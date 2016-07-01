@@ -1,0 +1,8 @@
+*.cs     text diff=csharp
+*.resx   text
+*.csproj text merge=union
+*.sln    text merge=union eol=crlf
+*.rtf    diff=astextplain
+*.json   text
+*.md     text
+*.txt    text
