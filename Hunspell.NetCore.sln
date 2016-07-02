@@ -12,6 +12,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		SharedAssemblyInfo.cs = SharedAssemblyInfo.cs
 	EndProjectSection
 EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Hunspell.NetCore.CoreBuild", "src\Hunspell.NetCore\Hunspell.NetCore.CoreBuild.xproj", "{1650CC3A-03F8-48B0-962C-5EAC0D6A4EC9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -22,11 +24,16 @@ Global
 		{4F32FF2A-9DBF-4DA4-8600-D2788B94C6CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4F32FF2A-9DBF-4DA4-8600-D2788B94C6CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4F32FF2A-9DBF-4DA4-8600-D2788B94C6CB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1650CC3A-03F8-48B0-962C-5EAC0D6A4EC9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1650CC3A-03F8-48B0-962C-5EAC0D6A4EC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1650CC3A-03F8-48B0-962C-5EAC0D6A4EC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1650CC3A-03F8-48B0-962C-5EAC0D6A4EC9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{4F32FF2A-9DBF-4DA4-8600-D2788B94C6CB} = {7DB151C3-9662-414F-84EF-7C6BD40C8AC6}
+		{1650CC3A-03F8-48B0-962C-5EAC0D6A4EC9} = {7DB151C3-9662-414F-84EF-7C6BD40C8AC6}
 	EndGlobalSection
 EndGlobal
