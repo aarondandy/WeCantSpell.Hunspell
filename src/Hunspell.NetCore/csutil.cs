@@ -80,6 +80,9 @@
 
 namespace Hunspell
 {
+    /// <summary>
+    /// Character encoding information.
+    /// </summary>
     public struct CsInfo
     {
         public byte CCase { get; set; }

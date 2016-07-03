@@ -84,11 +84,28 @@ using System.Collections.Generic;
 using Flag = System.UInt16;
 using MapEntry = System.Collections.Generic.List<string>;
 using FlagEntry = System.Collections.Generic.List<System.UInt16>;
+using System.Linq;
 
 namespace Hunspell
 {
     public class AffixMgr
     {
+        public AffixMgr(string affPath, List<HashMgr> ptr, string key = null)
+        {
+            AllDic = ptr;
+            HMgr = ptr.First();
+
+            if(!ParseFile(affPath, key))
+            {
+                throw new HunspellException($"Failure loading aff file {affPath}");
+            }
+
+            if(CpdMin == -1)
+            {
+                CpdMin = ATypes.MinCpdLen;
+            }
+        }
+
         private PfxEntry[] PStart { get; } = new PfxEntry[ATypes.SetSize];
 
         private SfxEntry[] SStart { get; } = new SfxEntry[ATypes.SetSize];
@@ -98,6 +115,8 @@ namespace Hunspell
         private SfxEntry[] SFlag { get; } = new SfxEntry[ATypes.SetSize];
 
         private List<HashMgr> AllDic { get; } = new List<HashMgr>();
+
+        private HashMgr HMgr { get; }
 
         [CLSCompliant(false)]
         public sbyte[] KeyString { get; }
@@ -142,7 +161,7 @@ namespace Hunspell
         private int SimplifiedTriple { get; }
 
         [CLSCompliant(false)]
-        public Flag ForbiddenWord { get; }
+        public Flag ForbiddenWord { get; } = 65510;
 
         [CLSCompliant(false)]
         public Flag NoSuggest { get; }
@@ -153,7 +172,7 @@ namespace Hunspell
         [CLSCompliant(false)]
         public Flag NeedAffix { get; }
 
-        private int CpdMin { get; }
+        private int CpdMin { get; } = -1;
 
         private bool ParsedRep { get; }
 
@@ -183,11 +202,11 @@ namespace Hunspell
 
         public PhoneTable Phone { get; }
 
-        public int MaxNgramSugs { get; }
+        public int MaxNgramSugs { get; } = -1;
 
-        public int MaxCpdSugs { get; }
+        public int MaxCpdSugs { get; } = -1;
 
-        public int MaxDiff { get; }
+        public int MaxDiff { get; } = -1;
 
         public int OnlyMaxDiff { get; }
 
@@ -195,7 +214,7 @@ namespace Hunspell
 
         public int SugsWithDots { get; }
 
-        private int CpdWordMax { get; }
+        private int CpdWordMax { get; } = -1;
 
         private int CpdMaxSyllable { get; }
 
@@ -272,11 +291,6 @@ namespace Hunspell
             {
                 throw new NotImplementedException();
             }
-        }
-
-        public AffixMgr(sbyte[] affPath, List<HashMgr> ptr, sbyte[] key = null)
-        {
-            throw new NotImplementedException();
         }
 
         [CLSCompliant(false)]
@@ -447,8 +461,36 @@ namespace Hunspell
             throw new NotImplementedException();
         }
 
-        private int ParseFile(sbyte[] affPath, sbyte[] key)
+        private bool ParseFile(string affPath, string key)
         {
+            var dupFlags = new sbyte[ATypes.ContSize];
+            var dupFlagsIni = 1;
+            var firstLine = true;
+
+            using(var afflst = new FileMgr(affPath, key))
+            {
+                string line;
+                while(afflst.GetLine(out line))
+                {
+                    /* remove byte order mark */
+                    if (firstLine)
+                    {
+                        firstLine = false;
+                        if (line.StartsWith("\xEF\xBB\xBF"))
+                        {
+                            // Affix file begins with byte order mark: possible incompatibility with old Hunspell versions
+                            line = line.Substring(3);
+                        }
+                    }
+
+                    throw new NotImplementedException();
+                }
+
+                throw new NotImplementedException();
+
+                FinishFileMgr(afflst);
+            }
+
             throw new NotImplementedException();
         }
 
@@ -557,12 +599,12 @@ namespace Hunspell
             throw new NotImplementedException();
         }
 
-        private int ProcessPfxTreeToList()
+        private bool ProcessPfxTreeToList()
         {
             throw new NotImplementedException();
         }
 
-        private int ProcessSfxTreeToList()
+        private bool ProcessSfxTreeToList()
         {
             throw new NotImplementedException();
         }
@@ -574,7 +616,9 @@ namespace Hunspell
 
         private void FinishFileMgr(FileMgr affLst)
         {
-            throw new NotImplementedException();
+            // TODO: consider disposing affList here
+            ProcessPfxTreeToList();
+            ProcessSfxTreeToList();
         }
     }
 }

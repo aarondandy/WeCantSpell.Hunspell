@@ -88,7 +88,7 @@ namespace Hunspell
     /// </summary>
     public class FileMgr : IDisposable
     {
-        public FileMgr(sbyte[] filename, sbyte[] key = null)
+        public FileMgr(string filename, string key = null)
         {
             throw new NotImplementedException();
         }
@@ -101,7 +101,7 @@ namespace Hunspell
 
         public int LineNum { get; protected set; }
 
-        public bool GetLine(ref sbyte[] _)
+        public bool GetLine(out string line)
         {
             throw new NotImplementedException();
         }

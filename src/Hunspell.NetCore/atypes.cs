@@ -51,15 +51,18 @@ namespace Hunspell
 {
     internal static class ATypes
     {
-        internal const int SetSize = 256;
+        public const int SetSize = 256;
 
-        internal const int ContSize = 65536;
-
-
-        internal const int AeXProduct = 1;
+        public const int ContSize = 65536;
 
 
-        internal const int InCpdNot = 0;
+        public const int AeXProduct = 1;
+
+
+        public const int InCpdNot = 0;
+
+
+        public const int MinCpdLen = 3;
     }
 
     public class GuessWord

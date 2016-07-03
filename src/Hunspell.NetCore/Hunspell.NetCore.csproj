@@ -58,6 +58,7 @@
     <Compile Include="hashmgr.cs" />
     <Compile Include="htypes.cs" />
     <Compile Include="hunspell.cs" />
+    <Compile Include="HunspellException.cs" />
     <Compile Include="hunzip.cs" />
     <Compile Include="langnum.cs" />
     <Compile Include="phonet.cs" />
