@@ -45,42 +45,44 @@
  *
  */
 
-using Flag = System.UInt16;
-
 namespace Hunspell
 {
-    internal static class ATypes
+    public enum LanguageNumber
     {
-        internal const int SetSize = 256;
-
-        internal const int ContSize = 65536;
-
-
-        internal const int AeXProduct = 1;
-
-
-        internal const int InCpdNot = 0;
-    }
-
-    public class GuessWord
-    {
-        sbyte[] Word { get; set; }
-
-        bool Allow { get; set; }
-
-        sbyte[] Orig { get; set; }
-    }
-
-    public class PatEntry
-    {
-        public string Pattern { get; set; }
-
-        public string Pattern2 { get; set; }
-
-        public string Pattern3 { get; set; }
-
-        Flag Cond { get; set; }
-
-        Flag Cond2 { get; set; }
+        AR = 96,
+        /// <remarks>
+        /// Custom number.
+        /// </remarks>
+        AZ = 100,
+        BG = 41,
+        CA = 37,
+        CS = 42,
+        DA = 45,
+        DE = 49,
+        EL = 30,
+        EN = 01,
+        ES = 34,
+        EU = 10,
+        FR = 02,
+        GL = 38,
+        HR = 78,
+        HU = 36,
+        IT = 39,
+        /// <remarks>
+        /// Custom number.
+        /// </remarks>
+        LA = 99,
+        /// <remarks>
+        /// Custom number.
+        /// </remarks>
+        LV = 101,
+        NL = 31,
+        PL = 48,
+        PT = 03,
+        RU = 07,
+        SV = 50,
+        TR = 90,
+        UK = 80,
+        XX = 999
     }
 }

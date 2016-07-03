@@ -82,6 +82,8 @@ using System;
 using System.Collections.Generic;
 
 using Flag = System.UInt16;
+using MapEntry = System.Collections.Generic.List<string>;
+using FlagEntry = System.Collections.Generic.List<System.UInt16>;
 
 namespace Hunspell
 {
@@ -415,14 +417,14 @@ namespace Hunspell
         }
 
         [CLSCompliant(false)]
-        public int CompoundCheckMorph(sbyte[] word, int len, short wordNum, short numSyllable, short maxWordNum, short wNum, HEntry[] words, HEntry[] rWords, ubyte huMovRule, ref sbyte[] result, sbyte[] partResult)
+        public int CompoundCheckMorph(sbyte[] word, int len, short wordNum, short numSyllable, short maxWordNum, short wNum, HEntry[] words, HEntry[] rWords, sbyte huMovRule, ref sbyte[] result, sbyte[] partResult)
         {
             // NOTE: may require pointers or an array slice
             throw new NotImplementedException();
         }
 
         [CLSCompliant(false)]
-        public List<sbyte[]> GetSuffixWords(ushort[] suff, int len, sbute[] rootWord)
+        public List<sbyte[]> GetSuffixWords(ushort[] suff, int len, sbyte[] rootWord)
         {
             throw new NotImplementedException();
         }

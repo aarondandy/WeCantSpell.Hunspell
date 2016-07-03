@@ -38,6 +38,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+/* hunzip: file decompression for sorted dictionaries with optional encryption,
+ * algorithm: prefix-suffix encoding and 16-bit Huffman encoding */
+
 /*
  *
  * This is a modified version of the Hunspell source code for the
@@ -45,42 +48,79 @@
  *
  */
 
-using Flag = System.UInt16;
+using System;
+using System.Collections.Generic;
+using System.IO;
 
 namespace Hunspell
 {
-    internal static class ATypes
+    public class Hunzip : IDisposable
     {
-        internal const int SetSize = 256;
+        internal const int BuffSize = 65536;
 
-        internal const int ContSize = 65536;
+        public Hunzip(string filename, string key = null)
+        {
+            throw new NotImplementedException();
+        }
 
+        protected string Filename { get; }
 
-        internal const int AeXProduct = 1;
+        protected FileStream FIn { get; }
 
+        protected int BufSiz { get; }
 
-        internal const int InCpdNot = 0;
-    }
+        protected int LasBit { get; }
 
-    public class GuessWord
-    {
-        sbyte[] Word { get; set; }
+        protected int Inc { get; }
 
-        bool Allow { get; set; }
+        protected int InBits { get; }
 
-        sbyte[] Orig { get; set; }
-    }
+        protected int OutC { get; }
 
-    public class PatEntry
-    {
-        public string Pattern { get; set; }
+        protected List<Bit> Dec { get; }
 
-        public string Pattern2 { get; set; }
+        protected sbyte[] In { get; } = new sbyte[Hunzip.BuffSize];
 
-        public string Pattern3 { get; set; }
+        protected sbyte[] Out { get; } = new sbyte[Hunzip.BuffSize + 1];
 
-        Flag Cond { get; set; }
+        protected sbyte[] Line { get; } = new sbyte[Hunzip.BuffSize + 50];
 
-        Flag Cond2 { get; set; }
+        public bool IsOpen()
+        {
+            return FIn?.CanRead ?? false;
+        }
+
+        public bool GetLine(string dest)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected int GetCode(string key)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected int GetBuf()
+        {
+            throw new NotImplementedException();
+        }
+
+        protected int Fail(string error, string par)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Dispose()
+        {
+            FIn?.Dispose();
+        }
+
+        protected struct Bit
+        {
+            byte C0;
+            byte C1;
+            int V0;
+            int V1;
+        }
     }
 }

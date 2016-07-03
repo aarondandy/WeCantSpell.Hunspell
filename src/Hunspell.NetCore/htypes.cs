@@ -45,42 +45,48 @@
  *
  */
 
-using Flag = System.UInt16;
-
 namespace Hunspell
 {
-    internal static class ATypes
+    public class HEntry
     {
-        internal const int SetSize = 256;
+        /// <summary>
+        /// Word length in bytes.
+        /// </summary>
+        public byte BLen { get; set; }
 
-        internal const int ContSize = 65536;
+        /// <summary>
+        /// Word length in characters (different for UTF-8 enc.).
+        /// </summary>
+        public byte CLen { get; set; }
 
+        /// <summary>
+        /// Length of affix flag vector.
+        /// </summary>
+        public short ALen { get; set; }
 
-        internal const int AeXProduct = 1;
+        /// <summary>
+        /// Affix flag vector.
+        /// </summary>
+        public ushort[] AStr { get; set; }
 
+        /// <summary>
+        /// next word with same hash code.
+        /// </summary>
+        public HEntry Next { get; set; }
 
-        internal const int InCpdNot = 0;
-    }
+        /// <summary>
+        /// Next homonym word (with same hash code).
+        /// </summary>
+        public HEntry NextHomonym { get; set; }
 
-    public class GuessWord
-    {
-        sbyte[] Word { get; set; }
+        /// <summary>
+        /// Variable fields (only for special pronounciation yet).
+        /// </summary>
+        public sbyte Var { get; set; }
 
-        bool Allow { get; set; }
-
-        sbyte[] Orig { get; set; }
-    }
-
-    public class PatEntry
-    {
-        public string Pattern { get; set; }
-
-        public string Pattern2 { get; set; }
-
-        public string Pattern3 { get; set; }
-
-        Flag Cond { get; set; }
-
-        Flag Cond2 { get; set; }
+        /// <summary>
+        /// Variable-length word (8-bit or UTF-8 encoding).
+        /// </summary>
+        public sbyte[] Word { get; set; }
     }
 }

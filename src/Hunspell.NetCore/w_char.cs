@@ -45,42 +45,12 @@
  *
  */
 
-using Flag = System.UInt16;
-
 namespace Hunspell
 {
-    internal static class ATypes
-    {
-        internal const int SetSize = 256;
-
-        internal const int ContSize = 65536;
-
-
-        internal const int AeXProduct = 1;
-
-
-        internal const int InCpdNot = 0;
-    }
-
-    public class GuessWord
-    {
-        sbyte[] Word { get; set; }
-
-        bool Allow { get; set; }
-
-        sbyte[] Orig { get; set; }
-    }
-
-    public class PatEntry
+    public class ReplEntry
     {
         public string Pattern { get; set; }
 
-        public string Pattern2 { get; set; }
-
-        public string Pattern3 { get; set; }
-
-        Flag Cond { get; set; }
-
-        Flag Cond2 { get; set; }
+        public string[] OutStrings { get; } = new string[4];
     }
 }

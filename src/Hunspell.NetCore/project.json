@@ -70,36 +70,13 @@
         "define": [ "NETSTANDARD_1_4", "NET_4_6_1", "HAS_CODECONTRACTS", "PRE_CORE" ]
       }
     },
-    "netstandard1.0": {
-      "buildOptions": {
-        "define": [ "NETSTANDARD_1_0" ]
-      },
-      "dependencies": {
-        "NETStandard.Library": "1.6.0"
-      }
-    },
-    "netstandard1.1": {
-      "buildOptions": {
-        "define": [ "NETSTANDARD_1_1" ]
-      },
-      "dependencies": {
-        "NETStandard.Library": "1.6.0"
-      }
-    },
-    "netstandard1.2": {
-      "buildOptions": {
-        "define": [ "NETSTANDARD_1_2" ]
-      },
-      "dependencies": {
-        "NETStandard.Library": "1.6.0"
-      }
-    },
     "netstandard1.3": {
       "buildOptions": {
         "define": [ "NETSTANDARD_1_3" ]
       },
       "dependencies": {
-        "NETStandard.Library": "1.6.0"
+        "NETStandard.Library": "1.6.0",
+        "System.IO.FileSystem": "4.0.1"
       }
     },
     "netstandard1.4": {
@@ -107,7 +84,8 @@
         "define": [ "NETSTANDARD_1_4" ]
       },
       "dependencies": {
-        "NETStandard.Library": "1.6.0"
+        "NETStandard.Library": "1.6.0",
+        "System.IO.FileSystem": "4.0.1"
       }
     },
     "netstandard1.5": {
@@ -115,7 +93,8 @@
         "define": [ "NETSTANDARD_1_5" ]
       },
       "dependencies": {
-        "NETStandard.Library": "1.6.0"
+        "NETStandard.Library": "1.6.0",
+        "System.IO.FileSystem": "4.0.1"
       }
     },
     "netstandard1.6": {
@@ -123,7 +102,8 @@
         "define": [ "NETSTANDARD_1_6" ]
       },
       "dependencies": {
-        "NETStandard.Library": "1.6.0"
+        "NETStandard.Library": "1.6.0",
+        "System.IO.FileSystem": "4.0.1"
       }
     }
   }
