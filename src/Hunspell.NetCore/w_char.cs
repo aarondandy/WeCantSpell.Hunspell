@@ -51,6 +51,33 @@ namespace Hunspell
     {
         public string Pattern { get; set; }
 
+        /// <summary>
+        /// Med, ini, fin, isol .
+        /// </summary>
         public string[] OutStrings { get; } = new string[4];
+
+        public string Med
+        {
+            get { return OutStrings[0]; }
+            set { OutStrings[0] = value; }
+        }
+
+        public string Ini
+        {
+            get { return OutStrings[1]; }
+            set { OutStrings[1] = value; }
+        }
+
+        public string Fin
+        {
+            get { return OutStrings[2]; }
+            set { OutStrings[2] = value; }
+        }
+
+        public string Isol
+        {
+            get { return OutStrings[3]; }
+            set { OutStrings[3] = value; }
+        }
     }
 }

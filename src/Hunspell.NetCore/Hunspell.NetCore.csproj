@@ -66,6 +66,7 @@
     <Compile Include="replist.cs" />
     <Compile Include="suggestmgr.cs" />
     <Compile Include="Utilities\ArrayExtensions.cs" />
+    <Compile Include="Utilities\StringExtensions.cs" />
     <Compile Include="w_char.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

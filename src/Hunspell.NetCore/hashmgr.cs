@@ -80,12 +80,17 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Hunspell
 {
     public class HashMgr
     {
-        public HashMgr(sbyte[] tPath, sbyte[] aPath, sbyte[] key = null)
+        public HashMgr()
+        {
+        }
+
+        public HashMgr(string tPath, string aPath, string key = null)
         {
             throw new NotImplementedException();
         }
@@ -94,7 +99,7 @@ namespace Hunspell
 
         private HEntry[] Table { get; }
 
-        private Flag Mode { get; }
+        private Flag FlagMode { get; } = Flag.Char;
 
         private int ComplexPrefixes { get; }
 
@@ -164,14 +169,84 @@ namespace Hunspell
             throw new NotImplementedException();
         }
 
-        public bool DecodeFlags(List<ushort> result, sbyte[] flags, FileMgr af)
+        public bool DecodeFlags(List<ushort> result, string flags, FileMgr af)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrEmpty(flags))
+            {
+                return false;
+            }
+
+            switch (FlagMode)
+            {
+                case Flag.Long:
+                    {
+                        throw new NotImplementedException();
+                    }
+                case Flag.Num:
+                    {
+                        throw new NotImplementedException();
+                    }
+                case Flag.Uni:
+                    {
+                        throw new NotImplementedException();
+                    }
+                case Flag.Char:
+                    {
+                        result.Clear();
+                        result.AddRange(flags.Cast<ushort>());
+                        break;
+                    }
+                default:
+                    return false;
+            }
+
+            return true;
         }
 
-        public ushort DecodeFlag(sbyte[] flag)
+        public ushort DecodeFlag(string flag)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrEmpty(flag))
+            {
+                // TODO: log warning
+                return 0;
+            }
+
+            ushort result;
+            switch (FlagMode)
+            {
+                case Flag.Long:
+                    {
+                        result = flag.Length >= 2
+                            ? (ushort)((flag[0] << 8) | (ushort)(flag[1]))
+                            : (ushort)0;
+                        break;
+                    }
+                case Flag.Num:
+                    {
+                        throw new NotImplementedException();
+                    }
+                case Flag.Uni:
+                    {
+                        throw new NotImplementedException();
+                    }
+                case Flag.Char:
+                    {
+                        result = flag.Length >= 1 ? flag[0] : (ushort)0;
+                        break;
+                    }
+                default:
+                    {
+                        result = 0;
+                        break;
+                    }
+            }
+
+            if (result == 0)
+            {
+                // TODO: log a warning
+            }
+
+            return result;
         }
 
         public sbyte[] EncodeFlags(ushort flag)
@@ -241,9 +316,21 @@ namespace Hunspell
 
         public enum Flag : int
         {
+            /// <summary>
+            /// Ispell's one-character flags (erfg -> e r f g).
+            /// </summary>
             Char,
+            /// <summary>
+            /// Two-character flags (1x2yZz -> 1x 2y Zz).
+            /// </summary>
             Long,
+            /// <summary>
+            /// Decimal numbers separated by comma (4521,23,233 -> 452123 233).
+            /// </summary>
             Num,
+            /// <summary>
+            /// UTF-8 characters.
+            /// </summary>
             Uni
         }
     }

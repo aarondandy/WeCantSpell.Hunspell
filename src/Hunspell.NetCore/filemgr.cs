@@ -90,7 +90,8 @@ namespace Hunspell
     {
         public FileMgr(string filename, string key = null)
         {
-            throw new NotImplementedException();
+            FIn = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read);
+            SIn = new StreamReader(FIn, true);
         }
 
         protected FileStream FIn { get; }
@@ -99,16 +100,20 @@ namespace Hunspell
 
         protected sbyte[] In { get; } = new sbyte[Hunzip.BuffSize];
 
+        private StreamReader SIn { get; }
+
         public int LineNum { get; protected set; }
 
         public bool GetLine(out string line)
         {
-            throw new NotImplementedException();
+            line = SIn.ReadLine();
+            return line != null;
         }
 
         public void Dispose()
         {
             HIn?.Dispose();
+            SIn?.Dispose();
             FIn?.Dispose();
         }
 

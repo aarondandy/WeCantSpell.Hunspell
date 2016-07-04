@@ -80,11 +80,15 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.IO;
 
 using Flag = System.UInt16;
 using MapEntry = System.Collections.Generic.List<string>;
-using FlagEntry = System.Collections.Generic.List<System.UInt16>;
-using System.Linq;
+using FlagEntry = System.Collections.Generic.List<ushort>;
+using System.Globalization;
+using Hunspell.Utilities;
 
 namespace Hunspell
 {
@@ -95,12 +99,12 @@ namespace Hunspell
             AllDic = ptr;
             HMgr = ptr.First();
 
-            if(!ParseFile(affPath, key))
+            if (!ParseFile(affPath, key))
             {
                 throw new HunspellException($"Failure loading aff file {affPath}");
             }
 
-            if(CpdMin == -1)
+            if (CpdMin == -1)
             {
                 CpdMin = ATypes.MinCpdLen;
             }
@@ -118,65 +122,96 @@ namespace Hunspell
 
         private HashMgr HMgr { get; }
 
-        [CLSCompliant(false)]
-        public sbyte[] KeyString { get; }
+        /// <summary>
+        /// The keyboard string.
+        /// </summary>
+        public string KeyString { get; private set; }
 
-        [CLSCompliant(false)]
-        public sbyte[] TryString { get; }
+        /// <summary>
+        /// The try string.
+        /// </summary>
+        public string TryString { get; private set; }
 
-        [CLSCompliant(false)]
-        public sbyte[] Encoding { get; }
+        /// <summary>
+        /// The name of the character set used by the .dict and .aff .
+        /// </summary>
+        public string Encoding { get; private set; }
 
         private CsInfo CsConv { get; }
 
-        public int Utf8 { get; }
+        /// <summary>
+        /// Indicates if the aff file used a UTF-8 encoding.
+        /// </summary>
+        public bool IsUtf8 { get; private set; }
 
-        public int ComplexPrefixes { get; }
+        /// <summary>
+        /// Indicates if agglutinative languages with right-to-left writing system are in use.
+        /// </summary>
+        public bool ComplexPrefixes { get; private set; }
 
-        [CLSCompliant(false)]
-        public Flag CompoundFlag { get; }
+        /// <summary>
+        /// The flag used by the controlled compound words.
+        /// </summary>
+        public Flag CompoundFlag { get; private set; }
 
-        private Flag CompoundBegin { get; }
+        /// <summary>
+        /// A flag used by compound words.
+        /// </summary>
+        private Flag CompoundBegin { get; set; }
 
-        private Flag CompoundMiddle { get; }
+        /// <summary>
+        /// A flag used by compound words.
+        /// </summary>
+        private Flag CompoundMiddle { get; set; }
 
-        private Flag CompoundEnd { get; }
+        /// <summary>
+        /// A flag used by compound words.
+        /// </summary>
+        private Flag CompoundEnd { get; set; }
 
-        private Flag CompoundRoot { get; }
+        /// <summary>
+        /// The flag sign compounds in dictionary.
+        /// </summary>
+        private Flag CompoundRoot { get; set; }
 
-        private Flag CompoundForbidFlag { get; }
+        private Flag CompoundForbidFlag { get; set; }
 
         private Flag CompoundPermitFlag { get; }
 
-        private int CompoundMoreSuffixes { get; }
+        private bool CompoundMoreSuffixes { get; set; }
 
-        private int CheckCompoundDup { get; }
+        private bool CheckCompoundDup { get; set; }
 
-        private int CheckCompoundRep { get; }
+        private bool CheckCompoundRep { get; set; }
 
-        private int CheckCompoundCase { get; }
+        private bool CheckCompoundCase { get; set; }
 
-        private int CheckCompoundTriple { get; }
+        private bool CheckCompoundTriple { get; set; }
 
-        private int SimplifiedTriple { get; }
+        private bool SimplifiedTriple { get; set; }
 
-        [CLSCompliant(false)]
-        public Flag ForbiddenWord { get; } = 65510;
+        /// <summary>
+        /// A flag used by forbidden words.
+        /// </summary>
+        public Flag ForbiddenWord { get; private set; } = 65510;
 
-        [CLSCompliant(false)]
-        public Flag NoSuggest { get; }
+        public Flag NoSuggest { get; private set; }
 
-        [CLSCompliant(false)]
-        public Flag NoNgramSuggest { get; }
+        public Flag NoNgramSuggest { get; private set; }
 
-        [CLSCompliant(false)]
-        public Flag NeedAffix { get; }
+        /// <summary>
+        /// A flag used by needaffixs.
+        /// </summary>
+        public Flag NeedAffix { get; private set; }
 
-        private int CpdMin { get; } = -1;
+        /// <summary>
+        /// The minimal length for words in compounds.
+        /// </summary>
+        private int CpdMin { get; set; } = -1;
 
         private bool ParsedRep { get; }
 
-        public List<ReplEntry> RepTable { get; } = new List<ReplEntry>();
+        public List<ReplEntry> RepTable { get; private set; }
 
         public RepList IConvTable { get; }
 
@@ -202,19 +237,19 @@ namespace Hunspell
 
         public PhoneTable Phone { get; }
 
-        public int MaxNgramSugs { get; } = -1;
+        public int MaxNgramSugs { get; set; } = -1;
 
-        public int MaxCpdSugs { get; } = -1;
+        public int MaxCpdSugs { get; private set; } = -1;
 
-        public int MaxDiff { get; } = -1;
+        public int MaxDiff { get; private set; } = -1;
 
-        public int OnlyMaxDiff { get; }
+        public bool OnlyMaxDiff { get; private set; }
 
-        public int NoSplitSugs { get; }
+        public bool NoSplitSugs { get; private set; }
 
-        public int SugsWithDots { get; }
+        public bool SugsWithDots { get; private set; }
 
-        private int CpdWordMax { get; } = -1;
+        private int CpdWordMax { get; set; } = -1;
 
         private int CpdMaxSyllable { get; }
 
@@ -222,7 +257,10 @@ namespace Hunspell
 
         private List<char> CpdVowelsUtf16 { get; }
 
-        private sbyte[] CpdSyllableNum { get; }
+        /// <summary>
+        /// A flag used by <see cref="CompoundCheck(sbyte[], short, short, short, short, HEntry[], HEntry[], sbyte, sbyte, ref int)"/>.
+        /// </summary>
+        private string CpdSyllableNum { get; set; }
 
         private sbyte[] PfxAppnd { get; }
 
@@ -238,48 +276,80 @@ namespace Hunspell
 
         private PfxEntry Pfx { get; }
 
-        private int CheckNum { get; }
+        /// <summary>
+        /// A flag used by the controlled compound words.
+        /// </summary>
+        private bool CheckNum { get; set; }
 
-        [CLSCompliant(false)]
-        public sbyte[] WordChars { get; }
+        /// <summary>
+        /// Extra word characters.
+        /// </summary>
+        public string WordChars { get; private set; }
 
-        public List<char> WordCharsUtf16 { get; } = new List<char>();
+        /// <summary>
+        /// Extra word characters.
+        /// </summary>
+        public string WordCharsUtf16 { get; private set; }
 
-        [CLSCompliant(false)]
-        public sbyte[] IgnoredChars { get; }
+        /// <summary>
+        /// Ignored characters (for example, Arabic optional diacretics charachters).
+        /// </summary>
+        public string IgnoredChars { get; private set; }
 
-        public List<char> IgnoredCharsUtf16 { get; } = new List<char>();
+        /// <summary>
+        /// Ignored characters (for example, Arabic optional diacretics charachters).
+        /// </summary>
+        public string IgnoredCharsUtf16 { get; private set; }
 
-        [CLSCompliant(false)]
-        public sbyte[] Version { get; }
+        public string Version { get; }
 
-        private sbyte[] Lang { get; }
+        /// <summary>
+        /// The language for language specific codes.
+        /// </summary>
+        private string Lang { get; set; }
 
         public int LangNum { get; }
 
-        private Flag LemmaPresent { get; }
+        /// <summary>
+        /// A flag used by forbidden words.
+        /// </summary>
+        private Flag LemmaPresent { get; set; }
 
-        private Flag Circumfix { get; }
+        /// <summary>
+        /// A flag used by circumfixes.
+        /// </summary>
+        private Flag Circumfix { get; set; }
 
-        [CLSCompliant(false)]
-        public Flag OnlyInCompound { get; }
+        /// <summary>
+        /// A flag used by fogemorphemes.
+        /// </summary>
+        public Flag OnlyInCompound { get; private set; }
 
-        [CLSCompliant(false)]
-        public Flag KeepCase { get; }
+        /// <summary>
+        /// A flag used by forbidden words.
+        /// </summary>
+        public Flag KeepCase { get; private set; }
 
-        [CLSCompliant(false)]
-        public Flag ForceUCase { get; }
+        /// <summary>
+        /// A flag used by forceucase.
+        /// </summary>
+        public Flag ForceUCase { get; private set; }
 
-        [CLSCompliant(false)]
-        public Flag Warn { get; }
+        /// <summary>
+        /// A flag used by warn.
+        /// </summary>
+        public Flag Warn { get; private set; }
 
-        public int ForbidWarn { get; }
+        public bool ForbidWarn { get; private set; }
 
-        private Flag SubStandard { get; }
+        /// <summary>
+        /// A flag used by the affix generator.
+        /// </summary>
+        private Flag SubStandard { get; set; }
 
-        public int CheckSharps { get; }
+        public bool CheckSharps { get; private set; }
 
-        public int FullStrip { get; }
+        public bool FullStrip { get; private set; }
 
         public int HaveContClass { get; }
 
@@ -461,16 +531,22 @@ namespace Hunspell
             throw new NotImplementedException();
         }
 
+        private static readonly Regex LineStringParseRegex = new Regex(@"^[ \t]*(\w+)[ \t]+(.+)[ \t]*$");
+        private static readonly Regex SingleCommandParseRegex = new Regex(@"^[ \t]*(\w+)[ \t]*$");
+        private static readonly Regex CommentLineRegex = new Regex(@"^\s*[#].*");
+
         private bool ParseFile(string affPath, string key)
         {
             var dupFlags = new sbyte[ATypes.ContSize];
             var dupFlagsIni = 1;
             var firstLine = true;
+            int tempInt;
+            string line;
+            Flag tempFlag;
 
-            using(var afflst = new FileMgr(affPath, key))
+            using (var afflst = new FileMgr(affPath, key))
             {
-                string line;
-                while(afflst.GetLine(out line))
+                while (afflst.GetLine(out line))
                 {
                     /* remove byte order mark */
                     if (firstLine)
@@ -483,25 +559,410 @@ namespace Hunspell
                         }
                     }
 
-                    throw new NotImplementedException();
+                    if (CommentLineRegex.IsMatch(line))
+                    {
+                        continue; // skip the comment lines
+                    }
+
+                    var singleCommandParsed = SingleCommandParseRegex.Match(line);
+                    if (singleCommandParsed.Success)
+                    {
+                        switch (singleCommandParsed.Groups[1].Value)
+                        {
+                            /* parse COMPLEXPREFIXES for agglutinative languages with right-to-left writing system */
+                            case "COMPLEXPREFIXES":
+                                ComplexPrefixes = true;
+                                break; // the origin code continues on after reading this indicator
+                            case "COMPOUNDMORESUFFIXES":
+                                CompoundMoreSuffixes = true;
+                                break;
+                            case "CHECKCOMPOUNDDUP":
+                                CheckCompoundDup = true;
+                                break;
+                            case "CHECKCOMPOUNDREP":
+                                CheckCompoundRep = true;
+                                break;
+                            case "CHECKCOMPOUNDTRIPLE":
+                                CheckCompoundTriple = true;
+                                break;
+                            case "SIMPLIFIEDTRIPLE":
+                                SimplifiedTriple = true;
+                                break;
+                            case "CHECKCOMPOUNDCASE":
+                                CheckCompoundCase = true;
+                                break;
+                            /* parse in the flag used by the controlled compound words */
+                            case "CHECKNUM":
+                                CheckNum = true;
+                                break;
+                            case "ONLYMAXDIFF":
+                                OnlyMaxDiff = true;
+                                break;
+                            case "NOSPLITSUGS":
+                                NoSplitSugs = true;
+                                break;
+                            case "FULLSTRIP":
+                                FullStrip = true;
+                                break;
+                            case "SUGSWITHDOTS":
+                                SugsWithDots = true;
+                                break;
+                            case "FORBIDWARN":
+                                ForbidWarn = true;
+                                break;
+                            case "CHECKSHARPS":
+                                CheckSharps = true;
+                                break;
+                        }
+                    }
+
+                    var lineParsed = LineStringParseRegex.Match(line);
+                    if (lineParsed.Success)
+                    {
+                        var value = lineParsed.Groups[2].Value;
+                        switch (lineParsed.Groups[1].Value)
+                        {
+                            /* parse in the keyboard string */
+                            case "KEY":
+                                KeyString = value;
+                                continue;
+                            /* parse in the try string */
+                            case "TRY":
+                                TryString = value;
+                                continue;
+                            /* parse in the name of the character set used by the .dict and .aff */
+                            case "SET":
+                                Encoding = value;
+                                IsUtf8 = value == "UTF-8";
+                                continue;
+                            /* parse in the language for language specific codes */
+                            case "LANG":
+                                Lang = value;
+                                continue;
+                            /* parse in the flag used by the controlled compound words */
+                            case "COMPOUNDFLAG":
+                                if (ParseFlag(value, out tempFlag, afflst))
+                                {
+                                    CompoundFlag = tempFlag;
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            /* parse in the flag used by compound words */
+                            case "COMPOUNDBEGIN":
+                                if (ParseFlag(value, out tempFlag, afflst))
+                                {
+                                    if (ComplexPrefixes)
+                                    {
+                                        CompoundEnd = tempFlag;
+                                    }
+                                    else
+                                    {
+                                        CompoundBegin = tempFlag;
+                                    }
+
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            /* parse in the flag used by compound words */
+                            case "COMPOUNDMIDDLE":
+                                if (ParseFlag(value, out tempFlag, afflst))
+                                {
+                                    CompoundMiddle = tempFlag;
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            /* parse in the flag used by compound words */
+                            case "COMPOUNDEND":
+                                if (ParseFlag(value, out tempFlag, afflst))
+                                {
+                                    if (ComplexPrefixes)
+                                    {
+                                        CompoundBegin = tempFlag;
+                                    }
+                                    else
+                                    {
+                                        CompoundEnd = tempFlag;
+                                    }
+
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            /* parse in the data used by compound_check() method */
+                            case "COMPOUNDWORDMAX":
+                                if (ParseNum(value, out tempInt, afflst))
+                                {
+                                    CpdWordMax = tempInt;
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            /* parse in the flag sign compounds in dictionary */
+                            case "COMPOUNDROOT":
+                                if (ParseFlag(value, out tempFlag, afflst))
+                                {
+                                    CompoundRoot = tempFlag;
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            /* parse in the flag used by compound_check() method */
+                            case "COMPOUNDFORBIDFLAG":
+                                if (ParseFlag(value, out tempFlag, afflst))
+                                {
+                                    CompoundForbidFlag = tempFlag;
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            case "NOSUGGEST":
+                                if (ParseFlag(value, out tempFlag, afflst))
+                                {
+                                    NoSuggest = tempFlag;
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            case "NONGRAMSUGGEST":
+                                if (ParseFlag(value, out tempFlag, afflst))
+                                {
+                                    NoNgramSuggest = tempFlag;
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            /* parse in the flag used by forbidden words */
+                            case "FORBIDDENWORD":
+                                if (ParseFlag(value, out tempFlag, afflst))
+                                {
+                                    ForbiddenWord = tempFlag;
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            /* parse in the flag used by forbidden words */
+                            case "LEMMA_PRESENT":
+                                if (ParseFlag(value, out tempFlag, afflst))
+                                {
+                                    LemmaPresent = tempFlag;
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            /* parse in the flag used by circumfixes */
+                            case "CIRCUMFIX":
+                                if (ParseFlag(value, out tempFlag, afflst))
+                                {
+                                    Circumfix = tempFlag;
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            /* parse in the flag used by fogemorphemes */
+                            case "ONLYINCOMPOUND":
+                                if (ParseFlag(value, out tempFlag, afflst))
+                                {
+                                    OnlyInCompound = tempFlag;
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            /* parse in the flag used by `needaffixs' */
+                            case "PSEUDOROOT":
+                            case "NEEDAFFIX":
+                                if (ParseFlag(value, out tempFlag, afflst))
+                                {
+                                    NeedAffix = tempFlag;
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            /* parse in the minimal length for words in compounds */
+                            case "COMPOUNDMIN":
+                                if (ParseNum(value, out tempInt, afflst))
+                                {
+                                    CpdMin = tempInt;
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            /* parse in the max. words and syllables in compounds */
+                            case "COMPOUNDSYLLABLE":
+                                throw new NotImplementedException();
+                            /* parse in the flag used by compound_check() method */
+                            case "SYLLABLENUM":
+                                CpdSyllableNum = value;
+                                continue;
+                            /* parse in the extra word characters */
+                            case "WORDCHARS":
+                                WordChars = value;
+                                WordCharsUtf16 = value;
+                                continue;
+                            /* parse in the ignored characters (for example, Arabic optional diacretics charachters) */
+                            case "IGNORE":
+                                IgnoredChars = value;
+                                IgnoredCharsUtf16 = value;
+                                continue;
+                            /* parse in the typical fault correcting table */
+                            case "REP":
+                                ParseRepTable(value, afflst);
+                                continue;
+                            /* parse in the input conversion table */
+                            case "ICONV":
+                                throw new NotImplementedException("TODO: conv table");
+                            /* parse in the input conversion table */
+                            case "OCONV":
+                                throw new NotImplementedException("TODO: conv table");
+                            /* parse in the input conversion table */
+                            case "PHONE":
+                                throw new NotImplementedException("TODO: phonetable");
+                            /* parse in the checkcompoundpattern table */
+                            case "CHECKCOMPOUNDPATTERN":
+                                throw new NotImplementedException("TODO: checkcpdtable");
+                            /* parse in the defcompound table */
+                            case "COMPOUNDRULE":
+                                throw new NotImplementedException("TODO: defcpdtable");
+                            /* parse in the related character map table */
+                            case "MAP":
+                                throw new NotImplementedException("TODO: map");
+                            /* parse in the word breakpoints table */
+                            case "BREAK":
+                                throw new NotImplementedException("TODO: break");
+                            case "VERSION":
+                                throw new NotImplementedException("TODO: persion parsing stuff");
+                            case "MAXNGRAMSUGS":
+                                if (ParseNum(value, out tempInt, afflst))
+                                {
+                                    MaxNgramSugs = tempInt;
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            case "MAXDIFF":
+                                if (ParseNum(value, out tempInt, afflst))
+                                {
+                                    MaxDiff = tempInt;
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            case "MAXCPDSUGS":
+                                if (ParseNum(value, out tempInt, afflst))
+                                {
+                                    MaxCpdSugs = tempInt;
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            /* parse in the flag used by forbidden words */
+                            case "KEEPCASE":
+                                if (ParseFlag(value, out tempFlag, afflst))
+                                {
+                                    KeepCase = tempFlag;
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            /* parse in the flag used by `forceucase' */
+                            case "FORCEUCASE":
+                                if (ParseFlag(value, out tempFlag, afflst))
+                                {
+                                    ForceUCase = tempFlag;
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            /* parse in the flag used by `warn' */
+                            case "WARN":
+                                if (ParseFlag(value, out tempFlag, afflst))
+                                {
+                                    Warn = tempFlag;
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            /* parse in the flag used by the affix generator */
+                            case "SUBSTANDARD":
+                                if (ParseFlag(value, out tempFlag, afflst))
+                                {
+                                    SubStandard = tempFlag;
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                        }
+                    }
+
+                    // TODO: finish this
                 }
 
-                throw new NotImplementedException();
+                // TODO: finish this
 
                 FinishFileMgr(afflst);
             }
 
-            throw new NotImplementedException();
+            // TODO: finish this
+
+            return true;
         }
 
-        private bool ParseFlag(sbyte[] line, ushort[] @out, FileMgr af)
+        private bool ParseFlag(string textValue, out ushort @out, FileMgr af)
         {
-            throw new NotImplementedException();
+            @out = HMgr.DecodeFlag(textValue);
+
+            return true;
         }
 
-        private bool ParseNum(sbyte[] line, out int @out, FileMgr af)
+        private bool ParseNum(string textValue, out int @out, FileMgr af)
         {
-            throw new NotImplementedException();
+            return int.TryParse(textValue, NumberStyles.Any, CultureInfo.InvariantCulture.NumberFormat, out @out);
         }
 
         private bool ParseCpdSyllable(sbyte[] line, FileMgr af)
@@ -509,9 +970,66 @@ namespace Hunspell
             throw new NotImplementedException();
         }
 
-        private bool ParseRepTable(sbyte[] line, FileMgr af)
+        private bool ParseRepTable(string replEntryTextLine, FileMgr af)
         {
-            throw new NotImplementedException();
+            replEntryTextLine = replEntryTextLine.TrimStartTabOrSpace().TrimEndOfLine();
+
+            if (string.IsNullOrEmpty(replEntryTextLine))
+            {
+                return false;
+            }
+
+            int tableNumber;
+            if (int.TryParse(replEntryTextLine, NumberStyles.Integer, CultureInfo.InvariantCulture.NumberFormat, out tableNumber))
+            {
+                if (RepTable == null)
+                {
+                    RepTable = new List<ReplEntry>(tableNumber);
+                    return true;
+                }
+                else
+                {
+                    // TODO: warn about redefining the table
+                    return false;
+                }
+            }
+
+            var replEntryTextParts = replEntryTextLine.SplitOnTabOrSpace();
+            if (replEntryTextParts.Length > 0)
+            {
+                var replEntry = new ReplEntry();
+                int type = 0;
+
+                replEntry.Pattern = replEntryTextParts[0];
+                if (replEntry.Pattern.StartsWith('^'))
+                {
+                    replEntry.Pattern = replEntry.Pattern.Substring(1);
+                    type = 1;
+                }
+
+                replEntry.Pattern = replEntry.Pattern.Replace('_', ' ');
+
+                if (replEntry.Pattern.Length == 0 && replEntry.Pattern.EndsWith('$'))
+                {
+                    type += 2;
+                    replEntry.Pattern = replEntry.Pattern.SubstringFromEnd(1);
+                }
+
+                if(replEntryTextParts.Length > 1)
+                {
+                    replEntry.OutStrings[type] = replEntryTextParts[1].Replace('_', ' ');
+                }
+
+                if (RepTable == null)
+                {
+                    RepTable = new List<ReplEntry>();
+                }
+
+                RepTable.Add(replEntry);
+                return true;
+            }
+
+            return false;
         }
 
         private bool ParseConvTable(sbyte[] line, FileMgr af, ref RepList[] rl)
@@ -591,22 +1109,43 @@ namespace Hunspell
 
         private PfxEntry ProcessPfxInOrder(PfxEntry ptr, PfxEntry nPtr)
         {
-            throw new NotImplementedException();
+            if (ptr != null)
+            {
+                nPtr = ProcessPfxInOrder(ptr.NextNe, nPtr);
+                ptr.Next = nPtr;
+                nPtr = ProcessPfxInOrder(ptr.NextEq, ptr);
+            }
+            return nPtr;
         }
 
-        private PfxEntry ProcessSfxInOrder(SfxEntry ptr, SfxEntry nPtr)
+        private SfxEntry ProcessSfxInOrder(SfxEntry ptr, SfxEntry nPtr)
         {
-            throw new NotImplementedException();
+            if (ptr != null)
+            {
+                nPtr = ProcessSfxInOrder(ptr.NextNe, nPtr);
+                ptr.Next = nPtr;
+                nPtr = ProcessSfxInOrder(ptr.NextEq, ptr);
+            }
+            return nPtr;
         }
 
         private bool ProcessPfxTreeToList()
         {
-            throw new NotImplementedException();
+            for (int i = 0; i < PStart.Length; i++)
+            {
+                PStart[i] = ProcessPfxInOrder(PStart[i], null);
+            }
+
+            return true;
         }
 
         private bool ProcessSfxTreeToList()
         {
-            throw new NotImplementedException();
+            for (int i = 0; i < SStart.Length; i++)
+            {
+                SStart[i] = ProcessSfxInOrder(SStart[i], null);
+            }
+            return true;
         }
 
         private int RedundantCondition(sbyte _1, sbyte[] strip, int strIpl, sbyte[] cond, int _2)
