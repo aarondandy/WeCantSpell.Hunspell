@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using FluentAssertions;
+using System;
+using System.Collections.Generic;
 using Xunit;
 
 namespace Hunspell.NetCore.Tests
@@ -24,6 +26,32 @@ namespace Hunspell.NetCore.Tests
             Assert.Equal(".", aff.WordChars);
             Assert.Equal(".", aff.WordCharsUtf16);
             Assert.Equal((ushort)'?', aff.ForbiddenWord);
+        }
+
+        [Fact]
+        public void can_parse_1706659_aff()
+        {
+            var ptr = new List<HashMgr>
+            {
+                new HashMgr()
+            };
+
+            var aff = new AffixMgr("files/1706659.aff", ptr);
+
+            Assert.Equal("ISO8859-1", aff.Encoding);
+            Assert.Equal("esijanrtolcdugmphbyfvkwqxz", aff.TryString);
+
+            throw new NotImplementedException();
+            // TODO: SFX A Y 5
+            // TODO: SFX A 0 e.
+            // TODO: SFX A 0 er.
+            // TODO: SFX A 0 en.
+            // TODO: SFX A 0 em.
+            // TODO: SFX A 0 es.
+
+            aff.DefCpdTable.Should().NotBeNull();
+            aff.DefCpdTable.Should().HaveCount(1);
+            aff.DefCpdTable[0].ShouldBeEquivalentTo(new ushort[] { 'v', 'w' });
         }
     }
 }

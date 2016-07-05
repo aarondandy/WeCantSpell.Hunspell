@@ -94,6 +94,9 @@ namespace Hunspell
 {
     public class AffixMgr
     {
+        private const int DupSfxFlag = 1;
+        private const int DupPfxFlag = 2;
+
         public AffixMgr(string affPath, List<HashMgr> ptr, string key = null)
         {
             AllDic = ptr;
@@ -233,7 +236,7 @@ namespace Hunspell
 
         private bool ParsedDefCpd { get; }
 
-        private List<FlagEntry> DefCpdTable { get; } = new List<FlagEntry>();
+        public List<FlagEntry> DefCpdTable { get; private set; }
 
         public PhoneTable Phone { get; }
 
@@ -351,7 +354,7 @@ namespace Hunspell
 
         public bool FullStrip { get; private set; }
 
-        public int HaveContClass { get; }
+        public bool HaveContClass { get; private set; }
 
         private sbyte[] ContClasses { get; } = new sbyte[ATypes.ContSize];
 
@@ -538,11 +541,13 @@ namespace Hunspell
         private bool ParseFile(string affPath, string key)
         {
             var dupFlags = new sbyte[ATypes.ContSize];
-            var dupFlagsIni = 1;
+            var dupFlagsNeedsCleared = true; // TODO: with .NET there is no need to clear the array
             var firstLine = true;
             int tempInt;
             string line;
             Flag tempFlag;
+            EntriesContainer sAffentries = null;
+            EntriesContainer pAffentries = null;
 
             using (var afflst = new FileMgr(affPath, key))
             {
@@ -619,8 +624,9 @@ namespace Hunspell
                     var lineParsed = LineStringParseRegex.Match(line);
                     if (lineParsed.Success)
                     {
+                        var commandName = lineParsed.Groups[1].Value;
                         var value = lineParsed.Groups[2].Value;
-                        switch (lineParsed.Groups[1].Value)
+                        switch (commandName)
                         {
                             /* parse in the keyboard string */
                             case "KEY":
@@ -838,8 +844,14 @@ namespace Hunspell
                                 continue;
                             /* parse in the typical fault correcting table */
                             case "REP":
-                                ParseRepTable(value, afflst);
-                                continue;
+                                if (ParseRepTable(value, afflst))
+                                {
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
                             /* parse in the input conversion table */
                             case "ICONV":
                                 throw new NotImplementedException("TODO: conv table");
@@ -854,7 +866,14 @@ namespace Hunspell
                                 throw new NotImplementedException("TODO: checkcpdtable");
                             /* parse in the defcompound table */
                             case "COMPOUNDRULE":
-                                throw new NotImplementedException("TODO: defcpdtable");
+                                if (ParseDefCpdTable(value, afflst))
+                                {
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
                             /* parse in the related character map table */
                             case "MAP":
                                 throw new NotImplementedException("TODO: map");
@@ -937,18 +956,82 @@ namespace Hunspell
                                 {
                                     return false;
                                 }
+                            /*parse this affix: P - prefix, S - suffix */
+                            case "PFX":
+                            case "SFX":
+                                char ft = commandName[0];
+                                if (ComplexPrefixes)
+                                {
+                                    ft = (ft == 'S') ? 'P' : 'S';
+                                }
+                                if (dupFlagsNeedsCleared)
+                                {
+                                    Array.Clear(dupFlags, 0, dupFlags.Length);
+                                    dupFlagsNeedsCleared = false;
+                                }
+
+                                var parsedOk = ft == 'P'
+                                    ? ParseAffix(value, ft, afflst, dupFlags, ref pAffentries)
+                                    : ParseAffix(value, ft, afflst, dupFlags, ref sAffentries);
+
+                                if (parsedOk)
+                                {
+                                    continue;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+
                         }
                     }
-
-                    // TODO: finish this
-                }
-
-                // TODO: finish this
+                } // end read loop
 
                 FinishFileMgr(afflst);
             }
 
-            // TODO: finish this
+            // affix trees are sorted now
+
+            // now we can speed up performance greatly taking advantage of the
+            // relationship between the affixes and the idea of "subsets".
+
+            // View each prefix as a potential leading subset of another and view
+            // each suffix (reversed) as a potential trailing subset of another.
+
+            // To illustrate this relationship if we know the prefix "ab" is found in the
+            // word to examine, only prefixes that "ab" is a leading subset of need be
+            // examined.
+            // Furthermore is "ab" is not present then none of the prefixes that "ab" is
+            // is a subset need be examined.
+            // The same argument goes for suffix string that are reversed.
+
+            // Then to top this off why not examine the first char of the word to quickly
+            // limit the set of prefixes to examine (i.e. the prefixes to examine must
+            // be leading supersets of the first character of the word (if they exist)
+
+            // To take advantage of this "subset" relationship, we need to add two links
+            // from entry.  One to take next if the current prefix is found (call it
+            // nexteq)
+            // and one to take next if the current prefix is not found (call it nextne).
+
+            // Since we have built ordered lists, all that remains is to properly
+            // initialize
+            // the nextne and nexteq pointers that relate them
+
+            ProcessPfxOrder();
+            ProcessSfxOrder();
+
+            /* get encoding for CHECKCOMPOUNDCASE */
+            if (!IsUtf8)
+            {
+                throw new NotImplementedException();
+            }
+
+            // default BREAK definition
+            if (!ParsedBreakTable)
+            {
+                throw new NotImplementedException();
+            }
 
             return true;
         }
@@ -970,37 +1053,29 @@ namespace Hunspell
             throw new NotImplementedException();
         }
 
-        private bool ParseRepTable(string replEntryTextLine, FileMgr af)
+        private bool ParseRepTable(string entryLine, FileMgr af)
         {
-            replEntryTextLine = replEntryTextLine.TrimStartTabOrSpace().TrimEndOfLine();
+            entryLine = entryLine.TrimStartTabOrSpace().TrimEndOfLine();
 
-            if (string.IsNullOrEmpty(replEntryTextLine))
+            if (string.IsNullOrEmpty(entryLine))
             {
                 return false;
             }
 
-            int tableNumber;
-            if (int.TryParse(replEntryTextLine, NumberStyles.Integer, CultureInfo.InvariantCulture.NumberFormat, out tableNumber))
+            int expectedTableSize;
+            if (RepTable == null && int.TryParse(entryLine, NumberStyles.Integer, CultureInfo.InvariantCulture.NumberFormat, out expectedTableSize))
             {
-                if (RepTable == null)
-                {
-                    RepTable = new List<ReplEntry>(tableNumber);
-                    return true;
-                }
-                else
-                {
-                    // TODO: warn about redefining the table
-                    return false;
-                }
+                RepTable = new List<ReplEntry>(expectedTableSize);
+                return true;
             }
 
-            var replEntryTextParts = replEntryTextLine.SplitOnTabOrSpace();
-            if (replEntryTextParts.Length > 0)
+            var entryTextParts = entryLine.SplitOnTabOrSpace();
+            if (entryTextParts.Length > 0)
             {
                 var replEntry = new ReplEntry();
                 int type = 0;
 
-                replEntry.Pattern = replEntryTextParts[0];
+                replEntry.Pattern = entryTextParts[0];
                 if (replEntry.Pattern.StartsWith('^'))
                 {
                     replEntry.Pattern = replEntry.Pattern.Substring(1);
@@ -1015,9 +1090,9 @@ namespace Hunspell
                     replEntry.Pattern = replEntry.Pattern.SubstringFromEnd(1);
                 }
 
-                if(replEntryTextParts.Length > 1)
+                if (entryTextParts.Length > 1)
                 {
-                    replEntry.OutStrings[type] = replEntryTextParts[1].Replace('_', ' ');
+                    replEntry.OutStrings[type] = entryTextParts[1].Replace('_', ' ');
                 }
 
                 if (RepTable == null)
@@ -1057,19 +1132,480 @@ namespace Hunspell
             throw new NotImplementedException();
         }
 
-        private bool ParseDefCpdTable(sbyte[] line, FileMgr af)
+        private bool ParseDefCpdTable(string entryLine, FileMgr af)
         {
-            throw new NotImplementedException();
+            entryLine = entryLine.TrimStartTabOrSpace().TrimEndOfLine();
+
+            if (string.IsNullOrEmpty(entryLine))
+            {
+                return false;
+            }
+
+            int expectedTableSize;
+            if (DefCpdTable == null && int.TryParse(entryLine, NumberStyles.Integer, CultureInfo.InvariantCulture.NumberFormat, out expectedTableSize))
+            {
+                DefCpdTable = new List<FlagEntry>(expectedTableSize);
+                return true;
+            }
+
+            var entry = new FlagEntry();
+
+            if (entryLine.IndexOf('(') >= 0)
+            {
+                for (var k = 0; k < entryLine.Length; k++)
+                {
+                    var chb = k;
+                    var che = k + 1;
+                    if (entryLine[k] == '(')
+                    {
+                        var parpos = entryLine.IndexOf(')', k);
+                        if (parpos >= 0)
+                        {
+                            chb = k + 1;
+                            che = parpos;
+                            k = parpos;
+                        }
+                    }
+
+                    if (entryLine[chb] == '*' || entryLine[chb] == '?')
+                    {
+                        entry.Add((Flag)entryLine[chb]);
+                    }
+                    else
+                    {
+                        if (!HMgr.DecodeFlags(entry, entryLine.Substring(chb, che - chb), af))
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (!HMgr.DecodeFlags(entry, entryLine, af))
+                {
+                    return false;
+                }
+            }
+
+            DefCpdTable.Add(entry);
+            return true;
         }
 
-        private bool ParseAffix(sbyte[] line, sbyte at, FileMgr af, sbyte[] dupFlags)
+        public class EntriesContainer
         {
-            throw new NotImplementedException();
+            public EntriesContainer(char at, AffixMgr mgr)
+            {
+                At = at;
+                Mgr = mgr;
+                Entries = null;
+                NumberEntriesRead = 0;
+                NumberEntriesExpected = 0;
+            }
+
+            public List<AffEntry> Entries { get; private set; }
+
+            private AffixMgr Mgr { get; }
+
+            private char At { get; }
+
+            public int NumberEntriesRead { get; set; }
+
+            public int NumberEntriesExpected { get; set; }
+
+            public AffEntry FirstEntry
+            {
+                get
+                {
+                    return Entries?.FirstOrDefault();
+                }
+            }
+
+            public void Initialize(int numents, sbyte opts, ushort aflag)
+            {
+                NumberEntriesExpected = numents;
+
+                if (Entries == null)
+                {
+                    Entries = new List<AffEntry>(numents);
+                }
+
+                var affEntry = At == 'P'
+                    ? new PfxEntry(Mgr)
+                    : (AffEntry)new SfxEntry(Mgr);
+                affEntry.Opts = opts;
+                affEntry.AFlag = aflag;
+                Entries.Add(affEntry);
+            }
+
+            public AffEntry AddEntry(sbyte opts)
+            {
+                if (Entries == null)
+                {
+                    Entries = new List<AffEntry>();
+                }
+
+                var affEntry = At == 'P'
+                    ? new PfxEntry(Mgr)
+                    : (AffEntry)new SfxEntry(Mgr);
+                Entries.Add(affEntry);
+                affEntry.Opts = (sbyte)(Entries[0].Opts & opts);
+                return affEntry;
+            }
         }
 
-        private void ReverseCondition(sbyte[] _)
+        private bool ParseAffix(string entryLine, char at, FileMgr af, sbyte[] dupFlags, ref EntriesContainer affentries)
         {
-            throw new NotImplementedException();
+            int numents = 0; // number of AffEntry structures to parse
+            ushort aflag = 0; // affix char identifier
+            sbyte ff = 0;
+            int i = 0;
+            var entryLineParts = entryLine.RegexSplitOnTabOrSpace();
+            AffEntry entry = null;
+
+            var needsToModifyFirstEntry = affentries != null && affentries.Entries?.Count == 1 && affentries.NumberEntriesRead == 0;
+            var firstEntry = affentries?.FirstEntry;
+
+            // split affix header line into pieces
+            int np = 0;
+
+            // piece 1 - is type of affix
+            np++; // because we already parse PFX and SFX before calling this method just increment it
+            if (affentries != null)
+            {
+                affentries.NumberEntriesRead++;
+                entry = needsToModifyFirstEntry
+                    ? firstEntry
+                    : affentries.AddEntry(ATypes.AeXProduct | ATypes.AeUtf8 | ATypes.AeAliasF | ATypes.AeAliasM);
+            }
+
+            // piece 2 - is affix char
+            if (entryLineParts.Count > 0)
+            {
+                np++;
+                aflag = HMgr.DecodeFlag(entryLineParts[0].Value);
+                if (affentries == null)
+                {
+                    if (
+                        ((at == 'S') && (dupFlags[aflag] & DupSfxFlag) != 0) ||
+                        ((at == 'P') && (dupFlags[aflag] & DupPfxFlag) != 0)
+                    )
+                    {
+                        // TODO: warn of multiple definitions of an affix flag
+                    }
+
+                    dupFlags[aflag] |= (sbyte)(at == 'S' ? DupSfxFlag : DupPfxFlag);
+                }
+                else
+                {
+                    if (firstEntry.AFlag != aflag)
+                    {
+                        // TODO: warning
+                        return false;
+                    }
+
+                    if (affentries != null && !needsToModifyFirstEntry && firstEntry != null)
+                    {
+                        entry.AFlag = firstEntry.AFlag;
+                    }
+                }
+            }
+
+            // piece 3 - is cross product indicator
+            if (entryLineParts.Count > 1)
+            {
+                var piece3 = entryLineParts[1].Value;
+                np++;
+                if (affentries == null)
+                {
+                    if (piece3.StartsWith('Y'))
+                    {
+                        ff = ATypes.AeXProduct;
+                    }
+                }
+                else
+                {
+                    entry.Strip = piece3;
+                    if (ComplexPrefixes)
+                    {
+                        entry.Strip = entry.Strip.Reverse();
+                    }
+
+                    if (entry.Strip == "0")
+                    {
+                        entry.Strip = string.Empty;
+                    }
+                }
+            }
+
+            // piece 4 - is number of affentries
+            if (entryLineParts.Count > 2)
+            {
+                var piece4 = entryLineParts[2].Value;
+                np++;
+                if (affentries == null)
+                {
+                    if (!int.TryParse(piece4, out numents) || numents <= 0 || numents == int.MaxValue)
+                    {
+                        return false;
+                    }
+
+                    sbyte opts = ff;
+                    if (IsUtf8)
+                    {
+                        opts |= ATypes.AeUtf8;
+                    }
+                    if (HMgr.IsAliasF)
+                    {
+                        opts |= ATypes.AeAliasF;
+                    }
+                    if (HMgr.IsAliasM)
+                    {
+                        opts |= ATypes.AeAliasM;
+                    }
+
+                    if (affentries == null)
+                    {
+                        affentries = new EntriesContainer(at, this);
+                        affentries.Initialize(numents, opts, aflag);
+                    }
+                }
+                else
+                {
+                    entry.MorphCode = null;
+                    entry.ContClass = null;
+                    entry.ContClassLen = 0;
+                    var dashIndex = piece4.IndexOf('/');
+                    if (dashIndex >= 0)
+                    {
+                        entry.Appnd = piece4.Substring(0, dashIndex);
+                        var dashStr = piece4.Substring(dashIndex + 1);
+
+                        if (!string.IsNullOrEmpty(IgnoredChars))
+                        {
+                            entry.Appnd = RemoveChars(entry.Appnd, IsUtf8 ? IgnoredCharsUtf16 : IgnoredChars);
+                        }
+
+                        if (ComplexPrefixes)
+                        {
+                            entry.Appnd = entry.Appnd.Reverse();
+                        }
+
+                        if (HMgr.IsAliasF)
+                        {
+                            int index;
+                            if (!int.TryParse(dashStr, out index))
+                            {
+                                return false;
+                            }
+
+                            var contClass = (entry.ContClass ?? Enumerable.Empty<Flag>()).ToList();
+                            entry.ContClassLen = checked((short)HMgr.GetAliasF(index, contClass, af));
+                            entry.ContClass = contClass.ToArray();
+
+                            if (entry.ContClassLen == 0)
+                            {
+                                // TODO: warn bad affix flag alias
+                            }
+                        }
+                        else
+                        {
+                            var contClass = (entry.ContClass ?? Enumerable.Empty<Flag>()).ToList();
+                            if (!HMgr.DecodeFlags(contClass, dashStr, af))
+                            {
+                                return false;
+                            }
+
+                            entry.ContClassLen = checked((short)contClass.Count);
+                            contClass.Sort(0, entry.ContClassLen, Comparer<Flag>.Default);
+                            entry.ContClass = contClass.ToArray();
+                        }
+
+                        HaveContClass = true;
+
+                        for (ushort _i = 0; _i < entry.ContClassLen; _i++)
+                        {
+                            ContClasses[_i] = 1;
+                        }
+                    }
+                    else
+                    {
+                        entry.Appnd = piece4;
+                        if (!string.IsNullOrEmpty(IgnoredChars))
+                        {
+                            entry.Appnd = entry.Appnd.Reverse();
+                        }
+
+                        if (ComplexPrefixes)
+                        {
+                            entry.Appnd = entry.Appnd.Reverse();
+                        }
+                    }
+
+                    if (entry.Appnd == "0")
+                    {
+                        entry.Appnd = string.Empty;
+                    }
+                }
+            }
+
+            // piece 5 - is the conditions descriptions
+            if (entryLineParts.Count > 3)
+            {
+                var chunk = entryLineParts[3].Value;
+                np++;
+                if (ComplexPrefixes)
+                {
+                    chunk = chunk.Reverse();
+                    chunk = ReverseCondition(chunk);
+                }
+
+                if (
+                    !string.IsNullOrEmpty(entry.Strip)
+                    && chunk != "."
+                    && RedundantCondition(at, entry.Strip, entry.Strip.Length, chunk, af.LineNum))
+                {
+                    chunk = ".";
+                }
+
+                if (at == 'S')
+                {
+                    chunk = chunk.Reverse();
+                    chunk = ReverseCondition(chunk);
+                }
+
+                if (!EncodeIt(entry, chunk))
+                {
+                    return false;
+                }
+            }
+
+            // piece 6
+            if (entryLineParts.Count > 4)
+            {
+                var piece6 = entryLineParts[4];
+                var chunk = piece6.Value;
+                np++;
+                if (HMgr.IsAliasM)
+                {
+                    int index;
+                    if (int.TryParse(chunk, out index))
+                    {
+                        entry.MorphCode = HMgr.GetAliasM(index);
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    if (ComplexPrefixes)
+                    {
+                        chunk = chunk.Reverse();
+                    }
+
+                    int indexAfterThisPiece = piece6.Index + piece6.Length + 1;
+                    if (indexAfterThisPiece >= entryLine.Length)
+                    {
+                        chunk = chunk + entryLine.Substring(indexAfterThisPiece);
+                    }
+
+                    entry.MorphCode = chunk;
+
+                    if (entry.MorphCode == null)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            if (np < 4)
+            {
+                return false;
+            }
+
+            var lastEntry = affentries != null && affentries.NumberEntriesRead == affentries.NumberEntriesExpected;
+            if (lastEntry)
+            {
+                foreach (var affEntry in affentries.Entries)
+                {
+                    var pfxEntry = affEntry as PfxEntry;
+                    if (pfxEntry != null)
+                    {
+                        BuildPfxTree(pfxEntry);
+                    }
+                    else
+                    {
+                        BuildSfxTree(affEntry as SfxEntry);
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        private string ReverseCondition(string piece)
+        {
+            if (string.IsNullOrEmpty(piece))
+            {
+                return piece;
+            }
+
+            bool neg = false;
+            var chars = piece.ToCharArray();
+            for (int k = chars.Length - 1; k >= 0; k--)
+            {
+                switch (chars[k])
+                {
+                    case '[':
+                        if (neg)
+                        {
+                            if (k < chars.Length - 1)
+                            {
+                                chars[k + 1] = '[';
+                            }
+                        }
+                        else
+                        {
+                            chars[k] = ']';
+                        }
+
+                        break;
+                    case ']':
+                        chars[k] = '[';
+                        if (neg && k < chars.Length - 1)
+                        {
+                            chars[k + 1] = '^';
+                        }
+
+                        neg = false;
+
+                        break;
+                    case '^':
+                        if (k < chars.Length - 1)
+                        {
+                            if (chars[k + 1] == ']')
+                            {
+                                neg = true;
+                            }
+                            else
+                            {
+                                chars[k + 1] = chars[k];
+                            }
+                        }
+
+                        break;
+                    default:
+                        if (neg && k < chars.Length - 1)
+                        {
+                            chars[k + 1] = chars[k];
+                        }
+                        break;
+                }
+            }
+
+            return new string(chars);
         }
 
         private sbyte[] DebugFlag(sbyte[] result, ushort flag)
@@ -1077,32 +1613,211 @@ namespace Hunspell
             throw new NotImplementedException();
         }
 
-        private int CondLen(sbyte[] _)
+        private int CondLen(string cond)
+        {
+            int length = 0;
+            bool group = false;
+
+            foreach (var st in cond)
+            {
+                if (st == '[')
+                {
+                    group = true;
+                    length++;
+                }
+                else if (st == ']')
+                {
+                    group = false;
+                }
+                else if (!group && (!IsUtf8 || ((st & 0x80) != 0 || ((st & 0xc0) == 0x80))))
+                {
+                    length++;
+                }
+            }
+
+            return length;
+        }
+
+        private bool EncodeIt(AffEntry entry, string cs)
+        {
+            if (cs != ".")
+            {
+                entry.NumConds = CondLen(cs);
+                entry.Conds = cs;
+            }
+            else
+            {
+                entry.NumConds = 0;
+                entry.Conds = string.Empty;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// we want to be able to quickly access prefix information
+        /// both by prefix flag, and sorted by prefix string itself
+        /// so we need to set up two indexes
+        /// </summary>
+        private bool BuildPfxTree(PfxEntry pfxptr)
+        {
+            PfxEntry ptr;
+            PfxEntry pptr;
+            PfxEntry ep = pfxptr;
+
+            // get the right starting points
+            string key = ep.Key;
+            byte flg = (byte)(ep.Flag & 0xff);
+
+            // first index by flag which must exist
+            ptr = PFlag[flg];
+            ep.FlgNxt = ptr;
+            PFlag[flg] = ep;
+
+            // handle the special case of null affix string
+            if (string.IsNullOrEmpty(key))
+            {
+                // always inset them at head of list at element 0
+                ptr = PStart[0];
+                ep.Next = ptr;
+                PStart[0] = ep;
+                return false;
+            }
+
+            // now handle the normal case
+            ep.NextEq = null;
+            ep.NextNe = null;
+
+            byte sp = (byte)key[0];
+            ptr = PStart[sp];
+
+            // handle the first insert
+            if (ptr == null)
+            {
+                PStart[sp] = ep;
+                return false;
+            }
+
+            // otherwise use binary tree insertion so that a sorted
+            // list can easily be generated later
+            pptr = null;
+            for (;;)
+            {
+                pptr = ptr;
+                if (string.CompareOrdinal(ep.Key, ptr.Key) <= 0)
+                {
+                    ptr = ptr.NextEq;
+                    if (ptr == null)
+                    {
+                        pptr.NextEq = ep;
+                        break;
+                    }
+                }
+                else
+                {
+                    ptr = ptr.NextEq;
+                    if (ptr == null)
+                    {
+                        pptr.NextEq = ep;
+                        break;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// we want to be able to quickly access suffix information
+        /// both by suffix flag, and sorted by the reverse of the
+        /// suffix string itself; so we need to set up two indexes
+        /// </summary>
+        private bool BuildSfxTree(SfxEntry sfxptr)
+        {
+            sfxptr.InitReverseWord();
+
+            SfxEntry ptr;
+            SfxEntry pptr;
+            SfxEntry ep = sfxptr;
+
+            /* get the right starting point */
+            string key = ep.Key;
+            byte flg = (byte)(ep.Flag & 0xff);
+
+            // first index by flag which must exist
+            ptr = SFlag[flg];
+            ep.FlgNxt = ptr;
+            SFlag[flg] = ep;
+
+            // next index by affix string
+
+            // handle the special case of null affix string
+            if (string.IsNullOrEmpty(key))
+            {
+                // always inset them at head of list at element 0
+                ptr = SStart[0];
+                ep.Next = ptr;
+                SStart[0] = ep;
+                return false;
+            }
+
+            // now handle the normal case
+            ep.NextEq = null;
+            ep.NextNe = null;
+
+            byte sp = (byte)key[0];
+            ptr = SStart[sp];
+
+            // handle the first insert
+            if (ptr == null)
+            {
+                SStart[sp] = ep;
+                return false;
+            }
+
+            // otherwise use binary tree insertion so that a sorted
+            // list can easily be generated later
+            pptr = null;
+            for (;;)
+            {
+                pptr = ptr;
+                if (string.CompareOrdinal(ep.Key, ptr.Key) <= 0)
+                {
+                    ptr = ptr.NextEq;
+                    if (ptr == null)
+                    {
+                        pptr.NextEq = ep;
+                        break;
+                    }
+                }
+                else
+                {
+                    ptr = ptr.NextNe;
+                    if (ptr == null)
+                    {
+                        ptr.NextNe = ep;
+                        break;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// reinitialize the PfxEntry links NextEQ and NextNE to speed searching
+        /// using the idea of leading subsets this time
+        /// </summary>
+        private bool ProcessPfxOrder()
         {
             throw new NotImplementedException();
         }
 
-        private int EncodeIt(AffEntry entry, sbyte[] cs)
-        {
-            throw new NotImplementedException();
-        }
-
-        private int BuildPfxTree(PfxEntry pfx)
-        {
-            throw new NotImplementedException();
-        }
-
-        private int BuildSfxTree(SfxEntry sfx)
-        {
-            throw new NotImplementedException();
-        }
-
-        private int ProcessPfxOrder()
-        {
-            throw new NotImplementedException();
-        }
-
-        private int ProcessSfxOrder()
+        /// <summary>
+        /// initialize the SfxEntry links NextEQ and NextNE to speed searching
+        /// using the idea of leading subsets this time
+        /// </summary>
+        private bool ProcessSfxOrder()
         {
             throw new NotImplementedException();
         }
@@ -1148,7 +1863,7 @@ namespace Hunspell
             return true;
         }
 
-        private int RedundantCondition(sbyte _1, sbyte[] strip, int strIpl, sbyte[] cond, int _2)
+        private bool RedundantCondition(char _, string strip, int stripLength, string cond, int lineNumber)
         {
             throw new NotImplementedException();
         }
@@ -1158,6 +1873,11 @@ namespace Hunspell
             // TODO: consider disposing affList here
             ProcessPfxTreeToList();
             ProcessSfxTreeToList();
+        }
+
+        private static string RemoveChars(string word, string ignored)
+        {
+            return new string(word.Where(c => !ignored.Contains(c)).ToArray());
         }
     }
 }

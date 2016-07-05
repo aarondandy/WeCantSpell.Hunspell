@@ -164,11 +164,7 @@ namespace Hunspell
             throw new NotImplementedException();
         }
 
-        public int DecodeFlags(ushort[][] result, sbyte[] flags, FileMgr af)
-        {
-            throw new NotImplementedException();
-        }
-
+        [Obsolete("Rename to DecodeFlagsInto")]
         public bool DecodeFlags(List<ushort> result, string flags, FileMgr af)
         {
             if (string.IsNullOrEmpty(flags))
@@ -192,8 +188,7 @@ namespace Hunspell
                     }
                 case Flag.Char:
                     {
-                        result.Clear();
-                        result.AddRange(flags.Cast<ushort>());
+                        result.AddRange(flags.Select(c => (ushort)c));
                         break;
                     }
                 default:
@@ -254,22 +249,28 @@ namespace Hunspell
             throw new NotImplementedException();
         }
 
-        public int IsAliasF()
+        public bool IsAliasF
+        {
+            get
+            {
+                return AliasF != null;
+            }
+        }
+
+        public int GetAliasF(int index, List<ushort> fVec, FileMgr af)
         {
             throw new NotImplementedException();
         }
 
-        public int GetAliasF(int index, ushort[][] fVec, FileMgr af)
+        public bool IsAliasM
         {
-            throw new NotImplementedException();
+            get
+            {
+                return AliasM != null;
+            }
         }
 
-        public int IsAliasM()
-        {
-            throw new NotImplementedException();
-        }
-
-        public sbyte[] GetAliasM(int index)
+        public string GetAliasM(int index)
         {
             throw new NotImplementedException();
         }

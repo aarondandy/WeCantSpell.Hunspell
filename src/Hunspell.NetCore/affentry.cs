@@ -92,10 +92,10 @@ namespace Hunspell
     {
         public PfxEntry(AffixMgr pmgr)
         {
-            throw new NotImplementedException();
+            PmyMgr = pmgr;
         }
 
-        private AffixMgr PmyMgr { get; }
+        private AffixMgr PmyMgr { get; set; }
 
         public PfxEntry Next { get; set; }
 
@@ -121,12 +121,11 @@ namespace Hunspell
             }
         }
 
-        [CLSCompliant(false)]
-        public sbyte[] Key
+        public string Key
         {
             get
             {
-                return Appnd.ToCString();
+                return Appnd;
             }
         }
 
@@ -138,7 +137,6 @@ namespace Hunspell
             }
         }
 
-        [CLSCompliant(false)]
         public ushort[] Cont
         {
             get
@@ -147,7 +145,7 @@ namespace Hunspell
             }
         }
 
-        public sbyte[] Morph
+        public string Morph
         {
             get
             {
@@ -211,12 +209,12 @@ namespace Hunspell
     {
         public SfxEntry(AffixMgr pmgr)
         {
-            throw new NotImplementedException();
+            PmyMgr = pmgr;
         }
 
-        private AffixMgr PmyMgr { get; }
+        private AffixMgr PmyMgr { get; set; }
 
-        private sbyte[] RAppnd {get;}
+        private string RAppnd { get; set; }
 
         public SfxEntry Next { get; set; }
 
@@ -248,12 +246,11 @@ namespace Hunspell
             }
         }
 
-        [CLSCompliant(false)]
-        public sbyte[] Key
+        public string Key
         {
             get
             {
-                return RAppnd.ToCString();
+                return RAppnd;
             }
         }
 
@@ -265,8 +262,7 @@ namespace Hunspell
             }
         }
 
-        [CLSCompliant(false)]
-        public sbyte[] Morph
+        public string Morph
         {
             get
             {
@@ -291,12 +287,11 @@ namespace Hunspell
             }
         }
 
-        [CLSCompliant(false)]
-        public sbyte[] Affix
+        public string Affix
         {
             get
             {
-                return Appnd.ToCString();
+                return Appnd;
             }
         }
 
@@ -338,7 +333,8 @@ namespace Hunspell
 
         public void InitReverseWord()
         {
-            throw new NotImplementedException();
+            RAppnd = Appnd;
+            RAppnd = RAppnd.Reverse();
         }
 
         [CLSCompliant(false)]

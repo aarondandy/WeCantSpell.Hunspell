@@ -45,6 +45,7 @@
  *
  */
 
+using System;
 using Flag = System.UInt16;
 
 namespace Hunspell
@@ -55,14 +56,26 @@ namespace Hunspell
 
         public const int ContSize = 65536;
 
+        // AffEntry options
 
+        /// <summary>
+        /// Indicates a cross product.
+        /// </summary>
         public const int AeXProduct = 1;
+        public const int AeUtf8 = 2;
+        public const int AeAliasF = 4;
+        public const int AeAliasM = 8;
+        [Obsolete("Avoiding this by using run time sized array.")]
+        public const int AeLongCond = 16;
 
 
         public const int InCpdNot = 0;
 
 
         public const int MinCpdLen = 3;
+        public const int MaxCompound = 10;
+        public const int MaxCondLen = 20;
+        public const int MaxCondLen1 = 20-4;
     }
 
     public class GuessWord

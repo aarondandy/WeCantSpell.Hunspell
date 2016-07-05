@@ -1,9 +1,15 @@
-﻿namespace Hunspell.Utilities
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+
+namespace Hunspell.Utilities
 {
     internal static class StringExtensions
     {
         private static readonly char[] EndOfLineCharacters = new[] { '\r', '\n' };
         private static readonly char[] SpaceOrTab = new[] { ' ', '\t' };
+        private static readonly Regex NotSpaceOrTabRegex = new Regex(@"[^ \t]+");
 
         public static string TrimEndOfLine(this string @this)
         {
@@ -30,9 +36,21 @@
             return @this.Split(SpaceOrTab);
         }
 
+        public static MatchCollection RegexSplitOnTabOrSpace(this string @this)
+        {
+            return NotSpaceOrTabRegex.Matches(@this);
+        }
+
         public static string SubstringFromEnd(this string @this, int startFromEnd)
         {
             return @this.Substring(0, @this.Length - startFromEnd);
+        }
+
+        public static string Reverse(this string @this)
+        {
+            var chars = @this.ToCharArray();
+            Array.Reverse(chars);
+            return new string(chars);
         }
     }
 }

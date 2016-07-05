@@ -55,26 +55,22 @@ namespace Hunspell
         {
         }
 
-        public byte NumConds { get; } = 0;
+        public int NumConds { get; set; }
 
-        [CLSCompliant(false)]
-        public sbyte Opts { get; } = 0;
+        public sbyte Opts { get; set; }
 
-        [CLSCompliant(false)]
-        public ushort AFlag { get; } = 0;
+        public ushort AFlag { get; set; }
 
-        [CLSCompliant(false)]
-        public sbyte[] MorphCode { get; } = null;
+        public string MorphCode { get; set; }
 
-        [CLSCompliant(false)]
-        public ushort[] ContClass { get; } = null;
+        public string Conds { get; set; }
 
-        public short ContClassLen { get; } = 0;
+        public ushort[] ContClass { get; set; }
 
-        [CLSCompliant(false)]
-        public sbyte[] Appnd { get; }
+        public short ContClassLen { get; set; }
 
-        [CLSCompliant(false)]
-        public sbyte[] Strip { get; }
+        public string Appnd { get; set; }
+
+        public string Strip { get; set; }
     }
 }
