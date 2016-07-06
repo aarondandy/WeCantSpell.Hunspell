@@ -82,13 +82,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.IO;
+using System.Globalization;
+using Hunspell.Utilities;
 
 using Flag = System.UInt16;
 using MapEntry = System.Collections.Generic.List<string>;
 using FlagEntry = System.Collections.Generic.List<ushort>;
-using System.Globalization;
-using Hunspell.Utilities;
 
 namespace Hunspell
 {
@@ -113,13 +112,13 @@ namespace Hunspell
             }
         }
 
-        private PfxEntry[] PStart { get; } = new PfxEntry[ATypes.SetSize];
+        public PfxEntry[] PStart { get; private set; } = new PfxEntry[ATypes.SetSize];
 
-        private SfxEntry[] SStart { get; } = new SfxEntry[ATypes.SetSize];
+        public SfxEntry[] SStart { get; private set; } = new SfxEntry[ATypes.SetSize];
 
-        private PfxEntry[] PFlag { get; } = new PfxEntry[ATypes.SetSize];
+        public PfxEntry[] PFlag { get; private set; } = new PfxEntry[ATypes.SetSize];
 
-        private SfxEntry[] SFlag { get; } = new SfxEntry[ATypes.SetSize];
+        public SfxEntry[] SFlag { get; private set; } = new SfxEntry[ATypes.SetSize];
 
         private List<HashMgr> AllDic { get; } = new List<HashMgr>();
 
@@ -224,9 +223,9 @@ namespace Hunspell
 
         public List<MapEntry> MapTable { get; } = new List<MapEntry>();
 
-        private bool ParsedBreakTable { get; }
+        private bool ParsedBreakTable { get; set; }
 
-        public List<sbyte[]> BreakTable { get; } = new List<sbyte[]>();
+        public List<string> BreakTable { get; } = new List<string>();
 
         private bool ParsedCheckCpd { get; }
 
@@ -378,11 +377,33 @@ namespace Hunspell
             throw new NotImplementedException();
         }
 
-        [CLSCompliant(false)]
-        public int IsSubset(sbyte[] s1, sbyte[] s2)
+        /// <summary>
+        /// Return <c>true</c> is <paramref name="sub"/> is a leading subset of <paramref name="super"/>. Dots are for infixes.
+        /// </summary>
+        /// <param name="sub">The subset to check.</param>
+        /// <param name="super">The string to compare the subset against.</param>
+        /// <returns>A boolean indicating if <paramref name="sub"/> is a leading subset of <paramref name="super"/>.</returns>
+        public bool IsSubset(string sub, string super)
         {
-            // NOTE: may require pointers or an array slice
-            throw new NotImplementedException();
+            if (sub == null || super == null || sub.Length > super.Length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < sub.Length; i++)
+            {
+                var subChar = sub[i];
+                if (subChar == '.')
+                {
+                    break;
+                }
+                if (subChar != super[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         [CLSCompliant(false)]
@@ -1024,13 +1045,16 @@ namespace Hunspell
             /* get encoding for CHECKCOMPOUNDCASE */
             if (!IsUtf8)
             {
-                throw new NotImplementedException();
+                // TODO: considering making it all UTF16
             }
 
             // default BREAK definition
             if (!ParsedBreakTable)
             {
-                throw new NotImplementedException();
+                BreakTable.Add("-");
+                BreakTable.Add("^-");
+                BreakTable.Add("-$");
+                ParsedBreakTable = true;
             }
 
             return true;
@@ -1810,7 +1834,68 @@ namespace Hunspell
         /// </summary>
         private bool ProcessPfxOrder()
         {
-            throw new NotImplementedException();
+            PfxEntry ptr;
+
+            // loop through each prefix list starting point
+            for (int i = 1; i < PStart.Length; i++)
+            {
+                ptr = PStart[i];
+
+                // look through the remainder of the list
+                //  and find next entry with affix that
+                // the current one is not a subset of
+                // mark that as destination for NextNE
+                // use next in list that you are a subset
+                // of as NextEQ
+
+                for (; ptr != null; ptr = ptr.Next)
+                {
+                    var nptr = ptr.Next;
+                    for (; nptr != null; nptr = nptr.Next)
+                    {
+                        if (!IsSubset(ptr.Key, nptr.Key))
+                        {
+                            break;
+                        }
+                    }
+
+                    ptr.NextNe = nptr;
+                    ptr.NextEq = null;
+                    if (ptr.Next != null && IsSubset(ptr.Key, ptr.Next.Key))
+                    {
+                        ptr.NextEq = ptr.Next;
+                    }
+                }
+
+                // now clean up by adding smart search termination strings:
+                // if you are already a superset of the previous prefix
+                // but not a subset of the next, search can end here
+                // so set NextNE properly
+
+                ptr = PStart[i];
+                for (; ptr != null; ptr = ptr.Next)
+                {
+                    var nptr = ptr.Next;
+                    PfxEntry mptr = null;
+                    for (; nptr != null; nptr = nptr.Next)
+                    {
+                        if (!IsSubset(ptr.Key, nptr.Key))
+                        {
+                            break;
+                        }
+
+                        mptr = nptr;
+                    }
+
+                    if (mptr != null)
+                    {
+                        mptr.NextNe = null;
+                    }
+                }
+
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -1819,7 +1904,67 @@ namespace Hunspell
         /// </summary>
         private bool ProcessSfxOrder()
         {
-            throw new NotImplementedException();
+            SfxEntry ptr;
+
+            // loop through each prefix list starting point
+            for (int i = 1; i < SStart.Length; i++)
+            {
+                ptr = SStart[i];
+
+                // look through the remainder of the list
+                //  and find next entry with affix that
+                // the current one is not a subset of
+                // mark that as destination for NextNE
+                // use next in list that you are a subset
+                // of as NextEQ
+
+                for (; ptr != null; ptr = ptr.Next)
+                {
+                    var nptr = ptr.Next;
+                    for (; nptr != null; nptr = nptr.Next)
+                    {
+                        if (!IsSubset(ptr.Key, nptr.Key))
+                        {
+                            break;
+                        }
+                    }
+
+                    ptr.NextNe = nptr;
+                    ptr.NextEq = null;
+                    if (ptr.Next != null && IsSubset(ptr.Key, ptr.Next.Key))
+                    {
+                        ptr.NextEq = ptr.Next;
+                    }
+                }
+
+                // now clean up by adding smart search termination strings:
+                // if you are already a superset of the previous suffix
+                // but not a subset of the next, search can end here
+                // so set NextNE properly
+
+                ptr = SStart[i];
+                for (; ptr != null; ptr = ptr.Next)
+                {
+                    var nptr = ptr.Next;
+                    SfxEntry mptr = null;
+                    for (; nptr != null; nptr = nptr.Next)
+                    {
+                        if (!IsSubset(ptr.Key, nptr.Key))
+                        {
+                            break;
+                        }
+
+                        mptr = nptr;
+                    }
+
+                    if(mptr != null)
+                    {
+                        mptr.NextNe = null;
+                    }
+                }
+            }
+
+            return true;
         }
 
         private PfxEntry ProcessPfxInOrder(PfxEntry ptr, PfxEntry nPtr)

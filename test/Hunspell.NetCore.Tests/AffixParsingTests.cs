@@ -1,6 +1,6 @@
-﻿using FluentAssertions;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Linq;
+using FluentAssertions;
 using Xunit;
 
 namespace Hunspell.NetCore.Tests
@@ -38,16 +38,20 @@ namespace Hunspell.NetCore.Tests
 
             var aff = new AffixMgr("files/1706659.aff", ptr);
 
-            Assert.Equal("ISO8859-1", aff.Encoding);
-            Assert.Equal("esijanrtolcdugmphbyfvkwqxz", aff.TryString);
+            aff.Encoding.Should().Be("ISO8859-1");
+            aff.TryString.Should().Be("esijanrtolcdugmphbyfvkwqxz");
 
-            throw new NotImplementedException();
-            // TODO: SFX A Y 5
-            // TODO: SFX A 0 e.
-            // TODO: SFX A 0 er.
-            // TODO: SFX A 0 en.
-            // TODO: SFX A 0 em.
-            // TODO: SFX A 0 es.
+            aff.SStart
+                .Where(a => a != null)
+                .Select(a => a.Affix)
+                .ShouldBeEquivalentTo(new[]
+                {
+                    "e",
+                    "er",
+                    "en",
+                    "em",
+                    "es"
+                });
 
             aff.DefCpdTable.Should().NotBeNull();
             aff.DefCpdTable.Should().HaveCount(1);
