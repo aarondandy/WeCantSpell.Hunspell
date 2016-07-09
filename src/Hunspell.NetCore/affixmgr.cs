@@ -91,6 +91,7 @@ using FlagEntry = System.Collections.Generic.List<ushort>;
 
 namespace Hunspell
 {
+    [Obsolete]
     public class AffixMgr
     {
         private const int DupSfxFlag = 1;
@@ -559,6 +560,7 @@ namespace Hunspell
         private static readonly Regex SingleCommandParseRegex = new Regex(@"^[ \t]*(\w+)[ \t]*$");
         private static readonly Regex CommentLineRegex = new Regex(@"^\s*[#].*");
 
+        [Obsolete]
         private bool ParseFile(string affPath, string key)
         {
             var dupFlags = new sbyte[ATypes.ContSize];
@@ -1108,7 +1110,7 @@ namespace Hunspell
 
                 replEntry.Pattern = replEntry.Pattern.Replace('_', ' ');
 
-                if (replEntry.Pattern.Length == 0 && replEntry.Pattern.EndsWith('$'))
+                if (replEntry.Pattern.Length != 0 && replEntry.Pattern.EndsWith('$'))
                 {
                     type += 2;
                     replEntry.Pattern = replEntry.Pattern.SubstringFromEnd(1);

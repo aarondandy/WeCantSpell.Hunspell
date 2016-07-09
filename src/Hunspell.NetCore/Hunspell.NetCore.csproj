@@ -50,22 +50,28 @@
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="affentry.cs" />
+    <Compile Include="AffixFile.cs" />
     <Compile Include="affixmgr.cs" />
+    <Compile Include="AffixUtfStreamLineReader.cs" />
     <Compile Include="atypes.cs" />
     <Compile Include="baseaffix.cs" />
     <Compile Include="csutil.cs" />
     <Compile Include="filemgr.cs" />
+    <Compile Include="FlagMode.cs" />
     <Compile Include="hashmgr.cs" />
     <Compile Include="htypes.cs" />
     <Compile Include="hunspell.cs" />
     <Compile Include="HunspellException.cs" />
     <Compile Include="hunzip.cs" />
+    <Compile Include="IAffixFileLineReader.cs" />
     <Compile Include="langnum.cs" />
     <Compile Include="phonet.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ReplacementEntry.cs" />
     <Compile Include="replist.cs" />
     <Compile Include="suggestmgr.cs" />
     <Compile Include="Utilities\ArrayExtensions.cs" />
+    <Compile Include="Utilities\IntExtensions.cs" />
     <Compile Include="Utilities\StringExtensions.cs" />
     <Compile Include="w_char.cs" />
   </ItemGroup>

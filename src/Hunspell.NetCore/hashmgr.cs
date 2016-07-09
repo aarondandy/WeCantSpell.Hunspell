@@ -84,6 +84,7 @@ using System.Linq;
 
 namespace Hunspell
 {
+    [Obsolete]
     public class HashMgr
     {
         public HashMgr()

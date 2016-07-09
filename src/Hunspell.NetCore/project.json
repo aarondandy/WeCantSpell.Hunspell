@@ -1,4 +1,4 @@
-{
+﻿{
   "title": "Hunspell.NetCore",
   "description": "A .NET port of Hunspell",
   "version": "0.0.0-*",
@@ -10,7 +10,9 @@
       "spell-check",
       "hunspell"
     ],
-    "owners": [ "aarondandy" ],
+    "owners": [
+      "aarondandy"
+    ],
     "repository": {
       "type": "git",
       "url": "https://github.com/aarondandy/Hunspell.NetCore"
@@ -33,7 +35,9 @@
         "Hunspell.NetCore.nuget.targets"
       ]
     },
-    "define": [ "TRACE" ],
+    "define": [
+      "TRACE"
+    ],
     "xmlDoc": true,
     "nowarn": [
       "CS1591"
@@ -42,37 +46,48 @@
   "configurations": {
     "Debug": {
       "buildOptions": {
-        "define": [ "DEBUG" ],
+        "define": [
+          "DEBUG"
+        ],
         "optimize": false
       }
     },
     "Release": {
       "buildOptions": {
-        "define": [ "RELEASE" ],
+        "define": [
+          "RELEASE"
+        ],
         "optimize": true,
         "warningsAsErrors": true
       }
     }
   },
   "frameworks": {
-    "net35": {
-      "buildOptions": {
-        "define": [ "PRE_NETSTANDARD", "NET_3_5", "PRE_CORE" ]
-      }
-    },
     "net451": {
       "buildOptions": {
-        "define": [ "NETSTANDARD_1_2", "NET_4_5_1", "HAS_CODECONTRACTS", "PRE_CORE" ]
+        "define": [
+          "NETSTANDARD_1_2",
+          "NET_4_5_1",
+          "HAS_CODECONTRACTS",
+          "PRE_CORE"
+        ]
       }
     },
     "net461": {
       "buildOptions": {
-        "define": [ "NETSTANDARD_1_4", "NET_4_6_1", "HAS_CODECONTRACTS", "PRE_CORE" ]
+        "define": [
+          "NETSTANDARD_1_4",
+          "NET_4_6_1",
+          "HAS_CODECONTRACTS",
+          "PRE_CORE"
+        ]
       }
     },
     "netstandard1.3": {
       "buildOptions": {
-        "define": [ "NETSTANDARD_1_3" ]
+        "define": [
+          "NETSTANDARD_1_3"
+        ]
       },
       "dependencies": {
         "NETStandard.Library": "1.6.0",
@@ -81,7 +96,9 @@
     },
     "netstandard1.4": {
       "buildOptions": {
-        "define": [ "NETSTANDARD_1_4" ]
+        "define": [
+          "NETSTANDARD_1_4"
+        ]
       },
       "dependencies": {
         "NETStandard.Library": "1.6.0",
@@ -90,7 +107,9 @@
     },
     "netstandard1.5": {
       "buildOptions": {
-        "define": [ "NETSTANDARD_1_5" ]
+        "define": [
+          "NETSTANDARD_1_5"
+        ]
       },
       "dependencies": {
         "NETStandard.Library": "1.6.0",
@@ -99,12 +118,17 @@
     },
     "netstandard1.6": {
       "buildOptions": {
-        "define": [ "NETSTANDARD_1_6" ]
+        "define": [
+          "NETSTANDARD_1_6"
+        ]
       },
       "dependencies": {
         "NETStandard.Library": "1.6.0",
         "System.IO.FileSystem": "4.0.1"
       }
     }
+  },
+  "dependencies": {
+    "System.Collections.Immutable": "1.2.0"
   }
 }

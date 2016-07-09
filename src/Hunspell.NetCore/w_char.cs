@@ -45,8 +45,11 @@
  *
  */
 
+using System;
+
 namespace Hunspell
 {
+    [Obsolete]
     public class ReplEntry
     {
         public string Pattern { get; set; }
