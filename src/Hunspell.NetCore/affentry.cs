@@ -88,6 +88,7 @@ namespace Hunspell
     /// <summary>
     /// A prefix entry.
     /// </summary>
+    [Obsolete("Use PrefixEntry")]
     public class PfxEntry : AffEntry
     {
         public PfxEntry(AffixMgr pmgr)
@@ -205,6 +206,7 @@ namespace Hunspell
     /// <summary>
     /// A suffix entry.
     /// </summary>
+    [Obsolete("Use SuffixEntry")]
     public class SfxEntry : AffEntry
     {
         public SfxEntry(AffixMgr pmgr)

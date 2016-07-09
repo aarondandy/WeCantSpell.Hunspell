@@ -316,6 +316,7 @@ namespace Hunspell
             throw new NotImplementedException();
         }
 
+        [Obsolete]
         public enum Flag : int
         {
             /// <summary>

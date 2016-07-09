@@ -299,6 +299,10 @@ namespace Hunspell
 
         public List<ReplacementEntry> Replacements { get; set; }
 
+        public List<SuffixEntry> Suffixes { get; set; }
+
+        public List<PrefixEntry> Prefixes { get; set; }
+
         public static async Task<AffixFile> ReadAsync(IAffixFileLineReader reader)
         {
             if (reader == null)
@@ -517,6 +521,11 @@ namespace Hunspell
         private bool TryParseReplacementEntryLine(string parameterText)
         {
             var parameters = parameterText.SplitOnTabOrSpace();
+            if (parameters.Length == 0)
+            {
+                return false;
+            }
+
             if (parameters.Length == 1)
             {
                 if (Replacements == null)
@@ -530,11 +539,6 @@ namespace Hunspell
                     return true;
                 }
 
-                return false;
-            }
-
-            if (parameters.Length < 2)
-            {
                 return false;
             }
 
@@ -577,7 +581,7 @@ namespace Hunspell
             switch (flagMode)
             {
                 case FlagMode.Char:
-                    if(text.Length >= 1)
+                    if (text.Length >= 1)
                     {
                         result = text[0];
                         return true;
@@ -585,7 +589,7 @@ namespace Hunspell
 
                     break;
                 case FlagMode.Long:
-                    if(text.Length >= 2)
+                    if (text.Length >= 2)
                     {
                         result = (text[0] << 8) | (byte)(text[1]);
                         return true;

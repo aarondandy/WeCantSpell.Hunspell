@@ -49,6 +49,7 @@ using System;
 
 namespace Hunspell
 {
+    [Obsolete]
     public class AffEntry
     {
         public AffEntry()

@@ -52,8 +52,10 @@ namespace Hunspell
 {
     internal static class ATypes
     {
+        [Obsolete("Avoid preallocating fixed size arrays")]
         public const int SetSize = 256;
 
+        [Obsolete("Avoid preallocating fixed size arrays")]
         public const int ContSize = 65536;
 
         // AffEntry options
@@ -61,11 +63,15 @@ namespace Hunspell
         /// <summary>
         /// Indicates a cross product.
         /// </summary>
+        [Obsolete("Use AffixEntryOptions")]
         public const int AeXProduct = 1;
+        [Obsolete("Use AffixEntryOptions")]
         public const int AeUtf8 = 2;
+        [Obsolete("Use AffixEntryOptions")]
         public const int AeAliasF = 4;
+        [Obsolete("Use AffixEntryOptions")]
         public const int AeAliasM = 8;
-        [Obsolete("Avoiding this by using run time sized array.")]
+        [Obsolete("Avoiding this by using run time sized arrays.")]
         public const int AeLongCond = 16;
 
 
@@ -75,6 +81,7 @@ namespace Hunspell
         public const int MinCpdLen = 3;
         public const int MaxCompound = 10;
         public const int MaxCondLen = 20;
+        [Obsolete("Avoid counting array sizes in bytes.")]
         public const int MaxCondLen1 = 20-4;
     }
 
