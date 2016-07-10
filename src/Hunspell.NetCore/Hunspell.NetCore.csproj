@@ -51,6 +51,7 @@
     </Compile>
     <Compile Include="affentry.cs" />
     <Compile Include="AffixEntry.cs" />
+    <Compile Include="AffixEntryGroup.cs" />
     <Compile Include="AffixEntryOptions.cs" />
     <Compile Include="AffixFile.cs" />
     <Compile Include="affixmgr.cs" />

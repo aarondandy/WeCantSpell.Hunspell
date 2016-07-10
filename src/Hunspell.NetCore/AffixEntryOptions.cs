@@ -5,6 +5,8 @@ namespace Hunspell
     [Flags]
     public enum AffixEntryOptions
     {
+        None = 0,
+
         /// <summary>
         /// Indicates that both prefixes and suffixes can apply to the same subject.
         /// </summary>

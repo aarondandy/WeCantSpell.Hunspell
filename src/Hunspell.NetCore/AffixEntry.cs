@@ -23,16 +23,6 @@ namespace Hunspell
         [Obsolete("This should probably be moved to a different data structure.")]
         public int ConditionCount { get; set; }
 
-        /// <summary>
-        /// Options for this affix.
-        /// </summary>
-        public AffixEntryOptions Options { get; set; }
-
-        /// <summary>
-        /// ID used to represent the affix.
-        /// </summary>
-        public int AFlag { get; set; }
-
         public string MorphCode { get; set; }
 
         /// <summary>
@@ -49,14 +39,6 @@ namespace Hunspell
         /// String to strip before adding affix.
         /// </summary>
         public string Strip { get; set; }
-
-        public bool AllowCross
-        {
-            get
-            {
-                return Options.HasFlag(AffixEntryOptions.CrossProduct);
-            }
-        }
 
         public abstract string Key { get; }
     }

@@ -1459,7 +1459,7 @@ namespace Hunspell
                         entry.Appnd = piece4;
                         if (!string.IsNullOrEmpty(IgnoredChars))
                         {
-                            entry.Appnd = entry.Appnd.Reverse();
+                            entry.Appnd = RemoveChars(entry.Appnd, IsUtf8 ? IgnoredCharsUtf16 : IgnoredChars);
                         }
 
                         if (ComplexPrefixes)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Hunspell.Utilities
@@ -31,7 +32,7 @@ namespace Hunspell.Utilities
 
         public static string[] SplitOnTabOrSpace(this string @this)
         {
-            return @this.Split(SpaceOrTab);
+            return @this.Split(SpaceOrTab, StringSplitOptions.RemoveEmptyEntries);
         }
 
         public static MatchCollection RegexSplitOnTabOrSpace(this string @this)
@@ -46,9 +47,31 @@ namespace Hunspell.Utilities
 
         public static string Reverse(this string @this)
         {
+            if(@this == null || @this.Length <= 1)
+            {
+                return @this;
+            }
+
             var chars = @this.ToCharArray();
             Array.Reverse(chars);
             return new string(chars);
+        }
+
+        public static string RemoveChars(this string @this, string remove)
+        {
+            if (string.IsNullOrEmpty(@this) || string.IsNullOrEmpty(remove))
+            {
+                return @this;
+            }
+
+            var chars = @this.ToList();
+            chars.RemoveAll(remove.Contains);
+            return new string(chars.ToArray());
+        }
+
+        public static bool Contains(this string @this, char c)
+        {
+            return @this.IndexOf(c) >= 0;
         }
     }
 }

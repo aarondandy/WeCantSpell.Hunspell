@@ -12,6 +12,8 @@ namespace Hunspell
         public AffixFile()
         {
             flagMode = FlagMode.Char;
+            Prefixes = new List<AffixEntryGroup<PrefixEntry>>();
+            Suffixes = new List<AffixEntryGroup<SuffixEntry>>();
         }
 
         private static readonly Regex LineStringParseRegex = new Regex(@"^[ \t]*(\w+)[ \t]+(.+)[ \t]*$");
@@ -299,9 +301,13 @@ namespace Hunspell
 
         public List<ReplacementEntry> Replacements { get; set; }
 
-        public List<SuffixEntry> Suffixes { get; set; }
+        public List<AffixEntryGroup<SuffixEntry>> Suffixes { get; set; }
 
-        public List<PrefixEntry> Prefixes { get; set; }
+        public List<AffixEntryGroup<PrefixEntry>> Prefixes { get; set; }
+
+        public bool IsAliasF { get; set; }
+
+        public bool IsAliasM { get; set; }
 
         public static async Task<AffixFile> ReadAsync(IAffixFileLineReader reader)
         {
@@ -478,7 +484,7 @@ namespace Hunspell
                 case "NEEDAFFIX": // parse in the flag used by `needaffixs'
                     return TryParseFlag(parameters, out needAffix);
                 case "REP": // parse in the typical fault correcting table
-                    return TryParseReplacementEntryLine(parameters);
+                    return TryParseReplacementEntryLineIntoReplacements(parameters);
                 case "ICONV": // parse in the input conversion table
                     throw new NotImplementedException();
                 case "OCONV": // parse in the input conversion table
@@ -510,15 +516,152 @@ namespace Hunspell
                 case "SUBSTANDARD":
                     throw new NotImplementedException();
                 case "PFX":
-                    throw new NotImplementedException();
+                    return TryParseAffixIntoList(parameters, Prefixes);
                 case "SFX":
-                    throw new NotImplementedException();
+                    return TryParseAffixIntoList(parameters, Suffixes);
                 default:
                     return false;
             }
         }
 
-        private bool TryParseReplacementEntryLine(string parameterText)
+        private static readonly Regex AffixLineRegex = new Regex(
+            @"^[\t ]*([^\t ]+)[\t ]+(?:([^\t ]+)[\t ]+([^\t ]+)|([^\t ]+)[\t ]+([^\t ]+)[\t ]+([^\t ]+)(?:[\t ]+(.+))?)[\t ]*$",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private bool TryParseAffixIntoList<TEntry>(string parameterText, List<AffixEntryGroup<TEntry>> groups)
+            where TEntry : AffixEntry, new()
+        {
+            var lineMatch = AffixLineRegex.Match(parameterText);
+            if (!lineMatch.Success)
+            {
+                return false;
+            }
+
+            var lineMatchGroups = lineMatch.Groups;
+
+            var characterFlag = lineMatchGroups[1].Value[0];
+            var affixGroup = groups.FindLast(g => g.AFlag == characterFlag);
+
+            if (lineMatchGroups[2].Success && lineMatchGroups[3].Success)
+            {
+                if (affixGroup != null)
+                {
+                    return false;
+                }
+
+                var options = AffixEntryOptions.None;
+                if (lineMatchGroups[2].Value.StartsWith('Y'))
+                {
+                    options |= AffixEntryOptions.CrossProduct;
+                }
+                if (IsAliasM)
+                {
+                    options |= AffixEntryOptions.AliasM;
+                }
+                if (IsAliasF)
+                {
+                    options |= AffixEntryOptions.AliasF;
+                }
+
+                int expectedEntryCount;
+                IntExtensions.TryParseInvariant(lineMatchGroups[3].Value, out expectedEntryCount);
+
+                affixGroup = new AffixEntryGroup<TEntry>(characterFlag, options, expectedEntryCount);
+                groups.Add(affixGroup);
+
+                return true;
+            }
+            else if (lineMatchGroups[4].Success && lineMatchGroups[5].Success && lineMatchGroups[6].Success)
+            {
+                var strip = lineMatchGroups[4].Value;
+                if (strip == "0")
+                {
+                    strip = string.Empty;
+                }
+                if (ComplexPrefixes)
+                {
+                    strip = strip.Reverse();
+                }
+
+                var affixText = lineMatchGroups[5].Value;
+                var affixSlashIndex = affixText.IndexOf('/');
+                if (affixSlashIndex >= 0)
+                {
+                    var slashPart = affixText.Substring(affixSlashIndex + 1);
+                    affixText = affixText.Substring(0, affixSlashIndex);
+                }
+                if (IgnoredChars != null)
+                {
+                    affixText = affixText.RemoveChars(IgnoredChars);
+                }
+                if (ComplexPrefixes)
+                {
+                    affixText = affixText.Reverse();
+                }
+                if (affixText == "0")
+                {
+                    affixText = string.Empty;
+                }
+
+                var conditionsText = lineMatchGroups[6].Value;
+                if (ComplexPrefixes)
+                {
+                    conditionsText = conditionsText.Reverse();
+                    throw new NotImplementedException("reverse_condition");
+                }
+                if (!string.IsNullOrEmpty(strip) && conditionsText != "." && RedundantCondition(strip, conditionsText))
+                {
+                    conditionsText = ".";
+                }
+                if (typeof(TEntry) == typeof(SuffixEntry))
+                {
+                    // TODO: reverse some stuff or do it in SuffixEntry somehow, or dont at all!
+                }
+
+                string morph = null;
+                if (lineMatchGroups[7].Success)
+                {
+                    morph = lineMatchGroups[7].Value;
+                    if (IsAliasM)
+                    {
+                        throw new NotImplementedException();
+                    }
+                    else
+                    {
+                        if (ComplexPrefixes)
+                        {
+                            morph = morph.Reverse();
+                        }
+                    }
+                }
+
+                if (affixGroup == null)
+                {
+                    affixGroup = new AffixEntryGroup<TEntry>(characterFlag, AffixEntryOptions.None, 0);
+                }
+
+                affixGroup.Entries.Add(new TEntry
+                {
+                    Strip = strip,
+                    Append = affixText,
+                    Conditions = conditionsText,
+                    MorphCode = morph
+                });
+
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private bool RedundantCondition(string strip, string condition)
+        {
+            throw new NotImplementedException();
+        }
+
+        private bool TryParseReplacementEntryLineIntoReplacements(string parameterText)
         {
             var parameters = parameterText.SplitOnTabOrSpace();
             if (parameters.Length == 0)
@@ -572,34 +715,36 @@ namespace Hunspell
 
         private bool TryParseFlag(string text, out int result)
         {
-            if (string.IsNullOrEmpty(text))
+            if (!string.IsNullOrEmpty(text))
             {
-                result = 0;
-                return false;
-            }
+                switch (flagMode)
+                {
+                    case FlagMode.Char:
+                        if (text.Length >= 1)
+                        {
+                            result = text[0];
+                            return true;
+                        }
 
-            switch (flagMode)
-            {
-                case FlagMode.Char:
-                    if (text.Length >= 1)
-                    {
-                        result = text[0];
-                        return true;
-                    }
+                        break;
+                    case FlagMode.Long:
+                        if (text.Length >= 2)
+                        {
+                            result = (text[0] << 8) | (byte)(text[1]);
+                            return true;
+                        }
+                        if (text.Length == 1)
+                        {
+                            result = text[1];
+                            return true;
+                        }
 
-                    break;
-                case FlagMode.Long:
-                    if (text.Length >= 2)
-                    {
-                        result = (text[0] << 8) | (byte)(text[1]);
-                        return true;
-                    }
-
-                    break;
-                case FlagMode.Num:
-                    throw new NotImplementedException();
-                case FlagMode.Uni:
-                    throw new NotImplementedException();
+                        break;
+                    case FlagMode.Num:
+                        throw new NotImplementedException();
+                    case FlagMode.Uni:
+                        throw new NotImplementedException();
+                }
             }
 
             result = 0;
