@@ -54,10 +54,12 @@
     <Compile Include="AffixEntryGroup.cs" />
     <Compile Include="AffixEntryOptions.cs" />
     <Compile Include="AffixFile.cs" />
+    <Compile Include="AffixFileReader.cs" />
     <Compile Include="affixmgr.cs" />
     <Compile Include="AffixUtfStreamLineReader.cs" />
     <Compile Include="atypes.cs" />
     <Compile Include="baseaffix.cs" />
+    <Compile Include="CompoundRule.cs" />
     <Compile Include="csutil.cs" />
     <Compile Include="filemgr.cs" />
     <Compile Include="FlagMode.cs" />
