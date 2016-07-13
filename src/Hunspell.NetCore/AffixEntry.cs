@@ -28,7 +28,7 @@ namespace Hunspell
         /// <summary>
         /// Encodes the conditions to be met.
         /// </summary>
-        public string Conditions { get; set; }
+        public string ConditionText { get; set; }
 
         /// <summary>
         /// The affix string to add.

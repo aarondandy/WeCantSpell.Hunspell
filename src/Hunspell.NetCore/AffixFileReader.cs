@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Hunspell
 {
-    internal class AffixFileReader
+    public class AffixFileReader : IDisposable
     {
         public AffixFileReader(IAffixFileLineReader reader)
         {
@@ -17,7 +17,6 @@ namespace Hunspell
                 throw new ArgumentNullException(nameof(reader));
             }
 
-            FlagMode = FlagMode.Char;
             Reader = reader;
         }
 
@@ -28,15 +27,30 @@ namespace Hunspell
             @"^[\t ]*([^\t ]+)[\t ]+(?:([^\t ]+)[\t ]+([^\t ]+)|([^\t ]+)[\t ]+([^\t ]+)[\t ]+([^\t ]+)(?:[\t ]+(.+))?)[\t ]*$",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-        public FlagMode FlagMode { get; private set; }
+        public FlagMode FlagMode { get; private set; } = FlagMode.Char;
 
         public IAffixFileLineReader Reader { get; }
+
+        private AffixFile Result { get; set; }
 
         private bool hasInitializedReplacements = false;
 
         private bool hasInitializedCompoundRules = false;
 
-        public async Task<AffixFile> ReadAsync()
+        private bool ownsReaderLifetime = true;
+
+        private bool attemptDisposeWhenDone = true;
+
+        /// <summary>
+        /// This method may be called multiple times.
+        /// </summary>
+        /// <returns>An object representing the affix file.</returns>
+        public async Task<AffixFile> GetOrReadAsync()
+        {
+            return Result ?? (Result = await ReadAsync());
+        }
+
+        private async Task<AffixFile> ReadAsync()
         {
             var result = new AffixFile();
 
@@ -68,6 +82,11 @@ namespace Hunspell
                 {
                     continue;
                 }
+            }
+
+            if (attemptDisposeWhenDone)
+            {
+                Dispose();
             }
 
             return result;
@@ -332,9 +351,26 @@ namespace Hunspell
                     conditionsText = conditionsText.Reverse();
                     throw new NotImplementedException("reverse_condition");
                 }
-                if (!string.IsNullOrEmpty(strip) && conditionsText != "." && RedundantCondition(strip, conditionsText))
+                if (!string.IsNullOrEmpty(strip) && conditionsText != ".")
                 {
-                    conditionsText = ".";
+                    bool isRedundant;
+                    if (typeof(TEntry) == typeof(PrefixEntry))
+                    {
+                        isRedundant = RedundantConditionPrefix(strip, conditionsText);
+                    }
+                    else if (typeof(TEntry) == typeof(SuffixEntry))
+                    {
+                        isRedundant = RedundantConditionSuffix(strip, conditionsText);
+                    }
+                    else
+                    {
+                        throw new NotSupportedException();
+                    }
+
+                    if (isRedundant)
+                    {
+                        conditionsText = ".";
+                    }
                 }
                 if (typeof(TEntry) == typeof(SuffixEntry))
                 {
@@ -367,7 +403,7 @@ namespace Hunspell
                 {
                     Strip = strip,
                     Append = affixText,
-                    Conditions = conditionsText,
+                    ConditionText = conditionsText,
                     MorphCode = morph
                 });
 
@@ -379,7 +415,57 @@ namespace Hunspell
             }
         }
 
-        private bool RedundantCondition(string strip, string condition)
+        private bool RedundantConditionPrefix(string strip, string condition)
+        {
+            if (strip.StartsWith(condition))
+            {
+                return true;
+            }
+
+            var lastConditionIndex = condition.Length - 1;
+            int i, j;
+            for (i = 0, j = 0; i < strip.Length && j < condition.Length; i++, j++)
+            {
+                if (condition[j] == '[')
+                {
+                    if (condition[j] != strip[i])
+                    {
+                        // TODO: warn
+                        return false;
+                    }
+                }
+                else if (j < lastConditionIndex)
+                {
+                    var neg = condition[j + 1] == '^';
+                    var @in = false;
+
+                    do
+                    {
+                        j++;
+                        if (strip[i] == condition[j])
+                        {
+                            @in = true;
+                        }
+                    } while (j < lastConditionIndex && condition[j] != ']');
+
+                    if (j == lastConditionIndex && condition[j] != ']')
+                    {
+                        // TODO: warn
+                        return false;
+                    }
+
+                    if (neg == @in)
+                    {
+                        // TODO: warn
+                        return false;
+                    }
+                }
+            }
+
+            return j >= condition.Length;
+        }
+
+        private bool RedundantConditionSuffix(string strip, string condition)
         {
             throw new NotImplementedException();
         }
@@ -504,6 +590,18 @@ namespace Hunspell
                     throw new NotImplementedException();
                 default:
                     throw new NotSupportedException();
+            }
+        }
+
+        public void Dispose()
+        {
+            if (ownsReaderLifetime)
+            {
+                var disposableReader = Reader as IDisposable;
+                if (disposableReader != null)
+                {
+                    disposableReader.Dispose();
+                }
             }
         }
     }

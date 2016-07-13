@@ -305,13 +305,13 @@ namespace Hunspell
 
         public static Task<AffixFile> ReadAsync(AffixUtfStreamLineReader reader)
         {
-            if(reader == null)
+            if (reader == null)
             {
                 throw new ArgumentNullException(nameof(reader));
             }
 
             var fileReader = new AffixFileReader(reader);
-            return fileReader.ReadAsync();
+            return fileReader.GetOrReadAsync();
         }
 
         public bool TrySetOption(string name, bool value)

@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using FluentAssertions;
 using Xunit;
 using System;
@@ -7,17 +6,29 @@ using System.Threading.Tasks;
 
 namespace Hunspell.NetCore.Tests
 {
-    public class AffixFileTests
+    public class AffixFileReaderTests
     {
-        public class Read
+        public class Constructors
+        {
+            [Fact]
+            public void null_line_reader_throws()
+            {
+                Action act = () => new AffixFileReader(null);
+
+                act.ShouldThrow<ArgumentNullException>();
+            }
+        }
+
+        public class ReadAsync
         {
             [Fact]
             public async Task can_read_sug_aff()
             {
                 AffixFile actual;
-                using (var reader = new AffixUtfStreamLineReader(@"files/sug.aff"))
+
+                using (var reader = new AffixFileReader(new AffixUtfStreamLineReader(@"files/sug.aff")))
                 {
-                    actual = await AffixFile.ReadAsync(reader);
+                    actual = await reader.GetOrReadAsync();
                 }
 
                 actual.MaxNgramSuggestions.Should().Be(0);
@@ -34,9 +45,10 @@ namespace Hunspell.NetCore.Tests
             public async Task can_read_1706659_aff()
             {
                 AffixFile actual;
-                using (var reader = new AffixUtfStreamLineReader(@"files/1706659.aff"))
+
+                using (var reader = new AffixFileReader(new AffixUtfStreamLineReader(@"files/1706659.aff")))
                 {
-                    actual = await AffixFile.ReadAsync(reader);
+                    actual = await reader.GetOrReadAsync();
                 }
 
                 actual.RequestedEncoding.Should().Be("ISO8859-1");
@@ -61,6 +73,29 @@ namespace Hunspell.NetCore.Tests
                 actual.CompoundRules.Should().HaveCount(1);
                 var rule1 = actual.CompoundRules.Single();
                 rule1.ShouldBeEquivalentTo(new[] { 'v', 'w' });
+            }
+
+            [Fact]
+            public async Task can_read_1975530_aff()
+            {
+                AffixFile actual;
+
+                using (var reader = new AffixFileReader(new AffixUtfStreamLineReader("files/1975530.aff")))
+                {
+                    actual = await reader.GetOrReadAsync();
+                }
+
+                actual.RequestedEncoding.Should().Be("UTF-8");
+                actual.IgnoredChars.Should().Be("ٌٍَُِّْـ");
+                actual.Prefixes.Should().HaveCount(1);
+                var prefixGroup1 = actual.Prefixes.Single();
+                prefixGroup1.AFlag.Should().Be('x');
+                prefixGroup1.Options.Should().Be(AffixEntryOptions.None);
+                prefixGroup1.Entries.Should().HaveCount(1);
+                var prefixEntry = prefixGroup1.Entries.Single();
+                prefixEntry.Append.Should().Be("ت");
+                prefixEntry.ConditionText.Should().Be("أ[^ي]");
+                prefixEntry.Strip.Should().Be("أ");
             }
         }
     }
