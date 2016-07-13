@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace Hunspell.Utilities
@@ -64,9 +64,26 @@ namespace Hunspell.Utilities
                 return @this;
             }
 
-            var chars = @this.ToList();
-            chars.RemoveAll(remove.Contains);
-            return new string(chars.ToArray());
+            var removeLookup = new HashSet<char>(remove);
+            return new string(
+                Array.FindAll(
+                    @this.ToCharArray(),
+                    c => !removeLookup.Contains(c)));
+        }
+
+        public static string RemoveChars(this string @this, char[] remove)
+        {
+            if(string.IsNullOrEmpty(@this) || remove == null || remove.Length == 0)
+            {
+                return @this;
+            }
+
+            var removeLookup = new HashSet<char>(remove);
+            var chars = @this.ToCharArray();
+            return new string(
+                Array.FindAll(
+                    @this.ToCharArray(),
+                    c => !removeLookup.Contains(c)));
         }
 
         public static bool Contains(this string @this, char c)

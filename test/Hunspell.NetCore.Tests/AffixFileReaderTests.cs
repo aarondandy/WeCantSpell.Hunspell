@@ -37,7 +37,7 @@ namespace Hunspell.NetCore.Tests
                 entry.Pattern.Should().Be("alot");
                 entry.Med.Should().Be("a lot");
                 actual.KeyString.Should().Be("qwertzuiop|asdfghjkl|yxcvbnm|aq");
-                actual.WordChars.Should().Be(".");
+                actual.WordChars.Should().BeEquivalentTo(new[] { '.' });
                 actual.ForbiddenWord.Should().Be((ushort)'?');
             }
 
@@ -86,7 +86,7 @@ namespace Hunspell.NetCore.Tests
                 }
 
                 actual.RequestedEncoding.Should().Be("UTF-8");
-                actual.IgnoredChars.Should().Be("ٌٍَُِّْـ");
+                actual.IgnoredChars.Should().BeEquivalentTo("ٌٍَُِّْـ".ToCharArray());
                 actual.Prefixes.Should().HaveCount(1);
                 var prefixGroup1 = actual.Prefixes.Single();
                 prefixGroup1.AFlag.Should().Be('x');

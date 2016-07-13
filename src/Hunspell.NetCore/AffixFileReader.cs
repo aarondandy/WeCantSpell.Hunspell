@@ -125,10 +125,10 @@ namespace Hunspell
                     affixFile.CompoundSyllableNum = parameters;
                     return true;
                 case "WORDCHARS": // parse in the extra word characters
-                    affixFile.WordChars = parameters;
+                    affixFile.WordChars = parameters.ToCharArray();
                     return true;
                 case "IGNORE": // parse in the ignored characters (for example, Arabic optional diacretics characters)
-                    affixFile.IgnoredChars = parameters;
+                    affixFile.IgnoredChars = parameters.ToCharArray();
                     return true;
                 case "COMPOUNDFLAG": // parse in the flag used by the controlled compound words
                     return TryParseFlag(parameters, out affixFile.compoundFlag);

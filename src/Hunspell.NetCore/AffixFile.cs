@@ -242,12 +242,12 @@ namespace Hunspell
         /// <summary>
         /// Extra word characters.
         /// </summary>
-        public string WordChars { get; set; }
+        public char[] WordChars { get; set; }
 
         /// <summary>
         /// Ignored characters (for example, Arabic optional diacretics characters).
         /// </summary>
-        public string IgnoredChars { get; set; }
+        public char[] IgnoredChars { get; set; }
 
         /// <summary>
         /// Maximum number of n-gram suggestions. A value of 0 switches off the n-gram suggestions.
