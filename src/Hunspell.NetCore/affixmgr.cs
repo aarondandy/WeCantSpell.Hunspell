@@ -1959,7 +1959,7 @@ namespace Hunspell
                         mptr = nptr;
                     }
 
-                    if(mptr != null)
+                    if (mptr != null)
                     {
                         mptr.NextNe = null;
                     }

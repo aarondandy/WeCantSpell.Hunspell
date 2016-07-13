@@ -42,23 +42,25 @@ namespace Hunspell.NetCore.Tests
                 actual.RequestedEncoding.Should().Be("ISO8859-1");
                 actual.TryString.Should().Be("esijanrtolcdugmphbyfvkwqxz");
 
-                /*actual.SStart
-                    .Where(a => a != null)
-                    .Select(a => a.Affix)
-                    .ShouldBeEquivalentTo(new[]
-                    {
+                actual.Suffixes.Should().HaveCount(1);
+                var suffixGroupA = actual.Suffixes.Single();
+                suffixGroupA.Options.Should().Be(AffixEntryOptions.CrossProduct);
+                suffixGroupA.AFlag.Should().Be('A');
+                suffixGroupA.Entries.Should().HaveCount(5);
+                var suffixes = suffixGroupA.Entries;
+                suffixes.Select(s => s.Append).Should().BeEquivalentTo(new[]
+                {
                     "e",
                     "er",
                     "en",
                     "em",
                     "es"
-                    });*/
+                });
 
-                //actual.DefCpdTable.Should().NotBeNull();
-                //actual.DefCpdTable.Should().HaveCount(1);
-                //actual.DefCpdTable[0].ShouldBeEquivalentTo(new ushort[] { 'v', 'w' });
-
-                throw new NotImplementedException();
+                actual.CompoundRules.Should().NotBeNull();
+                actual.CompoundRules.Should().HaveCount(1);
+                var rule1 = actual.CompoundRules.Single();
+                rule1.ShouldBeEquivalentTo(new[] { 'v', 'w' });
             }
         }
     }

@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -73,7 +72,7 @@ namespace Hunspell
 
             return result;
         }
-        
+
 
         private bool TryHandleTwoPartCommand(AffixFile affixFile, string name, string parameters)
         {
@@ -201,7 +200,7 @@ namespace Hunspell
             if (!hasInitializedCompoundRules || affixFile.CompoundRules == null)
             {
                 int expectedSize;
-                if(IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize > 0)
+                if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize > 0)
                 {
                     affixFile.CompoundRules = new List<CompoundRule>(expectedSize);
                     return true;
@@ -214,8 +213,41 @@ namespace Hunspell
                 hasInitializedCompoundRules = true;
             }
 
-            throw new NotImplementedException();
+            var entry = new CompoundRule();
 
+            if (parameterText.Contains('('))
+            {
+                for (var index = 0; index < parameterText.Length; index++)
+                {
+                    var indexBegin = index;
+                    var indexEnd = indexBegin + 1;
+                    if (parameterText[indexBegin] == '(')
+                    {
+                        var closeParenIndex = parameterText.IndexOf(')', indexEnd);
+                        if (closeParenIndex >= 0)
+                        {
+                            indexBegin = indexEnd;
+                            indexEnd = closeParenIndex;
+                            index = closeParenIndex;
+                        }
+                    }
+
+                    if (parameterText[indexBegin] == '*' || parameterText[indexBegin] == '?')
+                    {
+                        entry.Add(parameterText[indexBegin]);
+                    }
+                    else
+                    {
+                        entry.AddRange(DecodeFlags(parameterText.Substring(indexBegin, indexEnd - indexBegin)));
+                    }
+                }
+            }
+            else
+            {
+                entry.AddRange(DecodeFlags(parameterText));
+            }
+
+            affixFile.CompoundRules.Add(entry);
             return true;
         }
 
@@ -359,7 +391,7 @@ namespace Hunspell
             {
                 return false;
             }
-            
+
             if (parameters.Length == 1)
             {
                 if (!hasInitializedReplacements)
@@ -405,42 +437,74 @@ namespace Hunspell
             return true;
         }
 
-        private bool TryParseFlag(string text, out int result)
+        private IEnumerable<int> DecodeFlags(string parameterText)
         {
-            if (!string.IsNullOrEmpty(text))
+            if (string.IsNullOrEmpty(parameterText))
             {
-                switch (FlagMode)
-                {
-                    case FlagMode.Char:
-                        if (text.Length >= 1)
-                        {
-                            result = text[0];
-                            return true;
-                        }
-
-                        break;
-                    case FlagMode.Long:
-                        if (text.Length >= 2)
-                        {
-                            result = (text[0] << 8) | (byte)(text[1]);
-                            return true;
-                        }
-                        if (text.Length == 1)
-                        {
-                            result = text[1];
-                            return true;
-                        }
-
-                        break;
-                    case FlagMode.Num:
-                        throw new NotImplementedException();
-                    case FlagMode.Uni:
-                        throw new NotImplementedException();
-                }
+                return Enumerable.Empty<int>();
             }
 
-            result = 0;
-            return false;
+            switch (FlagMode)
+            {
+                case FlagMode.Char:
+                    return parameterText.Select(c => (int)c);
+                case FlagMode.Long:
+                    return DecodeLongFlags(parameterText);
+                case FlagMode.Num:
+                    throw new NotImplementedException();
+                case FlagMode.Uni:
+                    throw new NotImplementedException();
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+
+        private static IEnumerable<int> DecodeLongFlags(string text)
+        {
+            if (text == null)
+            {
+                yield break;
+            }
+
+            for (int i = 0; i < text.Length - 1; i += 2)
+            {
+                yield return (text[i] << 8) | (byte)(text[i + 1]);
+            }
+
+            if (text.Length % 2 == 1)
+            {
+                yield return text[text.Length - 1];
+            }
+        }
+
+        private bool TryParseFlag(string text, out int result)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                result = 0;
+                return false;
+            }
+
+            switch (FlagMode)
+            {
+                case FlagMode.Char:
+                    result = text[0];
+                    return true;
+                case FlagMode.Long:
+                    if (text.Length >= 2)
+                    {
+                        result = (text[0] << 8) | (byte)(text[1]);
+                        return true;
+                    }
+                    result = text[1];
+                    return true;
+                case FlagMode.Num:
+                    throw new NotImplementedException();
+                case FlagMode.Uni:
+                    throw new NotImplementedException();
+                default:
+                    throw new NotSupportedException();
+            }
         }
     }
 }
