@@ -37,6 +37,8 @@ namespace Hunspell
 
         private bool hasInitializedCompoundRules = false;
 
+        private bool hasInitializedCompoundPatterns = false;
+
         private bool ownsReaderLifetime = true;
 
         private bool attemptDisposeWhenDone = true;
@@ -176,7 +178,7 @@ namespace Hunspell
                 case "PHONE": // parse in the input conversion table
                     throw new NotImplementedException();
                 case "CHECKCOMPOUNDPATTERN": // parse in the checkcompoundpattern table
-                    throw new NotImplementedException();
+                    return TryParseCheckCompoundPatternIntoCompoundPatterns(affixFile, parameters);
                 case "COMPOUNDRULE": // parse in the defcompound table
                     return TryParseCompoundRuleIntoList(affixFile, parameters);
                 case "MAP": // parse in the related character map table
@@ -523,6 +525,85 @@ namespace Hunspell
             return true;
         }
 
+        private bool TryParseCheckCompoundPatternIntoCompoundPatterns(AffixFile affixFile, string parameterText)
+        {
+            var parameters = parameterText.SplitOnTabOrSpace();
+            if (parameters.Length == 0)
+            {
+                return false;
+            }
+
+            if (parameters.Length == 1)
+            {
+                if (!hasInitializedCompoundPatterns)
+                {
+                    int expectedCount;
+                    if (IntExtensions.TryParseInvariant(parameters[0], out expectedCount) && expectedCount >= 0)
+                    {
+                        affixFile.CompoundPatterns = new List<PatternEntry>(Math.Max(1, expectedCount));
+                        hasInitializedCompoundPatterns = true;
+                        return true;
+                    }
+                }
+            }
+            
+            int flag;
+            string chunk;
+            var patternEntry = new PatternEntry
+            {
+                Pattern = parameters[0]
+            };
+
+            var slashIndex = patternEntry.Pattern.IndexOf('/');
+            if (slashIndex >= 0)
+            {
+                chunk = patternEntry.Pattern.Substring(slashIndex + 1);
+                patternEntry.Pattern = patternEntry.Pattern.Substring(0, slashIndex);
+                if (TryParseFlag(chunk, out flag))
+                {
+                    patternEntry.Condition = flag;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            if (parameters.Length >= 2)
+            {
+                patternEntry.Pattern2 = parameters[1];
+                slashIndex = patternEntry.Pattern2.IndexOf('/');
+                if (slashIndex >= 0)
+                {
+                    chunk = patternEntry.Pattern2.Substring(slashIndex + 1);
+                    patternEntry.Pattern2 = patternEntry.Pattern2.Substring(0, slashIndex);
+                    if (TryParseFlag(chunk, out flag))
+                    {
+                        patternEntry.Condition2 = flag;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+
+                if(parameters.Length >= 3)
+                {
+                    patternEntry.Pattern3 = parameters[2];
+                    affixFile.SimplifiedCompound = true;
+                }
+            }
+
+            if(affixFile.CompoundPatterns == null)
+            {
+                affixFile.CompoundPatterns = new List<PatternEntry>();
+            }
+
+            affixFile.CompoundPatterns.Add(patternEntry);
+
+            return true;
+        }
+
         private IEnumerable<int> DecodeFlags(string parameterText)
         {
             if (string.IsNullOrEmpty(parameterText))
@@ -580,6 +661,36 @@ namespace Hunspell
                     if (text.Length >= 2)
                     {
                         result = (text[0] << 8) | (byte)(text[1]);
+                        return true;
+                    }
+                    result = text[1];
+                    return true;
+                case FlagMode.Num:
+                    throw new NotImplementedException();
+                case FlagMode.Uni:
+                    throw new NotImplementedException();
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+
+        private bool TryParseFlag(string text, out char result)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                result = default(char);
+                return false;
+            }
+
+            switch (FlagMode)
+            {
+                case FlagMode.Char:
+                    result = text[0];
+                    return true;
+                case FlagMode.Long:
+                    if (text.Length >= 2)
+                    {
+                        result = (char)((text[0] << 8) | (byte)(text[1]));
                         return true;
                     }
                     result = text[1];

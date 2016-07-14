@@ -50,6 +50,7 @@ using Flag = System.UInt16;
 
 namespace Hunspell
 {
+    [Obsolete]
     internal static class ATypes
     {
         [Obsolete("Avoid preallocating fixed size arrays")]
@@ -85,6 +86,7 @@ namespace Hunspell
         public const int MaxCondLen1 = 20-4;
     }
 
+    [Obsolete]
     public class GuessWord
     {
         sbyte[] Word { get; set; }
@@ -94,6 +96,7 @@ namespace Hunspell
         sbyte[] Orig { get; set; }
     }
 
+    [Obsolete]
     public class PatEntry
     {
         public string Pattern { get; set; }

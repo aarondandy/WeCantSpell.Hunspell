@@ -17,7 +17,7 @@ namespace Hunspell
 
         internal int compoundMin;
 
-        internal int compoundFlag;
+        internal char compoundFlag;
 
         internal int compoundBegin;
 
@@ -105,7 +105,7 @@ namespace Hunspell
         /// <summary>
         /// The flag used by the controlled compound words.
         /// </summary>
-        public int CompoundFlag
+        public char CompoundFlag
         {
             get { return compoundFlag; }
             set { compoundFlag = value; }
@@ -302,6 +302,9 @@ namespace Hunspell
 
         public List<CompoundRule> CompoundRules { get; set; }
 
+        public List<PatternEntry> CompoundPatterns { get; set; }
+
+        public bool SimplifiedCompound { get; set; }
 
         public static Task<AffixFile> ReadAsync(AffixUtfStreamLineReader reader)
         {

@@ -97,6 +97,23 @@ namespace Hunspell.NetCore.Tests
                 prefixEntry.ConditionText.Should().Be("أ[^ي]");
                 prefixEntry.Strip.Should().Be("أ");
             }
+
+            [Fact]
+            public async Task can_read_2970240_aff()
+            {
+                AffixFile actual;
+
+                using (var reader = new AffixFileReader(new AffixUtfStreamLineReader("files/2970240.aff")))
+                {
+                    actual = await reader.GetOrReadAsync();
+                }
+
+                actual.CompoundFlag.Should().Be('c');
+                actual.CompoundPatterns.Should().HaveCount(1);
+                var pattern = actual.CompoundPatterns.Single();
+                pattern.Pattern.Should().Be("le");
+                pattern.Pattern2.Should().Be("fi");
+            }
         }
     }
 }
