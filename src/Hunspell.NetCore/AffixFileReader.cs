@@ -150,6 +150,8 @@ namespace Hunspell
                     return IntExtensions.TryParseInvariant(parameters, out affixFile.compoundMin);
                 case "COMPOUNDROOT": // parse in the flag sign compounds in dictionary
                     return TryParseFlag(parameters, out affixFile.compoundRoot);
+                case "COMPOUNDPERMITFLAG": // parse in the flag used by compound_check() method
+                    return TryParseFlag(parameters, out affixFile.compoundPermitFlag);
                 case "COMPOUNDFORBIDFLAG": // parse in the flag used by compound_check() method
                     return TryParseFlag(parameters, out affixFile.compoundForbidFlag);
                 case "COMPOUNDSYLLABLE": // parse in the max. words and syllables in compounds
@@ -546,7 +548,7 @@ namespace Hunspell
                     }
                 }
             }
-            
+
             int flag;
             string chunk;
             var patternEntry = new PatternEntry
@@ -587,14 +589,14 @@ namespace Hunspell
                     }
                 }
 
-                if(parameters.Length >= 3)
+                if (parameters.Length >= 3)
                 {
                     patternEntry.Pattern3 = parameters[2];
                     affixFile.SimplifiedCompound = true;
                 }
             }
 
-            if(affixFile.CompoundPatterns == null)
+            if (affixFile.CompoundPatterns == null)
             {
                 affixFile.CompoundPatterns = new List<PatternEntry>();
             }

@@ -27,6 +27,8 @@ namespace Hunspell
 
         internal int compoundRoot;
 
+        internal int compoundPermitFlag;
+
         internal int compoundForbidFlag;
 
         internal int noSuggest;
@@ -163,6 +165,12 @@ namespace Hunspell
         {
             get { return compoundRoot; }
             set { compoundRoot = value; }
+        }
+
+        public int CompoundPermitFlag
+        {
+            get { return compoundPermitFlag; }
+            set { compoundPermitFlag = value; }
         }
 
         /// <summary>
