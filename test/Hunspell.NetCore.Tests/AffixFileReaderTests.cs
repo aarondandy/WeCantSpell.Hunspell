@@ -252,8 +252,8 @@ namespace Hunspell.NetCore.Tests
                 var actual = await ReadFileAsync(filePath);
 
                 actual.AliasF.Should().HaveCount(2);
-                actual.AliasF[0].Should().BeEquivalentTo(new int[] { 'A', 'B' });
-                actual.AliasF[1].Should().BeEquivalentTo(new int[] { 'A' });
+                actual.AliasF[0].ShouldBeEquivalentTo(new int[] { 'A', 'B' });
+                actual.AliasF[1].ShouldBeEquivalentTo(new int[] { 'A' });
                 actual.Suffixes.Should().HaveCount(2);
                 actual.Suffixes.First().AFlag.Should().Be('A');
                 actual.Suffixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF);
@@ -268,6 +268,44 @@ namespace Hunspell.NetCore.Tests
                 actual.Suffixes.Last().Entries.Single().Append.Should().Be("y");
                 actual.Suffixes.Last().Entries.Single().ContClass.ShouldBeEquivalentTo(new[] { 'A' });
                 actual.Suffixes.Last().Entries.Single().ConditionText.Should().Be(".");
+            }
+
+            [Fact]
+            public async Task can_read_alias2_aff()
+            {
+                var filePath = @"files/alias2.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.AliasF.Should().HaveCount(2);
+                actual.AliasF[0].ShouldBeEquivalentTo(new int[] { 'A', 'B' });
+                actual.AliasF[1].ShouldBeEquivalentTo(new int[] { 'A' });
+
+                actual.AliasM.Should().HaveCount(3);
+                actual.AliasM[0].Should().Be("is:affix_x");
+                actual.AliasM[1].Should().Be("ds:affix_y");
+                actual.AliasM[2].Should().Be("po:noun xx:other_data");
+
+                actual.Suffixes.Should().HaveCount(2);
+
+                actual.Suffixes[0].AFlag.Should().Be('A');
+                actual.Suffixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF | AffixEntryOptions.AliasM);
+                actual.Suffixes[0].Entries.Should().HaveCount(1);
+                var suffixEntry1 = actual.Suffixes[0].Entries.Single();
+                suffixEntry1.Strip.Should().BeEmpty();
+                suffixEntry1.Append.Should().Be("x");
+                suffixEntry1.ConditionText.Should().Be(".");
+                suffixEntry1.MorphCode.Should().Be("is:affix_x");
+
+                actual.Suffixes[1].AFlag.Should().Be('B');
+                actual.Suffixes[1].Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF | AffixEntryOptions.AliasM);
+                actual.Suffixes[1].Entries.Should().HaveCount(1);
+                var suffixEntry2 = actual.Suffixes[1].Entries.Single();
+                suffixEntry2.Strip.Should().BeEmpty();
+                suffixEntry2.Append.Should().Be("y");
+                suffixEntry2.ContClass.ShouldBeEquivalentTo(new int[] { 'A' });
+                suffixEntry2.ConditionText.Should().Be(".");
+                suffixEntry2.MorphCode.Should().Be("ds:affix_y");
             }
 
             [Fact]

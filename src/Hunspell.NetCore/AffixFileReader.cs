@@ -392,6 +392,7 @@ namespace Hunspell
             }
             else if (lineMatchGroups[4].Success && lineMatchGroups[5].Success && lineMatchGroups[6].Success)
             {
+                // piece 3 - is string to strip or 0 for null
                 var strip = lineMatchGroups[4].Value;
                 if (strip == "0")
                 {
@@ -402,6 +403,7 @@ namespace Hunspell
                     strip = strip.Reverse();
                 }
 
+                // piece 4 - is affix string or 0 for null
                 var affixText = lineMatchGroups[5].Value;
                 var affixSlashIndex = affixText.IndexOf('/');
                 if (affixSlashIndex >= 0)
@@ -440,22 +442,24 @@ namespace Hunspell
                     affixText = string.Empty;
                 }
 
-                var conditionsText = lineMatchGroups[6].Value;
+                // piece 5 - is the conditions descriptions
+                var conditionText = lineMatchGroups[6].Value;
                 if (affixFile.ComplexPrefixes)
                 {
-                    conditionsText = conditionsText.Reverse();
-                    throw new NotImplementedException("reverse_condition");
+                    conditionText = conditionText.Reverse();
+                    conditionText = ReverseCondition(conditionText);
                 }
-                if (!string.IsNullOrEmpty(strip) && conditionsText != ".")
+
+                if (!string.IsNullOrEmpty(strip) && conditionText != ".")
                 {
                     bool isRedundant;
                     if (typeof(TEntry) == typeof(PrefixEntry))
                     {
-                        isRedundant = RedundantConditionPrefix(strip, conditionsText);
+                        isRedundant = RedundantConditionPrefix(strip, conditionText);
                     }
                     else if (typeof(TEntry) == typeof(SuffixEntry))
                     {
-                        isRedundant = RedundantConditionSuffix(strip, conditionsText);
+                        isRedundant = RedundantConditionSuffix(strip, conditionText);
                     }
                     else
                     {
@@ -464,21 +468,32 @@ namespace Hunspell
 
                     if (isRedundant)
                     {
-                        conditionsText = ".";
+                        conditionText = ".";
                     }
                 }
+
                 if (typeof(TEntry) == typeof(SuffixEntry))
                 {
                     // TODO: reverse some stuff or do it in SuffixEntry somehow, or dont at all!
+                    conditionText = conditionText.Reverse();
+                    conditionText = ReverseCondition(conditionText);
                 }
 
+                // piece 6
                 string morph = null;
                 if (lineMatchGroups[7].Success)
                 {
-                    morph = lineMatchGroups[7].Value;
                     if (affixFile.IsAliasM)
                     {
-                        throw new NotImplementedException();
+                        int morphNumber;
+                        if(IntExtensions.TryParseInvariant(lineMatchGroups[7].Value, out morphNumber) && morphNumber > 0 && morphNumber <= affixFile.AliasM.Count)
+                        {
+                            morph = affixFile.AliasM[morphNumber - 1];
+                        }
+                        else
+                        {
+                            return false;
+                        }
                     }
                     else
                     {
@@ -498,7 +513,7 @@ namespace Hunspell
                 {
                     Strip = strip,
                     Append = affixText,
-                    ConditionText = conditionsText,
+                    ConditionText = conditionText,
                     MorphCode = morph,
                     ContClass = contClass
                 });
@@ -509,6 +524,70 @@ namespace Hunspell
             {
                 return false;
             }
+        }
+
+        private string ReverseCondition(string conditionText)
+        {
+            if (string.IsNullOrEmpty(conditionText))
+            {
+                return conditionText;
+            }
+
+            bool neg = false;
+            var chars = conditionText.ToCharArray();
+            var lastIndex = chars.Length - 1;
+            for (int k = lastIndex; k >= 0; k--)
+            {
+                switch (chars[k])
+                {
+                    case '[':
+                        if (neg)
+                        {
+                            if (k < lastIndex)
+                            {
+                                chars[k + 1] = '[';
+                            }
+                        }
+                        else
+                        {
+                            chars[k] = ']';
+                        }
+
+                        break;
+                    case ']':
+                        chars[k] = '[';
+                        if (neg && k < lastIndex)
+                        {
+                            chars[k + 1] = '^';
+                        }
+
+                        neg = false;
+
+                        break;
+                    case '^':
+                        if (k < lastIndex)
+                        {
+                            if (chars[k + 1] == ']')
+                            {
+                                neg = true;
+                            }
+                            else
+                            {
+                                chars[k + 1] = chars[k];
+                            }
+                        }
+
+                        break;
+                    default:
+                        if (neg && k < lastIndex)
+                        {
+                            chars[k + 1] = chars[k];
+                        }
+                        break;
+                }
+            }
+
+            return new string(chars);
         }
 
         private bool RedundantConditionPrefix(string strip, string condition)
