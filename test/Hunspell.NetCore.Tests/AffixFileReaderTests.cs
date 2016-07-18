@@ -215,6 +215,62 @@ namespace Hunspell.NetCore.Tests
             }
 
             [Fact]
+            public async Task can_read_affixes_aff()
+            {
+                var filePath = @"files/affixes.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.Prefixes.Should().HaveCount(1);
+                actual.Prefixes.Single().AFlag.Should().Be('A');
+                actual.Prefixes.Single().Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Prefixes.Single().Entries.Should().HaveCount(1);
+                var prefixEntry = actual.Prefixes.Single().Entries.Single();
+                prefixEntry.Strip.Should().BeEmpty();
+                prefixEntry.Append.Should().Be("re");
+                prefixEntry.ConditionText.Should().Be(".");
+
+                actual.Suffixes.Should().HaveCount(1);
+                actual.Suffixes.Single().AFlag.Should().Be('B');
+                actual.Suffixes.Single().Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Suffixes.Single().Entries.Should().HaveCount(2);
+                var suffixEntry1 = actual.Suffixes.Single().Entries.First();
+                suffixEntry1.Strip.Should().BeEmpty();
+                suffixEntry1.Append.Should().Be("ed");
+                suffixEntry1.ConditionText.Should().Be("[^y]");
+                var suffixEntry2 = actual.Suffixes.Single().Entries.Last();
+                suffixEntry2.Strip.Should().Be("y");
+                suffixEntry2.Append.Should().Be("ied");
+                suffixEntry2.ConditionText.Should().Be(".");
+            }
+
+            [Fact]
+            public async Task can_read_alias_aff()
+            {
+                var filePath = @"files/alias.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.AliasF.Should().HaveCount(2);
+                actual.AliasF[0].Should().BeEquivalentTo(new[] { 'A', 'B' });
+                actual.AliasF[1].Should().BeEquivalentTo(new[] { 'A' });
+                actual.Suffixes.Should().HaveCount(2);
+                actual.Suffixes.First().AFlag.Should().Be('A');
+                actual.Suffixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Suffixes.First().Entries.Should().HaveCount(1);
+                actual.Suffixes.First().Entries.Single().Strip.Should().BeEmpty();
+                actual.Suffixes.First().Entries.Single().Append.Should().Be("x");
+                actual.Suffixes.First().Entries.Single().ConditionText.Should().Be(".");
+                actual.Suffixes.Last().AFlag.Should().Be('B');
+                actual.Suffixes.Last().Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Suffixes.Last().Entries.Should().HaveCount(1);
+                actual.Suffixes.Last().Entries.Single().Strip.Should().BeEmpty();
+                actual.Suffixes.Last().Entries.Single().Append.Should().Be("y");
+                actual.Suffixes.Last().Entries.Single().ContClass.ShouldBeEquivalentTo(new[] { 'A' });
+                actual.Suffixes.Last().Entries.Single().ConditionText.Should().Be(".");
+            }
+
+            [Fact]
             public async Task can_read_sug_aff()
             {
                 var filePath = @"files/sug.aff";

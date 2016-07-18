@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 
 namespace Hunspell
 {
@@ -41,5 +42,7 @@ namespace Hunspell
         public string Strip { get; set; }
 
         public abstract string Key { get; }
+
+        public ImmutableList<int> ContClass { get; set; }
     }
 }

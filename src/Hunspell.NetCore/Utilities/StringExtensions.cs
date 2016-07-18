@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace Hunspell.Utilities
@@ -8,6 +9,7 @@ namespace Hunspell.Utilities
     {
         private static readonly char[] EndOfLineCharacters = new[] { '\r', '\n' };
         private static readonly char[] SpaceOrTab = new[] { ' ', '\t' };
+        private static readonly char[] CommaArray = new[] { ',' };
         private static readonly Regex NotSpaceOrTabRegex = new Regex(@"[^ \t]+");
 
         public static string TrimEndOfLine(this string @this)
@@ -35,6 +37,11 @@ namespace Hunspell.Utilities
             return @this.Split(SpaceOrTab, StringSplitOptions.RemoveEmptyEntries);
         }
 
+        public static string[] SplitOnComma(this string @this)
+        {
+            return @this.Split(CommaArray);
+        }
+
         public static MatchCollection RegexSplitOnTabOrSpace(this string @this)
         {
             return NotSpaceOrTabRegex.Matches(@this);
@@ -47,7 +54,7 @@ namespace Hunspell.Utilities
 
         public static string Reverse(this string @this)
         {
-            if(@this == null || @this.Length <= 1)
+            if (@this == null || @this.Length <= 1)
             {
                 return @this;
             }
@@ -73,7 +80,7 @@ namespace Hunspell.Utilities
 
         public static string RemoveChars(this string @this, char[] remove)
         {
-            if(string.IsNullOrEmpty(@this) || remove == null || remove.Length == 0)
+            if (string.IsNullOrEmpty(@this) || remove == null || remove.Length == 0)
             {
                 return @this;
             }
@@ -89,6 +96,11 @@ namespace Hunspell.Utilities
         public static bool Contains(this string @this, char c)
         {
             return @this.IndexOf(c) >= 0;
+        }
+
+        public static bool ContainsOrdinalIgnoreCase(this string @this, string value)
+        {
+            return @this.IndexOf(value, StringComparison.OrdinalIgnoreCase) >= 0;
         }
     }
 }

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Hunspell
@@ -303,10 +305,13 @@ namespace Hunspell
         public List<AffixEntryGroup<SuffixEntry>> Suffixes { get; set; }
 
         public List<AffixEntryGroup<PrefixEntry>> Prefixes { get; set; }
+        public ImmutableList<ImmutableList<int>> AliasF { get; set; }
 
-        public bool IsAliasF { get; set; }
+        public bool IsAliasF => AliasF != null && AliasF.Count > 0;
 
-        public bool IsAliasM { get; set; }
+        public ImmutableList<ImmutableList<int>> AliasM { get; set; }
+
+        public bool IsAliasM => AliasM != null && AliasM.Count > 0;
 
         public List<CompoundRule> CompoundRules { get; set; }
 

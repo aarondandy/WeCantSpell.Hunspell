@@ -1,6 +1,7 @@
 ﻿using Hunspell.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -111,6 +112,8 @@ namespace Hunspell
 
             switch (CultureInfo.InvariantCulture.TextInfo.ToUpper(name))
             {
+                case "FLAG": // parse in the try string
+                    return SetFlagMode(parameters);
                 case "KEY": // parse in the keyboard string
                     affixFile.KeyString = parameters;
                     return true;
@@ -122,6 +125,7 @@ namespace Hunspell
                     return true;
                 case "LANG": // parse in the language for language specific codes
                     affixFile.Language = parameters;
+                    throw new NotImplementedException("May need to extract langnum");
                     return true;
                 case "SYLLABLENUM": // parse in the flag used by compound_check() method
                     affixFile.CompoundSyllableNum = parameters;
@@ -207,6 +211,10 @@ namespace Hunspell
                     return TryParseAffixIntoList(affixFile, parameters, affixFile.Prefixes);
                 case "SFX":
                     return TryParseAffixIntoList(affixFile, parameters, affixFile.Suffixes);
+                case "AF":
+                    throw new NotImplementedException();
+                case "AM":
+                    throw new NotImplementedException();
                 default:
                     return false;
             }
@@ -287,6 +295,7 @@ namespace Hunspell
 
             var characterFlag = lineMatchGroups[1].Value[0];
             var affixGroup = groups.FindLast(g => g.AFlag == characterFlag);
+            var contClass = ImmutableList<int>.Empty;
 
             if (lineMatchGroups[2].Success && lineMatchGroups[3].Success)
             {
@@ -335,6 +344,23 @@ namespace Hunspell
                 {
                     var slashPart = affixText.Substring(affixSlashIndex + 1);
                     affixText = affixText.Substring(0, affixSlashIndex);
+
+                    if (affixFile.IsAliasF)
+                    {
+                        int aliasNumber;
+                        if (int.TryParse(slashPart, out aliasNumber) && aliasNumber > 0 && aliasNumber <= affixFile.AliasF.Count)
+                        {
+                            contClass = affixFile.AliasF[aliasNumber - 1];
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        contClass = ImmutableList.CreateRange(DecodeFlags(slashPart));
+                    }
                 }
                 if (affixFile.IgnoredChars != null)
                 {
@@ -344,6 +370,7 @@ namespace Hunspell
                 {
                     affixText = affixText.Reverse();
                 }
+
                 if (affixText == "0")
                 {
                     affixText = string.Empty;
@@ -408,7 +435,8 @@ namespace Hunspell
                     Strip = strip,
                     Append = affixText,
                     ConditionText = conditionsText,
-                    MorphCode = morph
+                    MorphCode = morph,
+                    ContClass = contClass
                 });
 
                 return true;
@@ -471,7 +499,56 @@ namespace Hunspell
 
         private bool RedundantConditionSuffix(string strip, string condition)
         {
-            throw new NotImplementedException();
+            if (strip.EndsWith(condition))
+            {
+                return true;
+            }
+
+            var lastConditionIndex = condition.Length - 1;
+            int i, j;
+            for (i = strip.Length - 1, j = condition.Length - 1; i >= 0 && j >= 0; i--, j--)
+            {
+                if (condition[j] != ']')
+                {
+                    if (condition[j] != strip[i])
+                    {
+                        // TODO: warn
+                        return false;
+                    }
+                }
+                else if (j > 0)
+                {
+                    var @in = false;
+                    do
+                    {
+                        j--;
+                        if (strip[i] == condition[j])
+                        {
+                            @in = true;
+                        }
+                    } while (j > 0 && condition[j] != '[');
+
+                    if (j == 0 && condition[j] != '[')
+                    {
+                        // TODO: warn
+                        return false;
+                    }
+
+                    var neg = j < lastConditionIndex && condition[j + 1] == '^';
+                    if (neg == @in)
+                    {
+                        // TODO: warn
+                        return false;
+                    }
+                }
+            }
+
+            if (j < 0)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private bool TryParseReplacementEntryLineIntoReplacements(AffixFile affixFile, string parameterText)
@@ -616,13 +693,12 @@ namespace Hunspell
             switch (FlagMode)
             {
                 case FlagMode.Char:
+                case FlagMode.Uni:
                     return parameterText.Select(c => (int)c);
                 case FlagMode.Long:
                     return DecodeLongFlags(parameterText);
                 case FlagMode.Num:
-                    throw new NotImplementedException();
-                case FlagMode.Uni:
-                    throw new NotImplementedException();
+                    return DecodeNumFlags(parameterText);
                 default:
                     throw new NotSupportedException();
             }
@@ -637,13 +713,30 @@ namespace Hunspell
 
             for (int i = 0; i < text.Length - 1; i += 2)
             {
-                yield return (text[i] << 8) | (byte)(text[i + 1]);
+                yield return checked((byte)(text[i] << 8) | (byte)(text[i + 1]));
             }
 
             if (text.Length % 2 == 1)
             {
                 yield return text[text.Length - 1];
             }
+        }
+
+        private static IEnumerable<int> DecodeNumFlags(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return Enumerable.Empty<int>();
+            }
+
+            return text
+                .SplitOnComma()
+                .Select(textValue =>
+                {
+                    int intValue;
+                    IntExtensions.TryParseInvariant(textValue, out intValue);
+                    return intValue;
+                });
         }
 
         private bool TryParseFlag(string text, out int result)
@@ -657,6 +750,7 @@ namespace Hunspell
             switch (FlagMode)
             {
                 case FlagMode.Char:
+                case FlagMode.Uni:
                     result = text[0];
                     return true;
                 case FlagMode.Long:
@@ -668,9 +762,7 @@ namespace Hunspell
                     result = text[1];
                     return true;
                 case FlagMode.Num:
-                    throw new NotImplementedException();
-                case FlagMode.Uni:
-                    throw new NotImplementedException();
+                    return IntExtensions.TryParseInvariant(text, out result);
                 default:
                     throw new NotSupportedException();
             }
@@ -687,6 +779,7 @@ namespace Hunspell
             switch (FlagMode)
             {
                 case FlagMode.Char:
+                case FlagMode.Uni:
                     result = text[0];
                     return true;
                 case FlagMode.Long:
@@ -698,12 +791,44 @@ namespace Hunspell
                     result = text[1];
                     return true;
                 case FlagMode.Num:
-                    throw new NotImplementedException();
-                case FlagMode.Uni:
-                    throw new NotImplementedException();
+                    return IntExtensions.TryParseInvariantAsChar(text, out result);
                 default:
                     throw new NotSupportedException();
             }
+        }
+
+        private bool SetFlagMode(string modeText)
+        {
+            if (string.IsNullOrEmpty(modeText))
+            {
+                return false;
+            }
+
+            FlagMode newMode;
+            if (modeText.ContainsOrdinalIgnoreCase("LONG"))
+            {
+                newMode = FlagMode.Long;
+            }
+            else if (modeText.ContainsOrdinalIgnoreCase("NUM"))
+            {
+                newMode = FlagMode.Num;
+            }
+            else if (modeText.ContainsOrdinalIgnoreCase("UTF"))
+            {
+                newMode = FlagMode.Uni;
+            }
+            else
+            {
+                return false;
+            }
+
+            if (newMode == FlagMode)
+            {
+                // TODO: warn
+            }
+
+            FlagMode = newMode;
+            return true;
         }
 
         public void Dispose()
