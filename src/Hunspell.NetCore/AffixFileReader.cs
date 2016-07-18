@@ -357,7 +357,12 @@ namespace Hunspell
 
             var lineMatchGroups = lineMatch.Groups;
 
-            var characterFlag = lineMatchGroups[1].Value[0];
+            char characterFlag;
+            if (!TryParseFlag(lineMatchGroups[1].Value, out characterFlag))
+            {
+                return false;
+            }
+
             var affixGroup = groups.FindLast(g => g.AFlag == characterFlag);
             var contClass = ImmutableList<int>.Empty;
 
@@ -486,7 +491,7 @@ namespace Hunspell
                     if (affixFile.IsAliasM)
                     {
                         int morphNumber;
-                        if(IntExtensions.TryParseInvariant(lineMatchGroups[7].Value, out morphNumber) && morphNumber > 0 && morphNumber <= affixFile.AliasM.Count)
+                        if (IntExtensions.TryParseInvariant(lineMatchGroups[7].Value, out morphNumber) && morphNumber > 0 && morphNumber <= affixFile.AliasM.Count)
                         {
                             morph = affixFile.AliasM[morphNumber - 1];
                         }
@@ -856,7 +861,7 @@ namespace Hunspell
 
             for (int i = 0; i < text.Length - 1; i += 2)
             {
-                yield return checked((byte)(text[i] << 8) | (byte)(text[i + 1]));
+                yield return unchecked((byte)text[i] << 8 | (byte)text[i + 1]);
             }
 
             if (text.Length % 2 == 1)
@@ -894,15 +899,24 @@ namespace Hunspell
             {
                 case FlagMode.Char:
                 case FlagMode.Uni:
+                    if (text.Length >= 2)
+                    {
+                        result = MergeCharacterBytes(text[0], text[1]);
+                        return true;
+                    }
+
                     result = text[0];
                     return true;
                 case FlagMode.Long:
                     if (text.Length >= 2)
                     {
-                        result = (text[0] << 8) | (byte)(text[1]);
-                        return true;
+                        result = unchecked(((byte)text[0] << 8) | (byte)text[1]);
                     }
-                    result = text[1];
+                    else
+                    {
+                        result = text[0];
+                    }
+
                     return true;
                 case FlagMode.Num:
                     return IntExtensions.TryParseInvariant(text, out result);
@@ -923,21 +937,36 @@ namespace Hunspell
             {
                 case FlagMode.Char:
                 case FlagMode.Uni:
+                    if (text.Length >= 2)
+                    {
+                        result = (char)MergeCharacterBytes(text[0], text[1]);
+                        return true;
+                    }
+
                     result = text[0];
                     return true;
                 case FlagMode.Long:
                     if (text.Length >= 2)
                     {
-                        result = (char)((text[0] << 8) | (byte)(text[1]));
-                        return true;
+                        result = unchecked((char)(((byte)text[0] << 8) | (byte)text[1]));
                     }
-                    result = text[1];
+                    else
+                    {
+                        result = text[0];
+                    }
+
                     return true;
                 case FlagMode.Num:
                     return IntExtensions.TryParseInvariantAsChar(text, out result);
                 default:
                     throw new NotSupportedException();
             }
+        }
+
+        [Obsolete("This method may be able to be replaced by a simple left shift operation like long flags are")]
+        private static ushort MergeCharacterBytes(char first, char second)
+        {
+            return BitConverter.ToUInt16(new byte[] { unchecked((byte)first), unchecked((byte)second) }, 0);
         }
 
         private bool SetFlagMode(string modeText)

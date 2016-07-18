@@ -37,7 +37,7 @@ namespace Hunspell
 
         internal int noNgramSuggest;
 
-        internal int forbiddenWord;
+        internal char forbiddenWord;
 
         internal int lemmaPresent;
 
@@ -207,7 +207,7 @@ namespace Hunspell
         /// <summary>
         /// A flag used by forbidden words.
         /// </summary>
-        public int ForbiddenWord
+        public char ForbiddenWord
         {
             get { return forbiddenWord; }
             set { forbiddenWord = value; }

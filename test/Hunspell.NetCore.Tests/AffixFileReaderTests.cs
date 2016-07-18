@@ -309,6 +309,166 @@ namespace Hunspell.NetCore.Tests
             }
 
             [Fact]
+            public async Task can_read_alias3_aff()
+            {
+                var filePath = @"files/alias3.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.ComplexPrefixes.Should().BeTrue();
+                actual.WordChars.Should().BeEquivalentTo(new[] { '_' });
+                actual.AliasM.Should().HaveCount(4);
+                actual.AliasM.ShouldBeEquivalentTo(new[]
+                {
+                    Reversed(@"affix_1/"),
+                    Reversed(@"affix_2/"),
+                    Reversed(@"/suffix_1"),
+                    Reversed(@"[stem_1]")
+                });
+
+                actual.Prefixes.Should().HaveCount(2);
+                var prefixGroup1 = actual.Prefixes[0];
+                prefixGroup1.AFlag.Should().Be('A');
+                prefixGroup1.Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasM);
+                prefixGroup1.Entries.Should().HaveCount(1);
+                var prefixEntry1 = prefixGroup1.Entries.Single();
+                prefixEntry1.Strip.Should().BeEmpty();
+                prefixEntry1.Append.Should().Be("ket");
+                prefixEntry1.ConditionText.Should().Be(".");
+                prefixEntry1.MorphCode.Should().Be(Reversed(@"affix_1/"));
+                var prefixGroup2 = actual.Prefixes[1];
+                prefixGroup2.AFlag.Should().Be('B');
+                prefixGroup2.Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasM);
+                prefixGroup2.Entries.Should().HaveCount(1);
+                var prefixEntry2 = prefixGroup2.Entries.Single();
+                prefixEntry2.Strip.Should().BeEmpty();
+                prefixEntry2.Append.Should().Be("tem");
+                prefixEntry2.ContClass.ShouldBeEquivalentTo(new int[] { 'A' });
+                prefixEntry2.ConditionText.Should().Be(".");
+                prefixEntry2.MorphCode.Should().Be(Reversed(@"affix_2/"));
+                actual.Suffixes.Should().HaveCount(1);
+                var suffixGroup1 = actual.Suffixes[0];
+                suffixGroup1.AFlag.Should().Be('C');
+                suffixGroup1.Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasM);
+                suffixGroup1.Entries.Should().HaveCount(1);
+                var suffixEntry1 = suffixGroup1.Entries.Single();
+                suffixEntry1.Strip.Should().BeEmpty();
+                suffixEntry1.Append.Should().Be("_tset_");
+                suffixEntry1.ConditionText.Should().Be(".");
+                suffixEntry1.MorphCode.Should().Be(Reversed(@"/suffix_1"));
+            }
+
+            [Fact]
+            public async Task can_read_allcaps_aff()
+            {
+                var filePath = @"files/allcaps.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.WordChars.ShouldBeEquivalentTo(new[] { '\'', '.' });
+
+                actual.Suffixes.Should().HaveCount(1);
+                actual.Suffixes.Single().AFlag.Should().Be('S');
+                actual.Suffixes.Single().Options.Should().Be(AffixEntryOptions.None);
+                actual.Suffixes.Single().Entries.Should().HaveCount(1);
+                var entry1 = actual.Suffixes.Single().Entries.Single();
+                entry1.Strip.Should().BeEmpty();
+                entry1.Append.Should().Be("'s");
+                entry1.ConditionText.Should().Be(".");
+            }
+
+            [Fact]
+            public async Task can_read_allcaps_utf_aff()
+            {
+                var filePath = @"files/allcaps_utf.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.RequestedEncoding.Should().Be("UTF-8");
+
+                actual.WordChars.ShouldBeEquivalentTo(new[] { '\'', '.' });
+
+                actual.Suffixes.Should().HaveCount(1);
+                actual.Suffixes.Single().AFlag.Should().Be('S');
+                actual.Suffixes.Single().Options.Should().Be(AffixEntryOptions.None);
+                actual.Suffixes.Single().Entries.Should().HaveCount(1);
+                var entry1 = actual.Suffixes.Single().Entries.Single();
+                entry1.Strip.Should().BeEmpty();
+                entry1.Append.Should().Be("'s");
+                entry1.ConditionText.Should().Be(".");
+            }
+
+            [Fact]
+            public async Task can_read_allcaps2_aff()
+            {
+                var filePath = @"files/allcaps2.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.ForbiddenWord.Should().Be('*');
+
+                actual.Suffixes.Should().HaveCount(1);
+                actual.Suffixes.Single().AFlag.Should().Be('s');
+                actual.Suffixes.Single().Options.Should().Be(AffixEntryOptions.None);
+                actual.Suffixes.Single().Entries.Should().HaveCount(1);
+                var entry1 = actual.Suffixes.Single().Entries.Single();
+                entry1.Strip.Should().BeEmpty();
+                entry1.Append.Should().Be("os");
+                entry1.ConditionText.Should().Be(".");
+            }
+
+            [Fact]
+            public async Task can_read_allcaps3_aff()
+            {
+                var filePath = @"files/allcaps3.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.WordChars.ShouldBeEquivalentTo(new[] { '\'' });
+
+                actual.Suffixes.Should().HaveCount(2);
+                var suffixGroup1 = actual.Suffixes[0];
+                suffixGroup1.AFlag.Should().Be('s');
+                suffixGroup1.Options.Should().Be(AffixEntryOptions.None);
+                suffixGroup1.Entries.Should().HaveCount(1);
+                var entry1 = suffixGroup1.Entries.Single();
+                entry1.Strip.Should().BeEmpty();
+                entry1.Append.Should().Be("s");
+                entry1.ConditionText.Should().Be(".");
+                var suffixGroup2 = actual.Suffixes[1];
+                suffixGroup2.AFlag.Should().Be('S');
+                suffixGroup2.Options.Should().Be(AffixEntryOptions.None);
+                suffixGroup2.Entries.Should().HaveCount(1);
+                var entry2 = suffixGroup2.Entries.Single();
+                entry2.Strip.Should().BeEmpty();
+                entry2.Append.Should().Be("\'s");
+                entry2.ConditionText.Should().Be(".");
+            }
+
+            [Fact]
+            public async Task can_read_arabic_aff()
+            {
+                var filePath = @"files/arabic.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.RequestedEncoding.Should().Be("UTF-8");
+                actual.TryString.Should().Be("أ");
+                actual.IgnoredChars.ShouldBeEquivalentTo(new[] { 'ّ', 'َ', 'ُ', 'ٌ', 'ْ', 'ِ', 'ٍ' });
+
+                actual.Prefixes.Should().HaveCount(1);
+                var group1 = actual.Prefixes.Single();
+                group1.AFlag.Should().Be((char)('A' | ('a' << 8)));
+                group1.Options.Should().Be(AffixEntryOptions.CrossProduct);
+                group1.Entries.Should().HaveCount(1);
+                var entry1 = group1.Entries.Single();
+                entry1.Strip.Should().BeEmpty();
+                entry1.Append.Should().BeEmpty();
+                entry1.ContClass.ShouldBeEquivalentTo(new[] { 'X', '0' });
+                entry1.ConditionText.Should().Be("أ[^ي]");
+            }
+
+            [Fact]
             public async Task can_read_sug_aff()
             {
                 var filePath = @"files/sug.aff";
@@ -322,7 +482,7 @@ namespace Hunspell.NetCore.Tests
                 entry.Med.Should().Be("a lot");
                 actual.KeyString.Should().Be("qwertzuiop|asdfghjkl|yxcvbnm|aq");
                 actual.WordChars.Should().BeEquivalentTo(new[] { '.' });
-                actual.ForbiddenWord.Should().Be((ushort)'?');
+                actual.ForbiddenWord.Should().Be('?');
             }
 
             private async Task<AffixFile> ReadFileAsync(string filePath)
@@ -331,6 +491,13 @@ namespace Hunspell.NetCore.Tests
                 {
                     return await reader.GetOrReadAsync();
                 }
+            }
+
+            private string Reversed(string text)
+            {
+                var letters = text.ToCharArray();
+                Array.Reverse(letters);
+                return new string(letters);
             }
         }
     }
