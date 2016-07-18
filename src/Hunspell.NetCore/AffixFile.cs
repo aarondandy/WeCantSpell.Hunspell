@@ -305,11 +305,12 @@ namespace Hunspell
         public List<AffixEntryGroup<SuffixEntry>> Suffixes { get; set; }
 
         public List<AffixEntryGroup<PrefixEntry>> Prefixes { get; set; }
-        public ImmutableList<ImmutableList<int>> AliasF { get; set; }
+
+        public List<ImmutableList<int>> AliasF { get; set; }
 
         public bool IsAliasF => AliasF != null && AliasF.Count > 0;
 
-        public ImmutableList<ImmutableList<int>> AliasM { get; set; }
+        public List<string> AliasM { get; set; }
 
         public bool IsAliasM => AliasM != null && AliasM.Count > 0;
 

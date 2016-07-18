@@ -252,17 +252,17 @@ namespace Hunspell.NetCore.Tests
                 var actual = await ReadFileAsync(filePath);
 
                 actual.AliasF.Should().HaveCount(2);
-                actual.AliasF[0].Should().BeEquivalentTo(new[] { 'A', 'B' });
-                actual.AliasF[1].Should().BeEquivalentTo(new[] { 'A' });
+                actual.AliasF[0].Should().BeEquivalentTo(new int[] { 'A', 'B' });
+                actual.AliasF[1].Should().BeEquivalentTo(new int[] { 'A' });
                 actual.Suffixes.Should().HaveCount(2);
                 actual.Suffixes.First().AFlag.Should().Be('A');
-                actual.Suffixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Suffixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF);
                 actual.Suffixes.First().Entries.Should().HaveCount(1);
                 actual.Suffixes.First().Entries.Single().Strip.Should().BeEmpty();
                 actual.Suffixes.First().Entries.Single().Append.Should().Be("x");
                 actual.Suffixes.First().Entries.Single().ConditionText.Should().Be(".");
                 actual.Suffixes.Last().AFlag.Should().Be('B');
-                actual.Suffixes.Last().Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Suffixes.Last().Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF);
                 actual.Suffixes.Last().Entries.Should().HaveCount(1);
                 actual.Suffixes.Last().Entries.Single().Strip.Should().BeEmpty();
                 actual.Suffixes.Last().Entries.Single().Append.Should().Be("y");

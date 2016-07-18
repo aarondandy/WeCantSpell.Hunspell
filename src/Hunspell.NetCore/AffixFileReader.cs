@@ -40,6 +40,10 @@ namespace Hunspell
 
         private bool hasInitializedCompoundPatterns = false;
 
+        private bool hasInitializedAliasF = false;
+
+        private bool hasInitializedAliasM = false;
+
         private bool ownsReaderLifetime = true;
 
         private bool attemptDisposeWhenDone = true;
@@ -212,14 +216,74 @@ namespace Hunspell
                 case "SFX":
                     return TryParseAffixIntoList(affixFile, parameters, affixFile.Suffixes);
                 case "AF":
-                    throw new NotImplementedException();
+                    return TryParseAliasF(affixFile, parameters);
                 case "AM":
-                    throw new NotImplementedException();
+                    return TryParseAliasM(affixFile, parameters);
                 default:
                     return false;
             }
         }
 
+        private bool TryParseAliasF(AffixFile affixFile, string parameterText)
+        {
+            if (string.IsNullOrEmpty(parameterText))
+            {
+                return false;
+            }
+
+            if (!hasInitializedAliasF || affixFile.AliasF == null)
+            {
+                int expectedSize;
+                if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize > 0)
+                {
+                    affixFile.AliasF = new List<ImmutableList<int>>(expectedSize);
+                    return true;
+                }
+                else if (affixFile.AliasF == null)
+                {
+                    affixFile.AliasF = new List<ImmutableList<int>>();
+                }
+
+                hasInitializedAliasF = true;
+            }
+
+            var flags = ImmutableList.CreateRange(DecodeFlags(parameterText).OrderBy(x => x));
+            affixFile.AliasF.Add(flags);
+            return true;
+        }
+
+        private bool TryParseAliasM(AffixFile affixFile, string parameterText)
+        {
+            if (string.IsNullOrEmpty(parameterText))
+            {
+                return false;
+            }
+
+            if (!hasInitializedAliasM || affixFile.AliasM == null)
+            {
+                int expectedSize;
+                if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize > 0)
+                {
+                    affixFile.AliasM = new List<string>(expectedSize);
+                    return true;
+                }
+                else if (affixFile.AliasM == null)
+                {
+                    affixFile.AliasM = new List<string>();
+                }
+
+                hasInitializedAliasM = true;
+            }
+
+            var chunk = parameterText;
+            if (affixFile.ComplexPrefixes)
+            {
+                chunk = chunk.Reverse();
+            }
+
+            affixFile.AliasM.Add(chunk);
+            return true;
+        }
 
         private bool TryParseCompoundRuleIntoList(AffixFile affixFile, string parameterText)
         {
@@ -236,7 +300,7 @@ namespace Hunspell
                     affixFile.CompoundRules = new List<CompoundRule>(expectedSize);
                     return true;
                 }
-                else
+                else if (affixFile.CompoundRules == null)
                 {
                     affixFile.CompoundRules = new List<CompoundRule>();
                 }
