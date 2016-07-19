@@ -517,10 +517,11 @@ namespace Hunspell
                 string morph = null;
                 if (lineMatchGroups[7].Success)
                 {
+                    morph = lineMatchGroups[7].Value;
                     if (affixFile.IsAliasM)
                     {
                         int morphNumber;
-                        if (IntExtensions.TryParseInvariant(lineMatchGroups[7].Value, out morphNumber) && morphNumber > 0 && morphNumber <= affixFile.AliasM.Count)
+                        if (IntExtensions.TryParseInvariant(morph, out morphNumber) && morphNumber > 0 && morphNumber <= affixFile.AliasM.Count)
                         {
                             morph = affixFile.AliasM[morphNumber - 1];
                         }

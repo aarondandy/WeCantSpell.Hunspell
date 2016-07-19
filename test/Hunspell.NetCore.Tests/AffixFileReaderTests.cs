@@ -555,6 +555,329 @@ namespace Hunspell.NetCore.Tests
             }
 
             [Fact]
+            public async Task can_read_checkcompoundcase_aff()
+            {
+                var filePath = @"files/checkcompoundcase.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.CheckCompoundCase.Should().BeTrue();
+                actual.CompoundFlag.Should().Be('A');
+            }
+
+            [Fact]
+            public async Task can_read_checkcompounddup_aff()
+            {
+                var filePath = @"files/checkcompounddup.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.CheckCompoundDup.Should().BeTrue();
+                actual.CompoundFlag.Should().Be('A');
+            }
+
+            [Fact]
+            public async Task can_read_checkcompoundpattern_aff()
+            {
+                var filePath = @"files/checkcompoundpattern.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.CompoundFlag.Should().Be('A');
+                actual.CompoundPatterns.Should().HaveCount(2);
+                actual.CompoundPatterns[0].Pattern.Should().Be("nny");
+                actual.CompoundPatterns[0].Pattern2.Should().Be("ny");
+                actual.CompoundPatterns[1].Pattern.Should().Be("ssz");
+                actual.CompoundPatterns[1].Pattern2.Should().Be("sz");
+            }
+
+            [Fact]
+            public async Task can_read_checkcompoundpattern2_aff()
+            {
+                var filePath = @"files/checkcompoundpattern2.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.CompoundFlag.Should().Be('A');
+                actual.CompoundPatterns.Should().HaveCount(2);
+                actual.CompoundPatterns[0].Pattern.Should().Be("o");
+                actual.CompoundPatterns[0].Pattern2.Should().Be("b");
+                actual.CompoundPatterns[0].Pattern3.Should().Be("z");
+                actual.CompoundPatterns[1].Pattern.Should().Be("oo");
+                actual.CompoundPatterns[1].Pattern2.Should().Be("ba");
+                actual.CompoundPatterns[1].Pattern3.Should().Be("u");
+                actual.CompoundMin.Should().Be(1);
+            }
+
+            [Fact]
+            public async Task can_read_checkcompoundpattern3_aff()
+            {
+                var filePath = @"files/checkcompoundpattern3.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.CompoundFlag.Should().Be('A');
+                actual.CompoundPatterns.Should().HaveCount(1);
+                actual.CompoundPatterns[0].Pattern.Should().Be("o");
+                actual.CompoundPatterns[0].Condition.Should().Be('X');
+                actual.CompoundPatterns[0].Pattern2.Should().Be("b");
+                actual.CompoundPatterns[0].Condition2.Should().Be('Y');
+                actual.CompoundPatterns[0].Pattern3.Should().Be("z");
+                actual.CompoundMin.Should().Be(1);
+            }
+
+            [Fact]
+            public async Task can_read_checkcompoundpattern4_aff()
+            {
+                var filePath = @"files/checkcompoundpattern4.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.CompoundFlag.Should().Be('x');
+                actual.CompoundMin.Should().Be(1);
+                actual.CompoundPatterns.Should().HaveCount(2);
+                actual.CompoundPatterns[0].Pattern.Should().Be("a");
+                actual.CompoundPatterns[0].Condition.Should().Be('A');
+                actual.CompoundPatterns[0].Pattern2.Should().Be("u");
+                actual.CompoundPatterns[0].Condition2.Should().Be('A');
+                actual.CompoundPatterns[0].Pattern3.Should().Be("O");
+                actual.CompoundPatterns[1].Pattern.Should().Be("u");
+                actual.CompoundPatterns[1].Condition.Should().Be('B');
+                actual.CompoundPatterns[1].Pattern2.Should().Be("u");
+                actual.CompoundPatterns[1].Condition2.Should().Be('B');
+                actual.CompoundPatterns[1].Pattern3.Should().Be("u");
+            }
+
+            [Fact]
+            public async Task can_read_checkcompoundtriple_aff()
+            {
+                var filePath = @"files/checkcompoundtriple.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.CheckCompoundTriple.Should().BeTrue();
+                actual.CompoundFlag.Should().Be('A');
+            }
+
+            [Fact]
+            public async Task can_read_checksharpsutf_aff()
+            {
+                var filePath = @"files/checksharpsutf.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.CheckSharps.Should().BeTrue();
+                actual.WordChars.ShouldBeEquivalentTo(new[] { 'ß', '.' });
+                actual.KeepCase.Should().Be('k');
+            }
+
+            [Fact]
+            public async Task can_read_circumfix_aff()
+            {
+                var filePath = @"files/circumfix.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.Circumfix.Should().Be('X');
+
+                actual.Prefixes.Should().HaveCount(2);
+                actual.Prefixes[0].AFlag.Should().Be('A');
+                actual.Prefixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Prefixes[0].Entries.Should().HaveCount(1);
+                var entry1 = actual.Prefixes[0].Entries[0];
+                entry1.Strip.Should().BeEmpty();
+                entry1.Append.Should().Be("leg");
+                entry1.ContClass.ShouldBeEquivalentTo(new[] { 'X' });
+                entry1.ConditionText.Should().Be(".");
+                actual.Prefixes[1].AFlag.Should().Be('B');
+                actual.Prefixes[1].Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Prefixes[1].Entries.Should().HaveCount(1);
+                var entry2 = actual.Prefixes[1].Entries[0];
+                entry2.Strip.Should().BeEmpty();
+                entry2.Append.Should().Be("legesleg");
+                entry2.ContClass.ShouldBeEquivalentTo(new[] { 'X' });
+                entry2.ConditionText.Should().Be(".");
+
+                actual.Suffixes.Should().HaveCount(1);
+                actual.Suffixes[0].AFlag.Should().Be('C');
+                actual.Suffixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Suffixes[0].Entries.Should().HaveCount(3);
+                var entry3 = actual.Suffixes[0].Entries[0];
+                entry3.Strip.Should().BeEmpty();
+                entry3.Append.Should().Be("obb");
+                entry3.ConditionText.Should().Be(".");
+                entry3.MorphCode.Should().Be("is:COMPARATIVE");
+                var entry4 = actual.Suffixes[0].Entries[1];
+                entry4.Strip.Should().BeEmpty();
+                entry4.Append.Should().Be("obb");
+                entry4.ContClass.ShouldBeEquivalentTo(new[] { 'A', 'X' });
+                entry4.ConditionText.Should().Be(".");
+                entry4.MorphCode.Should().Be("is:SUPERLATIVE");
+                var entry5 = actual.Suffixes[0].Entries[2];
+                entry5.Strip.Should().BeEmpty();
+                entry5.Append.Should().Be("obb");
+                entry5.ContClass.ShouldBeEquivalentTo(new[] { 'B', 'X' });
+                entry5.ConditionText.Should().Be(".");
+                entry5.MorphCode.Should().Be("is:SUPERSUPERLATIVE");
+            }
+
+            [Fact]
+            public async Task can_read_colons_in_words_aff()
+            {
+                var filePath = @"files/colons_in_words.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.WordChars.ShouldBeEquivalentTo(new[] { ':' });
+            }
+
+            [Fact]
+            public async Task can_read_compoundaffix2_aff()
+            {
+                var filePath = @"files/compoundaffix2.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.CompoundFlag.Should().Be('X');
+                actual.CompoundPermitFlag.Should().Be('Y');
+                actual.Prefixes.Should().HaveCount(1);
+                actual.Suffixes.Should().HaveCount(1);
+            }
+
+            [Fact]
+            public async Task can_read_compoundaffix3_aff()
+            {
+                var filePath = @"files/compoundaffix3.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.CompoundFlag.Should().Be('X');
+                actual.CompoundForbidFlag.Should().Be('Z');
+                actual.Prefixes.Should().HaveCount(1);
+                actual.Suffixes.Should().HaveCount(1);
+            }
+
+            [Fact]
+            public async Task can_read_compoundrule2_aff()
+            {
+                var filePath = @"files/compoundrule2.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.CompoundMin.Should().Be(1);
+                actual.CompoundRules.Should().HaveCount(1);
+                actual.CompoundRules[0].ShouldBeEquivalentTo(new[] { 'A', '*', 'B', '*', 'C', '*' });
+            }
+
+            [Fact]
+            public async Task can_read_compoundrule3_aff()
+            {
+                var filePath = @"files/compoundrule3.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.CompoundMin.Should().Be(1);
+                actual.CompoundRules.Should().HaveCount(1);
+                actual.CompoundRules[0].ShouldBeEquivalentTo(new[] { 'A', '?', 'B', '?', 'C', '?' });
+            }
+
+            [Fact]
+            public async Task can_read_compoundrule4_aff()
+            {
+                var filePath = @"files/compoundrule4.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.WordChars.ShouldBeEquivalentTo("0123456789".ToCharArray());
+                actual.CompoundMin.Should().Be(1);
+                actual.OnlyInCompound.Should().Be('c');
+                actual.CompoundRules.Should().HaveCount(2);
+                actual.CompoundRules[0].ShouldBeEquivalentTo(new[] { 'n', '*', '1', 't' });
+                actual.CompoundRules[1].ShouldBeEquivalentTo(new[] { 'n', '*', 'm', 'p' });
+            }
+
+            [Fact]
+            public async Task can_read_compoundrule5_aff()
+            {
+                var filePath = @"files/compoundrule5.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.CompoundMin.Should().Be(1);
+                actual.CompoundRules.Should().HaveCount(2);
+                actual.CompoundRules[0].ShouldBeEquivalentTo("N*%?".ToCharArray());
+                actual.CompoundRules[1].ShouldBeEquivalentTo("NN*.NN*%?".ToCharArray());
+                actual.WordChars.ShouldBeEquivalentTo("0123456789‰.".ToCharArray());
+            }
+
+            [Fact]
+            public async Task can_read_compoundrule6_aff()
+            {
+                var filePath = @"files/compoundrule6.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.CompoundMin.Should().Be(1);
+                actual.CompoundRules.Should().HaveCount(2);
+                actual.CompoundRules[0].ShouldBeEquivalentTo("A*A".ToCharArray());
+                actual.CompoundRules[1].ShouldBeEquivalentTo("A*AAB*BBBC*C".ToCharArray());
+            }
+
+            [Fact]
+            public async Task can_read_compoundrule7_aff()
+            {
+                var filePath = @"files/compoundrule7.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.WordChars.ShouldBeEquivalentTo("0123456789".ToCharArray());
+                actual.CompoundMin.Should().Be(1);
+                actual.OnlyInCompound.Should().Be('c' << 8 | 'c');
+                actual.CompoundRules.Should().HaveCount(2);
+                actual.CompoundRules[0].ShouldBeEquivalentTo(new[] { 'n' << 8 | 'n', '*', '1' << 8 | '1', 't' << 8 | 't' });
+                actual.CompoundRules[1].ShouldBeEquivalentTo(new[] { 'n' << 8 | 'n', '*', 'm' << 8 | 'm', 'p' << 8 | 'p' });
+            }
+
+            [Fact]
+            public async Task can_read_compoundrule8_aff()
+            {
+                var filePath = @"files/compoundrule8.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.WordChars.ShouldBeEquivalentTo("0123456789".ToCharArray());
+                actual.CompoundMin.Should().Be(1);
+                actual.OnlyInCompound.Should().Be(1000);
+                actual.CompoundRules.Should().HaveCount(2);
+                actual.CompoundRules[0].ShouldBeEquivalentTo(new[] { 1001, '*', 1002, 2001 });
+                actual.CompoundRules[1].ShouldBeEquivalentTo(new[] { 1001, '*', 2002, 2000 });
+            }
+
+            [Fact]
+            public async Task can_read_condition_aff()
+            {
+                var filePath = @"files/condition.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.WordChars.ShouldBeEquivalentTo("0123456789".ToCharArray());
+                actual.Suffixes.Should().HaveCount(4);
+                actual.Prefixes.Should().HaveCount(3);
+            }
+
+            [Fact]
+            public async Task can_read_condition_utf_aff()
+            {
+                var filePath = @"files/condition_utf.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.WordChars.ShouldBeEquivalentTo("0123456789".ToCharArray());
+                actual.Suffixes.Should().HaveCount(1);
+                actual.Prefixes.Should().HaveCount(1);
+            }
+
+            [Fact]
             public async Task can_read_sug_aff()
             {
                 var filePath = @"files/sug.aff";
