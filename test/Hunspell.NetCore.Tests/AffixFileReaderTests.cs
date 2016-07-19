@@ -878,6 +878,113 @@ namespace Hunspell.NetCore.Tests
             }
 
             [Fact]
+            public async Task can_read_digits_in_words_aff()
+            {
+                var filePath = @"files/digits_in_words.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.CompoundMin.Should().Be(1);
+                actual.CompoundRules.Should().HaveCount(1);
+                actual.CompoundRules[0].ShouldBeEquivalentTo(new[] { 'a', '*', 'b' });
+                actual.OnlyInCompound.Should().Be('c');
+                actual.WordChars.ShouldBeEquivalentTo("0123456789-".ToCharArray());
+            }
+
+            [Fact]
+            public async Task can_read_encoding_aff()
+            {
+                var filePath = @"files/encoding.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.RequestedEncoding.Should().Be("ISO-8859-15");
+            }
+
+            [Fact]
+            public async Task can_read_flagnum_aff()
+            {
+                var filePath = @"files/flagnum.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.Suffixes.Should().HaveCount(3);
+                actual.Suffixes[0].AFlag.Should().Be((char)999);
+                actual.Suffixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Suffixes[1].AFlag.Should().Be((char)214);
+                actual.Suffixes[1].Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Suffixes[2].AFlag.Should().Be((char)216);
+                actual.Suffixes[2].Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Prefixes.Should().HaveCount(1);
+                actual.Prefixes[0].AFlag.Should().Be((char)54321);
+                actual.Prefixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct);
+            }
+
+            [Fact]
+            public async Task can_read_fogemorpheme_aff()
+            {
+                var filePath = @"files/fogemorpheme.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.CompoundFlag.Should().Be('X');
+                actual.CompoundBegin.Should().Be('Y');
+                actual.OnlyInCompound.Should().Be('Z');
+                actual.CompoundPermitFlag.Should().Be('P');
+                actual.Suffixes.Should().HaveCount(1);
+            }
+
+            [Fact]
+            public async Task can_read_forbiddenword_aff()
+            {
+                var filePath = @"files/forbiddenword.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.ForbiddenWord.Should().Be('X');
+                actual.CompoundFlag.Should().Be('Y');
+                actual.Suffixes.Should().HaveCount(1);
+            }
+
+            [Fact]
+            public async Task can_read_forceucase_aff()
+            {
+                var filePath = @"files/forceucase.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.TryString.Should().Be("F");
+                actual.ForceUpperCase.Should().Be('A');
+                actual.CompoundFlag.Should().Be('C');
+            }
+
+            [Fact]
+            public async Task can_read_fullstrip_aff()
+            {
+                var filePath = @"files/fullstrip.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.FullStrip.Should().BeTrue();
+                actual.TryString.Should().Be("aioertnsclmdpgubzfvhàq'ACMSkBGPLxEyRTVòIODNwFéùèìjUZKHWJYQX");
+                actual.Suffixes.Should().HaveCount(1);
+                actual.Suffixes[0].AFlag.Should().Be('A');
+                actual.Suffixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct);
+                var entry1 = actual.Suffixes[0].Entries[0];
+                entry1.Strip.Should().Be("andare");
+                entry1.Append.Should().Be("vado");
+                entry1.ConditionText.Should().Be(".");
+                var entry2 = actual.Suffixes[0].Entries[1];
+                entry2.Strip.Should().Be("andare");
+                entry2.Append.Should().Be("va");
+                entry2.ConditionText.Should().Be(".");
+                var entry3 = actual.Suffixes[0].Entries[2];
+                entry3.Strip.Should().Be("are");
+                entry3.Append.Should().Be("iamo");
+                entry3.ConditionText.Should().Be("eradna");
+            }
+
+            [Fact]
             public async Task can_read_sug_aff()
             {
                 var filePath = @"files/sug.aff";

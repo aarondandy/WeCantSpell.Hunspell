@@ -25,7 +25,7 @@ namespace Hunspell
         private static readonly Regex SingleCommandParseRegex = new Regex(@"^[ \t]*(\w+)[ \t]*$");
         private static readonly Regex CommentLineRegex = new Regex(@"^\s*[#].*");
         private static readonly Regex AffixLineRegex = new Regex(
-            @"^[\t ]*([^\t ]+)[\t ]+(?:([^\t ]+)[\t ]+([^\t ]+)|([^\t ]+)[\t ]+([^\t ]+)[\t ]+([^\t ]+)(?:[\t ]+(.+))?)[\t ]*$",
+            @"^[\t ]*([^\t ]+)[\t ]+(?:([^\t ]+)[\t ]+([^\t ]+)|([^\t ]+)[\t ]+([^\t ]+)[\t ]+([^\t ]+)(?:[\t ]+(.+))?)[\t ]*(?:[#].+)?$",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         public FlagMode FlagMode { get; private set; } = FlagMode.Char;
