@@ -320,6 +320,8 @@ namespace Hunspell
 
         public bool SimplifiedCompound { get; set; }
 
+        public List<string> BreakTable { get; set; }
+
         public static Task<AffixFile> ReadAsync(AffixUtfStreamLineReader reader)
         {
             if (reader == null)

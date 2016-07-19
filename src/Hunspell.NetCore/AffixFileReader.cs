@@ -44,6 +44,8 @@ namespace Hunspell
 
         private bool hasInitializedAliasM = false;
 
+        private bool hasInitializedBreak = false;
+
         private bool ownsReaderLifetime = true;
 
         private bool attemptDisposeWhenDone = true;
@@ -194,7 +196,7 @@ namespace Hunspell
                 case "MAP": // parse in the related character map table
                     throw new NotImplementedException();
                 case "BREAK": // parse in the word breakpoints table
-                    throw new NotImplementedException();
+                    return TryParseBreak(affixFile, parameters);
                 case "VERSION":
                     throw new NotImplementedException();
                 case "MAXNGRAMSUGS":
@@ -224,6 +226,33 @@ namespace Hunspell
             }
         }
 
+        private bool TryParseBreak(AffixFile affixFile, string parameterText)
+        {
+            if (string.IsNullOrEmpty(parameterText))
+            {
+                return false;
+            }
+
+            if (!hasInitializedBreak || affixFile.BreakTable == null) 
+            {
+                int expectedSize;
+                if(IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
+                {
+                    affixFile.BreakTable = new List<string>(expectedSize);
+                    return true;
+                }
+                else if(affixFile.BreakTable == null)
+                {
+                    affixFile.BreakTable = new List<string>();
+                }
+
+                hasInitializedBreak = true;
+            }
+
+            affixFile.BreakTable.Add(parameterText);
+            return true;
+        }
+
         private bool TryParseAliasF(AffixFile affixFile, string parameterText)
         {
             if (string.IsNullOrEmpty(parameterText))
@@ -234,7 +263,7 @@ namespace Hunspell
             if (!hasInitializedAliasF || affixFile.AliasF == null)
             {
                 int expectedSize;
-                if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize > 0)
+                if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
                 {
                     affixFile.AliasF = new List<ImmutableList<int>>(expectedSize);
                     return true;
@@ -262,7 +291,7 @@ namespace Hunspell
             if (!hasInitializedAliasM || affixFile.AliasM == null)
             {
                 int expectedSize;
-                if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize > 0)
+                if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
                 {
                     affixFile.AliasM = new List<string>(expectedSize);
                     return true;
@@ -295,7 +324,7 @@ namespace Hunspell
             if (!hasInitializedCompoundRules || affixFile.CompoundRules == null)
             {
                 int expectedSize;
-                if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize > 0)
+                if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
                 {
                     affixFile.CompoundRules = new List<CompoundRule>(expectedSize);
                     return true;

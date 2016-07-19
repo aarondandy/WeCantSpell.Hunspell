@@ -469,6 +469,92 @@ namespace Hunspell.NetCore.Tests
             }
 
             [Fact]
+            public async Task can_read_base_aff()
+            {
+                var filePath = @"files/base.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.RequestedEncoding.Should().Be("ISO8859-1");
+                actual.WordChars.ShouldBeEquivalentTo(new[] { '.', '\'' });
+                actual.TryString.Should().Be("esianrtolcdugmphbyfvkwz'");
+
+                actual.Prefixes.Should().HaveCount(7);
+                var prefixGroup1 = actual.Prefixes.First();
+                prefixGroup1.AFlag.Should().Be('A');
+                prefixGroup1.Options.Should().Be(AffixEntryOptions.CrossProduct);
+                prefixGroup1.Entries.Should().HaveCount(1);
+                var entry1 = prefixGroup1.Entries.Single();
+                entry1.Strip.Should().BeEmpty();
+                entry1.Append.Should().Be("re");
+                entry1.ConditionText.Should().Be(".");
+
+                actual.Suffixes.Should().HaveCount(16);
+
+                actual.Replacements.Should().HaveCount(88);
+                actual.Replacements[0].Pattern.Should().Be("a");
+                actual.Replacements[0].OutStrings[0].Should().Be("ei");
+                actual.Replacements[87].Pattern.Should().Be("shun");
+                actual.Replacements[87].OutStrings[0].Should().Be("cion");
+            }
+
+            [Fact]
+            public async Task can_read_base_utf_aff()
+            {
+                var filePath = @"files/base_utf.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.TryString.Should().Be("esianrtolcdugmphbyfvkwzESIANRTOLCDUGMPHBYFVKWZ'");
+                actual.MaxNgramSuggestions.Should().Be(1);
+                actual.WordChars.ShouldBeEquivalentTo(new[] { '.', '\'', '’' });
+                actual.Prefixes.Should().HaveCount(7);
+                actual.Suffixes.Should().HaveCount(16);
+                actual.Replacements.Should().HaveCount(88);
+            }
+
+            [Fact]
+            public async Task can_read_break_aff()
+            {
+                var filePath = @"files/break.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.BreakTable.ShouldBeEquivalentTo(new[]
+                {
+                    "-",
+                    "–"
+                });
+
+                actual.WordChars.ShouldBeEquivalentTo(new[] { '-', '–' });
+            }
+
+            [Fact]
+            public async Task can_read_breakdefault_aff()
+            {
+                var filePath = @"files/breakdefault.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.MaxNgramSuggestions.Should().Be(0);
+                actual.WordChars.ShouldBeEquivalentTo(new[] { '-' });
+                actual.TryString.Should().Be("ot");
+            }
+
+            [Fact]
+            public async Task can_read_breakoff_aff()
+            {
+                var filePath = @"files/breakoff.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.MaxNgramSuggestions.Should().Be(0);
+                actual.WordChars.ShouldBeEquivalentTo(new[] { '-' });
+                actual.TryString.Should().Be("ot");
+                actual.BreakTable.Should().HaveCount(0);
+            }
+
+            [Fact]
             public async Task can_read_sug_aff()
             {
                 var filePath = @"files/sug.aff";
