@@ -48,6 +48,8 @@ namespace Hunspell
 
         private bool hasInitializedIconv = false;
 
+        private bool hasInitializedMap = false;
+
         private bool ownsReaderLifetime = true;
 
         private bool attemptDisposeWhenDone = true;
@@ -196,7 +198,7 @@ namespace Hunspell
                 case "COMPOUNDRULE": // parse in the defcompound table
                     return TryParseCompoundRuleIntoList(affixFile, parameters);
                 case "MAP": // parse in the related character map table
-                    throw new NotImplementedException();
+                    return TryParseMapEntry(affixFile, parameters);
                 case "BREAK": // parse in the word breakpoints table
                     return TryParseBreak(affixFile, parameters);
                 case "VERSION":
@@ -226,6 +228,53 @@ namespace Hunspell
                 default:
                     return false;
             }
+        }
+
+        private bool TryParseMapEntry(AffixFile affixFile, string parameterText)
+        {
+            if (string.IsNullOrEmpty(parameterText))
+            {
+                return false;
+            }
+
+            if (!hasInitializedMap || affixFile.MapTable == null)
+            {
+                int expectedSize;
+                if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
+                {
+                    affixFile.MapTable = new List<MapEntry>(expectedSize);
+                    return true;
+                }
+                else if (affixFile.MapTable == null)
+                {
+                    affixFile.MapTable = new List<MapEntry>();
+                }
+
+                hasInitializedMap = true;
+            }
+
+            var entry = new MapEntry();
+
+            for(int k = 0; k < parameterText.Length; ++k)
+            {
+                int chb = k;
+                int che = k + 1;
+                if(parameterText[k] == '(')
+                {
+                    var parpos = parameterText.IndexOf(')', k);
+                    if(parpos >= 0)
+                    {
+                        chb = k + 1;
+                        che = parpos;
+                        k = parpos;
+                    }
+                }
+
+                entry.Add(parameterText.Substring(chb, che - chb));
+            }
+
+            affixFile.MapTable.Add(entry);
+            return true;
         }
 
         private bool TryParseIconv(AffixFile affixFile, string parameterText)

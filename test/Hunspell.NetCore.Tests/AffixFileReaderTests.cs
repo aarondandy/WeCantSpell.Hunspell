@@ -1053,8 +1053,46 @@ namespace Hunspell.NetCore.Tests
                 actual.Prefixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct);
                 actual.Prefixes[0].Entries.Should().HaveCount(1);
                 actual.Prefixes[0].Entries[0].Strip.Should().BeEmpty();
-                actual.Prefixes[0].Entries[0].Append.Should().Be("re");
+                actual.Prefixes[0].Entries[0].Append.Should().Be("r");
                 actual.Prefixes[0].Entries[0].ConditionText.Should().Be(".");
+            }
+
+            [Fact]
+            public async Task can_read_ignoreutf_aff()
+            {
+                var filePath = @"files/ignoreutf.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.IgnoredChars.ShouldBeEquivalentTo("ًٌٍَُِّْ".ToCharArray());
+                actual.WordChars.ShouldBeEquivalentTo("ًٌٍَُِّْ".ToCharArray());
+            }
+
+            [Fact]
+            public async Task can_read_maputf_aff()
+            {
+                var filePath = @"files/maputf.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.MaxNgramSuggestions.Should().Be(0);
+                actual.MapTable.Should().HaveCount(3);
+                actual.MapTable[0].ShouldBeEquivalentTo(new[] { "u", "ú", "ü" });
+                actual.MapTable[1].ShouldBeEquivalentTo(new[] { "ö", "ó", "o" });
+                actual.MapTable[2].ShouldBeEquivalentTo(new[] { "ß", "ss" });
+            }
+
+            [Fact]
+            public async Task can_read_needaffix_aff()
+            {
+                var filePath = @"files/needaffix.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.NeedAffix.Should().Be('X');
+                actual.CompoundFlag.Should().Be('Y');
+                actual.Suffixes.Should().HaveCount(1);
+                actual.Suffixes[0].Entries.Should().HaveCount(1);
             }
 
             [Fact]
