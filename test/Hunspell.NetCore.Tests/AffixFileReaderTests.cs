@@ -985,6 +985,79 @@ namespace Hunspell.NetCore.Tests
             }
 
             [Fact]
+            public async Task can_read_germancompounding_aff()
+            {
+                var filePath = @"files/germancompounding.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.CheckSharps.Should().BeTrue();
+                actual.CompoundBegin.Should().Be('U');
+                actual.CompoundMiddle.Should().Be('V');
+                actual.CompoundEnd.Should().Be('W');
+                actual.CompoundPermitFlag.Should().Be('P');
+                actual.OnlyInCompound.Should().Be('X');
+                actual.CompoundMin.Should().Be(1);
+                actual.WordChars.ShouldBeEquivalentTo(new[] { '-' });
+
+                actual.Suffixes.Should().HaveCount(3);
+                actual.Suffixes[0].AFlag.Should().Be('A');
+                actual.Suffixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Suffixes[0].Entries.Should().HaveCount(3);
+                actual.Suffixes[0].Entries[0].Strip.Should().BeEmpty();
+                actual.Suffixes[0].Entries[0].Append.Should().Be("s");
+                actual.Suffixes[0].Entries[0].ContClass.ShouldBeEquivalentTo(new[] { 'U', 'P', 'X' });
+                actual.Suffixes[0].Entries[0].ConditionText.Should().Be(".");
+
+                actual.ForbiddenWord.Should().Be('Z');
+
+                actual.Prefixes.Should().HaveCount(2);
+                actual.Prefixes[0].AFlag.Should().Be('-');
+                actual.Prefixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Prefixes[0].Entries.Should().HaveCount(1);
+                actual.Prefixes[0].Entries[0].Strip.Should().BeEmpty();
+                actual.Prefixes[0].Entries[0].Append.Should().Be("-");
+                actual.Prefixes[0].Entries[0].ContClass.ShouldBeEquivalentTo(new[] { 'P' });
+                actual.Prefixes[0].Entries[0].ConditionText.Should().Be(".");
+                actual.Prefixes[1].Entries.Should().HaveCount(29);
+            }
+
+            [Fact]
+            public async Task can_read_iconv_aff()
+            {
+                var filePath = @"files/iconv.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.InputConversions.Should().HaveCount(4);
+                actual.InputConversions.ContainsKey("ş");
+                actual.InputConversions["ş"].OutStrings[0].Should().Be("ș");
+                actual.InputConversions.ContainsKey("ţ");
+                actual.InputConversions["ţ"].OutStrings[0].Should().Be("ț");
+                actual.InputConversions.ContainsKey("Ş");
+                actual.InputConversions["Ş"].OutStrings[0].Should().Be("Ș");
+                actual.InputConversions.ContainsKey("Ţ");
+                actual.InputConversions["Ţ"].OutStrings[0].Should().Be("Ț");
+            }
+
+            [Fact]
+            public async Task can_read_ignore_aff()
+            {
+                var filePath = @"files/ignore.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.IgnoredChars.ShouldBeEquivalentTo("aeiou".ToCharArray());
+                actual.Prefixes.Should().HaveCount(1);
+                actual.Prefixes[0].AFlag.Should().Be('A');
+                actual.Prefixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Prefixes[0].Entries.Should().HaveCount(1);
+                actual.Prefixes[0].Entries[0].Strip.Should().BeEmpty();
+                actual.Prefixes[0].Entries[0].Append.Should().Be("re");
+                actual.Prefixes[0].Entries[0].ConditionText.Should().Be(".");
+            }
+
+            [Fact]
             public async Task can_read_sug_aff()
             {
                 var filePath = @"files/sug.aff";

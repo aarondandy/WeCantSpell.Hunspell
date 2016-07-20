@@ -46,6 +46,8 @@ namespace Hunspell
 
         private bool hasInitializedBreak = false;
 
+        private bool hasInitializedIconv = false;
+
         private bool ownsReaderLifetime = true;
 
         private bool attemptDisposeWhenDone = true;
@@ -184,7 +186,7 @@ namespace Hunspell
                 case "REP": // parse in the typical fault correcting table
                     return TryParseReplacementEntryLineIntoReplacements(affixFile, parameters);
                 case "ICONV": // parse in the input conversion table
-                    throw new NotImplementedException();
+                    return TryParseIconv(affixFile, parameters);
                 case "OCONV": // parse in the input conversion table
                     throw new NotImplementedException();
                 case "PHONE": // parse in the input conversion table
@@ -226,6 +228,36 @@ namespace Hunspell
             }
         }
 
+        private bool TryParseIconv(AffixFile affixFile, string parameterText)
+        {
+            if (string.IsNullOrEmpty(parameterText))
+            {
+                return false;
+            }
+
+            if (!hasInitializedIconv || affixFile.InputConversions == null)
+            {
+                affixFile.InputConversions = new SortedDictionary<string, ReplacementEntry>();
+                hasInitializedIconv = true;
+
+                int expectedSize;
+                if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
+                {
+                    return true;
+                }
+            }
+
+            var parts = parameterText.SplitOnTabOrSpace();
+            if (parts.Length < 2)
+            {
+                return false;
+            }
+
+            affixFile.InputConversions.Add(parts[0], parts[1]);
+
+            return true;
+        }
+
         private bool TryParseBreak(AffixFile affixFile, string parameterText)
         {
             if (string.IsNullOrEmpty(parameterText))
@@ -233,15 +265,15 @@ namespace Hunspell
                 return false;
             }
 
-            if (!hasInitializedBreak || affixFile.BreakTable == null) 
+            if (!hasInitializedBreak || affixFile.BreakTable == null)
             {
                 int expectedSize;
-                if(IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
+                if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
                 {
                     affixFile.BreakTable = new List<string>(expectedSize);
                     return true;
                 }
-                else if(affixFile.BreakTable == null)
+                else if (affixFile.BreakTable == null)
                 {
                     affixFile.BreakTable = new List<string>();
                 }

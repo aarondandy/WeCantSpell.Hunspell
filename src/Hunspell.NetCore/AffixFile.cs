@@ -322,6 +322,8 @@ namespace Hunspell
 
         public List<string> BreakTable { get; set; }
 
+        public SortedDictionary<string, ReplacementEntry> InputConversions { get; set; }
+
         public static Task<AffixFile> ReadAsync(AffixUtfStreamLineReader reader)
         {
             if (reader == null)
