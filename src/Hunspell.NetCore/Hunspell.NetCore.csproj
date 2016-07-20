@@ -70,6 +70,7 @@
     <Compile Include="hunzip.cs" />
     <Compile Include="IAffixFileLineReader.cs" />
     <Compile Include="langnum.cs" />
+    <Compile Include="MapEntry.cs" />
     <Compile Include="PatternEntry.cs" />
     <Compile Include="phonet.cs" />
     <Compile Include="PrefixEntry.cs" />
