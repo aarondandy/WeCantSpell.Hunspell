@@ -52,6 +52,8 @@ namespace Hunspell
 
         private bool hasInitializedMap = false;
 
+        private bool hasInitializedPhone = false;
+
         private bool ownsReaderLifetime = true;
 
         private bool attemptDisposeWhenDone = true;
@@ -192,8 +194,8 @@ namespace Hunspell
                     return TryParseIconv(affixFile, parameters);
                 case "OCONV": // parse in the input conversion table
                     return TryParseOconv(affixFile, parameters);
-                case "PHONE": // parse in the input conversion table
-                    throw new NotImplementedException();
+                case "PHONE": // parse in the phonetic conversion table
+                    return TryParsePhone(affixFile, parameters);
                 case "CHECKCOMPOUNDPATTERN": // parse in the checkcompoundpattern table
                     return TryParseCheckCompoundPatternIntoCompoundPatterns(affixFile, parameters);
                 case "COMPOUNDRULE": // parse in the defcompound table
@@ -231,6 +233,53 @@ namespace Hunspell
             }
         }
 
+        private bool TryParsePhone(AffixFile affixFile, string parameterText)
+        {
+            if (string.IsNullOrEmpty(parameterText))
+            {
+                return false;
+            }
+
+            if (!hasInitializedPhone || affixFile.Phone == null)
+            {
+                int expectedSize;
+                if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
+                {
+                    affixFile.Phone = new List<PhoneticEntry>(expectedSize);
+                    return true;
+                }
+                else if (affixFile.Phone == null)
+                {
+                    affixFile.Phone = new List<PhoneticEntry>();
+                }
+
+                hasInitializedPhone = true;
+            }
+
+            var parts = parameterText.SplitOnTabOrSpace();
+
+            string item1, item2;
+            if (parts.Length >= 2)
+            {
+                item1 = parts[0];
+                item2 = parts[1];
+            }
+            else if (parts.Length == 1)
+            {
+                item1 = parts[0];
+                item2 = string.Empty;
+            }
+            else
+            {
+                return false;
+            }
+
+            item2 = item2.Replace("_", string.Empty);
+            var entry = new PhoneticEntry(item1, item2);
+            affixFile.Phone.Add(entry);
+            return true;
+        }
+
         private bool TryParseMapEntry(AffixFile affixFile, string parameterText)
         {
             if (string.IsNullOrEmpty(parameterText))
@@ -256,14 +305,14 @@ namespace Hunspell
 
             var entry = new MapEntry();
 
-            for(int k = 0; k < parameterText.Length; ++k)
+            for (int k = 0; k < parameterText.Length; ++k)
             {
                 int chb = k;
                 int che = k + 1;
-                if(parameterText[k] == '(')
+                if (parameterText[k] == '(')
                 {
                     var parpos = parameterText.IndexOf(')', k);
-                    if(parpos >= 0)
+                    if (parpos >= 0)
                     {
                         chb = k + 1;
                         che = parpos;

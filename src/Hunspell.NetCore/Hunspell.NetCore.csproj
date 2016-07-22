@@ -73,6 +73,7 @@
     <Compile Include="MapEntry.cs" />
     <Compile Include="PatternEntry.cs" />
     <Compile Include="phonet.cs" />
+    <Compile Include="PhoneticEntry.cs" />
     <Compile Include="PrefixEntry.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReplacementEntry.cs" />

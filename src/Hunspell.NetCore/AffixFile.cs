@@ -328,6 +328,8 @@ namespace Hunspell
 
         public List<MapEntry> MapTable { get; set; }
 
+        public List<PhoneticEntry> Phone { get; set; }
+
         public static Task<AffixFile> ReadAsync(AffixUtfStreamLineReader reader)
         {
             if (reader == null)

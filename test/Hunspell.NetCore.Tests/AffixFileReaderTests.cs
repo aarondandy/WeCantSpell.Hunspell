@@ -1191,6 +1191,20 @@ namespace Hunspell.NetCore.Tests
             }
 
             [Fact]
+            public async Task can_read_phone_add()
+            {
+                var filePath = @"files/phone.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.Phone.Should().HaveCount(105);
+                actual.Phone.First().Item1.Should().Be("AH(AEIOUY)-^");
+                actual.Phone.First().Item2.Should().Be("*H");
+                actual.Phone.Last().Item1.Should().Be("Z");
+                actual.Phone.Last().Item2.Should().Be("S");
+            }
+
+            [Fact]
             public async Task can_read_sug_aff()
             {
                 var filePath = @"files/sug.aff";
