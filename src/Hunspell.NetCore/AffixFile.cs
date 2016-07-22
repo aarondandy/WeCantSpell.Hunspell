@@ -324,6 +324,8 @@ namespace Hunspell
 
         public SortedDictionary<string, ReplacementEntry> InputConversions { get; set; }
 
+        public SortedDictionary<string, ReplacementEntry> OutputConversions { get; set; }
+
         public List<MapEntry> MapTable { get; set; }
 
         public static Task<AffixFile> ReadAsync(AffixUtfStreamLineReader reader)

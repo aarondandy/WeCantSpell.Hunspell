@@ -6,7 +6,7 @@ namespace Hunspell
     public class AffixEntryGroup<TEntry>
         where TEntry : AffixEntry
     {
-        public AffixEntryGroup(char aFlag, AffixEntryOptions options, int expectedEntryCount)
+        public AffixEntryGroup(int aFlag, AffixEntryOptions options, int expectedEntryCount)
         {
             AFlag = aFlag;
             Options = options;
@@ -21,7 +21,7 @@ namespace Hunspell
         /// <summary>
         /// ID used to represent the affix group.
         /// </summary>
-        public char AFlag { get; }
+        public int AFlag { get; }
 
         /// <summary>
         /// Options for this affix group.

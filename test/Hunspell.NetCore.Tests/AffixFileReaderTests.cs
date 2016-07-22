@@ -1096,6 +1096,101 @@ namespace Hunspell.NetCore.Tests
             }
 
             [Fact]
+            public async Task can_read_nepali_aff()
+            {
+                var filePath = @"files/nepali.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.IgnoredChars.Should().BeEquivalentTo(new[] { '￰' });
+                actual.WordChars.Should().BeEquivalentTo("ःािीॉॊोौॎॏॕॖॗ‌‍".ToCharArray());
+                actual.InputConversions.Should().HaveCount(3);
+                var key1 = "‌"; // NOTE: this is not the empty string
+                var value1_1 = "￰";
+                var value1_2 = "‌"; // NOTE: this is not the empty string
+                key1.Should().NotBeEmpty();
+                value1_2.Should().NotBeEmpty();
+                actual.InputConversions[key1].OutStrings[0].Should().Be("￰");
+                actual.InputConversions[key1].OutStrings[2].Should().Be(value1_1);
+                actual.InputConversions[key1].OutStrings[2].Should().Be(value1_2);
+                actual.InputConversions["र्‌य"].OutStrings[0].Should().Be("र्‌य");
+                actual.InputConversions["र्‌व"].OutStrings[0].Should().Be("र्‌व");
+            }
+
+            [Fact]
+            public async Task can_read_oconv_aff()
+            {
+                var filePath = @"files/oconv.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.OutputConversions.Should().HaveCount(7);
+                actual.OutputConversions["a"].OutStrings[0].Should().Be("A");
+                actual.OutputConversions["á"].OutStrings[0].Should().Be("Á");
+                actual.OutputConversions["b"].OutStrings[0].Should().Be("B");
+                actual.OutputConversions["c"].OutStrings[0].Should().Be("C");
+                actual.OutputConversions["d"].OutStrings[0].Should().Be("D");
+                actual.OutputConversions["e"].OutStrings[0].Should().Be("E");
+                actual.OutputConversions["é"].OutStrings[0].Should().Be("É");
+            }
+
+            [Fact]
+            public async Task can_read_onlyincompound2_aff()
+            {
+                var filePath = @"files/onlyincompound2.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.OnlyInCompound.Should().Be('O');
+                actual.CompoundFlag.Should().Be('A');
+                actual.CompoundPermitFlag.Should().Be('P');
+                actual.Suffixes.Should().HaveCount(1);
+                actual.Suffixes[0].AFlag.Should().Be('B');
+                actual.Suffixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Suffixes[0].Entries.Should().HaveCount(1);
+                actual.Suffixes[0].Entries[0].Strip.Should().BeEmpty();
+                actual.Suffixes[0].Entries[0].Append.Should().Be("s");
+                actual.Suffixes[0].Entries[0].ContClass.ShouldBeEquivalentTo(new[] { 'O', 'P' });
+                actual.Suffixes[0].Entries[0].ConditionText.Should().Be(".");
+                actual.CompoundPatterns.Should().HaveCount(1);
+                actual.CompoundPatterns[0].Pattern.Should().Be("0");
+                actual.CompoundPatterns[0].Condition.Should().Be('B');
+                actual.CompoundPatterns[0].Pattern2.Should().BeEmpty();
+                actual.CompoundPatterns[0].Condition2.Should().Be('A');
+            }
+
+            [Fact]
+            public async Task can_read_opentaal_cpdpat_aff()
+            {
+                var filePath = @"files/opentaal_cpdpat.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.CompoundBegin.Should().Be('C' << 8 | 'a');
+                actual.CompoundMiddle.Should().Be('C' << 8 | 'b');
+                actual.CompoundEnd.Should().Be('C' << 8 | 'c');
+                actual.CompoundPermitFlag.Should().Be('C' << 8 | 'p');
+                actual.OnlyInCompound.Should().Be('C' << 8 | 'x');
+                actual.CompoundPatterns.Should().HaveCount(1);
+                actual.CompoundPatterns[0].Pattern.Should().BeEmpty();
+                actual.CompoundPatterns[0].Condition.Should().Be('C' << 8 | 'h');
+                actual.CompoundPatterns[0].Pattern2.Should().BeEmpty();
+                actual.CompoundPatterns[0].Condition2.Should().Be('X' << 8 | 's');
+                actual.Suffixes.Should().HaveCount(1);
+                actual.Suffixes[0].AFlag.Should().Be('C' << 8 | 'h');
+                actual.Suffixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Suffixes[0].Entries.Should().HaveCount(2);
+                actual.Suffixes[0].Entries[0].Strip.Should().BeEmpty();
+                actual.Suffixes[0].Entries[0].Append.Should().Be("s");
+                actual.Suffixes[0].Entries[0].ContClass.ShouldBeEquivalentTo(new[] { 'C' << 8 | 'a', 'C' << 8 | 'b', 'C' << 8 | 'x', 'C' << 8 | 'p' });
+                actual.Suffixes[0].Entries[0].ConditionText.Should().Be(".");
+                actual.Suffixes[0].Entries[1].Strip.Should().BeEmpty();
+                actual.Suffixes[0].Entries[1].Append.Should().Be("s-");
+                actual.Suffixes[0].Entries[1].ContClass.ShouldBeEquivalentTo(new[] { 'C' << 8 | 'a', 'C' << 8 | 'b', 'C' << 8 | 'c', 'C' << 8 | 'p' });
+                actual.Suffixes[0].Entries[1].ConditionText.Should().Be(".");
+            }
+
+            [Fact]
             public async Task can_read_sug_aff()
             {
                 var filePath = @"files/sug.aff";

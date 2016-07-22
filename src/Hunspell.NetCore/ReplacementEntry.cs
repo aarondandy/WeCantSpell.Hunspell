@@ -1,5 +1,4 @@
 ﻿using Hunspell.Utilities;
-using System;
 using System.Collections.Generic;
 
 namespace Hunspell
@@ -72,7 +71,7 @@ namespace Hunspell
             if (pattern1.EndsWith('_'))
             {
                 type += 2;
-                pattern1.Substring(0, pattern1.Length - 1);
+                pattern1 = pattern1.Substring(0, pattern1.Length - 1);
             }
 
             pattern1 = pattern1.Replace('_', ' ');

@@ -48,6 +48,8 @@ namespace Hunspell
 
         private bool hasInitializedIconv = false;
 
+        private bool hasInitializedOconv = false;
+
         private bool hasInitializedMap = false;
 
         private bool ownsReaderLifetime = true;
@@ -136,7 +138,6 @@ namespace Hunspell
                 case "LANG": // parse in the language for language specific codes
                     affixFile.Language = parameters;
                     throw new NotImplementedException("May need to extract langnum");
-                    return true;
                 case "SYLLABLENUM": // parse in the flag used by compound_check() method
                     affixFile.CompoundSyllableNum = parameters;
                     return true;
@@ -190,7 +191,7 @@ namespace Hunspell
                 case "ICONV": // parse in the input conversion table
                     return TryParseIconv(affixFile, parameters);
                 case "OCONV": // parse in the input conversion table
-                    throw new NotImplementedException();
+                    return TryParseOconv(affixFile, parameters);
                 case "PHONE": // parse in the input conversion table
                     throw new NotImplementedException();
                 case "CHECKCOMPOUNDPATTERN": // parse in the checkcompoundpattern table
@@ -303,6 +304,36 @@ namespace Hunspell
             }
 
             affixFile.InputConversions.Add(parts[0], parts[1]);
+
+            return true;
+        }
+
+        private bool TryParseOconv(AffixFile affixFile, string parameterText)
+        {
+            if (string.IsNullOrEmpty(parameterText))
+            {
+                return false;
+            }
+
+            if (!hasInitializedOconv || affixFile.OutputConversions == null)
+            {
+                affixFile.OutputConversions = new SortedDictionary<string, ReplacementEntry>();
+                hasInitializedOconv = true;
+
+                int expectedSize;
+                if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
+                {
+                    return true;
+                }
+            }
+
+            var parts = parameterText.SplitOnTabOrSpace();
+            if (parts.Length < 2)
+            {
+                return false;
+            }
+
+            affixFile.OutputConversions.Add(parts[0], parts[1]);
 
             return true;
         }
