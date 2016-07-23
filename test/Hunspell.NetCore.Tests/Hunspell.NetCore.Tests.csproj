@@ -73,6 +73,7 @@
   <ItemGroup>
     <Compile Include="AffixFileReaderTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utilities\StringLineReader.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Hunspell.NetCore\Hunspell.NetCore.csproj">

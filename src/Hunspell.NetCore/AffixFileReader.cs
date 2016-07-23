@@ -139,7 +139,8 @@ namespace Hunspell
                     return true;
                 case "LANG": // parse in the language for language specific codes
                     affixFile.Language = parameters;
-                    throw new NotImplementedException("May need to extract langnum");
+                    affixFile.Culture = GetCultureFromLanguage(affixFile.Language);
+                    return true;
                 case "SYLLABLENUM": // parse in the flag used by compound_check() method
                     affixFile.CompoundSyllableNum = parameters;
                     return true;
@@ -230,6 +231,37 @@ namespace Hunspell
                     return TryParseAliasM(affixFile, parameters);
                 default:
                     return false;
+            }
+        }
+
+        private CultureInfo GetCultureFromLanguage(string language)
+        {
+            if (string.IsNullOrEmpty(language))
+            {
+                return CultureInfo.InvariantCulture;
+            }
+
+            language = language.Replace('_', '-');
+
+            try
+            {
+                return new CultureInfo(language, false);
+            }
+            catch (CultureNotFoundException)
+            {
+                var dashIndex = language.IndexOf('-');
+                if (dashIndex > 0)
+                {
+                    return GetCultureFromLanguage(language.Substring(0, dashIndex));
+                }
+                else
+                {
+                    return CultureInfo.InvariantCulture;
+                }
+            }
+            catch (ArgumentException)
+            {
+                return CultureInfo.InvariantCulture;
             }
         }
 

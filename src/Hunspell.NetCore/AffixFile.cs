@@ -106,7 +106,12 @@ namespace Hunspell
         /// <summary>
         /// The language for language specific codes.
         /// </summary>
-        public string Language { get; set; }
+        public string Language { get; set; } = CultureInfo.InvariantCulture.Name;
+
+        /// <summary>
+        /// The culture associated with the language.
+        /// </summary>
+        public CultureInfo Culture { get; set; } = CultureInfo.InvariantCulture;
 
         /// <summary>
         /// The flag used by the controlled compound words.

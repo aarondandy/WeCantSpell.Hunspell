@@ -3,6 +3,7 @@ using FluentAssertions;
 using Xunit;
 using System;
 using System.Threading.Tasks;
+using Hunspell.NetCore.Tests.Utilities;
 
 namespace Hunspell.NetCore.Tests
 {
@@ -1348,6 +1349,33 @@ namespace Hunspell.NetCore.Tests
                 actual.Suffixes[2].Entries[1].ContClass.ShouldBeEquivalentTo(new[] { 'X', 'A', 'B' });
                 actual.Suffixes[2].Entries[1].ConditionText.Should().Be(".");
                 actual.Suffixes[2].Entries[1].MorphCode.Should().Be("<DERIV>");
+            }
+
+            [Theory]
+            [InlineData("")]
+            [InlineData("de-DE")]
+            [InlineData("de")]
+            [InlineData("en-US")]
+            [InlineData("tr_TR")]
+            [InlineData("en-UK")]
+            [InlineData("hu-HU")]
+            [InlineData("it")]
+            [InlineData("ar")]
+            [InlineData("uk")]
+            [InlineData("xx")]
+            public async Task can_read_all_languages(string langCode)
+            {
+                var textFileContents = "# testing the LANG command\nLANG " + langCode;
+
+                AffixFile actual;
+                using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
+                {
+                    actual = await reader.GetOrReadAsync();
+                }
+
+                actual.Language.Should().Be(langCode);
+                actual.Culture.Should().NotBeNull();
+                actual.Culture.Name.Should().Be(langCode.Replace('_', '-'));
             }
 
             private async Task<AffixFile> ReadFileAsync(string filePath)
