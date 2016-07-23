@@ -217,7 +217,7 @@ namespace Hunspell
                 case "FORCEUCASE":
                     return TryParseFlag(parameters, out affixFile.forceUpperCase);
                 case "WARN":
-                    throw new NotImplementedException();
+                    return TryParseFlag(parameters, out affixFile.warn);
                 case "SUBSTANDARD":
                     throw new NotImplementedException();
                 case "PFX":

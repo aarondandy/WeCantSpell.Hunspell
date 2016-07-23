@@ -57,6 +57,8 @@ namespace Hunspell
 
         internal int forceUpperCase;
 
+        internal int warn;
+
         /// <summary>
         /// Indicates agglutinative languages with right-to-left writing system.
         /// </summary>
@@ -296,6 +298,12 @@ namespace Hunspell
         {
             get { return forceUpperCase; }
             set { forceUpperCase = value; }
+        }
+
+        public int Warn
+        {
+            get { return warn; }
+            set { warn = value; }
         }
 
         public string RequestedEncoding { get; set; }

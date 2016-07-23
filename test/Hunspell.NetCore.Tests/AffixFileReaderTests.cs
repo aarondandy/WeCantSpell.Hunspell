@@ -1198,10 +1198,64 @@ namespace Hunspell.NetCore.Tests
                 var actual = await ReadFileAsync(filePath);
 
                 actual.Phone.Should().HaveCount(105);
-                actual.Phone.First().Item1.Should().Be("AH(AEIOUY)-^");
-                actual.Phone.First().Item2.Should().Be("*H");
-                actual.Phone.Last().Item1.Should().Be("Z");
-                actual.Phone.Last().Item2.Should().Be("S");
+                actual.Phone.First().Rule.Should().Be("AH(AEIOUY)-^");
+                actual.Phone.First().Replace.Should().Be("*H");
+                actual.Phone.Last().Rule.Should().Be("Z");
+                actual.Phone.Last().Replace.Should().Be("S");
+            }
+
+            [Fact]
+            public async Task can_read_rep_aff()
+            {
+                var filePath = @"files/rep.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.MaxNgramSuggestions.Should().Be(0);
+                actual.Replacements.Should().HaveCount(8);
+                actual.Replacements.First().Pattern.Should().Be("f");
+                actual.Replacements.First().OutStrings[0].Should().Be("ph");
+                actual.Replacements.Last().Pattern.Should().Be("s");
+                actual.Replacements.Last().OutStrings[0].Should().Be("'s");
+                actual.Suffixes.Should().HaveCount(1);
+                actual.Suffixes.Single().AFlag.Should().Be('A');
+                actual.WordChars.Should().BeEquivalentTo(new[] { '\'' });
+            }
+
+            [Fact]
+            public async Task can_read_reputf_aff()
+            {
+                var filePath = @"files/reputf.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.MaxNgramSuggestions.Should().Be(0);
+                actual.Replacements.Should().HaveCount(1);
+                actual.Replacements[0].Pattern.Should().Be("oo");
+                actual.Replacements[0].OutStrings[0].Should().Be("őő");
+            }
+
+            [Fact]
+            public async Task can_read_simplifiedtriple_aff()
+            {
+                var filePath = @"files/simplifiedtriple.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.CheckCompoundTriple.Should().BeTrue();
+                actual.SimplifiedTriple.Should().BeTrue();
+                actual.CompoundMin.Should().Be(2);
+                actual.CompoundFlag.Should().Be('A');
+            }
+
+            [Fact]
+            public async Task can_read_slash_aff()
+            {
+                var filePath = @"files/slash.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.WordChars.ShouldBeEquivalentTo(@"/:".ToCharArray());
             }
 
             [Fact]
@@ -1219,6 +1273,81 @@ namespace Hunspell.NetCore.Tests
                 actual.KeyString.Should().Be("qwertzuiop|asdfghjkl|yxcvbnm|aq");
                 actual.WordChars.Should().BeEquivalentTo(new[] { '.' });
                 actual.ForbiddenWord.Should().Be('?');
+            }
+
+            [Fact]
+            public async Task can_read_utf8_bom_aff()
+            {
+                var filePath = @"files/utf8_bom.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.RequestedEncoding.Should().Be("UTF-8");
+            }
+
+            [Fact]
+            public async Task can_read_utfcompound_aff()
+            {
+                var filePath = @"files/utfcompound.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.CompoundMin.Should().Be(3);
+                actual.CompoundFlag.Should().Be('A');
+            }
+
+            [Fact]
+            public async Task can_read_warn_add()
+            {
+                var filePath = @"files/warn.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.Warn.Should().Be('W');
+                actual.Suffixes.Should().HaveCount(1);
+                actual.Replacements.Should().HaveCount(1);
+                actual.Replacements[0].Pattern.Should().Be("foo");
+                actual.Replacements[0].OutStrings[0].Should().Be("bar");
+            }
+
+            [Fact]
+            public async Task can_read_zeroaffix_aff()
+            {
+                var filePath = @"files/zeroaffix.aff";
+
+                var actual = await ReadFileAsync(filePath);
+
+                actual.NeedAffix.Should().Be('X');
+                actual.CompoundFlag.Should().Be('Y');
+
+                actual.Suffixes.Should().HaveCount(3);
+
+                actual.Suffixes[0].AFlag.Should().Be('A');
+                actual.Suffixes[0].Entries.Should().HaveCount(1);
+                actual.Suffixes[0].Entries[0].Strip.Should().BeEmpty();
+                actual.Suffixes[0].Entries[0].Append.Should().BeEmpty();
+                actual.Suffixes[0].Entries[0].ConditionText.Should().Be(".");
+                actual.Suffixes[0].Entries[0].MorphCode.Should().Be(">");
+
+                actual.Suffixes[1].AFlag.Should().Be('B');
+                actual.Suffixes[1].Entries.Should().HaveCount(1);
+                actual.Suffixes[1].Entries[0].Strip.Should().BeEmpty();
+                actual.Suffixes[1].Entries[0].Append.Should().BeEmpty();
+                actual.Suffixes[1].Entries[0].ConditionText.Should().Be(".");
+                actual.Suffixes[1].Entries[0].MorphCode.Should().Be("<ZERO>>");
+
+                actual.Suffixes[2].AFlag.Should().Be('C');
+                actual.Suffixes[2].Entries.Should().HaveCount(2);
+                actual.Suffixes[2].Entries[0].Strip.Should().BeEmpty();
+                actual.Suffixes[2].Entries[0].Append.Should().BeEmpty();
+                actual.Suffixes[2].Entries[0].ContClass.ShouldBeEquivalentTo(new[] { 'X', 'A', 'B' });
+                actual.Suffixes[2].Entries[0].ConditionText.Should().Be(".");
+                actual.Suffixes[2].Entries[0].MorphCode.Should().Be("<ZERODERIV>");
+                actual.Suffixes[2].Entries[1].Strip.Should().BeEmpty();
+                actual.Suffixes[2].Entries[1].Append.Should().Be("baz");
+                actual.Suffixes[2].Entries[1].ContClass.ShouldBeEquivalentTo(new[] { 'X', 'A', 'B' });
+                actual.Suffixes[2].Entries[1].ConditionText.Should().Be(".");
+                actual.Suffixes[2].Entries[1].MorphCode.Should().Be("<DERIV>");
             }
 
             private async Task<AffixFile> ReadFileAsync(string filePath)

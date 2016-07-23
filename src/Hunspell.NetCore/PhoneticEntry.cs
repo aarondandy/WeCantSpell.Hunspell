@@ -1,19 +1,15 @@
-﻿using System;
-
-namespace Hunspell
+﻿namespace Hunspell
 {
     public class PhoneticEntry
     {
-        public PhoneticEntry(string item1, string item2)
+        public PhoneticEntry(string rule, string replace)
         {
-            Item1 = item1;
-            Item2 = item2;
+            Rule = rule;
+            Replace = replace;
         }
 
-        [Obsolete("Name must change")]
-        public string Item1 { get; }
+        public string Rule { get; }
 
-        [Obsolete("Name must change")]
-        public string Item2 { get; }
+        public string Replace { get; }
     }
 }
