@@ -28,6 +28,16 @@ namespace Hunspell
             @"^[\t ]*([^\t ]+)[\t ]+(?:([^\t ]+)[\t ]+([^\t ]+)|([^\t ]+)[\t ]+([^\t ]+)[\t ]+([^\t ]+)(?:[\t ]+(.+))?)[\t ]*(?:[#].+)?$",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
+        /// <summary>
+        /// The flag type.
+        /// </summary>
+        /// <remarks>
+        /// Default type is the extended ASCII (8-bit) character. 
+        /// `UTF-8' parameter sets UTF-8 encoded Unicode character flags.
+        /// The `long' value sets the double extended ASCII character flag type,
+        /// the `num' sets the decimal number flag type. Decimal flags numbered from 1 to
+        /// 65000, and in flag fields are separated by comma.
+        /// </remarks>
         public FlagMode FlagMode { get; private set; } = FlagMode.Char;
 
         public IAffixFileLineReader Reader { get; }
@@ -112,14 +122,7 @@ namespace Hunspell
 
         private bool TryHandleTwoPartCommand(AffixFile affixFile, string name, string parameters)
         {
-            if (name == null || parameters == null)
-            {
-                return false;
-            }
-
-            name = name.Trim();
-
-            if (string.IsNullOrEmpty(name))
+            if (string.IsNullOrEmpty(name) || parameters == null)
             {
                 return false;
             }
@@ -173,7 +176,7 @@ namespace Hunspell
                 case "COMPOUNDFORBIDFLAG": // parse in the flag used by compound_check() method
                     return TryParseFlag(parameters, out affixFile.compoundForbidFlag);
                 case "COMPOUNDSYLLABLE": // parse in the max. words and syllables in compounds
-                    throw new NotImplementedException();
+                    return TryParseCompoundSyllable(parameters, affixFile);
                 case "NOSUGGEST":
                     return TryParseFlag(parameters, out affixFile.noSuggest);
                 case "NONGRAMSUGGEST":
@@ -206,7 +209,8 @@ namespace Hunspell
                 case "BREAK": // parse in the word breakpoints table
                     return TryParseBreak(affixFile, parameters);
                 case "VERSION":
-                    throw new NotImplementedException();
+                    affixFile.Version = parameters;
+                    return true;
                 case "MAXNGRAMSUGS":
                     return IntExtensions.TryParseInvariant(parameters, out affixFile.maxNgramSuggestions);
                 case "MAXDIFF":
@@ -220,7 +224,7 @@ namespace Hunspell
                 case "WARN":
                     return TryParseFlag(parameters, out affixFile.warn);
                 case "SUBSTANDARD":
-                    throw new NotImplementedException();
+                    return TryParseFlag(parameters, out affixFile.subStandard);
                 case "PFX":
                     return TryParseAffixIntoList(affixFile, parameters, affixFile.Prefixes);
                 case "SFX":
@@ -234,6 +238,35 @@ namespace Hunspell
             }
         }
 
+        private bool TryParseCompoundSyllable(string parameters, AffixFile affixFile)
+        {
+            if (string.IsNullOrEmpty(parameters))
+            {
+                return false;
+            }
+
+            var parts = parameters.SplitOnTabOrSpace();
+
+            if (parts.Length > 0)
+            {
+                int maxValue;
+                if (IntExtensions.TryParseInvariant(parts[0], out maxValue))
+                {
+                    affixFile.CompoundMaxSyllable = maxValue;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            var compoundVowels = (parts.Length > 1 ? parts[1] : "AEIOUaeiou").ToCharArray();
+            Array.Sort(compoundVowels);
+            affixFile.CompoundVowels = compoundVowels;
+
+            return true;
+        }
+
         private CultureInfo GetCultureFromLanguage(string language)
         {
             if (string.IsNullOrEmpty(language))
@@ -245,7 +278,7 @@ namespace Hunspell
 
             try
             {
-                return new CultureInfo(language, false);
+                return new CultureInfo(language);
             }
             catch (CultureNotFoundException)
             {
