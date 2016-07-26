@@ -168,7 +168,17 @@ namespace Hunspell
                 case "COMPOUNDWORDMAX": // parse in the data used by compound_check() method
                     return IntExtensions.TryParseInvariant(parameters, out affixFile.compoundWordMax);
                 case "COMPOUNDMIN": // parse in the minimal length for words in compounds
-                    return IntExtensions.TryParseInvariant(parameters, out affixFile.compoundMin);
+                    if (!IntExtensions.TryParseInvariant(parameters, out affixFile.compoundMin))
+                    {
+                        return false;
+                    }
+
+                    if (affixFile.compoundMin < 1)
+                    {
+                        affixFile.compoundMin = 1;
+                    }
+
+                    return true;
                 case "COMPOUNDROOT": // parse in the flag sign compounds in dictionary
                     return TryParseFlag(parameters, out affixFile.compoundRoot);
                 case "COMPOUNDPERMITFLAG": // parse in the flag used by compound_check() method

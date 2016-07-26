@@ -3,6 +3,10 @@ using System.Collections.Generic;
 
 namespace Hunspell
 {
+    /// <summary>
+    /// Contains a set of <see cref="AffixEntry"/> instances based on the same <see cref="AFlag"/>.
+    /// </summary>
+    /// <typeparam name="TEntry">The specific entry type.</typeparam>
     public class AffixEntryGroup<TEntry>
         where TEntry : AffixEntry
     {
