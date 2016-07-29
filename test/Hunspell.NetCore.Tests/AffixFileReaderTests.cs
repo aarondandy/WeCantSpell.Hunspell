@@ -1392,7 +1392,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "LANG " + langCode;
 
-                AffixFile actual;
+                AffixConfig actual;
                 using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
                 {
                     actual = await reader.GetOrReadAsync();
@@ -1410,7 +1410,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "SYLLABLENUM " + parameters;
 
-                AffixFile actual;
+                AffixConfig actual;
                 using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
                 {
                     actual = await reader.GetOrReadAsync();
@@ -1427,7 +1427,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "COMPOUNDWORDMAX " + parameters;
 
-                AffixFile actual;
+                AffixConfig actual;
                 using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
                 {
                     actual = await reader.GetOrReadAsync();
@@ -1450,7 +1450,7 @@ namespace Hunspell.NetCore.Tests
                 }
                 textFileContents += "COMPOUNDROOT " + parameters;
 
-                AffixFile actual;
+                AffixConfig actual;
                 using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
                 {
                     actual = await reader.GetOrReadAsync();
@@ -1468,7 +1468,7 @@ namespace Hunspell.NetCore.Tests
                 var expectedLetters = expectedLettersText.ToCharArray();
                 Array.Sort(expectedLetters);
 
-                AffixFile actual;
+                AffixConfig actual;
                 using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
                 {
                     actual = await reader.GetOrReadAsync();
@@ -1485,7 +1485,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "NOSUGGEST " + parameters;
 
-                AffixFile actual;
+                AffixConfig actual;
                 using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
                 {
                     actual = await reader.GetOrReadAsync();
@@ -1501,7 +1501,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "NONGRAMSUGGEST " + parameters;
 
-                AffixFile actual;
+                AffixConfig actual;
                 using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
                 {
                     actual = await reader.GetOrReadAsync();
@@ -1517,7 +1517,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "LEMMA_PRESENT " + parameters;
 
-                AffixFile actual;
+                AffixConfig actual;
                 using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
                 {
                     actual = await reader.GetOrReadAsync();
@@ -1533,7 +1533,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "VERSION " + parameters;
 
-                AffixFile actual;
+                AffixConfig actual;
                 using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
                 {
                     actual = await reader.GetOrReadAsync();
@@ -1550,7 +1550,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "MAXDIFF " + parameters;
 
-                AffixFile actual;
+                AffixConfig actual;
                 using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
                 {
                     actual = await reader.GetOrReadAsync();
@@ -1567,7 +1567,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "MAXCPDSUGS " + parameters;
 
-                AffixFile actual;
+                AffixConfig actual;
                 using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
                 {
                     actual = await reader.GetOrReadAsync();
@@ -1583,7 +1583,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "SUBSTANDARD " + parameters;
 
-                AffixFile actual;
+                AffixConfig actual;
                 using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
                 {
                     actual = await reader.GetOrReadAsync();
@@ -1597,7 +1597,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "COMPOUNDMORESUFFIXES";
 
-                AffixFile actual;
+                AffixConfig actual;
                 using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
                 {
                     actual = await reader.GetOrReadAsync();
@@ -1611,7 +1611,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "CHECKNUM";
 
-                AffixFile actual;
+                AffixConfig actual;
                 using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
                 {
                     actual = await reader.GetOrReadAsync();
@@ -1625,7 +1625,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "ONLYMAXDIFF";
 
-                AffixFile actual;
+                AffixConfig actual;
                 using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
                 {
                     actual = await reader.GetOrReadAsync();
@@ -1639,7 +1639,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "SUGSWITHDOTS";
 
-                AffixFile actual;
+                AffixConfig actual;
                 using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
                 {
                     actual = await reader.GetOrReadAsync();
@@ -1653,7 +1653,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "FORBIDWARN";
 
-                AffixFile actual;
+                AffixConfig actual;
                 using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
                 {
                     actual = await reader.GetOrReadAsync();
@@ -1662,7 +1662,7 @@ namespace Hunspell.NetCore.Tests
                 actual.ForbidWarn.Should().BeTrue();
             }
 
-            private async Task<AffixFile> ReadFileAsync(string filePath)
+            private async Task<AffixConfig> ReadFileAsync(string filePath)
             {
                 using (var reader = new AffixFileReader(new AffixUtfStreamLineReader(filePath)))
                 {

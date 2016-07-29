@@ -33,17 +33,17 @@ namespace Hunspell
         /// The number of conditions that must be met.
         /// </summary>
         [Obsolete("This should probably be moved to a different data structure.")]
-        public int ConditionCount { get; set; }
+        public int ConditionCount { get; }
 
         /// <summary>
         /// Optional morphological fields separated by spaces or tabulators.
         /// </summary>
-        public string MorphCode { get; set; }
+        public string MorphCode { get; }
 
         /// <summary>
         /// Encodes the conditions to be met.
         /// </summary>
-        public string ConditionText { get; set; }
+        public string ConditionText { get; }
 
         /// <summary>
         /// The affix string to add.
@@ -51,7 +51,7 @@ namespace Hunspell
         /// <remarks>
         /// Affix (optionally with flags of continuation classes, separated by a slash).
         /// </remarks>
-        public string Append { get; set; }
+        public string Append { get; }
 
         /// <summary>
         /// String to strip before adding affix.
@@ -60,10 +60,10 @@ namespace Hunspell
         /// Stripping characters from beginning (at prefix rules) or
         /// end(at suffix rules) of the word.
         /// </remarks>
-        public string Strip { get; set; }
+        public string Strip { get; }
+
+        public ImmutableArray<int> ContClass { get; }
 
         public abstract string Key { get; }
-
-        public ImmutableList<int> ContClass { get; set; }
     }
 }

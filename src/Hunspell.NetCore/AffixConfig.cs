@@ -1,64 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
-using System.Threading.Tasks;
 
 namespace Hunspell
 {
-    public class AffixFile
+    public partial class AffixConfig
     {
-        public AffixFile()
+        private AffixConfig()
         {
-            Prefixes = new List<AffixEntryGroup<PrefixEntry>>();
-            Suffixes = new List<AffixEntryGroup<SuffixEntry>>();
+            Prefixes = new ImmutableArray<AffixEntryGroup<PrefixEntry>>();
+            Suffixes = new ImmutableArray<AffixEntryGroup<SuffixEntry>>();
         }
 
-        internal int compoundWordMax;
+        /// <summary>
+        /// The flag type.
+        /// </summary>
+        /// <remarks>
+        /// Default type is the extended ASCII (8-bit) character. 
+        /// `UTF-8' parameter sets UTF-8 encoded Unicode character flags.
+        /// The `long' value sets the double extended ASCII character flag type,
+        /// the `num' sets the decimal number flag type. Decimal flags numbered from 1 to
+        /// 65000, and in flag fields are separated by comma.
+        /// </remarks>
+        public FlagMode FlagMode { get; private set; }
 
-        internal int compoundMin;
-
-        internal int compoundFlag;
-
-        internal int compoundBegin;
-
-        internal int compoundMiddle;
-
-        internal int compoundEnd;
-
-        internal int compoundRoot;
-
-        internal int compoundPermitFlag;
-
-        internal int compoundForbidFlag;
-
-        internal int noSuggest;
-
-        internal int noNgramSuggest;
-
-        internal char forbiddenWord;
-
-        internal int lemmaPresent;
-
-        internal int circumfix;
-
-        internal int onlyInCompound;
-
-        internal int needAffix;
-
-        internal int maxNgramSuggestions;
-
-        internal int maxDifferency;
-
-        internal int maxCompoundSuggestions;
-
-        internal int keepCase;
-
-        internal int forceUpperCase;
-
-        internal int warn;
-
-        internal int subStandard;
+        /// <summary>
+        /// Various affix options.
+        /// </summary>
+        public AffixConfigOptions Options { get; private set; }
 
         /// <summary>
         /// Indicates agglutinative languages with right-to-left writing system.
@@ -67,17 +36,20 @@ namespace Hunspell
         /// Set twofold prefix stripping (but single suffix stripping) eg. for morphologically complex
         /// languages with right-to-left writing system.
         /// </remarks>
-        public bool ComplexPrefixes { get; set; }
+        /// <seealso cref="AffixConfigOptions.ComplexPrefixes"/>
+        public bool ComplexPrefixes => Options.HasFlag(AffixConfigOptions.ComplexPrefixes);
 
         /// <summary>
         /// Allow twofold suffixes within compounds.
         /// </summary>
-        public bool CompoundMoreSuffixes { get; set; }
+        /// <seealso cref="AffixConfigOptions.CompoundMoreSuffixes"/>
+        public bool CompoundMoreSuffixes => Options.HasFlag(AffixConfigOptions.CompoundMoreSuffixes);
 
         /// <summary>
         /// Forbid word duplication in compounds (e.g. foofoo).
         /// </summary>
-        public bool CheckCompoundDup { get; set; }
+        /// <seealso cref="AffixConfigOptions.CheckCompoundDup"/>
+        public bool CheckCompoundDup => Options.HasFlag(AffixConfigOptions.CheckCompoundDup);
 
         /// <summary>
         /// Forbid compounding if the compound word may be a non compound word with a REP fault.
@@ -88,7 +60,8 @@ namespace Hunspell
         /// 'compound friendly' orthography.
         /// </remarks>
         /// <seealso cref="Replacements"/>
-        public bool CheckCompoundRep { get; set; }
+        /// <seealso cref="AffixConfigOptions.CheckCompoundRep"/>
+        public bool CheckCompoundRep => Options.HasFlag(AffixConfigOptions.CheckCompoundRep);
 
         /// <summary>
         /// Forbid compounding if the compound word contains triple repeating letters.
@@ -98,7 +71,8 @@ namespace Hunspell
         /// (e.g.foo|ox or xo|oof). Bug: missing multi-byte character support
         /// in UTF-8 encoding(works only for 7-bit ASCII characters).
         /// </remarks>
-        public bool CheckCompoundTriple { get; set; }
+        /// <seealso cref="AffixConfigOptions.CheckCompoundTriple"/>
+        public bool CheckCompoundTriple => Options.HasFlag(AffixConfigOptions.CheckCompoundTriple);
 
         /// <summary>
         /// Allow simplified 2-letter forms of the compounds forbidden by <see cref="CheckCompoundTriple"/>.
@@ -107,28 +81,33 @@ namespace Hunspell
         /// It's useful for Swedish and Norwegian (and for
         /// the old German orthography: Schiff|fahrt -> Schiffahrt).
         /// </remarks>
-        public bool SimplifiedTriple { get; set; }
+        /// <seealso cref="AffixConfigOptions.SimplifiedTriple"/>
+        public bool SimplifiedTriple => Options.HasFlag(AffixConfigOptions.SimplifiedTriple);
 
         /// <summary>
         /// Forbid upper case characters at word boundaries in compounds.
         /// </summary>
-        public bool CheckCompoundCase { get; set; }
+        /// <seealso cref="AffixConfigOptions.CheckCompoundCase"/>
+        public bool CheckCompoundCase => Options.HasFlag(AffixConfigOptions.CheckCompoundCase);
 
         /// <summary>
         /// A flag used by the controlled compound words.
         /// </summary>
-        public bool CheckNum { get; set; }
+        /// <seealso cref="AffixConfigOptions.CheckNum"/>
+        public bool CheckNum => Options.HasFlag(AffixConfigOptions.CheckNum);
 
         /// <summary>
         /// Remove all bad n-gram suggestions (default mode keeps one).
         /// </summary>
         /// <seealso cref="MaxDifferency"/>
-        public bool OnlyMaxDiff { get; set; }
+        /// <seealso cref="AffixConfigOptions.OnlyMaxDiff"/>
+        public bool OnlyMaxDiff => Options.HasFlag(AffixConfigOptions.OnlyMaxDiff);
 
         /// <summary>
         /// Disable word suggestions with spaces.
         /// </summary>
-        public bool NoSplitSuggestions { get; set; }
+        /// <seealso cref="AffixConfigOptions.NoSplitSuggestions"/>
+        public bool NoSplitSuggestions => Options.HasFlag(AffixConfigOptions.NoSplitSuggestions);
 
         /// <summary>
         /// Indicates that affix rules can strip full words.
@@ -138,7 +117,8 @@ namespace Hunspell
         /// adding the affixes, see fullstrip.* test files in the source distribution).
         /// Note: conditions may be word length without <see cref="FullStrip"/>, too.
         /// </remarks>
-        public bool FullStrip { get; set; }
+        /// <seealso cref="AffixConfigOptions.FullStrip"/>
+        public bool FullStrip => Options.HasFlag(AffixConfigOptions.FullStrip);
 
         /// <summary>
         /// Add dot(s) to suggestions, if input word terminates in dot(s).
@@ -147,7 +127,8 @@ namespace Hunspell
         /// Not for LibreOffice dictionaries, because LibreOffice
         /// has an automatic dot expansion mechanism.
         /// </remarks>
-        public bool SuggestWithDots { get; set; }
+        /// <seealso cref="AffixConfigOptions.SuggestWithDots"/>
+        public bool SuggestWithDots => Options.HasFlag(AffixConfigOptions.SuggestWithDots);
 
         /// <summary>
         /// When active, words marked with the <see cref="Warn"/> flag aren't accepted by the spell checker.
@@ -155,7 +136,8 @@ namespace Hunspell
         /// <remarks>
         /// Words with flag <see cref="Warn"/> aren't accepted by the spell checker using this parameter.
         /// </remarks>
-        public bool ForbidWarn { get; set; }
+        /// <seealso cref="AffixConfigOptions.ForbidWarn"/>
+        public bool ForbidWarn => Options.HasFlag(AffixConfigOptions.ForbidWarn);
 
         /// <summary>
         /// Indicates SS letter pair in uppercased (German) words may be upper case sharp s (ß).
@@ -167,7 +149,10 @@ namespace Hunspell
         /// in both spelling and suggestion.
         /// </remarks>
         /// <seealso cref="KeepCase"/>
-        public bool CheckSharps { get; set; }
+        /// <seealso cref="AffixConfigOptions.CheckSharps"/>
+        public bool CheckSharps => Options.HasFlag(AffixConfigOptions.CheckSharps);
+
+        public bool SimplifiedCompound => Options.HasFlag(AffixConfigOptions.SimplifiedCompound);
 
         /// <summary>
         /// A string of text representing a keyboard layout.
@@ -191,7 +176,7 @@ namespace Hunspell
         /// KEY qwertzuop|yxcvbnm|qaw|say|wse|dsx|sy|edr|fdc|dx|rft|gfv|fc|tgz|hgb|gv|zhu|jhn|hb|uji|kjm|jn|iko|lkm
         /// </code>
         /// </example>
-        public string KeyString { get; set; }
+        public string KeyString { get; private set; }
 
         /// <summary>
         /// Characters used to permit some suggestions.
@@ -200,7 +185,7 @@ namespace Hunspell
         /// Hunspell can suggest right word forms, when they differ from the
         /// bad input word by one TRY character.The parameter of TRY is case sensitive.
         /// </remarks>
-        public string TryString { get; set; }
+        public string TryString { get; private set; }
 
         /// <summary>
         /// The language code used for language specific functions.
@@ -208,12 +193,12 @@ namespace Hunspell
         /// <remarks>
         /// Use this to activate special casing of Azeri(LANG az) and Turkish(LANG tr).
         /// </remarks>
-        public string Language { get; set; } = CultureInfo.InvariantCulture.Name;
+        public string Language { get; private set; }
 
         /// <summary>
         /// The culture associated with the language.
         /// </summary>
-        public CultureInfo Culture { get; set; } = CultureInfo.InvariantCulture;
+        public CultureInfo Culture { get; private set; }
 
         /// <summary>
         /// Flag indicating that a word may be in compound words.
@@ -223,11 +208,7 @@ namespace Hunspell
         /// word shorter than <see cref="CompoundMin"/>). Affixes with <see cref="CompoundFlag"/> also permits
         /// compounding of affixed words.
         /// </remarks>
-        public int CompoundFlag
-        {
-            get { return compoundFlag; }
-            set { compoundFlag = value; }
-        }
+        public int CompoundFlag { get; private set; }
 
         /// <summary>
         /// A flag indicating that a word may be the first element in a compound word.
@@ -236,11 +217,7 @@ namespace Hunspell
         /// Words signed with this flag (or with a signed affix) may
         /// be first elements in compound words.
         /// </remarks>
-        public int CompoundBegin
-        {
-            get { return compoundBegin; }
-            set { compoundBegin = value; }
-        }
+        public int CompoundBegin { get; private set; }
 
         /// <summary>
         /// A flag indicating that a word may be the last element in a compound word.
@@ -249,11 +226,7 @@ namespace Hunspell
         /// Words signed with this flag (or with a signed affix) may
         /// be last elements in compound words.
         /// </remarks>
-        public int CompoundEnd
-        {
-            get { return compoundEnd; }
-            set { compoundEnd = value; }
-        }
+        public int CompoundEnd { get; private set; }
 
         /// <summary>
         /// A flag indicating that a word may be a middle element in a compound word.
@@ -261,11 +234,7 @@ namespace Hunspell
         /// <remarks>
         /// Words signed with this flag (or with a signed affix) may be middle elements in compound words.
         /// </remarks>
-        public int CompoundMiddle
-        {
-            get { return compoundMiddle; }
-            set { compoundMiddle = value; }
-        }
+        public int CompoundMiddle { get; private set; }
 
         /// <summary>
         /// Maximum word count in a compound word.
@@ -273,11 +242,7 @@ namespace Hunspell
         /// <remarks>
         /// Set maximum word count in a compound word. (Default is unlimited.)
         /// </remarks>
-        public int CompoundWordMax
-        {
-            get { return compoundWordMax; }
-            set { compoundWordMax = value; }
-        }
+        public int CompoundWordMax { get; private set; }
 
         /// <summary>
         /// Minimum length of words used for compounding.
@@ -285,11 +250,7 @@ namespace Hunspell
         /// <remarks>
         /// Default value is documented as 3 but may be 1.
         /// </remarks>
-        public int CompoundMin
-        {
-            get { return compoundMin; }
-            set { compoundMin = value; }
-        }
+        public int CompoundMin { get; private set; }
 
         /// <summary>
         /// A flag marking compounds as a compound root.
@@ -298,11 +259,7 @@ namespace Hunspell
         /// This flag signs the compounds in the dictionary
         /// (Now it is used only in the Hungarian language specific code).
         /// </remarks>
-        public int CompoundRoot
-        {
-            get { return compoundRoot; }
-            set { compoundRoot = value; }
-        }
+        public int CompoundRoot { get; private set; }
 
         /// <summary>
         /// A flag indicating that an affix may be inside of compounds.
@@ -312,11 +269,7 @@ namespace Hunspell
         /// suffixes are allowed at the end of compounds by default.
         /// Affixes with this flag may be inside of compounds.
         /// </remarks>
-        public int CompoundPermitFlag
-        {
-            get { return compoundPermitFlag; }
-            set { compoundPermitFlag = value; }
-        }
+        public int CompoundPermitFlag { get; private set; }
 
         /// <summary>
         /// A flag forbidding a suffix from compounding.
@@ -324,20 +277,7 @@ namespace Hunspell
         /// <remarks>
         /// Suffixes with this flag forbid compounding of the affixed word.
         /// </remarks>
-        public int CompoundForbidFlag
-        {
-            get { return compoundForbidFlag; }
-            set { compoundForbidFlag = value; }
-        }
-
-        /// <summary>
-        /// A flag used by compound check.
-        /// </summary>
-        /// <remarks>
-        /// Need for special compounding rules in Hungarian.
-        /// It appears that this string is used as a boolean where <c>null</c> or <see cref="string.Empty"/> indicates <c>false</c>.
-        /// </remarks>
-        public string CompoundSyllableNum { get; set; }
+        public int CompoundForbidFlag { get; private set; }
 
         /// <summary>
         /// Flag indicating that a word should not be used as a suggestion.
@@ -348,11 +288,7 @@ namespace Hunspell
         /// for vulgar and obscene words(see also <see cref="SubStandard"/> ).
         /// </remarks>
         /// <seealso cref="SubStandard"/>
-        public int NoSuggest
-        {
-            get { return noSuggest; }
-            set { noSuggest = value; }
-        }
+        public int NoSuggest { get; private set; }
 
         /// <summary>
         /// Flag indicating that a word should not be used in ngram based suggestions.
@@ -362,11 +298,7 @@ namespace Hunspell
 	    /// in ngram based(more, than 1-character distance) suggestions.
         /// </remarks>
         /// <seealso cref="NoSuggest"/>
-        public int NoNgramSuggest
-        {
-            get { return noNgramSuggest; }
-            set { noNgramSuggest = value; }
-        }
+        public int NoNgramSuggest { get; private set; }
 
         /// <summary>
         /// A flag indicating a forbidden word form.
@@ -377,11 +309,7 @@ namespace Hunspell
         /// the accepted affixed and compound words.
         /// Note: usefull to forbid erroneous words, generated by the compounding mechanism.
         /// </remarks>
-        public char ForbiddenWord
-        {
-            get { return forbiddenWord; }
-            set { forbiddenWord = value; }
-        }
+        public int ForbiddenWord { get; private set; }
 
         /// <summary>
         /// A flag used by forbidden words.
@@ -389,11 +317,7 @@ namespace Hunspell
         /// <remarks>
         /// Deprecated. Use "st:" field instead.
         /// </remarks>
-        public int LemmaPresent
-        {
-            get { return lemmaPresent; }
-            set { lemmaPresent = value; }
-        }
+        public int LemmaPresent { get; private set; }
 
         /// <summary>
         /// A flag indicating that affixes may be on a word when this word also has prefix with <see cref="Circumfix"/> flag and vice versa.
@@ -402,11 +326,7 @@ namespace Hunspell
         /// Affixes signed with this flag may be on a word when this word also has a
         /// prefix with this flag and vice versa(see circumfix.* test files in the source distribution).
         /// </remarks>
-        public int Circumfix
-        {
-            get { return circumfix; }
-            set { circumfix = value; }
-        }
+        public int Circumfix { get; private set; }
 
         /// <summary>
         /// A flag indicating that a suffix may be only inside of compounds.
@@ -418,11 +338,7 @@ namespace Hunspell
         /// Note: also valuable to flag compounding parts which are not correct as a word
         /// by itself.
         /// </remarks>
-        public int OnlyInCompound
-        {
-            get { return onlyInCompound; }
-            set { onlyInCompound = value; }
-        }
+        public int OnlyInCompound { get; private set; }
 
         /// <summary>
         /// A flag signing virtual stems in the dictionary.
@@ -433,42 +349,13 @@ namespace Hunspell
         /// NEEDAFFIX works also with prefixes and prefix + suffix combinations
         /// (see tests/pseudoroot5.*). This should be used instead of the deprecated PSEUDOROOT flag.
         /// </remarks>
-        public int NeedAffix
-        {
-            get { return needAffix; }
-            set { needAffix = value; }
-        }
-
-        /// <summary>
-        /// Extra word characters.
-        /// </summary>
-        /// <remarks>
-        /// Extends tokenizer of Hunspell command line interface with
-        /// additional word character.
-        /// For example, dot, dash, n-dash, numbers, percent sign
-        /// are word character in Hungarian.
-        /// </remarks>
-        public char[] WordChars { get; set; }
-
-        /// <summary>
-        /// Ignored characters (for example, Arabic optional diacretics characters)
-        /// for dictionary words, affixes and input words.
-        /// </summary>
-        /// <remarks>
-        /// Useful for optional characters, as Arabic (harakat) or Hebrew (niqqud) diacritical marks (see
-        /// tests/ignore.* test dictionary in Hunspell distribution).
-        /// </remarks>
-        public char[] IgnoredChars { get; set; }
+        public int NeedAffix { get; private set; }
 
         /// <summary>
         /// Maximum number of n-gram suggestions. A value of 0 switches off the n-gram suggestions.
         /// </summary>
         /// <seealso cref="MaxDifferency"/>
-        public int MaxNgramSuggestions
-        {
-            get { return maxNgramSuggestions; }
-            set { maxNgramSuggestions = value; }
-        }
+        public int MaxNgramSuggestions { get; private set; }
 
         /// <summary>
         /// Similarity factor for the n-gram based suggestions.
@@ -478,11 +365,7 @@ namespace Hunspell
         /// 10 = <see cref="MaxNgramSuggestions"/> n-gram suggestions).
         /// </remarks>
         /// <seealso cref="MaxNgramSuggestions"/>
-        public int MaxDifferency
-        {
-            get { return maxDifferency; }
-            set { maxDifferency = value; }
-        }
+        public int MaxDifferency { get; private set; }
 
         /// <summary>
         /// Maximum number of suggested compound words generated by compound rule.
@@ -492,11 +375,7 @@ namespace Hunspell
         /// number of the suggested compound words may be greater from the same 1-character
         /// distance type.
         /// </remarks>
-        public int MaxCompoundSuggestions
-        {
-            get { return maxCompoundSuggestions; }
-            set { maxCompoundSuggestions = value; }
-        }
+        public int MaxCompoundSuggestions { get; private set; }
 
         /// <summary>
         /// A flag indicating that uppercased and capitalized forms of words are forbidden.
@@ -516,11 +395,7 @@ namespace Hunspell
         /// example in the tests directory of the Hunspell distribution.
         /// </para>
         /// </remarks>
-        public int KeepCase
-        {
-            get { return keepCase; }
-            set { keepCase = value; }
-        }
+        public int KeepCase { get; private set; }
 
         /// <summary>
         /// A flag forcing capitalization of the whole compound word.
@@ -531,11 +406,7 @@ namespace Hunspell
         /// in capitalized compound forms, according to the Dutch spelling rules for proper
         /// names.
         /// </remarks>
-        public int ForceUpperCase
-        {
-            get { return forceUpperCase; }
-            set { forceUpperCase = value; }
-        }
+        public int ForceUpperCase { get; private set; }
 
         /// <summary>
         /// Flag indicating a rare word that is also often a spelling mistake.
@@ -545,11 +416,7 @@ namespace Hunspell
         /// see option -r of command line Hunspell and <see cref="ForbidWarn"/> .
         /// </remarks>
         /// <seealso cref="ForbidWarn"/>
-        public int Warn
-        {
-            get { return warn; }
-            set { warn = value; }
-        }
+        public int Warn { get; private set; }
 
         /// <summary>
         /// Flag signing affix rules and dictionary words not used in morphological generation.
@@ -560,16 +427,21 @@ namespace Hunspell
         /// future versions).
         /// </remarks>
         /// <seealso cref="NoSuggest"/>
-        public int SubStandard
-        {
-            get { return subStandard; }
-            set { subStandard = value; }
-        }
+        public int SubStandard { get; private set; }
+
+        /// <summary>
+        /// A flag used by compound check.
+        /// </summary>
+        /// <remarks>
+        /// Need for special compounding rules in Hungarian.
+        /// It appears that this string is used as a boolean where <c>null</c> or <see cref="string.Empty"/> indicates <c>false</c>.
+        /// </remarks>
+        public string CompoundSyllableNum { get; private set; }
 
         /// <summary>
         /// The encoding name to be used in morpheme, affix, and dictionary files.
         /// </summary>
-        public string RequestedEncoding { get; set; }
+        public string RequestedEncoding { get; private set; }
 
         /// <summary>
         /// Specifies modifications to try first
@@ -613,17 +485,17 @@ namespace Hunspell
         /// </code>
         /// </example>
         /// <seealso cref="CheckCompoundRep"/>
-        public List<ReplacementEntry> Replacements { get; set; }
+        public ImmutableArray<ReplacementEntry> Replacements { get; private set; }
 
         /// <summary>
         /// Suffixes attached to root words to make other words.
         /// </summary>
-        public List<AffixEntryGroup<SuffixEntry>> Suffixes { get; set; }
+        public ImmutableArray<AffixEntryGroup<SuffixEntry>> Suffixes { get; private set; }
 
         /// <summary>
         /// Preffixes attached to root words to make other words.
         /// </summary>
-        public List<AffixEntryGroup<PrefixEntry>> Prefixes { get; set; }
+        public ImmutableArray<AffixEntryGroup<PrefixEntry>> Prefixes { get; private set; }
 
         /// <summary>
         /// Ordinal numbers for affix flag compression.
@@ -664,22 +536,22 @@ namespace Hunspell
         /// work/AB
         /// </code>
         /// </example>
-        public List<ImmutableList<int>> AliasF { get; set; }
+        public ImmutableArray<ImmutableArray<int>> AliasF { get; private set; }
 
         /// <summary>
         /// Inidicates if any <see cref="AliasF"/> entries have been defined.
         /// </summary>
-        public bool IsAliasF => AliasF != null && AliasF.Count > 0;
+        public bool IsAliasF => AliasF != null && AliasF.Length > 0;
 
         /// <summary>
         /// Values used for morphological alias compression.
         /// </summary>
-        public List<string> AliasM { get; set; }
+        public ImmutableArray<string> AliasM { get; private set; }
 
         /// <summary>
         /// Indicates if any <see cref="AliasM"/> entries have been defined.
         /// </summary>
-        public bool IsAliasM => AliasM != null && AliasM.Count > 0;
+        public bool IsAliasM => AliasM != null && AliasM.Length > 0;
 
         /// <summary>
         /// Defines custom compound patterns with a regex-like syntax.
@@ -702,24 +574,23 @@ namespace Hunspell
         /// flags: (1500)*(2000)?
         /// </para>
         /// <para>
-        /// <see cref="CompoundRule"/> flags work completely separately from the
+        /// CompoundRule flags work completely separately from the
         /// compounding mechanisme using <see cref="CompoundFlag"/>, <see cref="CompoundBegin"/> , etc.compound
         /// flags. (Use these flags on different enhtries for words).
         /// </para>
         /// </remarks>
-        public List<CompoundRule> CompoundRules { get; set; }
+        public ImmutableArray<ImmutableArray<int>> CompoundRules { get; private set; }
 
         /// <summary>
-        /// 
+        /// Forbid compounding, if the first word in the compound ends with endchars, and
+        /// next word begins with beginchars and(optionally) they have the requested flags.
         /// </summary>
         /// <remarks>
         /// <para>
-        /// Forbid compounding, if the first word in the compound ends with endchars, and
-        /// next word begins with beginchars and(optionally) they have the requested flags.
         /// The optional replacement parameter allows simplified compound form.
         /// </para>
         /// <para>
-        /// <see cref="CompoundMin"/>  doesn't work correctly with the compound word alternation,
+        /// <see cref="CompoundMin"/> doesn't work correctly with the compound word alternation,
         /// so it may need to set <see cref="CompoundMin"/> to lower value.
         /// </para>
         /// </remarks>
@@ -730,9 +601,7 @@ namespace Hunspell
         /// CHECKCOMPOUNDPATTERN 0/x /y
         /// </code>
         /// </example>
-        public List<PatternEntry> CompoundPatterns { get; set; }
-
-        public bool SimplifiedCompound { get; set; }
+        public ImmutableArray<PatternEntry> CompoundPatterns { get; private set; }
 
         /// <summary>
         /// Defines new break points for breaking words and checking word parts separately.
@@ -790,7 +659,7 @@ namespace Hunspell
         /// </code>
         /// </example>
         /// <seealso cref="CompoundRules"/>
-        public List<string> BreakTable { get; set; }
+        public ImmutableArray<string> BreakTable { get; private set; }
 
         /// <summary>
         /// Input conversion entries.
@@ -798,12 +667,12 @@ namespace Hunspell
         /// <remarks>
         /// Useful to convert one type of quote to another one, or change ligature.
         /// </remarks>
-        public SortedDictionary<string, ReplacementEntry> InputConversions { get; set; }
+        public ImmutableSortedDictionary<string, ReplacementEntry> InputConversions { get; private set; }
 
         /// <summary>
         /// Output conversion entries.
         /// </summary>
-        public SortedDictionary<string, ReplacementEntry> OutputConversions { get; set; }
+        public ImmutableSortedDictionary<string, ReplacementEntry> OutputConversions { get; private set; }
 
         /// <summary>
         /// Mappings between related characters.
@@ -836,7 +705,7 @@ namespace Hunspell
         /// </code>
         /// </example>
         /// <seealso cref="Replacements"/>
-        public List<MapEntry> MapTable { get; set; }
+        public ImmutableArray<ImmutableArray<string>> MapTable { get; private set; }
 
         /// <summary>
         /// Phonetic transcription entries.
@@ -856,93 +725,45 @@ namespace Hunspell
         /// UTF-8 characters yet.
         /// </para>
         /// </remarks>
-        public List<PhoneticEntry> Phone { get; set; }
+        public ImmutableArray<PhoneticEntry> Phone { get; private set; }
 
         /// <summary>
         /// Maximum syllable number, that may be in a
         /// compound, if words in compounds are more than <see cref="CompoundWordMax"/>.
         /// </summary>
         /// <seealso cref="CompoundVowels"/>
-        public int CompoundMaxSyllable { get; set; }
+        public int CompoundMaxSyllable { get; private set; }
 
         /// <summary>
         /// Voewls for calculating syllables.
         /// </summary>
         /// <seealso cref="CompoundMaxSyllable"/>
-        public char[] CompoundVowels { get; set; }
+        public ImmutableArray<char> CompoundVowels { get; private set; }
+
+        /// <summary>
+        /// Extra word characters.
+        /// </summary>
+        /// <remarks>
+        /// Extends tokenizer of Hunspell command line interface with
+        /// additional word character.
+        /// For example, dot, dash, n-dash, numbers, percent sign
+        /// are word character in Hungarian.
+        /// </remarks>
+        public ImmutableArray<char> WordChars { get; private set; }
+
+        /// <summary>
+        /// Ignored characters (for example, Arabic optional diacretics characters)
+        /// for dictionary words, affixes and input words.
+        /// </summary>
+        /// <remarks>
+        /// Useful for optional characters, as Arabic (harakat) or Hebrew (niqqud) diacritical marks (see
+        /// tests/ignore.* test dictionary in Hunspell distribution).
+        /// </remarks>
+        public ImmutableArray<char> IgnoredChars { get; private set; }
 
         /// <summary>
         /// Affix and dictionary file version string.
         /// </summary>
-        public string Version { get; set; } = string.Empty;
-
-        public static Task<AffixFile> ReadAsync(AffixUtfStreamLineReader reader)
-        {
-            if (reader == null)
-            {
-                throw new ArgumentNullException(nameof(reader));
-            }
-
-            var fileReader = new AffixFileReader(reader);
-            return fileReader.GetOrReadAsync();
-        }
-
-        public bool TrySetOption(string name, bool value)
-        {
-            if (string.IsNullOrEmpty(name))
-            {
-                return false;
-            }
-
-            switch (CultureInfo.InvariantCulture.TextInfo.ToUpper(name))
-            {
-                /* parse COMPLEXPREFIXES for agglutinative languages with right-to-left writing system */
-                case "COMPLEXPREFIXES":
-                    ComplexPrefixes = value;
-                    return true;
-                case "COMPOUNDMORESUFFIXES":
-                    CompoundMoreSuffixes = value;
-                    return true;
-                case "CHECKCOMPOUNDDUP":
-                    CheckCompoundDup = value;
-                    return true;
-                case "CHECKCOMPOUNDREP":
-                    CheckCompoundRep = value;
-                    return true;
-                case "CHECKCOMPOUNDTRIPLE":
-                    CheckCompoundTriple = value;
-                    return true;
-                case "SIMPLIFIEDTRIPLE":
-                    SimplifiedTriple = value;
-                    return true;
-                case "CHECKCOMPOUNDCASE":
-                    CheckCompoundCase = value;
-                    return true;
-                /* parse in the flag used by the controlled compound words */
-                case "CHECKNUM":
-                    CheckNum = value;
-                    return true;
-                case "ONLYMAXDIFF":
-                    OnlyMaxDiff = value;
-                    return true;
-                case "NOSPLITSUGS":
-                    NoSplitSuggestions = value;
-                    return true;
-                case "FULLSTRIP":
-                    FullStrip = value;
-                    return true;
-                case "SUGSWITHDOTS":
-                    SuggestWithDots = value;
-                    return true;
-                case "FORBIDWARN":
-                    ForbidWarn = value;
-                    return true;
-                case "CHECKSHARPS":
-                    CheckSharps = value;
-                    return true;
-                default:
-                    return false;
-            }
-        }
+        public string Version { get; private set; }
     }
 }

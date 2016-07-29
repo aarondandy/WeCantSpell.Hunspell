@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 
 namespace Hunspell
 {
@@ -10,17 +10,12 @@ namespace Hunspell
     public class AffixEntryGroup<TEntry>
         where TEntry : AffixEntry
     {
-        public AffixEntryGroup(int aFlag, AffixEntryOptions options, int expectedEntryCount)
+        public AffixEntryGroup(int aFlag, AffixEntryOptions options, IEnumerable<TEntry> entries)
         {
             AFlag = aFlag;
             Options = options;
-            Entries = expectedEntryCount > 0 ? new List<TEntry>(expectedEntryCount) : new List<TEntry>();
+            Entries = ImmutableArray.CreateRange(entries);
         }
-
-        /// <summary>
-        /// All of the entries that make up this group.
-        /// </summary>
-        public List<TEntry> Entries { get; }
 
         /// <summary>
         /// ID used to represent the affix group.
@@ -32,12 +27,35 @@ namespace Hunspell
         /// </summary>
         public AffixEntryOptions Options { get; }
 
-        [Obsolete("May be unused")]
-        public bool AllowCross
+        /// <summary>
+        /// All of the entries that make up this group.
+        /// </summary>
+        public ImmutableArray<TEntry> Entries { get; }
+    }
+
+    public static class AffixEntryGroup
+    {
+        public class Builder<TEntry>
+            where TEntry: AffixEntry
         {
-            get
+            /// <summary>
+            /// ID used to represent the affix group.
+            /// </summary>
+            public int AFlag { get; set; }
+
+            /// <summary>
+            /// Options for this affix group.
+            /// </summary>
+            public AffixEntryOptions Options { get; set; }
+
+            /// <summary>
+            /// All of the entries that make up this group.
+            /// </summary>
+            public List<TEntry> Entries { get; set; }
+
+            public AffixEntryGroup<TEntry> ToGroup()
             {
-                return Options.HasFlag(AffixEntryOptions.CrossProduct);
+                return new AffixEntryGroup<TEntry>(AFlag, Options, Entries);
             }
         }
     }

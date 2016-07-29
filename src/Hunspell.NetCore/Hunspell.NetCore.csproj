@@ -50,16 +50,17 @@
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="affentry.cs" />
+    <Compile Include="AffixConfigOptions.cs" />
+    <Compile Include="AffixConfig.Builder.cs" />
     <Compile Include="AffixEntry.cs" />
     <Compile Include="AffixEntryGroup.cs" />
     <Compile Include="AffixEntryOptions.cs" />
-    <Compile Include="AffixFile.cs" />
+    <Compile Include="AffixConfig.cs" />
     <Compile Include="AffixFileReader.cs" />
     <Compile Include="affixmgr.cs" />
     <Compile Include="AffixUtfStreamLineReader.cs" />
     <Compile Include="atypes.cs" />
     <Compile Include="baseaffix.cs" />
-    <Compile Include="CompoundRule.cs" />
     <Compile Include="csutil.cs" />
     <Compile Include="filemgr.cs" />
     <Compile Include="FlagMode.cs" />
@@ -70,7 +71,6 @@
     <Compile Include="hunzip.cs" />
     <Compile Include="IAffixFileLineReader.cs" />
     <Compile Include="langnum.cs" />
-    <Compile Include="MapEntry.cs" />
     <Compile Include="PatternEntry.cs" />
     <Compile Include="phonet.cs" />
     <Compile Include="PhoneticEntry.cs" />

@@ -1,21 +1,15 @@
 ﻿using Hunspell.Utilities;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 
 namespace Hunspell
 {
     public class ReplacementEntry
     {
-        public enum Type : int
-        {
-            Med = 0,
-            Ini = 1,
-            Fin = 2,
-            Isol = 3
-        }
-
-        public ReplacementEntry(string pattern)
+        public ReplacementEntry(string pattern, string[] outStrings)
         {
             Pattern = pattern;
+            OutStrings = ImmutableArray.Create(outStrings);
         }
 
         public string Pattern { get; }
@@ -23,36 +17,28 @@ namespace Hunspell
         /// <summary>
         /// Med, ini, fin, isol .
         /// </summary>
-        public string[] OutStrings { get; } = new string[4];
+        public ImmutableArray<string> OutStrings { get; }
 
-        public string Med
-        {
-            get { return OutStrings[(int)Type.Med]; }
-            set { OutStrings[(int)Type.Med] = value; }
-        }
+        public string Med => OutStrings[(int)Type.Med];
 
-        public string Ini
-        {
-            get { return OutStrings[(int)Type.Ini]; }
-            set { OutStrings[(int)Type.Ini] = value; }
-        }
+        public string Ini => OutStrings[(int)Type.Ini];
 
-        public string Fin
-        {
-            get { return OutStrings[(int)Type.Fin]; }
-            set { OutStrings[(int)Type.Fin] = value; }
-        }
+        public string Fin => OutStrings[(int)Type.Fin];
 
-        public string Isol
+        public string Isol => OutStrings[(int)Type.Isol];
+
+        public enum Type : int
         {
-            get { return OutStrings[(int)Type.Isol]; }
-            set { OutStrings[(int)Type.Isol] = value; }
+            Med = 0,
+            Ini = 1,
+            Fin = 2,
+            Isol = 3
         }
     }
 
-    public static class ReplacementEntryExtensions
+    internal static class ReplacementEntryExtensions
     {
-        public static bool Add(this SortedDictionary<string, ReplacementEntry> list, string pattern1, string pattern2)
+        public static bool AddReplacementEntry(this SortedDictionary<string, string[]> list, string pattern1, string pattern2)
         {
             if (string.IsNullOrEmpty(pattern1) || string.IsNullOrEmpty(pattern2))
             {
@@ -76,19 +62,24 @@ namespace Hunspell
 
             pattern1 = pattern1.Replace('_', ' ');
             pattern2 = pattern2.Replace('_', ' ');
-            ReplacementEntry entry;
+            string[] entry;
 
             // find existing entry
             if (!list.TryGetValue(pattern1, out entry))
             {
                 // make a new entry if none exists
-                entry = new ReplacementEntry(pattern1);
-                list.Add(entry.Pattern, entry);
+                entry = new string[4];
+                list.Add(pattern1, entry);
             }
 
-            entry.OutStrings[type] = pattern2;
+            entry[type] = pattern2;
 
             return true;
+        }
+
+        public static ImmutableSortedDictionary<string, ReplacementEntry> ToImmutableReplacementEntries(this SortedDictionary<string, string[]> entries)
+        {
+            return entries.ToImmutableSortedDictionary(pair => pair.Key, pair => new ReplacementEntry(pair.Key, pair.Value));
         }
     }
 }

@@ -9,118 +9,108 @@ using System.Threading.Tasks;
 
 namespace Hunspell
 {
-    public class AffixFileReader : IDisposable
+    public class AffixFileReader
     {
-        public AffixFileReader(IAffixFileLineReader reader)
+        private AffixFileReader(AffixConfig.Builder builder)
         {
-            if (reader == null)
-            {
-                throw new ArgumentNullException(nameof(reader));
-            }
-
-            Reader = reader;
+            Builder = builder;
         }
 
-        private static readonly Regex LineStringParseRegex = new Regex(@"^[ \t]*(\w+)[ \t]+(.+)[ \t]*$");
-        private static readonly Regex SingleCommandParseRegex = new Regex(@"^[ \t]*(\w+)[ \t]*$");
-        private static readonly Regex CommentLineRegex = new Regex(@"^\s*[#].*");
+        private static readonly Regex LineStringParseRegex = new Regex(@"^[ \t]*(\w+)[ \t]+(.+)[ \t]*$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex SingleCommandParseRegex = new Regex(@"^[ \t]*(\w+)[ \t]*$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex CommentLineRegex = new Regex(@"^\s*[#].*", RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private static readonly Regex AffixLineRegex = new Regex(
             @"^[\t ]*([^\t ]+)[\t ]+(?:([^\t ]+)[\t ]+([^\t ]+)|([^\t ]+)[\t ]+([^\t ]+)[\t ]+([^\t ]+)(?:[\t ]+(.+))?)[\t ]*(?:[#].+)?$",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
-        /// <summary>
-        /// The flag type.
-        /// </summary>
-        /// <remarks>
-        /// Default type is the extended ASCII (8-bit) character. 
-        /// `UTF-8' parameter sets UTF-8 encoded Unicode character flags.
-        /// The `long' value sets the double extended ASCII character flag type,
-        /// the `num' sets the decimal number flag type. Decimal flags numbered from 1 to
-        /// 65000, and in flag fields are separated by comma.
-        /// </remarks>
-        public FlagMode FlagMode { get; private set; } = FlagMode.Char;
-
-        public IAffixFileLineReader Reader { get; }
-
-        private AffixFile Result { get; set; }
-
-        private bool hasInitializedReplacements = false;
-
-        private bool hasInitializedCompoundRules = false;
-
-        private bool hasInitializedCompoundPatterns = false;
-
-        private bool hasInitializedAliasF = false;
-
-        private bool hasInitializedAliasM = false;
-
-        private bool hasInitializedBreak = false;
-
-        private bool hasInitializedIconv = false;
-
-        private bool hasInitializedOconv = false;
-
-        private bool hasInitializedMap = false;
-
-        private bool hasInitializedPhone = false;
-
-        private bool ownsReaderLifetime = true;
-
-        private bool attemptDisposeWhenDone = true;
-
-        /// <summary>
-        /// This method may be called multiple times.
-        /// </summary>
-        /// <returns>An object representing the affix file.</returns>
-        public async Task<AffixFile> GetOrReadAsync()
+        private static readonly Dictionary<string, AffixConfigOptions> FileBitFlagCommandMappings = new Dictionary<string, AffixConfigOptions>(StringComparer.OrdinalIgnoreCase)
         {
-            return Result ?? (Result = await ReadAsync());
-        }
+            {"COMPLEXPREFIXES", AffixConfigOptions.ComplexPrefixes},
+            {"COMPOUNDMORESUFFIXES", AffixConfigOptions.CompoundMoreSuffixes},
+            {"CHECKCOMPOUNDDUP", AffixConfigOptions.CheckCompoundDup},
+            {"CHECKCOMPOUNDREP", AffixConfigOptions.CheckCompoundRep},
+            {"CHECKCOMPOUNDTRIPLE", AffixConfigOptions.CheckCompoundTriple},
+            {"SIMPLIFIEDTRIPLE", AffixConfigOptions.SimplifiedTriple},
+            {"CHECKCOMPOUNDCASE", AffixConfigOptions.CheckCompoundCase},
+            {"CHECKNUM", AffixConfigOptions.CheckNum},
+            {"ONLYMAXDIFF", AffixConfigOptions.OnlyMaxDiff},
+            {"NOSPLITSUGS", AffixConfigOptions.NoSplitSuggestions},
+            {"FULLSTRIP", AffixConfigOptions.FullStrip},
+            {"SUGSWITHDOTS", AffixConfigOptions.SuggestWithDots},
+            {"FORBIDWARN", AffixConfigOptions.ForbidWarn},
+            {"CHECKSHARPS", AffixConfigOptions.CheckSharps}
+        };
 
-        private async Task<AffixFile> ReadAsync()
+        private static readonly Dictionary<string, FlagMode> FlagModeParameterMappings = new Dictionary<string, FlagMode>(StringComparer.OrdinalIgnoreCase)
         {
-            var result = new AffixFile();
+            {"LONG", FlagMode.Long},
+            {"CHAR", FlagMode.Char},
+            {"NUM", FlagMode.Num},
+            {"UTF", FlagMode.Uni}
+        };
+
+        private AffixConfig.Builder Builder { get; }
+
+        private List<string> Warnings { get; } = new List<string>();
+
+        private InitializationFlags Initialized { get; set; } = InitializationFlags.None;
+
+        public static async Task<AffixConfig> ReadAsync(IAffixFileLineReader reader)
+        {
+            var builder = new AffixConfig.Builder();
+            var readerInstance = new AffixFileReader(builder);
 
             string line;
-            while (null != (line = await Reader.ReadLineAsync()))
+            while (null != (line = await reader.ReadLineAsync()))
             {
-                if (string.IsNullOrEmpty(line))
-                {
-                    continue;
-                }
-
-                if (CommentLineRegex.IsMatch(line))
-                {
-                    continue;
-                }
-
-                var singleCommandParsed = SingleCommandParseRegex.Match(line);
-                if (
-                    singleCommandParsed.Success
-                    && result.TrySetOption(singleCommandParsed.Groups[1].Value, true))
-                {
-                    continue;
-                }
-
-                var multiPartCommandParsed = LineStringParseRegex.Match(line);
-                if (
-                    multiPartCommandParsed.Success
-                    && TryHandleTwoPartCommand(result, multiPartCommandParsed.Groups[1].Value, multiPartCommandParsed.Groups[2].Value))
-                {
-                    continue;
-                }
+                readerInstance.ParseLine(line);
             }
 
-            if (attemptDisposeWhenDone)
-            {
-                Dispose();
-            }
-
-            return result;
+            return builder.ToConfiguration();
         }
 
+        private bool ParseLine(string line)
+        {
+            if (string.IsNullOrEmpty(line))
+            {
+                return false;
+            }
 
-        private bool TryHandleTwoPartCommand(AffixFile affixFile, string name, string parameters)
+            if (CommentLineRegex.IsMatch(line))
+            {
+                return false;
+            }
+
+            AffixConfigOptions option;
+            var singleCommandParsed = SingleCommandParseRegex.Match(line);
+            if (singleCommandParsed.Success && FileBitFlagCommandMappings.TryGetValue(singleCommandParsed.Groups[1].Value, out option))
+            {
+                Builder.EnableOptions(option);
+                return true;
+            }
+
+            var multiPartCommandParsed = LineStringParseRegex.Match(line);
+            if (
+                multiPartCommandParsed.Success
+                && TryHandleParameterizedCommand(multiPartCommandParsed.Groups[1].Value, multiPartCommandParsed.Groups[2].Value)
+            )
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool IsInitialized(InitializationFlags flags)
+        {
+            return Initialized.HasFlag(flags);
+        }
+
+        private void SetInitialized(InitializationFlags flags)
+        {
+            Initialized |= flags;
+        }
+
+        private bool TryHandleParameterizedCommand(string name, string parameters)
         {
             if (string.IsNullOrEmpty(name) || parameters == null)
             {
@@ -130,125 +120,125 @@ namespace Hunspell
             switch (CultureInfo.InvariantCulture.TextInfo.ToUpper(name))
             {
                 case "FLAG": // parse in the try string
-                    return SetFlagMode(parameters);
+                    return TrySetFlagMode(parameters);
                 case "KEY": // parse in the keyboard string
-                    affixFile.KeyString = parameters;
+                    Builder.KeyString = parameters;
                     return true;
                 case "TRY": // parse in the try string
-                    affixFile.TryString = parameters;
+                    Builder.TryString = parameters;
                     return true;
                 case "SET": // parse in the name of the character set used by the .dict and .aff
-                    affixFile.RequestedEncoding = parameters;
+                    Builder.RequestedEncoding = parameters;
                     return true;
                 case "LANG": // parse in the language for language specific codes
-                    affixFile.Language = parameters;
-                    affixFile.Culture = GetCultureFromLanguage(affixFile.Language);
+                    Builder.Language = parameters;
+                    Builder.Culture = GetCultureFromLanguage(Builder.Language);
                     return true;
                 case "SYLLABLENUM": // parse in the flag used by compound_check() method
-                    affixFile.CompoundSyllableNum = parameters;
+                    Builder.CompoundSyllableNum = parameters;
                     return true;
                 case "WORDCHARS": // parse in the extra word characters
-                    affixFile.WordChars = parameters.ToCharArray();
+                    Builder.WordChars = parameters.ToCharArray();
                     return true;
                 case "IGNORE": // parse in the ignored characters (for example, Arabic optional diacretics characters)
-                    affixFile.IgnoredChars = parameters.ToCharArray();
+                    Builder.IgnoredChars = parameters.ToCharArray();
                     return true;
                 case "COMPOUNDFLAG": // parse in the flag used by the controlled compound words
-                    return TryParseFlag(parameters, out affixFile.compoundFlag);
+                    return TryParseFlag(parameters, out Builder.compoundFlag);
                 case "COMPOUNDMIDDLE": // parse in the flag used by compound words
-                    return TryParseFlag(parameters, out affixFile.compoundMiddle);
+                    return TryParseFlag(parameters, out Builder.compoundMiddle);
                 case "COMPOUNDBEGIN": // parse in the flag used by compound words
-                    return affixFile.ComplexPrefixes
-                        ? TryParseFlag(parameters, out affixFile.compoundEnd)
-                        : TryParseFlag(parameters, out affixFile.compoundBegin);
+                    return Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes)
+                        ? TryParseFlag(parameters, out Builder.compoundEnd)
+                        : TryParseFlag(parameters, out Builder.compoundBegin);
                 case "COMPOUNDEND": // parse in the flag used by compound words
-                    return affixFile.ComplexPrefixes
-                        ? TryParseFlag(parameters, out affixFile.compoundBegin)
-                        : TryParseFlag(parameters, out affixFile.compoundEnd);
+                    return Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes)
+                        ? TryParseFlag(parameters, out Builder.compoundBegin)
+                        : TryParseFlag(parameters, out Builder.compoundEnd);
                 case "COMPOUNDWORDMAX": // parse in the data used by compound_check() method
-                    return IntExtensions.TryParseInvariant(parameters, out affixFile.compoundWordMax);
+                    return IntExtensions.TryParseInvariant(parameters, out Builder.compoundWordMax);
                 case "COMPOUNDMIN": // parse in the minimal length for words in compounds
-                    if (!IntExtensions.TryParseInvariant(parameters, out affixFile.compoundMin))
+                    if (!IntExtensions.TryParseInvariant(parameters, out Builder.compoundMin))
                     {
                         return false;
                     }
 
-                    if (affixFile.compoundMin < 1)
+                    if (Builder.compoundMin < 1)
                     {
-                        affixFile.compoundMin = 1;
+                        Builder.compoundMin = 1;
                     }
 
                     return true;
                 case "COMPOUNDROOT": // parse in the flag sign compounds in dictionary
-                    return TryParseFlag(parameters, out affixFile.compoundRoot);
+                    return TryParseFlag(parameters, out Builder.compoundRoot);
                 case "COMPOUNDPERMITFLAG": // parse in the flag used by compound_check() method
-                    return TryParseFlag(parameters, out affixFile.compoundPermitFlag);
+                    return TryParseFlag(parameters, out Builder.compoundPermitFlag);
                 case "COMPOUNDFORBIDFLAG": // parse in the flag used by compound_check() method
-                    return TryParseFlag(parameters, out affixFile.compoundForbidFlag);
+                    return TryParseFlag(parameters, out Builder.compoundForbidFlag);
                 case "COMPOUNDSYLLABLE": // parse in the max. words and syllables in compounds
-                    return TryParseCompoundSyllable(parameters, affixFile);
+                    return TryParseCompoundSyllable(parameters);
                 case "NOSUGGEST":
-                    return TryParseFlag(parameters, out affixFile.noSuggest);
+                    return TryParseFlag(parameters, out Builder.noSuggest);
                 case "NONGRAMSUGGEST":
-                    return TryParseFlag(parameters, out affixFile.noNgramSuggest);
+                    return TryParseFlag(parameters, out Builder.noNgramSuggest);
                 case "FORBIDDENWORD": // parse in the flag used by forbidden words
-                    return TryParseFlag(parameters, out affixFile.forbiddenWord);
+                    return TryParseFlag(parameters, out Builder.forbiddenWord);
                 case "LEMMA_PRESENT": // parse in the flag used by forbidden words
-                    return TryParseFlag(parameters, out affixFile.lemmaPresent);
+                    return TryParseFlag(parameters, out Builder.lemmaPresent);
                 case "CIRCUMFIX": // parse in the flag used by circumfixes
-                    return TryParseFlag(parameters, out affixFile.circumfix);
+                    return TryParseFlag(parameters, out Builder.circumfix);
                 case "ONLYINCOMPOUND": // parse in the flag used by fogemorphemes
-                    return TryParseFlag(parameters, out affixFile.onlyInCompound);
+                    return TryParseFlag(parameters, out Builder.onlyInCompound);
                 case "PSEUDOROOT": // parse in the flag used by `needaffixs'
                 case "NEEDAFFIX": // parse in the flag used by `needaffixs'
-                    return TryParseFlag(parameters, out affixFile.needAffix);
+                    return TryParseFlag(parameters, out Builder.needAffix);
                 case "REP": // parse in the typical fault correcting table
-                    return TryParseReplacementEntryLineIntoReplacements(affixFile, parameters);
+                    return TryParseReplacementEntryLineIntoReplacements(parameters);
                 case "ICONV": // parse in the input conversion table
-                    return TryParseIconv(affixFile, parameters);
+                    return TryParseIconv(parameters);
                 case "OCONV": // parse in the input conversion table
-                    return TryParseOconv(affixFile, parameters);
+                    return TryParseOconv(parameters);
                 case "PHONE": // parse in the phonetic conversion table
-                    return TryParsePhone(affixFile, parameters);
+                    return TryParsePhone(parameters);
                 case "CHECKCOMPOUNDPATTERN": // parse in the checkcompoundpattern table
-                    return TryParseCheckCompoundPatternIntoCompoundPatterns(affixFile, parameters);
+                    return TryParseCheckCompoundPatternIntoCompoundPatterns(parameters);
                 case "COMPOUNDRULE": // parse in the defcompound table
-                    return TryParseCompoundRuleIntoList(affixFile, parameters);
+                    return TryParseCompoundRuleIntoList(parameters);
                 case "MAP": // parse in the related character map table
-                    return TryParseMapEntry(affixFile, parameters);
+                    return TryParseMapEntry(parameters);
                 case "BREAK": // parse in the word breakpoints table
-                    return TryParseBreak(affixFile, parameters);
+                    return TryParseBreak(parameters);
                 case "VERSION":
-                    affixFile.Version = parameters;
+                    Builder.Version = parameters;
                     return true;
                 case "MAXNGRAMSUGS":
-                    return IntExtensions.TryParseInvariant(parameters, out affixFile.maxNgramSuggestions);
+                    return IntExtensions.TryParseInvariant(parameters, out Builder.maxNgramSuggestions);
                 case "MAXDIFF":
-                    return IntExtensions.TryParseInvariant(parameters, out affixFile.maxDifferency);
+                    return IntExtensions.TryParseInvariant(parameters, out Builder.maxDifferency);
                 case "MAXCPDSUGS":
-                    return IntExtensions.TryParseInvariant(parameters, out affixFile.maxCompoundSuggestions);
+                    return IntExtensions.TryParseInvariant(parameters, out Builder.maxCompoundSuggestions);
                 case "KEEPCASE": // parse in the flag used by forbidden words
-                    return TryParseFlag(parameters, out affixFile.keepCase);
+                    return TryParseFlag(parameters, out Builder.keepCase);
                 case "FORCEUCASE":
-                    return TryParseFlag(parameters, out affixFile.forceUpperCase);
+                    return TryParseFlag(parameters, out Builder.forceUpperCase);
                 case "WARN":
-                    return TryParseFlag(parameters, out affixFile.warn);
+                    return TryParseFlag(parameters, out Builder.warn);
                 case "SUBSTANDARD":
-                    return TryParseFlag(parameters, out affixFile.subStandard);
+                    return TryParseFlag(parameters, out Builder.subStandard);
                 case "PFX":
-                    return TryParseAffixIntoList(affixFile, parameters, affixFile.Prefixes);
+                    return TryParseAffixIntoList(parameters, Builder.Prefixes);
                 case "SFX":
-                    return TryParseAffixIntoList(affixFile, parameters, affixFile.Suffixes);
+                    return TryParseAffixIntoList(parameters, Builder.Suffixes);
                 case "AF":
-                    return TryParseAliasF(affixFile, parameters);
+                    return TryParseAliasF(parameters);
                 case "AM":
-                    return TryParseAliasM(affixFile, parameters);
+                    return TryParseAliasM(parameters);
                 default:
                     return false;
             }
         }
 
-        private bool TryParseCompoundSyllable(string parameters, AffixFile affixFile)
+        private bool TryParseCompoundSyllable(string parameters)
         {
             if (string.IsNullOrEmpty(parameters))
             {
@@ -262,7 +252,7 @@ namespace Hunspell
                 int maxValue;
                 if (IntExtensions.TryParseInvariant(parts[0], out maxValue))
                 {
-                    affixFile.CompoundMaxSyllable = maxValue;
+                    Builder.CompoundMaxSyllable = maxValue;
                 }
                 else
                 {
@@ -272,7 +262,7 @@ namespace Hunspell
 
             var compoundVowels = (parts.Length > 1 ? parts[1] : "AEIOUaeiou").ToCharArray();
             Array.Sort(compoundVowels);
-            affixFile.CompoundVowels = compoundVowels;
+            Builder.CompoundVowels = compoundVowels;
 
             return true;
         }
@@ -308,27 +298,27 @@ namespace Hunspell
             }
         }
 
-        private bool TryParsePhone(AffixFile affixFile, string parameterText)
+        private bool TryParsePhone(string parameterText)
         {
             if (string.IsNullOrEmpty(parameterText))
             {
                 return false;
             }
 
-            if (!hasInitializedPhone || affixFile.Phone == null)
+            if (IsInitialized(InitializationFlags.Phone) || Builder.Phone == null)
             {
                 int expectedSize;
                 if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
                 {
-                    affixFile.Phone = new List<PhoneticEntry>(expectedSize);
+                    Builder.Phone = new List<PhoneticEntry>(expectedSize);
                     return true;
                 }
-                else if (affixFile.Phone == null)
+                else if (Builder.Phone == null)
                 {
-                    affixFile.Phone = new List<PhoneticEntry>();
+                    Builder.Phone = new List<PhoneticEntry>();
                 }
 
-                hasInitializedPhone = true;
+                SetInitialized(InitializationFlags.Phone);
             }
 
             var parts = parameterText.SplitOnTabOrSpace();
@@ -351,28 +341,28 @@ namespace Hunspell
 
             item2 = item2.Replace("_", string.Empty);
             var entry = new PhoneticEntry(item1, item2);
-            affixFile.Phone.Add(entry);
+            Builder.Phone.Add(entry);
             return true;
         }
 
-        private bool TryParseMapEntry(AffixFile affixFile, string parameterText)
+        private bool TryParseMapEntry(string parameterText)
         {
             if (string.IsNullOrEmpty(parameterText))
             {
                 return false;
             }
 
-            if (!hasInitializedMap || affixFile.MapTable == null)
+            if (!hasInitializedMap || Builder.MapTable == null)
             {
                 int expectedSize;
                 if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
                 {
-                    affixFile.MapTable = new List<MapEntry>(expectedSize);
+                    Builder.MapTable = new List<MapEntry>(expectedSize);
                     return true;
                 }
-                else if (affixFile.MapTable == null)
+                else if (Builder.MapTable == null)
                 {
-                    affixFile.MapTable = new List<MapEntry>();
+                    Builder.MapTable = new List<MapEntry>();
                 }
 
                 hasInitializedMap = true;
@@ -398,18 +388,18 @@ namespace Hunspell
                 entry.Add(parameterText.Substring(chb, che - chb));
             }
 
-            affixFile.MapTable.Add(entry);
+            Builder.MapTable.Add(entry);
             return true;
         }
 
-        private bool TryParseIconv(AffixFile affixFile, string parameterText)
+        private bool TryParseIconv(string parameterText)
         {
             if (string.IsNullOrEmpty(parameterText))
             {
                 return false;
             }
 
-            if (!hasInitializedIconv || affixFile.InputConversions == null)
+            if (!hasInitializedIconv || Builder.InputConversions == null)
             {
                 affixFile.InputConversions = new SortedDictionary<string, ReplacementEntry>();
                 hasInitializedIconv = true;
@@ -427,21 +417,21 @@ namespace Hunspell
                 return false;
             }
 
-            affixFile.InputConversions.Add(parts[0], parts[1]);
+            Builder.InputConversions.AddReplacementEntry(parts[0], parts[1]);
 
             return true;
         }
 
-        private bool TryParseOconv(AffixFile affixFile, string parameterText)
+        private bool TryParseOconv(string parameterText)
         {
             if (string.IsNullOrEmpty(parameterText))
             {
                 return false;
             }
 
-            if (!hasInitializedOconv || affixFile.OutputConversions == null)
+            if (!hasInitializedOconv || Builder.OutputConversions == null)
             {
-                affixFile.OutputConversions = new SortedDictionary<string, ReplacementEntry>();
+                Builder.OutputConversions = new SortedDictionary<string, ReplacementEntry>();
                 hasInitializedOconv = true;
 
                 int expectedSize;
@@ -457,117 +447,117 @@ namespace Hunspell
                 return false;
             }
 
-            affixFile.OutputConversions.Add(parts[0], parts[1]);
+            Builder.OutputConversions.AddReplacementEntry(parts[0], parts[1]);
 
             return true;
         }
 
-        private bool TryParseBreak(AffixFile affixFile, string parameterText)
+        private bool TryParseBreak(string parameterText)
         {
             if (string.IsNullOrEmpty(parameterText))
             {
                 return false;
             }
 
-            if (!hasInitializedBreak || affixFile.BreakTable == null)
+            if (!hasInitializedBreak || Builder.BreakTable == null)
             {
                 int expectedSize;
                 if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
                 {
-                    affixFile.BreakTable = new List<string>(expectedSize);
+                    Builder.BreakTable = new List<string>(expectedSize);
                     return true;
                 }
-                else if (affixFile.BreakTable == null)
+                else if (Builder.BreakTable == null)
                 {
-                    affixFile.BreakTable = new List<string>();
+                    Builder.BreakTable = new List<string>();
                 }
 
                 hasInitializedBreak = true;
             }
 
-            affixFile.BreakTable.Add(parameterText);
+            Builder.BreakTable.Add(parameterText);
             return true;
         }
 
-        private bool TryParseAliasF(AffixFile affixFile, string parameterText)
+        private bool TryParseAliasF(AffixConfig.Builder builder, string parameterText)
         {
             if (string.IsNullOrEmpty(parameterText))
             {
                 return false;
             }
 
-            if (!hasInitializedAliasF || affixFile.AliasF == null)
+            if (!hasInitializedAliasF || Builder.AliasF == null)
             {
                 int expectedSize;
                 if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
                 {
-                    affixFile.AliasF = new List<ImmutableList<int>>(expectedSize);
+                    Builder.AliasF = new List<ImmutableList<int>>(expectedSize);
                     return true;
                 }
-                else if (affixFile.AliasF == null)
+                else if (Builder.AliasF == null)
                 {
-                    affixFile.AliasF = new List<ImmutableList<int>>();
+                    Builder.AliasF = new List<ImmutableList<int>>();
                 }
 
                 hasInitializedAliasF = true;
             }
 
             var flags = ImmutableList.CreateRange(DecodeFlags(parameterText).OrderBy(x => x));
-            affixFile.AliasF.Add(flags);
+            Builder.AliasF.Add(flags);
             return true;
         }
 
-        private bool TryParseAliasM(AffixFile affixFile, string parameterText)
+        private bool TryParseAliasM(AffixConfig.Builder builder, string parameterText)
         {
             if (string.IsNullOrEmpty(parameterText))
             {
                 return false;
             }
 
-            if (!hasInitializedAliasM || affixFile.AliasM == null)
+            if (!hasInitializedAliasM || Builder.AliasM == null)
             {
                 int expectedSize;
                 if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
                 {
-                    affixFile.AliasM = new List<string>(expectedSize);
+                    Builder.AliasM = new List<string>(expectedSize);
                     return true;
                 }
-                else if (affixFile.AliasM == null)
+                else if (Builder.AliasM == null)
                 {
-                    affixFile.AliasM = new List<string>();
+                    Builder.AliasM = new List<string>();
                 }
 
                 hasInitializedAliasM = true;
             }
 
             var chunk = parameterText;
-            if (affixFile.ComplexPrefixes)
+            if (Builder.ComplexPrefixes)
             {
                 chunk = chunk.Reverse();
             }
 
-            affixFile.AliasM.Add(chunk);
+            Builder.AliasM.Add(chunk);
             return true;
         }
 
-        private bool TryParseCompoundRuleIntoList(AffixFile affixFile, string parameterText)
+        private bool TryParseCompoundRuleIntoList(string parameterText)
         {
             if (string.IsNullOrEmpty(parameterText))
             {
                 return false;
             }
 
-            if (!hasInitializedCompoundRules || affixFile.CompoundRules == null)
+            if (!hasInitializedCompoundRules || Builder.CompoundRules == null)
             {
                 int expectedSize;
                 if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
                 {
-                    affixFile.CompoundRules = new List<CompoundRule>(expectedSize);
+                    Builder.CompoundRules = new List<CompoundRule>(expectedSize);
                     return true;
                 }
-                else if (affixFile.CompoundRules == null)
+                else if (Builder.CompoundRules == null)
                 {
-                    affixFile.CompoundRules = new List<CompoundRule>();
+                    Builder.CompoundRules = new List<CompoundRule>();
                 }
 
                 hasInitializedCompoundRules = true;
@@ -607,11 +597,11 @@ namespace Hunspell
                 entry.AddRange(DecodeFlags(parameterText));
             }
 
-            affixFile.CompoundRules.Add(entry);
+            Builder.CompoundRules.Add(entry);
             return true;
         }
 
-        private bool TryParseAffixIntoList<TEntry>(AffixFile affixFile, string parameterText, List<AffixEntryGroup<TEntry>> groups)
+        private bool TryParseAffixIntoList<TEntry>(string parameterText, List<AffixEntryGroup<TEntry>> groups)
             where TEntry : AffixEntry, new()
         {
             var lineMatch = AffixLineRegex.Match(parameterText);
@@ -643,11 +633,11 @@ namespace Hunspell
                 {
                     options |= AffixEntryOptions.CrossProduct;
                 }
-                if (affixFile.IsAliasM)
+                if (Builder.IsAliasM)
                 {
                     options |= AffixEntryOptions.AliasM;
                 }
-                if (affixFile.IsAliasF)
+                if (Builder.IsAliasF)
                 {
                     options |= AffixEntryOptions.AliasF;
                 }
@@ -668,7 +658,7 @@ namespace Hunspell
                 {
                     strip = string.Empty;
                 }
-                if (affixFile.ComplexPrefixes)
+                if (Builder.ComplexPrefixes)
                 {
                     strip = strip.Reverse();
                 }
@@ -681,12 +671,12 @@ namespace Hunspell
                     var slashPart = affixText.Substring(affixSlashIndex + 1);
                     affixText = affixText.Substring(0, affixSlashIndex);
 
-                    if (affixFile.IsAliasF)
+                    if (Builder.IsAliasF)
                     {
                         int aliasNumber;
-                        if (int.TryParse(slashPart, out aliasNumber) && aliasNumber > 0 && aliasNumber <= affixFile.AliasF.Count)
+                        if (int.TryParse(slashPart, out aliasNumber) && aliasNumber > 0 && aliasNumber <= Builder.AliasF.Count)
                         {
-                            contClass = affixFile.AliasF[aliasNumber - 1];
+                            contClass = Builder.AliasF[aliasNumber - 1];
                         }
                         else
                         {
@@ -698,11 +688,11 @@ namespace Hunspell
                         contClass = ImmutableList.CreateRange(DecodeFlags(slashPart));
                     }
                 }
-                if (affixFile.IgnoredChars != null)
+                if (Builder.IgnoredChars != null)
                 {
-                    affixText = affixText.RemoveChars(affixFile.IgnoredChars);
+                    affixText = affixText.RemoveChars(Builder.IgnoredChars);
                 }
-                if (affixFile.ComplexPrefixes)
+                if (Builder.ComplexPrefixes)
                 {
                     affixText = affixText.Reverse();
                 }
@@ -714,7 +704,7 @@ namespace Hunspell
 
                 // piece 5 - is the conditions descriptions
                 var conditionText = lineMatchGroups[6].Value;
-                if (affixFile.ComplexPrefixes)
+                if (Builder.ComplexPrefixes)
                 {
                     conditionText = conditionText.Reverse();
                     conditionText = ReverseCondition(conditionText);
@@ -754,12 +744,12 @@ namespace Hunspell
                 if (lineMatchGroups[7].Success)
                 {
                     morph = lineMatchGroups[7].Value;
-                    if (affixFile.IsAliasM)
+                    if (Builder.IsAliasM)
                     {
                         int morphNumber;
                         if (IntExtensions.TryParseInvariant(morph, out morphNumber) && morphNumber > 0 && morphNumber <= affixFile.AliasM.Count)
                         {
-                            morph = affixFile.AliasM[morphNumber - 1];
+                            morph = Builder.AliasM[morphNumber - 1];
                         }
                         else
                         {
@@ -768,7 +758,7 @@ namespace Hunspell
                     }
                     else
                     {
-                        if (affixFile.ComplexPrefixes)
+                        if (Builder.ComplexPrefixes)
                         {
                             morph = morph.Reverse();
                         }
@@ -965,7 +955,7 @@ namespace Hunspell
             return false;
         }
 
-        private bool TryParseReplacementEntryLineIntoReplacements(AffixFile affixFile, string parameterText)
+        private bool TryParseReplacementEntryLineIntoReplacements(string parameterText)
         {
             var parameters = parameterText.SplitOnTabOrSpace();
             if (parameters.Length == 0)
@@ -980,7 +970,7 @@ namespace Hunspell
                     int expectedCount;
                     if (IntExtensions.TryParseInvariant(parameters[0], out expectedCount) && expectedCount >= 0)
                     {
-                        affixFile.Replacements = new List<ReplacementEntry>(Math.Max(1, expectedCount));
+                        Builder.Replacements = new List<ReplacementEntry>(Math.Max(1, expectedCount));
                         hasInitializedReplacements = true;
                         return true;
                     }
@@ -1005,20 +995,20 @@ namespace Hunspell
                 type |= 2;
             }
 
-            if (affixFile.Replacements == null)
+            if (Builder.Replacements == null)
             {
-                affixFile.Replacements = new List<ReplacementEntry>();
+                Builder.Replacements = new List<ReplacementEntry>();
                 hasInitializedReplacements = true;
             }
 
             var replacement = new ReplacementEntry(pattern);
             replacement.OutStrings[type] = outString;
-            affixFile.Replacements.Add(replacement);
+            Builder.Replacements.Add(replacement);
 
             return true;
         }
 
-        private bool TryParseCheckCompoundPatternIntoCompoundPatterns(AffixFile affixFile, string parameterText)
+        private bool TryParseCheckCompoundPatternIntoCompoundPatterns(string parameterText)
         {
             var parameters = parameterText.SplitOnTabOrSpace();
             if (parameters.Length == 0)
@@ -1033,7 +1023,7 @@ namespace Hunspell
                     int expectedCount;
                     if (IntExtensions.TryParseInvariant(parameters[0], out expectedCount) && expectedCount >= 0)
                     {
-                        affixFile.CompoundPatterns = new List<PatternEntry>(Math.Max(1, expectedCount));
+                        Builder.CompoundPatterns = new List<PatternEntry>(Math.Max(1, expectedCount));
                         hasInitializedCompoundPatterns = true;
                         return true;
                     }
@@ -1083,16 +1073,16 @@ namespace Hunspell
                 if (parameters.Length >= 3)
                 {
                     patternEntry.Pattern3 = parameters[2];
-                    affixFile.SimplifiedCompound = true;
+                    Builder.SimplifiedCompound = true;
                 }
             }
 
-            if (affixFile.CompoundPatterns == null)
+            if (Builder.CompoundPatterns == null)
             {
-                affixFile.CompoundPatterns = new List<PatternEntry>();
+                Builder.CompoundPatterns = new List<PatternEntry>();
             }
 
-            affixFile.CompoundPatterns.Add(patternEntry);
+            Builder.CompoundPatterns.Add(patternEntry);
 
             return true;
         }
@@ -1104,7 +1094,7 @@ namespace Hunspell
                 return Enumerable.Empty<int>();
             }
 
-            switch (FlagMode)
+            switch (Builder.FlagMode)
             {
                 case FlagMode.Char:
                 case FlagMode.Uni:
@@ -1161,7 +1151,7 @@ namespace Hunspell
                 return false;
             }
 
-            switch (FlagMode)
+            switch (Builder.FlagMode)
             {
                 case FlagMode.Char:
                 case FlagMode.Uni:
@@ -1199,7 +1189,7 @@ namespace Hunspell
                 return false;
             }
 
-            switch (FlagMode)
+            switch (Builder.FlagMode)
             {
                 case FlagMode.Char:
                 case FlagMode.Uni:
@@ -1235,50 +1225,46 @@ namespace Hunspell
             return BitConverter.ToUInt16(new byte[] { unchecked((byte)first), unchecked((byte)second) }, 0);
         }
 
-        private bool SetFlagMode(string modeText)
+        private bool TrySetFlagMode(string modeText)
         {
             if (string.IsNullOrEmpty(modeText))
             {
                 return false;
             }
 
-            FlagMode newMode;
-            if (modeText.ContainsOrdinalIgnoreCase("LONG"))
+            FlagMode mode;
+            if (FlagModeParameterMappings.TryGetValue(modeText, out mode))
             {
-                newMode = FlagMode.Long;
-            }
-            else if (modeText.ContainsOrdinalIgnoreCase("NUM"))
-            {
-                newMode = FlagMode.Num;
-            }
-            else if (modeText.ContainsOrdinalIgnoreCase("UTF"))
-            {
-                newMode = FlagMode.Uni;
+                if (mode == Builder.FlagMode)
+                {
+                    Warnings.Add($"Redundant {nameof(Builder.FlagMode)}: {modeText}");
+                    return false;
+                }
+
+                Builder.FlagMode = mode;
+                return true;
             }
             else
             {
+                Warnings.Add($"Unknown {nameof(FlagMode)}: {modeText}");
                 return false;
             }
-
-            if (newMode == FlagMode)
-            {
-                // TODO: warn
-            }
-
-            FlagMode = newMode;
-            return true;
         }
 
-        public void Dispose()
+        [Flags]
+        private enum InitializationFlags
         {
-            if (ownsReaderLifetime)
-            {
-                var disposableReader = Reader as IDisposable;
-                if (disposableReader != null)
-                {
-                    disposableReader.Dispose();
-                }
-            }
+            None = 0,
+            Replacements = 1 << 0,
+            CompoundRules = 1 << 1,
+            CompoundPatterns = 1 << 2,
+            AliasF = 1 << 3,
+            AliasM = 1 << 4,
+            Break = 1 << 5,
+            Iconv = 1 << 6,
+            Oconv = 1 << 7,
+            Map = 1 << 8,
+            Phone = 1 << 9
         }
     }
 }
