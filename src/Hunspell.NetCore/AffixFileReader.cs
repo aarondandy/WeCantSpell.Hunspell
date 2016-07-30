@@ -193,7 +193,7 @@ namespace Hunspell
                 case "NEEDAFFIX": // parse in the flag used by `needaffixs'
                     return TryParseFlag(parameters, out Builder.NeedAffix);
                 case "REP": // parse in the typical fault correcting table
-                    return TryParseReplacements(parameters);
+                    return TryParseStandardListItem(EntryListType.Replacements, parameters, ref Builder.Replacements, TryParseReplacements);
                 case "ICONV": // parse in the input conversion table
                     return TryParseConv(parameters, EntryListType.Iconv, ref Builder.InputConversions);
                 case "OCONV": // parse in the output conversion table
@@ -829,72 +829,46 @@ namespace Hunspell
             return false;
         }
 
-        private bool TryParseReplacements(string parameterText)
+        private bool TryParseReplacements(string parameterText, List<SingleReplacementEntry> entries)
         {
-            if (string.IsNullOrEmpty(parameterText))
+            var parameters = parameterText.SplitOnTabOrSpace();
+            if (parameters.Length == 0)
             {
                 return false;
             }
 
-            if (!IsInitialized(EntryListType.Replacements) || Builder.Replacements == null)
+            var pattern = parameters[0];
+            var outString = parameters.Length > 1 ? parameters[1] : string.Empty;
+
+            ReplacementEntryType type;
+            var trailingDollar = pattern.EndsWith('$');
+            if (pattern.StartsWith('^'))
             {
-                int expectedSize;
-                if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
+                if (trailingDollar)
                 {
-                    Builder.Replacements = new Dictionary<string, string[]>(expectedSize);
-                    return true;
+                    type = ReplacementEntryType.Isol;
+                    pattern = pattern.Substring(1).SubstringFromEnd(1);
                 }
-                else if (Builder.Replacements == null)
+                else
                 {
-                    Builder.Replacements = new Dictionary<string, string[]>();
+                    type = ReplacementEntryType.Ini;
+                    pattern = pattern.Substring(1);
                 }
-
-                SetInitialized(EntryListType.Replacements);
-            }
-
-            var parameters = parameterText.SplitOnTabOrSpace();
-
-            string pattern, outString;
-            if (parameters.Length >= 2)
-            {
-                pattern = parameters[0];
-                outString = parameters[1];
-            }
-            else if (parameters.Length == 1)
-            {
-                pattern = parameters[0];
-                outString = string.Empty;
             }
             else
             {
-                return false;
+                if (trailingDollar)
+                {
+                    type = ReplacementEntryType.Fin;
+                    pattern = pattern.SubstringFromEnd(1);
+                }
+                else
+                {
+                    type = ReplacementEntryType.Med;
+                }
             }
 
-            pattern = pattern.Replace('_', ' ');
-            outString = outString.Replace('_', ' ');
-
-            int type = 0;
-
-            if (pattern.StartsWith('^'))
-            {
-                pattern = pattern.Substring(1);
-                type = 1;
-            }
-
-            if (pattern.EndsWith('$'))
-            {
-                pattern = pattern.SubstringFromEnd(1);
-                type += 2;
-            }
-
-            string[] outStrings;
-            if (!Builder.Replacements.TryGetValue(pattern, out outStrings) || outString == null)
-            {
-                outStrings = new string[4];
-                Builder.Replacements[pattern] = outStrings;
-            }
-
-            outStrings[type] = outString;
+            entries.Add(new SingleReplacementEntry(pattern.Replace('_', ' '), outString.Replace('_', ' '), type));
 
             return true;
         }
@@ -1115,7 +1089,7 @@ namespace Hunspell
         }
 
         [Flags]
-        private enum EntryListType
+        private enum EntryListType : short
         {
             None = 0,
             Replacements = 1 << 0,

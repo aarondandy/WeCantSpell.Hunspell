@@ -200,7 +200,7 @@ namespace Hunspell
             /// Specifies modifications to try first
             /// </summary>
             /// <seealso cref="AffixConfig.Replacements"/>
-            public Dictionary<string, string[]> Replacements;
+            public List<SingleReplacementEntry> Replacements;
 
             /// <summary>
             /// Suffixes attached to root words to make other words.
@@ -354,7 +354,7 @@ namespace Hunspell
                     SubStandard = SubStandard,
                     CompoundSyllableNum = CompoundSyllableNum,
                     RequestedEncoding = RequestedEncoding,
-                    Replacements = EmptyIfNull(Replacements).ToImmutableReplacementEntries(),
+                    Replacements = EmptyIfNull(Replacements).ToImmutableArray(),
                     Suffixes = EmptyIfNull(Suffixes).Select(b => b.ToGroup()).ToImmutableArray(),
                     Prefixes = EmptyIfNull(Prefixes).Select(b => b.ToGroup()).ToImmutableArray(),
                     AliasF = EmptyIfNull(AliasF).Select(ToImmutableArray).ToImmutableArray(),

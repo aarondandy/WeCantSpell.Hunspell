@@ -485,7 +485,7 @@ namespace Hunspell
         /// </code>
         /// </example>
         /// <seealso cref="CheckCompoundRep"/>
-        public ImmutableSortedDictionary<string, ReplacementEntry> Replacements { get; private set; }
+        public ImmutableArray<SingleReplacementEntry> Replacements { get; private set; }
 
         /// <summary>
         /// Suffixes attached to root words to make other words.
@@ -667,12 +667,12 @@ namespace Hunspell
         /// <remarks>
         /// Useful to convert one type of quote to another one, or change ligature.
         /// </remarks>
-        public ImmutableSortedDictionary<string, ReplacementEntry> InputConversions { get; private set; }
+        public ImmutableSortedDictionary<string, MultiReplacementEntry> InputConversions { get; private set; }
 
         /// <summary>
         /// Output conversion entries.
         /// </summary>
-        public ImmutableSortedDictionary<string, ReplacementEntry> OutputConversions { get; private set; }
+        public ImmutableSortedDictionary<string, MultiReplacementEntry> OutputConversions { get; private set; }
 
         /// <summary>
         /// Mappings between related characters.

@@ -76,8 +76,11 @@
     <Compile Include="PhoneticEntry.cs" />
     <Compile Include="PrefixEntry.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="MultiReplacementEntry.cs" />
     <Compile Include="ReplacementEntry.cs" />
+    <Compile Include="ReplacementEntryType.cs" />
     <Compile Include="replist.cs" />
+    <Compile Include="SingleReplacementEntry.cs" />
     <Compile Include="SuffixEntry.cs" />
     <Compile Include="suggestmgr.cs" />
     <Compile Include="Utilities\ArrayExtensions.cs" />

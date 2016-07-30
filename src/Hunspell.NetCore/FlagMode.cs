@@ -1,6 +1,6 @@
 ﻿namespace Hunspell
 {
-    public enum FlagMode : int
+    public enum FlagMode : byte
     {
         /// <summary>
         /// Ispell's one-character flags (erfg -> e r f g).

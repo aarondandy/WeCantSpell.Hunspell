@@ -45,8 +45,11 @@
  *
  */
 
+using System;
+
 namespace Hunspell
 {
+    [Obsolete("Replaced by CultureInfo")]
     public enum LanguageNumber
     {
         AR = 96,

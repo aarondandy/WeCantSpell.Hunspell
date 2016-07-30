@@ -480,10 +480,12 @@ namespace Hunspell.NetCore.Tests
                 actual.Suffixes.Should().HaveCount(16);
 
                 actual.Replacements.Should().HaveCount(88);
-                actual.Replacements["a"].Pattern.Should().Be("a");
-                actual.Replacements["a"].OutStrings[0].Should().Be("ei");
-                actual.Replacements["shun"].Pattern.Should().Be("shun");
-                actual.Replacements["shun"].OutStrings[0].Should().Be("cion");
+                actual.Replacements[0].Pattern.Should().Be("a");
+                actual.Replacements[0].OutString.Should().Be("ei");
+                actual.Replacements[0].Type.Should().Be(ReplacementEntryType.Med);
+                actual.Replacements[87].Pattern.Should().Be("shun");
+                actual.Replacements[87].OutString.Should().Be("cion");
+                actual.Replacements[87].Type.Should().Be(ReplacementEntryType.Med);
             }
 
             [Fact]
@@ -646,8 +648,9 @@ namespace Hunspell.NetCore.Tests
                 actual.CheckCompoundRep.Should().BeTrue();
                 actual.CompoundFlag.Should().Be('A');
                 actual.Replacements.Should().HaveCount(1);
-                actual.Replacements.Values.Single().Pattern.Should().NotBeNullOrEmpty();
-                actual.Replacements.Values.Single().OutStrings[0].Should().Be("i");
+                actual.Replacements.Single().Pattern.Should().NotBeNullOrEmpty();
+                actual.Replacements.Single().OutString.Should().Be("i");
+                actual.Replacements.Single().Type.Should().Be(ReplacementEntryType.Med);
             }
 
             [Fact]
@@ -1101,21 +1104,37 @@ namespace Hunspell.NetCore.Tests
             public async Task can_read_nepali_aff()
             {
                 var filePath = @"files/nepali.aff";
+                var key1 = "‌"; // NOTE: this is not the empty string
+                var value1_1 = "￰";
+                var value1_2 = "‌"; // NOTE: this is not the empty string
+                var key2 = "‍"; // NOTE: this is not the empty string
+                var value2_2 = "￰";
+                key1.Should().NotBeEmpty();
+                key2.Should().NotBeEmpty();
+                key2.Should().NotBe(key1);
+                value1_1.Should().NotBeEmpty();
+                value1_2.Should().NotBeEmpty();
+                value1_2.Should().NotBe(value1_1);
 
                 var actual = await ReadFileAsync(filePath);
 
                 actual.IgnoredChars.Should().BeEquivalentTo(new[] { '￰' });
                 actual.WordChars.Should().BeEquivalentTo("ःािीॉॊोौॎॏॕॖॗ‌‍".ToCharArray());
-                actual.InputConversions.Should().HaveCount(3);
-                var key1 = "‌"; // NOTE: this is not the empty string
-                var value1_1 = "￰";
-                var value1_2 = "‌"; // NOTE: this is not the empty string
-                key1.Should().NotBeEmpty();
-                value1_2.Should().NotBeEmpty();
-                actual.InputConversions[key1].OutStrings[0].Should().Be("￰");
-                actual.InputConversions[key1].OutStrings[2].Should().Be(value1_1);
-                actual.InputConversions[key1].OutStrings[2].Should().Be(value1_2);
+
+                actual.InputConversions.Should().HaveCount(4);
+
+                actual.InputConversions[key1].OutStrings[0].Equals(value1_1, StringComparison.Ordinal).Should().BeTrue();
+                actual.InputConversions[key1].OutStrings[1].Should().BeNull();
+                actual.InputConversions[key1].OutStrings[2].Equals(value1_2, StringComparison.Ordinal).Should().BeTrue();
+                actual.InputConversions[key1].OutStrings[3].Should().BeNull();
+
+                actual.InputConversions[key2].OutStrings[0].Should().BeNull();
+                actual.InputConversions[key2].OutStrings[1].Should().BeNull();
+                actual.InputConversions[key2].OutStrings[2].Equals(value2_2, StringComparison.Ordinal).Should().BeTrue();
+                actual.InputConversions[key2].OutStrings[3].Should().BeNull();
+
                 actual.InputConversions["र्‌य"].OutStrings[0].Should().Be("र्‌य");
+
                 actual.InputConversions["र्‌व"].OutStrings[0].Should().Be("र्‌व");
             }
 
@@ -1226,10 +1245,47 @@ namespace Hunspell.NetCore.Tests
 
                 actual.MaxNgramSuggestions.Should().Be(0);
                 actual.Replacements.Should().HaveCount(8);
-                actual.Replacements["f"].Pattern.Should().Be("f");
-                actual.Replacements["f"].OutStrings[0].Should().Be("ph");
-                actual.Replacements["s"].Pattern.Should().Be("s");
-                actual.Replacements["s"].OutStrings[0].Should().Be("'s");
+                actual.Replacements[0].Pattern.Should().Be("f");
+                actual.Replacements[0].OutString.Should().Be("ph");
+                actual.Replacements[0].Med.Should().Be("ph");
+                actual.Replacements[0].Type.Should().Be(ReplacementEntryType.Med);
+
+                actual.Replacements[1].Pattern.Should().Be("ph");
+                actual.Replacements[1].OutString.Should().Be("f");
+                actual.Replacements[1].Med.Should().Be("f");
+                actual.Replacements[1].Type.Should().Be(ReplacementEntryType.Med);
+
+                actual.Replacements[2].Pattern.Should().Be("shun");
+                actual.Replacements[2].OutString.Should().Be("tion");
+                actual.Replacements[2].Fin.Should().Be("tion");
+                actual.Replacements[2].Type.Should().Be(ReplacementEntryType.Fin);
+
+                actual.Replacements[3].Pattern.Should().Be("alot");
+                actual.Replacements[3].OutString.Should().Be("a lot");
+                actual.Replacements[3].Isol.Should().Be("a lot");
+                actual.Replacements[3].Type.Should().Be(ReplacementEntryType.Isol);
+
+                actual.Replacements[4].Pattern.Should().Be("foo");
+                actual.Replacements[4].OutString.Should().Be("bar");
+                actual.Replacements[4].Isol.Should().Be("bar");
+                actual.Replacements[4].Type.Should().Be(ReplacementEntryType.Isol);
+
+                actual.Replacements[5].Pattern.Should().Be("'");
+                actual.Replacements[5].OutString.Should().Be(" ");
+                actual.Replacements[5].Med.Should().Be(" ");
+                actual.Replacements[5].Type.Should().Be(ReplacementEntryType.Med);
+
+                actual.Replacements[6].Pattern.Should().StartWith("vinte");
+                actual.Replacements[6].Pattern.Should().EndWith("n");
+                actual.Replacements[6].OutString.Should().Be("vinte e un");
+                actual.Replacements[6].Isol.Should().Be("vinte e un");
+                actual.Replacements[6].Type.Should().Be(ReplacementEntryType.Isol);
+
+                actual.Replacements[7].Pattern.Should().Be("s");
+                actual.Replacements[7].OutString.Should().Be("'s");
+                actual.Replacements[7].Med.Should().Be("'s");
+                actual.Replacements[7].Type.Should().Be(ReplacementEntryType.Med);
+
                 actual.Suffixes.Should().HaveCount(1);
                 actual.Suffixes.Single().AFlag.Should().Be('A');
                 actual.WordChars.Should().BeEquivalentTo(new[] { '\'' });
@@ -1244,8 +1300,9 @@ namespace Hunspell.NetCore.Tests
 
                 actual.MaxNgramSuggestions.Should().Be(0);
                 actual.Replacements.Should().HaveCount(1);
-                actual.Replacements["oo"].Pattern.Should().Be("oo");
-                actual.Replacements["oo"].OutStrings[0].Should().Be("őő");
+                actual.Replacements.Single().Pattern.Should().Be("oo");
+                actual.Replacements.Single().OutString.Should().Be("őő");
+                actual.Replacements.Single().Type.Should().Be(ReplacementEntryType.Med);
             }
 
             [Fact]
@@ -1280,8 +1337,10 @@ namespace Hunspell.NetCore.Tests
 
                 actual.MaxNgramSuggestions.Should().Be(0);
                 actual.Replacements.Should().NotBeNull();
-                var entry = actual.Replacements.Should().HaveCount(1).And.Subject.Values.Single();
+                var entry = actual.Replacements.Should().HaveCount(1).And.Subject.Single();
                 entry.Pattern.Should().Be("alot");
+                entry.OutString.Should().Be("a lot");
+                entry.Type.Should().Be(ReplacementEntryType.Med);
                 entry.Med.Should().Be("a lot");
                 actual.KeyString.Should().Be("qwertzuiop|asdfghjkl|yxcvbnm|aq");
                 actual.WordChars.Should().BeEquivalentTo(new[] { '.' });
@@ -1319,8 +1378,9 @@ namespace Hunspell.NetCore.Tests
                 actual.Warn.Should().Be('W');
                 actual.Suffixes.Should().HaveCount(1);
                 actual.Replacements.Should().HaveCount(1);
-                actual.Replacements["foo"].Pattern.Should().Be("foo");
-                actual.Replacements["foo"].OutStrings[0].Should().Be("bar");
+                actual.Replacements.Single().Pattern.Should().Be("foo");
+                actual.Replacements.Single().OutString.Should().Be("bar");
+                actual.Replacements.Single().Type.Should().Be(ReplacementEntryType.Med);
             }
 
             [Fact]
@@ -1579,6 +1639,48 @@ namespace Hunspell.NetCore.Tests
                 var actual = await AffixFileReader.ReadAsync(new StringLineReader(textFileContents));
 
                 actual.ForbidWarn.Should().BeTrue();
+            }
+
+            [Theory]
+            [InlineData("abc", "def", "abc", "def", ReplacementEntryType.Med)]
+            [InlineData("^abc", "d_e_f", "abc", "d e f", ReplacementEntryType.Ini)]
+            [InlineData("a_b_c$", "d_e_f", "a b c", "d e f", ReplacementEntryType.Fin)]
+            [InlineData("^a_b_c$", "d_e_f", "a b c", "d e f", ReplacementEntryType.Isol)]
+            public async Task can_read_all_rep_types(string pattern, string outText, string expectedPattern, string expectedOutString, ReplacementEntryType expectedType)
+            {
+                var textFileContents = $"REP {pattern} {outText}";
+                string expectedMed = null;
+                string expectedIni = null;
+                string expectedFin = null;
+                string expectedIsol = null;
+
+                switch (expectedType)
+                {
+                    case ReplacementEntryType.Med:
+                        expectedMed = expectedOutString;
+                        break;
+                    case ReplacementEntryType.Ini:
+                        expectedIni = expectedOutString;
+                        break;
+                    case ReplacementEntryType.Fin:
+                        expectedFin = expectedOutString;
+                        break;
+                    case ReplacementEntryType.Isol:
+                        expectedIsol = expectedOutString;
+                        break;
+                }
+
+                var actual = await AffixFileReader.ReadAsync(new StringLineReader(textFileContents));
+
+                actual.Replacements.Should().HaveCount(1);
+                var rep = actual.Replacements.Single();
+                rep.Pattern.Should().Be(expectedPattern);
+                rep.OutString.Should().Be(expectedOutString);
+                rep.Type.Should().Be(expectedType);
+                rep.Med.Should().Be(expectedMed);
+                rep.Ini.Should().Be(expectedIni);
+                rep.Fin.Should().Be(expectedFin);
+                rep.Isol.Should().Be(expectedIsol);
             }
 
             private async Task<AffixConfig> ReadFileAsync(string filePath)
