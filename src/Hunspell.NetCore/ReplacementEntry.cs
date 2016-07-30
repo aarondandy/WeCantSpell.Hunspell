@@ -38,33 +38,47 @@ namespace Hunspell
 
     internal static class ReplacementEntryExtensions
     {
-        public static bool AddReplacementEntry(this SortedDictionary<string, string[]> list, string pattern1, string pattern2)
+        public static bool AddReplacementEntry(this Dictionary<string, string[]> list, string pattern1, string pattern2)
         {
             if (string.IsNullOrEmpty(pattern1) || string.IsNullOrEmpty(pattern2))
             {
                 return false;
             }
 
-            int type = 0;
+            var leadingUnderscore = pattern1.StartsWith('_');
+            var trailingUnderscore = pattern1.EndsWith('_');
 
-            // analyse word context
-            if (pattern1.StartsWith('_'))
+            int type;
+            if(leadingUnderscore)
             {
-                pattern1 = pattern1.Substring(1);
-                type += 1;
+                if (trailingUnderscore)
+                {
+                    type = 3;
+                    pattern1 = pattern1.Substring(1, pattern1.Length - 2);
+                }
+                else
+                {
+                    type = 1;
+                    pattern1 = pattern1.Substring(1);
+                }
             }
-
-            if (pattern1.EndsWith('_'))
+            else
             {
-                type += 2;
-                pattern1 = pattern1.Substring(0, pattern1.Length - 1);
+                if (trailingUnderscore)
+                {
+                    type = 2;
+                    pattern1 = pattern1.SubstringFromEnd(1);
+                }
+                else
+                {
+                    type = 0;
+                }
             }
 
             pattern1 = pattern1.Replace('_', ' ');
-            pattern2 = pattern2.Replace('_', ' ');
-            string[] entry;
 
             // find existing entry
+            string[] entry;
             if (!list.TryGetValue(pattern1, out entry))
             {
                 // make a new entry if none exists
@@ -72,12 +86,12 @@ namespace Hunspell
                 list.Add(pattern1, entry);
             }
 
-            entry[type] = pattern2;
+            entry[type] = pattern2.Replace('_', ' ');
 
             return true;
         }
 
-        public static ImmutableSortedDictionary<string, ReplacementEntry> ToImmutableReplacementEntries(this SortedDictionary<string, string[]> entries)
+        public static ImmutableSortedDictionary<string, ReplacementEntry> ToImmutableReplacementEntries(this Dictionary<string, string[]> entries)
         {
             return entries.ToImmutableSortedDictionary(pair => pair.Key, pair => new ReplacementEntry(pair.Key, pair.Value));
         }

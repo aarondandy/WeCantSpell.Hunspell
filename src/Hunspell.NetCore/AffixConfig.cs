@@ -485,7 +485,7 @@ namespace Hunspell
         /// </code>
         /// </example>
         /// <seealso cref="CheckCompoundRep"/>
-        public ImmutableArray<ReplacementEntry> Replacements { get; private set; }
+        public ImmutableSortedDictionary<string, ReplacementEntry> Replacements { get; private set; }
 
         /// <summary>
         /// Suffixes attached to root words to make other words.

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 
 namespace Hunspell
@@ -33,17 +34,17 @@ namespace Hunspell
         /// The number of conditions that must be met.
         /// </summary>
         [Obsolete("This should probably be moved to a different data structure.")]
-        public int ConditionCount { get; }
+        public int ConditionCount { get; private set; }
 
         /// <summary>
         /// Optional morphological fields separated by spaces or tabulators.
         /// </summary>
-        public string MorphCode { get; }
+        public string MorphCode { get; private set; }
 
         /// <summary>
         /// Encodes the conditions to be met.
         /// </summary>
-        public string ConditionText { get; }
+        public string ConditionText { get; private set; }
 
         /// <summary>
         /// The affix string to add.
@@ -51,7 +52,7 @@ namespace Hunspell
         /// <remarks>
         /// Affix (optionally with flags of continuation classes, separated by a slash).
         /// </remarks>
-        public string Append { get; }
+        public string Append { get; private set; }
 
         /// <summary>
         /// String to strip before adding affix.
@@ -60,10 +61,29 @@ namespace Hunspell
         /// Stripping characters from beginning (at prefix rules) or
         /// end(at suffix rules) of the word.
         /// </remarks>
-        public string Strip { get; }
+        public string Strip { get; private set; }
 
-        public ImmutableArray<int> ContClass { get; }
+        public ImmutableArray<int> ContClass { get; private set; }
 
         public abstract string Key { get; }
+
+        public static TEntry Create<TEntry>(
+            string strip,
+            string affixText,
+            string conditionText,
+            string morph,
+            IEnumerable<int> contClass
+        )
+            where TEntry : AffixEntry, new()
+        {
+            return new TEntry
+            {
+                Strip = strip,
+                Append = affixText,
+                ConditionText = conditionText,
+                MorphCode = morph,
+                ContClass = contClass.ToImmutableArray()
+            };
+        }
     }
 }

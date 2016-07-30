@@ -10,30 +10,6 @@ namespace Hunspell
     {
         public class Builder
         {
-            internal int compoundWordMax;
-            internal int compoundMin;
-            internal int compoundFlag;
-            internal int compoundBegin;
-            internal int compoundMiddle;
-            internal int compoundEnd;
-            internal int compoundRoot;
-            internal int compoundPermitFlag;
-            internal int compoundForbidFlag;
-            internal int noSuggest;
-            internal int noNgramSuggest;
-            internal int forbiddenWord;
-            internal int lemmaPresent;
-            internal int circumfix;
-            internal int onlyInCompound;
-            internal int needAffix;
-            internal int maxNgramSuggestions;
-            internal int maxDifferency;
-            internal int maxCompoundSuggestions;
-            internal int keepCase;
-            internal int forceUpperCase;
-            internal int warn;
-            internal int subStandard;
-
             /// <summary>
             /// Various affix options.
             /// </summary>
@@ -74,231 +50,139 @@ namespace Hunspell
             /// Flag indicating that a word may be in compound words.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundFlag"/>
-            public int CompoundFlag
-            {
-                get { return compoundFlag; }
-                set { compoundFlag = value; }
-            }
+            public int CompoundFlag;
 
             /// <summary>
             /// A flag indicating that a word may be the first element in a compound word.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundBegin"/>
-            public int CompoundBegin
-            {
-                get { return compoundBegin; }
-                set { compoundBegin = value; }
-            }
+            public int CompoundBegin;
 
             /// <summary>
             /// A flag indicating that a word may be the last element in a compound word.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundEnd"/>
-            public int CompoundEnd
-            {
-                get { return compoundEnd; }
-                set { compoundEnd = value; }
-            }
+            public int CompoundEnd;
 
             /// <summary>
             /// A flag indicating that a word may be a middle element in a compound word.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundMiddle"/>
-            public int CompoundMiddle
-            {
-                get { return compoundMiddle; }
-                set { compoundMiddle = value; }
-            }
+            public int CompoundMiddle;
 
             /// <summary>
             /// Maximum word count in a compound word.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundWordMax"/>
-            public int CompoundWordMax
-            {
-                get { return compoundWordMax; }
-                set { compoundWordMax = value; }
-            }
+            public int CompoundWordMax;
 
             /// <summary>
             /// Minimum length of words used for compounding.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundMin"/>
-            public int CompoundMin
-            {
-                get { return compoundMin; }
-                set { compoundMin = value; }
-            }
+            public int CompoundMin;
 
             /// <summary>
             /// A flag marking compounds as a compound root.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundRoot"/>
-            public int CompoundRoot
-            {
-                get { return compoundRoot; }
-                set { compoundRoot = value; }
-            }
+            public int CompoundRoot;
 
             /// <summary>
             /// A flag indicating that an affix may be inside of compounds.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundPermitFlag"/>
-            public int CompoundPermitFlag
-            {
-                get { return compoundPermitFlag; }
-                set { compoundPermitFlag = value; }
-            }
+            public int CompoundPermitFlag;
 
             /// <summary>
             /// A flag forbidding a suffix from compounding.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundForbidFlag"/>
-            public int CompoundForbidFlag
-            {
-                get { return compoundForbidFlag; }
-                set { compoundForbidFlag = value; }
-            }
+            public int CompoundForbidFlag;
 
             /// <summary>
             /// Flag indicating that a word should not be used as a suggestion.
             /// </summary>
             /// <seealso cref="AffixConfig.NoSuggest"/>
-            public int NoSuggest
-            {
-                get { return noSuggest; }
-                set { noSuggest = value; }
-            }
+            public int NoSuggest;
 
             /// <summary>
             /// Flag indicating that a word should not be used in ngram based suggestions.
             /// </summary>
             /// <seealso cref="AffixConfig.NoNgramSuggest"/>
-            public int NoNgramSuggest
-            {
-                get { return noNgramSuggest; }
-                set { noNgramSuggest = value; }
-            }
+            public int NoNgramSuggest;
 
             /// <summary>
             /// A flag indicating a forbidden word form.
             /// </summary>
             /// <seealso cref="AffixConfig.ForbiddenWord"/>
-            public int ForbiddenWord
-            {
-                get { return forbiddenWord; }
-                set { forbiddenWord = value; }
-            }
+            public int ForbiddenWord;
 
             /// <summary>
             /// A flag used by forbidden words.
             /// </summary>
             /// <seealso cref="AffixConfig.LemmaPresent"/>
-            public int LemmaPresent
-            {
-                get { return lemmaPresent; }
-                set { lemmaPresent = value; }
-            }
+            public int LemmaPresent;
 
             /// <summary>
             /// A flag indicating that affixes may be on a word when this word also has prefix with <see cref="Circumfix"/> flag and vice versa.
             /// </summary>
             /// <seealso cref="AffixConfig.Circumfix"/>
-            public int Circumfix
-            {
-                get { return circumfix; }
-                set { circumfix = value; }
-            }
+            public int Circumfix;
 
             /// <summary>
             /// A flag indicating that a suffix may be only inside of compounds.
             /// </summary>
             /// <seealso cref="AffixConfig.OnlyInCompound"/>
-            public int OnlyInCompound
-            {
-                get { return onlyInCompound; }
-                set { onlyInCompound = value; }
-            }
+            public int OnlyInCompound;
 
             /// <summary>
             /// A flag signing virtual stems in the dictionary.
             /// </summary>
             /// <seealso cref="AffixConfig.NeedAffix"/>
-            public int NeedAffix
-            {
-                get { return needAffix; }
-                set { needAffix = value; }
-            }
+            public int NeedAffix;
 
             /// <summary>
             /// Maximum number of n-gram suggestions. A value of 0 switches off the n-gram suggestions.
             /// </summary>
             /// <seealso cref="AffixConfig.MaxNgramSuggestions"/>
-            public int MaxNgramSuggestions
-            {
-                get { return maxNgramSuggestions; }
-                set { maxNgramSuggestions = value; }
-            }
+            public int MaxNgramSuggestions;
 
             /// <summary>
             /// Similarity factor for the n-gram based suggestions.
             /// </summary>
             /// <seealso cref="AffixConfig.MaxDifferency"/>
-            public int MaxDifferency
-            {
-                get { return maxDifferency; }
-                set { maxDifferency = value; }
-            }
+            public int MaxDifferency;
 
             /// <summary>
             /// Maximum number of suggested compound words generated by compound rule.
             /// </summary>
             /// <seealso cref="AffixConfig.MaxCompoundSuggestions"/>
-            public int MaxCompoundSuggestions
-            {
-                get { return maxCompoundSuggestions; }
-                set { maxCompoundSuggestions = value; }
-            }
+            public int MaxCompoundSuggestions;
 
             /// <summary>
             /// A flag indicating that uppercased and capitalized forms of words are forbidden.
             /// </summary>
             /// <seealso cref="AffixConfig.KeepCase"/>
-            public int KeepCase
-            {
-                get { return keepCase; }
-                set { keepCase = value; }
-            }
+            public int KeepCase;
 
             /// <summary>
             /// A flag forcing capitalization of the whole compound word.
             /// </summary>
             /// <seealso cref="AffixConfig.ForceUpperCase"/>
-            public int ForceUpperCase
-            {
-                get { return forceUpperCase; }
-                set { forceUpperCase = value; }
-            }
+            public int ForceUpperCase;
 
             /// <summary>
             /// Flag indicating a rare word that is also often a spelling mistake.
             /// </summary>
             /// <seealso cref="AffixConfig.Warn"/>
-            public int Warn
-            {
-                get { return warn; }
-                set { warn = value; }
-            }
+            public int Warn;
 
             /// <summary>
             /// Flag signing affix rules and dictionary words not used in morphological generation.
             /// </summary>
             /// <seealso cref="AffixConfig.SubStandard"/>
-            public int SubStandard
-            {
-                get { return subStandard; }
-                set { subStandard = value; }
-            }
+            public int SubStandard;
 
             /// <summary>
             /// A flag used by compound check.
@@ -316,44 +200,54 @@ namespace Hunspell
             /// Specifies modifications to try first
             /// </summary>
             /// <seealso cref="AffixConfig.Replacements"/>
-            public List<ReplacementEntry> Replacements { get; set; }
+            public Dictionary<string, string[]> Replacements;
 
             /// <summary>
             /// Suffixes attached to root words to make other words.
             /// </summary>
             /// <seealso cref="AffixConfig.Suffixes"/>
-            public List<AffixEntryGroup.Builder<SuffixEntry>> Suffixes { get; set; }
+            public List<AffixEntryGroup.Builder<SuffixEntry>> Suffixes;
 
             /// <summary>
             /// Preffixes attached to root words to make other words.
             /// </summary>
             /// <seealso cref="AffixConfig.Prefixes"/>
-            public List<AffixEntryGroup.Builder<PrefixEntry>> Prefixes { get; set; }
+            public List<AffixEntryGroup.Builder<PrefixEntry>> Prefixes;
 
             /// <summary>
             /// Ordinal numbers for affix flag compression.
             /// </summary>
             /// <seealso cref="AffixConfig.AliasF"/>
-            public List<List<int>> AliasF { get; set; }
+            public List<List<int>> AliasF;
+
+            /// <summary>
+            /// Inidicates if any <see cref="AliasF"/> entries have been defined.
+            /// </summary>
+            public bool IsAliasF => AliasF != null && AliasF.Count > 0;
 
             /// <summary>
             /// Values used for morphological alias compression.
             /// </summary>
             /// <seealso cref="AffixConfig.AliasM"/>
-            public List<string> AliasM { get; set; }
+            public List<string> AliasM;
+
+            /// <summary>
+            /// Indicates if any <see cref="AliasM"/> entries have been defined.
+            /// </summary>
+            public bool IsAliasM => AliasM != null && AliasM.Count > 0;
 
             /// <summary>
             /// Defines custom compound patterns with a regex-like syntax.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundRules"/>
-            public List<List<int>> CompoundRules { get; set; }
+            public List<List<int>> CompoundRules;
 
             /// <summary>
             /// Forbid compounding, if the first word in the compound ends with endchars, and
             /// next word begins with beginchars and(optionally) they have the requested flags.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundPatterns"/>
-            public List<PatternEntry> CompoundPatterns { get; set; }
+            public List<PatternEntry> CompoundPatterns;
 
             /// <seealso cref="AffixConfig.SimplifiedCompound"/>
             public bool SimplifiedCompound { get; set; }
@@ -362,31 +256,31 @@ namespace Hunspell
             /// Defines new break points for breaking words and checking word parts separately.
             /// </summary>
             /// <seealso cref="AffixConfig.BreakTable"/>
-            public List<string> BreakTable { get; set; }
+            public List<string> BreakTable;
 
             /// <summary>
             /// Input conversion entries.
             /// </summary>
             /// <seealso cref="AffixConfig.InputConversions"/>
-            public SortedDictionary<string, string[]> InputConversions { get; set; }
+            public Dictionary<string, string[]> InputConversions;
 
             /// <summary>
             /// Output conversion entries.
             /// </summary>
             /// <seealso cref="AffixConfig.OutputConversions"/>
-            public SortedDictionary<string, string[]> OutputConversions { get; set; }
+            public Dictionary<string, string[]> OutputConversions;
 
             /// <summary>
             /// Mappings between related characters.
             /// </summary>
             /// <seealso cref="AffixConfig.MapTable"/>
-            public List<List<string>> MapTable { get; set; }
+            public List<List<string>> MapTable;
 
             /// <summary>
             /// Phonetic transcription entries.
             /// </summary>
             /// <seealso cref="AffixConfig.Phone"/>
-            public List<PhoneticEntry> Phone { get; set; }
+            public List<PhoneticEntry> Phone;
 
             /// <summary>
             /// Maximum syllable number, that may be in a
@@ -460,7 +354,7 @@ namespace Hunspell
                     SubStandard = SubStandard,
                     CompoundSyllableNum = CompoundSyllableNum,
                     RequestedEncoding = RequestedEncoding,
-                    Replacements = ToImmutableArray(Replacements),
+                    Replacements = EmptyIfNull(Replacements).ToImmutableReplacementEntries(),
                     Suffixes = EmptyIfNull(Suffixes).Select(b => b.ToGroup()).ToImmutableArray(),
                     Prefixes = EmptyIfNull(Prefixes).Select(b => b.ToGroup()).ToImmutableArray(),
                     AliasF = EmptyIfNull(AliasF).Select(ToImmutableArray).ToImmutableArray(),
@@ -499,9 +393,9 @@ namespace Hunspell
                 return items == null ? Enumerable.Empty<T>() : items;
             }
 
-            private static SortedDictionary<K, V> EmptyIfNull<K, V>(SortedDictionary<K, V> items)
+            private static Dictionary<K, V> EmptyIfNull<K, V>(Dictionary<K, V> items)
             {
-                return items ?? new SortedDictionary<K, V>();
+                return items ?? new Dictionary<K, V>();
             }
         }
     }

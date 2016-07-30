@@ -1,10 +1,12 @@
-﻿namespace Hunspell
+﻿using Hunspell.Utilities;
+
+namespace Hunspell
 {
     public sealed class SuffixEntry : AffixEntry
     {
-        public SuffixEntry(string rAppend)
+        public SuffixEntry()
         {
-            RAppend = rAppend;
+            RAppend = Append.Reverse();
         }
 
         public string RAppend { get; }
