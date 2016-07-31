@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Hunspell
+﻿namespace Hunspell
 {
-    public enum ReplacementEntryType : byte
+    public enum ReplacementValueType : byte
     {
         /// <summary>
         /// Indicates that text can contain the pattern.

@@ -1,5 +1,8 @@
 ﻿namespace Hunspell
 {
+    /// <summary>
+    /// Indicates the method of encoding used for flag values.
+    /// </summary>
     public enum FlagMode : byte
     {
         /// <summary>

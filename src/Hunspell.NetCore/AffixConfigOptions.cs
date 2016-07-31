@@ -9,6 +9,9 @@ namespace Hunspell
     [Flags]
     public enum AffixConfigOptions : int
     {
+        /// <summary>
+        /// Indicates that no options are set.
+        /// </summary>
         None = 0,
 
         /// <summary>

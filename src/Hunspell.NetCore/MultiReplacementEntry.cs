@@ -18,15 +18,15 @@ namespace Hunspell
         /// </summary>
         public ImmutableArray<string> OutStrings { get; }
 
-        public override string Med => this[ReplacementEntryType.Med];
+        public override string Med => this[ReplacementValueType.Med];
 
-        public override string Ini => this[ReplacementEntryType.Ini];
+        public override string Ini => this[ReplacementValueType.Ini];
 
-        public override string Fin => this[ReplacementEntryType.Fin];
+        public override string Fin => this[ReplacementValueType.Fin];
 
-        public override string Isol => this[ReplacementEntryType.Isol];
+        public override string Isol => this[ReplacementValueType.Isol];
 
-        public override string this[ReplacementEntryType type] => OutStrings[(int)type];
+        public override string this[ReplacementValueType type] => OutStrings[(int)type];
     }
 
     internal static class MultiReplacementEntryExtensions
@@ -38,18 +38,18 @@ namespace Hunspell
                 return false;
             }
 
-            ReplacementEntryType type;
+            ReplacementValueType type;
             var trailingUnderscore = pattern1.EndsWith('_');
             if (pattern1.StartsWith('_'))
             {
                 if (trailingUnderscore)
                 {
-                    type = ReplacementEntryType.Isol;
+                    type = ReplacementValueType.Isol;
                     pattern1 = pattern1.Substring(1, pattern1.Length - 2);
                 }
                 else
                 {
-                    type = ReplacementEntryType.Ini;
+                    type = ReplacementValueType.Ini;
                     pattern1 = pattern1.Substring(1);
                 }
             }
@@ -57,12 +57,12 @@ namespace Hunspell
             {
                 if (trailingUnderscore)
                 {
-                    type = ReplacementEntryType.Fin;
+                    type = ReplacementValueType.Fin;
                     pattern1 = pattern1.SubstringFromEnd(1);
                 }
                 else
                 {
-                    type = ReplacementEntryType.Med;
+                    type = ReplacementValueType.Med;
                 }
             }
 

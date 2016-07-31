@@ -4,7 +4,7 @@ namespace Hunspell
 {
     public sealed class SingleReplacementEntry : ReplacementEntry
     {
-        public SingleReplacementEntry(string pattern, string outString, ReplacementEntryType type)
+        public SingleReplacementEntry(string pattern, string outString, ReplacementValueType type)
             : base(pattern)
         {
             OutString = outString;
@@ -13,16 +13,16 @@ namespace Hunspell
 
         public string OutString { get; }
 
-        public ReplacementEntryType Type { get; }
+        public ReplacementValueType Type { get; }
 
-        public override string Med => this[ReplacementEntryType.Med];
+        public override string Med => this[ReplacementValueType.Med];
 
-        public override string Ini => this[ReplacementEntryType.Ini];
+        public override string Ini => this[ReplacementValueType.Ini];
 
-        public override string Fin => this[ReplacementEntryType.Fin];
+        public override string Fin => this[ReplacementValueType.Fin];
 
-        public override string Isol => this[ReplacementEntryType.Isol];
+        public override string Isol => this[ReplacementValueType.Isol];
 
-        public override string this[ReplacementEntryType type] => type == Type ? OutString : null;
+        public override string this[ReplacementValueType type] => type == Type ? OutString : null;
     }
 }

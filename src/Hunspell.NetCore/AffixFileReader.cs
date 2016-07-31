@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Hunspell
 {
-    public class AffixFileReader
+    public sealed class AffixFileReader
     {
         private AffixFileReader(AffixConfig.Builder builder)
         {
@@ -47,6 +47,8 @@ namespace Hunspell
             {"NUM", FlagMode.Num},
             {"UTF", FlagMode.Uni}
         };
+
+        private static readonly string[] DefaultBreakTableEntries = new[] { "-", "^-", "-$" };
 
         private AffixConfig.Builder Builder { get; }
 
@@ -110,6 +112,21 @@ namespace Hunspell
             Initialized |= flags;
         }
 
+        private void AddDefaultBreakTableIfEmpty()
+        {
+            if (!IsInitialized(EntryListType.Break))
+            {
+                if (Builder.BreakTable == null)
+                {
+                    Builder.BreakTable = DefaultBreakTableEntries.ToList();
+                }
+                else if (Builder.BreakTable.Count == 0)
+                {
+                    Builder.BreakTable.AddRange(DefaultBreakTableEntries);
+                }
+            }
+        }
+
         private bool TryHandleParameterizedCommand(string name, string parameters)
         {
             if (string.IsNullOrEmpty(name) || parameters == null)
@@ -128,7 +145,7 @@ namespace Hunspell
                     Builder.TryString = parameters;
                     return true;
                 case "SET": // parse in the name of the character set used by the .dict and .aff
-                    Builder.RequestedEncoding = parameters;
+                    Builder.RequestedEncodingName = parameters;
                     return true;
                 case "LANG": // parse in the language for language specific codes
                     Builder.Language = parameters;
@@ -238,6 +255,37 @@ namespace Hunspell
             }
         }
 
+        private bool TryParseStandardListItem<T>(EntryListType entryListType, string parameterText, ref List<T> entries, Func<string, List<T>, bool> parse)
+        {
+            if (string.IsNullOrEmpty(parameterText))
+            {
+                return false;
+            }
+
+            if (!IsInitialized(entryListType))
+            {
+                SetInitialized(entryListType);
+
+                int expectedSize;
+                if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
+                {
+                    if (entries == null)
+                    {
+                        entries = new List<T>(expectedSize);
+                    }
+
+                    return true;
+                }
+            }
+
+            if (entries == null)
+            {
+                entries = new List<T>();
+            }
+
+            return parse(parameterText, entries);
+        }
+
         private bool TryParseCompoundSyllable(string parameters)
         {
             if (string.IsNullOrEmpty(parameters))
@@ -298,32 +346,6 @@ namespace Hunspell
             }
         }
 
-        private bool TryParseStandardListItem<T>(EntryListType entryListType, string parameterText, ref List<T> entries, Func<string, List<T>, bool> parse)
-        {
-            if (string.IsNullOrEmpty(parameterText))
-            {
-                return false;
-            }
-
-            if (!IsInitialized(entryListType) || entries == null)
-            {
-                int expectedSize;
-                if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
-                {
-                    entries = new List<T>(expectedSize);
-                    return true;
-                }
-                else if (entries == null)
-                {
-                    entries = new List<T>();
-                }
-
-                SetInitialized(entryListType);
-            }
-
-            return parse(parameterText, entries);
-        }
-
         private static bool TryParsePhone(string parameterText, List<PhoneticEntry> entries)
         {
             var parts = parameterText.SplitOnTabOrSpace();
@@ -374,20 +396,25 @@ namespace Hunspell
                 return false;
             }
 
-            if (!IsInitialized(entryListType) || entries == null)
+            if (!IsInitialized(entryListType))
             {
+                SetInitialized(entryListType);
+
                 int expectedSize;
                 if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
                 {
-                    entries = new Dictionary<string, string[]>(expectedSize);
+                    if (entries == null)
+                    {
+                        entries = new Dictionary<string, string[]>(expectedSize);
+                    }
+
                     return true;
                 }
-                else if (entries == null)
-                {
-                    entries = new Dictionary<string, string[]>();
-                }
+            }
 
-                SetInitialized(entryListType);
+            if (entries == null)
+            {
+                entries = new Dictionary<string, string[]>();
             }
 
             var parts = parameterText.SplitOnTabOrSpace();
@@ -840,18 +867,18 @@ namespace Hunspell
             var pattern = parameters[0];
             var outString = parameters.Length > 1 ? parameters[1] : string.Empty;
 
-            ReplacementEntryType type;
+            ReplacementValueType type;
             var trailingDollar = pattern.EndsWith('$');
             if (pattern.StartsWith('^'))
             {
                 if (trailingDollar)
                 {
-                    type = ReplacementEntryType.Isol;
-                    pattern = pattern.Substring(1).SubstringFromEnd(1);
+                    type = ReplacementValueType.Isol;
+                    pattern = pattern.Substring(1, pattern.Length - 2);
                 }
                 else
                 {
-                    type = ReplacementEntryType.Ini;
+                    type = ReplacementValueType.Ini;
                     pattern = pattern.Substring(1);
                 }
             }
@@ -859,12 +886,12 @@ namespace Hunspell
             {
                 if (trailingDollar)
                 {
-                    type = ReplacementEntryType.Fin;
+                    type = ReplacementValueType.Fin;
                     pattern = pattern.SubstringFromEnd(1);
                 }
                 else
                 {
-                    type = ReplacementEntryType.Med;
+                    type = ReplacementValueType.Med;
                 }
             }
 
@@ -915,7 +942,7 @@ namespace Hunspell
                 if (parameters.Length >= 3)
                 {
                     pattern3 = parameters[2];
-                    Builder.SimplifiedCompound = true;
+                    Builder.EnableOptions(AffixConfigOptions.SimplifiedCompound);
                 }
             }
 

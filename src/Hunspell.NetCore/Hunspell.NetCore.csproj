@@ -49,7 +49,6 @@
     <Compile Include="..\..\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
-    <Compile Include="affentry.cs" />
     <Compile Include="AffixConfigOptions.cs" />
     <Compile Include="AffixConfig.Builder.cs" />
     <Compile Include="AffixEntry.cs" />
@@ -57,36 +56,21 @@
     <Compile Include="AffixEntryOptions.cs" />
     <Compile Include="AffixConfig.cs" />
     <Compile Include="AffixFileReader.cs" />
-    <Compile Include="affixmgr.cs" />
     <Compile Include="AffixUtfStreamLineReader.cs" />
-    <Compile Include="atypes.cs" />
-    <Compile Include="baseaffix.cs" />
-    <Compile Include="csutil.cs" />
-    <Compile Include="filemgr.cs" />
     <Compile Include="FlagMode.cs" />
-    <Compile Include="hashmgr.cs" />
-    <Compile Include="htypes.cs" />
-    <Compile Include="hunspell.cs" />
     <Compile Include="HunspellException.cs" />
-    <Compile Include="hunzip.cs" />
     <Compile Include="IAffixFileLineReader.cs" />
-    <Compile Include="langnum.cs" />
     <Compile Include="PatternEntry.cs" />
-    <Compile Include="phonet.cs" />
     <Compile Include="PhoneticEntry.cs" />
     <Compile Include="PrefixEntry.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="MultiReplacementEntry.cs" />
     <Compile Include="ReplacementEntry.cs" />
     <Compile Include="ReplacementEntryType.cs" />
-    <Compile Include="replist.cs" />
     <Compile Include="SingleReplacementEntry.cs" />
     <Compile Include="SuffixEntry.cs" />
-    <Compile Include="suggestmgr.cs" />
-    <Compile Include="Utilities\ArrayExtensions.cs" />
     <Compile Include="Utilities\IntExtensions.cs" />
     <Compile Include="Utilities\StringExtensions.cs" />
-    <Compile Include="w_char.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

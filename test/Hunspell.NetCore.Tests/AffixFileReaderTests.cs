@@ -28,7 +28,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await ReadFileAsync(filePath);
 
-                actual.RequestedEncoding.Should().Be("UTF-8");
+                actual.RequestedEncodingName.Should().Be("UTF-8");
                 actual.MaxNgramSuggestions.Should().Be(1);
             }
 
@@ -39,7 +39,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await ReadFileAsync(filePath);
 
-                actual.RequestedEncoding.Should().Be("ISO8859-1");
+                actual.RequestedEncodingName.Should().Be("ISO8859-1");
 
                 actual.Suffixes.Should().HaveCount(4);
 
@@ -117,7 +117,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await ReadFileAsync(filePath);
 
-                actual.RequestedEncoding.Should().Be("ISO8859-1");
+                actual.RequestedEncodingName.Should().Be("ISO8859-1");
                 actual.TryString.Should().Be("esijanrtolcdugmphbyfvkwqxz");
                 actual.Suffixes.Should().HaveCount(1);
                 actual.Suffixes.Single().AFlag.Should().Be('A');
@@ -145,7 +145,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await ReadFileAsync(filePath);
 
-                actual.RequestedEncoding.Should().Be("UTF-8");
+                actual.RequestedEncodingName.Should().Be("UTF-8");
                 actual.IgnoredChars.Should().BeEquivalentTo("ٌٍَُِّْـ".ToCharArray());
                 actual.Prefixes.Should().HaveCount(1);
                 var prefixGroup1 = actual.Prefixes.Single();
@@ -372,7 +372,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await ReadFileAsync(filePath);
 
-                actual.RequestedEncoding.Should().Be("UTF-8");
+                actual.RequestedEncodingName.Should().Be("UTF-8");
 
                 actual.WordChars.ShouldBeEquivalentTo(new[] { '\'', '.' });
 
@@ -440,7 +440,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await ReadFileAsync(filePath);
 
-                actual.RequestedEncoding.Should().Be("UTF-8");
+                actual.RequestedEncodingName.Should().Be("UTF-8");
                 actual.TryString.Should().Be("أ");
                 actual.IgnoredChars.ShouldBeEquivalentTo(new[] { 'ّ', 'َ', 'ُ', 'ٌ', 'ْ', 'ِ', 'ٍ' });
 
@@ -463,7 +463,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await ReadFileAsync(filePath);
 
-                actual.RequestedEncoding.Should().Be("ISO8859-1");
+                actual.RequestedEncodingName.Should().Be("ISO8859-1");
                 actual.WordChars.ShouldBeEquivalentTo(new[] { '.', '\'' });
                 actual.TryString.Should().Be("esianrtolcdugmphbyfvkwz'");
 
@@ -482,10 +482,10 @@ namespace Hunspell.NetCore.Tests
                 actual.Replacements.Should().HaveCount(88);
                 actual.Replacements[0].Pattern.Should().Be("a");
                 actual.Replacements[0].OutString.Should().Be("ei");
-                actual.Replacements[0].Type.Should().Be(ReplacementEntryType.Med);
+                actual.Replacements[0].Type.Should().Be(ReplacementValueType.Med);
                 actual.Replacements[87].Pattern.Should().Be("shun");
                 actual.Replacements[87].OutString.Should().Be("cion");
-                actual.Replacements[87].Type.Should().Be(ReplacementEntryType.Med);
+                actual.Replacements[87].Type.Should().Be(ReplacementValueType.Med);
             }
 
             [Fact]
@@ -579,6 +579,7 @@ namespace Hunspell.NetCore.Tests
                 actual.CompoundPatterns[0].Pattern2.Should().Be("ny");
                 actual.CompoundPatterns[1].Pattern.Should().Be("ssz");
                 actual.CompoundPatterns[1].Pattern2.Should().Be("sz");
+                actual.SimplifiedCompound.Should().BeFalse();
             }
 
             [Fact]
@@ -597,6 +598,7 @@ namespace Hunspell.NetCore.Tests
                 actual.CompoundPatterns[1].Pattern2.Should().Be("ba");
                 actual.CompoundPatterns[1].Pattern3.Should().Be("u");
                 actual.CompoundMin.Should().Be(1);
+                actual.SimplifiedCompound.Should().BeTrue();
             }
 
             [Fact]
@@ -614,6 +616,7 @@ namespace Hunspell.NetCore.Tests
                 actual.CompoundPatterns[0].Condition2.Should().Be('Y');
                 actual.CompoundPatterns[0].Pattern3.Should().Be("z");
                 actual.CompoundMin.Should().Be(1);
+                actual.SimplifiedCompound.Should().BeTrue();
             }
 
             [Fact]
@@ -636,6 +639,7 @@ namespace Hunspell.NetCore.Tests
                 actual.CompoundPatterns[1].Pattern2.Should().Be("u");
                 actual.CompoundPatterns[1].Condition2.Should().Be('B');
                 actual.CompoundPatterns[1].Pattern3.Should().Be("u");
+                actual.SimplifiedCompound.Should().BeTrue();
             }
 
             [Fact]
@@ -650,7 +654,7 @@ namespace Hunspell.NetCore.Tests
                 actual.Replacements.Should().HaveCount(1);
                 actual.Replacements.Single().Pattern.Should().NotBeNullOrEmpty();
                 actual.Replacements.Single().OutString.Should().Be("i");
-                actual.Replacements.Single().Type.Should().Be(ReplacementEntryType.Med);
+                actual.Replacements.Single().Type.Should().Be(ReplacementValueType.Med);
             }
 
             [Fact]
@@ -903,7 +907,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await ReadFileAsync(filePath);
 
-                actual.RequestedEncoding.Should().Be("ISO-8859-15");
+                actual.RequestedEncodingName.Should().Be("ISO-8859-15");
             }
 
             [Fact]
@@ -1248,43 +1252,43 @@ namespace Hunspell.NetCore.Tests
                 actual.Replacements[0].Pattern.Should().Be("f");
                 actual.Replacements[0].OutString.Should().Be("ph");
                 actual.Replacements[0].Med.Should().Be("ph");
-                actual.Replacements[0].Type.Should().Be(ReplacementEntryType.Med);
+                actual.Replacements[0].Type.Should().Be(ReplacementValueType.Med);
 
                 actual.Replacements[1].Pattern.Should().Be("ph");
                 actual.Replacements[1].OutString.Should().Be("f");
                 actual.Replacements[1].Med.Should().Be("f");
-                actual.Replacements[1].Type.Should().Be(ReplacementEntryType.Med);
+                actual.Replacements[1].Type.Should().Be(ReplacementValueType.Med);
 
                 actual.Replacements[2].Pattern.Should().Be("shun");
                 actual.Replacements[2].OutString.Should().Be("tion");
                 actual.Replacements[2].Fin.Should().Be("tion");
-                actual.Replacements[2].Type.Should().Be(ReplacementEntryType.Fin);
+                actual.Replacements[2].Type.Should().Be(ReplacementValueType.Fin);
 
                 actual.Replacements[3].Pattern.Should().Be("alot");
                 actual.Replacements[3].OutString.Should().Be("a lot");
                 actual.Replacements[3].Isol.Should().Be("a lot");
-                actual.Replacements[3].Type.Should().Be(ReplacementEntryType.Isol);
+                actual.Replacements[3].Type.Should().Be(ReplacementValueType.Isol);
 
                 actual.Replacements[4].Pattern.Should().Be("foo");
                 actual.Replacements[4].OutString.Should().Be("bar");
                 actual.Replacements[4].Isol.Should().Be("bar");
-                actual.Replacements[4].Type.Should().Be(ReplacementEntryType.Isol);
+                actual.Replacements[4].Type.Should().Be(ReplacementValueType.Isol);
 
                 actual.Replacements[5].Pattern.Should().Be("'");
                 actual.Replacements[5].OutString.Should().Be(" ");
                 actual.Replacements[5].Med.Should().Be(" ");
-                actual.Replacements[5].Type.Should().Be(ReplacementEntryType.Med);
+                actual.Replacements[5].Type.Should().Be(ReplacementValueType.Med);
 
                 actual.Replacements[6].Pattern.Should().StartWith("vinte");
                 actual.Replacements[6].Pattern.Should().EndWith("n");
                 actual.Replacements[6].OutString.Should().Be("vinte e un");
                 actual.Replacements[6].Isol.Should().Be("vinte e un");
-                actual.Replacements[6].Type.Should().Be(ReplacementEntryType.Isol);
+                actual.Replacements[6].Type.Should().Be(ReplacementValueType.Isol);
 
                 actual.Replacements[7].Pattern.Should().Be("s");
                 actual.Replacements[7].OutString.Should().Be("'s");
                 actual.Replacements[7].Med.Should().Be("'s");
-                actual.Replacements[7].Type.Should().Be(ReplacementEntryType.Med);
+                actual.Replacements[7].Type.Should().Be(ReplacementValueType.Med);
 
                 actual.Suffixes.Should().HaveCount(1);
                 actual.Suffixes.Single().AFlag.Should().Be('A');
@@ -1302,7 +1306,7 @@ namespace Hunspell.NetCore.Tests
                 actual.Replacements.Should().HaveCount(1);
                 actual.Replacements.Single().Pattern.Should().Be("oo");
                 actual.Replacements.Single().OutString.Should().Be("őő");
-                actual.Replacements.Single().Type.Should().Be(ReplacementEntryType.Med);
+                actual.Replacements.Single().Type.Should().Be(ReplacementValueType.Med);
             }
 
             [Fact]
@@ -1340,7 +1344,7 @@ namespace Hunspell.NetCore.Tests
                 var entry = actual.Replacements.Should().HaveCount(1).And.Subject.Single();
                 entry.Pattern.Should().Be("alot");
                 entry.OutString.Should().Be("a lot");
-                entry.Type.Should().Be(ReplacementEntryType.Med);
+                entry.Type.Should().Be(ReplacementValueType.Med);
                 entry.Med.Should().Be("a lot");
                 actual.KeyString.Should().Be("qwertzuiop|asdfghjkl|yxcvbnm|aq");
                 actual.WordChars.Should().BeEquivalentTo(new[] { '.' });
@@ -1354,7 +1358,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await ReadFileAsync(filePath);
 
-                actual.RequestedEncoding.Should().Be("UTF-8");
+                actual.RequestedEncodingName.Should().Be("UTF-8");
             }
 
             [Fact]
@@ -1380,7 +1384,7 @@ namespace Hunspell.NetCore.Tests
                 actual.Replacements.Should().HaveCount(1);
                 actual.Replacements.Single().Pattern.Should().Be("foo");
                 actual.Replacements.Single().OutString.Should().Be("bar");
-                actual.Replacements.Single().Type.Should().Be(ReplacementEntryType.Med);
+                actual.Replacements.Single().Type.Should().Be(ReplacementValueType.Med);
             }
 
             [Fact]
@@ -1642,11 +1646,11 @@ namespace Hunspell.NetCore.Tests
             }
 
             [Theory]
-            [InlineData("abc", "def", "abc", "def", ReplacementEntryType.Med)]
-            [InlineData("^abc", "d_e_f", "abc", "d e f", ReplacementEntryType.Ini)]
-            [InlineData("a_b_c$", "d_e_f", "a b c", "d e f", ReplacementEntryType.Fin)]
-            [InlineData("^a_b_c$", "d_e_f", "a b c", "d e f", ReplacementEntryType.Isol)]
-            public async Task can_read_all_rep_types(string pattern, string outText, string expectedPattern, string expectedOutString, ReplacementEntryType expectedType)
+            [InlineData("abc", "def", "abc", "def", ReplacementValueType.Med)]
+            [InlineData("^abc", "d_e_f", "abc", "d e f", ReplacementValueType.Ini)]
+            [InlineData("a_b_c$", "d_e_f", "a b c", "d e f", ReplacementValueType.Fin)]
+            [InlineData("^a_b_c$", "d_e_f", "a b c", "d e f", ReplacementValueType.Isol)]
+            public async Task can_read_all_rep_types(string pattern, string outText, string expectedPattern, string expectedOutString, ReplacementValueType expectedType)
             {
                 var textFileContents = $"REP {pattern} {outText}";
                 string expectedMed = null;
@@ -1656,16 +1660,16 @@ namespace Hunspell.NetCore.Tests
 
                 switch (expectedType)
                 {
-                    case ReplacementEntryType.Med:
+                    case ReplacementValueType.Med:
                         expectedMed = expectedOutString;
                         break;
-                    case ReplacementEntryType.Ini:
+                    case ReplacementValueType.Ini:
                         expectedIni = expectedOutString;
                         break;
-                    case ReplacementEntryType.Fin:
+                    case ReplacementValueType.Fin:
                         expectedFin = expectedOutString;
                         break;
-                    case ReplacementEntryType.Isol:
+                    case ReplacementValueType.Isol:
                         expectedIsol = expectedOutString;
                         break;
                 }

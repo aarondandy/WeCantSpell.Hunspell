@@ -1,6 +1,6 @@
 ﻿namespace Hunspell
 {
-    public class PhoneticEntry
+    public sealed class PhoneticEntry
     {
         public PhoneticEntry(string rule, string replace)
         {

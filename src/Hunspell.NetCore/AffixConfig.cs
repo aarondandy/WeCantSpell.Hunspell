@@ -1,15 +1,12 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Globalization;
 
 namespace Hunspell
 {
-    public partial class AffixConfig
+    public sealed partial class AffixConfig
     {
         private AffixConfig()
         {
-            Prefixes = new ImmutableArray<AffixEntryGroup<PrefixEntry>>();
-            Suffixes = new ImmutableArray<AffixEntryGroup<SuffixEntry>>();
         }
 
         /// <summary>
@@ -441,7 +438,7 @@ namespace Hunspell
         /// <summary>
         /// The encoding name to be used in morpheme, affix, and dictionary files.
         /// </summary>
-        public string RequestedEncoding { get; private set; }
+        public string RequestedEncodingName { get; private set; }
 
         /// <summary>
         /// Specifies modifications to try first

@@ -14,37 +14,38 @@ namespace Hunspell
             /// Various affix options.
             /// </summary>
             /// <seealso cref="AffixConfig.Options"/>
-            public AffixConfigOptions Options { get; set; }
+            public AffixConfigOptions Options;
 
             /// <summary>
             /// The flag type.
             /// </summary>
             /// <seealso cref="AffixConfig.FlagMode"/>
-            public FlagMode FlagMode { get; set; } = FlagMode.Char;
+            public FlagMode FlagMode = FlagMode.Char;
 
             /// <summary>
             /// A string of text representing a keyboard layout.
             /// </summary>
             /// <seealso cref="AffixConfig.KeyString"/>
-            public string KeyString { get; set; }
+            [Obsolete("This will likely change type to a data structure")]
+            public string KeyString;
 
             /// <summary>
             /// Characters used to permit some suggestions.
             /// </summary>
             /// <seealso cref="AffixConfig.TryString"/>
-            public string TryString { get; set; }
+            public string TryString;
 
             /// <summary>
             /// The language code used for language specific functions.
             /// </summary>
             /// <seealso cref="AffixConfig.Language"/>
-            public string Language { get; set; }
+            public string Language;
 
             /// <summary>
             /// The culture associated with the language.
             /// </summary>
             /// <seealso cref="AffixConfig.Culture"/>
-            public CultureInfo Culture { get; set; }
+            public CultureInfo Culture;
 
             /// <summary>
             /// Flag indicating that a word may be in compound words.
@@ -188,16 +189,16 @@ namespace Hunspell
             /// A flag used by compound check.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundSyllableNum"/>
-            public string CompoundSyllableNum { get; set; }
+            public string CompoundSyllableNum;
 
             /// <summary>
             /// The encoding name to be used in morpheme, affix, and dictionary files.
             /// </summary>
-            /// <seealso cref="AffixConfig.RequestedEncoding"/>
-            public string RequestedEncoding { get; set; }
+            /// <seealso cref="AffixConfig.RequestedEncodingName"/>
+            public string RequestedEncodingName;
 
             /// <summary>
-            /// Specifies modifications to try first
+            /// Specifies modifications to try first.
             /// </summary>
             /// <seealso cref="AffixConfig.Replacements"/>
             public List<SingleReplacementEntry> Replacements;
@@ -248,9 +249,6 @@ namespace Hunspell
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundPatterns"/>
             public List<PatternEntry> CompoundPatterns;
-
-            /// <seealso cref="AffixConfig.SimplifiedCompound"/>
-            public bool SimplifiedCompound { get; set; }
 
             /// <summary>
             /// Defines new break points for breaking words and checking word parts separately.
@@ -321,6 +319,9 @@ namespace Hunspell
             /// <seealso cref="AffixConfig"/>
             public AffixConfig ToConfiguration()
             {
+                // TODO: ProcessPfxTreeToList and ProcessSfxTreeToList
+                // TODO: ProcessPfxOrder and ProcessSfxOrder
+
                 return new AffixConfig
                 {
                     Options = Options,
@@ -353,7 +354,7 @@ namespace Hunspell
                     Warn = Warn,
                     SubStandard = SubStandard,
                     CompoundSyllableNum = CompoundSyllableNum,
-                    RequestedEncoding = RequestedEncoding,
+                    RequestedEncodingName = RequestedEncodingName,
                     Replacements = EmptyIfNull(Replacements).ToImmutableArray(),
                     Suffixes = EmptyIfNull(Suffixes).Select(b => b.ToGroup()).ToImmutableArray(),
                     Prefixes = EmptyIfNull(Prefixes).Select(b => b.ToGroup()).ToImmutableArray(),

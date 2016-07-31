@@ -1,6 +1,6 @@
 ﻿namespace Hunspell
 {
-    public class PatternEntry
+    public sealed class PatternEntry
     {
         public PatternEntry(string pattern, string pattern2, string pattern3, int condition, int condition2)
         {

@@ -5,6 +5,7 @@ namespace Hunspell
 #if PRE_CORE
     [Serializable]
 #endif
+    [Obsolete("This exception appears to be unused and may be removed")]
     public sealed class HunspellException : Exception
     {
         public HunspellException(string message) : base(message)
