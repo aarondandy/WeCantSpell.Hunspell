@@ -12,16 +12,6 @@ namespace Hunspell.Utilities
         private static readonly char[] CommaArray = new[] { ',' };
         private static readonly Regex NotSpaceOrTabRegex = new Regex(@"[^ \t]+");
 
-        public static string TrimEndOfLine(this string @this)
-        {
-            return @this.TrimEnd(EndOfLineCharacters);
-        }
-
-        public static string TrimStartTabOrSpace(this string @this)
-        {
-            return @this.TrimStart(SpaceOrTab);
-        }
-
         public static bool StartsWith(this string @this, char character)
         {
             return @this.Length != 0 && @this[0] == character;
@@ -42,11 +32,6 @@ namespace Hunspell.Utilities
             return @this.Split(CommaArray);
         }
 
-        public static MatchCollection RegexSplitOnTabOrSpace(this string @this)
-        {
-            return NotSpaceOrTabRegex.Matches(@this);
-        }
-
         public static string SubstringFromEnd(this string @this, int startFromEnd)
         {
             return @this.Substring(0, @this.Length - startFromEnd);
@@ -62,20 +47,6 @@ namespace Hunspell.Utilities
             var chars = @this.ToCharArray();
             Array.Reverse(chars);
             return new string(chars);
-        }
-
-        public static string RemoveChars(this string @this, string remove)
-        {
-            if (string.IsNullOrEmpty(@this) || string.IsNullOrEmpty(remove))
-            {
-                return @this;
-            }
-
-            var removeLookup = new HashSet<char>(remove);
-            return new string(
-                Array.FindAll(
-                    @this.ToCharArray(),
-                    c => !removeLookup.Contains(c)));
         }
 
         public static string RemoveChars(this string @this, char[] remove)
@@ -96,11 +67,6 @@ namespace Hunspell.Utilities
         public static bool Contains(this string @this, char c)
         {
             return @this.IndexOf(c) >= 0;
-        }
-
-        public static bool ContainsOrdinalIgnoreCase(this string @this, string value)
-        {
-            return @this.IndexOf(value, StringComparison.OrdinalIgnoreCase) >= 0;
         }
     }
 }

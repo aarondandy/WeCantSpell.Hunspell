@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Hunspell
 {
-    public class AffixUtfStreamLineReader : IAffixFileLineReader, IDisposable
+    public sealed class AffixUtfStreamLineReader : IAffixFileLineReader, IDisposable
     {
         public AffixUtfStreamLineReader(Stream stream)
         {

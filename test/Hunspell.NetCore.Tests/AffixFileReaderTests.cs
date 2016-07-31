@@ -9,19 +9,6 @@ namespace Hunspell.NetCore.Tests
 {
     public class AffixFileReaderTests
     {
-        public class Constructors
-        {
-            [Fact]
-            public void null_line_reader_throws()
-            {
-                IAffixFileLineReader lineReader = null;
-
-                Action act = () => new AffixFileReader(lineReader);
-
-                act.ShouldThrow<ArgumentNullException>();
-            }
-        }
-
         public class ReadAsync
         {
             [Fact]
@@ -41,7 +28,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await ReadFileAsync(filePath);
 
-                actual.RequestedEncoding.Should().Be("UTF-8");
+                actual.RequestedEncodingName.Should().Be("UTF-8");
                 actual.MaxNgramSuggestions.Should().Be(1);
             }
 
@@ -52,7 +39,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await ReadFileAsync(filePath);
 
-                actual.RequestedEncoding.Should().Be("ISO8859-1");
+                actual.RequestedEncodingName.Should().Be("ISO8859-1");
 
                 actual.Suffixes.Should().HaveCount(4);
 
@@ -130,7 +117,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await ReadFileAsync(filePath);
 
-                actual.RequestedEncoding.Should().Be("ISO8859-1");
+                actual.RequestedEncodingName.Should().Be("ISO8859-1");
                 actual.TryString.Should().Be("esijanrtolcdugmphbyfvkwqxz");
                 actual.Suffixes.Should().HaveCount(1);
                 actual.Suffixes.Single().AFlag.Should().Be('A');
@@ -158,7 +145,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await ReadFileAsync(filePath);
 
-                actual.RequestedEncoding.Should().Be("UTF-8");
+                actual.RequestedEncodingName.Should().Be("UTF-8");
                 actual.IgnoredChars.Should().BeEquivalentTo("ٌٍَُِّْـ".ToCharArray());
                 actual.Prefixes.Should().HaveCount(1);
                 var prefixGroup1 = actual.Prefixes.Single();
@@ -385,7 +372,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await ReadFileAsync(filePath);
 
-                actual.RequestedEncoding.Should().Be("UTF-8");
+                actual.RequestedEncodingName.Should().Be("UTF-8");
 
                 actual.WordChars.ShouldBeEquivalentTo(new[] { '\'', '.' });
 
@@ -453,7 +440,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await ReadFileAsync(filePath);
 
-                actual.RequestedEncoding.Should().Be("UTF-8");
+                actual.RequestedEncodingName.Should().Be("UTF-8");
                 actual.TryString.Should().Be("أ");
                 actual.IgnoredChars.ShouldBeEquivalentTo(new[] { 'ّ', 'َ', 'ُ', 'ٌ', 'ْ', 'ِ', 'ٍ' });
 
@@ -476,7 +463,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await ReadFileAsync(filePath);
 
-                actual.RequestedEncoding.Should().Be("ISO8859-1");
+                actual.RequestedEncodingName.Should().Be("ISO8859-1");
                 actual.WordChars.ShouldBeEquivalentTo(new[] { '.', '\'' });
                 actual.TryString.Should().Be("esianrtolcdugmphbyfvkwz'");
 
@@ -494,9 +481,11 @@ namespace Hunspell.NetCore.Tests
 
                 actual.Replacements.Should().HaveCount(88);
                 actual.Replacements[0].Pattern.Should().Be("a");
-                actual.Replacements[0].OutStrings[0].Should().Be("ei");
+                actual.Replacements[0].OutString.Should().Be("ei");
+                actual.Replacements[0].Type.Should().Be(ReplacementValueType.Med);
                 actual.Replacements[87].Pattern.Should().Be("shun");
-                actual.Replacements[87].OutStrings[0].Should().Be("cion");
+                actual.Replacements[87].OutString.Should().Be("cion");
+                actual.Replacements[87].Type.Should().Be(ReplacementValueType.Med);
             }
 
             [Fact]
@@ -590,6 +579,7 @@ namespace Hunspell.NetCore.Tests
                 actual.CompoundPatterns[0].Pattern2.Should().Be("ny");
                 actual.CompoundPatterns[1].Pattern.Should().Be("ssz");
                 actual.CompoundPatterns[1].Pattern2.Should().Be("sz");
+                actual.SimplifiedCompound.Should().BeFalse();
             }
 
             [Fact]
@@ -608,6 +598,7 @@ namespace Hunspell.NetCore.Tests
                 actual.CompoundPatterns[1].Pattern2.Should().Be("ba");
                 actual.CompoundPatterns[1].Pattern3.Should().Be("u");
                 actual.CompoundMin.Should().Be(1);
+                actual.SimplifiedCompound.Should().BeTrue();
             }
 
             [Fact]
@@ -625,6 +616,7 @@ namespace Hunspell.NetCore.Tests
                 actual.CompoundPatterns[0].Condition2.Should().Be('Y');
                 actual.CompoundPatterns[0].Pattern3.Should().Be("z");
                 actual.CompoundMin.Should().Be(1);
+                actual.SimplifiedCompound.Should().BeTrue();
             }
 
             [Fact]
@@ -647,6 +639,7 @@ namespace Hunspell.NetCore.Tests
                 actual.CompoundPatterns[1].Pattern2.Should().Be("u");
                 actual.CompoundPatterns[1].Condition2.Should().Be('B');
                 actual.CompoundPatterns[1].Pattern3.Should().Be("u");
+                actual.SimplifiedCompound.Should().BeTrue();
             }
 
             [Fact]
@@ -659,8 +652,9 @@ namespace Hunspell.NetCore.Tests
                 actual.CheckCompoundRep.Should().BeTrue();
                 actual.CompoundFlag.Should().Be('A');
                 actual.Replacements.Should().HaveCount(1);
-                actual.Replacements[0].Pattern.Should().NotBeNullOrEmpty();
-                actual.Replacements[0].OutStrings[0].Should().Be("i");
+                actual.Replacements.Single().Pattern.Should().NotBeNullOrEmpty();
+                actual.Replacements.Single().OutString.Should().Be("i");
+                actual.Replacements.Single().Type.Should().Be(ReplacementValueType.Med);
             }
 
             [Fact]
@@ -913,7 +907,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await ReadFileAsync(filePath);
 
-                actual.RequestedEncoding.Should().Be("ISO-8859-15");
+                actual.RequestedEncodingName.Should().Be("ISO-8859-15");
             }
 
             [Fact]
@@ -1114,21 +1108,37 @@ namespace Hunspell.NetCore.Tests
             public async Task can_read_nepali_aff()
             {
                 var filePath = @"files/nepali.aff";
+                var key1 = "‌"; // NOTE: this is not the empty string
+                var value1_1 = "￰";
+                var value1_2 = "‌"; // NOTE: this is not the empty string
+                var key2 = "‍"; // NOTE: this is not the empty string
+                var value2_2 = "￰";
+                key1.Should().NotBeEmpty();
+                key2.Should().NotBeEmpty();
+                key2.Should().NotBe(key1);
+                value1_1.Should().NotBeEmpty();
+                value1_2.Should().NotBeEmpty();
+                value1_2.Should().NotBe(value1_1);
 
                 var actual = await ReadFileAsync(filePath);
 
                 actual.IgnoredChars.Should().BeEquivalentTo(new[] { '￰' });
                 actual.WordChars.Should().BeEquivalentTo("ःािीॉॊोौॎॏॕॖॗ‌‍".ToCharArray());
-                actual.InputConversions.Should().HaveCount(3);
-                var key1 = "‌"; // NOTE: this is not the empty string
-                var value1_1 = "￰";
-                var value1_2 = "‌"; // NOTE: this is not the empty string
-                key1.Should().NotBeEmpty();
-                value1_2.Should().NotBeEmpty();
-                actual.InputConversions[key1].OutStrings[0].Should().Be("￰");
-                actual.InputConversions[key1].OutStrings[2].Should().Be(value1_1);
-                actual.InputConversions[key1].OutStrings[2].Should().Be(value1_2);
+
+                actual.InputConversions.Should().HaveCount(4);
+
+                actual.InputConversions[key1].OutStrings[0].Equals(value1_1, StringComparison.Ordinal).Should().BeTrue();
+                actual.InputConversions[key1].OutStrings[1].Should().BeNull();
+                actual.InputConversions[key1].OutStrings[2].Equals(value1_2, StringComparison.Ordinal).Should().BeTrue();
+                actual.InputConversions[key1].OutStrings[3].Should().BeNull();
+
+                actual.InputConversions[key2].OutStrings[0].Should().BeNull();
+                actual.InputConversions[key2].OutStrings[1].Should().BeNull();
+                actual.InputConversions[key2].OutStrings[2].Equals(value2_2, StringComparison.Ordinal).Should().BeTrue();
+                actual.InputConversions[key2].OutStrings[3].Should().BeNull();
+
                 actual.InputConversions["र्‌य"].OutStrings[0].Should().Be("र्‌य");
+
                 actual.InputConversions["र्‌व"].OutStrings[0].Should().Be("र्‌व");
             }
 
@@ -1239,10 +1249,47 @@ namespace Hunspell.NetCore.Tests
 
                 actual.MaxNgramSuggestions.Should().Be(0);
                 actual.Replacements.Should().HaveCount(8);
-                actual.Replacements.First().Pattern.Should().Be("f");
-                actual.Replacements.First().OutStrings[0].Should().Be("ph");
-                actual.Replacements.Last().Pattern.Should().Be("s");
-                actual.Replacements.Last().OutStrings[0].Should().Be("'s");
+                actual.Replacements[0].Pattern.Should().Be("f");
+                actual.Replacements[0].OutString.Should().Be("ph");
+                actual.Replacements[0].Med.Should().Be("ph");
+                actual.Replacements[0].Type.Should().Be(ReplacementValueType.Med);
+
+                actual.Replacements[1].Pattern.Should().Be("ph");
+                actual.Replacements[1].OutString.Should().Be("f");
+                actual.Replacements[1].Med.Should().Be("f");
+                actual.Replacements[1].Type.Should().Be(ReplacementValueType.Med);
+
+                actual.Replacements[2].Pattern.Should().Be("shun");
+                actual.Replacements[2].OutString.Should().Be("tion");
+                actual.Replacements[2].Fin.Should().Be("tion");
+                actual.Replacements[2].Type.Should().Be(ReplacementValueType.Fin);
+
+                actual.Replacements[3].Pattern.Should().Be("alot");
+                actual.Replacements[3].OutString.Should().Be("a lot");
+                actual.Replacements[3].Isol.Should().Be("a lot");
+                actual.Replacements[3].Type.Should().Be(ReplacementValueType.Isol);
+
+                actual.Replacements[4].Pattern.Should().Be("foo");
+                actual.Replacements[4].OutString.Should().Be("bar");
+                actual.Replacements[4].Isol.Should().Be("bar");
+                actual.Replacements[4].Type.Should().Be(ReplacementValueType.Isol);
+
+                actual.Replacements[5].Pattern.Should().Be("'");
+                actual.Replacements[5].OutString.Should().Be(" ");
+                actual.Replacements[5].Med.Should().Be(" ");
+                actual.Replacements[5].Type.Should().Be(ReplacementValueType.Med);
+
+                actual.Replacements[6].Pattern.Should().StartWith("vinte");
+                actual.Replacements[6].Pattern.Should().EndWith("n");
+                actual.Replacements[6].OutString.Should().Be("vinte e un");
+                actual.Replacements[6].Isol.Should().Be("vinte e un");
+                actual.Replacements[6].Type.Should().Be(ReplacementValueType.Isol);
+
+                actual.Replacements[7].Pattern.Should().Be("s");
+                actual.Replacements[7].OutString.Should().Be("'s");
+                actual.Replacements[7].Med.Should().Be("'s");
+                actual.Replacements[7].Type.Should().Be(ReplacementValueType.Med);
+
                 actual.Suffixes.Should().HaveCount(1);
                 actual.Suffixes.Single().AFlag.Should().Be('A');
                 actual.WordChars.Should().BeEquivalentTo(new[] { '\'' });
@@ -1257,8 +1304,9 @@ namespace Hunspell.NetCore.Tests
 
                 actual.MaxNgramSuggestions.Should().Be(0);
                 actual.Replacements.Should().HaveCount(1);
-                actual.Replacements[0].Pattern.Should().Be("oo");
-                actual.Replacements[0].OutStrings[0].Should().Be("őő");
+                actual.Replacements.Single().Pattern.Should().Be("oo");
+                actual.Replacements.Single().OutString.Should().Be("őő");
+                actual.Replacements.Single().Type.Should().Be(ReplacementValueType.Med);
             }
 
             [Fact]
@@ -1295,6 +1343,8 @@ namespace Hunspell.NetCore.Tests
                 actual.Replacements.Should().NotBeNull();
                 var entry = actual.Replacements.Should().HaveCount(1).And.Subject.Single();
                 entry.Pattern.Should().Be("alot");
+                entry.OutString.Should().Be("a lot");
+                entry.Type.Should().Be(ReplacementValueType.Med);
                 entry.Med.Should().Be("a lot");
                 actual.KeyString.Should().Be("qwertzuiop|asdfghjkl|yxcvbnm|aq");
                 actual.WordChars.Should().BeEquivalentTo(new[] { '.' });
@@ -1308,7 +1358,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await ReadFileAsync(filePath);
 
-                actual.RequestedEncoding.Should().Be("UTF-8");
+                actual.RequestedEncodingName.Should().Be("UTF-8");
             }
 
             [Fact]
@@ -1332,8 +1382,9 @@ namespace Hunspell.NetCore.Tests
                 actual.Warn.Should().Be('W');
                 actual.Suffixes.Should().HaveCount(1);
                 actual.Replacements.Should().HaveCount(1);
-                actual.Replacements[0].Pattern.Should().Be("foo");
-                actual.Replacements[0].OutStrings[0].Should().Be("bar");
+                actual.Replacements.Single().Pattern.Should().Be("foo");
+                actual.Replacements.Single().OutString.Should().Be("bar");
+                actual.Replacements.Single().Type.Should().Be(ReplacementValueType.Med);
             }
 
             [Fact]
@@ -1392,11 +1443,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "LANG " + langCode;
 
-                AffixFile actual;
-                using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
-                {
-                    actual = await reader.GetOrReadAsync();
-                }
+                var actual = await AffixFileReader.ReadAsync(new StringLineReader(textFileContents));
 
                 actual.Language.Should().Be(langCode);
                 actual.Culture.Should().NotBeNull();
@@ -1410,11 +1457,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "SYLLABLENUM " + parameters;
 
-                AffixFile actual;
-                using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
-                {
-                    actual = await reader.GetOrReadAsync();
-                }
+                var actual = await AffixFileReader.ReadAsync(new StringLineReader(textFileContents));
 
                 actual.CompoundSyllableNum.Should().Be(parameters);
             }
@@ -1427,11 +1470,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "COMPOUNDWORDMAX " + parameters;
 
-                AffixFile actual;
-                using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
-                {
-                    actual = await reader.GetOrReadAsync();
-                }
+                var actual = await AffixFileReader.ReadAsync(new StringLineReader(textFileContents));
 
                 actual.CompoundWordMax.Should().Be(expected);
             }
@@ -1450,11 +1489,7 @@ namespace Hunspell.NetCore.Tests
                 }
                 textFileContents += "COMPOUNDROOT " + parameters;
 
-                AffixFile actual;
-                using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
-                {
-                    actual = await reader.GetOrReadAsync();
-                }
+                var actual = await AffixFileReader.ReadAsync(new StringLineReader(textFileContents));
 
                 actual.CompoundRoot.Should().Be(expected);
             }
@@ -1468,14 +1503,10 @@ namespace Hunspell.NetCore.Tests
                 var expectedLetters = expectedLettersText.ToCharArray();
                 Array.Sort(expectedLetters);
 
-                AffixFile actual;
-                using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
-                {
-                    actual = await reader.GetOrReadAsync();
-                }
+                var actual = await AffixFileReader.ReadAsync(new StringLineReader(textFileContents));
 
                 actual.CompoundMaxSyllable.Should().Be(expectedNumber);
-                actual.CompoundVowels = expectedLetters;
+                actual.CompoundVowels.ShouldBeEquivalentTo(expectedLetters);
             }
 
             [Theory]
@@ -1485,11 +1516,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "NOSUGGEST " + parameters;
 
-                AffixFile actual;
-                using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
-                {
-                    actual = await reader.GetOrReadAsync();
-                }
+                var actual = await AffixFileReader.ReadAsync(new StringLineReader(textFileContents));
 
                 actual.NoSuggest.Should().Be(expectedFlag);
             }
@@ -1501,11 +1528,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "NONGRAMSUGGEST " + parameters;
 
-                AffixFile actual;
-                using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
-                {
-                    actual = await reader.GetOrReadAsync();
-                }
+                var actual = await AffixFileReader.ReadAsync(new StringLineReader(textFileContents));
 
                 actual.NoNgramSuggest.Should().Be(expectedFlag);
             }
@@ -1517,29 +1540,21 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "LEMMA_PRESENT " + parameters;
 
-                AffixFile actual;
-                using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
-                {
-                    actual = await reader.GetOrReadAsync();
-                }
+                var actual = await AffixFileReader.ReadAsync(new StringLineReader(textFileContents));
 
                 actual.LemmaPresent.Should().Be(expectedFlag);
             }
 
             [Theory]
-            [InlineData("Magyar 1.6")]
-            [InlineData("")]
-            public async Task can_read_version(string parameters)
+            [InlineData("Magyar 1.6", "Magyar 1.6")]
+            [InlineData("", null)]
+            public async Task can_read_version(string parameters, string expected)
             {
                 var textFileContents = "VERSION " + parameters;
 
-                AffixFile actual;
-                using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
-                {
-                    actual = await reader.GetOrReadAsync();
-                }
+                var actual = await AffixFileReader.ReadAsync(new StringLineReader(textFileContents));
 
-                actual.Version.Should().Be(parameters);
+                actual.Version.Should().Be(expected);
             }
 
             [Theory]
@@ -1550,11 +1565,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "MAXDIFF " + parameters;
 
-                AffixFile actual;
-                using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
-                {
-                    actual = await reader.GetOrReadAsync();
-                }
+                var actual = await AffixFileReader.ReadAsync(new StringLineReader(textFileContents));
 
                 actual.MaxDifferency.Should().Be(expected);
             }
@@ -1567,11 +1578,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "MAXCPDSUGS " + parameters;
 
-                AffixFile actual;
-                using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
-                {
-                    actual = await reader.GetOrReadAsync();
-                }
+                var actual = await AffixFileReader.ReadAsync(new StringLineReader(textFileContents));
 
                 actual.MaxCompoundSuggestions.Should().Be(expected);
             }
@@ -1583,11 +1590,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "SUBSTANDARD " + parameters;
 
-                AffixFile actual;
-                using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
-                {
-                    actual = await reader.GetOrReadAsync();
-                }
+                var actual = await AffixFileReader.ReadAsync(new StringLineReader(textFileContents));
 
                 actual.SubStandard.Should().Be(expectedFlag);
             }
@@ -1597,11 +1600,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "COMPOUNDMORESUFFIXES";
 
-                AffixFile actual;
-                using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
-                {
-                    actual = await reader.GetOrReadAsync();
-                }
+                var actual = await AffixFileReader.ReadAsync(new StringLineReader(textFileContents));
 
                 actual.CompoundMoreSuffixes.Should().BeTrue();
             }
@@ -1611,11 +1610,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "CHECKNUM";
 
-                AffixFile actual;
-                using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
-                {
-                    actual = await reader.GetOrReadAsync();
-                }
+                var actual = await AffixFileReader.ReadAsync(new StringLineReader(textFileContents));
 
                 actual.CheckNum.Should().BeTrue();
             }
@@ -1625,11 +1620,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "ONLYMAXDIFF";
 
-                AffixFile actual;
-                using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
-                {
-                    actual = await reader.GetOrReadAsync();
-                }
+                var actual = await AffixFileReader.ReadAsync(new StringLineReader(textFileContents));
 
                 actual.OnlyMaxDiff.Should().BeTrue();
             }
@@ -1639,11 +1630,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "SUGSWITHDOTS";
 
-                AffixFile actual;
-                using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
-                {
-                    actual = await reader.GetOrReadAsync();
-                }
+                var actual = await AffixFileReader.ReadAsync(new StringLineReader(textFileContents));
 
                 actual.SuggestWithDots.Should().BeTrue();
             }
@@ -1653,20 +1640,58 @@ namespace Hunspell.NetCore.Tests
             {
                 var textFileContents = "FORBIDWARN";
 
-                AffixFile actual;
-                using (var reader = new AffixFileReader(new StringLineReader(textFileContents)))
-                {
-                    actual = await reader.GetOrReadAsync();
-                }
+                var actual = await AffixFileReader.ReadAsync(new StringLineReader(textFileContents));
 
                 actual.ForbidWarn.Should().BeTrue();
             }
 
-            private async Task<AffixFile> ReadFileAsync(string filePath)
+            [Theory]
+            [InlineData("abc", "def", "abc", "def", ReplacementValueType.Med)]
+            [InlineData("^abc", "d_e_f", "abc", "d e f", ReplacementValueType.Ini)]
+            [InlineData("a_b_c$", "d_e_f", "a b c", "d e f", ReplacementValueType.Fin)]
+            [InlineData("^a_b_c$", "d_e_f", "a b c", "d e f", ReplacementValueType.Isol)]
+            public async Task can_read_all_rep_types(string pattern, string outText, string expectedPattern, string expectedOutString, ReplacementValueType expectedType)
             {
-                using (var reader = new AffixFileReader(new AffixUtfStreamLineReader(filePath)))
+                var textFileContents = $"REP {pattern} {outText}";
+                string expectedMed = null;
+                string expectedIni = null;
+                string expectedFin = null;
+                string expectedIsol = null;
+
+                switch (expectedType)
                 {
-                    return await reader.GetOrReadAsync();
+                    case ReplacementValueType.Med:
+                        expectedMed = expectedOutString;
+                        break;
+                    case ReplacementValueType.Ini:
+                        expectedIni = expectedOutString;
+                        break;
+                    case ReplacementValueType.Fin:
+                        expectedFin = expectedOutString;
+                        break;
+                    case ReplacementValueType.Isol:
+                        expectedIsol = expectedOutString;
+                        break;
+                }
+
+                var actual = await AffixFileReader.ReadAsync(new StringLineReader(textFileContents));
+
+                actual.Replacements.Should().HaveCount(1);
+                var rep = actual.Replacements.Single();
+                rep.Pattern.Should().Be(expectedPattern);
+                rep.OutString.Should().Be(expectedOutString);
+                rep.Type.Should().Be(expectedType);
+                rep.Med.Should().Be(expectedMed);
+                rep.Ini.Should().Be(expectedIni);
+                rep.Fin.Should().Be(expectedFin);
+                rep.Isol.Should().Be(expectedIsol);
+            }
+
+            private async Task<AffixConfig> ReadFileAsync(string filePath)
+            {
+                using (var lineReader = new AffixUtfStreamLineReader(filePath))
+                {
+                    return await AffixFileReader.ReadAsync(lineReader);
                 }
             }
 
