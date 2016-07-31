@@ -70,6 +70,14 @@ namespace Hunspell
             return builder.ToConfiguration();
         }
 
+        public static async Task<AffixConfig> ReadFileAsync(string filePath)
+        {
+            using (var reader = new AffixUtfStreamLineReader(filePath))
+            {
+                return await ReadAsync(reader);
+            }
+        }
+
         private bool ParseLine(string line)
         {
             if (string.IsNullOrEmpty(line))

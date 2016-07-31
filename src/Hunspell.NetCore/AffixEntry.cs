@@ -107,12 +107,6 @@ namespace Hunspell
         }
 
         /// <summary>
-        /// The number of conditions that must be met.
-        /// </summary>
-        [Obsolete("This should probably be moved to a different data structure.")]
-        public int ConditionCount { get; private set; }
-
-        /// <summary>
         /// Optional morphological fields separated by spaces or tabulators.
         /// </summary>
         public string MorphCode { get; private set; }
