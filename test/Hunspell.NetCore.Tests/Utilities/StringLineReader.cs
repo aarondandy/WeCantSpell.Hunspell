@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Hunspell.NetCore.Tests.Utilities
 {
-    public class StringLineReader : IAffixFileLineReader
+    public class StringLineReader : IAffixLineReader
     {
         private static readonly char[] LineBreakChars = new[]{'\n','\r'};
 

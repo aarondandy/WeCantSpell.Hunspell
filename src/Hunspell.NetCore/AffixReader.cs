@@ -9,19 +9,23 @@ using System.Threading.Tasks;
 
 namespace Hunspell
 {
-    public sealed class AffixFileReader
+    public sealed class AffixReader
     {
-        private AffixFileReader(AffixConfig.Builder builder)
+        private AffixReader(AffixConfig.Builder builder)
         {
             Builder = builder;
         }
 
         private static readonly Regex LineStringParseRegex = new Regex(@"^[ \t]*(\w+)[ \t]+(.+)[ \t]*$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
         private static readonly Regex SingleCommandParseRegex = new Regex(@"^[ \t]*(\w+)[ \t]*$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
         private static readonly Regex CommentLineRegex = new Regex(@"^\s*[#].*", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
         private static readonly Regex AffixLineRegex = new Regex(
             @"^[\t ]*([^\t ]+)[\t ]+(?:([^\t ]+)[\t ]+([^\t ]+)|([^\t ]+)[\t ]+([^\t ]+)[\t ]+([^\t ]+)(?:[\t ]+(.+))?)[\t ]*(?:[#].+)?$",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
         private static readonly Dictionary<string, AffixConfigOptions> FileBitFlagCommandMappings = new Dictionary<string, AffixConfigOptions>(StringComparer.OrdinalIgnoreCase)
         {
             {"COMPLEXPREFIXES", AffixConfigOptions.ComplexPrefixes},
@@ -56,10 +60,10 @@ namespace Hunspell
 
         private EntryListType Initialized { get; set; } = EntryListType.None;
 
-        public static async Task<AffixConfig> ReadAsync(IAffixFileLineReader reader)
+        public static async Task<AffixConfig> ReadAsync(IAffixLineReader reader)
         {
             var builder = new AffixConfig.Builder();
-            var readerInstance = new AffixFileReader(builder);
+            var readerInstance = new AffixReader(builder);
 
             string line;
             while (null != (line = await reader.ReadLineAsync()))
@@ -67,12 +71,14 @@ namespace Hunspell
                 readerInstance.ParseLine(line);
             }
 
+            readerInstance.AddDefaultBreakTableIfEmpty();
+
             return builder.ToConfiguration();
         }
 
         public static async Task<AffixConfig> ReadFileAsync(string filePath)
         {
-            using (var reader = new AffixUtfStreamLineReader(filePath))
+            using (var reader = new UtfStreamLineReader(filePath))
             {
                 return await ReadAsync(reader);
             }
@@ -126,9 +132,10 @@ namespace Hunspell
             {
                 if (Builder.BreakTable == null)
                 {
-                    Builder.BreakTable = DefaultBreakTableEntries.ToList();
+                    Builder.BreakTable = new List<string>(DefaultBreakTableEntries.Length);
                 }
-                else if (Builder.BreakTable.Count == 0)
+
+                if (Builder.BreakTable.Count == 0)
                 {
                     Builder.BreakTable.AddRange(DefaultBreakTableEntries);
                 }
@@ -137,11 +144,6 @@ namespace Hunspell
 
         private bool TryHandleParameterizedCommand(string name, string parameters)
         {
-            if (string.IsNullOrEmpty(name) || parameters == null)
-            {
-                return false;
-            }
-
             switch (CultureInfo.InvariantCulture.TextInfo.ToUpper(name))
             {
                 case "FLAG": // parse in the try string
@@ -156,7 +158,7 @@ namespace Hunspell
                     Builder.RequestedEncodingName = parameters;
                     return true;
                 case "LANG": // parse in the language for language specific codes
-                    Builder.Language = parameters;
+                    Builder.Language = parameters.Trim();
                     Builder.Culture = GetCultureFromLanguage(Builder.Language);
                     return true;
                 case "SYLLABLENUM": // parse in the flag used by compound_check() method
@@ -169,17 +171,17 @@ namespace Hunspell
                     Builder.IgnoredChars = parameters.ToCharArray();
                     return true;
                 case "COMPOUNDFLAG": // parse in the flag used by the controlled compound words
-                    return TryParseFlag(parameters, out Builder.CompoundFlag);
+                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.CompoundFlag);
                 case "COMPOUNDMIDDLE": // parse in the flag used by compound words
-                    return TryParseFlag(parameters, out Builder.CompoundMiddle);
+                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.CompoundMiddle);
                 case "COMPOUNDBEGIN": // parse in the flag used by compound words
                     return Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes)
-                        ? TryParseFlag(parameters, out Builder.CompoundEnd)
-                        : TryParseFlag(parameters, out Builder.CompoundBegin);
+                        ? FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.CompoundEnd)
+                        : FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.CompoundBegin);
                 case "COMPOUNDEND": // parse in the flag used by compound words
                     return Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes)
-                        ? TryParseFlag(parameters, out Builder.CompoundBegin)
-                        : TryParseFlag(parameters, out Builder.CompoundEnd);
+                        ? FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.CompoundBegin)
+                        : FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.CompoundEnd);
                 case "COMPOUNDWORDMAX": // parse in the data used by compound_check() method
                     return IntExtensions.TryParseInvariant(parameters, out Builder.CompoundWordMax);
                 case "COMPOUNDMIN": // parse in the minimal length for words in compounds
@@ -195,28 +197,28 @@ namespace Hunspell
 
                     return true;
                 case "COMPOUNDROOT": // parse in the flag sign compounds in dictionary
-                    return TryParseFlag(parameters, out Builder.CompoundRoot);
+                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.CompoundRoot);
                 case "COMPOUNDPERMITFLAG": // parse in the flag used by compound_check() method
-                    return TryParseFlag(parameters, out Builder.CompoundPermitFlag);
+                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.CompoundPermitFlag);
                 case "COMPOUNDFORBIDFLAG": // parse in the flag used by compound_check() method
-                    return TryParseFlag(parameters, out Builder.CompoundForbidFlag);
+                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.CompoundForbidFlag);
                 case "COMPOUNDSYLLABLE": // parse in the max. words and syllables in compounds
                     return TryParseCompoundSyllable(parameters);
                 case "NOSUGGEST":
-                    return TryParseFlag(parameters, out Builder.NoSuggest);
+                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.NoSuggest);
                 case "NONGRAMSUGGEST":
-                    return TryParseFlag(parameters, out Builder.NoNgramSuggest);
+                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.NoNgramSuggest);
                 case "FORBIDDENWORD": // parse in the flag used by forbidden words
-                    return TryParseFlag(parameters, out Builder.ForbiddenWord);
+                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.ForbiddenWord);
                 case "LEMMA_PRESENT": // parse in the flag used by forbidden words
-                    return TryParseFlag(parameters, out Builder.LemmaPresent);
+                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.LemmaPresent);
                 case "CIRCUMFIX": // parse in the flag used by circumfixes
-                    return TryParseFlag(parameters, out Builder.Circumfix);
+                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.Circumfix);
                 case "ONLYINCOMPOUND": // parse in the flag used by fogemorphemes
-                    return TryParseFlag(parameters, out Builder.OnlyInCompound);
+                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.OnlyInCompound);
                 case "PSEUDOROOT": // parse in the flag used by `needaffixs'
                 case "NEEDAFFIX": // parse in the flag used by `needaffixs'
-                    return TryParseFlag(parameters, out Builder.NeedAffix);
+                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.NeedAffix);
                 case "REP": // parse in the typical fault correcting table
                     return TryParseStandardListItem(EntryListType.Replacements, parameters, ref Builder.Replacements, TryParseReplacements);
                 case "ICONV": // parse in the input conversion table
@@ -243,13 +245,13 @@ namespace Hunspell
                 case "MAXCPDSUGS":
                     return IntExtensions.TryParseInvariant(parameters, out Builder.MaxCompoundSuggestions);
                 case "KEEPCASE": // parse in the flag used by forbidden words
-                    return TryParseFlag(parameters, out Builder.KeepCase);
+                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.KeepCase);
                 case "FORCEUCASE":
-                    return TryParseFlag(parameters, out Builder.ForceUpperCase);
+                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.ForceUpperCase);
                 case "WARN":
-                    return TryParseFlag(parameters, out Builder.Warn);
+                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.Warn);
                 case "SUBSTANDARD":
-                    return TryParseFlag(parameters, out Builder.SubStandard);
+                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.SubStandard);
                 case "PFX":
                     return TryParseAffixIntoList(parameters, ref Builder.Prefixes);
                 case "SFX":
@@ -265,11 +267,6 @@ namespace Hunspell
 
         private bool TryParseStandardListItem<T>(EntryListType entryListType, string parameterText, ref List<T> entries, Func<string, List<T>, bool> parse)
         {
-            if (string.IsNullOrEmpty(parameterText))
-            {
-                return false;
-            }
-
             if (!IsInitialized(entryListType))
             {
                 SetInitialized(entryListType);
@@ -296,11 +293,6 @@ namespace Hunspell
 
         private bool TryParseCompoundSyllable(string parameters)
         {
-            if (string.IsNullOrEmpty(parameters))
-            {
-                return false;
-            }
-
             var parts = parameters.SplitOnTabOrSpace();
 
             if (parts.Length > 0)
@@ -399,11 +391,6 @@ namespace Hunspell
 
         private bool TryParseConv(string parameterText, EntryListType entryListType, ref Dictionary<string, string[]> entries)
         {
-            if (string.IsNullOrEmpty(parameterText))
-            {
-                return false;
-            }
-
             if (!IsInitialized(entryListType))
             {
                 SetInitialized(entryListType);
@@ -444,7 +431,7 @@ namespace Hunspell
 
         private bool TryParseAliasF(string parameterText, List<List<int>> entries)
         {
-            entries.Add(DecodeFlags(parameterText).OrderBy(x => x).ToList());
+            entries.Add(FlagUtilities.DecodeFlags(Builder.FlagMode, parameterText).OrderBy(x => x).ToList());
             return true;
         }
 
@@ -488,13 +475,13 @@ namespace Hunspell
                     }
                     else
                     {
-                        entry.AddRange(DecodeFlags(parameterText.Substring(indexBegin, indexEnd - indexBegin)));
+                        entry.AddRange(FlagUtilities.DecodeFlags(Builder.FlagMode, parameterText.Substring(indexBegin, indexEnd - indexBegin)));
                     }
                 }
             }
             else
             {
-                entry = DecodeFlags(parameterText).ToList();
+                entry = FlagUtilities.DecodeFlags(Builder.FlagMode, parameterText).ToList();
             }
 
             entries.Add(entry);
@@ -518,7 +505,7 @@ namespace Hunspell
             var lineMatchGroups = lineMatch.Groups;
 
             char characterFlag;
-            if (!TryParseFlag(lineMatchGroups[1].Value, out characterFlag))
+            if (!FlagUtilities.TryParseFlag(Builder.FlagMode, lineMatchGroups[1].Value, out characterFlag))
             {
                 return false;
             }
@@ -585,7 +572,7 @@ namespace Hunspell
                     if (Builder.IsAliasF)
                     {
                         int aliasNumber;
-                        if (int.TryParse(slashPart, out aliasNumber) && aliasNumber > 0 && aliasNumber <= Builder.AliasF.Count)
+                        if (IntExtensions.TryParseInvariant(slashPart, out aliasNumber) && aliasNumber > 0 && aliasNumber <= Builder.AliasF.Count)
                         {
                             contClass = Builder.AliasF[aliasNumber - 1].ToImmutableArray();
                         }
@@ -596,7 +583,7 @@ namespace Hunspell
                     }
                     else
                     {
-                        contClass = ImmutableArray.CreateRange(DecodeFlags(slashPart));
+                        contClass = ImmutableArray.CreateRange(FlagUtilities.DecodeFlags(Builder.FlagMode, slashPart));
                     }
                 }
                 if (Builder.IgnoredChars != null)
@@ -925,7 +912,7 @@ namespace Hunspell
             var slashIndex = pattern.IndexOf('/');
             if (slashIndex >= 0)
             {
-                if (!TryParseFlag(pattern.Substring(slashIndex + 1), out condition))
+                if (!FlagUtilities.TryParseFlag(Builder.FlagMode, pattern.Substring(slashIndex + 1), out condition))
                 {
                     return false;
                 }
@@ -939,7 +926,7 @@ namespace Hunspell
                 slashIndex = pattern2.IndexOf('/');
                 if (slashIndex >= 0)
                 {
-                    if (!TryParseFlag(pattern2.Substring(slashIndex + 1), out condition2))
+                    if (!FlagUtilities.TryParseFlag(Builder.FlagMode, pattern2.Substring(slashIndex + 1), out condition2))
                     {
                         return false;
                     }
@@ -957,144 +944,6 @@ namespace Hunspell
             entries.Add(new PatternEntry(pattern, pattern2, pattern3, condition, condition2));
 
             return true;
-        }
-
-        private IEnumerable<int> DecodeFlags(string parameterText)
-        {
-            if (string.IsNullOrEmpty(parameterText))
-            {
-                return Enumerable.Empty<int>();
-            }
-
-            switch (Builder.FlagMode)
-            {
-                case FlagMode.Char:
-                case FlagMode.Uni:
-                    return parameterText.Select(c => (int)c);
-                case FlagMode.Long:
-                    return DecodeLongFlags(parameterText);
-                case FlagMode.Num:
-                    return DecodeNumFlags(parameterText);
-                default:
-                    throw new NotSupportedException();
-            }
-        }
-
-        private static IEnumerable<int> DecodeLongFlags(string text)
-        {
-            if (text == null)
-            {
-                yield break;
-            }
-
-            for (int i = 0; i < text.Length - 1; i += 2)
-            {
-                yield return unchecked((byte)text[i] << 8 | (byte)text[i + 1]);
-            }
-
-            if (text.Length % 2 == 1)
-            {
-                yield return text[text.Length - 1];
-            }
-        }
-
-        private static IEnumerable<int> DecodeNumFlags(string text)
-        {
-            if (string.IsNullOrEmpty(text))
-            {
-                return Enumerable.Empty<int>();
-            }
-
-            return text
-                .SplitOnComma()
-                .Select(textValue =>
-                {
-                    int intValue;
-                    IntExtensions.TryParseInvariant(textValue, out intValue);
-                    return intValue;
-                });
-        }
-
-        private bool TryParseFlag(string text, out int result)
-        {
-            if (string.IsNullOrEmpty(text))
-            {
-                result = 0;
-                return false;
-            }
-
-            switch (Builder.FlagMode)
-            {
-                case FlagMode.Char:
-                case FlagMode.Uni:
-                    if (text.Length >= 2)
-                    {
-                        result = MergeCharacterBytes(text[0], text[1]);
-                        return true;
-                    }
-
-                    result = text[0];
-                    return true;
-                case FlagMode.Long:
-                    if (text.Length >= 2)
-                    {
-                        result = unchecked(((byte)text[0] << 8) | (byte)text[1]);
-                    }
-                    else
-                    {
-                        result = text[0];
-                    }
-
-                    return true;
-                case FlagMode.Num:
-                    return IntExtensions.TryParseInvariant(text, out result);
-                default:
-                    throw new NotSupportedException();
-            }
-        }
-
-        private bool TryParseFlag(string text, out char result)
-        {
-            if (string.IsNullOrEmpty(text))
-            {
-                result = default(char);
-                return false;
-            }
-
-            switch (Builder.FlagMode)
-            {
-                case FlagMode.Char:
-                case FlagMode.Uni:
-                    if (text.Length >= 2)
-                    {
-                        result = (char)MergeCharacterBytes(text[0], text[1]);
-                        return true;
-                    }
-
-                    result = text[0];
-                    return true;
-                case FlagMode.Long:
-                    if (text.Length >= 2)
-                    {
-                        result = unchecked((char)(((byte)text[0] << 8) | (byte)text[1]));
-                    }
-                    else
-                    {
-                        result = text[0];
-                    }
-
-                    return true;
-                case FlagMode.Num:
-                    return IntExtensions.TryParseInvariantAsChar(text, out result);
-                default:
-                    throw new NotSupportedException();
-            }
-        }
-
-        [Obsolete("This method may be able to be replaced by a simple left shift operation like long flags are")]
-        private static ushort MergeCharacterBytes(char first, char second)
-        {
-            return BitConverter.ToUInt16(new byte[] { unchecked((byte)first), unchecked((byte)second) }, 0);
         }
 
         private bool TrySetFlagMode(string modeText)

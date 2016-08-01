@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 
 namespace Hunspell
 {
-    public sealed class AffixUtfStreamLineReader : IAffixFileLineReader, IDisposable
+    public sealed class UtfStreamLineReader : IAffixLineReader, IDictionaryLineReader, IDisposable
     {
-        public AffixUtfStreamLineReader(Stream stream)
+        public UtfStreamLineReader(Stream stream)
         {
             if (stream == null)
             {
@@ -18,7 +18,7 @@ namespace Hunspell
             reader = new StreamReader(stream, Encoding.UTF8, true);
         }
 
-        public AffixUtfStreamLineReader(string filePath)
+        public UtfStreamLineReader(string filePath)
             : this(File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
         {
         }
@@ -26,10 +26,7 @@ namespace Hunspell
         private readonly Stream stream;
         private readonly StreamReader reader;
 
-        public Task<string> ReadLineAsync()
-        {
-            return reader.ReadLineAsync();
-        }
+        public Task<string> ReadLineAsync() => reader.ReadLineAsync();
 
         public void Dispose()
         {

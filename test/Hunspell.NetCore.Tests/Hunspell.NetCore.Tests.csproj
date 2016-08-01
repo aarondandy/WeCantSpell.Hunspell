@@ -71,7 +71,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AffixFileReaderTests.cs" />
+    <Compile Include="AffixReaderTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities\StringLineReader.cs" />
   </ItemGroup>

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace Hunspell.Utilities
@@ -67,6 +66,11 @@ namespace Hunspell.Utilities
         public static bool Contains(this string @this, char c)
         {
             return @this.IndexOf(c) >= 0;
+        }
+
+        public static bool IsTabOrSpace(char c)
+        {
+            return c == ' ' || c == '\t';
         }
     }
 }
