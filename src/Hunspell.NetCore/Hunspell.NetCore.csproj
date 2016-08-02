@@ -18,7 +18,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;NETSTANDARD_1_3;NET_4_6;PRE_CORE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;NETSTANDARD_1_4;NET_4_6_1;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <NoWarn>CS1591</NoWarn>
@@ -28,7 +28,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;RELEASE;NETSTANDARD_1_3;NET_4_6;PRE_CORE</DefineConstants>
+    <DefineConstants>TRACE;RELEASE;NETSTANDARD_1_4;NET_4_6_1;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>bin\Release\Hunspell.NetCore.XML</DocumentationFile>
@@ -56,11 +56,15 @@
     <Compile Include="AffixEntryOptions.cs" />
     <Compile Include="AffixConfig.cs" />
     <Compile Include="AffixReader.cs" />
+    <Compile Include="CapitalizationType.cs" />
     <Compile Include="Dictionary.Builder.cs" />
     <Compile Include="Dictionary.cs" />
     <Compile Include="DictionaryEntry.cs" />
+    <Compile Include="DictionaryEntryOptions.cs" />
     <Compile Include="DictionaryReader.cs" />
     <Compile Include="IDictionaryLineReader.cs" />
+    <Compile Include="MorphologicalTags.cs" />
+    <Compile Include="SpecialFlags.cs" />
     <Compile Include="UtfStreamLineReader.cs" />
     <Compile Include="FlagMode.cs" />
     <Compile Include="HunspellException.cs" />

@@ -8,13 +8,13 @@ namespace Hunspell
     {
         public class Builder
         {
-            public List<DictionaryEntry> Entries;
+            public Dictionary<string, List<DictionaryEntry>> Entries;
 
             public Dictionary ToDictionary()
             {
                 return new Dictionary
                 {
-                    Entries = EmptyIfNull(Entries).ToImmutableArray()
+                    Entries = EmptyIfNull(Entries).ToImmutableDictionary(pair => pair.Key, pair => pair.Value.ToImmutableArray())
                 };
             }
 

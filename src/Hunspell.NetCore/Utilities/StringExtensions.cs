@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Text.RegularExpressions;
 
 namespace Hunspell.Utilities
@@ -63,14 +64,24 @@ namespace Hunspell.Utilities
                     c => !removeLookup.Contains(c)));
         }
 
+        public static string RemoveChars(this string @this, ImmutableArray<char> remove)
+        {
+            if (string.IsNullOrEmpty(@this) || remove == null || remove.Length == 0)
+            {
+                return @this;
+            }
+
+            var removeLookup = new HashSet<char>(remove);
+            var chars = @this.ToCharArray();
+            return new string(
+                Array.FindAll(
+                    @this.ToCharArray(),
+                    c => !removeLookup.Contains(c)));
+        }
+
         public static bool Contains(this string @this, char c)
         {
             return @this.IndexOf(c) >= 0;
-        }
-
-        public static bool IsTabOrSpace(char c)
-        {
-            return c == ' ' || c == '\t';
         }
     }
 }

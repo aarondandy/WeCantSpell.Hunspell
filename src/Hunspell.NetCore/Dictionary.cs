@@ -8,6 +8,6 @@ namespace Hunspell
         {
         }
 
-        public ImmutableArray<DictionaryEntry> Entries { get; private set; }
+        public ImmutableDictionary<string, ImmutableArray<DictionaryEntry>> Entries { get; private set; }
     }
 }

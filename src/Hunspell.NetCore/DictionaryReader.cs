@@ -1,6 +1,7 @@
 ﻿using Hunspell.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -20,8 +21,8 @@ namespace Hunspell
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         private static readonly Regex WordLineRegex = new Regex(
-            @"^[\t ]*((?:[^\t \\\/]|\\\/|\\)+)(?:\/([^\t ]+))+?(?:[\t ]+([^\t ]+))*[\t ]*$",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+            @"^[\t ]*(?<word>[^\t ]+?)((?<!\\)[/](?<flags>[^\t ]+))?([\t ]+(?<morphs>[^\t ]+))*[\t ]*$",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture);
 
         private Dictionary.Builder Builder { get; }
 
@@ -65,7 +66,7 @@ namespace Hunspell
 
             if (Builder.Entries == null)
             {
-                Builder.Entries = new List<DictionaryEntry>();
+                Builder.Entries = new Dictionary<string, List<DictionaryEntry>>();
             }
 
             var match = WordLineRegex.Match(line);
@@ -74,35 +75,44 @@ namespace Hunspell
                 return false;
             }
 
-            var word = match.Groups[1].Value.Replace(@"\/", @"/");
+            var word = match.Groups["word"].Value.Replace(@"\/", @"/");
 
-            List<int> flags;
-            if (match.Groups[2].Success)
+            var flagGroup = match.Groups["flags"];
+            ImmutableArray<int> flags;
+            if (flagGroup.Success)
             {
-                flags = FlagUtilities.DecodeFlags(Affix.FlagMode, match.Groups[2].Value).ToList();
-            }
-            else
-            {
-                flags = null;
-            }
-
-            List<string> morphs;
-            if (match.Groups[3].Success)
-            {
-                morphs = new List<string>(match.Groups[3].Captures.Count);
-                foreach (Capture morphCapture in match.Groups[3].Captures)
+                if (Affix.IsAliasF)
                 {
-                    morphs.Add(morphCapture.Value);
+                    throw new NotImplementedException();
+                }
+                else
+                {
+                    flags = FlagUtilities.DecodeFlags(Affix.FlagMode, flagGroup.Value).OrderBy(x => x).ToImmutableArray();
                 }
             }
             else
             {
-                morphs = null;
+                flags = ImmutableArray<int>.Empty;
             }
 
-            throw new NotImplementedException(); // Builder.Entries.Add(new DictionaryEntry(word, flags, morphs));
+            ImmutableArray<string> morphs;
+            var morphGroup = match.Groups["morphs"];
+            if (morphGroup.Success)
+            {
+                var morphBuilder = ImmutableArray.CreateBuilder<string>(morphGroup.Captures.Count);
+                for (int i = 0; i < morphs.Length; i++)
+                {
+                    morphBuilder.Add(morphGroup.Captures[i].Value);
+                }
 
-            return true;
+                morphs = morphBuilder.ToImmutableArray();
+            }
+            else
+            {
+                morphs = ImmutableArray<string>.Empty;
+            }
+
+            return AddWord(word, flags, morphs);
         }
 
         private bool AttemptToProcessInitializationLine(string line)
@@ -117,11 +127,128 @@ namespace Hunspell
                 {
                     if (Builder.Entries == null)
                     {
-                        Builder.Entries = new List<DictionaryEntry>(expectedSize);
+                        Builder.Entries = new Dictionary<string, List<DictionaryEntry>>(expectedSize);
                     }
 
                     return true;
                 }
+            }
+
+            return false;
+        }
+
+        private bool AddWord(string word, ImmutableArray<int> flags, ImmutableArray<string> morphs)
+        {
+            return AddWord(word, flags, morphs, false)
+                || AddWordCapitalized(word, flags, morphs, CapitalizationTypeUtilities.GetCapitalizationType(word));
+        }
+
+        private bool AddWord(string word, ImmutableArray<int> flags, ImmutableArray<string> morphs, bool onlyUpperCase)
+        {
+            if (Affix.IgnoredChars.Length > 0)
+            {
+                word = word.RemoveChars(Affix.IgnoredChars);
+            }
+
+            if (Affix.ComplexPrefixes)
+            {
+                word = word.Reverse();
+
+                if (morphs.Length != 0 && !Affix.IsAliasM)
+                {
+                    if (Affix.ComplexPrefixes)
+                    {
+                        var morphBuilder = ImmutableArray.CreateBuilder<string>(morphs.Length);
+                        for(int i = morphs.Length-1; i >=0; i--)
+                        {
+                            morphBuilder.Add(morphs[i].Reverse());
+                        }
+
+                        morphs = morphBuilder.ToImmutableArray();
+                    }
+                }
+            }
+
+            DictionaryEntryOptions options;
+            if (morphs.Length != 0)
+            {
+                if (Affix.IsAliasM)
+                {
+                    options = DictionaryEntryOptions.AliasM;
+                    throw new NotImplementedException();
+                }
+                else
+                {
+                    options = DictionaryEntryOptions.None;
+                }
+
+                if (morphs.Any(m => m.StartsWith(MorphologicalTags.Phon)))
+                {
+                    options |= DictionaryEntryOptions.Phon;
+                }
+            }
+            else
+            {
+                options = DictionaryEntryOptions.None;
+            }
+
+            List<DictionaryEntry> entryList;
+            if (!Builder.Entries.TryGetValue(word, out entryList) || entryList == null)
+            {
+                entryList = new List<DictionaryEntry>();
+                Builder.Entries[word] = entryList;
+            }
+
+            var upperCaseHomonym = false;
+            for (var i = 0; i < entryList.Count; i++)
+            {
+                var existingEntry = entryList[i];
+
+                if (!onlyUpperCase)
+                {
+                    if (existingEntry.Flags != null && existingEntry.Flags.Contains(SpecialFlags.OnlyUpcaseFlag))
+                    {
+                        existingEntry = new DictionaryEntry(existingEntry.Word, flags, existingEntry.Morphs, existingEntry.Options);
+                        entryList[i] = existingEntry;
+                        return false;
+                    }
+                }
+                else
+                {
+                    upperCaseHomonym = true;
+                }
+            }
+
+            if (!upperCaseHomonym)
+            {
+                entryList.Add(new DictionaryEntry(word, flags, morphs, options));
+            }
+
+            return false;
+        }
+
+        private bool AddWordCapitalized(string word, ImmutableArray<int> flags, ImmutableArray<string> morphs, CapitalizationType capType)
+        {
+            // add inner capitalized forms to handle the following allcap forms:
+            // Mixed caps: OpenOffice.org -> OPENOFFICE.ORG
+            // Allcaps with suffixes: CIA's -> CIA'S
+
+            if (
+                (
+                    capType == CapitalizationType.Huh
+                    || capType == CapitalizationType.HuhInit
+                    || (capType == CapitalizationType.All && flags.Length != 0)
+                )
+                &&
+                !flags.Contains(SpecialFlags.ForbiddenWord)
+            )
+            {
+                flags = flags.Add(SpecialFlags.OnlyUpcaseFlag);
+                word =
+                    Affix.Culture.TextInfo.ToUpper(word.Substring(0, 1))
+                    + Affix.Culture.TextInfo.ToLower(word.Substring(1));
+
+                return AddWord(word, flags, morphs, true);
             }
 
             return false;
