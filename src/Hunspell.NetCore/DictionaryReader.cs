@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -32,7 +33,11 @@ namespace Hunspell
 
         public static async Task<Dictionary> ReadAsync(IDictionaryLineReader reader, AffixConfig affix)
         {
-            var builder = new Dictionary.Builder();
+            var builder = new Dictionary.Builder
+            {
+                Affix = affix
+            };
+
             var readerInstance = new DictionaryReader(builder, affix);
 
             string line;
@@ -42,6 +47,13 @@ namespace Hunspell
             }
 
             return builder.ToDictionary();
+        }
+
+        public static async Task<Dictionary> ReadFileAsync(string filePath)
+        {
+            var affixFilePath = Path.ChangeExtension(filePath, "aff");
+            var affix = await AffixReader.ReadFileAsync(affixFilePath);
+            return await ReadFileAsync(filePath, affix);
         }
 
         public static async Task<Dictionary> ReadFileAsync(string filePath, AffixConfig affix)

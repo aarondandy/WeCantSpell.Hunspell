@@ -9,5 +9,7 @@ namespace Hunspell
         }
 
         public ImmutableDictionary<string, ImmutableArray<DictionaryEntry>> Entries { get; private set; }
+
+        public AffixConfig Affix { get; private set; }
     }
 }

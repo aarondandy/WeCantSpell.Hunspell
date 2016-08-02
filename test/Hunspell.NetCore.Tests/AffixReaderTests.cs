@@ -11,7 +11,7 @@ namespace Hunspell.NetCore.Tests
 {
     public class AffixReaderTests
     {
-        public class ReadAsync
+        public class ReadFileAsync : AffixReaderTests
         {
             [Fact]
             public async Task can_read_1463589_aff()
@@ -1452,6 +1452,20 @@ namespace Hunspell.NetCore.Tests
                 actual.Suffixes[2].Entries[1].MorphCode.Should().Be("<DERIV>");
             }
 
+            [Theory, MemberData("AllAffixFilePaths")]
+            public async Task can_read_file_without_exception(string filePath)
+            {
+                var actual = await AffixReader.ReadFileAsync(filePath);
+
+                actual.Should().NotBeNull();
+            }
+
+            public static IEnumerable<object[]> AllAffixFilePaths =>
+                Array.ConvertAll(Directory.GetFiles("files/", "*.aff"), filePath => new object[] { filePath });
+        }
+
+        public class ReadAsync : AffixReaderTests
+        {
             [Theory]
             [InlineData("de-DE")]
             [InlineData("de")]
@@ -1748,24 +1762,13 @@ namespace Hunspell.NetCore.Tests
                 rep.Fin.Should().Be(expectedFin);
                 rep.Isol.Should().Be(expectedIsol);
             }
+        }
 
-            [Theory, MemberData("AllAffixFilePaths")]
-            public async Task can_read_file_without_exception(string filePath)
-            {
-                var actual = await AffixReader.ReadFileAsync(filePath);
-
-                actual.Should().NotBeNull();
-            }
-
-            public static IEnumerable<object[]> AllAffixFilePaths =>
-                Array.ConvertAll(Directory.GetFiles("files/", "*.aff"), filePath => new object[] { filePath });
-
-            private string Reversed(string text)
-            {
-                var letters = text.ToCharArray();
-                Array.Reverse(letters);
-                return new string(letters);
-            }
+        protected string Reversed(string text)
+        {
+            var letters = text.ToCharArray();
+            Array.Reverse(letters);
+            return new string(letters);
         }
     }
 }
