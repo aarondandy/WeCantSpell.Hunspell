@@ -538,17 +538,17 @@ namespace Hunspell
         /// <summary>
         /// Inidicates if any <see cref="AliasF"/> entries have been defined.
         /// </summary>
-        public bool IsAliasF => AliasF != null && AliasF.Length > 0;
+        public bool IsAliasF => AliasF.Length != 0;
 
         /// <summary>
         /// Values used for morphological alias compression.
         /// </summary>
-        public ImmutableArray<string> AliasM { get; private set; }
+        public ImmutableArray<ImmutableArray<string>> AliasM { get; private set; }
 
         /// <summary>
         /// Indicates if any <see cref="AliasM"/> entries have been defined.
         /// </summary>
-        public bool IsAliasM => AliasM != null && AliasM.Length > 0;
+        public bool IsAliasM => AliasM.Length != 0;
 
         /// <summary>
         /// Defines custom compound patterns with a regex-like syntax.

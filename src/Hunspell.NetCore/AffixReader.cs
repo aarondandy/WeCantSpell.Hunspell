@@ -429,20 +429,23 @@ namespace Hunspell
             return true;
         }
 
-        private bool TryParseAliasF(string parameterText, List<List<int>> entries)
+        private bool TryParseAliasF(string parameterText, List<ImmutableArray<int>> entries)
         {
-            entries.Add(FlagUtilities.DecodeFlags(Builder.FlagMode, parameterText).OrderBy(x => x).ToList());
+            entries.Add(FlagUtilities.DecodeFlags(Builder.FlagMode, parameterText).OrderBy(x => x).ToImmutableArray());
             return true;
         }
 
-        private bool TryParseAliasM(string parameterText, List<string> entries)
+        private bool TryParseAliasM(string parameterText, List<ImmutableArray<string>> entries)
         {
             if (Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes))
             {
                 parameterText = parameterText.Reverse();
             }
 
-            entries.Add(parameterText);
+            var parts = parameterText.SplitOnTabOrSpace();
+
+            entries.Add(parts.ToImmutableArray());
+
             return true;
         }
 
@@ -638,14 +641,14 @@ namespace Hunspell
                 }
 
                 // piece 6
-                string morph = null;
+                ImmutableArray<string> morph;
                 if (lineMatchGroups[7].Success)
                 {
-                    morph = lineMatchGroups[7].Value;
+                    var morphAffixText = lineMatchGroups[7].Value;
                     if (Builder.IsAliasM)
                     {
                         int morphNumber;
-                        if (IntExtensions.TryParseInvariant(morph, out morphNumber) && morphNumber > 0 && morphNumber <= Builder.AliasM.Count)
+                        if (IntExtensions.TryParseInvariant(morphAffixText, out morphNumber) && morphNumber > 0 && morphNumber <= Builder.AliasM.Count)
                         {
                             morph = Builder.AliasM[morphNumber - 1];
                         }
@@ -658,9 +661,15 @@ namespace Hunspell
                     {
                         if (Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes))
                         {
-                            morph = morph.Reverse();
+                            morphAffixText = morphAffixText.Reverse();
                         }
+
+                        morph = morphAffixText.SplitOnTabOrSpace().ToImmutableArray();
                     }
+                }
+                else
+                {
+                    morph = ImmutableArray<string>.Empty;
                 }
 
                 if (affixGroup == null)

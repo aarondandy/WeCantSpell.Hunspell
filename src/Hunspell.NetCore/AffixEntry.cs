@@ -108,7 +108,7 @@ namespace Hunspell
         /// <summary>
         /// Optional morphological fields separated by spaces or tabulators.
         /// </summary>
-        public string MorphCode { get; private set; }
+        public ImmutableArray<string> MorphCode { get; private set; }
 
         /// <summary>
         /// Encodes the conditions to be met.
@@ -141,7 +141,7 @@ namespace Hunspell
             string strip,
             string affixText,
             string conditionText,
-            string morph,
+            IEnumerable<string> morph,
             IEnumerable<int> contClass
         )
             where TEntry : AffixEntry, new()
@@ -151,7 +151,7 @@ namespace Hunspell
                 Strip = strip,
                 Append = affixText,
                 ConditionText = conditionText,
-                MorphCode = morph,
+                MorphCode = morph.ToImmutableArray(),
                 ContClass = contClass.ToImmutableArray()
             };
         }

@@ -95,7 +95,16 @@ namespace Hunspell
             {
                 if (Affix.IsAliasF)
                 {
-                    throw new NotImplementedException();
+                    int flagAliasNumber;
+                    if (IntExtensions.TryParseInvariant(flagGroup.Value, out flagAliasNumber) && flagAliasNumber > 0 && flagAliasNumber <= Affix.AliasF.Length)
+                    {
+                        flags = Affix.AliasF[flagAliasNumber - 1];
+                    }
+                    else
+                    {
+                        // TODO: warn
+                        return false;
+                    }
                 }
                 else
                 {
@@ -112,7 +121,7 @@ namespace Hunspell
             if (morphGroup.Success)
             {
                 var morphBuilder = ImmutableArray.CreateBuilder<string>(morphGroup.Captures.Count);
-                for (int i = 0; i < morphs.Length; i++)
+                for (int i = 0; i < morphGroup.Captures.Count; i++)
                 {
                     morphBuilder.Add(morphGroup.Captures[i].Value);
                 }
@@ -171,7 +180,7 @@ namespace Hunspell
                     if (Affix.ComplexPrefixes)
                     {
                         var morphBuilder = ImmutableArray.CreateBuilder<string>(morphs.Length);
-                        for(int i = morphs.Length-1; i >=0; i--)
+                        for (int i = morphs.Length - 1; i >= 0; i--)
                         {
                             morphBuilder.Add(morphs[i].Reverse());
                         }
@@ -187,7 +196,23 @@ namespace Hunspell
                 if (Affix.IsAliasM)
                 {
                     options = DictionaryEntryOptions.AliasM;
-                    throw new NotImplementedException();
+                    var morphBuilder = ImmutableArray.CreateBuilder<string>(morphs.Length);
+                    for(int i = 0; i < morphs.Length; i++)
+                    {
+                        var originalValue = morphs[i];
+                        int morphNumber;
+
+                        if (IntExtensions.TryParseInvariant(originalValue, out morphNumber) && morphNumber > 0 && morphNumber <= Affix.AliasM.Length)
+                        {
+                            morphBuilder.AddRange(Affix.AliasM[morphNumber - 1]);
+                        }
+                        else
+                        {
+                            morphBuilder.Add(originalValue);
+                        }
+                    }
+
+                    morphs = morphBuilder.ToImmutableArray();
                 }
                 else
                 {
@@ -252,7 +277,7 @@ namespace Hunspell
                     || (capType == CapitalizationType.All && flags.Length != 0)
                 )
                 &&
-                !flags.Contains(SpecialFlags.ForbiddenWord)
+                !flags.Contains(Affix.ForbiddenWord)
             )
             {
                 flags = flags.Add(SpecialFlags.OnlyUpcaseFlag);

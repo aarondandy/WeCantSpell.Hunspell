@@ -219,7 +219,7 @@ namespace Hunspell
             /// Ordinal numbers for affix flag compression.
             /// </summary>
             /// <seealso cref="AffixConfig.AliasF"/>
-            public List<List<int>> AliasF;
+            public List<ImmutableArray<int>> AliasF;
 
             /// <summary>
             /// Inidicates if any <see cref="AliasF"/> entries have been defined.
@@ -230,7 +230,7 @@ namespace Hunspell
             /// Values used for morphological alias compression.
             /// </summary>
             /// <seealso cref="AffixConfig.AliasM"/>
-            public List<string> AliasM;
+            public List<ImmutableArray<string>> AliasM;
 
             /// <summary>
             /// Indicates if any <see cref="AliasM"/> entries have been defined.
@@ -321,6 +321,7 @@ namespace Hunspell
             {
                 // TODO: ProcessPfxTreeToList and ProcessSfxTreeToList
                 // TODO: ProcessPfxOrder and ProcessSfxOrder
+                // TODO: optimize memory reuse for Immutable collections, focused on AliasF and AliasM
 
                 return new AffixConfig
                 {
@@ -358,8 +359,8 @@ namespace Hunspell
                     Replacements = EmptyIfNull(Replacements).ToImmutableArray(),
                     Suffixes = EmptyIfNull(Suffixes).Select(b => b.ToGroup()).ToImmutableArray(),
                     Prefixes = EmptyIfNull(Prefixes).Select(b => b.ToGroup()).ToImmutableArray(),
-                    AliasF = EmptyIfNull(AliasF).Select(ToImmutableArray).ToImmutableArray(),
-                    AliasM = ToImmutableArray(AliasM),
+                    AliasF = EmptyIfNull(AliasF).ToImmutableArray(),
+                    AliasM = EmptyIfNull(AliasM).ToImmutableArray(),
                     CompoundRules = EmptyIfNull(CompoundRules).Select(ToImmutableArray).ToImmutableArray(),
                     CompoundPatterns = ToImmutableArray(CompoundPatterns),
                     BreakTable = ToImmutableArray(BreakTable),

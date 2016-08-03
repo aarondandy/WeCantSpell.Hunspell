@@ -272,9 +272,9 @@ namespace Hunspell.NetCore.Tests
                 actual.AliasF[1].ShouldBeEquivalentTo(new int[] { 'A' });
 
                 actual.AliasM.Should().HaveCount(3);
-                actual.AliasM[0].Should().Be("is:affix_x");
-                actual.AliasM[1].Should().Be("ds:affix_y");
-                actual.AliasM[2].Should().Be("po:noun xx:other_data");
+                actual.AliasM[0].Should().OnlyContain(x => x == "is:affix_x");
+                actual.AliasM[1].Should().OnlyContain(x => x == "ds:affix_y");
+                actual.AliasM[2].ShouldAllBeEquivalentTo(new[] { "po:noun", "xx:other_data" });
 
                 actual.Suffixes.Should().HaveCount(2);
 
@@ -285,7 +285,7 @@ namespace Hunspell.NetCore.Tests
                 suffixEntry1.Strip.Should().BeEmpty();
                 suffixEntry1.Append.Should().Be("x");
                 suffixEntry1.ConditionText.Should().Be(".");
-                suffixEntry1.MorphCode.Should().Be("is:affix_x");
+                suffixEntry1.MorphCode.Should().OnlyContain(x => x == "is:affix_x");
 
                 actual.Suffixes[1].AFlag.Should().Be('B');
                 actual.Suffixes[1].Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF | AffixEntryOptions.AliasM);
@@ -295,7 +295,7 @@ namespace Hunspell.NetCore.Tests
                 suffixEntry2.Append.Should().Be("y");
                 suffixEntry2.ContClass.ShouldBeEquivalentTo(new int[] { 'A' });
                 suffixEntry2.ConditionText.Should().Be(".");
-                suffixEntry2.MorphCode.Should().Be("ds:affix_y");
+                suffixEntry2.MorphCode.Should().OnlyContain(x => x == "ds:affix_y");
             }
 
             [Fact]
@@ -310,10 +310,10 @@ namespace Hunspell.NetCore.Tests
                 actual.AliasM.Should().HaveCount(4);
                 actual.AliasM.ShouldBeEquivalentTo(new[]
                 {
-                    Reversed(@"affix_1/"),
-                    Reversed(@"affix_2/"),
-                    Reversed(@"/suffix_1"),
-                    Reversed(@"[stem_1]")
+                    new[] { Reversed(@"affix_1/") },
+                    new[] { Reversed(@"affix_2/") },
+                    new[] { Reversed(@"/suffix_1") },
+                    new[] { Reversed(@"[stem_1]") }
                 });
 
                 actual.Prefixes.Should().HaveCount(2);
@@ -325,7 +325,7 @@ namespace Hunspell.NetCore.Tests
                 prefixEntry1.Strip.Should().BeEmpty();
                 prefixEntry1.Append.Should().Be("ket");
                 prefixEntry1.ConditionText.Should().Be(".");
-                prefixEntry1.MorphCode.Should().Be(Reversed(@"affix_1/"));
+                prefixEntry1.MorphCode.Should().ContainSingle(Reversed(@"affix_1/"));
                 var prefixGroup2 = actual.Prefixes[1];
                 prefixGroup2.AFlag.Should().Be('B');
                 prefixGroup2.Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasM);
@@ -335,7 +335,7 @@ namespace Hunspell.NetCore.Tests
                 prefixEntry2.Append.Should().Be("tem");
                 prefixEntry2.ContClass.ShouldBeEquivalentTo(new int[] { 'A' });
                 prefixEntry2.ConditionText.Should().Be(".");
-                prefixEntry2.MorphCode.Should().Be(Reversed(@"affix_2/"));
+                prefixEntry2.MorphCode.Should().ContainSingle(Reversed(@"affix_2/"));
                 actual.Suffixes.Should().HaveCount(1);
                 var suffixGroup1 = actual.Suffixes[0];
                 suffixGroup1.AFlag.Should().Be('C');
@@ -345,7 +345,7 @@ namespace Hunspell.NetCore.Tests
                 suffixEntry1.Strip.Should().BeEmpty();
                 suffixEntry1.Append.Should().Be("_tset_");
                 suffixEntry1.ConditionText.Should().Be(".");
-                suffixEntry1.MorphCode.Should().Be(Reversed(@"/suffix_1"));
+                suffixEntry1.MorphCode.Should().ContainSingle(Reversed(@"/suffix_1"));
             }
 
             [Fact]
@@ -717,19 +717,19 @@ namespace Hunspell.NetCore.Tests
                 entry3.Strip.Should().BeEmpty();
                 entry3.Append.Should().Be("obb");
                 entry3.ConditionText.Should().Be(".");
-                entry3.MorphCode.Should().Be("is:COMPARATIVE");
+                entry3.MorphCode.Should().OnlyContain(x => x == "is:COMPARATIVE");
                 var entry4 = actual.Suffixes[0].Entries[1];
                 entry4.Strip.Should().BeEmpty();
                 entry4.Append.Should().Be("obb");
                 entry4.ContClass.ShouldBeEquivalentTo(new[] { 'A', 'X' });
                 entry4.ConditionText.Should().Be(".");
-                entry4.MorphCode.Should().Be("is:SUPERLATIVE");
+                entry4.MorphCode.Should().OnlyContain(x => x == "is:SUPERLATIVE");
                 var entry5 = actual.Suffixes[0].Entries[2];
                 entry5.Strip.Should().BeEmpty();
                 entry5.Append.Should().Be("obb");
                 entry5.ContClass.ShouldBeEquivalentTo(new[] { 'B', 'X' });
                 entry5.ConditionText.Should().Be(".");
-                entry5.MorphCode.Should().Be("is:SUPERSUPERLATIVE");
+                entry5.MorphCode.Should().OnlyContain(x => x == "is:SUPERSUPERLATIVE");
             }
 
             [Fact]
@@ -1094,6 +1094,26 @@ namespace Hunspell.NetCore.Tests
             }
 
             [Fact]
+            public async Task can_read_morph_aff()
+            {
+                var filePath = @"files/morph.aff";
+
+                var actual = await AffixReader.ReadFileAsync(filePath);
+
+                actual.Prefixes.Should().HaveCount(1);
+                actual.Prefixes[0].AFlag.Should().Be('P');
+                actual.Prefixes[0].Entries[0].MorphCode.ShouldBeEquivalentTo(new[] { "dp:pfx_un", "sp:un" });
+
+                actual.Suffixes.Should().HaveCount(3);
+                actual.Suffixes[0].AFlag.Should().Be('S');
+                actual.Suffixes[0].Entries[0].MorphCode.ShouldBeEquivalentTo(new[] { "is:plur" });
+                actual.Suffixes[1].AFlag.Should().Be('Q');
+                actual.Suffixes[1].Entries[0].MorphCode.ShouldBeEquivalentTo(new[] { "is:sg_3" });
+                actual.Suffixes[2].AFlag.Should().Be('R');
+                actual.Suffixes[2].Entries[0].MorphCode.ShouldBeEquivalentTo(new[] { "ds:der_able" });
+            }
+
+            [Fact]
             public async Task can_read_needaffix_aff()
             {
                 var filePath = @"files/needaffix.aff";
@@ -1429,14 +1449,14 @@ namespace Hunspell.NetCore.Tests
                 actual.Suffixes[0].Entries[0].Strip.Should().BeEmpty();
                 actual.Suffixes[0].Entries[0].Append.Should().BeEmpty();
                 actual.Suffixes[0].Entries[0].ConditionText.Should().Be(".");
-                actual.Suffixes[0].Entries[0].MorphCode.Should().Be(">");
+                actual.Suffixes[0].Entries[0].MorphCode.Should().OnlyContain(x => x == ">");
 
                 actual.Suffixes[1].AFlag.Should().Be('B');
                 actual.Suffixes[1].Entries.Should().HaveCount(1);
                 actual.Suffixes[1].Entries[0].Strip.Should().BeEmpty();
                 actual.Suffixes[1].Entries[0].Append.Should().BeEmpty();
                 actual.Suffixes[1].Entries[0].ConditionText.Should().Be(".");
-                actual.Suffixes[1].Entries[0].MorphCode.Should().Be("<ZERO>>");
+                actual.Suffixes[1].Entries[0].MorphCode.Should().OnlyContain(x => x == "<ZERO>>");
 
                 actual.Suffixes[2].AFlag.Should().Be('C');
                 actual.Suffixes[2].Entries.Should().HaveCount(2);
@@ -1444,12 +1464,12 @@ namespace Hunspell.NetCore.Tests
                 actual.Suffixes[2].Entries[0].Append.Should().BeEmpty();
                 actual.Suffixes[2].Entries[0].ContClass.ShouldBeEquivalentTo(new[] { 'X', 'A', 'B' });
                 actual.Suffixes[2].Entries[0].ConditionText.Should().Be(".");
-                actual.Suffixes[2].Entries[0].MorphCode.Should().Be("<ZERODERIV>");
+                actual.Suffixes[2].Entries[0].MorphCode.Should().OnlyContain(x => x == "<ZERODERIV>");
                 actual.Suffixes[2].Entries[1].Strip.Should().BeEmpty();
                 actual.Suffixes[2].Entries[1].Append.Should().Be("baz");
                 actual.Suffixes[2].Entries[1].ContClass.ShouldBeEquivalentTo(new[] { 'X', 'A', 'B' });
                 actual.Suffixes[2].Entries[1].ConditionText.Should().Be(".");
-                actual.Suffixes[2].Entries[1].MorphCode.Should().Be("<DERIV>");
+                actual.Suffixes[2].Entries[1].MorphCode.Should().OnlyContain(x => x == "<DERIV>");
             }
 
             [Theory, MemberData("AllAffixFilePaths")]
