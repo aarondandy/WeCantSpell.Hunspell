@@ -62,9 +62,12 @@
     <Compile Include="DictionaryEntry.cs" />
     <Compile Include="DictionaryEntryOptions.cs" />
     <Compile Include="DictionaryReader.cs" />
+    <Compile Include="Hunspell.cs" />
     <Compile Include="IDictionaryLineReader.cs" />
     <Compile Include="MorphologicalTags.cs" />
     <Compile Include="SpecialFlags.cs" />
+    <Compile Include="SpellCheckResult.cs" />
+    <Compile Include="SpellCheckResultType.cs" />
     <Compile Include="UtfStreamLineReader.cs" />
     <Compile Include="FlagMode.cs" />
     <Compile Include="HunspellException.cs" />

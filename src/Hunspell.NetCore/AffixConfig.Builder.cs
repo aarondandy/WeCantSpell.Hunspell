@@ -317,7 +317,7 @@ namespace Hunspell
             /// </summary>
             /// <returns>A constructed affix config.</returns>
             /// <seealso cref="AffixConfig"/>
-            public AffixConfig ToConfiguration()
+            public AffixConfig ToAffixConfig()
             {
                 // TODO: ProcessPfxTreeToList and ProcessSfxTreeToList
                 // TODO: ProcessPfxOrder and ProcessSfxOrder

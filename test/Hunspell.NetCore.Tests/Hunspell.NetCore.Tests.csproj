@@ -73,6 +73,7 @@
   <ItemGroup>
     <Compile Include="AffixReaderTests.cs" />
     <Compile Include="DictionaryReaderTests.cs" />
+    <Compile Include="HunspellTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities\StringLineReader.cs" />
   </ItemGroup>

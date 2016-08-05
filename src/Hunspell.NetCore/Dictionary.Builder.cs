@@ -17,7 +17,7 @@ namespace Hunspell
                 return new Dictionary
                 {
                     Entries = EmptyIfNull(Entries).ToImmutableDictionary(pair => pair.Key, pair => pair.Value.ToImmutableArray()),
-                    Affix = Affix
+                    Affix = Affix ?? new AffixConfig.Builder().ToAffixConfig()
                 };
             }
 

@@ -73,7 +73,7 @@ namespace Hunspell
 
             readerInstance.AddDefaultBreakTableIfEmpty();
 
-            return builder.ToConfiguration();
+            return builder.ToAffixConfig();
         }
 
         public static async Task<AffixConfig> ReadFileAsync(string filePath)
