@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -54,34 +55,41 @@ namespace Hunspell.NetCore.Tests
             }
 
             [Theory, MemberData("AllGoodFilePaths")]
-            public async Task can_find_good_words_in_dictionary(string goodWordsFilePath)
+            public async Task can_find_good_words_in_dictionary(string dictionaryFilePath, string word)
             {
-                var dicFilePath = Path.ChangeExtension(goodWordsFilePath, "dic");
-                var dictionary = await DictionaryReader.ReadFileAsync(dicFilePath);
-                var goodWords = File.ReadAllLines(goodWordsFilePath);
+                var dictionary = await DictionaryReader.ReadFileAsync(dictionaryFilePath);
                 var hunspell = new Hunspell(dictionary);
 
-                var checkResults = Array.ConvertAll(goodWords, hunspell.Check);
-                checkResults.Should().OnlyContain(b => b);
+                var checkResult = hunspell.Check(word);
+
+                checkResult.Should().BeTrue();
             }
 
             [Theory, MemberData("AllWrongFilePaths")]
-            public async Task cant_find_wrong_words_in_dictionary(string wrongWordsFilePath)
+            public async Task cant_find_wrong_words_in_dictionary(string dictionaryFilePath, string word)
             {
-                var dicFilePath = Path.ChangeExtension(wrongWordsFilePath, "dic");
-                var dictionary = await DictionaryReader.ReadFileAsync(dicFilePath);
-                var wrongWords = File.ReadAllLines(wrongWordsFilePath);
+                var dictionary = await DictionaryReader.ReadFileAsync(dictionaryFilePath);
                 var hunspell = new Hunspell(dictionary);
 
-                var checkResults = Array.ConvertAll(wrongWords, hunspell.Check);
-                checkResults.Should().OnlyContain(b => !b);
+                var checkResult = hunspell.Check(word);
+
+                checkResult.Should().BeFalse();
             }
 
-            public static IEnumerable<object[]> AllGoodFilePaths =>
-                Array.ConvertAll(Directory.GetFiles("files/", "*.good"), filePath => new object[] { filePath });
+            public static IEnumerable<object[]> AllGoodFilePaths => GetWordCheckParameters("*.good");
 
-            public static IEnumerable<object[]> AllWrongFilePaths =>
-                Array.ConvertAll(Directory.GetFiles("files/", "*.wrong"), filePath => new object[] { filePath });
+            public static IEnumerable<object[]> AllWrongFilePaths => GetWordCheckParameters("*.wrong");
+
+            protected static IEnumerable<string[]> GetWordCheckParameters(string searchPattern)
+            {
+                return Directory.GetFiles("files/", searchPattern)
+                    .SelectMany(wordFilePath =>
+                    {
+                        var dictionaryPath = Path.ChangeExtension(wordFilePath, "dic");
+                        return File.ReadLines(wordFilePath, Encoding.UTF8)
+                            .Select(word => new string[] { dictionaryPath, word });
+                    });
+            }
         }
     }
 }
