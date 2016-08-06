@@ -682,6 +682,11 @@ namespace Hunspell
                     };
                 }
 
+                if (!Builder.HasContClass && contClass.Length != 0)
+                {
+                    Builder.HasContClass = true;
+                }
+
                 affixGroup.Entries.Add(AffixEntry.Create<TEntry>(strip, affixText, conditionText, morph, contClass));
 
                 return true;

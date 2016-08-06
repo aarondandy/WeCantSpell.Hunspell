@@ -1,6 +1,5 @@
 ﻿using Hunspell.Utilities;
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 
 namespace Hunspell
@@ -48,7 +47,7 @@ namespace Hunspell
             string wordToClean;
             if (Affix.InputConversions.Count > 0)
             {
-                throw new NotImplementedException();
+                ConvertInput(word, out wordToClean);
             }
             else
             {
@@ -111,12 +110,169 @@ namespace Hunspell
                 return new SpellCheckResult(root, resultType, isFound);
             }
 
+            // recursive breaking at break points
             if (Affix.BreakTable.Length != 0)
             {
-                throw new NotImplementedException();
+                int nbr = 0;
+                wl = scw.Length;
+
+                // calculate break points for recursion limit
+                for (var j = 0; j < Affix.BreakTable.Length; j++)
+                {
+                    int pos = 0;
+                    while ((pos = scw.IndexOf(Affix.BreakTable[j], pos)) >= 0)
+                    {
+                        ++nbr;
+                        pos += Affix.BreakTable[j].Length;
+                    }
+                }
+                if (nbr >= 10)
+                {
+                    return new SpellCheckResult(root, resultType, false);
+                }
+
+                // check boundary patterns (^begin and end$)
+                for (var j = 0; j < Affix.BreakTable.Length; j++)
+                {
+                    var breakEntry = Affix.BreakTable[j];
+                    var plen = breakEntry.Length;
+                    if (plen == 1 || plen > wl)
+                    {
+                        continue;
+                    }
+
+                    if (
+                        breakEntry.StartsWith('^')
+                        && scw.Substring(0, plen - 1) == breakEntry.Substring(1)
+                        && Check(scw.Substring(plen - 1))
+                    )
+                    {
+                        return new SpellCheckResult(root, resultType, true);
+                    }
+
+                    if (
+                        breakEntry.EndsWith('$')
+                        && scw.Substring(wl - plen + 1, plen - 1) == breakEntry.Substring(0, plen - 1)
+                    )
+                    {
+                        var suffix = scw.Substring(wl - plen + 1);
+
+                        scw = scw.Substring(0, wl - plen + 1);
+
+                        if (Check(scw))
+                        {
+                            return new SpellCheckResult(root, resultType, true);
+                        }
+
+                        scw += suffix;
+                    }
+                }
+
+                // other patterns
+                for (var j = 0; j < Affix.BreakTable.Length; j++)
+                {
+                    var breakEntry = Affix.BreakTable[j];
+                    var plen = breakEntry.Length;
+                    var found = scw.IndexOf(breakEntry);
+
+                    if (found > 0 && found < wl - plen)
+                    {
+                        if (!Check(scw.Substring(found + plen)))
+                        {
+                            continue;
+                        }
+
+                        var suffix = scw.Substring(found);
+                        scw = scw.Substring(found);
+
+                        // examine 2 sides of the break point
+                        if (Check(scw))
+                        {
+                            return new SpellCheckResult(root, resultType, true);
+                        }
+
+                        scw += suffix;
+
+                        // LANG_hu: spec. dash rule
+                        if (StringComparer.OrdinalIgnoreCase.Equals(Affix.Culture.TwoLetterISOLanguageName, "hu") && breakEntry == "-")
+                        {
+                            suffix = scw.Substring(found + 1);
+                            scw = scw.Substring(found + 1);
+                            if (Check(scw))
+                            {
+                                return new SpellCheckResult(root, resultType, true);
+                            }
+
+                            scw += suffix;
+                        }
+                    }
+                }
             }
 
             return new SpellCheckResult(root, resultType, false);
+        }
+
+        private bool ConvertInput(string word, out string dest)
+        {
+            dest = string.Empty;
+
+            var change = false;
+            for (var i = 0; i < word.Length; i++)
+            {
+                var entry = FindInput(word.Substring(i));
+                var l = ReplaceInput(word.Substring(i), entry, i == 0);
+                if (l.Length != 0)
+                {
+                    dest += l;
+                    i += entry.Pattern.Length - 1;
+                    change = true;
+                }
+                else
+                {
+                    dest += word[i];
+                }
+            }
+
+            return change;
+        }
+
+        private MultiReplacementEntry FindInput(string word)
+        {
+            MultiReplacementEntry entry = null;
+            for (var i = 0; i < word.Length - 1; i++)
+            {
+                if (Affix.InputConversions.TryGetValue(word.Substring(i), out entry))
+                {
+                    return entry;
+                }
+            }
+
+            return entry;
+        }
+
+        private string ReplaceInput(string word, ReplacementEntry entry, bool atStart)
+        {
+            if (entry == null)
+            {
+                return string.Empty;
+            }
+
+            ReplacementValueType type;
+            if (word.Length == entry.Pattern.Length)
+            {
+                type = atStart ? ReplacementValueType.Isol : ReplacementValueType.Fin;
+            }
+            else
+            {
+                type = atStart ? ReplacementValueType.Ini : ReplacementValueType.Med;
+            }
+
+            while (type != 0 && string.IsNullOrEmpty(entry[type]))
+            {
+                type = (type == ReplacementValueType.Fin && !atStart) ? 0 : type - 1;
+            }
+
+            return entry[type];
         }
 
         private DictionaryEntry CheckWord(string w, ref SpellCheckResultType info, out string root)
@@ -194,10 +350,72 @@ namespace Hunspell
             // check with affixes
             if (he == null)
             {
-                throw new NotImplementedException();
+                // try stripping off affixes
+                he = AffixCheck(word, len, 0);
+
+                // check compound restriction and onlyupcase
+                if (he != null)
+                {
+                    throw new NotImplementedException();
+                }
+
+                if (he != null)
+                {
+                    throw new NotImplementedException();
+                }
+                else if (Affix.HasCompound)
+                {
+                    // try check compound word
+                    throw new NotImplementedException();
+                }
             }
 
             return he;
+        }
+
+        private DictionaryEntry AffixCheck(string word, int len, int needFlag, CompoundOptions inCompound = CompoundOptions.Not)
+        {
+            DictionaryEntry rv = null;
+
+            rv = PrefixCheck(word, len, inCompound, needFlag);
+            if (rv != null)
+            {
+                return rv;
+            }
+
+            rv = SuffixCheck(word, len, 0, null, 0, needFlag, inCompound);
+
+            if (rv != null)
+            {
+                return rv;
+            }
+
+            if (Affix.HasContClass)
+            {
+                throw new NotImplementedException();
+            }
+
+            return rv;
+        }
+
+        private DictionaryEntry PrefixCheck(string word, int len, CompoundOptions inCompound, int needFlag)
+        {
+            if (Affix.Prefixes.Length == 0)
+            {
+                return null;
+            }
+
+            throw new NotImplementedException();
+        }
+
+        private DictionaryEntry SuffixCheck(string word, int len, int sfxOpts, PrefixEntry pfx, int cclass, int needFlag, CompoundOptions inCompound)
+        {
+            if (Affix.Suffixes.Length == 0)
+            {
+                return null;
+            }
+
+            throw new NotImplementedException();
         }
 
         private int CleanWord2(out string dest, string src, out CapitalizationType capType, out int abbv)

@@ -313,6 +313,11 @@ namespace Hunspell
             public string Version { get; set; }
 
             /// <summary>
+            /// Indicates that some of the affix entries have "cont class".
+            /// </summary>
+            public bool HasContClass { get; set; }
+
+            /// <summary>
             /// Constructs a <see cref="AffixConfig"/> based on the values set in the builder.
             /// </summary>
             /// <returns>A constructed affix config.</returns>
@@ -372,7 +377,8 @@ namespace Hunspell
                     CompoundVowels = ToImmutableArray(CompoundVowels),
                     WordChars = ToImmutableArray(WordChars),
                     IgnoredChars = ToImmutableArray(IgnoredChars),
-                    Version = Version
+                    Version = Version,
+                    HasContClass = HasContClass
                 };
             }
 

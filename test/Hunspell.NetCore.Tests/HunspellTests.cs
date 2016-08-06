@@ -1,6 +1,9 @@
 ﻿using FluentAssertions;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Hunspell.NetCore.Tests
@@ -49,6 +52,36 @@ namespace Hunspell.NetCore.Tests
 
                 actual.Should().Be(expected);
             }
+
+            [Theory, MemberData("AllGoodFilePaths")]
+            public async Task can_find_good_words_in_dictionary(string goodWordsFilePath)
+            {
+                var dicFilePath = Path.ChangeExtension(goodWordsFilePath, "dic");
+                var dictionary = await DictionaryReader.ReadFileAsync(dicFilePath);
+                var goodWords = File.ReadAllLines(goodWordsFilePath);
+                var hunspell = new Hunspell(dictionary);
+
+                var checkResults = Array.ConvertAll(goodWords, hunspell.Check);
+                checkResults.Should().OnlyContain(b => b);
+            }
+
+            [Theory, MemberData("AllWrongFilePaths")]
+            public async Task cant_find_wrong_words_in_dictionary(string wrongWordsFilePath)
+            {
+                var dicFilePath = Path.ChangeExtension(wrongWordsFilePath, "dic");
+                var dictionary = await DictionaryReader.ReadFileAsync(dicFilePath);
+                var wrongWords = File.ReadAllLines(wrongWordsFilePath);
+                var hunspell = new Hunspell(dictionary);
+
+                var checkResults = Array.ConvertAll(wrongWords, hunspell.Check);
+                checkResults.Should().OnlyContain(b => !b);
+            }
+
+            public static IEnumerable<object[]> AllGoodFilePaths =>
+                Array.ConvertAll(Directory.GetFiles("files/", "*.good"), filePath => new object[] { filePath });
+
+            public static IEnumerable<object[]> AllWrongFilePaths =>
+                Array.ConvertAll(Directory.GetFiles("files/", "*.wrong"), filePath => new object[] { filePath });
         }
     }
 }

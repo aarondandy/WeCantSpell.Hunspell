@@ -762,5 +762,12 @@ namespace Hunspell
         /// Affix and dictionary file version string.
         /// </summary>
         public string Version { get; private set; }
+
+        /// <summary>
+        /// Indicates that some of the affix entries have "cont class".
+        /// </summary>
+        public bool HasContClass { get; private set; }
+
+        public bool HasCompound => CompoundFlag != 0 || CompoundBegin != 0 || this.CompoundRules.Length != 0;
     }
 }
