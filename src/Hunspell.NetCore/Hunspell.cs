@@ -1,5 +1,6 @@
 ﻿using Hunspell.Utilities;
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 
 namespace Hunspell
@@ -374,7 +375,7 @@ namespace Hunspell
                     }
 
                     root = he.Word;
-                    if(Affix.ComplexPrefixes)
+                    if (Affix.ComplexPrefixes)
                     {
                         root = root.Reverse();
                     }
@@ -382,11 +383,152 @@ namespace Hunspell
                 else if (Affix.HasCompound)
                 {
                     // try check compound word
-                    throw new NotImplementedException();
+                    List<DictionaryEntry> rwords;
+                    he = CompoundCheck(word, 0, 0, int.MaxValue, 0, null, out rwords, 0, 0, ref info);
+
+                    // LANG_hu section: `moving rule' with last dash
+                    if (he != null && StringComparer.OrdinalIgnoreCase.Equals(Affix.Culture.TwoLetterISOLanguageName, "hu") && word.EndsWith('-'))
+                    {
+                        var dup = word.Substring(0, word.Length - 1);
+                        he = CompoundCheck(dup, -5, 0, int.MaxValue, 0, null, out rwords, 1, 0, ref info);
+                    }
+
+                    if (he != null)
+                    {
+                        root = he.Word;
+                        if (Affix.ComplexPrefixes)
+                        {
+                            root = root.Reverse();
+                        }
+
+                        info |= SpellCheckResultType.Compound;
+                    }
                 }
             }
 
             return he;
+        }
+
+        private DictionaryEntry CompoundCheck(string word, int wordnum, int numsyllable, int maxwordnum, int wnum, ImmutableList<DictionaryEntry> words, out List<DictionaryEntry> rwords, int hu_mov_rule, int isSug, ref SpellCheckResultType info)
+        {
+            int i;
+            int oldnumsyllable, oldnumsyllable2, oldwordnum, oldwordnum2;
+            DictionaryEntry rv = null;
+            DictionaryEntry rv_first = null;
+            char ch = '\0';
+            int striple = 0;
+            int scpd = 0;
+            int soldi = 0;
+            int oldcmin = 0;
+            int oldcmax = 0;
+            int oldlen = 0;
+            char affixed = (char)0;
+            var oldwords = words;
+            var len = word.Length;
+
+            int checked_prefix;
+            var cmin = Affix.CompoundMin;
+            var cmax = word.Length - Affix.CompoundMin + 1;
+
+            var st = word;
+
+            for (i = cmin; i < cmax; i++)
+            {
+                words = oldwords;
+                var onlycpdrule = words != null && words.Count > 0 ? 1 : 0;
+                do
+                {
+                    // onlycpdrule loop
+
+                    oldnumsyllable = numsyllable;
+                    oldwordnum = wordnum;
+                    checked_prefix = 0;
+
+                    do
+                    {
+                        // simplified checkcompoundpattern loop
+
+                        if (scpd > 0)
+                        {
+                            for (; scpd <= Affix.CompoundPatterns.Length &&
+                                (string.IsNullOrEmpty(Affix.CompoundPatterns[scpd - 1].Pattern3) ||
+                                word.Substring(i) != Affix.CompoundPatterns[scpd - 1].Pattern3);
+                                scpd++)
+                            {
+                                ;
+                            }
+
+                            if (scpd > Affix.CompoundPatterns.Length)
+                            {
+                                break;
+                            }
+
+                            //st = st.replace(i, -1, Affix.CompoundPatterns[scpd - 1].Pattern);
+                            st = st.Substring(0, i) + Affix.CompoundPatterns[scpd - 1].Pattern;
+
+                            soldi = i;
+                            i += Affix.CompoundPatterns[scpd - 1].Pattern.Length;
+
+                            //st = st.replace(i, -1, Affix.CompoundPatterns[scpd - 1].Pattern2);
+                            st = st.Substring(0, i) + Affix.CompoundPatterns[scpd - 1].Pattern2;
+
+                            //st = st.replace(i + Affix.CompoundPatterns[scpd - 1].Pattern2.Length, -1, word.Substring(soldi + Affix.CompoundPatterns[scpd - 1].Pattern3.Length));
+                            st = st.Substring(0, i + Affix.CompoundPatterns[scpd - 1].Pattern2.Length) + word.Substring(soldi + Affix.CompoundPatterns[scpd - 1].Pattern3.Length);
+
+                            oldlen = len;
+                            len += Affix.CompoundPatterns[scpd - 1].Pattern.Length +
+                                Affix.CompoundPatterns[scpd - 1].Pattern2.Length -
+                                Affix.CompoundPatterns[scpd - 1].Pattern3.Length;
+                            oldcmin = cmin;
+                            oldcmax = cmax;
+                            cmin = Affix.CompoundMin;
+                            cmax = st.Length - Affix.CompoundMin + 1;
+
+                            cmax = len - Affix.CompoundMin + 1;
+                        }
+
+                        ch = st[i];
+                        st = st.Substring(0, i);
+
+                        object sfx = null;
+                        object pfx = null;
+
+                        // FIRST WORD
+
+                        throw new NotImplementedException();
+
+                        if (soldi != 0)
+                        {
+                            i = soldi;
+                            soldi = 0;
+                            len = oldlen;
+                            cmin = oldcmin;
+                            cmax = oldcmax;
+                        }
+                        scpd++;
+                    }
+                    while (onlycpdrule == 0 && Affix.SimplifiedCompound && scpd < Affix.CompoundPatterns.Length);
+
+                    scpd = 0;
+                    wordnum = oldwordnum;
+                    numsyllable = oldnumsyllable;
+
+                    if (soldi != 0)
+                    {
+                        i = soldi;
+                        st = word;
+                        soldi = 0;
+                    }
+                    else
+                    {
+                        st = st.Substring(0, i) + ch.ToString() + st.Substring(i + 1);
+                    }
+                }
+                while (Affix.CompoundRules.Length != 0 && oldwordnum == 0 && onlycpdrule++ < 1);
+            }
+
+            rwords = new List<DictionaryEntry>();
+            return null;
         }
 
         private DictionaryEntry AffixCheck(string word, int needFlag, CompoundOptions inCompound = CompoundOptions.Not)
