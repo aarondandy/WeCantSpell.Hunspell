@@ -20,5 +20,7 @@ namespace Hunspell
         public ImmutableArray<string> Morphs { get; }
 
         public DictionaryEntryOptions Options { get; }
+
+        public bool HasFlags => !Flags.IsDefaultOrEmpty;
     }
 }

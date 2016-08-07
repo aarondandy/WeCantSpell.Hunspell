@@ -351,14 +351,33 @@ namespace Hunspell
                 he = AffixCheck(word, 0);
 
                 // check compound restriction and onlyupcase
-                if (he != null)
+                if (
+                    he != null
+                    && he.HasFlags
+                    &&
+                    (
+                        (Affix.OnlyInCompound != 0 && he.Flags.Contains(Affix.OnlyInCompound))
+                        ||
+                        (info.HasFlag(SpellCheckResultType.InitCap) && he.Flags.Contains(SpecialFlags.OnlyUpcaseFlag))
+                    )
+                )
                 {
-                    throw new NotImplementedException();
+                    he = null;
                 }
 
                 if (he != null)
                 {
-                    throw new NotImplementedException();
+                    if (he.HasFlags && he.Flags.Contains(Affix.ForbiddenWord))
+                    {
+                        info |= SpellCheckResultType.Forbidden;
+                        return null;
+                    }
+
+                    root = he.Word;
+                    if(Affix.ComplexPrefixes)
+                    {
+                        root = root.Reverse();
+                    }
                 }
                 else if (Affix.HasCompound)
                 {
@@ -570,7 +589,7 @@ namespace Hunspell
                     if (word.EndsWith(sptr.Append))
                     {
                         if ((((inCompound != CompoundOptions.Begin)) ||  // && !cclass
-                                                                 // except when signed with compoundpermitflag flag
+                                                                         // except when signed with compoundpermitflag flag
            (sptr.HasContClass && Affix.CompoundPermitFlag != 0 &&
             sptr.ContClass.Contains(Affix.CompoundPermitFlag))) &&
           (Affix.Circumfix == 0 ||
@@ -582,7 +601,7 @@ namespace Hunspell
            // circumfix flag in prefix AND suffix
            ((pfx != null && (ep.HasContClass) &&
              ep.ContClass.Contains(Affix.Circumfix)) &&
-            (sptr.HasContClass&&
+            (sptr.HasContClass &&
              (sptr.ContClass.Contains(Affix.Circumfix))))) &&
           // fogemorpheme
           (inCompound != CompoundOptions.Not ||
@@ -600,14 +619,14 @@ namespace Hunspell
               sptr.ContClass.Contains(Affix.OnlyInCompound)))
                             {
                                 var rv = CheckWordSuffix(affixGroup, sptr, word, sfxOpts, pfxGroup, pfx, cclass, needFlag, inCompound != CompoundOptions.Not ? 0 : Affix.OnlyInCompound);
-                                if(rv != null)
+                                if (rv != null)
                                 {
                                     if (!sptr.HasContClass)
                                     {
                                         // TODO: need to work around some thread safety bugs
                                         throw new NotImplementedException();
                                     }
-                                    else if(StringComparer.OrdinalIgnoreCase.Equals(Affix.Culture.TwoLetterISOLanguageName, "hu")
+                                    else if (StringComparer.OrdinalIgnoreCase.Equals(Affix.Culture.TwoLetterISOLanguageName, "hu")
                                         && sptr.Key.StartsWith('i')
                                         && sptr.Key.Length >= 2
                                         && sptr.Key[1] != 'y'
