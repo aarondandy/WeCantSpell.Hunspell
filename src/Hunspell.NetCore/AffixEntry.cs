@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 
 namespace Hunspell
@@ -111,9 +112,9 @@ namespace Hunspell
         public ImmutableArray<string> MorphCode { get; private set; }
 
         /// <summary>
-        /// Encodes the conditions to be met.
+        /// Text matching conditions that are to be met.
         /// </summary>
-        public string ConditionText { get; private set; }
+        public CharacterConditionGroup Conditions { get; private set; }
 
         /// <summary>
         /// The affix string to add.
@@ -134,13 +135,15 @@ namespace Hunspell
 
         public ImmutableArray<int> ContClass { get; private set; }
 
+        public bool HasContClass => !ContClass.IsDefaultOrEmpty;
+
         public abstract string Key { get; }
 
         public static TEntry Create<TEntry>
         (
             string strip,
             string affixText,
-            string conditionText,
+            CharacterConditionGroup conditions,
             IEnumerable<string> morph,
             IEnumerable<int> contClass
         )
@@ -150,7 +153,7 @@ namespace Hunspell
             {
                 Strip = strip,
                 Append = affixText,
-                ConditionText = conditionText,
+                Conditions = conditions,
                 MorphCode = morph.ToImmutableArray(),
                 ContClass = contClass.ToImmutableArray()
             };

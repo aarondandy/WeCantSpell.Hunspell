@@ -1,4 +1,5 @@
-﻿using Hunspell.Utilities;
+﻿using System;
+using Hunspell.Utilities;
 
 namespace Hunspell
 {

@@ -57,6 +57,8 @@
     <Compile Include="AffixConfig.cs" />
     <Compile Include="AffixReader.cs" />
     <Compile Include="CapitalizationType.cs" />
+    <Compile Include="CharacterCondition.cs" />
+    <Compile Include="CharacterConditionGroup.cs" />
     <Compile Include="CompoundOptions.cs" />
     <Compile Include="Dictionary.Builder.cs" />
     <Compile Include="Dictionary.cs" />

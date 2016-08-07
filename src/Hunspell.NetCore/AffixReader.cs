@@ -611,16 +611,18 @@ namespace Hunspell
                     conditionText = ReverseCondition(conditionText);
                 }
 
-                if (!string.IsNullOrEmpty(strip) && conditionText != ".")
+                var conditions = CharacterCondition.Parse(conditionText);
+
+                if (!string.IsNullOrEmpty(strip) && !conditions.AllowsAnySingleCharacter)
                 {
                     bool isRedundant;
                     if (typeof(TEntry) == typeof(PrefixEntry))
                     {
-                        isRedundant = RedundantConditionPrefix(strip, conditionText);
+                        isRedundant = RedundantConditionPrefix(strip, conditions);
                     }
                     else if (typeof(TEntry) == typeof(SuffixEntry))
                     {
-                        isRedundant = RedundantConditionSuffix(strip, conditionText);
+                        isRedundant = RedundantConditionSuffix(strip, conditions);
                     }
                     else
                     {
@@ -629,14 +631,14 @@ namespace Hunspell
 
                     if (isRedundant)
                     {
-                        conditionText = ".";
+                        conditions = CharacterConditionGroup.AllowAnySingleCharacter;
                     }
                 }
 
                 if (typeof(TEntry) == typeof(SuffixEntry))
                 {
-                    // TODO: reverse some stuff or do it in SuffixEntry somehow, or dont at all!
-                    conditionText = conditionText.Reverse();
+                    // conditions = conditions.Reversed(); // TODO: it would be best if this reverse could be avoided
+                    conditionText = conditionText.Reverse(); // TODO: should stop using condition text
                     conditionText = ReverseCondition(conditionText);
                 }
 
@@ -687,7 +689,7 @@ namespace Hunspell
                     Builder.HasContClass = true;
                 }
 
-                affixGroup.Entries.Add(AffixEntry.Create<TEntry>(strip, affixText, conditionText, morph, contClass));
+                affixGroup.Entries.Add(AffixEntry.Create<TEntry>(strip, affixText, conditions, morph, contClass));
 
                 return true;
             }
@@ -697,6 +699,7 @@ namespace Hunspell
             }
         }
 
+        [Obsolete]
         private static string ReverseCondition(string conditionText)
         {
             if (string.IsNullOrEmpty(conditionText))
@@ -761,20 +764,27 @@ namespace Hunspell
             return new string(chars);
         }
 
-        private bool RedundantConditionPrefix(string strip, string condition)
+        [Obsolete("This method should just be inlined")]
+        private bool RedundantConditionPrefix(string text, CharacterConditionGroup conditions)
         {
-            if (strip.StartsWith(condition))
+            return conditions.IsOnlyPossibleMatch(text);
+        }
+
+        [Obsolete]
+        private bool RedundantConditionPrefix(string text, string conditions)
+        {
+            if (text.StartsWith(conditions))
             {
                 return true;
             }
 
-            var lastConditionIndex = condition.Length - 1;
+            var lastConditionIndex = conditions.Length - 1;
             int i, j;
-            for (i = 0, j = 0; i < strip.Length && j < condition.Length; i++, j++)
+            for (i = 0, j = 0; i < text.Length && j < conditions.Length; i++, j++)
             {
-                if (condition[j] == '[')
+                if (conditions[j] != '[')
                 {
-                    if (condition[j] != strip[i])
+                    if (conditions[j] != text[i])
                     {
                         Warnings.Add($"Failure checking {nameof(RedundantConditionPrefix)} .");
                         return false;
@@ -782,19 +792,19 @@ namespace Hunspell
                 }
                 else if (j < lastConditionIndex)
                 {
-                    var neg = condition[j + 1] == '^';
+                    var neg = conditions[j + 1] == '^';
                     var @in = false;
 
                     do
                     {
                         j++;
-                        if (strip[i] == condition[j])
+                        if (text[i] == conditions[j])
                         {
                             @in = true;
                         }
-                    } while (j < lastConditionIndex && condition[j] != ']');
+                    } while (j < lastConditionIndex && conditions[j] != ']');
 
-                    if (j == lastConditionIndex && condition[j] != ']')
+                    if (j == lastConditionIndex && conditions[j] != ']')
                     {
                         Warnings.Add($"Failure checking {nameof(RedundantConditionPrefix)} .");
                         return false;
@@ -808,23 +818,30 @@ namespace Hunspell
                 }
             }
 
-            return j >= condition.Length;
+            return j >= conditions.Length;
         }
 
-        private bool RedundantConditionSuffix(string strip, string condition)
+        [Obsolete("This method should just be inlined")]
+        private bool RedundantConditionSuffix(string text, CharacterConditionGroup conditions)
         {
-            if (strip.EndsWith(condition))
+            return conditions.IsOnlyPossibleMatch(text);
+        }
+
+        [Obsolete]
+        private bool RedundantConditionSuffix(string text, string conditions)
+        {
+            if (text.EndsWith(conditions))
             {
                 return true;
             }
 
-            var lastConditionIndex = condition.Length - 1;
+            var lastConditionIndex = conditions.Length - 1;
             int i, j;
-            for (i = strip.Length - 1, j = condition.Length - 1; i >= 0 && j >= 0; i--, j--)
+            for (i = text.Length - 1, j = conditions.Length - 1; i >= 0 && j >= 0; i--, j--)
             {
-                if (condition[j] != ']')
+                if (conditions[j] != ']')
                 {
-                    if (condition[j] != strip[i])
+                    if (conditions[j] != text[i])
                     {
                         Warnings.Add($"Failure checking {nameof(RedundantConditionSuffix)} .");
                         return false;
@@ -836,19 +853,19 @@ namespace Hunspell
                     do
                     {
                         j--;
-                        if (strip[i] == condition[j])
+                        if (text[i] == conditions[j])
                         {
                             @in = true;
                         }
-                    } while (j > 0 && condition[j] != '[');
+                    } while (j > 0 && conditions[j] != '[');
 
-                    if (j == 0 && condition[j] != '[')
+                    if (j == 0 && conditions[j] != '[')
                     {
                         Warnings.Add($"Failure checking {nameof(RedundantConditionSuffix)} .");
                         return false;
                     }
 
-                    var neg = j < lastConditionIndex && condition[j + 1] == '^';
+                    var neg = j < lastConditionIndex && conditions[j + 1] == '^';
                     if (neg == @in)
                     {
                         Warnings.Add($"Failure checking {nameof(RedundantConditionSuffix)} .");

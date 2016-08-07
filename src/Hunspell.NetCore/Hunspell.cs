@@ -281,24 +281,21 @@ namespace Hunspell
             var useBuffer = false;
             string w2;
             string word;
-            int len;
 
             if (Affix.IgnoredChars.Length != 0)
             {
                 w2 = w;
                 w2 = w2.RemoveChars(Affix.IgnoredChars);
                 word = w2;
-                len = w2.Length;
                 useBuffer = true;
             }
             else
             {
                 w2 = string.Empty;
                 word = w;
-                len = w.Length;
             }
 
-            if (len == 0)
+            if (word.Length == 0)
             {
                 return null;
             }
@@ -351,7 +348,7 @@ namespace Hunspell
             if (he == null)
             {
                 // try stripping off affixes
-                he = AffixCheck(word, len, 0);
+                he = AffixCheck(word, 0);
 
                 // check compound restriction and onlyupcase
                 if (he != null)
@@ -373,17 +370,17 @@ namespace Hunspell
             return he;
         }
 
-        private DictionaryEntry AffixCheck(string word, int len, int needFlag, CompoundOptions inCompound = CompoundOptions.Not)
+        private DictionaryEntry AffixCheck(string word, int needFlag, CompoundOptions inCompound = CompoundOptions.Not)
         {
             DictionaryEntry rv = null;
 
-            rv = PrefixCheck(word, len, inCompound, needFlag);
+            rv = PrefixCheck(word, inCompound, needFlag);
             if (rv != null)
             {
                 return rv;
             }
 
-            rv = SuffixCheck(word, len, 0, null, 0, needFlag, inCompound);
+            rv = SuffixCheck(word, 0, null, null, 0, needFlag, inCompound);
 
             if (rv != null)
             {
@@ -398,24 +395,314 @@ namespace Hunspell
             return rv;
         }
 
-        private DictionaryEntry PrefixCheck(string word, int len, CompoundOptions inCompound, int needFlag)
+        private DictionaryEntry PrefixCheck(string word, CompoundOptions inCompound, int needFlag)
         {
             if (Affix.Prefixes.Length == 0)
             {
                 return null;
             }
 
+            // first handle the special case of 0 length prefixes
+            foreach (var affixGroup in Affix.Prefixes)
+            {
+                foreach (var affixEntry in affixGroup.Entries)
+                {
+                    var fogemorpheme = inCompound != CompoundOptions.Not || !affixEntry.ContClass.Contains(Affix.OnlyInCompound);
+                    var permitPrefixInCompounds = inCompound != CompoundOptions.End || affixEntry.ContClass.Contains(Affix.CompoundPermitFlag);
+                    if (fogemorpheme && permitPrefixInCompounds)
+                    {
+                        var entry = CheckWordPrefix(affixGroup, affixEntry, word, inCompound, needFlag);
+                        if (entry != null)
+                        {
+                            return entry;
+                        }
+                    }
+                }
+            }
+
             throw new NotImplementedException();
         }
 
-        private DictionaryEntry SuffixCheck(string word, int len, int sfxOpts, PrefixEntry pfx, int cclass, int needFlag, CompoundOptions inCompound)
+        private DictionaryEntry CheckWordPrefix(AffixEntryGroup<PrefixEntry> group, PrefixEntry entry, string word, CompoundOptions inCompound, int needFlag)
+        {
+            DictionaryEntry he;
+
+            // on entry prefix is 0 length or already matches the beginning of the word.
+            // So if the remaining root word has positive length
+            // and if there are enough chars in root word and added back strip chars
+            // to meet the number of characters conditions, then test it
+
+            var tmpl = word.Length - entry.Append.Length; // length of tmpword
+
+            if (tmpl > 0 || (tmpl == 0 && Affix.FullStrip))
+            {
+                // generate new root word by removing prefix and adding
+                // back any characters that would have been stripped
+
+                var tmpword = entry.Strip;
+                tmpword += word.Substring(entry.Append.Length);
+
+                // now make sure all of the conditions on characters
+                // are met.  Please see the appendix at the end of
+                // this file for more info on exactly what is being
+                // tested
+
+                // if all conditions are met then check if resulting
+                // root word in the dictionary
+
+                if (TestCondition(entry, tmpword))
+                {
+                    foreach (var dictionaryEntry in Lookup(tmpword))
+                    {
+                        if (
+                            dictionaryEntry.Flags.Contains(group.AFlag)
+                            && !entry.ContClass.Contains(Affix.NeedAffix) // forbid single prefixes with needaffix flag
+                            &&
+                            (
+                                needFlag != 0
+                                || dictionaryEntry.Flags.Contains(needFlag)
+                                ||
+                                (
+                                    entry.ContClass.Length != 0
+                                    && entry.ContClass.Contains(needFlag)
+                                )
+                            )
+                        )
+                        {
+                            return dictionaryEntry;
+                        }
+                    }
+
+                    // prefix matched but no root word was found
+                    // if aeXPRODUCT is allowed, try again but now
+                    // ross checked combined with a suffix
+
+                    if (group.Options.HasFlag(AffixEntryOptions.CrossProduct))
+                    {
+                        he = SuffixCheck(tmpword, AffixEntryOptions.CrossProduct, group, entry, 0, needFlag, inCompound);
+                        if (he != null)
+                        {
+                            return he;
+                        }
+                    }
+
+                }
+            }
+
+            return null;
+        }
+
+        private ImmutableArray<DictionaryEntry> Lookup(string word)
+        {
+            ImmutableArray<DictionaryEntry> entries;
+            return Dictionary.Entries.TryGetValue(word, out entries) ? entries : ImmutableArray<DictionaryEntry>.Empty;
+        }
+
+        [Obsolete("Inline")]
+        private bool TestCondition(PrefixEntry entry, string word)
+        {
+            return entry.Conditions.IsStartingMatch(word);
+        }
+
+        private DictionaryEntry SuffixCheck(string word, AffixEntryOptions sfxOpts, AffixEntryGroup<PrefixEntry> pfxGroup, PrefixEntry pfx, int cclass, int needFlag, CompoundOptions inCompound)
         {
             if (Affix.Suffixes.Length == 0)
             {
                 return null;
             }
 
-            throw new NotImplementedException();
+            foreach (var affixGroup in Affix.Suffixes)
+            {
+                foreach (var affixEntry in affixGroup.Entries)
+                {
+                    if (cclass == 0 || affixEntry.ContClass.Length != 0)
+                    {
+                        // suffixes are not allowed in beginning of compounds
+                        if ((((inCompound != CompoundOptions.Begin)) ||  // && !cclass
+                                                                         // except when signed with compoundpermitflag flag
+                       (affixEntry.ContClass.Length != 0 && Affix.CompoundPermitFlag != 0 &&
+
+                        affixEntry.ContClass.Contains(Affix.CompoundPermitFlag))) &&
+                      (Affix.Circumfix == 0 ||
+                       // no circumfix flag in prefix and suffix
+                       ((pfx == null || pfx.ContClass.Length == 0 ||
+                         !pfx.ContClass.Contains(Affix.Circumfix)) &&
+                        (affixEntry.ContClass.Length == 0 ||
+                         !(affixEntry.ContClass.Contains(Affix.Circumfix)))) ||
+                       // circumfix flag in prefix AND suffix
+                       ((pfx != null && pfx.ContClass.Length != 0 &&
+                         pfx.ContClass.Contains(Affix.Circumfix)) &&
+                        (affixEntry.ContClass.Length != 0 &&
+                         (affixEntry.ContClass.Contains(Affix.Circumfix))))) &&
+                      // fogemorpheme
+                      (inCompound != CompoundOptions.Not ||
+                       !(affixEntry.ContClass.Length != 0 &&
+                         (affixEntry.ContClass.Contains(Affix.OnlyInCompound)))) &&
+                      // needaffix on prefix or first suffix
+                      (cclass != 0 ||
+                       !(affixEntry.ContClass.Length != 0 &&
+                         affixEntry.ContClass.Contains(Affix.NeedAffix)) ||
+                       (pfx != null &&
+                        !((pfx.ContClass.Length != 0) &&
+                          pfx.ContClass.Contains(Affix.NeedAffix)))))
+                        {
+                            var rv = CheckWordSuffix(affixGroup, affixEntry, word, sfxOpts, pfxGroup, pfx, cclass, needFlag, (inCompound != 0 ? 0 : Affix.OnlyInCompound));
+                            if (rv != null)
+                            {
+                                return rv;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (string.IsNullOrEmpty(word))
+            {
+                return null;
+            }
+
+            var ep = pfx;
+
+            foreach (var affixGroup in Affix.Suffixes)
+            {
+                foreach (var sptr in affixGroup.Entries)
+                {
+                    if (word.EndsWith(sptr.Append))
+                    {
+                        if ((((inCompound != CompoundOptions.Begin)) ||  // && !cclass
+                                                                 // except when signed with compoundpermitflag flag
+           (sptr.HasContClass && Affix.CompoundPermitFlag != 0 &&
+            sptr.ContClass.Contains(Affix.CompoundPermitFlag))) &&
+          (Affix.Circumfix == 0 ||
+           // no circumfix flag in prefix and suffix
+           ((pfx == null || !(ep.HasContClass) ||
+             !ep.ContClass.Contains(Affix.Circumfix)) &&
+            (!sptr.HasContClass ||
+             !(sptr.ContClass.Contains(Affix.Circumfix)))) ||
+           // circumfix flag in prefix AND suffix
+           ((pfx != null && (ep.HasContClass) &&
+             ep.ContClass.Contains(Affix.Circumfix)) &&
+            (sptr.HasContClass&&
+             (sptr.ContClass.Contains(Affix.Circumfix))))) &&
+          // fogemorpheme
+          (inCompound != CompoundOptions.Not ||
+           !((sptr.HasContClass && (sptr.ContClass.Contains(Affix.OnlyInCompound))))) &&
+          // needaffix on prefix or first suffix
+          (cclass != 0 ||
+           !(sptr.HasContClass &&
+             sptr.ContClass.Contains(Affix.NeedAffix)) ||
+           (pfx != null &&
+            !((ep.HasContClass) &&
+              ep.ContClass.Contains(Affix.NeedAffix)))))
+                        {
+                            if (inCompound != CompoundOptions.End || pfx != null ||
+            !(sptr.HasContClass &&
+              sptr.ContClass.Contains(Affix.OnlyInCompound)))
+                            {
+                                var rv = CheckWordSuffix(affixGroup, sptr, word, sfxOpts, pfxGroup, pfx, cclass, needFlag, inCompound != CompoundOptions.Not ? 0 : Affix.OnlyInCompound);
+                                if(rv != null)
+                                {
+                                    if (!sptr.HasContClass)
+                                    {
+                                        // TODO: need to work around some thread safety bugs
+                                        throw new NotImplementedException();
+                                    }
+                                    else if(StringComparer.OrdinalIgnoreCase.Equals(Affix.Culture.TwoLetterISOLanguageName, "hu")
+                                        && sptr.Key.StartsWith('i')
+                                        && sptr.Key.Length >= 2
+                                        && sptr.Key[1] != 'y'
+                                        && sptr.Key[1] != 't'
+                                    )
+                                    {
+                                        // TODO: need to work around some thread safety bugs
+                                        throw new NotImplementedException();
+                                    }
+
+                                    return rv;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private DictionaryEntry CheckWordSuffix(AffixEntryGroup<SuffixEntry> group, SuffixEntry entry, string word, AffixEntryOptions optFlags, AffixEntryGroup<PrefixEntry> pfxGroup, PrefixEntry pfx, int cclass, int needFlag, int badFlag)
+        {
+            var ep = pfx;
+            // if this suffix is being cross checked with a prefix
+            // but it does not support cross products skip it
+
+            if (optFlags.HasFlag(AffixEntryOptions.CrossProduct) && !group.Options.HasFlag(AffixEntryOptions.CrossProduct))
+            {
+                return null;
+            }
+
+            // upon entry suffix is 0 length or already matches the end of the word.
+            // So if the remaining root word has positive length
+            // and if there are enough chars in root word and added back strip chars
+            // to meet the number of characters conditions, then test it
+
+            var tmpl = word.Length - entry.Append.Length;
+            // the second condition is not enough for UTF-8 strings
+            // it checked in test_condition()
+
+            if ((tmpl > 0 || (tmpl == 0 && Affix.FullStrip)) &&
+                (tmpl + entry.Strip.Length >= entry.Conditions.Count))
+            {
+                // generate new root word by removing suffix and adding
+                // back any characters that would have been stripped or
+                // or null terminating the shorter string
+
+                var tmpstring = word.Substring(0, tmpl);
+
+                if (!string.IsNullOrEmpty(entry.Strip))
+                {
+                    tmpstring += entry.Strip;
+                }
+
+                var tmpword = 0;
+                var endword = tmpstring.Length;
+
+                // now make sure all of the conditions on characters
+                // are met.  Please see the appendix at the end of
+                // this file for more info on exactly what is being
+                // tested
+
+                // if all conditions are met then check if resulting
+                // root word in the dictionary
+
+                if (entry.Conditions.IsEndingMatch(tmpstring))
+                {
+                    foreach (var he in Lookup(tmpstring))
+                    {
+                        if ((he.Flags.Contains(group.AFlag) ||
+               (ep != null && ep.HasContClass &&
+                ep.ContClass.Contains(group.AFlag))) &&
+              ((!optFlags.HasFlag(AffixEntryOptions.CrossProduct)) ||
+               (ep != null && he.Flags.Contains(pfxGroup.AFlag)) ||
+               // enabled by prefix
+               ((entry.HasContClass) &&
+                (ep != null && entry.ContClass.Contains(pfxGroup.AFlag)))) &&
+              // handle cont. class
+              ((cclass == 0) ||
+               ((entry.HasContClass) && entry.ContClass.Contains(cclass))) &&
+              // check only in compound homonyms (bad flags)
+              (badFlag == 0 || !he.Flags.Contains(badFlag)) &&
+              // handle required flag
+              ((needFlag == 0) ||
+               (he.Flags.Contains(needFlag) ||
+                ((entry.HasContClass) && entry.ContClass.Contains(needFlag)))))
+                        {
+                            return he;
+                        }
+                    }
+                }
+            }
+
+            return null;
         }
 
         private int CleanWord2(out string dest, string src, out CapitalizationType capType, out int abbv)
