@@ -349,7 +349,7 @@ namespace Hunspell
             if (he == null)
             {
                 // try stripping off affixes
-                he = AffixCheck(word, 0);
+                he = AffixCheck(word, 0, CompoundOptions.Not);
 
                 // check compound restriction and onlyupcase
                 if (
@@ -411,6 +411,8 @@ namespace Hunspell
 
         private DictionaryEntry CompoundCheck(string word, int wordnum, int numsyllable, int maxwordnum, int wnum, ImmutableList<DictionaryEntry> words, out List<DictionaryEntry> rwords, int hu_mov_rule, int isSug, ref SpellCheckResultType info)
         {
+            rwords = null;
+
             int i;
             int oldnumsyllable, oldnumsyllable2, oldwordnum, oldwordnum2;
             DictionaryEntry rv = null;
@@ -422,7 +424,8 @@ namespace Hunspell
             int oldcmin = 0;
             int oldcmax = 0;
             int oldlen = 0;
-            char affixed = (char)0;
+            int checkedstriple = 0;
+            int affixed = 0;
             var oldwords = words;
             var len = word.Length;
 
@@ -487,15 +490,474 @@ namespace Hunspell
                             cmax = len - Affix.CompoundMin + 1;
                         }
 
-                        ch = st[i];
+                        //ch = st[i];
                         st = st.Substring(0, i);
 
-                        object sfx = null;
-                        object pfx = null;
+                        SuffixEntry sfx = null; // TODO: this currently relies on some shared mutable state
+                        PrefixEntry pfx = null; // TODO: this currently relies on some shared mutable state
 
                         // FIRST WORD
 
-                        throw new NotImplementedException();
+                        affixed = 1;
+                        var searchEntries = Lookup(st); // perhaps without prefix
+                        var searchEntriesIndex = 0;
+
+                        rv = searchEntriesIndex < searchEntries.Length ? searchEntries[searchEntriesIndex] : null;
+
+                        // search homonym with compound flag
+                        while ((rv != null) && hu_mov_rule == 0 &&
+               ((Affix.NeedAffix != 0 && rv.Flags.Contains(Affix.NeedAffix)) ||
+                !((Affix.CompoundFlag != 0 && (words == null || words.Count == 0) && onlycpdrule == 0 &&
+                   rv.Flags.Contains(Affix.CompoundFlag)) ||
+                  (Affix.CompoundBegin != 0 && wordnum == 0 && onlycpdrule == 0 &&
+                   rv.Flags.Contains(Affix.CompoundBegin)) ||
+                  (Affix.CompoundMiddle != 0 && wordnum != 0 && (words == null || words.Count == 0) && onlycpdrule == 0 &&
+                   rv.Flags.Contains(Affix.CompoundMiddle)) ||
+                  (Affix.HasCompoundRules && onlycpdrule != 0 &&
+                   (((words == null || words.Count == 0) && wordnum == 0 &&
+                     DefCpdCheck(ref words, wnum, rv, out rwords, 0)) ||
+                    (words != null &&
+                     DefCpdCheck(ref words, wnum, rv, out rwords, 0))))) ||
+                (scpd != 0 && Affix.CompoundPatterns[scpd - 1].Condition != 0 &&
+                 !rv.Flags.Contains(Affix.CompoundPatterns[scpd - 1].Condition))))
+                        {
+                            searchEntriesIndex++;
+                            rv = searchEntriesIndex < searchEntries.Length ? searchEntries[searchEntriesIndex] : null;
+                        }
+
+                        if (rv != null)
+                        {
+                            affixed = 0;
+                        }
+
+                        if (rv == null)
+                        {
+                            if (onlycpdrule != 0)
+                            {
+                                break;
+                            }
+
+                            if (Affix.CompoundFlag != 0 &&
+                                  (rv = PrefixCheck(st.Substring(0, i),
+                                                      hu_mov_rule != 0 ? CompoundOptions.Other : CompoundOptions.Begin,
+                                                      Affix.CompoundFlag)) == null)
+                            {
+                                if (((rv = SuffixCheck(
+                                          st.Substring(0, i), 0, null, null, 0, Affix.CompoundFlag,
+                                          hu_mov_rule != 0 ? CompoundOptions.Other : CompoundOptions.Begin)) != null ||
+                                     (Affix.CompoundMoreSuffixes &&
+                                      (rv = SuffixCheckTwoSfx(st.Substring(0, i), 0, null, Affix.CompoundFlag)) != null)) &&
+                                    hu_mov_rule == 0 && sfx.HasContClass &&
+                                    ((Affix.CompoundForbidFlag != 0 &&
+                                      sfx.ContClass.Contains(Affix.CompoundForbidFlag)) ||
+                                     (Affix.CompoundEnd != 0 &&
+                                      sfx.ContClass.Contains(Affix.CompoundEnd))))
+                                {
+                                    rv = null;
+                                }
+                            }
+
+                            if (rv != null ||
+                                (((wordnum == 0) && Affix.CompoundBegin != 0 &&
+                                  ((rv = SuffixCheck(
+                                        st.Substring(0, i), 0, null, null, 0, Affix.CompoundBegin,
+                                        hu_mov_rule != 0 ? CompoundOptions.Other : CompoundOptions.Begin)) != null ||
+                                   (Affix.CompoundMoreSuffixes &&
+                                    (rv = SuffixCheckTwoSfx(
+                                         st.Substring(0, i), 0, null,
+                                         Affix.CompoundBegin)) != null) ||  // twofold suffixes + compound
+                                   (rv = PrefixCheck(st.Substring(0, i),
+                                                      hu_mov_rule != 0 ? CompoundOptions.Other : CompoundOptions.Begin,
+                                                      Affix.CompoundBegin)) != null)) ||
+                                 ((wordnum > 0) && Affix.CompoundMiddle != 0 &&
+                                  ((rv = SuffixCheck(
+                                        st.Substring(0, i), 0, null, null, 0, Affix.CompoundMiddle,
+                                        hu_mov_rule != 0 ? CompoundOptions.Other : CompoundOptions.Begin)) != null ||
+                                   (Affix.CompoundMoreSuffixes &&
+                                    (rv = SuffixCheckTwoSfx(
+                                         st.Substring(0, i), 0, null,
+                                         Affix.CompoundMiddle)) != null) ||  // twofold suffixes + compound
+                                   (rv = PrefixCheck(st.Substring(0, i),
+                                                      hu_mov_rule != 0 ? CompoundOptions.Other : CompoundOptions.Begin,
+                                                      Affix.CompoundMiddle)) != null))))
+                            {
+                                checked_prefix = 1;
+                            }
+                        }
+                        else if (rv.HasFlags && (rv.Flags.Contains(Affix.ForbiddenWord) ||
+                                rv.Flags.Contains(Affix.NeedAffix) ||
+                                rv.Flags.Contains(SpecialFlags.OnlyUpcaseFlag) ||
+                                (isSug != 0 && Affix.NoSuggest != 0 &&
+                                 rv.Flags.Contains(Affix.NoSuggest))))
+                        {
+                            // else check forbiddenwords and needaffix
+                            st = st.SetChar(ch, i);
+                            break;
+                        }
+
+                        // check non_compound flag in suffix and prefix
+                        if ((rv != null) && hu_mov_rule == 0 &&
+                            ((pfx != null && pfx.HasContClass &&
+                              pfx.ContClass.Contains(Affix.CompoundForbidFlag)) ||
+                             (sfx != null && sfx.HasContClass &&
+                              sfx.ContClass.Contains(Affix.CompoundForbidFlag))))
+                        {
+                            rv = null;
+                        }
+
+                        // check compoundend flag in suffix and prefix
+                        if ((rv != null) && checked_prefix == 0 && Affix.CompoundEnd != 0 && hu_mov_rule == 0 &&
+                            ((pfx != null && pfx.HasContClass &&
+                              pfx.ContClass.Contains(Affix.CompoundEnd)) ||
+                             (sfx != null && sfx.HasContClass &&
+                              sfx.ContClass.Contains(Affix.CompoundEnd))))
+                        {
+                            rv = null;
+                        }
+
+                        // check compoundmiddle flag in suffix and prefix
+                        if ((rv != null) && checked_prefix == 0 && (wordnum == 0) && Affix.CompoundMiddle != 0 &&
+                            hu_mov_rule == 0 &&
+                            ((pfx != null && pfx.HasContClass &&
+                              pfx.ContClass.Contains(Affix.CompoundMiddle)) ||
+                             (sfx != null && sfx.HasContClass &&
+                              sfx.ContClass.Contains(Affix.CompoundMiddle))))
+                        {
+                            rv = null;
+                        }
+
+                        // check forbiddenwords
+                        if ((rv != null) && (rv.HasFlags) &&
+                            (rv.Flags.Contains(Affix.ForbiddenWord) ||
+                             rv.Flags.Contains(SpecialFlags.OnlyUpcaseFlag) ||
+                             (isSug != 0 && Affix.NoSuggest != 0 && rv.Flags.Contains(Affix.NoSuggest))))
+                        {
+                            rwords = null;
+                            return null;
+                        }
+
+                        // increment word number, if the second root has a compoundroot flag
+                        if ((rv != null) && Affix.CompoundRoot != 0 &&
+                            (rv.Flags.Contains(Affix.CompoundRoot)))
+                        {
+                            wordnum++;
+                        }
+
+                        // first word is acceptable in compound words?
+
+                        if (((rv != null) &&
+             (checked_prefix != 0 || (words != null && wnum < words.Count && words[wnum] != null) ||
+              (Affix.CompoundFlag != 0 && rv.Flags.Contains(Affix.CompoundFlag)) ||
+              ((oldwordnum == 0) && Affix.CompoundBegin != 0 &&
+               rv.Flags.Contains(Affix.CompoundBegin)) ||
+              ((oldwordnum > 0) && Affix.CompoundMiddle != 0 &&
+               rv.Flags.Contains(Affix.CompoundMiddle))
+
+              // LANG_hu section: spec. Hungarian rule
+              || (StringComparer.OrdinalIgnoreCase.Equals(Affix.Culture.TwoLetterISOLanguageName, "hu") && hu_mov_rule != 0 &&
+                  (rv.Flags.Contains('F') ||  // XXX hardwired Hungarian dictionary codes
+                   rv.Flags.Contains('G') ||
+                   rv.Flags.Contains('H')))
+              // END of LANG_hu section
+              ) &&
+             (
+                 // test CHECKCOMPOUNDPATTERN conditions
+                 scpd == 0 || Affix.CompoundPatterns[scpd - 1].Condition == 0 ||
+                 rv.Flags.Contains(Affix.CompoundPatterns[scpd - 1].Condition)) &&
+             !((Affix.CheckCompoundTriple && scpd == 0 &&
+                (words == null || words.Count == 0) &&  // test triple letters
+                (word[i - 1] == word[i]) &&
+                (((i > 1) && (word[i - 1] == word[i - 2])) ||
+                 ((word[i - 1] == word[i + 1]))  // may be word[i+1] == '\0'
+                 )) ||
+               (Affix.CheckCompoundCase && scpd == 0 && (words == null || words.Count == 0) &&
+                CompoundCaseCheck(word, i))))
+            // LANG_hu section: spec. Hungarian rule
+            || ((rv == null) && StringComparer.OrdinalIgnoreCase.Equals(Affix.Culture.TwoLetterISOLanguageName, "hu") && hu_mov_rule != 0 &&
+                (rv = AffixCheck(st.Substring(0, i), 0, CompoundOptions.Not)) != null &&
+                (sfx != null && sfx.HasContClass &&
+                 (  // XXX hardwired Hungarian dic. codes
+                     sfx.ContClass.Contains('x') ||
+                     sfx.ContClass.Contains('%')))))
+                        {
+                            // first word is ok condition
+
+                            if (StringComparer.OrdinalIgnoreCase.Equals(Affix.Culture.TwoLetterISOLanguageName, "hu"))
+                            {
+                                // calculate syllable number of the word
+                                numsyllable += GetSyllable(st.Substring(i));
+                                // + 1 word, if syllable number of the prefix > 1 (hungarian
+                                // convention)
+                                if (pfx != null && (GetSyllable(pfx.Key) > 1))
+                                {
+                                    wordnum++;
+                                }
+                            }
+
+                            // NEXT WORD(S)
+                            rv_first = rv;
+                            st = st.SetChar(ch, i);
+
+                            do
+                            {
+                                // striple loop
+
+                                // check simplifiedtriple
+                                if (Affix.SimplifiedTriple)
+                                {
+                                    if (striple != 0)
+                                    {
+                                        checkedstriple = 1;
+                                        i--; // check "fahrt" instead of "ahrt" in "Schiffahrt"
+                                    }
+                                    else if (i > 2 && word[i - 1] == word[i - 2])
+                                    {
+                                        striple = 1;
+                                    }
+                                }
+
+                                var homonyms = Lookup(st.Substring(i));  // perhaps without prefix
+                                var homonymIndex = 0;
+                                List<DictionaryEntry> junkDictionaryEntryList;
+
+                                rv = homonymIndex < homonyms.Length ? homonyms[homonymIndex] : null;
+                                // search homonym with compound flag
+                                while ((rv != null) &&
+                                       ((Affix.NeedAffix != 0 && rv.Flags.Contains(Affix.NeedAffix)) ||
+                                        !((Affix.CompoundFlag != 0 && (words == null || words.Count == 0) &&
+                                           rv.Flags.Contains(Affix.CompoundFlag)) ||
+                                          (Affix.CompoundEnd != 0 && (words == null || words.Count == 0) &&
+                                           rv.Flags.Contains(Affix.CompoundEnd)) ||
+                                          (Affix.HasCompoundRules && words != null && words.Count != 0 &&
+                                           DefCpdCheck(ref words, wnum + 1, rv, out junkDictionaryEntryList, 1))) ||
+                                        (scpd != 0 && Affix.CompoundPatterns[scpd - 1].Condition2 != 0 &&
+                                         !rv.Flags.Contains(Affix.CompoundPatterns[scpd - 1].Condition2))))
+                                {
+                                    homonymIndex++;
+                                    rv = homonymIndex < homonyms.Length ? homonyms[homonymIndex] : null;
+                                }
+
+                                // check FORCEUCASE
+                                if (rv != null && Affix.ForceUpperCase != 0 && (rv != null) &&
+                                    (rv.Flags.Contains(Affix.ForceUpperCase)) &&
+                                    !(info.HasFlag(SpellCheckResultType.OrigCap)))
+                                {
+                                    rv = null;
+                                }
+
+                                if (rv != null && words != null && words.Count > 0 && words[wnum + 1] != null)
+                                {
+                                    return rv_first;
+                                }
+
+                                oldnumsyllable2 = numsyllable;
+                                oldwordnum2 = wordnum;
+
+                                if ((rv != null) && StringComparer.OrdinalIgnoreCase.Equals(Affix.Culture.TwoLetterISOLanguageName, "hu") &&
+                                    (rv.Flags.Contains('I')) &&
+                                    !(rv.Flags.Contains('J')))
+                                {
+                                    numsyllable--;
+                                }
+
+                                // increment word number, if the second root has a compoundroot flag
+                                if ((rv != null) && (Affix.CompoundRoot != 0) &&
+                                    (rv.Flags.Contains(Affix.CompoundRoot)))
+                                {
+                                    wordnum++;
+                                }
+
+                                // check forbiddenwords
+                                if ((rv != null) && (rv.HasFlags) &&
+                                    (rv.Flags.Contains(Affix.ForbiddenWord) ||
+                                     rv.Flags.Contains(SpecialFlags.OnlyUpcaseFlag) ||
+                                     (isSug != 0 && Affix.NoSuggest != 0 &&
+                                      rv.Flags.Contains(Affix.NoSuggest))))
+                                {
+                                    return null;
+                                }
+
+                                // second word is acceptable, as a root?
+                                // hungarian conventions: compounding is acceptable,
+                                // when compound forms consist of 2 words, or if more,
+                                // then the syllable number of root words must be 6, or lesser.
+
+                                if ((rv != null) &&
+                                    ((Affix.CompoundFlag != 0 && rv.Flags.Contains(Affix.CompoundFlag)) ||
+                                     (Affix.CompoundEnd != 0 && rv.Flags.Contains(Affix.CompoundEnd))) &&
+                                    (((Affix.CompoundWordMax == -1) || (wordnum + 1 < Affix.CompoundWordMax)) ||
+                                     ((Affix.CompoundMaxSyllable != 0) &&
+                                      ((numsyllable + GetSyllable(rv.Word)) <=
+                                       Affix.CompoundMaxSyllable))) &&
+                                    (
+                                        // test CHECKCOMPOUNDPATTERN
+                                        !Affix.HasCompoundPatterns || scpd != 0 ||
+                                        !CompoundPatternCheck(word, i, rv_first, rv, 0)) &&
+                                    ((!Affix.CheckCompoundDup || (rv != rv_first)))
+                                    // test CHECKCOMPOUNDPATTERN conditions
+                                    &&
+                                    (scpd == 0 || Affix.CompoundPatterns[scpd - 1].Condition2 == 0 ||
+                                     rv.Flags.Contains(Affix.CompoundPatterns[scpd - 1].Condition2)))
+                                {
+                                    // forbid compound word, if it is a non compound word with typical
+                                    // fault
+                                    if (Affix.CheckCompoundRep && CompoundReplacementCheck(word.Substring(0, len)))
+                                    {
+                                        return null;
+                                    }
+                                    return rv_first;
+                                }
+
+                                numsyllable = oldnumsyllable2;
+                                wordnum = oldwordnum2;
+
+                                // perhaps second word has prefix or/and suffix
+                                sfx = null; // TODO: shared mutable state bug
+                                var sfxflag = 0; // TODO: shared mutable state bug
+
+                                rv = (Affix.CompoundFlag != 0 && onlycpdrule == 0)
+                                     ? AffixCheck(word.Substring(i), Affix.CompoundFlag, CompoundOptions.End)
+                                     : null;
+
+                                if (rv == null && Affix.CompoundEnd != 0 && onlycpdrule == 0)
+                                {
+                                    sfx = null; // TODO: shared mutable state bug
+                                    pfx = null; // TODO: shared mutable state bug
+                                    rv = AffixCheck(word.Substring(i), Affix.CompoundEnd, CompoundOptions.End);
+                                }
+
+                                if (rv == null && Affix.HasCompoundRules && words != null && words.Count != 0)
+                                {
+                                    rv = AffixCheck(word.Substring(i), 0, CompoundOptions.End);
+                                    List<DictionaryEntry> junkEntries;
+                                    if (rv != null && DefCpdCheck(ref words, wnum + 1, rv, out junkEntries, 1))
+                                    {
+                                        return rv_first;
+                                    }
+
+                                    rv = null;
+                                }
+
+                                // test CHECKCOMPOUNDPATTERN conditions (allowed forms)
+                                if (rv != null &&
+                                    !(scpd == 0 || Affix.CompoundPatterns[scpd - 1].Condition2 == 0 ||
+                                      rv.Flags.Contains(Affix.CompoundPatterns[scpd - 1].Condition2)))
+                                {
+                                    rv = null;
+                                }
+
+                                // test CHECKCOMPOUNDPATTERN conditions (forbidden compounds)
+                                if (rv != null && Affix.HasCompoundPatterns && scpd == 0 &&
+                                    CompoundPatternCheck(word, i, rv_first, rv, affixed))
+                                {
+                                    rv = null;
+                                }
+
+                                // check non_compound flag in suffix and prefix
+                                if ((rv != null) && ((pfx != null && pfx.HasContClass &&
+                                              pfx.ContClass.Contains(Affix.CompoundForbidFlag)) ||
+                                             (sfx != null && sfx.HasContClass &&
+                                              sfx.ContClass.Contains(Affix.CompoundForbidFlag))))
+                                {
+                                    rv = null;
+                                }
+
+                                // check FORCEUCASE
+                                if (rv != null && Affix.ForceUpperCase != 0 &&
+                                    (rv.Flags.Contains(Affix.ForceUpperCase)) &&
+                                    !(info.HasFlag(SpellCheckResultType.OrigCap)))
+                                {
+                                    rv = null;
+                                }
+
+                                // check forbiddenwords
+                                if ((rv != null) && (rv.HasFlags) &&
+                                    (rv.Flags.Contains(Affix.ForbiddenWord) ||
+                                     rv.Flags.Contains(SpecialFlags.OnlyUpcaseFlag) ||
+                                     (isSug != 0 && Affix.NoSuggest != 0 &&
+                                      rv.Flags.Contains(Affix.NoSuggest))))
+                                {
+                                    return null;
+                                }
+
+                                // pfxappnd = prefix of word+i, or NULL
+                                // calculate syllable number of prefix.
+                                // hungarian convention: when syllable number of prefix is more,
+                                // than 1, the prefix+word counts as two words.
+
+                                if (StringComparer.OrdinalIgnoreCase.Equals(Affix.Culture.TwoLetterISOLanguageName, "hu"))
+                                {
+                                    throw new NotImplementedException();
+                                }
+
+                                // increment word number, if the second word has a compoundroot flag
+                                if ((rv != null) && (Affix.CompoundRoot != 0) &&
+                                    (rv.Flags.Contains(Affix.CompoundRoot)))
+                                {
+                                    wordnum++;
+                                }
+
+                                // second word is acceptable, as a word with prefix or/and suffix?
+                                // hungarian conventions: compounding is acceptable,
+                                // when compound forms consist 2 word, otherwise
+                                // the syllable number of root words is 6, or lesser.
+                                if ((rv != null) &&
+                                    (((Affix.CompoundWordMax == -1) || (wordnum + 1 < Affix.CompoundWordMax)) ||
+                                     ((Affix.CompoundMaxSyllable != 0) && (numsyllable <= Affix.CompoundMaxSyllable))) &&
+                                    ((!Affix.CheckCompoundDup || (rv != rv_first))))
+                                {
+                                    // forbid compound word, if it is a non compound word with typical
+                                    // fault
+                                    if (Affix.CheckCompoundRep && CompoundReplacementCheck(word))
+                                    {
+                                        return null;
+                                    }
+
+                                    return rv_first;
+                                }
+
+                                numsyllable = oldnumsyllable2;
+                                wordnum = oldwordnum2;
+
+                                // perhaps second word is a compound word (recursive call)
+                                if (wordnum < maxwordnum)
+                                {
+                                    rv = CompoundCheck(st.Substring(i), wordnum + 1,
+                                      numsyllable, maxwordnum, wnum + 1, words, out rwords, 0,
+                                      isSug, ref info);
+
+                                    if (rv != null && Affix.HasCompoundPatterns &&
+                                      ((scpd == 0 &&
+                                        CompoundPatternCheck(word, i, rv_first, rv, affixed)) ||
+                                       (scpd != 0 &&
+                                        !CompoundPatternCheck(word, i, rv_first, rv, affixed))))
+                                    {
+                                        rv = null;
+                                    }
+                                }
+                                else
+                                {
+                                    rv = null;
+                                }
+
+                                if (rv != null)
+                                {
+                                    // forbid compound word, if it is a non compound word with typical
+                                    // fault
+
+                                    throw new NotImplementedException();
+                                }
+                            }
+                            while (striple != 0 && checkedstriple == 0);  // end of striple loop
+
+                            if (checkedstriple != 0)
+                            {
+                                i++;
+                                checkedstriple = 0;
+                                striple = 0;
+                            }
+
+                        }
 
                         if (soldi != 0)
                         {
@@ -521,17 +983,237 @@ namespace Hunspell
                     }
                     else
                     {
-                        st = st.Substring(0, i) + ch.ToString() + st.Substring(i + 1);
+                        st = st.SetChar(ch, i);
                     }
                 }
                 while (Affix.CompoundRules.Length != 0 && oldwordnum == 0 && onlycpdrule++ < 1);
             }
 
-            rwords = new List<DictionaryEntry>();
             return null;
         }
 
-        private DictionaryEntry AffixCheck(string word, int needFlag, CompoundOptions inCompound = CompoundOptions.Not)
+        /// <summary>
+        /// Forbid compoundings when there are special patterns at word bound.
+        /// </summary>
+        private bool CompoundPatternCheck(string word, int pos, DictionaryEntry r1, DictionaryEntry r2, int affixed)
+        {
+            for (var i = 0; i < Affix.CompoundPatterns.Length; i++)
+            {
+                var patternEntry = Affix.CompoundPatterns[i];
+
+                int len;
+                if (IsSubset(patternEntry.Pattern2, word.Substring(pos)) &&
+        (r1 == null || patternEntry.Condition == 0 ||
+         (r1.HasFlags && r1.Flags.Contains(patternEntry.Condition))) &&
+        (r2 == null || patternEntry.Condition2 == 0 ||
+         (r2.HasFlags && r2.Flags.Contains(patternEntry.Condition2))) &&
+        // zero length pattern => only TESTAFF
+        // zero pattern (0/flag) => unmodified stem (zero affixes allowed)
+        (string.IsNullOrEmpty(patternEntry.Pattern) ||
+         ((patternEntry.Pattern.StartsWith('0') && r1.Word.Length <= pos &&
+           word.Substring(pos - r1.Word.Length).StartsWith(r1.Word)) || //strncmp(0 + pos - r1.Word.Length, r1.Word, r1.Word.Length) == 0) ||
+          (!patternEntry.Pattern.StartsWith('0') &&
+           ((len = patternEntry.Pattern.Length) != 0) &&
+           word.Substring(pos - len).StartsWith(patternEntry.Pattern.Substring(0, len))))))
+                //strncmp(0 + pos - len, patternEntry.Pattern, len) == 0))))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool IsSubset(string s1, string s2)
+        {
+            if (s1.Length > s2.Length)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < s1.Length; i++)
+            {
+                if (s1[i] != s2[i])
+                {
+                    if (s1[i] != '.')
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Is word a non compound with a REP substitution (see checkcompoundrep)?
+        /// </summary>
+        /// <seealso cref="AffixConfig.CheckCompoundRep"/>
+        private bool CompoundReplacementCheck(string word)
+        {
+            if (word.Length < 2 || !Affix.HasReplacements)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < Affix.Replacements.Length; i++)
+            {
+                var replacementEntry = Affix.Replacements[i];
+                int rIndex = 0;
+                var lenp = replacementEntry.Pattern.Length;
+                // search every occurence of the pattern in the word
+                while ((rIndex = word.IndexOf(replacementEntry.Pattern, rIndex)) >= 0)
+                {
+                    var candidate = word;
+                    ReplacementValueType type;
+
+                    if (rIndex + replacementEntry.Pattern.Length == lenp)
+                    {
+                        type = rIndex == 0 ? ReplacementValueType.Isol : ReplacementValueType.Fin;
+                    }
+                    else
+                    {
+                        type = rIndex == 0 ? ReplacementValueType.Ini : ReplacementValueType.Med;
+                    }
+
+                    var replacement = replacementEntry[type];
+                    if (replacement != null)
+                    {
+                        candidate = candidate.Replace(rIndex, lenp, replacement);
+
+                        if (CandidateCheck(candidate))
+                        {
+                            return true;
+                        }
+                    }
+
+                    rIndex++;
+                }
+            }
+
+            return false;
+        }
+
+        private bool CandidateCheck(string word)
+        {
+            var entries = Lookup(word);
+            if (!entries.IsDefaultOrEmpty)
+            {
+                return true;
+            }
+
+            var rv = AffixCheck(word, 0, CompoundOptions.Not);
+            return rv != null;
+        }
+
+        private int GetSyllable(string word)
+        {
+            if (Affix.CompoundMaxSyllable == 0)
+            {
+                return 0;
+            }
+
+            var num = 0;
+
+            for (var i = 0; i < word.Length; i++)
+            {
+                if (Affix.CompoundVowels.Contains(word[i]))
+                {
+                    ++num;
+                }
+            }
+
+            return num;
+        }
+
+        /// <summary>
+        /// Forbid compounding with neighbouring upper and lower case characters at word bounds.
+        /// </summary>
+        private bool CompoundCaseCheck(string word, int pos)
+        {
+            var a = pos - 1;
+            var b = pos;
+            if ((char.IsUpper(word, a) || char.IsUpper(word, b)) && word[a] != '-' && word[b] != '-')
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private DictionaryEntry SuffixCheckTwoSfx(string word, int sfxopts, PrefixEntry ppfx, int needflag)
+        {
+            DictionaryEntry rv = null;
+
+            // first handle the special case of 0 length suffixes
+            foreach (var suffixGroup in Affix.Suffixes)
+            {
+                foreach (var se in suffixGroup.Entries)
+                {
+                    if (Affix.ContClasses.Contains(suffixGroup.AFlag))
+                    {
+                        rv = CheckTwoSfx(suffixGroup, se, word, sfxopts, ppfx, needflag);
+                        if (rv != null)
+                        {
+                            return rv;
+                        }
+                    }
+                }
+            }
+
+            // now handle the general case
+            if (string.IsNullOrEmpty(word))
+            {
+                return null; // FULLSTRIP
+            }
+
+            foreach (var suffixGroup in Affix.Suffixes)
+            {
+                foreach (var sptr in suffixGroup.Entries)
+                {
+                    if (word.EndsWith(sptr.Key))
+                    {
+                        if (Affix.ContClasses.Contains(suffixGroup.AFlag))
+                        {
+                            rv = CheckTwoSfx(suffixGroup, sptr, word, sfxopts, ppfx, needflag);
+                            if (rv != null)
+                            {
+                                // TODO: work around shared mutable state bugs
+                                return rv;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private DictionaryEntry CheckTwoSfx(AffixEntryGroup<SuffixEntry> suffixGroup, SuffixEntry se, string word, int sfxopts, PrefixEntry ppfx, int needflag)
+        {
+            throw new NotImplementedException();
+        }
+
+        private bool DefCpdCheck(ref ImmutableList<DictionaryEntry> words, int wnum, DictionaryEntry rv, out List<DictionaryEntry> def, int all)
+        {
+            var w = 0;
+            def = new List<DictionaryEntry>();
+
+            if (words == null || words.IsEmpty)
+            {
+                w = 1;
+                words = def.ToImmutableList();
+            }
+
+            if (words == null || words.IsEmpty)
+            {
+                return false;
+            }
+
+            throw new NotImplementedException();
+        }
+
+        private DictionaryEntry AffixCheck(string word, int needFlag, CompoundOptions inCompound)
         {
             DictionaryEntry rv = null;
 

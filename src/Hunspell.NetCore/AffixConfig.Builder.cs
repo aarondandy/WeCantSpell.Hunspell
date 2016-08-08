@@ -328,14 +328,14 @@ namespace Hunspell
                 // TODO: ProcessPfxOrder and ProcessSfxOrder
                 // TODO: optimize memory reuse for Immutable collections, focused on AliasF and AliasM
 
-                return new AffixConfig
+                var config = new AffixConfig
                 {
                     Options = Options,
                     FlagMode = FlagMode,
                     KeyString = KeyString ?? string.Empty,
                     TryString = TryString ?? string.Empty,
                     Language = Language ?? string.Empty,
-                    Culture = CultureInfo.ReadOnly(Culture ??CultureInfo.InvariantCulture),
+                    Culture = CultureInfo.ReadOnly(Culture ?? CultureInfo.InvariantCulture),
                     CompoundFlag = CompoundFlag,
                     CompoundBegin = CompoundBegin,
                     CompoundEnd = CompoundEnd,
@@ -377,9 +377,14 @@ namespace Hunspell
                     CompoundVowels = ToImmutableArray(CompoundVowels),
                     WordChars = ToImmutableArray(WordChars),
                     IgnoredChars = ToImmutableArray(IgnoredChars),
-                    Version = Version,
-                    HasContClass = HasContClass
+                    Version = Version
                 };
+
+                config.ContClasses = ImmutableSortedSet.CreateRange(
+                    config.Prefixes.SelectMany(g => g.Entries.SelectMany(e => e.ContClass))
+                    .Concat(config.Suffixes.SelectMany(g => g.Entries.SelectMany(e => e.ContClass))));
+
+                return config;
             }
 
             /// <summary>

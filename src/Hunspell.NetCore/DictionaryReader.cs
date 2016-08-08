@@ -196,7 +196,7 @@ namespace Hunspell
                 {
                     options = DictionaryEntryOptions.AliasM;
                     var morphBuilder = ImmutableArray.CreateBuilder<string>(morphs.Length);
-                    for(int i = 0; i < morphs.Length; i++)
+                    for (int i = 0; i < morphs.Length; i++)
                     {
                         var originalValue = morphs[i];
                         int morphNumber;

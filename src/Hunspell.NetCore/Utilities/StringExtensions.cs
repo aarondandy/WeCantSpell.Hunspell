@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Hunspell.Utilities
@@ -82,6 +83,37 @@ namespace Hunspell.Utilities
         public static bool Contains(this string @this, char c)
         {
             return @this.IndexOf(c) >= 0;
+        }
+
+        public static string SetChar(this string @this, char c, int index)
+        {
+            if (index == -1)
+            {
+                return c.ToString() + @this;
+            }
+            if (index >= 0 && index < @this.Length)
+            {
+                var builder = new StringBuilder(@this, @this.Length);
+                builder[index] = c;
+                return builder.ToString();
+            }
+            if (index == @this.Length)
+            {
+                return string.IsNullOrEmpty(@this) ? c.ToString() : @this + c.ToString();
+            }
+
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        public static string Replace(this string @this, int index, int removeCount, string replacement)
+        {
+            var builder = new StringBuilder(@this, Math.Max(@this.Length, @this.Length + replacement.Length - removeCount));
+
+            // TODO: consider optimizing this
+            builder.Remove(index, removeCount);
+            builder.Insert(index, replacement);
+
+            return builder.ToString();
         }
     }
 }

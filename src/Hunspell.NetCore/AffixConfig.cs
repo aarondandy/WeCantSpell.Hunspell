@@ -764,10 +764,22 @@ namespace Hunspell
         public string Version { get; private set; }
 
         /// <summary>
+        /// The set of used affix cont classes.
+        /// </summary>
+        /// <seealso cref="AffixEntry.ContClass"/>
+        public ImmutableSortedSet<int> ContClasses { get; private set; }
+
+        /// <summary>
         /// Indicates that some of the affix entries have "cont class".
         /// </summary>
-        public bool HasContClass { get; private set; }
+        public bool HasContClass => ContClasses.Count != 0;
 
         public bool HasCompound => CompoundFlag != 0 || CompoundBegin != 0 || this.CompoundRules.Length != 0;
+
+        public bool HasCompoundRules => !CompoundRules.IsDefaultOrEmpty;
+
+        public bool HasCompoundPatterns => !CompoundPatterns.IsDefaultOrEmpty;
+
+        public bool HasReplacements => !Replacements.IsDefaultOrEmpty;
     }
 }
