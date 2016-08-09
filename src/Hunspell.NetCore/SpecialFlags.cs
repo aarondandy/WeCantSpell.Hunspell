@@ -4,11 +4,25 @@ namespace Hunspell
 {
     public static class SpecialFlags
     {
-        public static readonly int DefaultFlags = 65510;
+        public static readonly FlagValue DefaultFlags = new FlagValue(65510);
 
         [Obsolete("This value appears to be unused")]
-        public static readonly int ForbiddenWord = 65510;
+        public static readonly FlagValue ForbiddenWord = new FlagValue(65510);
 
-        public static readonly int OnlyUpcaseFlag = 65511;
+        public static readonly FlagValue OnlyUpcaseFlag = new FlagValue(65511);
+
+        public static readonly FlagValue LetterF = new FlagValue('F');
+
+        public static readonly FlagValue LetterG = new FlagValue('G');
+
+        public static readonly FlagValue LetterH = new FlagValue('H');
+
+        public static readonly FlagValue LetterI = new FlagValue('I');
+
+        public static readonly FlagValue LetterJ = new FlagValue('J');
+
+        public static readonly FlagValue LetterXLower = new FlagValue('x');
+
+        public static readonly FlagValue LetterPercent = new FlagValue('%');
     }
 }

@@ -40,11 +40,6 @@ namespace Hunspell
                 return new SpellCheckResult(true);
             }
 
-            CapitalizationType capType;
-            int abbv;
-            int wl;
-            string scw;
-
             string wordToClean;
             if (Affix.InputConversions.Count > 0)
             {
@@ -55,8 +50,10 @@ namespace Hunspell
                 wordToClean = word;
             }
 
-            wl = CleanWord2(out scw, wordToClean, out capType, out abbv);
-
+            CapitalizationType capType;
+            int abbv;
+            string scw;
+            var wl = CleanWord2(out scw, wordToClean, out capType, out abbv);
             if (wl == 0)
             {
                 return new SpellCheckResult(false);
@@ -82,7 +79,7 @@ namespace Hunspell
                     }
 
                     rv = CheckWord(scw, ref resultType, out root);
-                    if (abbv != 0 && rv == null)
+                    if (rv == null && abbv != 0)
                     {
                         scw += ".";
                         rv = CheckWord(scw, ref resultType, out root);
@@ -349,7 +346,7 @@ namespace Hunspell
             if (he == null)
             {
                 // try stripping off affixes
-                he = AffixCheck(word, 0, CompoundOptions.Not);
+                he = AffixCheck(word, new FlagValue(), CompoundOptions.Not);
 
                 // check compound restriction and onlyupcase
                 if (
@@ -543,7 +540,7 @@ namespace Hunspell
                                                       Affix.CompoundFlag)) == null)
                             {
                                 if (((rv = SuffixCheck(
-                                          st.Substring(0, i), 0, null, null, 0, Affix.CompoundFlag,
+                                          st.Substring(0, i), 0, null, null, new FlagValue(), Affix.CompoundFlag,
                                           hu_mov_rule != 0 ? CompoundOptions.Other : CompoundOptions.Begin)) != null ||
                                      (Affix.CompoundMoreSuffixes &&
                                       (rv = SuffixCheckTwoSfx(st.Substring(0, i), 0, null, Affix.CompoundFlag)) != null)) &&
@@ -560,7 +557,7 @@ namespace Hunspell
                             if (rv != null ||
                                 (((wordnum == 0) && Affix.CompoundBegin != 0 &&
                                   ((rv = SuffixCheck(
-                                        st.Substring(0, i), 0, null, null, 0, Affix.CompoundBegin,
+                                        st.Substring(0, i), 0, null, null, new FlagValue(), Affix.CompoundBegin,
                                         hu_mov_rule != 0 ? CompoundOptions.Other : CompoundOptions.Begin)) != null ||
                                    (Affix.CompoundMoreSuffixes &&
                                     (rv = SuffixCheckTwoSfx(
@@ -571,7 +568,7 @@ namespace Hunspell
                                                       Affix.CompoundBegin)) != null)) ||
                                  ((wordnum > 0) && Affix.CompoundMiddle != 0 &&
                                   ((rv = SuffixCheck(
-                                        st.Substring(0, i), 0, null, null, 0, Affix.CompoundMiddle,
+                                        st.Substring(0, i), 0, null, null, new FlagValue(), Affix.CompoundMiddle,
                                         hu_mov_rule != 0 ? CompoundOptions.Other : CompoundOptions.Begin)) != null ||
                                    (Affix.CompoundMoreSuffixes &&
                                     (rv = SuffixCheckTwoSfx(
@@ -655,9 +652,9 @@ namespace Hunspell
 
               // LANG_hu section: spec. Hungarian rule
               || (StringComparer.OrdinalIgnoreCase.Equals(Affix.Culture.TwoLetterISOLanguageName, "hu") && hu_mov_rule != 0 &&
-                  (rv.Flags.Contains('F') ||  // XXX hardwired Hungarian dictionary codes
-                   rv.Flags.Contains('G') ||
-                   rv.Flags.Contains('H')))
+                  (rv.Flags.Contains(SpecialFlags.LetterF) ||  // XXX hardwired Hungarian dictionary codes
+                   rv.Flags.Contains(SpecialFlags.LetterG) ||
+                   rv.Flags.Contains(SpecialFlags.LetterH)))
               // END of LANG_hu section
               ) &&
              (
@@ -674,11 +671,11 @@ namespace Hunspell
                 CompoundCaseCheck(word, i))))
             // LANG_hu section: spec. Hungarian rule
             || ((rv == null) && StringComparer.OrdinalIgnoreCase.Equals(Affix.Culture.TwoLetterISOLanguageName, "hu") && hu_mov_rule != 0 &&
-                (rv = AffixCheck(st.Substring(0, i), 0, CompoundOptions.Not)) != null &&
+                (rv = AffixCheck(st.Substring(0, i), new FlagValue(), CompoundOptions.Not)) != null &&
                 (sfx != null && sfx.HasContClass &&
                  (  // XXX hardwired Hungarian dic. codes
-                     sfx.ContClass.Contains('x') ||
-                     sfx.ContClass.Contains('%')))))
+                     sfx.ContClass.Contains(SpecialFlags.LetterXLower) ||
+                     sfx.ContClass.Contains(SpecialFlags.LetterPercent)))))
                         {
                             // first word is ok condition
 
@@ -754,8 +751,8 @@ namespace Hunspell
                                 oldwordnum2 = wordnum;
 
                                 if ((rv != null) && StringComparer.OrdinalIgnoreCase.Equals(Affix.Culture.TwoLetterISOLanguageName, "hu") &&
-                                    (rv.Flags.Contains('I')) &&
-                                    !(rv.Flags.Contains('J')))
+                                    (rv.Flags.Contains(SpecialFlags.LetterI)) &&
+                                    !(rv.Flags.Contains(SpecialFlags.LetterJ)))
                                 {
                                     numsyllable--;
                                 }
@@ -828,7 +825,7 @@ namespace Hunspell
 
                                 if (rv == null && Affix.HasCompoundRules && words != null && words.Count != 0)
                                 {
-                                    rv = AffixCheck(word.Substring(i), 0, CompoundOptions.End);
+                                    rv = AffixCheck(word.Substring(i), new FlagValue(), CompoundOptions.End);
                                     List<DictionaryEntry> junkEntries;
                                     if (rv != null && DefCpdCheck(ref words, wnum + 1, rv, out junkEntries, 1))
                                     {
@@ -1102,7 +1099,7 @@ namespace Hunspell
                 return true;
             }
 
-            var rv = AffixCheck(word, 0, CompoundOptions.Not);
+            var rv = AffixCheck(word, new FlagValue(), CompoundOptions.Not);
             return rv != null;
         }
 
@@ -1213,7 +1210,7 @@ namespace Hunspell
             throw new NotImplementedException();
         }
 
-        private DictionaryEntry AffixCheck(string word, int needFlag, CompoundOptions inCompound)
+        private DictionaryEntry AffixCheck(string word, FlagValue needFlag, CompoundOptions inCompound)
         {
             DictionaryEntry rv = null;
 
@@ -1223,7 +1220,7 @@ namespace Hunspell
                 return rv;
             }
 
-            rv = SuffixCheck(word, 0, null, null, 0, needFlag, inCompound);
+            rv = SuffixCheck(word, 0, null, null, new FlagValue(), needFlag, inCompound);
 
             if (rv != null)
             {
@@ -1238,7 +1235,7 @@ namespace Hunspell
             return rv;
         }
 
-        private DictionaryEntry PrefixCheck(string word, CompoundOptions inCompound, int needFlag)
+        private DictionaryEntry PrefixCheck(string word, CompoundOptions inCompound, FlagValue needFlag)
         {
             if (Affix.Prefixes.Length == 0)
             {
@@ -1266,7 +1263,7 @@ namespace Hunspell
             throw new NotImplementedException();
         }
 
-        private DictionaryEntry CheckWordPrefix(AffixEntryGroup<PrefixEntry> group, PrefixEntry entry, string word, CompoundOptions inCompound, int needFlag)
+        private DictionaryEntry CheckWordPrefix(AffixEntryGroup<PrefixEntry> group, PrefixEntry entry, string word, CompoundOptions inCompound, FlagValue needFlag)
         {
             DictionaryEntry he;
 
@@ -1322,7 +1319,7 @@ namespace Hunspell
 
                     if (group.Options.HasFlag(AffixEntryOptions.CrossProduct))
                     {
-                        he = SuffixCheck(tmpword, AffixEntryOptions.CrossProduct, group, entry, 0, needFlag, inCompound);
+                        he = SuffixCheck(tmpword, AffixEntryOptions.CrossProduct, group, entry, new FlagValue(), needFlag, inCompound);
                         if (he != null)
                         {
                             return he;
@@ -1347,7 +1344,7 @@ namespace Hunspell
             return entry.Conditions.IsStartingMatch(word);
         }
 
-        private DictionaryEntry SuffixCheck(string word, AffixEntryOptions sfxOpts, AffixEntryGroup<PrefixEntry> pfxGroup, PrefixEntry pfx, int cclass, int needFlag, CompoundOptions inCompound)
+        private DictionaryEntry SuffixCheck(string word, AffixEntryOptions sfxOpts, AffixEntryGroup<PrefixEntry> pfxGroup, PrefixEntry pfx, FlagValue cclass, FlagValue needFlag, CompoundOptions inCompound)
         {
             if (Affix.Suffixes.Length == 0)
             {
@@ -1389,7 +1386,7 @@ namespace Hunspell
                         !((pfx.ContClass.Length != 0) &&
                           pfx.ContClass.Contains(Affix.NeedAffix)))))
                         {
-                            var rv = CheckWordSuffix(affixGroup, affixEntry, word, sfxOpts, pfxGroup, pfx, cclass, needFlag, (inCompound != 0 ? 0 : Affix.OnlyInCompound));
+                            var rv = CheckWordSuffix(affixGroup, affixEntry, word, sfxOpts, pfxGroup, pfx, cclass, needFlag, (inCompound != 0 ? new FlagValue() : Affix.OnlyInCompound));
                             if (rv != null)
                             {
                                 return rv;
@@ -1442,7 +1439,7 @@ namespace Hunspell
             !(sptr.HasContClass &&
               sptr.ContClass.Contains(Affix.OnlyInCompound)))
                             {
-                                var rv = CheckWordSuffix(affixGroup, sptr, word, sfxOpts, pfxGroup, pfx, cclass, needFlag, inCompound != CompoundOptions.Not ? 0 : Affix.OnlyInCompound);
+                                var rv = CheckWordSuffix(affixGroup, sptr, word, sfxOpts, pfxGroup, pfx, cclass, needFlag, inCompound != CompoundOptions.Not ? new FlagValue() : Affix.OnlyInCompound);
                                 if (rv != null)
                                 {
                                     if (!sptr.HasContClass)
@@ -1472,7 +1469,7 @@ namespace Hunspell
             return null;
         }
 
-        private DictionaryEntry CheckWordSuffix(AffixEntryGroup<SuffixEntry> group, SuffixEntry entry, string word, AffixEntryOptions optFlags, AffixEntryGroup<PrefixEntry> pfxGroup, PrefixEntry pfx, int cclass, int needFlag, int badFlag)
+        private DictionaryEntry CheckWordSuffix(AffixEntryGroup<SuffixEntry> group, SuffixEntry entry, string word, AffixEntryOptions optFlags, AffixEntryGroup<PrefixEntry> pfxGroup, PrefixEntry pfx, FlagValue cclass, FlagValue needFlag, FlagValue badFlag)
         {
             var ep = pfx;
             // if this suffix is being cross checked with a prefix

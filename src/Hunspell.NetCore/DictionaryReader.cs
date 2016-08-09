@@ -89,7 +89,7 @@ namespace Hunspell
             var word = match.Groups["word"].Value.Replace(@"\/", @"/");
 
             var flagGroup = match.Groups["flags"];
-            ImmutableArray<int> flags;
+            ImmutableArray<FlagValue> flags;
             if (flagGroup.Success)
             {
                 if (Affix.IsAliasF)
@@ -112,7 +112,7 @@ namespace Hunspell
             }
             else
             {
-                flags = ImmutableArray<int>.Empty;
+                flags = ImmutableArray<FlagValue>.Empty;
             }
 
             ImmutableArray<string> morphs;
@@ -157,13 +157,13 @@ namespace Hunspell
             return false;
         }
 
-        private bool AddWord(string word, ImmutableArray<int> flags, ImmutableArray<string> morphs)
+        private bool AddWord(string word, ImmutableArray<FlagValue> flags, ImmutableArray<string> morphs)
         {
             return AddWord(word, flags, morphs, false)
                 || AddWordCapitalized(word, flags, morphs, CapitalizationTypeUtilities.GetCapitalizationType(word));
         }
 
-        private bool AddWord(string word, ImmutableArray<int> flags, ImmutableArray<string> morphs, bool onlyUpperCase)
+        private bool AddWord(string word, ImmutableArray<FlagValue> flags, ImmutableArray<string> morphs, bool onlyUpperCase)
         {
             if (Affix.IgnoredChars.Length > 0)
             {
@@ -263,7 +263,7 @@ namespace Hunspell
             return false;
         }
 
-        private bool AddWordCapitalized(string word, ImmutableArray<int> flags, ImmutableArray<string> morphs, CapitalizationType capType)
+        private bool AddWordCapitalized(string word, ImmutableArray<FlagValue> flags, ImmutableArray<string> morphs, CapitalizationType capType)
         {
             // add inner capitalized forms to handle the following allcap forms:
             // Mixed caps: OpenOffice.org -> OPENOFFICE.ORG

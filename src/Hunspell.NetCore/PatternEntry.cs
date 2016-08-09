@@ -2,7 +2,7 @@
 {
     public sealed class PatternEntry
     {
-        public PatternEntry(string pattern, string pattern2, string pattern3, int condition, int condition2)
+        public PatternEntry(string pattern, string pattern2, string pattern3, FlagValue condition, FlagValue condition2)
         {
             Pattern = pattern;
             Pattern2 = pattern2;
@@ -17,8 +17,8 @@
 
         public string Pattern3 { get; }
 
-        public int Condition { get; }
+        public FlagValue Condition { get; }
 
-        public int Condition2 { get; }
+        public FlagValue Condition2 { get; }
     }
 }

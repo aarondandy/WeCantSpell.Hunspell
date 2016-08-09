@@ -133,7 +133,7 @@ namespace Hunspell
         /// </remarks>
         public string Strip { get; private set; }
 
-        public ImmutableArray<int> ContClass { get; private set; }
+        public ImmutableArray<FlagValue> ContClass { get; private set; }
 
         public bool HasContClass => !ContClass.IsDefaultOrEmpty;
 
@@ -145,7 +145,7 @@ namespace Hunspell
             string affixText,
             CharacterConditionGroup conditions,
             IEnumerable<string> morph,
-            IEnumerable<int> contClass
+            IEnumerable<FlagValue> contClass
         )
             where TEntry : AffixEntry, new()
         {

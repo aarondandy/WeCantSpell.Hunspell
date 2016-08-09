@@ -65,6 +65,7 @@
     <Compile Include="DictionaryEntry.cs" />
     <Compile Include="DictionaryEntryOptions.cs" />
     <Compile Include="DictionaryReader.cs" />
+    <Compile Include="FlagValue.cs" />
     <Compile Include="Hunspell.cs" />
     <Compile Include="IDictionaryLineReader.cs" />
     <Compile Include="MorphologicalTags.cs" />

@@ -6,18 +6,18 @@ namespace Hunspell.Utilities
 {
     internal static class FlagUtilities
     {
-        public static IEnumerable<int> DecodeFlags(FlagMode flagMode, string parameterText)
+        public static IEnumerable<FlagValue> DecodeFlags(FlagMode flagMode, string parameterText)
         {
             if (string.IsNullOrEmpty(parameterText))
             {
-                return Enumerable.Empty<int>();
+                return Enumerable.Empty<FlagValue>();
             }
 
             switch (flagMode)
             {
                 case FlagMode.Char:
                 case FlagMode.Uni:
-                    return parameterText.Select(c => (int)c);
+                    return parameterText.Select(c => new FlagValue(c));
                 case FlagMode.Long:
                     return DecodeLongFlags(parameterText);
                 case FlagMode.Num:
@@ -27,7 +27,7 @@ namespace Hunspell.Utilities
             }
         }
 
-        private static IEnumerable<int> DecodeLongFlags(string text)
+        private static IEnumerable<FlagValue> DecodeLongFlags(string text)
         {
             if (text == null)
             {
@@ -36,37 +36,37 @@ namespace Hunspell.Utilities
 
             for (int i = 0; i < text.Length - 1; i += 2)
             {
-                yield return unchecked((byte)text[i] << 8 | (byte)text[i + 1]);
+                yield return new FlagValue(text[i], unchecked((byte)text[i + 1]));
             }
 
             if (text.Length % 2 == 1)
             {
-                yield return text[text.Length - 1];
+                yield return new FlagValue(text[text.Length - 1]);
             }
         }
 
-        private static IEnumerable<int> DecodeNumFlags(string text)
+        private static IEnumerable<FlagValue> DecodeNumFlags(string text)
         {
             if (string.IsNullOrEmpty(text))
             {
-                return Enumerable.Empty<int>();
+                return Enumerable.Empty<FlagValue>();
             }
 
             return text
                 .SplitOnComma()
                 .Select(textValue =>
                 {
-                    int intValue;
-                    IntExtensions.TryParseInvariant(textValue, out intValue);
-                    return intValue;
+                    FlagValue flagValue;
+                    FlagValue.TryParse(textValue, out flagValue);
+                    return flagValue;
                 });
         }
 
-        public static bool TryParseFlag(FlagMode flagMode, string text, out int result)
+        public static bool TryParseFlag(FlagMode flagMode, string text, out FlagValue result)
         {
             if (string.IsNullOrEmpty(text))
             {
-                result = 0;
+                result = default(FlagValue);
                 return false;
             }
 
@@ -76,30 +76,31 @@ namespace Hunspell.Utilities
                 case FlagMode.Uni:
                     if (text.Length >= 2)
                     {
-                        result = MergeCharacterBytes(text[0], text[1]);
+                        result = new FlagValue(MergeCharacterBytes(text[0], text[1]));
                         return true;
                     }
 
-                    result = text[0];
+                    result = new FlagValue(text[0]);
                     return true;
                 case FlagMode.Long:
                     if (text.Length >= 2)
                     {
-                        result = unchecked(((byte)text[0] << 8) | (byte)text[1]);
+                        result = new FlagValue(text[0], unchecked((byte)text[1]));
                     }
                     else
                     {
-                        result = text[0];
+                        result = new FlagValue(text[0]);
                     }
 
                     return true;
                 case FlagMode.Num:
-                    return IntExtensions.TryParseInvariant(text, out result);
+                    return FlagValue.TryParse(text, out result);
                 default:
                     throw new NotSupportedException();
             }
         }
 
+        [Obsolete]
         public static bool TryParseFlag(FlagMode flagMode, string text, out char result)
         {
             if (string.IsNullOrEmpty(text))

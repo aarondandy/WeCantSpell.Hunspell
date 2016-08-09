@@ -43,7 +43,7 @@ namespace Hunspell.NetCore.Tests
                     {
                         [dictionaryWord] = new List<DictionaryEntry>
                         {
-                            new DictionaryEntry(dictionaryWord, Enumerable.Empty<int>(), Enumerable.Empty<string>(), DictionaryEntryOptions.None)
+                            new DictionaryEntry(dictionaryWord, Enumerable.Empty<FlagValue>(), Enumerable.Empty<string>(), DictionaryEntryOptions.None)
                         }
                     }
                 }.ToDictionary();

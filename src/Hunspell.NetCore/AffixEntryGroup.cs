@@ -10,7 +10,7 @@ namespace Hunspell
     public sealed class AffixEntryGroup<TEntry>
         where TEntry : AffixEntry
     {
-        public AffixEntryGroup(int aFlag, AffixEntryOptions options, IEnumerable<TEntry> entries)
+        public AffixEntryGroup(FlagValue aFlag, AffixEntryOptions options, IEnumerable<TEntry> entries)
         {
             AFlag = aFlag;
             Options = options;
@@ -20,7 +20,7 @@ namespace Hunspell
         /// <summary>
         /// ID used to represent the affix group.
         /// </summary>
-        public int AFlag { get; }
+        public FlagValue AFlag { get; }
 
         /// <summary>
         /// Options for this affix group.
@@ -41,7 +41,7 @@ namespace Hunspell
             /// <summary>
             /// ID used to represent the affix group.
             /// </summary>
-            public int AFlag { get; set; }
+            public FlagValue AFlag { get; set; }
 
             /// <summary>
             /// Options for this affix group.

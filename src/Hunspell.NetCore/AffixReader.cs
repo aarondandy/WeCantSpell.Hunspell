@@ -429,7 +429,7 @@ namespace Hunspell
             return true;
         }
 
-        private bool TryParseAliasF(string parameterText, List<ImmutableArray<int>> entries)
+        private bool TryParseAliasF(string parameterText, List<ImmutableArray<FlagValue>> entries)
         {
             entries.Add(FlagUtilities.DecodeFlags(Builder.FlagMode, parameterText).OrderBy(x => x).ToImmutableArray());
             return true;
@@ -449,13 +449,13 @@ namespace Hunspell
             return true;
         }
 
-        private bool TryParseCompoundRuleIntoList(string parameterText, List<List<int>> entries)
+        private bool TryParseCompoundRuleIntoList(string parameterText, List<List<FlagValue>> entries)
         {
-            List<int> entry;
+            List<FlagValue> entry;
 
             if (parameterText.Contains('('))
             {
-                entry = new List<int>();
+                entry = new List<FlagValue>();
 
                 for (var index = 0; index < parameterText.Length; index++)
                 {
@@ -474,7 +474,7 @@ namespace Hunspell
 
                     if (parameterText[indexBegin] == '*' || parameterText[indexBegin] == '?')
                     {
-                        entry.Add(parameterText[indexBegin]);
+                        entry.Add(new FlagValue(parameterText[indexBegin]));
                     }
                     else
                     {
@@ -507,14 +507,14 @@ namespace Hunspell
 
             var lineMatchGroups = lineMatch.Groups;
 
-            char characterFlag;
+            FlagValue characterFlag;
             if (!FlagUtilities.TryParseFlag(Builder.FlagMode, lineMatchGroups[1].Value, out characterFlag))
             {
                 return false;
             }
 
             var affixGroup = groups.FindLast(g => g.AFlag == characterFlag);
-            var contClass = ImmutableArray<int>.Empty;
+            var contClass = ImmutableArray<FlagValue>.Empty;
 
             if (lineMatchGroups[2].Success && lineMatchGroups[3].Success)
             {
@@ -937,8 +937,8 @@ namespace Hunspell
             string pattern = parameters[0];
             string pattern2 = null;
             string pattern3 = null;
-            int condition = 0;
-            int condition2 = 0;
+            FlagValue condition = new FlagValue();
+            FlagValue condition2 = new FlagValue();
 
             var slashIndex = pattern.IndexOf('/');
             if (slashIndex >= 0)

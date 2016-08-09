@@ -51,25 +51,25 @@ namespace Hunspell
             /// Flag indicating that a word may be in compound words.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundFlag"/>
-            public int CompoundFlag;
+            public FlagValue CompoundFlag;
 
             /// <summary>
             /// A flag indicating that a word may be the first element in a compound word.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundBegin"/>
-            public int CompoundBegin;
+            public FlagValue CompoundBegin;
 
             /// <summary>
             /// A flag indicating that a word may be the last element in a compound word.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundEnd"/>
-            public int CompoundEnd;
+            public FlagValue CompoundEnd;
 
             /// <summary>
             /// A flag indicating that a word may be a middle element in a compound word.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundMiddle"/>
-            public int CompoundMiddle;
+            public FlagValue CompoundMiddle;
 
             /// <summary>
             /// Maximum word count in a compound word.
@@ -87,61 +87,61 @@ namespace Hunspell
             /// A flag marking compounds as a compound root.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundRoot"/>
-            public int CompoundRoot;
+            public FlagValue CompoundRoot;
 
             /// <summary>
             /// A flag indicating that an affix may be inside of compounds.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundPermitFlag"/>
-            public int CompoundPermitFlag;
+            public FlagValue CompoundPermitFlag;
 
             /// <summary>
             /// A flag forbidding a suffix from compounding.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundForbidFlag"/>
-            public int CompoundForbidFlag;
+            public FlagValue CompoundForbidFlag;
 
             /// <summary>
             /// Flag indicating that a word should not be used as a suggestion.
             /// </summary>
             /// <seealso cref="AffixConfig.NoSuggest"/>
-            public int NoSuggest;
+            public FlagValue NoSuggest;
 
             /// <summary>
             /// Flag indicating that a word should not be used in ngram based suggestions.
             /// </summary>
             /// <seealso cref="AffixConfig.NoNgramSuggest"/>
-            public int NoNgramSuggest;
+            public FlagValue NoNgramSuggest;
 
             /// <summary>
             /// A flag indicating a forbidden word form.
             /// </summary>
             /// <seealso cref="AffixConfig.ForbiddenWord"/>
-            public int ForbiddenWord;
+            public FlagValue ForbiddenWord;
 
             /// <summary>
             /// A flag used by forbidden words.
             /// </summary>
             /// <seealso cref="AffixConfig.LemmaPresent"/>
-            public int LemmaPresent;
+            public FlagValue LemmaPresent;
 
             /// <summary>
             /// A flag indicating that affixes may be on a word when this word also has prefix with <see cref="Circumfix"/> flag and vice versa.
             /// </summary>
             /// <seealso cref="AffixConfig.Circumfix"/>
-            public int Circumfix;
+            public FlagValue Circumfix;
 
             /// <summary>
             /// A flag indicating that a suffix may be only inside of compounds.
             /// </summary>
             /// <seealso cref="AffixConfig.OnlyInCompound"/>
-            public int OnlyInCompound;
+            public FlagValue OnlyInCompound;
 
             /// <summary>
             /// A flag signing virtual stems in the dictionary.
             /// </summary>
             /// <seealso cref="AffixConfig.NeedAffix"/>
-            public int NeedAffix;
+            public FlagValue NeedAffix;
 
             /// <summary>
             /// Maximum number of n-gram suggestions. A value of 0 switches off the n-gram suggestions.
@@ -165,25 +165,25 @@ namespace Hunspell
             /// A flag indicating that uppercased and capitalized forms of words are forbidden.
             /// </summary>
             /// <seealso cref="AffixConfig.KeepCase"/>
-            public int KeepCase;
+            public FlagValue KeepCase;
 
             /// <summary>
             /// A flag forcing capitalization of the whole compound word.
             /// </summary>
             /// <seealso cref="AffixConfig.ForceUpperCase"/>
-            public int ForceUpperCase;
+            public FlagValue ForceUpperCase;
 
             /// <summary>
             /// Flag indicating a rare word that is also often a spelling mistake.
             /// </summary>
             /// <seealso cref="AffixConfig.Warn"/>
-            public int Warn;
+            public FlagValue Warn;
 
             /// <summary>
             /// Flag signing affix rules and dictionary words not used in morphological generation.
             /// </summary>
             /// <seealso cref="AffixConfig.SubStandard"/>
-            public int SubStandard;
+            public FlagValue SubStandard;
 
             /// <summary>
             /// A flag used by compound check.
@@ -219,7 +219,7 @@ namespace Hunspell
             /// Ordinal numbers for affix flag compression.
             /// </summary>
             /// <seealso cref="AffixConfig.AliasF"/>
-            public List<ImmutableArray<int>> AliasF;
+            public List<ImmutableArray<FlagValue>> AliasF;
 
             /// <summary>
             /// Inidicates if any <see cref="AliasF"/> entries have been defined.
@@ -241,7 +241,7 @@ namespace Hunspell
             /// Defines custom compound patterns with a regex-like syntax.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundRules"/>
-            public List<List<int>> CompoundRules;
+            public List<List<FlagValue>> CompoundRules;
 
             /// <summary>
             /// Forbid compounding, if the first word in the compound ends with endchars, and
