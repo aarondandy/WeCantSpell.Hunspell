@@ -57,12 +57,12 @@ namespace Hunspell
         /// <returns>True when the start of the <paramref name="text"/> is matched by the <see cref="Conditions"/>.</returns>
         public bool IsStartingMatch(string text)
         {
-            if (string.IsNullOrEmpty(text) || Conditions.Length < text.Length)
+            if (string.IsNullOrEmpty(text) || Conditions.Length > text.Length)
             {
                 return false;
             }
 
-            for (int i = 0; i < text.Length; i++)
+            for (int i = 0; i < Conditions.Length; i++)
             {
                 if (!Conditions[i].IsMatch(text[i]))
                 {
@@ -80,16 +80,13 @@ namespace Hunspell
         /// <returns>True when the end of the <paramref name="text"/> is matched by the <see cref="Conditions"/>.</returns>
         public bool IsEndingMatch(string text)
         {
-            if (string.IsNullOrEmpty(text) || Conditions.Length < text.Length)
+            if (string.IsNullOrEmpty(text) || Conditions.Length > text.Length)
             {
                 return false;
             }
 
-            for (int i = 0; i < text.Length; i++)
+            for (int textIndex = text.Length - 1, conditionIndex = Conditions.Length - 1; conditionIndex >= 0; --textIndex, --conditionIndex)
             {
-                var textIndex = text.Length - i - 1;
-                var conditionIndex = Conditions.Length - i - 1;
-
                 if (!Conditions[conditionIndex].IsMatch(text[textIndex]))
                 {
                     return false;

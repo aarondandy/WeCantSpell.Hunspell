@@ -533,7 +533,7 @@ namespace Hunspell
         /// work/AB
         /// </code>
         /// </example>
-        public ImmutableArray<ImmutableArray<FlagValue>> AliasF { get; private set; }
+        public ImmutableArray<ImmutableSortedSet<FlagValue>> AliasF { get; private set; }
 
         /// <summary>
         /// Inidicates if any <see cref="AliasF"/> entries have been defined.

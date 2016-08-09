@@ -94,13 +94,8 @@ namespace Hunspell
 
         public bool IsMatch(char c)
         {
-            var isInList = Characters != null && Characters.Contains(c);
-            if (Restricted)
-            {
-                return !isInList;
-            }
-
-            return isInList;
+            var isInList = (Characters?.Contains(c)).GetValueOrDefault();
+            return Restricted ? !isInList : isInList;
         }
 
         public bool AllowsAny => Restricted && (Characters == null || Characters.Count == 0);

@@ -219,7 +219,7 @@ namespace Hunspell
             /// Ordinal numbers for affix flag compression.
             /// </summary>
             /// <seealso cref="AffixConfig.AliasF"/>
-            public List<ImmutableArray<FlagValue>> AliasF;
+            public List<ImmutableSortedSet<FlagValue>> AliasF;
 
             /// <summary>
             /// Inidicates if any <see cref="AliasF"/> entries have been defined.

@@ -171,17 +171,17 @@ namespace Hunspell
                     Builder.IgnoredChars = parameters.ToCharArray();
                     return true;
                 case "COMPOUNDFLAG": // parse in the flag used by the controlled compound words
-                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.CompoundFlag);
+                    return TryParseFlag(parameters, out Builder.CompoundFlag);
                 case "COMPOUNDMIDDLE": // parse in the flag used by compound words
-                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.CompoundMiddle);
+                    return TryParseFlag(parameters, out Builder.CompoundMiddle);
                 case "COMPOUNDBEGIN": // parse in the flag used by compound words
                     return Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes)
-                        ? FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.CompoundEnd)
-                        : FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.CompoundBegin);
+                        ? TryParseFlag(parameters, out Builder.CompoundEnd)
+                        : TryParseFlag(parameters, out Builder.CompoundBegin);
                 case "COMPOUNDEND": // parse in the flag used by compound words
                     return Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes)
-                        ? FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.CompoundBegin)
-                        : FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.CompoundEnd);
+                        ? TryParseFlag(parameters, out Builder.CompoundBegin)
+                        : TryParseFlag(parameters, out Builder.CompoundEnd);
                 case "COMPOUNDWORDMAX": // parse in the data used by compound_check() method
                     return IntExtensions.TryParseInvariant(parameters, out Builder.CompoundWordMax);
                 case "COMPOUNDMIN": // parse in the minimal length for words in compounds
@@ -197,28 +197,28 @@ namespace Hunspell
 
                     return true;
                 case "COMPOUNDROOT": // parse in the flag sign compounds in dictionary
-                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.CompoundRoot);
+                    return TryParseFlag(parameters, out Builder.CompoundRoot);
                 case "COMPOUNDPERMITFLAG": // parse in the flag used by compound_check() method
-                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.CompoundPermitFlag);
+                    return TryParseFlag(parameters, out Builder.CompoundPermitFlag);
                 case "COMPOUNDFORBIDFLAG": // parse in the flag used by compound_check() method
-                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.CompoundForbidFlag);
+                    return TryParseFlag(parameters, out Builder.CompoundForbidFlag);
                 case "COMPOUNDSYLLABLE": // parse in the max. words and syllables in compounds
                     return TryParseCompoundSyllable(parameters);
                 case "NOSUGGEST":
-                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.NoSuggest);
+                    return TryParseFlag(parameters, out Builder.NoSuggest);
                 case "NONGRAMSUGGEST":
-                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.NoNgramSuggest);
+                    return TryParseFlag(parameters, out Builder.NoNgramSuggest);
                 case "FORBIDDENWORD": // parse in the flag used by forbidden words
-                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.ForbiddenWord);
+                    return TryParseFlag(parameters, out Builder.ForbiddenWord);
                 case "LEMMA_PRESENT": // parse in the flag used by forbidden words
-                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.LemmaPresent);
+                    return TryParseFlag(parameters, out Builder.LemmaPresent);
                 case "CIRCUMFIX": // parse in the flag used by circumfixes
-                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.Circumfix);
+                    return TryParseFlag(parameters, out Builder.Circumfix);
                 case "ONLYINCOMPOUND": // parse in the flag used by fogemorphemes
-                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.OnlyInCompound);
+                    return TryParseFlag(parameters, out Builder.OnlyInCompound);
                 case "PSEUDOROOT": // parse in the flag used by `needaffixs'
                 case "NEEDAFFIX": // parse in the flag used by `needaffixs'
-                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.NeedAffix);
+                    return TryParseFlag(parameters, out Builder.NeedAffix);
                 case "REP": // parse in the typical fault correcting table
                     return TryParseStandardListItem(EntryListType.Replacements, parameters, ref Builder.Replacements, TryParseReplacements);
                 case "ICONV": // parse in the input conversion table
@@ -245,13 +245,13 @@ namespace Hunspell
                 case "MAXCPDSUGS":
                     return IntExtensions.TryParseInvariant(parameters, out Builder.MaxCompoundSuggestions);
                 case "KEEPCASE": // parse in the flag used by forbidden words
-                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.KeepCase);
+                    return TryParseFlag(parameters, out Builder.KeepCase);
                 case "FORCEUCASE":
-                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.ForceUpperCase);
+                    return TryParseFlag(parameters, out Builder.ForceUpperCase);
                 case "WARN":
-                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.Warn);
+                    return TryParseFlag(parameters, out Builder.Warn);
                 case "SUBSTANDARD":
-                    return FlagUtilities.TryParseFlag(Builder.FlagMode, parameters, out Builder.SubStandard);
+                    return TryParseFlag(parameters, out Builder.SubStandard);
                 case "PFX":
                     return TryParseAffixIntoList(parameters, ref Builder.Prefixes);
                 case "SFX":
@@ -429,9 +429,9 @@ namespace Hunspell
             return true;
         }
 
-        private bool TryParseAliasF(string parameterText, List<ImmutableArray<FlagValue>> entries)
+        private bool TryParseAliasF(string parameterText, List<ImmutableSortedSet<FlagValue>> entries)
         {
-            entries.Add(FlagUtilities.DecodeFlags(Builder.FlagMode, parameterText).OrderBy(x => x).ToImmutableArray());
+            entries.Add(ParseFlags(parameterText).OrderBy(x => x).ToImmutableSortedSet());
             return true;
         }
 
@@ -478,13 +478,13 @@ namespace Hunspell
                     }
                     else
                     {
-                        entry.AddRange(FlagUtilities.DecodeFlags(Builder.FlagMode, parameterText.Substring(indexBegin, indexEnd - indexBegin)));
+                        entry.AddRange(ParseFlags(parameterText.Substring(indexBegin, indexEnd - indexBegin)));
                     }
                 }
             }
             else
             {
-                entry = FlagUtilities.DecodeFlags(Builder.FlagMode, parameterText).ToList();
+                entry = ParseFlags(parameterText).ToList();
             }
 
             entries.Add(entry);
@@ -508,7 +508,7 @@ namespace Hunspell
             var lineMatchGroups = lineMatch.Groups;
 
             FlagValue characterFlag;
-            if (!FlagUtilities.TryParseFlag(Builder.FlagMode, lineMatchGroups[1].Value, out characterFlag))
+            if (!TryParseFlag(lineMatchGroups[1].Value, out characterFlag))
             {
                 return false;
             }
@@ -586,7 +586,7 @@ namespace Hunspell
                     }
                     else
                     {
-                        contClass = ImmutableArray.CreateRange(FlagUtilities.DecodeFlags(Builder.FlagMode, slashPart));
+                        contClass = ImmutableArray.CreateRange(ParseFlags(slashPart));
                     }
                 }
                 if (Builder.IgnoredChars != null)
@@ -943,7 +943,7 @@ namespace Hunspell
             var slashIndex = pattern.IndexOf('/');
             if (slashIndex >= 0)
             {
-                if (!FlagUtilities.TryParseFlag(Builder.FlagMode, pattern.Substring(slashIndex + 1), out condition))
+                if (!TryParseFlag(pattern.Substring(slashIndex + 1), out condition))
                 {
                     return false;
                 }
@@ -957,7 +957,7 @@ namespace Hunspell
                 slashIndex = pattern2.IndexOf('/');
                 if (slashIndex >= 0)
                 {
-                    if (!FlagUtilities.TryParseFlag(Builder.FlagMode, pattern2.Substring(slashIndex + 1), out condition2))
+                    if (!TryParseFlag(pattern2.Substring(slashIndex + 1), out condition2))
                     {
                         return false;
                     }
@@ -1001,6 +1001,16 @@ namespace Hunspell
                 Warnings.Add($"Unknown {nameof(FlagMode)}: {modeText}");
                 return false;
             }
+        }
+
+        private IEnumerable<FlagValue> ParseFlags(string text)
+        {
+            return FlagValue.ParseFlags(text, Builder.FlagMode);
+        }
+
+        private bool TryParseFlag(string text, out FlagValue value)
+        {
+            return FlagValue.TryParseFlag(text, Builder.FlagMode, out value);
         }
 
         [Flags]

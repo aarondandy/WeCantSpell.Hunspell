@@ -448,7 +448,7 @@ namespace Hunspell.NetCore.Tests
 
                 actual.Prefixes.Should().HaveCount(1);
                 var group1 = actual.Prefixes.Single();
-                group1.AFlag.Should().Be((char)('A' | ('a' << 8)));
+                group1.AFlag.Should().Be('A');
                 group1.Options.Should().Be(AffixEntryOptions.CrossProduct);
                 group1.Entries.Should().HaveCount(1);
                 var entry1 = group1.Entries.Single();

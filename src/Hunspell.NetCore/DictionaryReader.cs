@@ -89,7 +89,7 @@ namespace Hunspell
             var word = match.Groups["word"].Value.Replace(@"\/", @"/");
 
             var flagGroup = match.Groups["flags"];
-            ImmutableArray<FlagValue> flags;
+            ImmutableSortedSet<FlagValue> flags;
             if (flagGroup.Success)
             {
                 if (Affix.IsAliasF)
@@ -107,12 +107,12 @@ namespace Hunspell
                 }
                 else
                 {
-                    flags = FlagUtilities.DecodeFlags(Affix.FlagMode, flagGroup.Value).OrderBy(x => x).ToImmutableArray();
+                    flags = FlagValue.ParseFlags(flagGroup.Value, Affix.FlagMode).ToImmutableSortedSet();
                 }
             }
             else
             {
-                flags = ImmutableArray<FlagValue>.Empty;
+                flags = ImmutableSortedSet<FlagValue>.Empty;
             }
 
             ImmutableArray<string> morphs;
@@ -157,13 +157,13 @@ namespace Hunspell
             return false;
         }
 
-        private bool AddWord(string word, ImmutableArray<FlagValue> flags, ImmutableArray<string> morphs)
+        private bool AddWord(string word, ImmutableSortedSet<FlagValue> flags, ImmutableArray<string> morphs)
         {
             return AddWord(word, flags, morphs, false)
                 || AddWordCapitalized(word, flags, morphs, CapitalizationTypeUtilities.GetCapitalizationType(word));
         }
 
-        private bool AddWord(string word, ImmutableArray<FlagValue> flags, ImmutableArray<string> morphs, bool onlyUpperCase)
+        private bool AddWord(string word, ImmutableSortedSet<FlagValue> flags, ImmutableArray<string> morphs, bool onlyUpperCase)
         {
             if (!Affix.IgnoredChars.IsEmpty)
             {
@@ -263,7 +263,7 @@ namespace Hunspell
             return false;
         }
 
-        private bool AddWordCapitalized(string word, ImmutableArray<FlagValue> flags, ImmutableArray<string> morphs, CapitalizationType capType)
+        private bool AddWordCapitalized(string word, ImmutableSortedSet<FlagValue> flags, ImmutableArray<string> morphs, CapitalizationType capType)
         {
             // add inner capitalized forms to handle the following allcap forms:
             // Mixed caps: OpenOffice.org -> OPENOFFICE.ORG
@@ -273,7 +273,7 @@ namespace Hunspell
                 (
                     capType == CapitalizationType.Huh
                     || capType == CapitalizationType.HuhInit
-                    || (capType == CapitalizationType.All && flags.Length != 0)
+                    || (capType == CapitalizationType.All && !flags.IsEmpty)
                 )
                 &&
                 !flags.Contains(Affix.ForbiddenWord)
