@@ -165,7 +165,7 @@ namespace Hunspell
 
         private bool AddWord(string word, ImmutableArray<FlagValue> flags, ImmutableArray<string> morphs, bool onlyUpperCase)
         {
-            if (Affix.IgnoredChars.Length > 0)
+            if (!Affix.IgnoredChars.IsEmpty)
             {
                 word = word.RemoveChars(Affix.IgnoredChars);
             }

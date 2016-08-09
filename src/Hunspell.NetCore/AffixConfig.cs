@@ -735,7 +735,7 @@ namespace Hunspell
         /// Voewls for calculating syllables.
         /// </summary>
         /// <seealso cref="CompoundMaxSyllable"/>
-        public ImmutableArray<char> CompoundVowels { get; private set; }
+        public ImmutableSortedSet<char> CompoundVowels { get; private set; }
 
         /// <summary>
         /// Extra word characters.
@@ -746,7 +746,7 @@ namespace Hunspell
         /// For example, dot, dash, n-dash, numbers, percent sign
         /// are word character in Hungarian.
         /// </remarks>
-        public ImmutableArray<char> WordChars { get; private set; }
+        public ImmutableSortedSet<char> WordChars { get; private set; }
 
         /// <summary>
         /// Ignored characters (for example, Arabic optional diacretics characters)
@@ -756,7 +756,7 @@ namespace Hunspell
         /// Useful for optional characters, as Arabic (harakat) or Hebrew (niqqud) diacritical marks (see
         /// tests/ignore.* test dictionary in Hunspell distribution).
         /// </remarks>
-        public ImmutableArray<char> IgnoredChars { get; private set; }
+        public ImmutableSortedSet<char> IgnoredChars { get; private set; }
 
         /// <summary>
         /// Affix and dictionary file version string.

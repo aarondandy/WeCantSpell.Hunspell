@@ -111,6 +111,8 @@ namespace Hunspell
         /// </summary>
         public ImmutableArray<string> MorphCode { get; private set; }
 
+        public bool HasMorphCode => !MorphCode.IsDefaultOrEmpty;
+
         /// <summary>
         /// Text matching conditions that are to be met.
         /// </summary>
@@ -133,9 +135,9 @@ namespace Hunspell
         /// </remarks>
         public string Strip { get; private set; }
 
-        public ImmutableArray<FlagValue> ContClass { get; private set; }
+        public ImmutableSortedSet<FlagValue> ContClass { get; private set; }
 
-        public bool HasContClass => !ContClass.IsDefaultOrEmpty;
+        public bool HasContClass => !ContClass.IsEmpty;
 
         public abstract string Key { get; }
 
@@ -154,8 +156,8 @@ namespace Hunspell
                 Strip = strip,
                 Append = affixText,
                 Conditions = conditions,
-                MorphCode = morph.ToImmutableArray(),
-                ContClass = contClass.ToImmutableArray()
+                MorphCode = morph == null ? ImmutableArray<string>.Empty : morph.ToImmutableArray(),
+                ContClass = contClass == null ? ImmutableSortedSet<FlagValue>.Empty : contClass.ToImmutableSortedSet()
             };
         }
     }

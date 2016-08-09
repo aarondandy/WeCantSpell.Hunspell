@@ -50,6 +50,7 @@ namespace Hunspell.Utilities
             return new string(chars);
         }
 
+        [Obsolete]
         public static string RemoveChars(this string @this, char[] remove)
         {
             if (string.IsNullOrEmpty(@this) || remove == null || remove.Length == 0)
@@ -65,6 +66,28 @@ namespace Hunspell.Utilities
                     c => !removeLookup.Contains(c)));
         }
 
+        public static string RemoveChars(this string @this, ImmutableSortedSet<char> remove)
+        {
+            if (string.IsNullOrEmpty(@this) || remove == null || remove.IsEmpty)
+            {
+                return @this;
+            }
+
+            var builder = new StringBuilder(@this.Length);
+
+            for (var i = 0; i < @this.Length; i++)
+            {
+                var c = @this[i];
+                if (!remove.Contains(c))
+                {
+                    builder.Append(c);
+                }
+            }
+
+            return builder.ToString();
+        }
+
+        [Obsolete]
         public static string RemoveChars(this string @this, ImmutableArray<char> remove)
         {
             if (string.IsNullOrEmpty(@this) || remove == null || remove.Length == 0)

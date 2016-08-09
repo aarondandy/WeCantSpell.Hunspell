@@ -10,6 +10,11 @@ namespace Hunspell
         public MultiReplacementEntry(string pattern, string[] outStrings)
             : base(pattern)
         {
+            if (outStrings.Length < 4)
+            {
+                throw new ArgumentException(nameof(outStrings));
+            }
+
             OutStrings = ImmutableArray.Create(outStrings);
         }
 

@@ -454,7 +454,7 @@ namespace Hunspell.NetCore.Tests
                 var entry1 = group1.Entries.Single();
                 entry1.Strip.Should().BeEmpty();
                 entry1.Append.Should().BeEmpty();
-                entry1.ContClass.Should().ContainInOrder(new[] { 'X', '0' });
+                entry1.ContClass.Should().ContainInOrder(new[] { '0', 'X' });
                 entry1.Conditions.GetEncoded().Should().Be("أ[^ي]");
             }
 
@@ -818,7 +818,7 @@ namespace Hunspell.NetCore.Tests
                 actual.CompoundRules.Should().HaveCount(2);
                 actual.CompoundRules[0].Should().ContainInOrder("N*%?".ToCharArray());
                 actual.CompoundRules[1].Should().ContainInOrder("NN*.NN*%?".ToCharArray());
-                actual.WordChars.Should().ContainInOrder("0123456789‰.".ToCharArray());
+                actual.WordChars.Should().ContainInOrder("0123456789‰.".ToCharArray().OrderBy(x => x));
             }
 
             [Fact]
@@ -899,7 +899,7 @@ namespace Hunspell.NetCore.Tests
                 actual.CompoundRules.Should().HaveCount(1);
                 actual.CompoundRules[0].Should().ContainInOrder(new[] { 'a', '*', 'b' });
                 actual.OnlyInCompound.Should().Be('c');
-                actual.WordChars.Should().ContainInOrder("0123456789-".ToCharArray());
+                actual.WordChars.Should().ContainInOrder("0123456789-".ToCharArray().OrderBy(x => x));
             }
 
             [Fact]
@@ -1017,7 +1017,7 @@ namespace Hunspell.NetCore.Tests
                 actual.Suffixes[0].Entries.Should().HaveCount(3);
                 actual.Suffixes[0].Entries[0].Strip.Should().BeEmpty();
                 actual.Suffixes[0].Entries[0].Append.Should().Be("s");
-                actual.Suffixes[0].Entries[0].ContClass.Should().ContainInOrder(new[] { 'U', 'P', 'X' });
+                actual.Suffixes[0].Entries[0].ContClass.Should().ContainInOrder(new[] { 'U', 'P', 'X' }.OrderBy(x => x));
                 actual.Suffixes[0].Entries[0].Conditions.GetEncoded().Should().Be(".");
 
                 actual.ForbiddenWord.Should().Be('Z');
@@ -1252,11 +1252,11 @@ namespace Hunspell.NetCore.Tests
                 actual.Suffixes[0].Entries.Should().HaveCount(2);
                 actual.Suffixes[0].Entries[0].Strip.Should().BeEmpty();
                 actual.Suffixes[0].Entries[0].Append.Should().Be("s");
-                actual.Suffixes[0].Entries[0].ContClass.Should().ContainInOrder(new[] { 'C' << 8 | 'a', 'C' << 8 | 'b', 'C' << 8 | 'x', 'C' << 8 | 'p' });
+                actual.Suffixes[0].Entries[0].ContClass.Should().ContainInOrder(new[] { 'C' << 8 | 'a', 'C' << 8 | 'b', 'C' << 8 | 'x', 'C' << 8 | 'p' }.OrderBy(x => x));
                 actual.Suffixes[0].Entries[0].Conditions.GetEncoded().Should().Be(".");
                 actual.Suffixes[0].Entries[1].Strip.Should().BeEmpty();
                 actual.Suffixes[0].Entries[1].Append.Should().Be("s-");
-                actual.Suffixes[0].Entries[1].ContClass.Should().ContainInOrder(new[] { 'C' << 8 | 'a', 'C' << 8 | 'b', 'C' << 8 | 'c', 'C' << 8 | 'p' });
+                actual.Suffixes[0].Entries[1].ContClass.Should().ContainInOrder(new[] { 'C' << 8 | 'a', 'C' << 8 | 'b', 'C' << 8 | 'c', 'C' << 8 | 'p' }.OrderBy(x => x));
                 actual.Suffixes[0].Entries[1].Conditions.GetEncoded().Should().Be(".");
             }
 
@@ -1462,12 +1462,12 @@ namespace Hunspell.NetCore.Tests
                 actual.Suffixes[2].Entries.Should().HaveCount(2);
                 actual.Suffixes[2].Entries[0].Strip.Should().BeEmpty();
                 actual.Suffixes[2].Entries[0].Append.Should().BeEmpty();
-                actual.Suffixes[2].Entries[0].ContClass.Should().ContainInOrder(new[] { 'X', 'A', 'B' });
+                actual.Suffixes[2].Entries[0].ContClass.Should().ContainInOrder(new[] { 'X', 'A', 'B' }.OrderBy(x => x));
                 actual.Suffixes[2].Entries[0].Conditions.GetEncoded().Should().Be(".");
                 actual.Suffixes[2].Entries[0].MorphCode.Should().OnlyContain(x => x == "<ZERODERIV>");
                 actual.Suffixes[2].Entries[1].Strip.Should().BeEmpty();
                 actual.Suffixes[2].Entries[1].Append.Should().Be("baz");
-                actual.Suffixes[2].Entries[1].ContClass.Should().ContainInOrder(new[] { 'X', 'A', 'B' });
+                actual.Suffixes[2].Entries[1].ContClass.Should().ContainInOrder(new[] { 'X', 'A', 'B' }.OrderBy(x => x));
                 actual.Suffixes[2].Entries[1].Conditions.GetEncoded().Should().Be(".");
                 actual.Suffixes[2].Entries[1].MorphCode.Should().OnlyContain(x => x == "<DERIV>");
             }

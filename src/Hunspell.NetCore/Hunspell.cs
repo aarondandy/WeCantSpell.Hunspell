@@ -280,7 +280,7 @@ namespace Hunspell
             string w2;
             string word;
 
-            if (Affix.IgnoredChars.Length != 0)
+            if (!Affix.IgnoredChars.IsEmpty)
             {
                 w2 = w;
                 w2 = w2.RemoveChars(Affix.IgnoredChars);
@@ -325,7 +325,7 @@ namespace Hunspell
                     he = entry;
 
                     // check forbidden and onlyincompound words
-                    if (entry.Flags.Length != 0 && entry.Flags.Contains(Affix.ForbiddenWord))
+                    if (!entry.Flags.IsEmpty && entry.Flags.Contains(Affix.ForbiddenWord))
                     {
                         info |= SpellCheckResultType.Forbidden;
 
@@ -1303,7 +1303,7 @@ namespace Hunspell
                                 || dictionaryEntry.Flags.Contains(needFlag)
                                 ||
                                 (
-                                    entry.ContClass.Length != 0
+                                    !entry.ContClass.IsEmpty
                                     && entry.ContClass.Contains(needFlag)
                                 )
                             )
@@ -1355,35 +1355,35 @@ namespace Hunspell
             {
                 foreach (var affixEntry in affixGroup.Entries)
                 {
-                    if (cclass == 0 || affixEntry.ContClass.Length != 0)
+                    if (cclass == 0 || !affixEntry.ContClass.IsEmpty)
                     {
                         // suffixes are not allowed in beginning of compounds
                         if ((((inCompound != CompoundOptions.Begin)) ||  // && !cclass
                                                                          // except when signed with compoundpermitflag flag
-                       (affixEntry.ContClass.Length != 0 && Affix.CompoundPermitFlag != 0 &&
+                       (!affixEntry.ContClass.IsEmpty && Affix.CompoundPermitFlag != 0 &&
 
                         affixEntry.ContClass.Contains(Affix.CompoundPermitFlag))) &&
                       (Affix.Circumfix == 0 ||
                        // no circumfix flag in prefix and suffix
-                       ((pfx == null || pfx.ContClass.Length == 0 ||
+                       ((pfx == null || pfx.ContClass.IsEmpty ||
                          !pfx.ContClass.Contains(Affix.Circumfix)) &&
-                        (affixEntry.ContClass.Length == 0 ||
+                        (affixEntry.ContClass.IsEmpty ||
                          !(affixEntry.ContClass.Contains(Affix.Circumfix)))) ||
                        // circumfix flag in prefix AND suffix
-                       ((pfx != null && pfx.ContClass.Length != 0 &&
+                       ((pfx != null && !pfx.ContClass.IsEmpty &&
                          pfx.ContClass.Contains(Affix.Circumfix)) &&
-                        (affixEntry.ContClass.Length != 0 &&
+                        (!affixEntry.ContClass.IsEmpty &&
                          (affixEntry.ContClass.Contains(Affix.Circumfix))))) &&
                       // fogemorpheme
                       (inCompound != CompoundOptions.Not ||
-                       !(affixEntry.ContClass.Length != 0 &&
+                       !(!affixEntry.ContClass.IsEmpty &&
                          (affixEntry.ContClass.Contains(Affix.OnlyInCompound)))) &&
                       // needaffix on prefix or first suffix
                       (cclass != 0 ||
-                       !(affixEntry.ContClass.Length != 0 &&
+                       !(!affixEntry.ContClass.IsEmpty &&
                          affixEntry.ContClass.Contains(Affix.NeedAffix)) ||
                        (pfx != null &&
-                        !((pfx.ContClass.Length != 0) &&
+                        !((!pfx.ContClass.IsEmpty) &&
                           pfx.ContClass.Contains(Affix.NeedAffix)))))
                         {
                             var rv = CheckWordSuffix(affixGroup, affixEntry, word, sfxOpts, pfxGroup, pfx, cclass, needFlag, (inCompound != 0 ? new FlagValue() : Affix.OnlyInCompound));

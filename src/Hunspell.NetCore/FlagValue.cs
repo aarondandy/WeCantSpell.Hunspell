@@ -8,7 +8,6 @@ namespace Hunspell
         IEquatable<FlagValue>,
         IEquatable<int>,
         IEquatable<char>,
-        IComparable,
         IComparable<FlagValue>,
         IComparable<int>,
         IComparable<char>
@@ -83,11 +82,6 @@ namespace Hunspell
         public int CompareTo(char other)
         {
             return value.CompareTo(other);
-        }
-
-        public int CompareTo(object obj)
-        {
-            return value.CompareTo(obj);
         }
 
         public override string ToString()

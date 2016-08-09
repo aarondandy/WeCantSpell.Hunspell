@@ -374,9 +374,9 @@ namespace Hunspell
                     MapTable = EmptyIfNull(MapTable).Select(ToImmutableArray).ToImmutableArray(),
                     Phone = ToImmutableArray(Phone),
                     CompoundMaxSyllable = CompoundMaxSyllable,
-                    CompoundVowels = ToImmutableArray(CompoundVowels),
-                    WordChars = ToImmutableArray(WordChars),
-                    IgnoredChars = ToImmutableArray(IgnoredChars),
+                    CompoundVowels = ToImmutableSortedSet(CompoundVowels),
+                    WordChars = ToImmutableSortedSet(WordChars),
+                    IgnoredChars = ToImmutableSortedSet(IgnoredChars),
                     Version = Version
                 };
 
@@ -394,6 +394,11 @@ namespace Hunspell
             public void EnableOptions(AffixConfigOptions options)
             {
                 Options |= options;
+            }
+
+            private static ImmutableSortedSet<T> ToImmutableSortedSet<T>(IEnumerable<T> items)
+            {
+                return items == null ? ImmutableSortedSet<T>.Empty : items.ToImmutableSortedSet();
             }
 
             private static ImmutableArray<T> ToImmutableArray<T>(IEnumerable<T> items)

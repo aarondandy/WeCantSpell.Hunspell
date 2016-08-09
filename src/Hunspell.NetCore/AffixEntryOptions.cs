@@ -12,7 +12,7 @@ namespace Hunspell
         /// </summary>
         CrossProduct = 1 << 0,
 
-        [Obsolete("This flag should be unused as UTF16 will be used internally.")]
+        [Obsolete("This flag should not be unused as UTF16 will be used internally.")]
         Utf8 = 1 << 1,
 
         AliasF = 1 << 2,
