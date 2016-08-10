@@ -108,6 +108,7 @@ namespace Hunspell
             {
                 return ".";
             }
+
             if (PermitsSingleCharacter)
             {
                 return Characters[0].ToString();

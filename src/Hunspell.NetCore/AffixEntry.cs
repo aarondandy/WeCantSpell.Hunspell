@@ -137,7 +137,7 @@ namespace Hunspell
 
         public ImmutableSortedSet<FlagValue> ContClass { get; private set; }
 
-        public bool HasContClass => !ContClass.IsEmpty;
+        public bool HasContClasses => !ContClass.IsEmpty;
 
         public abstract string Key { get; }
 
@@ -159,6 +159,38 @@ namespace Hunspell
                 MorphCode = morph == null ? ImmutableArray<string>.Empty : morph.ToImmutableArray(),
                 ContClass = contClass == null ? ImmutableSortedSet<FlagValue>.Empty : contClass.ToImmutableSortedSet()
             };
+        }
+
+        public bool ContainsContClass(FlagValue flag) => flag.HasValue && ContClass.Contains(flag);
+
+        public bool ContainsAnyContClass(FlagValue a, FlagValue b)
+        {
+            return HasContClasses
+                &&
+                (
+                    (a.HasValue && ContClass.Contains(a))
+                    ||
+                    (b.HasValue && ContClass.Contains(b))
+                );
+        }
+
+        public bool ContainsAnyContClass(params FlagValue[] flags)
+        {
+            if (!HasContClasses || flags == null || flags.Length == 0)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < flags.Length; i++)
+            {
+                var flag = flags[i];
+                if (flag.HasValue && ContClass.Contains(flag))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

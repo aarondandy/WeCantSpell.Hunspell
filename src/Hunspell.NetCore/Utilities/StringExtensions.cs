@@ -128,15 +128,47 @@ namespace Hunspell.Utilities
             throw new ArgumentOutOfRangeException(nameof(index));
         }
 
+        public static string ReplaceToEnd(this string @this, int index, string replacement)
+        {
+            if (string.IsNullOrEmpty(replacement))
+            {
+                return @this.Substring(0, index);
+            }
+
+            var builder = new StringBuilder(@this, index + replacement.Length);
+
+            builder.Remove(index, builder.Length - index);
+            builder.Append(replacement);
+
+            return builder.ToString();
+        }
+
         public static string Replace(this string @this, int index, int removeCount, string replacement)
         {
             var builder = new StringBuilder(@this, Math.Max(@this.Length, @this.Length + replacement.Length - removeCount));
 
-            // TODO: consider optimizing this
             builder.Remove(index, removeCount);
             builder.Insert(index, replacement);
 
             return builder.ToString();
+        }
+
+        public static bool EqualsOffset(string a, int aOffset, string b, int bOffset)
+        {
+            if (ReferenceEquals(a, b) && aOffset == bOffset)
+            {
+                return true;
+            }
+
+            var aLength = (a?.Length).GetValueOrDefault();
+            var bLength = (b?.Length).GetValueOrDefault();
+
+            if ((aLength - aOffset) != (bLength - bOffset))
+            {
+                return false;
+            }
+
+            return string.CompareOrdinal(a, aOffset, b, bOffset, Math.Max(aLength, bLength)) == 0;
         }
     }
 }

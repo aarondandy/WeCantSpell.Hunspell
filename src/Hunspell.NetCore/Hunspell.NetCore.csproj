@@ -86,6 +86,7 @@
     <Compile Include="SingleReplacementEntry.cs" />
     <Compile Include="SuffixEntry.cs" />
     <Compile Include="Utilities\ArrayExtensions.cs" />
+    <Compile Include="Utilities\CultureInfoExtensions.cs" />
     <Compile Include="Utilities\IntExtensions.cs" />
     <Compile Include="Utilities\StringExtensions.cs" />
   </ItemGroup>

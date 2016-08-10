@@ -242,7 +242,7 @@ namespace Hunspell
 
                 if (!onlyUpperCase)
                 {
-                    if (existingEntry.Flags != null && existingEntry.Flags.Contains(SpecialFlags.OnlyUpcaseFlag))
+                    if (existingEntry.ContainsFlag(SpecialFlags.OnlyUpcaseFlag))
                     {
                         existingEntry = new DictionaryEntry(existingEntry.Word, flags, existingEntry.Morphs, existingEntry.Options);
                         entryList[i] = existingEntry;
