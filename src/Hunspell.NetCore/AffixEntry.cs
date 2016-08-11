@@ -124,7 +124,7 @@ namespace Hunspell
         /// <remarks>
         /// Affix (optionally with flags of continuation classes, separated by a slash).
         /// </remarks>
-        public string Append { get; private set; }
+        public virtual string Append { get; protected set; }
 
         /// <summary>
         /// String to strip before adding affix.

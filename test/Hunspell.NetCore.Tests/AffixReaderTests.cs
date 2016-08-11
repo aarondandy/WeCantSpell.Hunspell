@@ -1012,13 +1012,29 @@ namespace Hunspell.NetCore.Tests
                 actual.WordChars.ShouldBeEquivalentTo(new[] { '-' });
 
                 actual.Suffixes.Should().HaveCount(3);
+
                 actual.Suffixes[0].AFlag.Should().Be('A');
                 actual.Suffixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct);
                 actual.Suffixes[0].Entries.Should().HaveCount(3);
                 actual.Suffixes[0].Entries[0].Strip.Should().BeEmpty();
                 actual.Suffixes[0].Entries[0].Append.Should().Be("s");
+                actual.Suffixes[0].Entries[0].Key.Should().Be("s");
                 actual.Suffixes[0].Entries[0].ContClass.Should().ContainInOrder(new[] { 'U', 'P', 'X' }.OrderBy(x => x));
                 actual.Suffixes[0].Entries[0].Conditions.GetEncoded().Should().Be(".");
+                actual.Suffixes[0].Entries[1].Append.Should().Be("s");
+                actual.Suffixes[0].Entries[1].Key.Should().Be("s");
+                actual.Suffixes[0].Entries[2].Append.Should().BeEmpty();
+                actual.Suffixes[0].Entries[2].Key.Should().BeEmpty();
+
+                actual.Suffixes[1].AFlag.Should().Be('B');
+                actual.Suffixes[1].Entries.Should().HaveCount(2);
+
+                actual.Suffixes[2].AFlag.Should().Be('C');
+                actual.Suffixes[2].Entries.Should().HaveCount(1);
+                actual.Suffixes[2].Entries[0].Strip.Should().BeEmpty();
+                actual.Suffixes[2].Entries[0].Append.Should().Be("n");
+                actual.Suffixes[2].Entries[0].ContClass.Should().ContainInOrder(new[] { 'D', 'W' });
+                actual.Suffixes[2].Entries[0].Conditions.GetEncoded().Should().Be(".");
 
                 actual.ForbiddenWord.Should().Be('Z');
 

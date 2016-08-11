@@ -563,7 +563,7 @@ namespace Hunspell
                                             Affix.CompoundMoreSuffixes
                                             &&
                                             (
-                                                rv = SuffixCheckTwoSfx(st.Substring(0, i), 0, null, Affix.CompoundFlag)
+                                                rv = SuffixCheckTwoSfx(st.Substring(0, i), 0, null, null, Affix.CompoundFlag)
                                             ) != null
                                         )
                                     )
@@ -592,7 +592,7 @@ namespace Hunspell
                                             Affix.CompoundMoreSuffixes
                                             &&
                                             (
-                                                rv = SuffixCheckTwoSfx(st.Substring(0, i), 0, null, Affix.CompoundBegin)
+                                                rv = SuffixCheckTwoSfx(st.Substring(0, i), 0, null, null, Affix.CompoundBegin)
                                             ) != null
                                         )
                                         ||  // twofold suffixes + compound
@@ -615,7 +615,7 @@ namespace Hunspell
                                             Affix.CompoundMoreSuffixes
                                             &&
                                             (
-                                                rv = SuffixCheckTwoSfx(st.Substring(0, i), 0, null, Affix.CompoundMiddle)
+                                                rv = SuffixCheckTwoSfx(st.Substring(0, i), 0, null, null, Affix.CompoundMiddle)
                                             ) != null
                                         )
                                         ||  // twofold suffixes + compound
@@ -1213,18 +1213,22 @@ namespace Hunspell
                 ClearSuffix();
                 ClearPrefix();
 
-                if(rv != null)
+                if (rv != null)
                 {
                     return rv;
                 }
 
                 // if still not found check all two-level suffixes
 
-                throw new NotImplementedException();
+                rv = SuffixCheckTwoSfx(word, 0, null, null, needFlag);
+                if (rv != null)
+                {
+                    return rv;
+                }
 
                 // if still not found check all two-level prefixes
 
-                throw new NotImplementedException();
+                rv = PrefixCheckTwoSfx(word, CompoundOptions.Not, needFlag);
             }
 
             return rv;
@@ -1484,7 +1488,7 @@ namespace Hunspell
             return null;
         }
 
-        private DictionaryEntry SuffixCheckTwoSfx(string word, int sfxopts, PrefixEntry ppfx, FlagValue needflag)
+        private DictionaryEntry SuffixCheckTwoSfx(string word, AffixEntryOptions sfxopts, AffixEntryGroup<PrefixEntry> pfxGroup, PrefixEntry ppfx, FlagValue needflag)
         {
             DictionaryEntry rv = null;
 
@@ -1495,7 +1499,7 @@ namespace Hunspell
                 {
                     if (Affix.ContClasses.Contains(suffixGroup.AFlag))
                     {
-                        rv = CheckTwoSfx(suffixGroup, se, word, sfxopts, ppfx, needflag);
+                        rv = CheckTwoSfx(suffixGroup, se, word, sfxopts, pfxGroup, ppfx, needflag);
                         if (rv != null)
                         {
                             return rv;
@@ -1518,7 +1522,7 @@ namespace Hunspell
                     {
                         if (Affix.ContClasses.Contains(suffixGroup.AFlag))
                         {
-                            rv = CheckTwoSfx(suffixGroup, sptr, word, sfxopts, ppfx, needflag);
+                            rv = CheckTwoSfx(suffixGroup, sptr, word, sfxopts, pfxGroup, ppfx, needflag);
                             if (rv != null)
                             {
                                 SuffixFlag = SuffixGroup.AFlag;
@@ -1884,9 +1888,82 @@ namespace Hunspell
             return null;
         }
 
-        private DictionaryEntry CheckTwoSfx(AffixEntryGroup<SuffixEntry> suffixGroup, SuffixEntry se, string word, int sfxopts, PrefixEntry ppfx, int needflag)
+        private DictionaryEntry CheckTwoSfx(AffixEntryGroup<SuffixEntry> suffixGroup, SuffixEntry se, string word, AffixEntryOptions optflags, AffixEntryGroup<PrefixEntry> pfxGroup, PrefixEntry ppfx, FlagValue needflag)
         {
-            throw new NotImplementedException();
+            var ep = ppfx;
+
+            // if this suffix is being cross checked with a prefix
+            // but it does not support cross products skip it
+
+            if (optflags.HasFlag(AffixEntryOptions.CrossProduct) && !suffixGroup.Options.HasFlag(AffixEntryOptions.CrossProduct))
+            {
+                return null;
+            }
+
+            // upon entry suffix is 0 length or already matches the end of the word.
+            // So if the remaining root word has positive length
+            // and if there are enough chars in root word and added back strip chars
+            // to meet the number of characters conditions, then test it
+
+            int tmpl = word.Length - se.Append.Length; // length of tmpword
+
+            // the second condition is not enough for UTF-8 strings
+            // it checked in test_condition()
+
+            if (
+                (tmpl > 0 || (tmpl == 0 && Affix.FullStrip))
+                &&
+                (tmpl + se.Strip.Length >= se.Conditions.Count)
+            )
+            {
+                // generate new root word by removing suffix and adding
+                // back any characters that would have been stripped or
+                // or null terminating the shorter string
+
+
+                var tmpword = word;
+                tmpword = tmpword.Substring(0, Math.Min(tmpl, tmpword.Length));
+                tmpword += se.Strip;
+                tmpl = tmpword.Length;
+
+                // now make sure all of the conditions on characters
+                // are met.  Please see the appendix at the end of
+                // this file for more info on exactly what is being
+                // tested
+
+                // if all conditions are met then recall suffix_check
+
+                if (TestCondition(se, tmpword))
+                {
+                    DictionaryEntry he;
+
+                    if (ppfx != null)
+                    {
+                        // handle conditional suffix
+                        if (se.ContainsContClass(pfxGroup.AFlag))
+                        {
+                            he = SuffixCheck(tmpword, AffixEntryOptions.None, null, null, suffixGroup.AFlag, needflag, CompoundOptions.Not);
+                        }
+                        else
+                        {
+                            he = SuffixCheck(tmpword, optflags, pfxGroup, ppfx, suffixGroup.AFlag, needflag, CompoundOptions.Not);
+                        }
+
+                        throw new NotImplementedException();
+                    }
+                    else
+                    {
+                        he = SuffixCheck(tmpword, AffixEntryOptions.None, null, null, suffixGroup.AFlag, needflag, CompoundOptions.Not);
+                    }
+
+                    if (he != null)
+                    {
+                        return he;
+                    }
+                }
+            }
+
+            return null;
         }
 
         private bool CandidateCheck(string word)
@@ -1905,6 +1982,12 @@ namespace Hunspell
         private bool TestCondition(PrefixEntry entry, string word)
         {
             return entry.Conditions.IsStartingMatch(word);
+        }
+
+        [Obsolete("Inline")]
+        private bool TestCondition(SuffixEntry entry, string word)
+        {
+            return entry.Conditions.IsEndingMatch(word);
         }
 
         private bool ConvertInput(string word, out string dest)

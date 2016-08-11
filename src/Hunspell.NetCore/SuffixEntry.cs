@@ -1,16 +1,23 @@
-﻿using System;
-using Hunspell.Utilities;
+﻿using Hunspell.Utilities;
 
 namespace Hunspell
 {
     public sealed class SuffixEntry : AffixEntry
     {
-        public SuffixEntry()
+        public override string Append
         {
-            RAppend = Append.Reverse();
+            get
+            {
+                return base.Append;
+            }
+            protected set
+            {
+                base.Append = value;
+                RAppend = value.Reverse();
+            }
         }
 
-        public string RAppend { get; }
+        public string RAppend { get; private set; }
 
         public override string Key => RAppend;
     }
