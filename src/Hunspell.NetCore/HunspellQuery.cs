@@ -1302,7 +1302,87 @@ namespace Hunspell
             SuffixAppend = null;
             SuffixExtra = 0;
 
-            throw new NotImplementedException();
+            // first handle the special case of 0 length prefixes
+            foreach (var prefixGroup in Affix.Prefixes)
+            {
+                foreach (var pe in prefixGroup.Entries.Where(e => string.IsNullOrEmpty(e.Key)))
+                {
+                    var rv = CheckTwoSfx(prefixGroup, pe, word, inCompound, needFlag);
+                    if (rv != null)
+                    {
+                        return rv;
+                    }
+                }
+            }
+
+            foreach (var prefixGroup in Affix.Prefixes)
+            {
+                foreach (var pptr in prefixGroup.Entries.Where(e => !string.IsNullOrEmpty(e.Key)))
+                {
+                    var rv = CheckTwoSfx(prefixGroup, pptr, word, inCompound, needFlag);
+                    if (rv != null)
+                    {
+                        Prefix = pptr;
+                        return rv;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Check if this prefix entry matches.
+        /// </summary>
+        private DictionaryEntry CheckTwoSfx(AffixEntryGroup<PrefixEntry> prefixGroup, PrefixEntry pe, string word, CompoundOptions inCompound, FlagValue needFlag)
+        {
+            // on entry prefix is 0 length or already matches the beginning of the word.
+            // So if the remaining root word has positive length
+            // and if there are enough chars in root word and added back strip chars
+            // to meet the number of characters conditions, then test it
+
+            int tmpl = word.Length - pe.Append.Length; // length of tmpword
+
+            if (
+                (tmpl > 0 || (tmpl == 0 && Affix.FullStrip))
+                &&
+                (tmpl + pe.Strip.Length >= pe.Conditions.Count)
+            )
+            {
+                // generate new root word by removing prefix and adding
+                // back any characters that would have been stripped
+
+                var tmpword = pe.Strip + word.Substring(pe.Append.Length);
+
+                // now make sure all of the conditions on characters
+                // are met.  Please see the appendix at the end of
+                // this file for more info on exactly what is being
+                // tested
+
+                // if all conditions are met then check if resulting
+                // root word in the dictionary
+
+                if (TestCondition(pe, tmpword))
+                {
+                    tmpl += pe.Strip.Length;
+
+                    // prefix matched but no root word was found
+                    // if CrossProduct is allowed, try again but now
+                    // cross checked combined with a suffix
+
+                    if (prefixGroup.Options.HasFlag(AffixEntryOptions.CrossProduct) && (inCompound != CompoundOptions.Begin))
+                    {
+                        // find hash entry of root word
+                        var he = SuffixCheckTwoSfx(tmpword, AffixEntryOptions.CrossProduct, prefixGroup, pe, needFlag);
+                        if (he != null)
+                        {
+                            return he;
+                        }
+                    }
+                }
+            }
+
+            return null;
         }
 
         private string PrefixCheckMorph(string word, CompoundOptions inCompound, FlagValue needFlag)
