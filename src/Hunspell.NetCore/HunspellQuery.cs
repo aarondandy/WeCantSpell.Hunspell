@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 
 namespace Hunspell
 {
@@ -1244,7 +1245,7 @@ namespace Hunspell
             // first handle the special case of 0 length prefixes
             foreach (var affixGroup in Affix.Prefixes)
             {
-                foreach (var pfx in affixGroup.Entries)
+                foreach (var pfx in affixGroup.Entries.Where(e => string.IsNullOrEmpty(e.Key)))
                 {
                     if (
                         // fogemorpheme
@@ -1267,7 +1268,7 @@ namespace Hunspell
             // now handle the general case
             foreach (var affixGroup in Affix.Prefixes)
             {
-                foreach (var pfx in affixGroup.Entries)
+                foreach (var pfx in affixGroup.Entries.Where(e => !string.IsNullOrEmpty(e.Key)))
                 {
                     if (IsSubset(pfx.Key, word))
                     {
@@ -1327,9 +1328,10 @@ namespace Hunspell
                 return null;
             }
 
+            // first handle the special case of 0 length suffixes
             foreach (var affixGroup in Affix.Suffixes)
             {
-                foreach (var affixEntry in affixGroup.Entries)
+                foreach (var affixEntry in affixGroup.Entries.Where(e => string.IsNullOrEmpty(e.Key)))
                 {
                     if (!cclass.HasValue || affixEntry.HasContClasses)
                     {
@@ -1392,6 +1394,7 @@ namespace Hunspell
                 }
             }
 
+            // now handle the general case
             if (string.IsNullOrEmpty(word))
             {
                 return null;
@@ -1401,7 +1404,7 @@ namespace Hunspell
 
             foreach (var affixGroup in Affix.Suffixes)
             {
-                foreach (var sptr in affixGroup.Entries)
+                foreach (var sptr in affixGroup.Entries.Where(e => !string.IsNullOrEmpty(e.Key)))
                 {
                     if (word.EndsWith(sptr.Append))
                     {
@@ -1495,7 +1498,7 @@ namespace Hunspell
             // first handle the special case of 0 length suffixes
             foreach (var suffixGroup in Affix.Suffixes)
             {
-                foreach (var se in suffixGroup.Entries)
+                foreach (var se in suffixGroup.Entries.Where(e => string.IsNullOrEmpty(e.Key)))
                 {
                     if (Affix.ContClasses.Contains(suffixGroup.AFlag))
                     {
@@ -1516,7 +1519,7 @@ namespace Hunspell
 
             foreach (var suffixGroup in Affix.Suffixes)
             {
-                foreach (var sptr in suffixGroup.Entries)
+                foreach (var sptr in suffixGroup.Entries.Where(e => !string.IsNullOrEmpty(e.Key)))
                 {
                     if (word.EndsWith(sptr.Key))
                     {
