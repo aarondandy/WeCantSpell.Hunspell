@@ -758,7 +758,8 @@ namespace Hunspell
                                     ||
                                     (
                                         huMovRule != 0
-                                        && Affix.Culture.IsHungarianLanguage() // LANG_hu section: spec. Hungarian rule
+                                        // LANG_hu section: spec. Hungarian rule
+                                        && Affix.Culture.IsHungarianLanguage()
                                         // XXX hardwired Hungarian dictionary codes
                                         && rv.ContainsAnyFlags(SpecialFlags.LetterF, SpecialFlags.LetterG, SpecialFlags.LetterH)
                                     ) // END of LANG_hu section
@@ -802,7 +803,7 @@ namespace Hunspell
                                     rv = AffixCheck(st.Substring(0, i), new FlagValue(), CompoundOptions.Not)
                                 ) != null
                                 && sfx != null // TODO: sfx shared state bug
-                                // XXX hardwired Hungarian dic. codes
+                                               // XXX hardwired Hungarian dic. codes
                                 && sfx.ContainsAnyContClass(SpecialFlags.LetterXLower, SpecialFlags.LetterPercent)
                             )
                         )
@@ -1478,13 +1479,16 @@ namespace Hunspell
             // first handle the special case of 0 length prefixes
             foreach (var affixGroup in Affix.Prefixes)
             {
-                foreach (var affixEntry in affixGroup.Entries)
+                foreach (var pfx in affixGroup.Entries)
                 {
-                    var fogemorpheme = inCompound != CompoundOptions.Not || !affixEntry.ContainsContClass(Affix.OnlyInCompound);
-                    var permitPrefixInCompounds = inCompound != CompoundOptions.End || affixEntry.ContainsContClass(Affix.CompoundPermitFlag);
-                    if (fogemorpheme && permitPrefixInCompounds)
+                    if (
+                        // fogemorpheme
+                        (inCompound != CompoundOptions.Not || !pfx.ContainsContClass(Affix.OnlyInCompound))
+                        // permit prefixes in compounds
+                        && (inCompound != CompoundOptions.End || pfx.ContainsContClass(Affix.CompoundPermitFlag))
+                    )
                     {
-                        var entry = CheckWordPrefix(affixGroup, affixEntry, word, inCompound, needFlag);
+                        var entry = CheckWordPrefix(affixGroup, pfx, word, inCompound, needFlag);
                         if (entry != null)
                         {
                             return entry;
@@ -1493,7 +1497,33 @@ namespace Hunspell
                 }
             }
 
-            throw new NotImplementedException();
+            // now handle the general case
+            foreach (var affixGroup in Affix.Prefixes)
+            {
+                foreach (var pfx in affixGroup.Entries)
+                {
+                    if (IsSubset(pfx.Key, word))
+                    {
+                        if (
+                            // fogemorpheme
+                            (inCompound != CompoundOptions.Not || !pfx.ContainsContClass(Affix.OnlyInCompound))
+                            // permit prefixes in compounds
+                            && (inCompound != CompoundOptions.End || pfx.ContainsContClass(Affix.CompoundPermitFlag))
+                        )
+                        {
+                            // check prefix
+
+                            var entry = CheckWordPrefix(affixGroup, pfx, word, inCompound, needFlag);
+                            if (entry != null)
+                            {
+                                return entry;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return null;
         }
 
         private DictionaryEntry CheckWordPrefix(AffixEntryGroup<PrefixEntry> group, PrefixEntry entry, string word, CompoundOptions inCompound, FlagValue needFlag)
