@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text;
 
 namespace Hunspell
 {
@@ -16,6 +17,8 @@ namespace Hunspell
         }
 
         private const string DefaultXmlToken = "<?xml?>";
+
+        private const int MaxSharps = 5;
 
         public string WordToCheck { get; }
 
@@ -126,9 +129,13 @@ namespace Hunspell
 
                     break;
                 case CapitalizationType.All:
-                    throw new NotImplementedException();
+                    rv = CheckDetailsAllCap(abbv, ref scw, ref resultType, out root)
+                        // attempt the init case to get similar functionality to a fall through
+                        ?? CheckDetailsInitCap(abbv, capType, ref scw, ref resultType, out root);
+                    break;
                 case CapitalizationType.Init:
-                    throw new NotImplementedException();
+                    rv = CheckDetailsInitCap(abbv, capType, ref scw, ref resultType, out root);
+                    break;
                 default:
                     throw new NotSupportedException(capType.ToString());
             }
@@ -249,6 +256,246 @@ namespace Hunspell
             }
 
             return new SpellCheckResult(root, resultType, false);
+        }
+
+
+        private DictionaryEntry CheckDetailsAllCap(int abbv, ref string scw, ref SpellCheckResultType resultType, out string root)
+        {
+            resultType |= SpellCheckResultType.OrigCap;
+            var rv = CheckWord(scw, ref resultType, out root);
+            if (rv != null)
+            {
+                return rv;
+            }
+
+            if (abbv != 0)
+            {
+                var u8buffer = scw + ".";
+                rv = CheckWord(u8buffer, ref resultType, out root);
+                if (rv != null)
+                {
+                    return rv;
+                }
+            }
+
+            // Spec. prefix handling for Catalan, French, Italian:
+            // prefixes separated by apostrophe (SANT'ELIA -> Sant'+Elia).
+
+            var apos = scw.IndexOf('\'');
+            if (apos >= 0)
+            {
+                MakeAllSmall2(ref scw);
+
+                // conversion may result in string with different len than before MakeAllSmall2 so re-scan
+
+                if (apos >= 0 && apos < scw.Length - 1)
+                {
+                    var part1 = scw.Substring(0, apos + 1);
+                    var part2 = scw.Substring(apos + 1);
+
+                    MakeInitCap2(ref part2);
+                    scw = part1 + part2;
+                    rv = CheckWord(scw, ref resultType, out root);
+                    if (rv != null)
+                    {
+                        return rv;
+                    }
+
+                }
+            }
+
+            if (Affix.CheckSharps && scw.Contains("SS"))
+            {
+                MakeAllSmall2(ref scw);
+
+                var u8buffer = scw;
+                rv = SpellSharps(ref u8buffer, 0, 0, 0, ref resultType, out root);
+                if (rv == null)
+                {
+                    MakeInitCap2(ref scw);
+                    rv = SpellSharps(ref scw, 0, 0, 0, ref resultType, out root);
+                }
+
+                if (abbv != 0 && rv == null)
+                {
+                    u8buffer += ".";
+                    rv = SpellSharps(ref u8buffer, 0, 0, 0, ref resultType, out root);
+                    if (rv == null)
+                    {
+                        u8buffer = scw + ".";
+                        rv = SpellSharps(ref u8buffer, 0, 0, 0, ref resultType, out root);
+                    }
+                }
+            }
+
+            return rv;
+        }
+
+        private DictionaryEntry CheckDetailsInitCap(int abbv, CapitalizationType capType, ref string scw, ref SpellCheckResultType resultType, out string root)
+        {
+            resultType |= SpellCheckResultType.OrigCap;
+            MakeAllSmall2(ref scw);
+            var u8buffer = scw;
+            MakeInitCap2(ref scw);
+
+            if (capType == CapitalizationType.Init)
+            {
+                resultType |= SpellCheckResultType.InitCap;
+            }
+
+            var rv = CheckWord(scw, ref resultType, out root);
+
+            if (capType == CapitalizationType.Init)
+            {
+                resultType &= ~SpellCheckResultType.InitCap;
+            }
+
+            // forbid bad capitalization
+            // (for example, ijs -> Ijs instead of IJs in Dutch)
+            // use explicit forms in dic: Ijs/F (F = FORBIDDENWORD flag)
+
+            if (resultType.HasFlag(SpellCheckResultType.Forbidden))
+            {
+                rv = null;
+                return rv;
+            }
+
+            if (rv != null && IsKeepCase(rv) && capType == CapitalizationType.All)
+            {
+                rv = null;
+            }
+
+            if (rv != null)
+            {
+                return rv;
+            }
+
+            rv = CheckWord(u8buffer, ref resultType, out root);
+
+            if (abbv != 0 && rv == null)
+            {
+                u8buffer += ".";
+                rv = CheckWord(u8buffer, ref resultType, out root);
+                if (rv == null)
+                {
+                    u8buffer = scw;
+                    u8buffer += ".";
+                    if (capType == CapitalizationType.Init)
+                    {
+                        resultType |= SpellCheckResultType.InitCap;
+                    }
+
+                    rv = CheckWord(u8buffer, ref resultType, out root);
+
+                    if (capType == CapitalizationType.Init)
+                    {
+                        resultType &= ~SpellCheckResultType.InitCap;
+                    }
+
+                    if (rv != null && IsKeepCase(rv) && capType == CapitalizationType.All)
+                    {
+                        rv = null;
+                    }
+
+                    return rv;
+                }
+            }
+            if (
+                rv != null
+                && IsKeepCase(rv)
+                &&
+                (
+                    capType == CapitalizationType.All
+                    ||
+                    // if CHECKSHARPS: KEEPCASE words with \xDF  are allowed
+                    // in INITCAP form, too.
+                    !(Affix.CheckSharps && u8buffer.Contains('ß'))
+                )
+            )
+            {
+                rv = null;
+            }
+
+            return rv;
+        }
+
+        private bool IsKeepCase(DictionaryEntry rv)
+        {
+            return rv.ContainsFlag(Affix.KeepCase);
+        }
+
+        /// <summary>
+        /// Recursive search for right ss - sharp s permutations
+        /// </summary>
+        private DictionaryEntry SpellSharps(ref string @base, int nPos, int n, int repNum, ref SpellCheckResultType info, out string root)
+        {
+            root = null;
+            var pos = @base.IndexOf("ss", nPos);
+            if (pos >= 0 && n < MaxSharps)
+            {
+                // TODO: this string manipulation can be simpler
+
+                var baseBuilder = new StringBuilder(@base, @base.Length);
+                baseBuilder[pos] = 'ß';
+                baseBuilder.Remove(pos + 1, 1);
+                @base = baseBuilder.ToString();
+
+                var h = SpellSharps(ref @base, pos + 1, n + 1, repNum + 1, ref info, out root);
+                if (h != null)
+                {
+                    return h;
+                }
+
+                baseBuilder.Clear();
+                baseBuilder.Append(@base);
+                baseBuilder[pos] = 's';
+                baseBuilder.Insert(pos + 1, 's');
+                @base = baseBuilder.ToString();
+
+                h = SpellSharps(ref @base, pos + 2, n + 1, repNum, ref info, out root);
+                if (h != null)
+                {
+                    return h;
+                }
+            }
+            else if (repNum > 0)
+            {
+                ; // NOTE: there is no need to convert the UTF8 sharp to latin-1
+            }
+
+            return null;
+        }
+
+        private int MakeInitCap2(ref string s)
+        {
+            s = MakeInitCap(s);
+            return s.Length;
+        }
+
+        private string MakeInitCap(string s)
+        {
+            if (string.IsNullOrEmpty(s))
+            {
+                return s;
+            }
+
+            var builder = new StringBuilder(s, s.Length);
+            builder[0] = Affix.Culture.TextInfo.ToUpper(builder[0]);
+            return builder.ToString();
+        }
+
+        private int MakeAllSmall2(ref string s)
+        {
+            s = MakeAllSmall(s);
+            return s.Length;
+        }
+
+        /// <summary>
+        /// Convert to all little.
+        /// </summary>
+        private string MakeAllSmall(string s)
+        {
+            return Affix.Culture.TextInfo.ToLower(s);
         }
 
         private bool Check(string word)
@@ -2031,8 +2278,6 @@ namespace Hunspell
                         {
                             he = SuffixCheck(tmpword, optflags, pfxGroup, ppfx, suffixGroup.AFlag, needflag, CompoundOptions.Not);
                         }
-
-                        throw new NotImplementedException();
                     }
                     else
                     {
