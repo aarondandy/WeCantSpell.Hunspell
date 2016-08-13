@@ -976,7 +976,6 @@ namespace Hunspell
                         }
 
                         // first word is acceptable in compound words?
-
                         if (
                             (
                                 rv != null
@@ -986,7 +985,7 @@ namespace Hunspell
                                     ||
                                     (
                                         words != null
-                                        && wnum < words.Count
+                                        && words.ContainsKey(wnum)
                                         && words[wnum] != null
                                     )
                                     ||
@@ -1016,12 +1015,15 @@ namespace Hunspell
                                         Affix.CheckCompoundTriple
                                         && scpd == 0
                                         && words == null
+                                        && i - 1 >= 0
+                                        && word.Length >= 2
+                                        && i < word.Length
                                         && (word[i - 1] == word[i]) // test triple letters
                                         &&
                                         (
-                                            (i > 1 && word[i - 1] == word[i - 2])
+                                            (i - 2 >= 0 && word[i - 1] == word[i - 2])
                                             ||
-                                            (word[i - 1] == word[i + 1])  // may be word[i+1] == '\0'
+                                            (i + 1 < word.Length && word[i - 1] == word[i + 1])
                                         )
                                     )
                                     ||
@@ -1142,7 +1144,7 @@ namespace Hunspell
                                 if (
                                     rv != null
                                     && words != null
-                                    && words.Count > wnum + 1
+                                    && words.ContainsKey(wnum + 1)
                                     && words[wnum + 1] != null
                                 )
                                 {
@@ -1361,8 +1363,7 @@ namespace Hunspell
                                     )
                                 )
                                 {
-                                    // forbid compound word, if it is a non compound word with typical
-                                    // fault
+                                    // forbid compound word, if it is a non compound word with typical fault
                                     if (Affix.CheckCompoundRep && CompoundReplacementCheck(word))
                                     {
                                         return null;
@@ -1400,10 +1401,54 @@ namespace Hunspell
 
                                 if (rv != null)
                                 {
-                                    // forbid compound word, if it is a non compound word with typical
-                                    // fault
+                                    // forbid compound word, if it is a non compound word with typical fault
+                                    if (Affix.CheckCompoundRep || Affix.ForbiddenWord.HasValue)
+                                    {
 
-                                    throw new NotImplementedException();
+                                        if (Affix.CheckCompoundRep && CpdRepCheck(word))
+                                        {
+                                            return null;
+                                        }
+
+                                        // check first part
+                                        // TODO: is this a StartsWith check?
+                                        if(string.CompareOrdinal(rv.Word, 0, word, 0, rv.Word.Length) == 0)
+                                        {
+                                            var r = st[i + rv.Word.Length];
+                                            var stCcrBackup = st;
+                                            st = st.Substring(0, i + rv.Word.Length);
+
+                                            if (Affix.CheckCompoundRep && CpdRepCheck(st))
+                                            {
+                                                st = stCcrBackup;
+                                                continue;
+                                            }
+
+                                            if (Affix.ForbiddenWord.HasValue)
+                                            {
+                                                var rv2 = Lookup(word)
+                                                    .FirstOrDefault();
+
+                                                if (rv2 == null)
+                                                {
+                                                    rv2 = AffixCheck(word, default(FlagValue), CompoundOptions.Not);
+                                                }
+
+                                                if (
+                                                    rv2 != null
+                                                    && rv2.ContainsFlag(Affix.ForbiddenWord)
+                                                    && string.CompareOrdinal(rv2.Word, 0, st, 0, i + rv.Word.Length) == 0
+                                                )
+                                                {
+                                                    return null;
+                                                }
+                                            }
+
+                                            st = stCcrBackup;
+                                        }
+                                    }
+
+                                    return rv_first;
                                 }
                             }
                             while (striple != 0 && checkedstriple == 0);  // end of striple loop
@@ -1448,6 +1493,45 @@ namespace Hunspell
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Is word a non compound with a REP substitution (see checkcompoundrep)?
+        /// </summary>
+        private bool CpdRepCheck(string word)
+        {
+            var wl = word.Length;
+            if (wl < 2 || Affix.Replacements.IsEmpty)
+            {
+                return false;
+            }
+
+            for(var i = 0; i < Affix.Replacements.Length; i++)
+            {
+                var r = 0;
+                var lenp = Affix.Replacements[i].Pattern.Length;
+
+                // search every occurence of the pattern in the word
+                while ((r = word.IndexOf(Affix.Replacements[i].Pattern, r)) >= 0)
+                {
+                    var candidate = word;
+                    var type = r == 0 ? ReplacementValueType.Ini : ReplacementValueType.Med;
+                    if (r - 0 + Affix.Replacements[i].Pattern.Length == lenp)
+                    {
+                        type += 2;
+                    }
+
+                    candidate = candidate.Replace(r - 0, lenp, Affix.Replacements[i][type]);
+                    if (CandidateCheck(candidate))
+                    {
+                        return true;
+                    }
+
+                    ++r;  // search for the next letter
+                }
+            }
+
+            return false;
         }
 
         private DictionaryEntry AffixCheck(string word, FlagValue needFlag, CompoundOptions inCompound)
@@ -2072,7 +2156,7 @@ namespace Hunspell
 
                     // backtrack
                     if (bt != 0)
-                    { 
+                    {
                         do
                         {
                             ok = 1;

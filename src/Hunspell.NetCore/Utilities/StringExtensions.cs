@@ -153,6 +153,7 @@ namespace Hunspell.Utilities
             return builder.ToString();
         }
 
+        [Obsolete("Make sure this method is used correctly")]
         public static bool EqualsOffset(string a, int aOffset, string b, int bOffset)
         {
             if (ReferenceEquals(a, b) && aOffset == bOffset)
