@@ -77,6 +77,7 @@ namespace Hunspell
                 return new SpellCheckResult(false);
             }
 
+            // Hunspell supports XML input of the simplified API (see manual)
             if (word == DefaultXmlToken)
             {
                 return new SpellCheckResult(true);
@@ -95,12 +96,16 @@ namespace Hunspell
             CapitalizationType capType;
             int abbv;
             string scw;
+
+            // input conversion
             var wl = CleanWord2(out scw, wordToClean, out capType, out abbv);
             if (wl == 0)
             {
                 return new SpellCheckResult(false);
             }
 
+            // allow numbers with dots, dashes and commas (but forbid double separators:
+            // "..", "--" etc.)
             if (IsNumericWord(word))
             {
                 return new SpellCheckResult(true);
@@ -608,14 +613,14 @@ namespace Hunspell
                 else if (Affix.HasCompound)
                 {
                     // try check compound word
-                    var rwords = new List<DictionaryEntry>();
-                    he = CompoundCheck(word, 0, 0, int.MaxValue, 0, null, ref rwords, 0, 0, ref info);
+                    var rwords = new Dictionary<int, DictionaryEntry>();
+                    he = CompoundCheck(word, 0, 0, 100, 0, null, ref rwords, 0, 0, ref info);
 
                     // LANG_hu section: `moving rule' with last dash
                     if (he != null && word.EndsWith('-') && Affix.Culture.IsHungarianLanguage())
                     {
                         var dup = word.Substring(0, word.Length - 1);
-                        he = CompoundCheck(dup, -5, 0, int.MaxValue, 0, null, ref rwords, 1, 0, ref info);
+                        he = CompoundCheck(dup, -5, 0, 100, 0, null, ref rwords, 1, 0, ref info);
                     }
 
                     if (he != null)
@@ -634,7 +639,7 @@ namespace Hunspell
             return he;
         }
 
-        private DictionaryEntry CompoundCheck(string word, int wordnum, int numsyllable, int maxwordnum, int wnum, List<DictionaryEntry> words, ref List<DictionaryEntry> rwords, int huMovRule, int isSug, ref SpellCheckResultType info)
+        private DictionaryEntry CompoundCheck(string word, int wordnum, int numsyllable, int maxwordnum, int wnum, Dictionary<int, DictionaryEntry> words, ref Dictionary<int, DictionaryEntry> rwords, int huMovRule, int isSug, ref SpellCheckResultType info)
         {
             int i;
             int oldnumsyllable, oldnumsyllable2, oldwordnum, oldwordnum2;
@@ -657,11 +662,12 @@ namespace Hunspell
             var cmax = word.Length - Affix.CompoundMin + 1;
 
             var st = word;
+            var stBeforeCharacterMangling = st;
 
             for (i = cmin; i < cmax; i++)
             {
                 words = oldwords;
-                var onlycpdrule = words != null && words.Count > 0 ? 1 : 0; // TODO: consider converting to boolean
+                var onlycpdrule = words != null ? 1 : 0; // TODO: consider converting to boolean
                 do // onlycpdrule loop
                 {
 
@@ -710,6 +716,7 @@ namespace Hunspell
                         }
 
                         ch = i < st.Length ? st[i] : '\0';
+                        stBeforeCharacterMangling = st;
                         st = st.Substring(0, i);
 
                         SuffixGroup = null;
@@ -736,7 +743,7 @@ namespace Hunspell
                                 !(
                                     (
                                         onlycpdrule == 0
-                                        && (words == null || words.Count == 0)
+                                        && words == null
                                         && rv.ContainsFlag(Affix.CompoundFlag)
                                     )
                                     ||
@@ -749,7 +756,7 @@ namespace Hunspell
                                     (
                                         wordnum != 0
                                         && onlycpdrule == 0
-                                        && (words == null || words.Count == 0)
+                                        && words == null
                                         && rv.ContainsFlag(Affix.CompoundMiddle)
                                     )
                                     ||
@@ -759,12 +766,15 @@ namespace Hunspell
                                         &&
                                         (
                                             (
-                                                wordnum == 0
-                                                && (words == null || words.Count == 0)
-                                                && DefCpdCheck(ref words, wnum, rv, ref rwords, 0)
+                                                words == null
+                                                && wordnum == 0
+                                                && DefCpdCheck(ref words, wnum, rv, rwords, 0)
                                             )
                                             ||
-                                            (words != null && DefCpdCheck(ref words, wnum, rv, ref rwords, 0))
+                                            (
+                                                words != null
+                                                && DefCpdCheck(ref words, wnum, rv, rwords, 0)
+                                            )
                                         )
                                     )
                                 )
@@ -888,9 +898,7 @@ namespace Hunspell
                         )
                         {
                             // else check forbiddenwords and needaffix
-                            st = ch == '\0'
-                                ? st.Substring(0, i)
-                                : st.SetChar(ch, i);
+                            st = stBeforeCharacterMangling;
 
                             break;
                         }
@@ -1007,7 +1015,7 @@ namespace Hunspell
                                     (
                                         Affix.CheckCompoundTriple
                                         && scpd == 0
-                                        && (words == null || words.Count == 0)
+                                        && words == null
                                         && (word[i - 1] == word[i]) // test triple letters
                                         &&
                                         (
@@ -1020,7 +1028,7 @@ namespace Hunspell
                                     (
                                         Affix.CheckCompoundCase
                                         && scpd == 0
-                                        && (words == null || words.Count == 0)
+                                        && words == null
                                         && CompoundCaseCheck(word, i)
                                     )
                                 )
@@ -1065,7 +1073,8 @@ namespace Hunspell
 
                             // NEXT WORD(S)
                             rv_first = rv;
-                            st = st.SetChar(ch, i);
+                            st = stBeforeCharacterMangling;
+                            //st = st.SetChar(ch, i);
 
                             do
                             {
@@ -1087,7 +1096,6 @@ namespace Hunspell
 
                                 var homonyms = Lookup(st.Substring(i));  // perhaps without prefix
                                 var homonymIndex = 0;
-                                List<DictionaryEntry> junkDictionaryEntryList = null;
 
                                 rv = homonymIndex < homonyms.Length ? homonyms[homonymIndex] : null;
                                 // search homonym with compound flag
@@ -1098,15 +1106,14 @@ namespace Hunspell
                                         rv.ContainsFlag(Affix.NeedAffix)
                                         ||
                                         !(
-                                            ((words == null || words.Count == 0) && rv.ContainsFlag(Affix.CompoundFlag))
+                                            (words == null && rv.ContainsFlag(Affix.CompoundFlag))
                                             ||
-                                            ((words == null || words.Count == 0) && rv.ContainsFlag(Affix.CompoundEnd))
+                                            (words == null && rv.ContainsFlag(Affix.CompoundEnd))
                                             ||
                                             (
                                                 Affix.HasCompoundRules
                                                 && words != null
-                                                && words.Count != 0
-                                                && DefCpdCheck(ref words, wnum + 1, rv, ref junkDictionaryEntryList, 1)
+                                                && DefCpdCheck(ref words, wnum + 1, rv, null, 1)
                                             )
                                         )
                                         ||
@@ -1135,7 +1142,7 @@ namespace Hunspell
                                 if (
                                     rv != null
                                     && words != null
-                                    && words.Count != 0
+                                    && words.Count > wnum + 1
                                     && words[wnum + 1] != null
                                 )
                                 {
@@ -1243,11 +1250,10 @@ namespace Hunspell
                                     rv = AffixCheck(word.Substring(i), Affix.CompoundEnd, CompoundOptions.End);
                                 }
 
-                                if (rv == null && Affix.HasCompoundRules && words != null && words.Count != 0)
+                                if (rv == null && Affix.HasCompoundRules && words != null)
                                 {
                                     rv = AffixCheck(word.Substring(i), new FlagValue(), CompoundOptions.End);
-                                    List<DictionaryEntry> junkEntries = null;
-                                    if (rv != null && DefCpdCheck(ref words, wnum + 1, rv, ref junkEntries, 1))
+                                    if (rv != null && DefCpdCheck(ref words, wnum + 1, rv, null, 1))
                                     {
                                         return rv_first;
                                     }
@@ -1435,7 +1441,7 @@ namespace Hunspell
                     }
                     else
                     {
-                        st = st.SetChar(ch, i);
+                        st = stBeforeCharacterMangling;
                     }
                 }
                 while (Affix.CompoundRules.Length != 0 && oldwordnum == 0 && onlycpdrule++ < 1);
@@ -1882,22 +1888,258 @@ namespace Hunspell
             return Dictionary.Entries.TryGetValue(word, out entries) ? entries : ImmutableArray<DictionaryEntry>.Empty;
         }
 
-        private bool DefCpdCheck(ref List<DictionaryEntry> words, int wnum, DictionaryEntry rv, ref List<DictionaryEntry> def, int all)
+        private class MetacharData
+        {
+            /// <summary>
+            /// Metacharacter (*, ?) position for backtracking.
+            /// </summary>
+            public int btpp;
+            /// <summary>
+            /// Word position for metacharacters.
+            /// </summary>
+            public int btwp;
+            /// <summary>
+            /// Number of matched characters in metacharacter.
+            /// </summary>
+            public int btnum;
+        }
+
+        private bool DefCpdCheck(ref Dictionary<int, DictionaryEntry> words, int wnum, DictionaryEntry rv, Dictionary<int, DictionaryEntry> def, int all)
         {
             var w = 0;
 
-            if (words == null || words.Count == 0)
+            if (words == null)
             {
                 w = 1;
                 words = def;
             }
 
-            if (words == null || words.Count == 0)
+            if (words == null)
             {
                 return false;
             }
 
-            throw new NotImplementedException();
+            var btinfo = new Dictionary<int, MetacharData>();
+
+            short bt = 0;
+
+            words[wnum] = rv;
+
+            // has the last word COMPOUNDRULE flag?
+            if (!rv.HasFlags)
+            {
+                words[wnum] = null;
+                if (w != 0)
+                {
+                    words = null;
+                }
+
+                return false;
+            }
+
+            var ok = 0;
+            foreach (var compoundRule in Affix.CompoundRules)
+            {
+                foreach (var flag in compoundRule)
+                {
+                    if (!flag.Equals('*') && !flag.Equals('?') && rv.ContainsFlag(flag))
+                    {
+                        ok = 1; // TODO: optimize this
+                        break;
+                    }
+                }
+            }
+
+            if (ok == 0)
+            {
+                words[wnum] = null;
+                if (w != 0)
+                {
+                    words = null;
+                }
+
+                return false;
+            }
+
+            for (var i = 0; i < Affix.CompoundRules.Length; i++)
+            {
+                var pp = 0; // pattern position
+                var wp = 0; // "words" position
+                int ok2;
+                ok = 1;
+                ok2 = 1;
+                do
+                {
+                    while (pp < Affix.CompoundRules[i].Length && wp <= wnum)
+                    {
+                        if (
+                            (
+                                pp + 1 < Affix.CompoundRules[i].Length
+                            )
+                            &&
+                            (
+                                Affix.CompoundRules[i][pp + 1] == '*'
+                                ||
+                                Affix.CompoundRules[i][pp + 1] == '?'
+                            )
+                        )
+                        {
+                            var wend = Affix.CompoundRules[i][pp + 1] == '?' ? wp : wnum;
+                            ok2 = 1;
+                            pp += 2;
+
+                            if (!btinfo.ContainsKey(bt))
+                            {
+                                btinfo[bt] = new MetacharData();
+                            }
+                            btinfo[bt].btpp = pp;
+                            btinfo[bt].btwp = wp;
+
+                            while (wp <= wend)
+                            {
+                                if (!words[wp].HasFlags || !words[wp].ContainsFlag(Affix.CompoundRules[i][pp - 2]))
+                                {
+                                    ok2 = 0;
+                                    break;
+                                }
+                                wp++;
+                            }
+
+                            if (wp <= wnum)
+                            {
+                                ok2 = 0;
+                            }
+
+                            btinfo[bt].btnum = wp - btinfo[bt].btwp;
+
+                            if (btinfo[bt].btnum > 0)
+                            {
+                                ++bt;
+                            }
+                            if (ok2 != 0)
+                            {
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            ok2 = 1;
+                            if (
+                                words[wp] == null
+                                ||
+                                !words[wp].HasFlags
+                                ||
+                                !words[wp].ContainsFlag(Affix.CompoundRules[i][pp])
+                            )
+                            {
+                                ok = 0;
+                                break;
+                            }
+
+                            pp++;
+                            wp++;
+
+                            if (Affix.CompoundRules[i].Length == pp && wp <= wnum)
+                            {
+                                ok = 0;
+                            }
+                        }
+                    }
+
+                    if (ok != 0 && ok2 != 0)
+                    {
+                        var r = pp;
+                        while (
+                            Affix.CompoundRules[i].Length > r
+                            &&
+                            r + 1 < Affix.CompoundRules[i].Length
+                            &&
+                            (
+                                Affix.CompoundRules[i][r + 1] == '*'
+                                ||
+                                Affix.CompoundRules[i][r + 1] == '?'
+                            )
+                        )
+                        {
+                            r += 2;
+                        }
+
+                        if (Affix.CompoundRules[i].Length <= r)
+                        {
+                            return true;
+                        }
+                    }
+
+                    // backtrack
+                    if (bt != 0)
+                    { 
+                        do
+                        {
+                            ok = 1;
+                            btinfo[bt - 1].btnum--;
+                            pp = btinfo[bt - 1].btpp;
+                            wp = btinfo[bt - 1].btwp + btinfo[bt - 1].btnum;
+                        }
+                        while ((btinfo[bt - 1].btnum < 0) && (--bt) != 0);
+                    }
+
+                }
+                while (bt != 0);
+
+                if (
+                    ok != 0
+                    && ok2 != 0
+                    &&
+                    (
+                        all == 0
+                        ||
+                        Affix.CompoundRules[i].Length <= pp
+                    )
+                )
+                {
+                    return true;
+                }
+
+                // check zero ending
+                while (
+                    ok != 0
+                    && ok2 != 0
+                    &&
+                    (
+                        Affix.CompoundRules[i].Length > pp
+                    )
+                    &&
+                    (
+                        (pp + 1) < Affix.CompoundRules[i].Length
+                    )
+                    &&
+                    (
+                        (Affix.CompoundRules[i][pp + 1] == '*')
+                        ||
+                        (Affix.CompoundRules[i][pp + 1] == '?')
+                    )
+                )
+                {
+                    pp += 2;
+                }
+
+                if (
+                    ok != 0
+                    && ok2 != 0
+                    && Affix.CompoundRules[i].Length <= pp
+                )
+                {
+                    return true;
+                }
+            }
+
+            words[wnum] = null;
+            if (w != 0)
+            {
+                words = null;
+            }
+
+            return false;
         }
 
         /// <summary>
