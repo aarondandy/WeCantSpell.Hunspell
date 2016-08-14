@@ -83,66 +83,60 @@ namespace Hunspell
                 return new SpellCheckResult(true);
             }
 
-            string wordToClean;
-            if (!Affix.InputConversions.IsEmpty)
-            {
-                ConvertInput(word, out wordToClean);
-            }
-            else
-            {
-                wordToClean = word;
-            }
-
             CapitalizationType capType;
             int abbv;
             string scw;
 
             // input conversion
-            var wl = CleanWord2(out scw, wordToClean, out capType, out abbv);
+            string convertedWord;
+            if (!Affix.HasInputConversions || !TryConvertInput(word, out convertedWord))
+            {
+                convertedWord = word;
+            }
+
+            var wl = CleanWord2(out scw, convertedWord, out capType, out abbv);
             if (wl == 0)
             {
                 return new SpellCheckResult(false);
             }
 
-            // allow numbers with dots, dashes and commas (but forbid double separators:
-            // "..", "--" etc.)
+            // allow numbers with dots, dashes and commas (but forbid double separators: "..", "--" etc.)
             if (IsNumericWord(word))
             {
                 return new SpellCheckResult(true);
             }
 
-            DictionaryEntry rv;
             var resultType = SpellCheckResultType.None;
             var root = string.Empty;
 
-            switch (capType)
+            DictionaryEntry rv;
+
+            if (capType == CapitalizationType.Huh || capType == CapitalizationType.HuhInit || capType == CapitalizationType.None)
             {
-                case CapitalizationType.Huh:
-                case CapitalizationType.HuhInit:
-                case CapitalizationType.None:
-                    if (capType == CapitalizationType.HuhInit)
-                    {
-                        resultType |= SpellCheckResultType.OrigCap;
-                    }
+                if (capType == CapitalizationType.HuhInit)
+                {
+                    resultType |= SpellCheckResultType.OrigCap;
+                }
 
-                    rv = CheckWord(scw, ref resultType, out root);
-                    if (rv == null && abbv != 0)
-                    {
-                        scw += ".";
-                        rv = CheckWord(scw, ref resultType, out root);
-                    }
+                rv = CheckWord(scw, ref resultType, out root);
+                if (abbv != 0 && rv == null)
+                {
+                    var u8buffer = scw + ".";
+                    rv = CheckWord(u8buffer, ref resultType, out root);
+                }
+            }
+            else if (capType == CapitalizationType.All)
+            {
+                rv = CheckDetailsAllCap(abbv, ref scw, ref resultType, out root);
+            }
+            else
+            {
+                rv = null;
+            }
 
-                    break;
-                case CapitalizationType.All:
-                    rv = CheckDetailsAllCap(abbv, ref scw, ref resultType, out root)
-                        // attempt the init case to get similar functionality to a fall through
-                        ?? CheckDetailsInitCap(abbv, capType, ref scw, ref resultType, out root);
-                    break;
-                case CapitalizationType.Init:
-                    rv = CheckDetailsInitCap(abbv, capType, ref scw, ref resultType, out root);
-                    break;
-                default:
-                    throw new NotSupportedException(capType.ToString());
+            if (capType == CapitalizationType.Init || (capType == CapitalizationType.All && rv == null))
+            {
+                rv = CheckDetailsInitCap(abbv, capType, ref scw, ref resultType, out root);
             }
 
             if (rv != null)
@@ -150,7 +144,9 @@ namespace Hunspell
                 var isFound = true;
                 if (rv.ContainsFlag(Affix.Warn))
                 {
-                    if (Affix.ForbiddenWord.HasValue)
+                    resultType |= SpellCheckResultType.Warn;
+
+                    if (Affix.ForbidWarn)
                     {
                         isFound = false;
                     }
@@ -293,7 +289,7 @@ namespace Hunspell
 
                 // conversion may result in string with different len than before MakeAllSmall2 so re-scan
 
-                if (apos >= 0 && apos < scw.Length - 1)
+                if (apos < scw.Length - 1)
                 {
                     var part1 = scw.Substring(0, apos + 1);
                     var part2 = scw.Substring(apos + 1);
@@ -306,6 +302,12 @@ namespace Hunspell
                         return rv;
                     }
 
+                    MakeInitCap2(ref scw);
+                    rv = CheckWord(scw, ref resultType, out root);
+                    if (rv != null)
+                    {
+                        return rv;
+                    }
                 }
             }
 
@@ -405,6 +407,7 @@ namespace Hunspell
                     return rv;
                 }
             }
+
             if (
                 rv != null
                 && IsKeepCase(rv)
@@ -463,10 +466,8 @@ namespace Hunspell
                     return h;
                 }
             }
-            else if (repNum > 0)
-            {
-                ; // NOTE: there is no need to convert the UTF8 sharp to latin-1
-            }
+
+            // NOTE: there is no need to convert the UTF8 sharp to latin-1 because it is in UTF16
 
             return null;
         }
@@ -1412,7 +1413,7 @@ namespace Hunspell
 
                                         // check first part
                                         // TODO: is this a StartsWith check?
-                                        if(string.CompareOrdinal(rv.Word, 0, word, 0, rv.Word.Length) == 0)
+                                        if (string.CompareOrdinal(rv.Word, 0, word, 0, rv.Word.Length) == 0)
                                         {
                                             var r = st[i + rv.Word.Length];
                                             var stCcrBackup = st;
@@ -1506,7 +1507,7 @@ namespace Hunspell
                 return false;
             }
 
-            for(var i = 0; i < Affix.Replacements.Length; i++)
+            for (var i = 0; i < Affix.Replacements.Length; i++)
             {
                 var r = 0;
                 var lenp = Affix.Replacements[i].Pattern.Length;
@@ -2644,54 +2645,56 @@ namespace Hunspell
             return entry.Conditions.IsEndingMatch(word);
         }
 
-        private bool ConvertInput(string word, out string dest)
+        private bool TryConvertInput(string input, out string converted)
         {
-            dest = string.Empty;
+            converted = string.Empty;
 
-            var change = false;
-            for (var i = 0; i < word.Length; i++)
+            var appliedConversion = false;
+            for (var i = 0; i < input.Length; i++)
             {
-                var entry = FindInput(word.Substring(i));
-                var l = ReplaceInput(word.Substring(i), entry, i == 0);
-                if (l.Length != 0)
+                var replacementEntry = FindLargestMatchingInputConversion(input.Substring(i));
+                var replacementText = replacementEntry == null
+                    ? string.Empty
+                    : ExtractReplacementText(input.Length - i, replacementEntry, i == 0);
+
+                if (replacementText.Length == 0)
                 {
-                    dest += l;
-                    i += entry.Pattern.Length - 1;
-                    change = true;
+                    converted += input[i];
                 }
                 else
                 {
-                    dest += word[i];
+                    converted += replacementText;
+                    i += replacementEntry.Pattern.Length - 1;
+                    appliedConversion = true;
                 }
             }
 
-            return change;
+            return appliedConversion;
         }
 
-        [Obsolete("Should be moved closer to InputConversions")]
-        private MultiReplacementEntry FindInput(string word)
+        /// <summary>
+        /// Finds an input conversion matching the longest version of the given <paramref name="text"/> from the left.
+        /// </summary>
+        /// <param name="text">The text to find a matching input conversion for.</param>
+        /// <returns>The best matching input conversion.</returns>
+        /// <seealso cref="AffixConfig.InputConversions"/>
+        private MultiReplacementEntry FindLargestMatchingInputConversion(string text)
         {
             MultiReplacementEntry entry = null;
-            for (var i = 0; i < word.Length - 1; i++)
+            for (var searchLength = text.Length; searchLength > 0; searchLength--)
             {
-                if (Affix.InputConversions.TryGetValue(word.Substring(i), out entry))
+                if (Affix.InputConversions.TryGetValue(text.Substring(0, searchLength), out entry))
                 {
-                    return entry;
+                    break;
                 }
             }
 
             return entry;
         }
 
-        [Obsolete("Should be a member of ReplacementEntry")]
-        private string ReplaceInput(string word, ReplacementEntry entry, bool atStart)
+        private string ExtractReplacementText(int remainingCharactersToReplace, ReplacementEntry entry, bool atStart)
         {
-            if (entry == null)
-            {
-                return string.Empty;
-            }
-
-            var type = word.Length == entry.Pattern.Length
+            var type = remainingCharactersToReplace == entry.Pattern.Length
                 ? (atStart ? ReplacementValueType.Isol : ReplacementValueType.Fin)
                 : (atStart ? ReplacementValueType.Ini : ReplacementValueType.Med);
 
@@ -2700,43 +2703,78 @@ namespace Hunspell
                 type = (type == ReplacementValueType.Fin && !atStart) ? ReplacementValueType.Med : type - 1;
             }
 
-            return entry[type];
+            return entry[type] ?? string.Empty;
         }
 
+        /// <summary>
+        /// Make a copy of <paramref name="src"/> at <paramref name="dest"/> while removing all leading
+        /// blanks and removing any trailing periods.
+        /// </summary>
+        /// <param name="dest">The cleaned source text.</param>
+        /// <param name="src">The source text to clean and classify.</param>
+        /// <param name="capType">The capitalization type the <paramref name="src"/> is classified as.</param>
+        /// <param name="abbv">Abbreviation flag indicating the presence of trailing periods.</param>
+        /// <returns></returns>
+        /// <remarks>
+        /// Removes all leading blanks and removes any trailing periods after recording
+        /// their presence with the abbreviation flag (<paramref name="abbv"/>)
+        /// also since already going through character by character,
+        /// set the capitalization type (<paramref name="capType"/>) and
+        /// return the length of the "cleaned" (and UTF-8 encoded) word
+        /// </remarks>
         private int CleanWord2(out string dest, string src, out CapitalizationType capType, out int abbv)
         {
-            dest = string.Empty;
-
-            int q = 0;
-
             // first skip over any leading blanks
-            while (q < src.Length && src[q] == ' ')
-            {
-                q++;
-            }
+            var qIndex = CountMatchingFromLeft(src, ' ');
 
             // now strip off any trailing periods (recording their presence)
-            abbv = 0;
-            var nl = src.Length - q;
-            while (nl > 0 && src[q + nl - 1] == '.')
-            {
-                nl--;
-                abbv++;
-            }
+            abbv = CountMatchingFromRight(src, '.');
+
+            var nl = src.Length - qIndex - abbv;
 
             // if no characters are left it can't be capitalized
             if (nl <= 0)
             {
+                dest = string.Empty;
                 capType = CapitalizationType.None;
                 return 0;
             }
 
-            dest = src.Substring(q, nl);
-            nl = dest.Length;
-
+            dest = src.Substring(qIndex, nl);
             capType = CapitalizationTypeUtilities.GetCapitalizationType(dest);
+            return dest.Length;
+        }
 
-            return nl;
+        private static int CountMatchingFromLeft(string text, char character)
+        {
+            int count = 0;
+
+            if (text != null)
+            {
+                while (count < text.Length && text[count] == character)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static int CountMatchingFromRight(string text, char character)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return 0;
+            }
+
+            int lastIndex = text.Length - 1;
+            int searchIndex = lastIndex;
+            while (searchIndex >= 0 && text[searchIndex] == character)
+            {
+                searchIndex--;
+            }
+
+            return lastIndex - searchIndex;
         }
 
         private bool IsNumericWord(string word)

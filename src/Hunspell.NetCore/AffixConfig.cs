@@ -781,5 +781,9 @@ namespace Hunspell
         public bool HasCompoundPatterns => !CompoundPatterns.IsDefaultOrEmpty;
 
         public bool HasReplacements => !Replacements.IsDefaultOrEmpty;
+
+        public bool HasInputConversions => !InputConversions.IsEmpty;
+
+        public bool HasOutputConversions => !OutputConversions.IsEmpty;
     }
 }

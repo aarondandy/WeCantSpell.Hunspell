@@ -41,9 +41,10 @@ namespace Hunspell
 
             var numberCapitalized = 0;
             var numberNeutral = 0;
+            UnicodeCategory category;
             for (int i = 0; i < word.Length; i++)
             {
-                var category = CharUnicodeInfo.GetUnicodeCategory(word, i);
+                category = CharUnicodeInfo.GetUnicodeCategory(word, i);
                 if (category == UnicodeCategory.UppercaseLetter || category == UnicodeCategory.TitlecaseLetter)
                 {
                     numberCapitalized++;
@@ -58,16 +59,13 @@ namespace Hunspell
                 }
             }
 
-            bool firstIsCapitalized;
             if (numberCapitalized == 0)
             {
                 return CapitalizationType.None;
             }
-            else
-            {
-                var category = CharUnicodeInfo.GetUnicodeCategory(word, 0);
-                firstIsCapitalized = category == UnicodeCategory.UppercaseLetter || category == UnicodeCategory.TitlecaseLetter;
-            }
+
+            category = CharUnicodeInfo.GetUnicodeCategory(word, 0);
+            var firstIsCapitalized = category == UnicodeCategory.UppercaseLetter || category == UnicodeCategory.TitlecaseLetter;
 
             if (numberCapitalized == 1 && firstIsCapitalized)
             {
