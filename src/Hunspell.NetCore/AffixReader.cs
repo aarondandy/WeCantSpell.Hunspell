@@ -60,13 +60,13 @@ namespace Hunspell
 
         private EntryListType Initialized { get; set; } = EntryListType.None;
 
-        public static async Task<AffixConfig> ReadAsync(IAffixLineReader reader)
+        public static async Task<AffixConfig> ReadAsync(IHunspellFileLineReader reader)
         {
             var builder = new AffixConfig.Builder();
             var readerInstance = new AffixReader(builder);
 
             string line;
-            while (null != (line = await reader.ReadLineAsync()))
+            while (null != (line = await reader.ReadLineAsync().ConfigureAwait(false)))
             {
                 readerInstance.ParseLine(line);
             }
@@ -80,7 +80,7 @@ namespace Hunspell
         {
             using (var reader = new UtfStreamLineReader(filePath))
             {
-                return await ReadAsync(reader);
+                return await ReadAsync(reader).ConfigureAwait(false);
             }
         }
 

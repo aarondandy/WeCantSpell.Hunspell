@@ -30,7 +30,7 @@ namespace Hunspell
 
         private bool hasInitialized;
 
-        public static async Task<Dictionary> ReadAsync(IDictionaryLineReader reader, AffixConfig affix)
+        public static async Task<Dictionary> ReadAsync(IHunspellFileLineReader reader, AffixConfig affix)
         {
             var builder = new Dictionary.Builder
             {
@@ -40,7 +40,7 @@ namespace Hunspell
             var readerInstance = new DictionaryReader(builder, affix);
 
             string line;
-            while (null != (line = await reader.ReadLineAsync()))
+            while (null != (line = await reader.ReadLineAsync().ConfigureAwait(false)))
             {
                 readerInstance.ParseLine(line);
             }
@@ -51,15 +51,15 @@ namespace Hunspell
         public static async Task<Dictionary> ReadFileAsync(string filePath)
         {
             var affixFilePath = Path.ChangeExtension(filePath, "aff");
-            var affix = await AffixReader.ReadFileAsync(affixFilePath);
-            return await ReadFileAsync(filePath, affix);
+            var affix = await AffixReader.ReadFileAsync(affixFilePath).ConfigureAwait(false);
+            return await ReadFileAsync(filePath, affix).ConfigureAwait(false);
         }
 
         public static async Task<Dictionary> ReadFileAsync(string filePath, AffixConfig affix)
         {
             using (var reader = new UtfStreamLineReader(filePath))
             {
-                return await ReadAsync(reader, affix);
+                return await ReadAsync(reader, affix).ConfigureAwait(false);
             }
         }
 

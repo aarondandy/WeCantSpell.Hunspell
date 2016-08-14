@@ -54,7 +54,11 @@ namespace Hunspell.NetCore.Tests
                 actual.Should().Be(expected);
             }
 
-            [Theory, MemberData("AllGoodFilePaths")]
+            public static IEnumerable<object[]> can_find_good_words_in_dictionary_data =>
+                GetAllDataFilePaths("*.good")
+                    .SelectMany(ToDictionaryWordTestData);
+
+            [Theory, MemberData(nameof(can_find_good_words_in_dictionary_data))]
             public async Task can_find_good_words_in_dictionary(string dictionaryFilePath, string word)
             {
                 var dictionary = await DictionaryReader.ReadFileAsync(dictionaryFilePath);
@@ -65,7 +69,12 @@ namespace Hunspell.NetCore.Tests
                 checkResult.Should().BeTrue();
             }
 
-            [Theory, MemberData("AllWrongFilePaths")]
+            public static IEnumerable<object[]> cant_find_wrong_words_in_dictionary_data =>
+                GetAllDataFilePaths("*.wrong")
+                    .Where(filePath => !IsExplicitSuggestionTest(filePath))
+                    .SelectMany(ToDictionaryWordTestData);
+
+            [Theory, MemberData(nameof(cant_find_wrong_words_in_dictionary_data))]
             public async Task cant_find_wrong_words_in_dictionary(string dictionaryFilePath, string word)
             {
                 var dictionary = await DictionaryReader.ReadFileAsync(dictionaryFilePath);
@@ -76,19 +85,43 @@ namespace Hunspell.NetCore.Tests
                 checkResult.Should().BeFalse();
             }
 
-            public static IEnumerable<object[]> AllGoodFilePaths => GetWordCheckParameters("*.good");
+            public static IEnumerable<object[]> can_check_words_meant_for_suggest_test_without_exception_data =>
+                GetAllDataFilePaths("*.wrong")
+                    .Where(IsExplicitSuggestionTest)
+                    .SelectMany(ToDictionaryWordTestData);
 
-            public static IEnumerable<object[]> AllWrongFilePaths => GetWordCheckParameters("*.wrong");
-
-            protected static IEnumerable<string[]> GetWordCheckParameters(string searchPattern)
+            [Theory, MemberData(nameof(can_check_words_meant_for_suggest_test_without_exception_data))]
+            public async Task can_check_words_meant_for_suggest_test_without_exception(string dictionaryFilePath, string word)
             {
-                return Directory.GetFiles("files/", searchPattern)
-                    .SelectMany(wordFilePath =>
-                    {
-                        var dictionaryPath = Path.ChangeExtension(wordFilePath, "dic");
-                        return File.ReadLines(wordFilePath, Encoding.UTF8)
-                            .Select(word => new string[] { dictionaryPath, word });
-                    });
+                var dictionary = await DictionaryReader.ReadFileAsync(dictionaryFilePath);
+                var hunspell = new Hunspell(dictionary);
+
+                Action act = () => hunspell.Check(word);
+
+                act.ShouldNotThrow();
+            }
+
+            protected static IEnumerable<string> GetAllDataFilePaths(string searchPattern)
+            {
+                return Directory.GetFiles("files/", searchPattern);
+            }
+
+            protected static IEnumerable<object[]> ToDictionaryWordTestData(string wordFilePath)
+            {
+                var dictionaryPath = Path.ChangeExtension(wordFilePath, "dic");
+                var lines = UtfStreamLineReader.ReadLines(wordFilePath);
+                return lines.Select(line => new object[] { dictionaryPath, line });
+            }
+
+            protected static bool IsExplicitSuggestionTest(string filePath)
+            {
+                if (!filePath.EndsWith(".wrong", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new ArgumentException(nameof(filePath));
+                }
+
+                return File.Exists(Path.ChangeExtension(filePath, "sug"))
+                    && !File.Exists(Path.ChangeExtension(filePath, "good"));
             }
         }
     }

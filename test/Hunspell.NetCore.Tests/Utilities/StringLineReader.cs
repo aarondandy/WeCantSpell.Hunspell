@@ -1,9 +1,10 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Hunspell.NetCore.Tests.Utilities
 {
-    public class StringLineReader : IAffixLineReader
+    public class StringLineReader : IHunspellFileLineReader
     {
         private static readonly char[] LineBreakChars = new[]{'\n','\r'};
 
@@ -40,6 +41,11 @@ namespace Hunspell.NetCore.Tests.Utilities
             }
 
             return Task.FromResult(result);
+        }
+
+        public string ReadLine()
+        {
+            return ReadLineAsync().Result;
         }
     }
 }

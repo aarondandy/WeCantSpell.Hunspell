@@ -1488,7 +1488,7 @@ namespace Hunspell.NetCore.Tests
                 actual.Suffixes[2].Entries[1].MorphCode.Should().OnlyContain(x => x == "<DERIV>");
             }
 
-            [Theory, MemberData("AllAffixFilePaths")]
+            [Theory, MemberData(nameof(can_read_file_without_exception_data))]
             public async Task can_read_file_without_exception(string filePath)
             {
                 var actual = await AffixReader.ReadFileAsync(filePath);
@@ -1496,7 +1496,7 @@ namespace Hunspell.NetCore.Tests
                 actual.Should().NotBeNull();
             }
 
-            public static IEnumerable<object[]> AllAffixFilePaths =>
+            public static IEnumerable<object[]> can_read_file_without_exception_data =>
                 Array.ConvertAll(Directory.GetFiles("files/", "*.aff"), filePath => new object[] { filePath });
         }
 

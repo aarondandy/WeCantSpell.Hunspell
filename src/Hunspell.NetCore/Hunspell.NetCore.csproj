@@ -68,7 +68,7 @@
     <Compile Include="FlagValue.cs" />
     <Compile Include="Hunspell.cs" />
     <Compile Include="HunspellQuery.cs" />
-    <Compile Include="IDictionaryLineReader.cs" />
+    <Compile Include="IHunspellFileLineReader.cs" />
     <Compile Include="MorphologicalTags.cs" />
     <Compile Include="SpecialFlags.cs" />
     <Compile Include="SpellCheckResult.cs" />
@@ -76,7 +76,6 @@
     <Compile Include="UtfStreamLineReader.cs" />
     <Compile Include="FlagMode.cs" />
     <Compile Include="HunspellException.cs" />
-    <Compile Include="IAffixLineReader.cs" />
     <Compile Include="PatternEntry.cs" />
     <Compile Include="PhoneticEntry.cs" />
     <Compile Include="PrefixEntry.cs" />
