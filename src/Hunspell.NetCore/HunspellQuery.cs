@@ -546,29 +546,47 @@ namespace Hunspell
                 word = w2;
             }
 
-            DictionaryEntry he = null;
-
             // look word in hash table
+            DictionaryEntry he = null;
             ImmutableArray<DictionaryEntry> entries;
             if (Dictionary.Entries.TryGetValue(word, out entries))
             {
-                // TODO: this loop can be optimized away if !Affix.ForbiddenWord.HasValue : to `he = entries.LastOrDefault();`
-                foreach (var entry in entries)
+                he = entries.First();
+
+                // check forbidden and onlyincompound words
+                if (he.ContainsFlag(Affix.ForbiddenWord))
                 {
-                    he = entry;
+                    info |= SpellCheckResultType.Forbidden;
 
-                    // check forbidden and onlyincompound words
-                    if (entry.ContainsFlag(Affix.ForbiddenWord))
+                    if (he.ContainsFlag(Affix.CompoundFlag) && Affix.Culture.IsHungarianLanguage())
                     {
-                        info |= SpellCheckResultType.Forbidden;
-
-                        if (entry.ContainsFlag(Affix.CompoundFlag) && Affix.Culture.IsHungarianLanguage())
-                        {
-                            info |= SpellCheckResultType.Compound;
-                        }
-
-                        return null;
+                        info |= SpellCheckResultType.Compound;
                     }
+
+                    return null;
+                }
+
+                // he = next not needaffix, onlyincompound homonym or onlyupcase word
+                var heIndex = 0;
+                while (
+                    he != null
+                    && he.HasFlags
+                    &&
+                    (
+                        he.ContainsFlag(Affix.NeedAffix)
+                        ||
+                        he.ContainsFlag(Affix.OnlyInCompound)
+                        ||
+                        (
+                            info.HasFlag(SpellCheckResultType.InitCap)
+                            &&
+                            he.ContainsFlag(SpecialFlags.OnlyUpcaseFlag)
+                        )
+                    )
+                )
+                {
+                    heIndex++;
+                    he = heIndex < entries.Length ? entries[heIndex] : null;
                 }
             }
 
@@ -601,10 +619,13 @@ namespace Hunspell
                         return null;
                     }
 
-                    root = he.Word;
-                    if (Affix.ComplexPrefixes)
+                    if (root != null)
                     {
-                        root = root.Reverse();
+                        root = he.Word;
+                        if (Affix.ComplexPrefixes)
+                        {
+                            root = root.Reverse();
+                        }
                     }
                 }
                 else if (Affix.HasCompound)
@@ -613,19 +634,22 @@ namespace Hunspell
                     var rwords = new Dictionary<int, DictionaryEntry>();
                     he = CompoundCheck(word, 0, 0, 100, 0, null, ref rwords, 0, 0, ref info);
 
-                    // LANG_hu section: `moving rule' with last dash
-                    if (he != null && word.EndsWith('-') && Affix.Culture.IsHungarianLanguage())
+                    if (he == null && word.EndsWith('-') && Affix.Culture.IsHungarianLanguage())
                     {
+                        // LANG_hu section: `moving rule' with last dash
                         var dup = word.Substring(0, word.Length - 1);
                         he = CompoundCheck(dup, -5, 0, 100, 0, null, ref rwords, 1, 0, ref info);
                     }
 
                     if (he != null)
                     {
-                        root = he.Word;
-                        if (Affix.ComplexPrefixes)
+                        if (root != null)
                         {
-                            root = root.Reverse();
+                            root = he.Word;
+                            if (Affix.ComplexPrefixes)
+                            {
+                                root = root.Reverse();
+                            }
                         }
 
                         info |= SpellCheckResultType.Compound;
