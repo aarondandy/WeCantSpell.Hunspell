@@ -109,8 +109,9 @@ namespace Hunspell.NetCore.Tests
             protected static IEnumerable<object[]> ToDictionaryWordTestData(string wordFilePath)
             {
                 var dictionaryPath = Path.ChangeExtension(wordFilePath, "dic");
-                var lines = UtfStreamLineReader.ReadLines(wordFilePath);
-                return lines.Select(line => new object[] { dictionaryPath, line });
+                return UtfStreamLineReader.ReadLines(wordFilePath)
+                    .Where(line => !string.IsNullOrEmpty(line))
+                    .Select(line => new object[] { dictionaryPath, line });
             }
 
             protected static bool IsExplicitSuggestionTest(string filePath)
