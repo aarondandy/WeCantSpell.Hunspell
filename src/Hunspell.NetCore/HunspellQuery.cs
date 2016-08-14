@@ -118,16 +118,16 @@ namespace Hunspell
                     resultType |= SpellCheckResultType.OrigCap;
                 }
 
-                rv = CheckWord(scw, ref resultType, out root);
+                rv = CheckWord(scw, ref resultType, ref root);
                 if (abbv != 0 && rv == null)
                 {
                     var u8buffer = scw + ".";
-                    rv = CheckWord(u8buffer, ref resultType, out root);
+                    rv = CheckWord(u8buffer, ref resultType, ref root);
                 }
             }
             else if (capType == CapitalizationType.All)
             {
-                rv = CheckDetailsAllCap(abbv, ref scw, ref resultType, out root);
+                rv = CheckDetailsAllCap(abbv, ref scw, ref resultType, ref root);
             }
             else
             {
@@ -136,7 +136,7 @@ namespace Hunspell
 
             if (capType == CapitalizationType.Init || (capType == CapitalizationType.All && rv == null))
             {
-                rv = CheckDetailsInitCap(abbv, capType, ref scw, ref resultType, out root);
+                rv = CheckDetailsInitCap(abbv, capType, ref scw, ref resultType, ref root);
             }
 
             if (rv != null)
@@ -256,10 +256,10 @@ namespace Hunspell
         }
 
 
-        private DictionaryEntry CheckDetailsAllCap(int abbv, ref string scw, ref SpellCheckResultType resultType, out string root)
+        private DictionaryEntry CheckDetailsAllCap(int abbv, ref string scw, ref SpellCheckResultType resultType, ref string root)
         {
             resultType |= SpellCheckResultType.OrigCap;
-            var rv = CheckWord(scw, ref resultType, out root);
+            var rv = CheckWord(scw, ref resultType, ref root);
             if (rv != null)
             {
                 return rv;
@@ -268,7 +268,7 @@ namespace Hunspell
             if (abbv != 0)
             {
                 var u8buffer = scw + ".";
-                rv = CheckWord(u8buffer, ref resultType, out root);
+                rv = CheckWord(u8buffer, ref resultType, ref root);
                 if (rv != null)
                 {
                     return rv;
@@ -292,14 +292,14 @@ namespace Hunspell
 
                     MakeInitCap2(ref part2);
                     scw = part1 + part2;
-                    rv = CheckWord(scw, ref resultType, out root);
+                    rv = CheckWord(scw, ref resultType, ref root);
                     if (rv != null)
                     {
                         return rv;
                     }
 
                     MakeInitCap2(ref scw);
-                    rv = CheckWord(scw, ref resultType, out root);
+                    rv = CheckWord(scw, ref resultType, ref root);
                     if (rv != null)
                     {
                         return rv;
@@ -312,21 +312,21 @@ namespace Hunspell
                 MakeAllSmall2(ref scw);
 
                 var u8buffer = scw;
-                rv = SpellSharps(ref u8buffer, 0, 0, 0, ref resultType, out root);
+                rv = SpellSharps(ref u8buffer, 0, 0, 0, ref resultType, ref root);
                 if (rv == null)
                 {
                     MakeInitCap2(ref scw);
-                    rv = SpellSharps(ref scw, 0, 0, 0, ref resultType, out root);
+                    rv = SpellSharps(ref scw, 0, 0, 0, ref resultType, ref root);
                 }
 
                 if (abbv != 0 && rv == null)
                 {
                     u8buffer += ".";
-                    rv = SpellSharps(ref u8buffer, 0, 0, 0, ref resultType, out root);
+                    rv = SpellSharps(ref u8buffer, 0, 0, 0, ref resultType, ref root);
                     if (rv == null)
                     {
                         u8buffer = scw + ".";
-                        rv = SpellSharps(ref u8buffer, 0, 0, 0, ref resultType, out root);
+                        rv = SpellSharps(ref u8buffer, 0, 0, 0, ref resultType, ref root);
                     }
                 }
             }
@@ -334,7 +334,7 @@ namespace Hunspell
             return rv;
         }
 
-        private DictionaryEntry CheckDetailsInitCap(int abbv, CapitalizationType capType, ref string scw, ref SpellCheckResultType resultType, out string root)
+        private DictionaryEntry CheckDetailsInitCap(int abbv, CapitalizationType capType, ref string scw, ref SpellCheckResultType resultType, ref string root)
         {
             resultType |= SpellCheckResultType.OrigCap;
             MakeAllSmall2(ref scw);
@@ -346,7 +346,7 @@ namespace Hunspell
                 resultType |= SpellCheckResultType.InitCap;
             }
 
-            var rv = CheckWord(scw, ref resultType, out root);
+            var rv = CheckWord(scw, ref resultType, ref root);
 
             if (capType == CapitalizationType.Init)
             {
@@ -373,12 +373,12 @@ namespace Hunspell
                 return rv;
             }
 
-            rv = CheckWord(u8buffer, ref resultType, out root);
+            rv = CheckWord(u8buffer, ref resultType, ref root);
 
             if (abbv != 0 && rv == null)
             {
                 u8buffer += ".";
-                rv = CheckWord(u8buffer, ref resultType, out root);
+                rv = CheckWord(u8buffer, ref resultType, ref root);
                 if (rv == null)
                 {
                     u8buffer = scw;
@@ -388,7 +388,7 @@ namespace Hunspell
                         resultType |= SpellCheckResultType.InitCap;
                     }
 
-                    rv = CheckWord(u8buffer, ref resultType, out root);
+                    rv = CheckWord(u8buffer, ref resultType, ref root);
 
                     if (capType == CapitalizationType.Init)
                     {
@@ -431,9 +431,8 @@ namespace Hunspell
         /// <summary>
         /// Recursive search for right ss - sharp s permutations
         /// </summary>
-        private DictionaryEntry SpellSharps(ref string @base, int nPos, int n, int repNum, ref SpellCheckResultType info, out string root)
+        private DictionaryEntry SpellSharps(ref string @base, int nPos, int n, int repNum, ref SpellCheckResultType info, ref string root)
         {
-            root = null;
             var pos = @base.IndexOf("ss", nPos);
             if (pos >= 0 && n < MaxSharps)
             {
@@ -444,7 +443,7 @@ namespace Hunspell
                 baseBuilder.Remove(pos + 1, 1);
                 @base = baseBuilder.ToString();
 
-                var h = SpellSharps(ref @base, pos + 1, n + 1, repNum + 1, ref info, out root);
+                var h = SpellSharps(ref @base, pos + 1, n + 1, repNum + 1, ref info, ref root);
                 if (h != null)
                 {
                     return h;
@@ -456,14 +455,16 @@ namespace Hunspell
                 baseBuilder.Insert(pos + 1, 's');
                 @base = baseBuilder.ToString();
 
-                h = SpellSharps(ref @base, pos + 2, n + 1, repNum, ref info, out root);
+                h = SpellSharps(ref @base, pos + 2, n + 1, repNum, ref info, ref root);
                 if (h != null)
                 {
                     return h;
                 }
             }
-
-            // NOTE: there is no need to convert the UTF8 sharp to latin-1 because it is in UTF16
+            else if (repNum > 0)
+            {
+                return CheckWord(@base, ref info, ref root);
+            }
 
             return null;
         }
@@ -505,9 +506,8 @@ namespace Hunspell
             return new HunspellQueryState(word, Affix, Dictionary).Check();
         }
 
-        private DictionaryEntry CheckWord(string w, ref SpellCheckResultType info, out string root)
+        private DictionaryEntry CheckWord(string w, ref SpellCheckResultType info, ref string root)
         {
-            root = string.Empty;
             var useBuffer = false;
             string w2;
             string word;
