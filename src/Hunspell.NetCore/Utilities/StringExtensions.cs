@@ -164,12 +164,17 @@ namespace Hunspell.Utilities
             var aLength = (a?.Length).GetValueOrDefault();
             var bLength = (b?.Length).GetValueOrDefault();
 
-            if ((aLength - aOffset) != (bLength - bOffset))
+            return string.CompareOrdinal(a, aOffset, b, bOffset, Math.Max(aLength, bLength)) == 0;
+        }
+
+        public static bool EqualsOffset(string a, int aOffset, string b, int bOffset, int length)
+        {
+            if (ReferenceEquals(a, b) && aOffset == bOffset)
             {
-                return false;
+                return true;
             }
 
-            return string.CompareOrdinal(a, aOffset, b, bOffset, Math.Max(aLength, bLength)) == 0;
+            return string.CompareOrdinal(a, aOffset, b, bOffset, length) == 0;
         }
     }
 }

@@ -156,15 +156,14 @@ namespace Hunspell
             }
 
             // recursive breaking at break points
-            if (!Affix.BreakTable.IsDefaultOrEmpty)
+            if (Affix.HasBreakEntries)
             {
                 int nbr = 0;
                 wl = scw.Length;
 
                 // calculate break points for recursion limit
-                for (var j = 0; j < Affix.BreakTable.Length; j++)
+                foreach (var breakEntry in Affix.BreakTable)
                 {
-                    var breakEntry = Affix.BreakTable[j];
                     int pos = 0;
                     while ((pos = scw.IndexOf(breakEntry, pos)) >= 0)
                     {
@@ -179,9 +178,8 @@ namespace Hunspell
                 }
 
                 // check boundary patterns (^begin and end$)
-                for (var j = 0; j < Affix.BreakTable.Length; j++)
+                foreach (var breakEntry in Affix.BreakTable)
                 {
-                    var breakEntry = Affix.BreakTable[j];
                     var plen = breakEntry.Length;
                     if (plen == 1 || plen > wl)
                     {
@@ -190,7 +188,7 @@ namespace Hunspell
 
                     if (
                         breakEntry.StartsWith('^')
-                        && scw.Substring(0, plen - 1) == breakEntry.Substring(1)
+                        && StringExtensions.EqualsOffset(scw, 0, breakEntry, 1, plen - 1)
                         && Check(scw.Substring(plen - 1))
                     )
                     {
@@ -199,11 +197,10 @@ namespace Hunspell
 
                     if (
                         breakEntry.EndsWith('$')
-                        && scw.Substring(wl - plen + 1, plen - 1) == breakEntry.Substring(0, plen - 1)
+                        && StringExtensions.EqualsOffset(scw, wl - plen + 1, breakEntry, 0, plen - 1)
                     )
                     {
                         var suffix = scw.Substring(wl - plen + 1);
-
                         scw = scw.Substring(0, wl - plen + 1);
 
                         if (Check(scw))
@@ -216,9 +213,8 @@ namespace Hunspell
                 }
 
                 // other patterns
-                for (var j = 0; j < Affix.BreakTable.Length; j++)
+                foreach (var breakEntry in Affix.BreakTable)
                 {
-                    var breakEntry = Affix.BreakTable[j];
                     var plen = breakEntry.Length;
                     var found = scw.IndexOf(breakEntry);
 
@@ -230,7 +226,7 @@ namespace Hunspell
                         }
 
                         var suffix = scw.Substring(found);
-                        scw = scw.Substring(found);
+                        scw = scw.Substring(0, found);
 
                         // examine 2 sides of the break point
                         if (Check(scw))
