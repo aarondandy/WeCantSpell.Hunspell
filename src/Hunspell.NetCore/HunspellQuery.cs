@@ -509,10 +509,10 @@ namespace Hunspell
         private DictionaryEntry CheckWord(string w, ref SpellCheckResultType info, ref string root)
         {
             var useBuffer = false;
-            string w2;
+            string w2 = string.Empty;
             string word;
 
-            if (!Affix.IgnoredChars.IsEmpty)
+            if (Affix.HasIgnoredChars)
             {
                 w2 = w;
                 w2 = w2.RemoveChars(Affix.IgnoredChars);
@@ -521,7 +521,6 @@ namespace Hunspell
             }
             else
             {
-                w2 = string.Empty;
                 word = w;
             }
 
@@ -530,12 +529,13 @@ namespace Hunspell
                 return null;
             }
 
+            // word reversing wrapper for complex prefixes
             if (Affix.ComplexPrefixes)
             {
                 if (!useBuffer)
                 {
                     w2 = word;
-                    useBuffer = false;
+                    useBuffer = true;
                 }
 
                 w2 = w2.Reverse();

@@ -787,5 +787,9 @@ namespace Hunspell
         public bool HasOutputConversions => !OutputConversions.IsEmpty;
 
         public bool HasBreakEntries => !BreakTable.IsDefaultOrEmpty;
+
+        public bool HasIgnoredChars => !IgnoredChars.IsEmpty;
+
+        public bool HasWordChars => !WordChars.IsEmpty;
     }
 }
