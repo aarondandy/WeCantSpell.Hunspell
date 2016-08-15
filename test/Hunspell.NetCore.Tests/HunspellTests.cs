@@ -106,11 +106,15 @@ namespace Hunspell.NetCore.Tests
                 return Directory.GetFiles("files/", searchPattern);
             }
 
+            private static readonly char[] SpaceOrTab = new[] { ' ', '\t' };
+
             protected static IEnumerable<object[]> ToDictionaryWordTestData(string wordFilePath)
             {
                 var dictionaryPath = Path.ChangeExtension(wordFilePath, "dic");
                 return UtfStreamLineReader.ReadLines(wordFilePath)
-                    .Where(line => !string.IsNullOrEmpty(line))
+                    .Where(line => line != null)
+                    .Select(line => line.Trim(SpaceOrTab))
+                    .Where(line => line.Length != 0)
                     .Select(line => new object[] { dictionaryPath, line });
             }
 
