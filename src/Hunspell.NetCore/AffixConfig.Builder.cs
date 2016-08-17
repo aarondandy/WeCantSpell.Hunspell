@@ -380,9 +380,12 @@ namespace Hunspell
                     Version = Version
                 };
 
-                config.ContClasses = ImmutableSortedSet.CreateRange(
-                    config.Prefixes.SelectMany(g => g.Entries.SelectMany(e => e.ContClass))
-                    .Concat(config.Suffixes.SelectMany(g => g.Entries.SelectMany(e => e.ContClass))));
+                config.ContClasses =
+                    Enumerable.Concat<AffixEntry>(
+                        config.Prefixes.SelectMany(g => g.Entries),
+                        config.Suffixes.SelectMany(g => g.Entries))
+                    .SelectMany(e => e.ContClass)
+                    .ToImmutableSortedSet();
 
                 return config;
             }

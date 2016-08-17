@@ -774,7 +774,7 @@ namespace Hunspell
         /// </summary>
         public bool HasContClass => ContClasses.Count != 0;
 
-        public bool HasCompound => CompoundFlag != 0 || CompoundBegin != 0 || this.CompoundRules.Length != 0;
+        public bool HasCompound => CompoundFlag != 0 || CompoundBegin != 0 || HasCompoundRules;
 
         public bool HasCompoundRules => !CompoundRules.IsDefaultOrEmpty;
 
