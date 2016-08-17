@@ -780,6 +780,8 @@ namespace Hunspell
 
         public bool HasCompoundPatterns => !CompoundPatterns.IsDefaultOrEmpty;
 
+        public bool HasCompoundVowels => !CompoundVowels.IsEmpty;
+
         public bool HasReplacements => !Replacements.IsDefaultOrEmpty;
 
         public bool HasInputConversions => !InputConversions.IsEmpty;

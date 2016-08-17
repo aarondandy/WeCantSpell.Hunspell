@@ -680,7 +680,7 @@ namespace Hunspell
 
             int checked_prefix;
             var cmin = Affix.CompoundMin;
-            var cmax = word.Length - Affix.CompoundMin + 1;
+            var cmax = word.Length - cmin + 1;
 
             var st = word;
             var stBeforeCharacterMangling = st;
@@ -701,18 +701,20 @@ namespace Hunspell
 
                         if (scpd > 0)
                         {
-                            for (; scpd <= Affix.CompoundPatterns.Length; scpd++)
+                            while (scpd <= Affix.CompoundPatterns.Length)
                             {
                                 var pattern3 = Affix.CompoundPatterns[scpd - 1].Pattern3;
-                                if (string.IsNullOrEmpty(pattern3) || StringExtensions.EqualsOffset(word, i, pattern3, 0))
+                                if (!string.IsNullOrEmpty(pattern3) && !StringExtensions.EqualsOffset(word, i, pattern3, 0))
                                 {
                                     break;
                                 }
+
+                                scpd++;
                             }
 
                             if (scpd > Affix.CompoundPatterns.Length)
                             {
-                                break;
+                                break; // break simplified checkcompoundpattern loop
                             }
 
                             var scpdPatternEntry = Affix.CompoundPatterns[scpd - 1];
@@ -731,8 +733,6 @@ namespace Hunspell
                             oldcmin = cmin;
                             oldcmax = cmax;
                             cmin = Affix.CompoundMin;
-                            cmax = st.Length - Affix.CompoundMin + 1;
-
                             cmax = len - Affix.CompoundMin + 1;
                         }
 
@@ -740,10 +740,8 @@ namespace Hunspell
                         stBeforeCharacterMangling = st;
                         st = st.Substring(0, i);
 
-                        SuffixGroup = null;
-                        Suffix = null;
-                        PrefixGroup = null;
-                        Prefix = null;
+                        ClearSuffix();
+                        ClearPrefix();
 
                         // FIRST WORD
 
@@ -874,7 +872,7 @@ namespace Hunspell
                                                 rv = SuffixCheckTwoSfx(st.Substring(0, i), 0, null, null, Affix.CompoundBegin)
                                             ) != null
                                         )
-                                        ||  // twofold suffixes + compound
+                                        || // twofold suffixes + compound
                                         (
                                             rv = PrefixCheck(st.Substring(0, i), huMovRule != 0 ? CompoundOptions.Other : CompoundOptions.Begin, Affix.CompoundBegin)
                                         ) != null
@@ -897,7 +895,7 @@ namespace Hunspell
                                                 rv = SuffixCheckTwoSfx(st.Substring(0, i), 0, null, null, Affix.CompoundMiddle)
                                             ) != null
                                         )
-                                        ||  // twofold suffixes + compound
+                                        || // twofold suffixes + compound
                                         (
                                             rv = PrefixCheck(st.Substring(0, i), huMovRule != 0 ? CompoundOptions.Other : CompoundOptions.Begin, Affix.CompoundMiddle)
                                         ) != null
@@ -1425,7 +1423,7 @@ namespace Hunspell
                                     if (Affix.CheckCompoundRep || Affix.ForbiddenWord.HasValue)
                                     {
 
-                                        if (Affix.CheckCompoundRep && CpdRepCheck(word))
+                                        if (Affix.CheckCompoundRep && CompoundReplacementCheck(word))
                                         {
                                             return null;
                                         }
@@ -1438,7 +1436,7 @@ namespace Hunspell
                                             var stCcrBackup = st;
                                             st = st.Substring(0, i + rv.Word.Length);
 
-                                            if (Affix.CheckCompoundRep && CpdRepCheck(st))
+                                            if (Affix.CheckCompoundRep && CompoundReplacementCheck(st))
                                             {
                                                 st = stCcrBackup;
                                                 continue;
@@ -1480,7 +1478,7 @@ namespace Hunspell
                                 striple = 0;
                             }
 
-                        }
+                        } // first word is ok condition
 
                         if (soldi != 0)
                         {
@@ -1490,9 +1488,10 @@ namespace Hunspell
                             cmin = oldcmin;
                             cmax = oldcmax;
                         }
+
                         scpd++;
                     }
-                    while (onlycpdrule == 0 && Affix.SimplifiedCompound && scpd < Affix.CompoundPatterns.Length);
+                    while (onlycpdrule == 0 && Affix.SimplifiedCompound && scpd <= Affix.CompoundPatterns.Length); // end of simplifiedcpd loop
 
                     scpd = 0;
                     wordnum = oldwordnum;
@@ -1509,49 +1508,10 @@ namespace Hunspell
                         st = stBeforeCharacterMangling;
                     }
                 }
-                while (Affix.CompoundRules.Length != 0 && oldwordnum == 0 && onlycpdrule++ < 1);
+                while (Affix.HasCompoundRules && oldwordnum == 0 && onlycpdrule++ < 1);
             }
 
             return null;
-        }
-
-        /// <summary>
-        /// Is word a non compound with a REP substitution (see checkcompoundrep)?
-        /// </summary>
-        private bool CpdRepCheck(string word)
-        {
-            var wl = word.Length;
-            if (wl < 2 || Affix.Replacements.IsEmpty)
-            {
-                return false;
-            }
-
-            for (var i = 0; i < Affix.Replacements.Length; i++)
-            {
-                var r = 0;
-                var lenp = Affix.Replacements[i].Pattern.Length;
-
-                // search every occurence of the pattern in the word
-                while ((r = word.IndexOf(Affix.Replacements[i].Pattern, r)) >= 0)
-                {
-                    var candidate = word;
-                    var type = r == 0 ? ReplacementValueType.Ini : ReplacementValueType.Med;
-                    if (r - 0 + Affix.Replacements[i].Pattern.Length == lenp)
-                    {
-                        type += 2;
-                    }
-
-                    candidate = candidate.Replace(r - 0, lenp, Affix.Replacements[i][type]);
-                    if (CandidateCheck(candidate))
-                    {
-                        return true;
-                    }
-
-                    ++r;  // search for the next letter
-                }
-            }
-
-            return false;
         }
 
         /// <summary>
@@ -2294,7 +2254,7 @@ namespace Hunspell
 
         private int GetSyllable(string word)
         {
-            if (Affix.CompoundMaxSyllable == 0)
+            if (Affix.CompoundMaxSyllable == 0 || !Affix.HasCompoundVowels)
             {
                 return 0;
             }
@@ -2350,7 +2310,7 @@ namespace Hunspell
                             (
                                 patternEntry.Pattern.StartsWith('0')
                                 && r1.Word.Length <= pos
-                                && word.Substring(pos - r1.Word.Length).StartsWith(r1.Word)
+                                && StringExtensions.EqualsOffset(word, pos - r1.Word.Length, r1.Word, 0, r1.Word.Length)
                             )
                             ||
                             (
@@ -2362,7 +2322,7 @@ namespace Hunspell
                                     ) != 0
                                 )
                                 &&
-                                word.Substring(pos - len).StartsWith(patternEntry.Pattern.Substring(0, len))
+                                StringExtensions.EqualsOffset(word, pos - len, patternEntry.Pattern, 0, len)
                             )
                         )
                     )
@@ -2411,7 +2371,7 @@ namespace Hunspell
                         }
                     }
 
-                    rIndex++;
+                    rIndex++; // search for the next letter
                 }
             }
 
