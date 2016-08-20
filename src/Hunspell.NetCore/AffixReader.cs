@@ -183,14 +183,16 @@ namespace Hunspell
                         ? TryParseFlag(parameters, out Builder.CompoundBegin)
                         : TryParseFlag(parameters, out Builder.CompoundEnd);
                 case "COMPOUNDWORDMAX": // parse in the data used by compound_check() method
-                    return IntExtensions.TryParseInvariant(parameters, out Builder.CompoundWordMax);
+                    Builder.CompoundWordMax = IntExtensions.TryParseInvariant(parameters);
+                    return Builder.CompoundWordMax.HasValue;
                 case "COMPOUNDMIN": // parse in the minimal length for words in compounds
-                    if (!IntExtensions.TryParseInvariant(parameters, out Builder.CompoundMin))
+                    Builder.CompoundMin = IntExtensions.TryParseInvariant(parameters);
+                    if (!Builder.CompoundMin.HasValue)
                     {
                         return false;
                     }
 
-                    if (Builder.CompoundMin < 1)
+                    if (Builder.CompoundMin.GetValueOrDefault() < 1)
                     {
                         Builder.CompoundMin = 1;
                     }
@@ -239,11 +241,14 @@ namespace Hunspell
                     Builder.Version = parameters;
                     return true;
                 case "MAXNGRAMSUGS":
-                    return IntExtensions.TryParseInvariant(parameters, out Builder.MaxNgramSuggestions);
+                    Builder.MaxNgramSuggestions = IntExtensions.TryParseInvariant(parameters);
+                    return Builder.MaxNgramSuggestions.HasValue;
                 case "MAXDIFF":
-                    return IntExtensions.TryParseInvariant(parameters, out Builder.MaxDifferency);
+                    Builder.MaxDifferency = IntExtensions.TryParseInvariant(parameters);
+                    return Builder.MaxDifferency.HasValue;
                 case "MAXCPDSUGS":
-                    return IntExtensions.TryParseInvariant(parameters, out Builder.MaxCompoundSuggestions);
+                    Builder.MaxCompoundSuggestions = IntExtensions.TryParseInvariant(parameters);
+                    return Builder.MaxCompoundSuggestions.HasValue;
                 case "KEEPCASE": // parse in the flag used by forbidden words
                     return TryParseFlag(parameters, out Builder.KeepCase);
                 case "FORCEUCASE":

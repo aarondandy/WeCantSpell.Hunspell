@@ -1550,8 +1550,8 @@ namespace Hunspell.NetCore.Tests
             [Theory]
             [InlineData("0", 0)]
             [InlineData("5", 5)]
-            [InlineData("words", 0)]
-            public async Task can_read_compoundwordmax(string parameters, int expected)
+            [InlineData("words", null)]
+            public async Task can_read_compoundwordmax(string parameters, int? expected)
             {
                 var textFileContents = "COMPOUNDWORDMAX " + parameters;
 
@@ -1565,7 +1565,7 @@ namespace Hunspell.NetCore.Tests
             [InlineData("0", 1)]
             [InlineData("1", 1)]
             [InlineData("2", 2)]
-            [InlineData("words", 0)]
+            [InlineData("words", 3)]
             public async Task can_read_compoundmin(string parameters, int expected)
             {
                 var textFileContents = "COMPOUNDMIN " + parameters;
@@ -1662,8 +1662,8 @@ namespace Hunspell.NetCore.Tests
             [Theory]
             [InlineData("1", 1)]
             [InlineData("0", 0)]
-            [InlineData("", 0)]
-            public async Task can_read_maxdiff(string parameters, int expected)
+            [InlineData("", null)]
+            public async Task can_read_maxdiff(string parameters, int? expected)
             {
                 var textFileContents = "MAXDIFF " + parameters;
 
@@ -1675,7 +1675,7 @@ namespace Hunspell.NetCore.Tests
             [Theory]
             [InlineData("1", 1)]
             [InlineData("0", 0)]
-            [InlineData("", 0)]
+            [InlineData("", 3)]
             public async Task can_read_maxcpdsugs(string parameters, int expected)
             {
                 var textFileContents = "MAXCPDSUGS " + parameters;

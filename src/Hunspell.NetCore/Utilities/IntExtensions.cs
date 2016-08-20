@@ -1,5 +1,4 @@
-﻿using System;
-using System.Globalization;
+﻿using System.Globalization;
 
 namespace Hunspell.Utilities
 {
@@ -10,12 +9,12 @@ namespace Hunspell.Utilities
             return int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture.NumberFormat, out value);
         }
 
-        public static bool TryParseInvariantAsChar(string text, out char result)
+        public static int? TryParseInvariant(string text)
         {
-            int intValue;
-            var ok = TryParseInvariant(text, out intValue);
-            result = (char)intValue;
-            return ok;
+            int value;
+            return TryParseInvariant(text, out value)
+                ? (int?)value
+                : null;
         }
     }
 }
