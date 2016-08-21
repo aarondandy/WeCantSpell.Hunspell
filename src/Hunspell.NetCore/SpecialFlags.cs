@@ -23,6 +23,8 @@ namespace Hunspell
 
         public static readonly FlagValue LetterXLower = new FlagValue('x');
 
+        public static readonly FlagValue LetterCLower = new FlagValue('c');
+
         public static readonly FlagValue LetterPercent = new FlagValue('%');
     }
 }

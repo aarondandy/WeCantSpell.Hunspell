@@ -1377,7 +1377,46 @@ namespace Hunspell
 
                                 if (Affix.Culture.IsHungarianLanguage())
                                 {
-                                    throw new NotImplementedException();
+                                    // calculate syllable number of the word
+                                    numsyllable += GetSyllable(word.Substring(i));
+
+                                    // - affix syllable num.
+                                    // XXX only second suffix (inflections, not derivations)
+                                    if (SuffixAppend != null)
+                                    {
+                                        var tmp = SuffixAppend;
+                                        tmp = tmp.Reverse();
+                                        numsyllable -= GetSyllable(tmp) + SuffixExtra;
+                                    }
+
+                                    // + 1 word, if syllable number of the prefix > 1 (hungarian
+                                    // convention)
+                                    if (Prefix != null && GetSyllable(Prefix.Key) > 1)
+                                    {
+                                        wordnum++;
+                                    }
+
+                                    // increment syllable num, if last word has a SYLLABLENUM flag
+                                    // and the suffix is beginning `s'
+
+                                    if (!string.IsNullOrEmpty(Affix.CompoundSyllableNum))
+                                    {
+                                        if (SuffixFlag == SpecialFlags.LetterCLower)
+                                        {
+                                            numsyllable += 2;
+                                        }
+                                        else if (SuffixFlag == SpecialFlags.LetterJ)
+                                        {
+                                            numsyllable += 1;
+                                        }
+                                        else if (SuffixFlag == SpecialFlags.LetterI)
+                                        {
+                                            if (rv != null && rv.ContainsFlag(SpecialFlags.LetterJ))
+                                            {
+                                                numsyllable += 1;
+                                            }
+                                        }
+                                    }
                                 }
 
                                 // increment word number, if the second word has a compoundroot flag
@@ -1409,7 +1448,7 @@ namespace Hunspell
                                 )
                                 {
                                     // forbid compound word, if it is a non compound word with typical fault
-                                    if (Affix.CheckCompoundRep && CompoundReplacementCheck(word))
+                                    if (Affix.CheckCompoundRep && CompoundReplacementCheck(word.Substring(0, len)))
                                     {
                                         return null;
                                     }
@@ -1431,7 +1470,7 @@ namespace Hunspell
                                         &&
                                         (
                                             (scpd == 0 && CompoundPatternCheck(word, i, rv_first, rv, affixed))
-                                            || // TODO: can these both be optimized as (scpd == 0) == (...) ?
+                                            ||
                                             (scpd != 0 && !CompoundPatternCheck(word, i, rv_first, rv, affixed))
                                         )
                                     )
@@ -1449,15 +1488,13 @@ namespace Hunspell
                                     // forbid compound word, if it is a non compound word with typical fault
                                     if (Affix.CheckCompoundRep || Affix.ForbiddenWord.HasValue)
                                     {
-
                                         if (Affix.CheckCompoundRep && CompoundReplacementCheck(word))
                                         {
                                             return null;
                                         }
 
                                         // check first part
-                                        // TODO: is this a StartsWith check?
-                                        if (string.CompareOrdinal(rv.Word, 0, word, 0, rv.Word.Length) == 0)
+                                        if (StringExtensions.EqualsOffset(rv.Word, 0, word, i, rv.Word.Length))
                                         {
                                             var r = st[i + rv.Word.Length];
                                             var stCcrBackup = st;
@@ -1476,13 +1513,13 @@ namespace Hunspell
 
                                                 if (rv2 == null)
                                                 {
-                                                    rv2 = AffixCheck(word.Substring(len), default(FlagValue), CompoundOptions.Not);
+                                                    rv2 = AffixCheck(word.Substring(0, len), default(FlagValue), CompoundOptions.Not);
                                                 }
 
                                                 if (
                                                     rv2 != null
                                                     && rv2.ContainsFlag(Affix.ForbiddenWord)
-                                                    && string.CompareOrdinal(rv2.Word, 0, st, 0, i + rv.Word.Length) == 0
+                                                    && StringExtensions.EqualsOffset(rv2.Word, 0, st, 0, i + rv.Word.Length)
                                                 )
                                                 {
                                                     return null;
