@@ -194,7 +194,7 @@ namespace Hunspell
             /// <summary>
             /// The encoding name to be used in morpheme, affix, and dictionary files.
             /// </summary>
-            /// <seealso cref="AffixConfig.RequestedEncodingName"/>
+            /// <seealso cref="AffixConfig.EncodingName"/>
             public string RequestedEncodingName;
 
             /// <summary>
@@ -332,7 +332,7 @@ namespace Hunspell
                 {
                     Options = Options,
                     FlagMode = FlagMode,
-                    KeyString = KeyString ?? string.Empty,
+                    KeyString = KeyString ?? DefaultKeyString,
                     TryString = TryString ?? string.Empty,
                     Language = Language ?? string.Empty,
                     Culture = CultureInfo.ReadOnly(Culture ?? CultureInfo.InvariantCulture),
@@ -360,7 +360,7 @@ namespace Hunspell
                     Warn = Warn,
                     SubStandard = SubStandard,
                     CompoundSyllableNum = CompoundSyllableNum,
-                    RequestedEncodingName = RequestedEncodingName,
+                    EncodingName = RequestedEncodingName ?? DefaultEncodingName,
                     Replacements = EmptyIfNull(Replacements).ToImmutableArray(),
                     Suffixes = EmptyIfNull(Suffixes).Select(b => b.ToGroup()).ToImmutableArray(),
                     Prefixes = EmptyIfNull(Prefixes).Select(b => b.ToGroup()).ToImmutableArray(),

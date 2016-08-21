@@ -1782,15 +1782,15 @@ namespace Hunspell
         {
             DictionaryEntry rv = null;
 
-            if (Affix.Suffixes.Length == 0)
+            if (!Affix.HasSuffixes)
             {
                 return null;
             }
 
             // first handle the special case of 0 length suffixes
-            foreach (var suffixGroup in Affix.Suffixes)
+            foreach (var seGroup in Affix.Suffixes)
             {
-                foreach (var se in suffixGroup.Entries.Where(e => string.IsNullOrEmpty(e.Key)))
+                foreach (var se in seGroup.Entries.Where(e => string.IsNullOrEmpty(e.Key)))
                 {
                     if (!cclass.HasValue || se.HasContClasses)
                     {
@@ -1811,10 +1811,16 @@ namespace Hunspell
                                     (
                                         pfx == null
                                         ||
+                                        !pfx.HasContClasses
+                                        ||
                                         !pfx.ContainsContClass(Affix.Circumfix)
                                     )
                                     &&
-                                    !se.ContainsContClass(Affix.Circumfix)
+                                    (
+                                        !se.HasContClasses
+                                        ||
+                                        !se.ContainsContClass(Affix.Circumfix)
+                                    )
                                 )
                                 ||
                                 // circumfix flag in prefix AND suffix
@@ -1846,11 +1852,10 @@ namespace Hunspell
                             )
                         )
                         {
-                            rv = CheckWordSuffix(suffixGroup, se, word, sfxOpts, pfxGroup, pfx, cclass, needFlag, inCompound != CompoundOptions.Not ? new FlagValue() : Affix.OnlyInCompound);
+                            rv = CheckWordSuffix(seGroup, se, word, sfxOpts, pfxGroup, pfx, cclass, needFlag, inCompound != CompoundOptions.Not ? new FlagValue() : Affix.OnlyInCompound);
                             if (rv != null)
                             {
-                                SuffixGroup = suffixGroup;
-                                Suffix = se;
+                                SetSuffix(seGroup, se);
                                 return rv;
                             }
                         }
@@ -1864,9 +1869,9 @@ namespace Hunspell
                 return null;
             }
 
-            foreach (var suffixGroup in Affix.Suffixes)
+            foreach (var sptrGroup in Affix.Suffixes)
             {
-                foreach (var sptr in suffixGroup.Entries.Where(e => !string.IsNullOrEmpty(e.Key)))
+                foreach (var sptr in sptrGroup.Entries.Where(e => !string.IsNullOrEmpty(e.Key)))
                 {
                     if (IsReverseSubset(sptr.Key, word))
                     {
@@ -1887,10 +1892,16 @@ namespace Hunspell
                                     (
                                         pfx == null
                                         ||
+                                        !pfx.HasContClasses
+                                        ||
                                         !pfx.ContainsContClass(Affix.Circumfix)
                                     )
                                     &&
-                                    !sptr.ContainsContClass(Affix.Circumfix)
+                                    (
+                                        !sptr.HasContClasses
+                                        ||
+                                        !sptr.ContainsContClass(Affix.Circumfix)
+                                    )
                                 )
                                 ||
                                 // circumfix flag in prefix AND suffix
@@ -1930,12 +1941,11 @@ namespace Hunspell
                                 !sptr.ContainsContClass(Affix.OnlyInCompound)
                             )
                             {
-                                rv = CheckWordSuffix(suffixGroup, sptr, word, sfxOpts, pfxGroup, pfx, cclass, needFlag, inCompound != CompoundOptions.Not ? new FlagValue() : Affix.OnlyInCompound);
+                                rv = CheckWordSuffix(sptrGroup, sptr, word, sfxOpts, pfxGroup, pfx, cclass, needFlag, (inCompound != CompoundOptions.Not ? new FlagValue() : Affix.OnlyInCompound));
                                 if (rv != null)
                                 {
-                                    SuffixGroup = suffixGroup;
-                                    Suffix = sptr;
-                                    SuffixFlag = suffixGroup.AFlag;
+                                    SetSuffix(sptrGroup, sptr);
+                                    SuffixFlag = sptrGroup.AFlag;
 
                                     if (!sptr.HasContClasses)
                                     {
@@ -1944,7 +1954,7 @@ namespace Hunspell
                                     else if (
                                         Affix.Culture.IsHungarianLanguage()
                                         && sptr.Key.Length >= 2
-                                        && sptr.Key.StartsWith('i')
+                                        && sptr.Key[0] == 'i'
                                         && sptr.Key[1] != 'y'
                                         && sptr.Key[1] != 't'
                                     )
@@ -1953,6 +1963,7 @@ namespace Hunspell
                                         SuffixExtra = 1;
                                     }
 
+                                    // END of LANG_hu section
                                     return rv;
                                 }
                             }
@@ -1967,18 +1978,18 @@ namespace Hunspell
         /// <summary>
         /// Check word for two-level suffixes.
         /// </summary>
-        private DictionaryEntry SuffixCheckTwoSfx(string word, AffixEntryOptions sfxopts, AffixEntryGroup<PrefixEntry> pfxGroup, PrefixEntry ppfx, FlagValue needflag)
+        private DictionaryEntry SuffixCheckTwoSfx(string word, AffixEntryOptions sfxopts, AffixEntryGroup<PrefixEntry> pfxGroup, PrefixEntry pfx, FlagValue needflag)
         {
             DictionaryEntry rv = null;
 
             // first handle the special case of 0 length suffixes
-            foreach (var suffixGroup in Affix.Suffixes)
+            foreach (var seGroup in Affix.Suffixes)
             {
-                foreach (var se in suffixGroup.Entries.Where(e => string.IsNullOrEmpty(e.Key)))
+                foreach (var se in seGroup.Entries.Where(e => string.IsNullOrEmpty(e.Key)))
                 {
-                    if (Affix.ContClasses.Contains(suffixGroup.AFlag))
+                    if (Affix.ContClasses.Contains(seGroup.AFlag))
                     {
-                        rv = CheckTwoSfx(suffixGroup, se, word, sfxopts, pfxGroup, ppfx, needflag);
+                        rv = CheckTwoSfx(seGroup, se, word, sfxopts, pfxGroup, pfx, needflag);
                         if (rv != null)
                         {
                             return rv;
@@ -1993,15 +2004,15 @@ namespace Hunspell
                 return null; // FULLSTRIP
             }
 
-            foreach (var suffixGroup in Affix.Suffixes)
+            foreach (var sptrGroup in Affix.Suffixes)
             {
-                foreach (var sptr in suffixGroup.Entries.Where(e => !string.IsNullOrEmpty(e.Key)))
+                foreach (var sptr in sptrGroup.Entries.Where(e => !string.IsNullOrEmpty(e.Key)))
                 {
                     if (IsReverseSubset(sptr.Key, word))
                     {
-                        if (Affix.ContClasses.Contains(suffixGroup.AFlag))
+                        if (Affix.ContClasses.Contains(sptrGroup.AFlag))
                         {
-                            rv = CheckTwoSfx(suffixGroup, sptr, word, sfxopts, pfxGroup, ppfx, needflag);
+                            rv = CheckTwoSfx(sptrGroup, sptr, word, sfxopts, pfxGroup, pfx, needflag);
                             if (rv != null)
                             {
                                 SuffixFlag = SuffixGroup.AFlag;
@@ -2018,11 +2029,6 @@ namespace Hunspell
             }
 
             return null;
-        }
-
-        private string SuffixCheckTwoSfxMorph(string word, int sfxopts, PrefixEntry ppfx, FlagValue needFlag)
-        {
-            throw new NotImplementedException();
         }
 
         private ImmutableArray<DictionaryEntry> Lookup(string word)

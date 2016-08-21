@@ -15,6 +15,10 @@ namespace Hunspell
 
         private const int DefaultMaxCompoundSuggestions = 3;
 
+        private const string DefaultEncodingName = "ISO8859-1";
+
+        private const string DefaultKeyString = "qwertyuiop|asdfghjkl|zxcvbnm";
+
         /// <summary>
         /// The flag type.
         /// </summary>
@@ -444,7 +448,7 @@ namespace Hunspell
         /// <summary>
         /// The encoding name to be used in morpheme, affix, and dictionary files.
         /// </summary>
-        public string RequestedEncodingName { get; private set; }
+        public string EncodingName { get; private set; }
 
         /// <summary>
         /// Specifies modifications to try first
@@ -778,9 +782,9 @@ namespace Hunspell
         /// <summary>
         /// Indicates that some of the affix entries have "cont class".
         /// </summary>
-        public bool HasContClass => ContClasses.Count != 0;
+        public bool HasContClass => !ContClasses.IsEmpty;
 
-        public bool HasCompound => CompoundFlag != 0 || CompoundBegin != 0 || HasCompoundRules;
+        public bool HasCompound => CompoundFlag.HasValue || CompoundBegin.HasValue || HasCompoundRules;
 
         public bool HasCompoundRules => !CompoundRules.IsDefaultOrEmpty;
 
@@ -799,5 +803,9 @@ namespace Hunspell
         public bool HasIgnoredChars => !IgnoredChars.IsEmpty;
 
         public bool HasWordChars => !WordChars.IsEmpty;
+
+        public bool HasSuffixes => !Suffixes.IsDefaultOrEmpty;
+
+        public bool HasPrefixes => !Prefixes.IsDefaultOrEmpty;
     }
 }

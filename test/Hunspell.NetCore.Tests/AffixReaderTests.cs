@@ -30,7 +30,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.RequestedEncodingName.Should().Be("UTF-8");
+                actual.EncodingName.Should().Be("UTF-8");
                 actual.MaxNgramSuggestions.Should().Be(1);
             }
 
@@ -41,7 +41,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.RequestedEncodingName.Should().Be("ISO8859-1");
+                actual.EncodingName.Should().Be("ISO8859-1");
 
                 actual.Suffixes.Should().HaveCount(4);
 
@@ -119,7 +119,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.RequestedEncodingName.Should().Be("ISO8859-1");
+                actual.EncodingName.Should().Be("ISO8859-1");
                 actual.TryString.Should().Be("esijanrtolcdugmphbyfvkwqxz");
                 actual.Suffixes.Should().HaveCount(1);
                 actual.Suffixes.Single().AFlag.Should().Be('A');
@@ -147,7 +147,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.RequestedEncodingName.Should().Be("UTF-8");
+                actual.EncodingName.Should().Be("UTF-8");
                 actual.IgnoredChars.Should().BeEquivalentTo("ٌٍَُِّْـ".ToCharArray());
                 actual.Prefixes.Should().HaveCount(1);
                 var prefixGroup1 = actual.Prefixes.Single();
@@ -374,7 +374,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.RequestedEncodingName.Should().Be("UTF-8");
+                actual.EncodingName.Should().Be("UTF-8");
 
                 actual.WordChars.ShouldBeEquivalentTo(new[] { '\'', '.' });
 
@@ -442,7 +442,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.RequestedEncodingName.Should().Be("UTF-8");
+                actual.EncodingName.Should().Be("UTF-8");
                 actual.TryString.Should().Be("أ");
                 actual.IgnoredChars.ShouldBeEquivalentTo(new[] { 'ّ', 'َ', 'ُ', 'ٌ', 'ْ', 'ِ', 'ٍ' });
 
@@ -465,7 +465,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.RequestedEncodingName.Should().Be("ISO8859-1");
+                actual.EncodingName.Should().Be("ISO8859-1");
                 actual.WordChars.ShouldBeEquivalentTo(new[] { '.', '\'' });
                 actual.TryString.Should().Be("esianrtolcdugmphbyfvkwz'");
 
@@ -909,7 +909,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.RequestedEncodingName.Should().Be("ISO-8859-15");
+                actual.EncodingName.Should().Be("ISO-8859-15");
             }
 
             [Fact]
@@ -1419,7 +1419,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.RequestedEncodingName.Should().Be("UTF-8");
+                actual.EncodingName.Should().Be("UTF-8");
             }
 
             [Fact]
