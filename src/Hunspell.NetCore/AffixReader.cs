@@ -211,7 +211,8 @@ namespace Hunspell
                 case "NONGRAMSUGGEST":
                     return TryParseFlag(parameters, out Builder.NoNgramSuggest);
                 case "FORBIDDENWORD": // parse in the flag used by forbidden words
-                    return TryParseFlag(parameters, out Builder.ForbiddenWord);
+                    Builder.ForbiddenWord = TryParseFlag(parameters);
+                    return Builder.ForbiddenWord.HasValue;
                 case "LEMMA_PRESENT": // parse in the flag used by forbidden words
                     return TryParseFlag(parameters, out Builder.LemmaPresent);
                 case "CIRCUMFIX": // parse in the flag used by circumfixes
@@ -1016,6 +1017,14 @@ namespace Hunspell
         private bool TryParseFlag(string text, out FlagValue value)
         {
             return FlagValue.TryParseFlag(text, Builder.FlagMode, out value);
+        }
+
+        private FlagValue TryParseFlag(string text)
+        {
+            FlagValue value;
+            return FlagValue.TryParseFlag(text, Builder.FlagMode, out value)
+                ? value
+                : default(FlagValue);
         }
 
         [Flags]

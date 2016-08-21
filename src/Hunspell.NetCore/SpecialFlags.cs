@@ -6,7 +6,6 @@ namespace Hunspell
     {
         public static readonly FlagValue DefaultFlags = new FlagValue(65510);
 
-        [Obsolete("This value appears to be unused")]
         public static readonly FlagValue ForbiddenWord = new FlagValue(65510);
 
         public static readonly FlagValue OnlyUpcaseFlag = new FlagValue(65511);

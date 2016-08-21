@@ -117,7 +117,7 @@ namespace Hunspell
             /// A flag indicating a forbidden word form.
             /// </summary>
             /// <seealso cref="AffixConfig.ForbiddenWord"/>
-            public FlagValue ForbiddenWord;
+            public FlagValue? ForbiddenWord;
 
             /// <summary>
             /// A flag used by forbidden words.
@@ -347,7 +347,7 @@ namespace Hunspell
                     CompoundForbidFlag = CompoundForbidFlag,
                     NoSuggest = NoSuggest,
                     NoNgramSuggest = NoNgramSuggest,
-                    ForbiddenWord = ForbiddenWord,
+                    ForbiddenWord = ForbiddenWord ?? SpecialFlags.ForbiddenWord,
                     LemmaPresent = LemmaPresent,
                     Circumfix = Circumfix,
                     OnlyInCompound = OnlyInCompound,
