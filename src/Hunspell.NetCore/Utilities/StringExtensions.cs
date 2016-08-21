@@ -87,45 +87,9 @@ namespace Hunspell.Utilities
             return builder.ToString();
         }
 
-        [Obsolete]
-        public static string RemoveChars(this string @this, ImmutableArray<char> remove)
-        {
-            if (string.IsNullOrEmpty(@this) || remove == null || remove.Length == 0)
-            {
-                return @this;
-            }
-
-            var removeLookup = new HashSet<char>(remove);
-            var chars = @this.ToCharArray();
-            return new string(
-                Array.FindAll(
-                    @this.ToCharArray(),
-                    c => !removeLookup.Contains(c)));
-        }
-
         public static bool Contains(this string @this, char c)
         {
             return @this.IndexOf(c) >= 0;
-        }
-
-        public static string SetChar(this string @this, char c, int index)
-        {
-            if (index == -1)
-            {
-                return c.ToString() + @this;
-            }
-            if (index >= 0 && index < @this.Length)
-            {
-                var builder = new StringBuilder(@this, @this.Length);
-                builder[index] = c;
-                return builder.ToString();
-            }
-            if (index == @this.Length)
-            {
-                return string.IsNullOrEmpty(@this) ? c.ToString() : @this + c.ToString();
-            }
-
-            throw new ArgumentOutOfRangeException(nameof(index));
         }
 
         public static string ReplaceToEnd(this string @this, int index, string replacement)

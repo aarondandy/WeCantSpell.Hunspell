@@ -177,7 +177,7 @@ namespace Hunspell
                 foreach (var breakEntry in Affix.BreakTable)
                 {
                     int pos = 0;
-                    while ((pos = scw.IndexOf(breakEntry, pos)) >= 0)
+                    while ((pos = scw.IndexOf(breakEntry, pos, StringComparison.Ordinal)) >= 0)
                     {
                         ++nbr;
                         pos += breakEntry.Length;
@@ -228,7 +228,7 @@ namespace Hunspell
                 foreach (var breakEntry in Affix.BreakTable)
                 {
                     var plen = breakEntry.Length;
-                    var found = scw.IndexOf(breakEntry);
+                    var found = scw.IndexOf(breakEntry, StringComparison.Ordinal);
 
                     if (found > 0 && found < wl - plen)
                     {
@@ -445,7 +445,7 @@ namespace Hunspell
         /// </summary>
         private DictionaryEntry SpellSharps(ref string @base, int nPos, int n, int repNum, ref SpellCheckResultType info, ref string root)
         {
-            var pos = @base.IndexOf("ss", nPos);
+            var pos = @base.IndexOf("ss", nPos, StringComparison.Ordinal);
             if (pos >= 0 && n < MaxSharps)
             {
                 // TODO: this string manipulation can be simpler
@@ -678,7 +678,10 @@ namespace Hunspell
             int oldnumsyllable, oldnumsyllable2, oldwordnum, oldwordnum2;
             DictionaryEntry rv = null;
             DictionaryEntry rv_first = null;
+            string st;
             char ch = '\0';
+            int cmin;
+            int cmax;
             int striple = 0;
             int scpd = 0;
             int soldi = 0;
@@ -686,15 +689,17 @@ namespace Hunspell
             int oldcmax = 0;
             int oldlen = 0;
             int checkedstriple = 0;
-            int affixed = 0; // TODO: consider converting to boolean
+            int affixed = 0;
+
             var oldwords = words;
             var len = word.Length;
 
             int checked_prefix;
-            var cmin = Affix.CompoundMin;
-            var cmax = word.Length - cmin + 1;
 
-            var st = word;
+            cmin = Affix.CompoundMin;
+            cmax = word.Length - cmin + 1;
+
+            st = word;
             var stBeforeCharacterMangling = st;
 
             for (i = cmin; i < cmax; i++)
@@ -753,7 +758,7 @@ namespace Hunspell
                             cmax = len - Affix.CompoundMin + 1;
                         }
 
-                        ch = i < st.Length ? st[i] : '\0';
+                        ch = i < st.Length ? st[i] : default(char);
                         stBeforeCharacterMangling = st;
                         st = st.Substring(0, i);
 
@@ -1051,10 +1056,10 @@ namespace Hunspell
                                         Affix.CheckCompoundTriple
                                         && scpd == 0
                                         && words == null
-                                        && i - 1 >= 0
-                                        && word.Length >= 2
+                                        // test triple letters
+                                        && i > 0
                                         && i < word.Length
-                                        && (word[i - 1] == word[i]) // test triple letters
+                                        && word[i - 1] == word[i]
                                         &&
                                         (
                                             (i - 2 >= 0 && word[i - 1] == word[i - 2])
@@ -1471,7 +1476,7 @@ namespace Hunspell
 
                                                 if (rv2 == null)
                                                 {
-                                                    rv2 = AffixCheck(word, default(FlagValue), CompoundOptions.Not);
+                                                    rv2 = AffixCheck(word.Substring(len), default(FlagValue), CompoundOptions.Not);
                                                 }
 
                                                 if (
@@ -2381,7 +2386,7 @@ namespace Hunspell
                 int rIndex = 0;
                 var lenp = replacementEntry.Pattern.Length;
                 // search every occurence of the pattern in the word
-                while ((rIndex = word.IndexOf(replacementEntry.Pattern, rIndex)) >= 0)
+                while ((rIndex = word.IndexOf(replacementEntry.Pattern, rIndex, StringComparison.Ordinal)) >= 0)
                 {
                     var candidate = word;
                     var type = rIndex + replacementEntry.Pattern.Length == lenp
