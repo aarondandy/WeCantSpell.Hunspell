@@ -117,20 +117,6 @@ namespace Hunspell.Utilities
             return builder.ToString();
         }
 
-        [Obsolete("Make sure this method is used correctly")]
-        public static bool EqualsOffset(string a, int aOffset, string b, int bOffset)
-        {
-            if (ReferenceEquals(a, b) && aOffset == bOffset)
-            {
-                return true;
-            }
-
-            var aLength = (a?.Length).GetValueOrDefault();
-            var bLength = (b?.Length).GetValueOrDefault();
-
-            return string.CompareOrdinal(a, aOffset, b, bOffset, Math.Max(aLength, bLength)) == 0;
-        }
-
         public static bool EqualsOffset(string a, int aOffset, string b, int bOffset, int length)
         {
             if (ReferenceEquals(a, b) && aOffset == bOffset)
