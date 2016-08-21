@@ -112,8 +112,7 @@ namespace Hunspell.NetCore.Tests
                 var dictionaryPath = Path.ChangeExtension(wordFilePath, "dic");
                 return UtfStreamLineReader.ReadLines(wordFilePath)
                     .Where(line => line != null)
-                    .Select(line => line.Trim(SpaceOrTab))
-                    .Where(line => line.Length != 0)
+                    .SelectMany(line => line.Split(SpaceOrTab, StringSplitOptions.RemoveEmptyEntries))
                     .Select(line => new object[] { dictionaryPath, line });
             }
 
