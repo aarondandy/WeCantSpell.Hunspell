@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Hunspell
@@ -7,7 +6,7 @@ namespace Hunspell
     /// <summary>
     /// Defines operations to read affix or dictionary lines from a stream sequentially.
     /// </summary>
-    public interface IHunspellFileLineReader
+    public interface IHunspellLineReader
     {
         /// <summary>
         /// Reads the next line from a stream.
@@ -22,9 +21,9 @@ namespace Hunspell
         string ReadLine();
     }
 
-    public static class HunspellFileLineReaderExtensions
+    public static class HunspellLineReaderExtensions
     {
-        public static async Task<List<string>> ReadLinesAsync(this IHunspellFileLineReader reader)
+        public static async Task<List<string>> ReadLinesAsync(this IHunspellLineReader reader)
         {
             var lines = new List<string>();
 
@@ -37,7 +36,7 @@ namespace Hunspell
             return lines;
         }
 
-        public static IEnumerable<string> ReadLines(this IHunspellFileLineReader reader)
+        public static IEnumerable<string> ReadLines(this IHunspellLineReader reader)
         {
             string line;
             while ((line = reader.ReadLine()) != null)

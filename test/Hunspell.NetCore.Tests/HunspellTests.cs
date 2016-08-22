@@ -110,7 +110,9 @@ namespace Hunspell.NetCore.Tests
             protected static IEnumerable<object[]> ToDictionaryWordTestData(string wordFilePath)
             {
                 var dictionaryPath = Path.ChangeExtension(wordFilePath, "dic");
-                return UtfStreamLineReader.ReadLines(wordFilePath)
+                var affix = AffixReader.ReadFile(Path.ChangeExtension(wordFilePath, "aff"));
+
+                return StaticEncodingLineReader.ReadLines(wordFilePath, affix.Encoding)
                     .Where(line => line != null)
                     .SelectMany(line => line.Split(SpaceOrTab, StringSplitOptions.RemoveEmptyEntries))
                     .Select(line => new object[] { dictionaryPath, line });

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -30,7 +31,7 @@ namespace Hunspell
 
         private bool hasInitialized;
 
-        public static async Task<Dictionary> ReadAsync(IHunspellFileLineReader reader, AffixConfig affix)
+        public static async Task<Dictionary> ReadAsync(IHunspellLineReader reader, AffixConfig affix)
         {
             var builder = new Dictionary.Builder
             {
@@ -40,7 +41,25 @@ namespace Hunspell
             var readerInstance = new DictionaryReader(builder, affix);
 
             string line;
-            while (null != (line = await reader.ReadLineAsync().ConfigureAwait(false)))
+            while ((line = await reader.ReadLineAsync().ConfigureAwait(false)) != null)
+            {
+                readerInstance.ParseLine(line);
+            }
+
+            return builder.ToDictionary();
+        }
+
+        public static Dictionary Read(IHunspellLineReader reader, AffixConfig affix)
+        {
+            var builder = new Dictionary.Builder
+            {
+                Affix = affix
+            };
+
+            var readerInstance = new DictionaryReader(builder, affix);
+
+            string line;
+            while ((line = reader.ReadLine()) != null)
             {
                 readerInstance.ParseLine(line);
             }
@@ -55,11 +74,28 @@ namespace Hunspell
             return await ReadFileAsync(filePath, affix).ConfigureAwait(false);
         }
 
+        public static Dictionary ReadFile(string filePath)
+        {
+            var affixFilePath = Path.ChangeExtension(filePath, "aff");
+            var affix = AffixReader.ReadFile(affixFilePath);
+            return ReadFile(filePath, affix);
+        }
+
         public static async Task<Dictionary> ReadFileAsync(string filePath, AffixConfig affix)
         {
-            using (var reader = new UtfStreamLineReader(filePath))
+            using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var reader = new StaticEncodingLineReader(stream, affix.Encoding))
             {
                 return await ReadAsync(reader, affix).ConfigureAwait(false);
+            }
+        }
+
+        public static Dictionary ReadFile(string filePath, AffixConfig affix)
+        {
+            using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var reader = new StaticEncodingLineReader(stream, affix.Encoding))
+            {
+                return Read(reader, affix);
             }
         }
 
@@ -104,6 +140,11 @@ namespace Hunspell
                         // TODO: warn
                         return false;
                     }
+                }
+                else if(Affix.FlagMode == FlagMode.Uni)
+                {
+                    var utf8Flags = Encoding.UTF8.GetString(Affix.Encoding.GetBytes(flagGroup.Value));
+                    flags = FlagValue.ParseFlags(utf8Flags, FlagMode.Char).ToImmutableSortedSet();
                 }
                 else
                 {

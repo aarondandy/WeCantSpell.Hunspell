@@ -68,12 +68,13 @@
     <Compile Include="FlagValue.cs" />
     <Compile Include="Hunspell.cs" />
     <Compile Include="HunspellQuery.cs" />
-    <Compile Include="IHunspellFileLineReader.cs" />
+    <Compile Include="IHunspellLineReader.cs" />
     <Compile Include="MorphologicalTags.cs" />
     <Compile Include="SpecialFlags.cs" />
     <Compile Include="SpellCheckResult.cs" />
     <Compile Include="SpellCheckResultType.cs" />
-    <Compile Include="UtfStreamLineReader.cs" />
+    <Compile Include="StaticEncodingLineReader.cs" />
+    <Compile Include="DynamicEncodingLineReader.cs" />
     <Compile Include="FlagMode.cs" />
     <Compile Include="HunspellException.cs" />
     <Compile Include="PatternEntry.cs" />

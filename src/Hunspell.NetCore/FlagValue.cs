@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 
 namespace Hunspell
 {
@@ -103,7 +104,6 @@ namespace Hunspell
             switch (mode)
             {
                 case FlagMode.Char:
-                case FlagMode.Uni:
                     value = new FlagValue(text[0]);
                     return true;
                 case FlagMode.Long:
@@ -114,6 +114,7 @@ namespace Hunspell
                     return true;
                 case FlagMode.Num:
                     return TryParseNumberFlag(text, out value);
+                case FlagMode.Uni:
                 default:
                     throw new NotSupportedException();
             }
@@ -138,7 +139,6 @@ namespace Hunspell
             switch (mode)
             {
                 case FlagMode.Char:
-                case FlagMode.Uni:
                     return text == null
                         ? Enumerable.Empty<FlagValue>()
                         : text.ToCharArray().ConvertAll(c => new FlagValue(c));
@@ -146,6 +146,7 @@ namespace Hunspell
                     return ParseLongFlags(text);
                 case FlagMode.Num:
                     return ParseNumberFlags(text);
+                case FlagMode.Uni:
                 default:
                     throw new NotSupportedException();
             }

@@ -1,10 +1,9 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 
 namespace Hunspell.NetCore.Tests.Utilities
 {
-    public class StringLineReader : IHunspellFileLineReader
+    public class Utf16StringLineReader : IHunspellLineReader
     {
         private static readonly char[] LineBreakChars = new[]{'\n','\r'};
 
@@ -12,7 +11,7 @@ namespace Hunspell.NetCore.Tests.Utilities
 
         private string Content { get; }
 
-        public StringLineReader(string text)
+        public Utf16StringLineReader(string text)
         {
             Content = text;
         }

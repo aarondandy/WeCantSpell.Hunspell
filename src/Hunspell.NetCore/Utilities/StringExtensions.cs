@@ -126,5 +126,27 @@ namespace Hunspell.Utilities
 
             return string.CompareOrdinal(a, aOffset, b, bOffset, length) == 0;
         }
+
+        public static Encoding GetEncodingByName(string encodingName)
+        {
+            if (string.IsNullOrEmpty(encodingName))
+            {
+                return null;
+            }
+
+            try
+            {
+                return Encoding.GetEncoding(encodingName);
+            }
+            catch(ArgumentException)
+            {
+                if (encodingName.Length >= 4 && encodingName.StartsWith("ISO") && encodingName[3] != '-')
+                {
+                    return GetEncodingByName(encodingName.Insert(3, "-"));
+                }
+
+                return null;
+            }
+        }
     }
 }

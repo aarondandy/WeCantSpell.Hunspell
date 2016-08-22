@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Globalization;
+using System.Text;
 
 namespace Hunspell
 {
@@ -15,7 +16,7 @@ namespace Hunspell
 
         private const int DefaultMaxCompoundSuggestions = 3;
 
-        private const string DefaultEncodingName = "ISO8859-1";
+        public static readonly Encoding DefaultEncoding = Encoding.GetEncoding("ISO8859-1");
 
         private const string DefaultKeyString = "qwertyuiop|asdfghjkl|zxcvbnm";
 
@@ -448,7 +449,7 @@ namespace Hunspell
         /// <summary>
         /// The encoding name to be used in morpheme, affix, and dictionary files.
         /// </summary>
-        public string EncodingName { get; private set; }
+        public Encoding Encoding { get; private set; }
 
         /// <summary>
         /// Specifies modifications to try first

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 
 namespace Hunspell
 {
@@ -192,10 +193,10 @@ namespace Hunspell
             public string CompoundSyllableNum;
 
             /// <summary>
-            /// The encoding name to be used in morpheme, affix, and dictionary files.
+            /// The encoding to be used in morpheme, affix, and dictionary files.
             /// </summary>
-            /// <seealso cref="AffixConfig.EncodingName"/>
-            public string RequestedEncodingName;
+            /// <seealso cref="AffixConfig.Encoding"/>
+            public Encoding Encoding = DefaultEncoding;
 
             /// <summary>
             /// Specifies modifications to try first.
@@ -360,7 +361,7 @@ namespace Hunspell
                     Warn = Warn,
                     SubStandard = SubStandard,
                     CompoundSyllableNum = CompoundSyllableNum,
-                    EncodingName = RequestedEncodingName ?? DefaultEncodingName,
+                    Encoding = Encoding,
                     Replacements = EmptyIfNull(Replacements).ToImmutableArray(),
                     Suffixes = EmptyIfNull(Suffixes).Select(b => b.ToGroup()).ToImmutableArray(),
                     Prefixes = EmptyIfNull(Prefixes).Select(b => b.ToGroup()).ToImmutableArray(),

@@ -768,7 +768,7 @@ namespace Hunspell.NetCore.Tests
             public async Task can_read_ignoreutf_dic()
             {
                 var filePath = @"files/ignoreutf.dic";
-                var ignoreChars = "ًٌٍَُِّْ".ToCharArray();
+                var ignoreChars = new []{ 1618, 1617, 1616, 1615, 1614, 1613, 1612, 1611 }.Select(i => (char)i).ToArray();
                 IEnumerable<string> expectedWords = new[]
                 {
                     "طِير",

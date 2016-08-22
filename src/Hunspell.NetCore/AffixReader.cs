@@ -3,7 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -49,7 +51,9 @@ namespace Hunspell
             {"LONG", FlagMode.Long},
             {"CHAR", FlagMode.Char},
             {"NUM", FlagMode.Num},
-            {"UTF", FlagMode.Uni}
+            {"UTF", FlagMode.Uni},
+            {"UNI", FlagMode.Uni},
+            {"UTF-8", FlagMode.Uni}
         };
 
         private static readonly string[] DefaultBreakTableEntries = new[] { "-", "^-", "-$" };
@@ -60,13 +64,29 @@ namespace Hunspell
 
         private EntryListType Initialized { get; set; } = EntryListType.None;
 
-        public static async Task<AffixConfig> ReadAsync(IHunspellFileLineReader reader)
+        public static async Task<AffixConfig> ReadAsync(IHunspellLineReader reader)
         {
             var builder = new AffixConfig.Builder();
             var readerInstance = new AffixReader(builder);
 
             string line;
-            while (null != (line = await reader.ReadLineAsync().ConfigureAwait(false)))
+            while ((line = await reader.ReadLineAsync().ConfigureAwait(false)) != null)
+            {
+                readerInstance.ParseLine(line);
+            }
+
+            readerInstance.AddDefaultBreakTableIfEmpty();
+
+            return builder.ToAffixConfig();
+        }
+
+        public static AffixConfig Read(IHunspellLineReader reader)
+        {
+            var builder = new AffixConfig.Builder();
+            var readerInstance = new AffixReader(builder);
+
+            string line;
+            while ((line = reader.ReadLine()) != null)
             {
                 readerInstance.ParseLine(line);
             }
@@ -78,9 +98,19 @@ namespace Hunspell
 
         public static async Task<AffixConfig> ReadFileAsync(string filePath)
         {
-            using (var reader = new UtfStreamLineReader(filePath))
+            using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var reader = new DynamicEncodingLineReader(stream, AffixConfig.DefaultEncoding))
             {
                 return await ReadAsync(reader).ConfigureAwait(false);
+            }
+        }
+
+        public static AffixConfig ReadFile(string filePath)
+        {
+            using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var reader = new DynamicEncodingLineReader(stream, AffixConfig.DefaultEncoding))
+            {
+                return Read(reader);
             }
         }
 
@@ -155,7 +185,13 @@ namespace Hunspell
                     Builder.TryString = parameters;
                     return true;
                 case "SET": // parse in the name of the character set used by the .dict and .aff
-                    Builder.RequestedEncodingName = parameters;
+                    var encoding = StringExtensions.GetEncodingByName(parameters);
+                    if (encoding == null)
+                    {
+                        return false;
+                    }
+
+                    Builder.Encoding = encoding;
                     return true;
                 case "LANG": // parse in the language for language specific codes
                     Builder.Language = parameters.Trim();
@@ -1009,20 +1045,46 @@ namespace Hunspell
             }
         }
 
+        private string ReDecodeConvertedStringAsUtf8(string decoded)
+        {
+            return Encoding.UTF8.GetString(Builder.Encoding.GetBytes(decoded));
+        }
+
         private IEnumerable<FlagValue> ParseFlags(string text)
         {
-            return FlagValue.ParseFlags(text, Builder.FlagMode);
+            var flagMode = Builder.FlagMode;
+            if (flagMode == FlagMode.Uni)
+            {
+                text = ReDecodeConvertedStringAsUtf8(text);
+                flagMode = FlagMode.Char;
+            }
+
+            return FlagValue.ParseFlags(text, flagMode);
         }
 
         private bool TryParseFlag(string text, out FlagValue value)
         {
-            return FlagValue.TryParseFlag(text, Builder.FlagMode, out value);
+            var flagMode = Builder.FlagMode;
+            if (flagMode == FlagMode.Uni)
+            {
+                text = ReDecodeConvertedStringAsUtf8(text);
+                flagMode = FlagMode.Char;
+            }
+
+            return FlagValue.TryParseFlag(text, flagMode, out value);
         }
 
         private FlagValue TryParseFlag(string text)
         {
+            var flagMode = Builder.FlagMode;
+            if (Builder.FlagMode == FlagMode.Uni)
+            {
+                text = ReDecodeConvertedStringAsUtf8(text);
+                flagMode = FlagMode.Char;
+            }
+
             FlagValue value;
-            return FlagValue.TryParseFlag(text, Builder.FlagMode, out value)
+            return FlagValue.TryParseFlag(text, flagMode, out value)
                 ? value
                 : default(FlagValue);
         }
