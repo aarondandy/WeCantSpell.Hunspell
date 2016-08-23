@@ -138,7 +138,7 @@ namespace Hunspell.Utilities
             {
                 return Encoding.GetEncoding(encodingName);
             }
-            catch(ArgumentException)
+            catch (ArgumentException)
             {
                 if (encodingName.Length >= 4 && encodingName.StartsWith("ISO") && encodingName[3] != '-')
                 {

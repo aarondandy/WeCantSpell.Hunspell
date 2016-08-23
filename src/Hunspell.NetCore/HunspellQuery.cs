@@ -725,7 +725,7 @@ namespace Hunspell
                                 (
                                     string.IsNullOrEmpty(Affix.CompoundPatterns[scpd - 1].Pattern3)
                                     ||
-                                    StringExtensions.EqualsOffset(word, i, Affix.CompoundPatterns[scpd - 1].Pattern3, 0, Affix.CompoundPatterns[scpd - 1].Pattern3.Length)
+                                    !StringExtensions.EqualsOffset(word, i, Affix.CompoundPatterns[scpd - 1].Pattern3, 0, Affix.CompoundPatterns[scpd - 1].Pattern3.Length)
                                 )
                                 ;
                                 scpd++

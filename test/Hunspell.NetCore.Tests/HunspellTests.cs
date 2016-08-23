@@ -115,6 +115,8 @@ namespace Hunspell.NetCore.Tests
                 return StaticEncodingLineReader.ReadLines(wordFilePath, affix.Encoding)
                     .Where(line => line != null)
                     .SelectMany(line => line.Split(SpaceOrTab, StringSplitOptions.RemoveEmptyEntries))
+                    .Distinct()
+                    .OrderBy(w => w, StringComparer.Ordinal)
                     .Select(line => new object[] { dictionaryPath, line });
             }
 
