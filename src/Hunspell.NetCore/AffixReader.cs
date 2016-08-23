@@ -174,7 +174,8 @@ namespace Hunspell
 
         private bool TryHandleParameterizedCommand(string name, string parameters)
         {
-            switch (CultureInfo.InvariantCulture.TextInfo.ToUpper(name))
+            var commandName = CultureInfo.InvariantCulture.TextInfo.ToUpper(name);
+            switch (commandName)
             {
                 case "FLAG": // parse in the try string
                     return TrySetFlagMode(parameters);
@@ -295,9 +296,16 @@ namespace Hunspell
                 case "SUBSTANDARD":
                     return TryParseFlag(parameters, out Builder.SubStandard);
                 case "PFX":
-                    return TryParseAffixIntoList(parameters, ref Builder.Prefixes);
                 case "SFX":
-                    return TryParseAffixIntoList(parameters, ref Builder.Suffixes);
+                    var parseAsPrefix = "PFX" == commandName;
+                    if (Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes))
+                    {
+                        parseAsPrefix = !parseAsPrefix;
+                    }
+
+                    return parseAsPrefix
+                        ? TryParseAffixIntoList(parameters, ref Builder.Prefixes)
+                        : TryParseAffixIntoList(parameters, ref Builder.Suffixes);
                 case "AF":
                     return TryParseStandardListItem(EntryListType.AliasF, parameters, ref Builder.AliasF, TryParseAliasF);
                 case "AM":

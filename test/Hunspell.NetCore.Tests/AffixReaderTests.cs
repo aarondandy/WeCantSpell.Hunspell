@@ -316,36 +316,39 @@ namespace Hunspell.NetCore.Tests
                     new[] { Reversed(@"[stem_1]") }
                 });
 
-                actual.Prefixes.Should().HaveCount(2);
-                var prefixGroup1 = actual.Prefixes[0];
-                prefixGroup1.AFlag.Should().Be('A');
-                prefixGroup1.Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasM);
-                prefixGroup1.Entries.Should().HaveCount(1);
-                var prefixEntry1 = prefixGroup1.Entries.Single();
-                prefixEntry1.Strip.Should().BeEmpty();
-                prefixEntry1.Append.Should().Be("ket");
-                prefixEntry1.Conditions.GetEncoded().Should().Be(".");
-                prefixEntry1.MorphCode.Should().ContainSingle(Reversed(@"affix_1/"));
-                var prefixGroup2 = actual.Prefixes[1];
-                prefixGroup2.AFlag.Should().Be('B');
-                prefixGroup2.Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasM);
-                prefixGroup2.Entries.Should().HaveCount(1);
-                var prefixEntry2 = prefixGroup2.Entries.Single();
-                prefixEntry2.Strip.Should().BeEmpty();
-                prefixEntry2.Append.Should().Be("tem");
-                prefixEntry2.ContClass.Should().ContainInOrder(new int[] { 'A' });
-                prefixEntry2.Conditions.GetEncoded().Should().Be(".");
-                prefixEntry2.MorphCode.Should().ContainSingle(Reversed(@"affix_2/"));
-                actual.Suffixes.Should().HaveCount(1);
+                actual.Suffixes.Should().HaveCount(2);
+                actual.Prefixes.Should().HaveCount(1);
+
                 var suffixGroup1 = actual.Suffixes[0];
-                suffixGroup1.AFlag.Should().Be('C');
+                suffixGroup1.AFlag.Should().Be('A');
                 suffixGroup1.Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasM);
                 suffixGroup1.Entries.Should().HaveCount(1);
                 var suffixEntry1 = suffixGroup1.Entries.Single();
                 suffixEntry1.Strip.Should().BeEmpty();
-                suffixEntry1.Append.Should().Be("_tset_");
+                suffixEntry1.Append.Should().Be("ket");
                 suffixEntry1.Conditions.GetEncoded().Should().Be(".");
-                suffixEntry1.MorphCode.Should().ContainSingle(Reversed(@"/suffix_1"));
+                suffixEntry1.MorphCode.Should().ContainSingle(Reversed(@"affix_1/"));
+
+                var suffixGroup2 = actual.Suffixes[1];
+                suffixGroup2.AFlag.Should().Be('B');
+                suffixGroup2.Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasM);
+                suffixGroup2.Entries.Should().HaveCount(1);
+                var suffixEntry2 = suffixGroup2.Entries.Single();
+                suffixEntry2.Strip.Should().BeEmpty();
+                suffixEntry2.Append.Should().Be("tem");
+                suffixEntry2.ContClass.Should().ContainInOrder(new int[] { 'A' });
+                suffixEntry2.Conditions.GetEncoded().Should().Be(".");
+                suffixEntry2.MorphCode.Should().ContainSingle(Reversed(@"affix_2/"));
+
+                var prefixGroup1 = actual.Prefixes[0];
+                prefixGroup1.AFlag.Should().Be('C');
+                prefixGroup1.Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasM);
+                prefixGroup1.Entries.Should().HaveCount(1);
+                var prefixEntry1 = prefixGroup1.Entries.Single();
+                prefixEntry1.Strip.Should().BeEmpty();
+                prefixEntry1.Append.Should().Be("_tset_");
+                prefixEntry1.Conditions.GetEncoded().Should().Be(".");
+                prefixEntry1.MorphCode.Should().ContainSingle(Reversed(@"/suffix_1"));
             }
 
             [Fact]
