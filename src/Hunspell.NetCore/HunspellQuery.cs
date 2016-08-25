@@ -741,16 +741,16 @@ namespace Hunspell
 
                             var scpdPatternEntry = Affix.CompoundPatterns[scpd - 1];
 
-                            st = st.ReplaceToEnd(i, scpdPatternEntry.Pattern);
+                            stChars.ReplaceToEnd(i, scpdPatternEntry.Pattern);
 
                             soldi = i;
                             i += scpdPatternEntry.Pattern.Length;
 
-                            st = st.ReplaceToEnd(i, scpdPatternEntry.Pattern2);
+                            stChars.ReplaceToEnd(i, scpdPatternEntry.Pattern2);
 
-                            st = st.ReplaceToEnd(i + scpdPatternEntry.Pattern2.Length, word.Substring(soldi + scpdPatternEntry.Pattern3.Length));
+                            stChars.ReplaceToEnd(i + scpdPatternEntry.Pattern2.Length, word.Substring(soldi + scpdPatternEntry.Pattern3.Length));
 
-                            Array.Copy(st.ToCharArray(), 0, stChars, 0, Math.Min(st.Length, stChars.Length));
+                            st = stChars.AsTerminatedString();
 
                             oldlen = len;
                             len += scpdPatternEntry.Pattern.Length + scpdPatternEntry.Pattern2.Length - scpdPatternEntry.Pattern3.Length;
@@ -760,12 +760,15 @@ namespace Hunspell
                             cmax = len - Affix.CompoundMin + 1;
                         }
 
-                        ch = i < st.Length ? st[i] : default(char);
-
                         if (i < stChars.Length)
                         {
+                            ch = stChars[i];
                             stChars[i] = default(char);
                             st = stChars.AsTerminatedString();
+                        }
+                        else
+                        {
+                            ch = default(char);
                         }
 
                         ClearSuffix();

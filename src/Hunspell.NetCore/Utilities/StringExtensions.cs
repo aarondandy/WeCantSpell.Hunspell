@@ -154,5 +154,13 @@ namespace Hunspell.Utilities
             var zeroIndex = Array.IndexOf(chars, default(char));
             return zeroIndex < 0 ? new string(chars) : new string(chars, 0, zeroIndex);
         }
+
+        public static void ReplaceToEnd(this char[] chars, int offset, string replacement)
+        {
+            for(var i = 0; i < replacement.Length && offset + i < chars.Length; i++)
+            {
+                chars[offset + i] = replacement[i];
+            }
+        }
     }
 }
