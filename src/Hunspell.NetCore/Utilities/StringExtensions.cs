@@ -148,5 +148,11 @@ namespace Hunspell.Utilities
                 return null;
             }
         }
+
+        public static string AsTerminatedString(this char[] chars)
+        {
+            var zeroIndex = Array.IndexOf(chars, default(char));
+            return zeroIndex < 0 ? new string(chars) : new string(chars, 0, zeroIndex);
+        }
     }
 }

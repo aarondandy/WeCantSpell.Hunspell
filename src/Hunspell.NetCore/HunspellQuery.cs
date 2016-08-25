@@ -700,7 +700,7 @@ namespace Hunspell
             cmax = word.Length - cmin + 1;
 
             st = word;
-            var stBeforeCharacterMangling = st;
+            var stChars = st.ToCharArray();
 
             for (i = cmin; i < cmax; i++)
             {
@@ -750,6 +750,8 @@ namespace Hunspell
 
                             st = st.ReplaceToEnd(i + scpdPatternEntry.Pattern2.Length, word.Substring(soldi + scpdPatternEntry.Pattern3.Length));
 
+                            Array.Copy(st.ToCharArray(), 0, stChars, 0, Math.Min(st.Length, stChars.Length));
+
                             oldlen = len;
                             len += scpdPatternEntry.Pattern.Length + scpdPatternEntry.Pattern2.Length - scpdPatternEntry.Pattern3.Length;
                             oldcmin = cmin;
@@ -759,8 +761,12 @@ namespace Hunspell
                         }
 
                         ch = i < st.Length ? st[i] : default(char);
-                        stBeforeCharacterMangling = st;
-                        st = st.Substring(0, i);
+
+                        if (i < stChars.Length)
+                        {
+                            stChars[i] = default(char);
+                            st = stChars.AsTerminatedString();
+                        }
 
                         ClearSuffix();
                         ClearPrefix();
@@ -848,21 +854,21 @@ namespace Hunspell
                                 Affix.CompoundFlag.HasValue
                                 &&
                                 (
-                                    rv = PrefixCheck(st.Substring(0, i), huMovRule != 0 ? CompoundOptions.Other : CompoundOptions.Begin, Affix.CompoundFlag)
+                                    rv = PrefixCheck(st, huMovRule != 0 ? CompoundOptions.Other : CompoundOptions.Begin, Affix.CompoundFlag)
                                 ) == null
                             )
                             {
                                 if (
                                     (
                                         (
-                                            rv = SuffixCheck(st.Substring(0, i), 0, null, null, new FlagValue(), Affix.CompoundFlag, huMovRule != 0 ? CompoundOptions.Other : CompoundOptions.Begin)
+                                            rv = SuffixCheck(st, 0, null, null, new FlagValue(), Affix.CompoundFlag, huMovRule != 0 ? CompoundOptions.Other : CompoundOptions.Begin)
                                         ) != null
                                         ||
                                         (
                                             Affix.CompoundMoreSuffixes
                                             &&
                                             (
-                                                rv = SuffixCheckTwoSfx(st.Substring(0, i), 0, null, null, Affix.CompoundFlag)
+                                                rv = SuffixCheckTwoSfx(st, 0, null, null, Affix.CompoundFlag)
                                             ) != null
                                         )
                                     )
@@ -884,19 +890,19 @@ namespace Hunspell
                                     &&
                                     (
                                         (
-                                            rv = SuffixCheck(st.Substring(0, i), 0, null, null, new FlagValue(), Affix.CompoundBegin, huMovRule != 0 ? CompoundOptions.Other : CompoundOptions.Begin)
+                                            rv = SuffixCheck(st, 0, null, null, new FlagValue(), Affix.CompoundBegin, huMovRule != 0 ? CompoundOptions.Other : CompoundOptions.Begin)
                                         ) != null
                                         ||
                                         (
                                             Affix.CompoundMoreSuffixes
                                             &&
                                             (
-                                                rv = SuffixCheckTwoSfx(st.Substring(0, i), 0, null, null, Affix.CompoundBegin)
+                                                rv = SuffixCheckTwoSfx(st, 0, null, null, Affix.CompoundBegin)
                                             ) != null
                                         )
                                         || // twofold suffixes + compound
                                         (
-                                            rv = PrefixCheck(st.Substring(0, i), huMovRule != 0 ? CompoundOptions.Other : CompoundOptions.Begin, Affix.CompoundBegin)
+                                            rv = PrefixCheck(st, huMovRule != 0 ? CompoundOptions.Other : CompoundOptions.Begin, Affix.CompoundBegin)
                                         ) != null
                                     )
                                 )
@@ -907,19 +913,19 @@ namespace Hunspell
                                     &&
                                     (
                                         (
-                                            rv = SuffixCheck(st.Substring(0, i), 0, null, null, new FlagValue(), Affix.CompoundMiddle, huMovRule != 0 ? CompoundOptions.Other : CompoundOptions.Begin)
+                                            rv = SuffixCheck(st, 0, null, null, new FlagValue(), Affix.CompoundMiddle, huMovRule != 0 ? CompoundOptions.Other : CompoundOptions.Begin)
                                         ) != null
                                         ||
                                         (
                                             Affix.CompoundMoreSuffixes
                                             &&
                                             (
-                                                rv = SuffixCheckTwoSfx(st.Substring(0, i), 0, null, null, Affix.CompoundMiddle)
+                                                rv = SuffixCheckTwoSfx(st, 0, null, null, Affix.CompoundMiddle)
                                             ) != null
                                         )
                                         || // twofold suffixes + compound
                                         (
-                                            rv = PrefixCheck(st.Substring(0, i), huMovRule != 0 ? CompoundOptions.Other : CompoundOptions.Begin, Affix.CompoundMiddle)
+                                            rv = PrefixCheck(st, huMovRule != 0 ? CompoundOptions.Other : CompoundOptions.Begin, Affix.CompoundMiddle)
                                         ) != null
                                     )
                                 )
@@ -939,7 +945,11 @@ namespace Hunspell
                         )
                         {
                             // else check forbiddenwords and needaffix
-                            st = stBeforeCharacterMangling;
+                            if (i < stChars.Length)
+                            {
+                                stChars[i] = ch;
+                                st = stChars.AsTerminatedString();
+                            }
 
                             break;
                         }
@@ -1083,7 +1093,7 @@ namespace Hunspell
                                 && huMovRule != 0
                                 &&
                                 (
-                                    rv = AffixCheck(st.Substring(0, i), new FlagValue(), CompoundOptions.Not)
+                                    rv = AffixCheck(st, new FlagValue(), CompoundOptions.Not)
                                 ) != null
                                 && Suffix != null // XXX hardwired Hungarian dic. codes
                                 && Suffix.ContainsAnyContClass(SpecialFlags.LetterXLower, SpecialFlags.LetterPercent)
@@ -1115,8 +1125,12 @@ namespace Hunspell
 
                             // NEXT WORD(S)
                             rv_first = rv;
-                            st = stBeforeCharacterMangling;
-                            //st = st.SetChar(ch, i);
+
+                            if (i < stChars.Length)
+                            {
+                                stChars[i] = ch;
+                                st = stChars.AsTerminatedString();
+                            }
 
                             do
                             {
@@ -1497,12 +1511,20 @@ namespace Hunspell
                                         if (StringExtensions.EqualsOffset(rv.Word, 0, word, i, rv.Word.Length))
                                         {
                                             var r = st[i + rv.Word.Length];
-                                            var stCcrBackup = st;
-                                            st = st.Substring(0, i + rv.Word.Length);
+                                            if (i + rv.Word.Length < stChars.Length)
+                                            {
+                                                stChars[i + rv.Word.Length] = '\0';
+                                                st = stChars.AsTerminatedString();
+                                            }
 
                                             if (Affix.CheckCompoundRep && CompoundReplacementCheck(st))
                                             {
-                                                st = stCcrBackup;
+                                                if (i + rv.Word.Length < stChars.Length)
+                                                {
+                                                    stChars[i + rv.Word.Length] = r;
+                                                    st = stChars.AsTerminatedString();
+                                                }
+
                                                 continue;
                                             }
 
@@ -1526,7 +1548,12 @@ namespace Hunspell
                                                 }
                                             }
 
-                                            st = stCcrBackup;
+
+                                            if (i + rv.Word.Length < stChars.Length)
+                                            {
+                                                stChars[i + rv.Word.Length] = r;
+                                                st = stChars.AsTerminatedString();
+                                            }
                                         }
                                     }
 
@@ -1565,11 +1592,18 @@ namespace Hunspell
                     {
                         i = soldi;
                         st = word;
+                        stChars = st.ToCharArray();
                         soldi = 0;
                     }
                     else
                     {
-                        st = stBeforeCharacterMangling;
+                        if (i < stChars.Length)
+                        {
+                            stChars[i] = ch;
+                        }
+
+                        var zeroCharIndex = Array.IndexOf(stChars, default(char));
+                        st = new string(stChars, 0, zeroCharIndex < 0 ? stChars.Length : zeroCharIndex);
                     }
                 }
                 while (Affix.HasCompoundRules && oldwordnum == 0 && onlycpdrule++ < 1);

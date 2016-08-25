@@ -70,7 +70,6 @@ namespace Hunspell.NetCore.Tests
 
             public static IEnumerable<object[]> cant_find_wrong_words_in_dictionary_data =>
                 GetAllDataFilePaths("*.wrong")
-                    .Where(filePath => !IsExplicitSuggestionTest(filePath))
                     .SelectMany(ToDictionaryWordTestData);
 
             [Theory, MemberData(nameof(cant_find_wrong_words_in_dictionary_data))]
@@ -82,22 +81,6 @@ namespace Hunspell.NetCore.Tests
                 var checkResult = hunspell.Check(word);
 
                 checkResult.Should().BeFalse();
-            }
-
-            public static IEnumerable<object[]> can_check_words_meant_for_suggest_test_without_exception_data =>
-                GetAllDataFilePaths("*.wrong")
-                    .Where(IsExplicitSuggestionTest)
-                    .SelectMany(ToDictionaryWordTestData);
-
-            [Theory, MemberData(nameof(can_check_words_meant_for_suggest_test_without_exception_data))]
-            public async Task can_check_words_meant_for_suggest_test_without_exception(string dictionaryFilePath, string word)
-            {
-                var dictionary = await DictionaryReader.ReadFileAsync(dictionaryFilePath);
-                var hunspell = new Hunspell(dictionary);
-
-                Action act = () => hunspell.Check(word);
-
-                act.ShouldNotThrow();
             }
 
             protected static IEnumerable<string> GetAllDataFilePaths(string searchPattern)
@@ -118,17 +101,6 @@ namespace Hunspell.NetCore.Tests
                     .Distinct()
                     .OrderBy(w => w, StringComparer.Ordinal)
                     .Select(line => new object[] { dictionaryPath, line });
-            }
-
-            protected static bool IsExplicitSuggestionTest(string filePath)
-            {
-                if (!filePath.EndsWith(".wrong", StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new ArgumentException(nameof(filePath));
-                }
-
-                return File.Exists(Path.ChangeExtension(filePath, "sug"))
-                    && !File.Exists(Path.ChangeExtension(filePath, "good"));
             }
         }
     }
