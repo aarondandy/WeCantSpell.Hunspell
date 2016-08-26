@@ -741,15 +741,17 @@ namespace Hunspell
 
                             var scpdPatternEntry = Affix.CompoundPatterns[scpd - 1];
 
-                            stChars.ReplaceToEnd(i, scpdPatternEntry.Pattern);
+                            var neededSize = i + scpdPatternEntry.Pattern.Length + scpdPatternEntry.Pattern2.Length + (word.Length - (i + scpdPatternEntry.Pattern3.Length));
+                            if(stChars.Length < neededSize)
+                            {
+                                Array.Resize(ref stChars, neededSize);
+                            }
 
+                            scpdPatternEntry.Pattern.CopyTo(stChars, i);
                             soldi = i;
                             i += scpdPatternEntry.Pattern.Length;
-
-                            stChars.ReplaceToEnd(i, scpdPatternEntry.Pattern2);
-
-                            stChars.ReplaceToEnd(i + scpdPatternEntry.Pattern2.Length, word.Substring(soldi + scpdPatternEntry.Pattern3.Length));
-
+                            scpdPatternEntry.Pattern2.CopyTo(stChars, i);
+                            word.CopyTo(soldi + scpdPatternEntry.Pattern3.Length, stChars, i + scpdPatternEntry.Pattern2.Length);
                             st = stChars.AsTerminatedString();
 
                             oldlen = len;

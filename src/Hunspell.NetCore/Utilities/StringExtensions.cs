@@ -92,21 +92,6 @@ namespace Hunspell.Utilities
             return @this.IndexOf(c) >= 0;
         }
 
-        public static string ReplaceToEnd(this string @this, int index, string replacement)
-        {
-            if (string.IsNullOrEmpty(replacement))
-            {
-                return @this.Substring(0, index);
-            }
-
-            var builder = new StringBuilder(@this, index + replacement.Length);
-
-            builder.Remove(index, builder.Length - index);
-            builder.Append(replacement);
-
-            return builder.ToString();
-        }
-
         public static string Replace(this string @this, int index, int removeCount, string replacement)
         {
             var builder = new StringBuilder(@this, Math.Max(@this.Length, @this.Length + replacement.Length - removeCount));
@@ -155,12 +140,14 @@ namespace Hunspell.Utilities
             return zeroIndex < 0 ? new string(chars) : new string(chars, 0, zeroIndex);
         }
 
-        public static void ReplaceToEnd(this char[] chars, int offset, string replacement)
+        public static void CopyTo(this string @this, char[] destination, int destinationIndex)
         {
-            for(var i = 0; i < replacement.Length && offset + i < chars.Length; i++)
-            {
-                chars[offset + i] = replacement[i];
-            }
+            @this.CopyTo(0, destination, destinationIndex, @this.Length);
+        }
+
+        public static void CopyTo(this string @this, int sourceIndex, char[] destination, int destinationIndex)
+        {
+            @this.CopyTo(sourceIndex, destination, destinationIndex, @this.Length - sourceIndex);
         }
     }
 }
