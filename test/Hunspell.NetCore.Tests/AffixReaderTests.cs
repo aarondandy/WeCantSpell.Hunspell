@@ -1546,16 +1546,16 @@ namespace Hunspell.NetCore.Tests
                 actual.Suffixes[2].Entries[1].MorphCode.Should().OnlyContain(x => x == "<DERIV>");
             }
 
-            [Theory, MemberData(nameof(can_read_file_without_exception_data))]
+            public static IEnumerable<object[]> can_read_file_without_exception_args =>
+                Array.ConvertAll(Directory.GetFiles("files/", "*.aff"), filePath => new object[] { filePath });
+
+            [Theory, MemberData(nameof(can_read_file_without_exception_args))]
             public async Task can_read_file_without_exception(string filePath)
             {
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
                 actual.Should().NotBeNull();
             }
-
-            public static IEnumerable<object[]> can_read_file_without_exception_data =>
-                Array.ConvertAll(Directory.GetFiles("files/", "*.aff"), filePath => new object[] { filePath });
         }
 
         public class ReadAsync : AffixReaderTests

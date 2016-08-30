@@ -768,7 +768,7 @@ namespace Hunspell.NetCore.Tests
             public async Task can_read_ignoreutf_dic()
             {
                 var filePath = @"files/ignoreutf.dic";
-                var ignoreChars = new []{ 1618, 1617, 1616, 1615, 1614, 1613, 1612, 1611 }.Select(i => (char)i).ToArray();
+                var ignoreChars = new[] { 1618, 1617, 1616, 1615, 1614, 1613, 1612, 1611 }.Select(i => (char)i).ToArray();
                 IEnumerable<string> expectedWords = new[]
                 {
                     "طِير",
@@ -1036,16 +1036,16 @@ namespace Hunspell.NetCore.Tests
                 actual.Entries["bar"][0].Morphs.ShouldBeEquivalentTo(new[] { "<BAR" });
             }
 
-            [Theory, MemberData(nameof(can_read_file_without_exception_data))]
+            public static IEnumerable<object[]> can_read_file_without_exception_args =>
+                Array.ConvertAll(Directory.GetFiles("files/", "*.dic"), filePath => new object[] { filePath });
+
+            [Theory, MemberData(nameof(can_read_file_without_exception_args))]
             public async Task can_read_file_without_exception(string filePath)
             {
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
                 actual.Should().NotBeNull();
             }
-
-            public static IEnumerable<object[]> can_read_file_without_exception_data =>
-                Array.ConvertAll(Directory.GetFiles("files/", "*.dic"), filePath => new object[] { filePath });
         }
     }
 }

@@ -742,7 +742,7 @@ namespace Hunspell
                             var scpdPatternEntry = Affix.CompoundPatterns[scpd - 1];
 
                             var neededSize = i + scpdPatternEntry.Pattern.Length + scpdPatternEntry.Pattern2.Length + (word.Length - (i + scpdPatternEntry.Pattern3.Length));
-                            if(stChars.Length < neededSize)
+                            if (stChars.Length < neededSize)
                             {
                                 Array.Resize(ref stChars, neededSize);
                             }
