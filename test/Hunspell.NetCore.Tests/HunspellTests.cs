@@ -91,6 +91,53 @@ namespace Hunspell.NetCore.Tests
 
         public class Suggest : HunspellTests
         {
+            [Theory]
+            [InlineData("files/nosuggest.dic", "foox")]
+            [InlineData("files/nosuggest.dic", "foobarx")]
+            [InlineData("files/nosuggest.dic", "barfoox")]
+            [InlineData("files/onlyincompound.dic", "pseudo")]
+            [InlineData("files/onlyincompound.dic", "pseudos")]
+            [InlineData("files/opentaal_forbiddenword1.dic", "foowordbar")]
+            [InlineData("files/opentaal_forbiddenword1.dic", "foowordbars")]
+            [InlineData("files/opentaal_forbiddenword1.dic", "foowordba")]
+            [InlineData("files/opentaal_forbiddenword1.dic", "foowordbas")]
+            [InlineData("files/opentaal_forbiddenword2.dic", "foowordbar")]
+            [InlineData("files/opentaal_forbiddenword2.dic", "foowordbars")]
+            [InlineData("files/opentaal_forbiddenword2.dic", "foowordba")]
+            [InlineData("files/opentaal_forbiddenword2.dic", "foowordbas")]
+            [InlineData("files/rep.dic", "foo")]
+            [InlineData("files/rep.dic", "foobars")]
+            public async Task words_without_suggestions_offer_no_suggestions(string dictionaryFilePath, string word)
+            {
+                var hunspell = await Hunspell.FromFileAsync(dictionaryFilePath);
+
+                var actual = hunspell.Suggest(word);
+
+                actual.Should().BeEmpty();
+            }
+
+            [Theory]
+            [InlineData("files/opentaal_forbiddenword1.dic", "barwodfoo", new[] { "barwordfoo" })]
+            [InlineData("files/opentaal_forbiddenword2.dic", "barwodfoo", new[] { "barwordfoo" })]
+            [InlineData("files/rep.dic", "phorm", new[] { "form" })]
+            [InlineData("files/rep.dic", "fantom", new[] { "phantom" })]
+            [InlineData("files/rep.dic", "vacashun", new[] { "vacation" })]
+            [InlineData("files/rep.dic", "vacashuns", new[] { "vacations" })]
+            [InlineData("files/rep.dic", "alot", new[] { "a lot", "lot" })]
+            [InlineData("files/rep.dic", "un'alunno", new[] { "un alunno" })]
+            [InlineData("files/rep.dic", "barfoos", new[] { "bar" })]
+            [InlineData("files/rep.dic", "vinteún", new[] { "vinte e un" })]
+            [InlineData("files/rep.dic", "autos", new[] { "auto's", "auto" })]
+            public async Task words_offer_specific_suggestions(string dictionaryFilePath, string word, string[] expectedSuggestions)
+            {
+                var hunspell = await Hunspell.FromFileAsync(dictionaryFilePath);
+
+                var actual = hunspell.Suggest(word);
+
+                actual.Should().NotBeNullOrEmpty();
+                actual.Should().StartWith(expectedSuggestions);
+            }
+
             public static IEnumerable<object[]> can_find_correct_best_suggestion_args()
             {
                 foreach (var testSet in GetSuggestionTestFileSets().Where(s => s.WrongLines.Count == s.SuggestionLines.Count))
@@ -123,23 +170,31 @@ namespace Hunspell.NetCore.Tests
                 actual.Should().StartWith(expectedSuggestions);
             }
 
-            public static IEnumerable<object[]> misfits() =>
-                GetSuggestionTestFileSets()
-                    .Where(s => s.WrongLines.Count != s.SuggestionLines.Count)
-                    .Select(s => new object[] { s.DictionaryFilePath });
-
-            [Theory, MemberData(nameof(misfits))]
-            public async Task expose_misfits(string dictionaryFilePath)
+            [Fact]
+            public async Task untested_suggestion_files_should_not_be_found()
             {
-                // maybe keep this here, excluding tests that are hand made
-                // just make individual tests for each specific file set that gives problems
-                // looks like there are 5 files so far with this problem
-                throw new NotImplementedException("Need to find a way to test the suggestions correctly.");
+                var untestedSets = GetSuggestionTestFileSets()
+                    .Where(s => s.WrongLines.Count != s.SuggestionLines.Count)
+                    .ToList();
+
+                untestedSets.Should().BeEmpty();
             }
+
+            private static readonly HashSet<string> ExcludedSuggestionFiles = new HashSet<string>
+            {
+                "nosuggest",
+                "onlyincompound",
+                "opentaal_forbiddenword1",
+                "opentaal_forbiddenword2",
+                "rep"
+            };
 
             protected static IEnumerable<SuggestionTestSet> GetSuggestionTestFileSets()
             {
-                foreach (var suggestionFilePath in GetAllDataFilePaths("*.sug"))
+                var suggestionFilePaths = GetAllDataFilePaths("*.sug")
+                    .Where(p => !ExcludedSuggestionFiles.Contains(Path.GetFileNameWithoutExtension(p)));
+
+                foreach (var suggestionFilePath in suggestionFilePaths)
                 {
                     var wrongFilePath = Path.ChangeExtension(suggestionFilePath, "wrong");
                     if (!File.Exists(wrongFilePath))
