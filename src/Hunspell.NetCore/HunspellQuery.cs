@@ -451,6 +451,11 @@ namespace Hunspell
             return rv;
         }
 
+        private List<string> Suggest(string word)
+        {
+            return new HunspellQueryState(word, Affix, Dictionary).Suggest();
+        }
+
         public List<string> Suggest()
         {
             var word = WordToCheck;
@@ -677,7 +682,57 @@ namespace Hunspell
             var dashPos = scw.IndexOf('-');
             if (dashPos >= 0)
             {
-                throw new NotImplementedException();
+                var noDashSug = true;
+                for (var j = 0; j < slst.Count && noDashSug; j++)
+                {
+                    if (slst[j].Contains('-'))
+                    {
+                        noDashSug = false;
+                    }
+                }
+
+                var prevPos = 0;
+                var last = false;
+
+                while (noDashSug && !last)
+                {
+                    if (dashPos == scw.Length)
+                    {
+                        last = true;
+                    }
+
+                    var chunk = scw.Substring(prevPos, dashPos - prevPos);
+                    if (!Check(chunk))
+                    {
+                        var nlst = Suggest(chunk);
+
+                        foreach (var j in nlst)
+                        {
+                            var wspace = scw.Substring(0, prevPos);
+                            wspace += j;
+                            if (!last)
+                            {
+                                wspace += "-";
+                                wspace += scw.Substring(dashPos + 1);
+                            }
+
+                            InsertSuggestion(slst, wspace);
+                        }
+
+                        noDashSug = false;
+                    }
+
+                    if (!last)
+                    {
+                        prevPos = dashPos + 1;
+                        dashPos = scw.IndexOf('-', prevPos);
+                    }
+
+                    if (dashPos < 0)
+                    {
+                        dashPos = scw.Length;
+                    }
+                }
             }
 
             // word reversing wrapper for complex prefixes
@@ -712,7 +767,37 @@ namespace Hunspell
             {
                 if (capType == CapitalizationType.Init || capType == CapitalizationType.All)
                 {
-                    throw new NotImplementedException();
+                    var l = 0;
+                    for (var j = 0; j < slst.Count; j++)
+                    {
+                        if (!slst[j].Contains(' ') && !Check(slst[j]))
+                        {
+                            string s;
+                            s = slst[j];
+                            MakeAllSmall2(ref s);
+                            if (Check(s))
+                            {
+                                slst[l] = s;
+                                l++;
+                            }
+                            else
+                            {
+                                MakeInitCap2(ref s);
+                                if (Check(s))
+                                {
+                                    slst[l] = s;
+                                    ++l;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            slst[l] = slst[j];
+                            l++;
+                        }
+                    }
+
+                    slst.RemoveRange(l, slst.Count - l);
                 }
             }
 
@@ -724,10 +809,10 @@ namespace Hunspell
             // output conversion
             if (Affix.HasOutputConversions)
             {
-                for(var j = 0; j < slst.Count; j++)
+                for (var j = 0; j < slst.Count; j++)
                 {
                     string wspace;
-                    if(TryConvertOutput(slst[j], out wspace))
+                    if (TryConvertOutput(slst[j], out wspace))
                     {
                         slst[j] = wspace;
                     }
