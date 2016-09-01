@@ -102,6 +102,29 @@ namespace Hunspell.Utilities
             return builder.ToString();
         }
 
+        public static bool EqualsOffset(string a, int aOffset, string b, int bOffset)
+        {
+            if (ReferenceEquals(a, b) && aOffset == bOffset)
+            {
+                return true;
+            }
+
+            var aRemaining = a?.Length ?? 0 - aOffset;
+            var bRemaining = b?.Length ?? 0 - bOffset;
+
+            if (aRemaining != bRemaining)
+            {
+                return false;
+            }
+
+            if (aRemaining < 0)
+            {
+                return false;
+            }
+
+            return string.CompareOrdinal(a, aOffset, b, bOffset, aRemaining) == 0;
+        }
+
         public static bool EqualsOffset(string a, int aOffset, string b, int bOffset, int length)
         {
             if (ReferenceEquals(a, b) && aOffset == bOffset)

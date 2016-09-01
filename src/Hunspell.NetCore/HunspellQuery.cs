@@ -19,6 +19,8 @@ namespace Hunspell
         private const string DefaultXmlToken = "<?xml?>";
 
         private const int MaxSharps = 5;
+        private const int MaxWordLen = 176;
+        private const int MaxWordUtf8Len = MaxWordLen * 3;
 
         public string WordToCheck { get; }
 
@@ -80,6 +82,16 @@ namespace Hunspell
             return CheckDetails().Correct;
         }
 
+        private bool Check(string word)
+        {
+            return new HunspellQueryState(word, Affix, Dictionary).Check();
+        }
+
+        private SpellCheckResult CheckDetails(string word)
+        {
+            return new HunspellQueryState(word, Affix, Dictionary).CheckDetails();
+        }
+
         public SpellCheckResult CheckDetails()
         {
             var word = WordToCheck;
@@ -93,6 +105,11 @@ namespace Hunspell
             if (word == DefaultXmlToken)
             {
                 return new SpellCheckResult(true);
+            }
+
+            if (word.Length >= MaxWordUtf8Len)
+            {
+                return new SpellCheckResult(false);
             }
 
             CapitalizationType capType;
@@ -267,7 +284,6 @@ namespace Hunspell
             return new SpellCheckResult(root, resultType, false);
         }
 
-
         private DictionaryEntry CheckDetailsAllCap(int abbv, ref string scw, ref SpellCheckResultType resultType, ref string root)
         {
             resultType |= SpellCheckResultType.OrigCap;
@@ -435,6 +451,227 @@ namespace Hunspell
             return rv;
         }
 
+        public List<string> Suggest()
+        {
+            var word = WordToCheck;
+            var slst = new List<string>();
+
+            int onlyCompoundSuggest = 0;
+            if (Dictionary.Entries.IsEmpty)
+            {
+                return slst;
+            }
+
+            // process XML input of the simplified API (see manual)
+            if (StringExtensions.EqualsOffset(word, 0, DefaultXmlToken, 0, DefaultXmlToken.Length - 3))
+            {
+                throw new NotImplementedException();
+            }
+
+            if (word.Length >= MaxWordUtf8Len)
+            {
+                return slst;
+            }
+
+            CapitalizationType capType;
+            int abbv;
+            string scw;
+            string root = null;
+
+            // input conversion
+            string convertedWord;
+            if (!Affix.HasInputConversions || !TryConvertInput(word, out convertedWord))
+            {
+                convertedWord = word;
+            }
+
+            var wl = CleanWord2(out scw, convertedWord, out capType, out abbv);
+            if (wl == 0)
+            {
+                return slst;
+            }
+
+            int capWords = 0;
+
+            if (capType == CapitalizationType.None && Affix.ForceUpperCase.HasValue)
+            {
+                var info = SpellCheckResultType.OrigCap;
+                if (CheckWord(scw, ref info, ref root) != null)
+                {
+                    var form = scw;
+                    form = MakeInitCap(form);
+                    slst.Add(form);
+                    return slst;
+                }
+            }
+
+            if (capType == CapitalizationType.None)
+            {
+                Suggest(slst, scw, ref onlyCompoundSuggest);
+            }
+            else if (capType == CapitalizationType.Init)
+            {
+                capWords = 1;
+                Suggest(slst, scw, ref onlyCompoundSuggest);
+                var wspace = scw;
+                MakeAllSmall2(ref wspace);
+                Suggest(slst, wspace, ref onlyCompoundSuggest);
+            }
+            else if (capType == CapitalizationType.Huh || capType == CapitalizationType.HuhInit)
+            {
+                if (capType == CapitalizationType.HuhInit)
+                {
+                    capWords = 1;
+                }
+
+                Suggest(slst, scw, ref onlyCompoundSuggest);
+
+                // something.The -> something. The
+                var dotPos = scw.IndexOf('.');
+                if (dotPos >= 0)
+                {
+                    var postDot = scw.Substring(dotPos + 1);
+                    var capTypeLocal = CapitalizationTypeUtilities.GetCapitalizationType(postDot);
+                    if (capTypeLocal == CapitalizationType.Init)
+                    {
+                        var str = scw;
+                        str.Insert(dotPos + 1, " ");
+                        InsertSuggestion(slst, str);
+                    }
+                }
+
+                string wspace;
+                if (capType == CapitalizationType.HuhInit)
+                {
+                    // TheOpenOffice.org -> The OpenOffice.org
+                    wspace = scw;
+                    MakeInitSmall2(ref wspace);
+                    Suggest(slst, wspace, ref onlyCompoundSuggest);
+                }
+
+                wspace = scw;
+                MakeAllSmall2(ref wspace);
+                if (Check(wspace))
+                {
+                    InsertSuggestion(slst, wspace);
+                }
+
+                var prevns = slst.Count;
+                Suggest(slst, wspace, ref onlyCompoundSuggest);
+
+                if (capType == CapitalizationType.HuhInit)
+                {
+                    MakeInitCap2(ref wspace);
+                    if (Check(wspace))
+                    {
+                        InsertSuggestion(slst, wspace);
+                    }
+
+                    Suggest(slst, wspace, ref onlyCompoundSuggest);
+                }
+
+                // aNew -> "a New" (instead of "a new")
+                for (var j = prevns; j < slst.Count; j++)
+                {
+                    var spaceIndex = slst[j].IndexOf(' ');
+                    if (spaceIndex >= 0)
+                    {
+                        var space = slst[j].Substring(spaceIndex);
+                        var slen = space.Length - 1;
+
+                        // different case after space (need capitalisation)
+                        if ((slen < wl) && !StringExtensions.EqualsOffset(scw, wl - slen, space, 1))
+                        {
+                            var first = slst[j].Substring(0, spaceIndex + 1);
+                            var second = slst[j].Substring(spaceIndex + 1);
+                            MakeInitCap2(ref second);
+                            // set as first suggestion
+                            slst.RemoveAt(j);
+                            slst.Insert(0, first + second);
+                        }
+                    }
+                }
+            }
+            else if (capType == CapitalizationType.All)
+            {
+                var wspace = scw;
+                MakeAllSmall2(ref wspace);
+                Suggest(slst, wspace, ref onlyCompoundSuggest);
+                if (Affix.KeepCase.HasValue && Check(wspace))
+                {
+                    InsertSuggestion(slst, wspace);
+                }
+
+                MakeInitCap2(ref wspace);
+                Suggest(slst, wspace, ref onlyCompoundSuggest);
+                for (var j = 0; j < slst.Count; j++)
+                {
+                    slst[j] = slst[j].Replace("ß", "SS");
+                }
+            }
+
+            // LANG_hu section: replace '-' with ' ' in Hungarian
+            if (Affix.Culture.IsHungarianLanguage())
+            {
+                for (var j = 0; j < slst.Count; j++)
+                {
+                    var pos = slst[j].IndexOf("-");
+                    if (pos >= 0)
+                    {
+                        var w = slst[j].Substring(0, pos);
+                        w += slst[j].Substring(pos + 1);
+                        var info = CheckDetails(w).Info;
+                        if (info.HasFlag(SpellCheckResultType.Compound) && info.HasFlag(SpellCheckResultType.Forbidden))
+                        {
+                            slst[pos] = " ";
+                        }
+                        else
+                        {
+                            slst[pos] = "-";
+                        }
+                    }
+                }
+            }
+
+            // try ngram approach since found nothing or only compound words
+            if ((slst.Count == 0 || onlyCompoundSuggest != 0) && Affix.MaxNgramSuggestions != 0)
+            {
+                if (capType == CapitalizationType.None)
+                {
+                    throw new NotImplementedException();
+                }
+                else if (capType == CapitalizationType.Huh || capType == CapitalizationType.HuhInit)
+                {
+                    if (capType == CapitalizationType.HuhInit)
+                    {
+                        capWords = 1;
+                    }
+
+                    throw new NotImplementedException();
+                }
+                else if (capType == CapitalizationType.Init)
+                {
+                    throw new NotImplementedException();
+                }
+                else if (capType == CapitalizationType.All)
+                {
+                    throw new NotImplementedException();
+                }
+            }
+
+            throw new NotImplementedException();
+        }
+
+        private void Suggest(List<string> wlst, string candidate, ref int compoundSuggest)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void InsertSuggestion(List<string> slst, string word)
+        {
+            slst.Insert(0, word);
+        }
+
         private bool IsKeepCase(DictionaryEntry rv)
         {
             return rv.ContainsFlag(Affix.KeepCase);
@@ -513,9 +750,22 @@ namespace Hunspell
             return Affix.Culture.TextInfo.ToLower(s);
         }
 
-        private bool Check(string word)
+        private int MakeInitSmall2(ref string s)
         {
-            return new HunspellQueryState(word, Affix, Dictionary).Check();
+            s = MakeInitSmall(s);
+            return s.Length;
+        }
+
+        private string MakeInitSmall(string s)
+        {
+            if (string.IsNullOrEmpty(s))
+            {
+                return s;
+            }
+
+            var builder = new StringBuilder(s, s.Length);
+            builder[0] = Affix.Culture.TextInfo.ToLower(builder[0]);
+            return builder.ToString();
         }
 
         private DictionaryEntry CheckWord(string w, ref SpellCheckResultType info, ref string root)

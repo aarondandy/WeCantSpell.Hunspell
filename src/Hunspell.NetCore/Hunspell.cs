@@ -42,9 +42,9 @@ namespace Hunspell
             return new HunspellQueryState(word, Affix, Dictionary).CheckDetails();
         }
 
-        public List<string> Suggest(string givenWord)
+        public List<string> Suggest(string word)
         {
-            throw new NotImplementedException();
+            return new HunspellQueryState(word, Affix, Dictionary).Suggest();
         }
     }
 }
