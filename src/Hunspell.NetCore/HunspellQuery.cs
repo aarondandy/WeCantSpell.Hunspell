@@ -621,13 +621,15 @@ namespace Hunspell
                         var w = slst[j].Substring(0, pos);
                         w += slst[j].Substring(pos + 1);
                         var info = CheckDetails(w).Info;
+
+                        // TODO: this section is probably a bug in the original
                         if (info.HasFlag(SpellCheckResultType.Compound) && info.HasFlag(SpellCheckResultType.Forbidden))
                         {
-                            slst[pos] = " ";
+                            slst[pos] = " "; // TODO: possible index out of range
                         }
                         else
                         {
-                            slst[pos] = "-";
+                            slst[pos] = "-"; // TODO: possible index out of range
                         }
                     }
                 }
@@ -638,7 +640,7 @@ namespace Hunspell
             {
                 if (capType == CapitalizationType.None)
                 {
-                    throw new NotImplementedException();
+                    NGramSuggest(slst, scw);
                 }
                 else if (capType == CapitalizationType.Huh || capType == CapitalizationType.HuhInit)
                 {
@@ -647,22 +649,100 @@ namespace Hunspell
                         capWords = 1;
                     }
 
-                    throw new NotImplementedException();
+                    var wspace = scw;
+                    MakeAllSmall2(ref wspace);
+                    NGramSuggest(slst, wspace);
                 }
                 else if (capType == CapitalizationType.Init)
                 {
-                    throw new NotImplementedException();
+                    capWords = 1;
+                    var wspace = scw;
+                    MakeAllSmall2(ref wspace);
+                    NGramSuggest(slst, wspace);
                 }
                 else if (capType == CapitalizationType.All)
+                {
+                    var wspace = scw;
+                    MakeAllSmall2(ref wspace);
+                    var oldns = slst.Count;
+                    NGramSuggest(slst, wspace);
+                    for (var j = oldns; j < slst.Count; j++)
+                    {
+                        slst[j] = MakeAllCap(slst[j]);
+                    }
+                }
+            }
+
+            // try dash suggestion (Afo-American -> Afro-American)
+            var dashPos = scw.IndexOf('-');
+            if (dashPos >= 0)
+            {
+                throw new NotImplementedException();
+            }
+
+            // word reversing wrapper for complex prefixes
+            if (Affix.ComplexPrefixes)
+            {
+                for (var j = 0; j < slst.Count; j++)
+                {
+                    slst[j] = slst[j].Reverse();
+                }
+            }
+
+            // capitalize
+            if (capWords != 0)
+            {
+                for (var j = 0; j < slst.Count; j++)
+                {
+                    slst[j] = MakeInitCap(slst[j]);
+                }
+            }
+
+            // expand suggestions with dot(s)
+            if (abbv != 0 && Affix.SuggestWithDots)
+            {
+                for (var j = 0; j < slst.Count; j++)
+                {
+                    slst[j] += word.Substring(word.Length - abbv);
+                }
+            }
+
+            // remove bad capitalized and forbidden forms
+            if (Affix.KeepCase.HasValue || Affix.ForbiddenWord.HasValue)
+            {
+                if (capType == CapitalizationType.Init || capType == CapitalizationType.All)
                 {
                     throw new NotImplementedException();
                 }
             }
 
-            throw new NotImplementedException();
+            // remove duplications
+            slst = slst
+                .Distinct(Affix.StringComparer)
+                .ToList();
+
+            // output conversion
+            if (Affix.HasOutputConversions)
+            {
+                for(var j = 0; j < slst.Count; j++)
+                {
+                    string wspace;
+                    if(TryConvertOutput(slst[j], out wspace))
+                    {
+                        slst[j] = wspace;
+                    }
+                }
+            }
+
+            return slst;
         }
 
         private void Suggest(List<string> wlst, string candidate, ref int compoundSuggest)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void NGramSuggest(List<string> wlst, string w)
         {
             throw new NotImplementedException();
         }
@@ -766,6 +846,16 @@ namespace Hunspell
             var builder = new StringBuilder(s, s.Length);
             builder[0] = Affix.Culture.TextInfo.ToLower(builder[0]);
             return builder.ToString();
+        }
+
+        private void MakeAllCap2(ref string s)
+        {
+            s = MakeAllCap(s);
+        }
+
+        private string MakeAllCap(string s)
+        {
+            return Affix.Culture.TextInfo.ToUpper(s);
         }
 
         private DictionaryEntry CheckWord(string w, ref SpellCheckResultType info, ref string root)
@@ -3075,6 +3165,33 @@ namespace Hunspell
             return appliedConversion;
         }
 
+        private bool TryConvertOutput(string input, out string converted)
+        {
+            converted = string.Empty;
+
+            var appliedConversion = false;
+            for (var i = 0; i < input.Length; i++)
+            {
+                var replacementEntry = FindLargestMatchingOutputConversion(input.Substring(i));
+                var replacementText = replacementEntry == null
+                    ? string.Empty
+                    : ExtractReplacementText(input.Length - i, replacementEntry, i == 0);
+
+                if (replacementText.Length == 0)
+                {
+                    converted += input[i];
+                }
+                else
+                {
+                    converted += replacementText;
+                    i += replacementEntry.Pattern.Length - 1;
+                    appliedConversion = true;
+                }
+            }
+
+            return appliedConversion;
+        }
+
         /// <summary>
         /// Finds an input conversion matching the longest version of the given <paramref name="text"/> from the left.
         /// </summary>
@@ -3087,6 +3204,20 @@ namespace Hunspell
             for (var searchLength = text.Length; searchLength > 0; searchLength--)
             {
                 if (Affix.InputConversions.TryGetValue(text.Substring(0, searchLength), out entry))
+                {
+                    break;
+                }
+            }
+
+            return entry;
+        }
+
+        private MultiReplacementEntry FindLargestMatchingOutputConversion(string text)
+        {
+            MultiReplacementEntry entry = null;
+            for (var searchLength = text.Length; searchLength > 0; searchLength--)
+            {
+                if (Affix.OutputConversions.TryGetValue(text.Substring(0, searchLength), out entry))
                 {
                     break;
                 }

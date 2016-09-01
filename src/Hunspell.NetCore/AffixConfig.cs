@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
 
@@ -207,6 +208,11 @@ namespace Hunspell
         /// The culture associated with the language.
         /// </summary>
         public CultureInfo Culture { get; private set; }
+
+        /// <summary>
+        /// The string comparer associated with the culture.
+        /// </summary>
+        public StringComparer StringComparer { get; private set; }
 
         /// <summary>
         /// Flag indicating that a word may be in compound words.

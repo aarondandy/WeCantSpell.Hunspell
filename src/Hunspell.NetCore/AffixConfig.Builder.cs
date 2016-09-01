@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using Hunspell.Utilities;
 
 namespace Hunspell
 {
@@ -329,6 +330,8 @@ namespace Hunspell
                 // TODO: ProcessPfxOrder and ProcessSfxOrder
                 // TODO: optimize memory reuse for Immutable collections, focused on AliasF and AliasM
 
+                var culture = CultureInfo.ReadOnly(Culture ?? CultureInfo.InvariantCulture);
+
                 var config = new AffixConfig
                 {
                     Options = Options,
@@ -336,7 +339,8 @@ namespace Hunspell
                     KeyString = KeyString ?? DefaultKeyString,
                     TryString = TryString ?? string.Empty,
                     Language = Language ?? string.Empty,
-                    Culture = CultureInfo.ReadOnly(Culture ?? CultureInfo.InvariantCulture),
+                    Culture = culture,
+                    StringComparer = new CulturedStringComparer(culture),
                     CompoundFlag = CompoundFlag,
                     CompoundBegin = CompoundBegin,
                     CompoundEnd = CompoundEnd,
