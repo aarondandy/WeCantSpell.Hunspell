@@ -172,5 +172,74 @@ namespace Hunspell.Utilities
         {
             @this.CopyTo(sourceIndex, destination, destinationIndex, @this.Length - sourceIndex);
         }
+
+        public static void Swap(this StringBuilder @this, int indexA, int indexB)
+        {
+            if (indexA < 0 || indexA > @this.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(indexA));
+            }
+            if (indexB < 0 || indexB > @this.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(indexB));
+            }
+
+            if (indexA == indexB)
+            {
+                return;
+            }
+
+            var temp = @this[indexA];
+            @this[indexA] = @this[indexB];
+            @this[indexB] = temp;
+        }
+
+        public static string ToStringTerminated(this StringBuilder @this)
+        {
+            var terminatedIndex = @this.IndexOf('\0');
+            if (terminatedIndex >= 0)
+            {
+                return @this.ToString(0, terminatedIndex);
+            }
+
+            return @this.ToString();
+        }
+
+        public static string ToStringTerminated(this StringBuilder @this, int startIndex)
+        {
+            var terminatedIndex = @this.IndexOf('\0', startIndex);
+            if(terminatedIndex >= 0)
+            {
+                return @this.ToString(startIndex, terminatedIndex - startIndex);
+            }
+
+            return @this.ToString(startIndex, @this.Length - startIndex);
+        }
+
+        public static int IndexOf(this StringBuilder @this, char c)
+        {
+            for (var i = 0; i < @this.Length; i++)
+            {
+                if (@this[i] == '\0')
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        public static int IndexOf(this StringBuilder @this, char c, int offset)
+        {
+            for (var i = offset; i < @this.Length; i++)
+            {
+                if (@this[i] == '\0')
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
     }
 }

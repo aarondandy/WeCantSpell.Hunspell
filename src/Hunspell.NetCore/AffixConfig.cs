@@ -814,5 +814,7 @@ namespace Hunspell
         public bool HasSuffixes => !Suffixes.IsDefaultOrEmpty;
 
         public bool HasPrefixes => !Prefixes.IsDefaultOrEmpty;
+
+        public bool HasMapTableEntries => !MapTable.IsDefaultOrEmpty;
     }
 }

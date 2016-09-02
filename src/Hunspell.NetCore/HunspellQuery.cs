@@ -19,8 +19,21 @@ namespace Hunspell
         private const string DefaultXmlToken = "<?xml?>";
 
         private const int MaxSharps = 5;
+
         private const int MaxWordLen = 176;
+
         private const int MaxWordUtf8Len = MaxWordLen * 3;
+
+        private const int MaxSuggestions = 15;
+
+        /// <summary>
+        /// Timelimit: max ~1/4 sec (process time on Linux) for a time consuming function.
+        /// </summary>
+        private const int TimeLimit = 1000 >> 2;
+
+        private const int MinTimer = 100;
+
+        private const int MaxPlusTimer = 100;
 
         public string WordToCheck { get; }
 
@@ -822,9 +835,802 @@ namespace Hunspell
             return slst;
         }
 
-        private void Suggest(List<string> wlst, string candidate, ref int compoundSuggest)
+        private void Suggest(List<string> slst, string w, ref int onlyCompoundSug)
+        {
+            var noCompoundTwoWords = 0;
+            var wl = 0;
+            var nSugOrig = slst.Count;
+            string w2;
+            var word = w;
+            var oldSug = 0;
+
+            // word reversing wrapper for complex prefixes
+            if (Affix.ComplexPrefixes)
+            {
+                w2 = w;
+                w2 = w2.Reverse();
+                word = w2;
+            }
+
+            for (var cpdSuggest = 0; cpdSuggest < 2 && noCompoundTwoWords == 0; cpdSuggest++)
+            {
+                // limit compound suggestion
+                if (cpdSuggest > 0)
+                {
+                    oldSug = slst.Count;
+                }
+
+                // suggestions for an uppercase word (html -> HTML)
+                if (slst.Count < MaxSuggestions)
+                {
+                    CapChars(slst, word, cpdSuggest);
+                }
+
+                // perhaps we made a typical fault of spelling
+                if (slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < oldSug + MaxSuggestions))
+                {
+                    ReplChars(slst, word, cpdSuggest);
+                }
+
+                // perhaps we made chose the wrong char from a related set
+                if (slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < oldSug + MaxSuggestions))
+                {
+                    MapChars(slst, word, cpdSuggest);
+                }
+
+                // only suggest compound words when no other suggestion
+                if (cpdSuggest == 0 && slst.Count > nSugOrig)
+                {
+                    noCompoundTwoWords = 1;
+                }
+
+                // did we swap the order of chars by mistake
+                if (slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < oldSug + MaxSuggestions))
+                {
+                    LongSwapChar(slst, word, cpdSuggest);
+                }
+
+                // did we just hit the wrong key in place of a good char (case and keyboard)
+                if (slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < oldSug + MaxSuggestions))
+                {
+                    BadCharKey(slst, word, cpdSuggest);
+                }
+
+                // did we add a char that should not be there
+                if (slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < oldSug + MaxSuggestions))
+                {
+                    ExtraChar(slst, word, cpdSuggest);
+                }
+
+                // did we forgot a char
+                if (slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < oldSug + MaxSuggestions))
+                {
+                    ForgotChar(slst, word, cpdSuggest);
+                }
+
+                // did we move a char
+                if (slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < oldSug + MaxSuggestions))
+                {
+                    MoveChar(slst, word, cpdSuggest);
+                }
+
+                // did we just hit the wrong key in place of a good char
+                if (slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < oldSug + MaxSuggestions))
+                {
+                    BadChar(slst, word, cpdSuggest);
+                }
+
+                // did we double two characters
+                if (slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < oldSug + MaxSuggestions))
+                {
+                    DoubleTwoChars(slst, word, cpdSuggest);
+                }
+
+                // perhaps we forgot to hit space and two words ran together
+                if (!Affix.NoSplitSuggestions && slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < oldSug + MaxSuggestions))
+                {
+                    TwoWords(slst, word, cpdSuggest);
+                }
+            }
+
+            if (noCompoundTwoWords == 0 && slst.Count != 0)
+            {
+                onlyCompoundSug = 1;
+            }
+        }
+
+        /// <summary>
+        /// Error is should have been two words.
+        /// </summary>
+        private int TwoWords(List<string> wlst, string word, int cpdSuggest)
+        {
+            int c2;
+            var forbidden = 0;
+            int cwrd;
+
+            var wl = word.Length;
+            if (wl < 3)
+            {
+                return wlst.Count;
+            }
+
+            var isHungarian = Affix.Culture.IsHungarianLanguage();
+            if (isHungarian)
+            {
+                forbidden = CheckForbidden(word) ? 1 : 0;
+            }
+
+            var candidate = new StringBuilder(wl + 2);
+            candidate.Append('\0');
+            candidate.Append(word);
+
+            // split the string into two pieces after every char
+            // if both pieces are good words make them a suggestion
+
+            for (var p = 1; p + 1 < candidate.Length; p++)
+            {
+                candidate[p - 1] = candidate[p];
+                candidate[p] = '\0';
+                var c1 = CheckWord(candidate.ToStringTerminated(), cpdSuggest);
+                if (c1 != 0)
+                {
+                    c2 = CheckWord(candidate.ToStringTerminated(p + 1), cpdSuggest);
+                    if (c2 != 0)
+                    {
+                        candidate[p] = ' ';
+
+                        // spec. Hungarian code (need a better compound word support)
+                        if (
+                            isHungarian
+                            &&
+                            forbidden == 0
+                            && // if 3 repeating letter, use - instead of space
+                            (
+                                (
+                                    candidate[p - 1] == candidate[p]
+                                    &&
+                                    (
+                                        (
+                                            p > 1
+                                            &&
+                                            candidate[p - 1] == candidate[p - 2]
+                                        )
+                                        ||
+                                        (
+                                            candidate[p - 1] == candidate[p + 2]
+                                        )
+                                    )
+                                )
+                                || // or multiple compounding, with more, than 6 syllables
+                                (
+                                    c1 == 3
+                                    &&
+                                    c2 >= 2
+                                )
+                            )
+                        )
+                        {
+                            candidate[p] = '-';
+                        }
+
+                        cwrd = 1;
+
+                        var currentCandidateString = candidate.ToStringTerminated();
+                        for (var k = 0; k < wlst.Count; k++)
+                        {
+                            if (string.Equals(wlst[k], currentCandidateString, StringComparison.Ordinal))
+                            {
+                                cwrd = 0;
+                                break;
+                            }
+                        }
+
+                        if (wlst.Count < MaxSuggestions)
+                        {
+                            if (cwrd != 0)
+                            {
+                                wlst.Add(currentCandidateString);
+                            }
+                        }
+                        else
+                        {
+                            return wlst.Count;
+                        }
+
+                        // add two word suggestion with dash, if TRY string contains
+                        // "a" or "-"
+                        // NOTE: cwrd doesn't modified for REP twoword sugg.
+
+                        if (
+                            !string.IsNullOrEmpty(Affix.TryString)
+                            &&
+                            (
+                                Affix.TryString.Contains('a')
+                                ||
+                                Affix.TryString.Contains('-')
+                            )
+                            &&
+                            candidate.Length - (p + 1) > 1
+                            &&
+                            p > 1
+                        )
+                        {
+                            candidate[p] = '-';
+                            currentCandidateString = candidate.ToStringTerminated();
+                            for (var k = 0; k < wlst.Count; k++)
+                            {
+                                if (string.Equals(wlst[k], currentCandidateString, StringComparison.Ordinal))
+                                {
+                                    cwrd = 0;
+                                    break;
+                                }
+                            }
+
+                            if (wlst.Count < MaxSuggestions)
+                            {
+                                if (cwrd != 0)
+                                {
+                                    wlst.Add(currentCandidateString);
+                                }
+                            }
+                            else
+                            {
+                                return wlst.Count;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return wlst.Count;
+        }
+
+        private bool CheckForbidden(string word)
+        {
+            var rv = Lookup(word).FirstOrDefault();
+            if (rv != null && rv.ContainsAnyFlags(Affix.NeedAffix, Affix.OnlyInCompound))
+            {
+                rv = null;
+            }
+
+            if (PrefixCheck(word, CompoundOptions.Begin, default(FlagValue)) == null)
+            {
+                rv = SuffixCheck(word, AffixEntryOptions.None, null, null, default(FlagValue), default(FlagValue), CompoundOptions.Not); // prefix+suffix, suffix
+            }
+
+            // check forbidden words
+            if (rv != null && rv.ContainsFlag(Affix.ForbiddenWord))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// perhaps we doubled two characters (pattern aba -> ababa, for example vacation -> vacacation)
+        /// </summary>
+        private int DoubleTwoChars(List<string> wlst, string word, int cpdSuggest)
+        {
+            var state = 0;
+            var wl = word.Length;
+            if (wl < 5)
+            {
+                return wlst.Count;
+            }
+
+            for (var i = 2; i < wl; i++)
+            {
+                if (word[i] == word[i - 2])
+                {
+                    state++;
+                    if (state == 3)
+                    {
+                        var candidate = word.Substring(0, i - 1);
+                        candidate += word.Substring(i + 1);
+                        TestSug(wlst, candidate, cpdSuggest);
+                        state = 0;
+                    }
+                }
+                else
+                {
+                    state = 0;
+                }
+            }
+
+            return wlst.Count;
+        }
+
+        /// <summary>
+        /// Error is wrong char in place of correct one.
+        /// </summary>
+        private int BadChar(List<string> wlst, string word, int cpdSuggest)
+        {
+            if (string.IsNullOrEmpty(Affix.TryString))
+            {
+                return wlst.Count;
+            }
+
+            var candidate = new StringBuilder(word, word.Length);
+            long? timeLimit = Environment.TickCount;
+            int? timer = MinTimer;
+
+            // swap out each char one by one and try all the tryme
+            // chars in its place to see if that makes a good word
+            for (var j = 0; j < Affix.TryString.Length; j++)
+            {
+                for (var aI = candidate.Length - 1; aI >= 0; aI--)
+                {
+                    var tmpc = candidate[aI];
+                    if (Affix.TryString[j] != tmpc)
+                    {
+                        continue;
+                    }
+
+                    candidate[aI] = Affix.TryString[j];
+                    TestSug(wlst, candidate.ToString(), cpdSuggest, ref timer, ref timeLimit);
+                    if (timer == 0)
+                    {
+                        return wlst.Count;
+                    }
+
+                    candidate[aI] = tmpc;
+                }
+            }
+
+            return wlst.Count;
+        }
+
+        /// <summary>
+        /// Error is a letter was moved.
+        /// </summary>
+        private int MoveChar(List<string> wlst, string word, int cpdSuggest)
+        {
+            var candidate = new StringBuilder(word, word.Length);
+            if (candidate.Length < 2)
+            {
+                return wlst.Count;
+            }
+
+            // try moving a char
+            for (var p = 0; p < candidate.Length; p++)
+            {
+                for (var q = p + 1; q < candidate.Length && q - p < 10; q++)
+                {
+                    candidate.Swap(q, q - 1);
+                    if (q - p < 2)
+                    {
+                        continue; // omit swap char
+                    }
+
+                    TestSug(wlst, candidate.ToString(), cpdSuggest);
+                }
+
+                candidate.Clear();
+                candidate.Append(word);
+            }
+
+            for (var p = candidate.Length - 1; p >= 0; p--)
+            {
+                for (var q = p - 1; q >= 0 && p - q < 10; q--)
+                {
+                    candidate.Swap(q, q + 1);
+                    if (p - q < 2)
+                    {
+                        continue;  // omit swap char
+                    }
+
+                    TestSug(wlst, candidate.ToString(), cpdSuggest);
+                }
+
+                candidate.Clear();
+                candidate.Append(word);
+            }
+
+            return wlst.Count;
+        }
+
+        /// <summary>
+        /// Error is missing a letter it needs.
+        /// </summary>
+        private int ForgotChar(List<string> wlst, string word, int cpdSuggest)
+        {
+            var candidate = new StringBuilder(word, word.Length + 1);
+            long? timeLimit = Environment.TickCount;
+            int? timer = MinTimer;
+
+            if (string.IsNullOrEmpty(Affix.TryString))
+            {
+                return wlst.Count;
+            }
+
+            // try inserting a tryme character before every letter (and the null terminator)
+            for (var k = 0; k < Affix.TryString.Length; k++)
+            {
+                var tryChar = Affix.TryString[k];
+                for (var i = 0; i < candidate.Length; i++)
+                {
+                    var index = candidate.Length - i;
+                    candidate.Insert(index, tryChar);
+                    TestSug(wlst, candidate.ToString(), cpdSuggest, ref timer, ref timeLimit);
+                    if (timer == 0)
+                    {
+                        return wlst.Count;
+                    }
+
+                    candidate.Remove(index, 1);
+                }
+            }
+
+            return wlst.Count;
+        }
+
+        /// <summary>
+        /// Error is word has an extra letter it does not need.
+        /// </summary>
+        private int ExtraChar(List<string> wlst, string word, int cpdSuggest)
+        {
+            var candidate = new StringBuilder(word, word.Length);
+            if (candidate.Length < 2)
+            {
+                return wlst.Count;
+            }
+
+            // try omitting one char of word at a time
+            for (var i = 0; i < candidate.Length; i++)
+            {
+                var index = candidate.Length - 1 - i;
+                var tmpc = candidate[index];
+                candidate.Remove(index, 1);
+                TestSug(wlst, candidate.ToString(), cpdSuggest);
+                candidate.Insert(index, tmpc);
+            }
+
+            return wlst.Count;
+        }
+
+        /// <summary>
+        /// error is wrong char in place of correct one (case and keyboard related version)
+        /// </summary>
+        private int BadCharKey(List<string> wlst, string word, int cpdSuggest)
+        {
+            var candidate = new StringBuilder(word, word.Length);
+
+            // swap out each char one by one and try uppercase and neighbor
+            // keyboard chars in its place to see if that makes a good word
+            for (var i = 0; i < candidate.Length; i++)
+            {
+                var tmpc = candidate[i];
+                // check with uppercase letters
+                candidate[i] = Affix.Culture.TextInfo.ToUpper(tmpc);
+                if (tmpc != candidate[i])
+                {
+                    TestSug(wlst, candidate.ToString(), cpdSuggest);
+                    candidate[i] = tmpc;
+                }
+
+                // check neighbor characters in keyboard string
+                if (string.IsNullOrEmpty(Affix.KeyString))
+                {
+                    continue;
+                }
+
+                var loc = Affix.KeyString.IndexOf(tmpc);
+                while (loc >= 0)
+                {
+                    var priorLoc = loc - 1;
+                    if (priorLoc >= 0 && Affix.KeyString[priorLoc] != '|')
+                    {
+                        candidate[i] = Affix.KeyString[priorLoc];
+                        TestSug(wlst, candidate.ToString(), cpdSuggest);
+                    }
+
+                    var nextLoc = loc + 1;
+                    if (nextLoc < Affix.KeyString.Length && Affix.KeyString[nextLoc] != '|')
+                    {
+                        candidate[i] = Affix.KeyString[nextLoc];
+                        TestSug(wlst, candidate.ToString(), cpdSuggest);
+                    }
+
+                    loc = Affix.KeyString.IndexOf(tmpc, nextLoc);
+                }
+
+                candidate[i] = tmpc;
+            }
+            return wlst.Count;
+
+        }
+
+        /// <summary>
+        /// Error is not adjacent letter were swapped.
+        /// </summary>
+        private int LongSwapChar(List<string> wlst, string word, int cpdSuggest)
+        {
+            var candidate = new StringBuilder(word, word.Length);
+            // try swapping not adjacent chars one by one
+            for (var p = 0; p < candidate.Length; p++)
+            {
+                for (var q = 0; q < candidate.Length; q++)
+                {
+                    if (p != q)
+                    {
+                        candidate.Swap(p, q);
+                        TestSug(wlst, candidate.ToString(), cpdSuggest);
+                        candidate.Swap(p, q);
+                    }
+                }
+            }
+
+            return wlst.Count;
+        }
+
+        private void CapChars(List<string> wlst, string word, int cpdSuggest)
+        {
+            var candidate = word;
+            MakeAllCap2(ref candidate);
+            TestSug(wlst, candidate, cpdSuggest);
+        }
+
+        private int MapChars(List<string> wlst, string word, int cpdSuggest)
+        {
+            var candidate = string.Empty;
+            long timeLimit;
+            int timer;
+
+            int wl = word.Length;
+            if (wl < 2)
+            {
+                return wlst.Count;
+            }
+
+            if (!Affix.HasMapTableEntries)
+            {
+                return wlst.Count;
+            }
+
+            timeLimit = Environment.TickCount;
+            timer = MinTimer;
+
+            return MapRelated(word, ref candidate, 0, wlst, cpdSuggest, ref timer, ref timeLimit);
+        }
+
+        private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, int cpdSuggest, ref int timer, ref long timeLimit)
         {
             throw new NotImplementedException();
+        }
+
+        private void TestSug(List<string> wlst, string candidate, int cpdSuggest)
+        {
+            int? timer = null;
+            long? timeLimit = null;
+            TestSug(wlst, candidate, cpdSuggest, ref timer, ref timeLimit);
+        }
+
+        private void TestSug(List<string> wlst, string candidate, int cpdSuggest, ref int? timer, ref long? timeLimit)
+        {
+            var cwrd = 1;
+            if (wlst.Count == MaxSuggestions)
+            {
+                return;
+            }
+
+            for (var k = 0; k < wlst.Count; k++)
+            {
+                if (wlst[k] == candidate)
+                {
+                    cwrd = 0;
+                    break;
+                }
+            }
+
+            if (cwrd != 0 && CheckWord(candidate, cpdSuggest, ref timer, ref timeLimit) != 0)
+            {
+                wlst.Add(candidate);
+            }
+        }
+
+        private int CheckWord(string word, int cpdSuggest)
+        {
+            int? timer = null;
+            long? timeLimit = null;
+            return CheckWord(word, cpdSuggest, ref timer, ref timeLimit);
+        }
+
+        /// <summary>
+        /// See if a candidate suggestion is spelled correctly
+        /// needs to check both root words and words with affixes.
+        /// </summary>
+        /// <remarks>
+        /// Obsolote MySpell-HU modifications:
+        /// return value 2 and 3 marks compounding with hyphen (-)
+        /// `3' marks roots without suffix
+        /// </remarks>
+        private int CheckWord(string word, int cpdSuggest, ref int? timer, ref long? timeLimit)
+        {
+            // check time limit
+            if (timer.HasValue)
+            {
+                timer--;
+                if (timer != 0 && timeLimit.HasValue)
+                {
+                    if (Environment.TickCount - timeLimit.GetValueOrDefault() > TimeLimit)
+                    {
+                        return 0;
+                    }
+
+                    timer = MaxPlusTimer;
+                }
+            }
+
+            DictionaryEntry rv = null;
+            int noSuffix = 0;
+
+            if (cpdSuggest == 1)
+            {
+                if (Affix.HasCompound)
+                {
+                    DictionaryEntry rv2 = null;
+                    var rwords = new Dictionary<int, DictionaryEntry>(); // buffer for COMPOUND pattern checking
+                    var info = SpellCheckResultType.None;
+                    rv = CompoundCheck(word, 0, 0, 100, 0, null, ref rwords, 0, 1, ref info);
+                    if (
+                        rv != null
+                        &&
+                        (
+                            (rv2 = Lookup(word).FirstOrDefault()) == null
+                            ||
+                            !rv2.HasFlags
+                            ||
+                            !rv2.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest)
+                        )
+                    )
+                    {
+                        return 3; // XXX obsolote categorisation + only ICONV needs affix flag check?
+                    }
+                }
+
+                return 0;
+            }
+
+            var rvs = Lookup(word); // get homonyms
+            var rvIndex = 0;
+            rv = rvs.FirstOrDefault();
+
+            if (rv != null)
+            {
+                if (rv.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest))
+                {
+                    return 0;
+                }
+
+                while (rv != null)
+                {
+                    if (rv.ContainsAnyFlags(Affix.NeedAffix, SpecialFlags.OnlyUpcaseFlag, Affix.OnlyInCompound))
+                    {
+                        rvIndex++;
+                        rv = rvIndex < rvs.Length ? rvs[rvIndex] : null;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                rv = PrefixCheck(word, CompoundOptions.Not, default(FlagValue)); // only prefix, and prefix + suffix XXX
+            }
+
+            if (rv != null)
+            {
+                noSuffix = 1;
+            }
+            else
+            {
+                rv = SuffixCheck(word, AffixEntryOptions.None, null, null, default(FlagValue), default(FlagValue), CompoundOptions.Not); // only suffix
+            }
+
+            if (rv == null && Affix.HasContClass)
+            {
+                rv = SuffixCheckTwoSfx(word, AffixEntryOptions.None, null, null, default(FlagValue));
+                if (rv == null)
+                {
+                    rv = PrefixCheckTwoSfx(word, CompoundOptions.Begin, default(FlagValue));
+                }
+            }
+
+            // check forbidden words
+            if (rv != null && rv.ContainsAnyFlags(Affix.ForbiddenWord, SpecialFlags.OnlyUpcaseFlag, Affix.NoSuggest, Affix.OnlyInCompound))
+            {
+                return 0;
+            }
+
+            if (rv != null)
+            {
+                // XXX obsolete
+                if (rv.ContainsFlag(Affix.CompoundFlag))
+                {
+                    return 2 + noSuffix;
+                }
+
+                return 1;
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Suggestions for a typical fault of spelling, that
+        /// differs with more, than 1 letter from the right form.
+        /// </summary>
+        private int ReplChars(List<string> wlst, string word, int cpdSuggest)
+        {
+            string candidate;
+            var wl = word.Length;
+            if (wl < 2 || !Affix.HasReplacements)
+            {
+                return wlst.Count;
+            }
+
+            for (var i = 0; i < Affix.Replacements.Length; i++)
+            {
+                var r = 0;
+                // search every occurence of the pattern in the word
+                while ((r = word.IndexOf(Affix.Replacements[i].Pattern, r, StringComparison.Ordinal)) >= 0)
+                {
+                    var type = (r == 0) ? ReplacementValueType.Ini : ReplacementValueType.Med;
+                    if (r - 0 + Affix.Replacements[i].Pattern.Length == word.Length)
+                    {
+                        type += 2;
+                    }
+
+                    while (type != 0 && string.IsNullOrEmpty(Affix.Replacements[i][type]))
+                    {
+                        type = (type == ReplacementValueType.Fin && r != 0) ? ReplacementValueType.Med : type - 1;
+                    }
+
+                    var @out = Affix.Replacements[i][type];
+                    if (string.IsNullOrEmpty(@out))
+                    {
+                        r++;
+                        continue;
+                    }
+
+                    candidate = word;
+                    candidate = candidate.Substring(0, r);
+                    candidate += Affix.Replacements[i][type];
+                    candidate += word.Substring(r + Affix.Replacements[i].Pattern.Length);
+                    TestSug(wlst, candidate, cpdSuggest);
+
+                    // check REP suggestions with space
+                    var sp = candidate.IndexOf(' ');
+                    if (sp >= 0)
+                    {
+                        var prev = 0;
+                        while (sp >= 0)
+                        {
+                            var prevChunk = candidate.Substring(prev, sp - prev);
+                            if (CheckWord(prevChunk, 0) != 0)
+                            {
+                                var oldNs = wlst.Count;
+                                var postChunk = candidate.Substring(sp + 1);
+                                TestSug(wlst, postChunk, cpdSuggest);
+                                if (oldNs < wlst.Count)
+                                {
+                                    wlst[wlst.Count - 1] = candidate;
+                                }
+                            }
+
+                            prev = sp + 1;
+                            sp = candidate.IndexOf(' ', prev);
+                        }
+                    }
+
+                    r++; // search for the next letter
+                }
+            }
+
+            return wlst.Count;
         }
 
         private void NGramSuggest(List<string> wlst, string w)
