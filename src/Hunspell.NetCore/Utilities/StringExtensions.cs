@@ -208,7 +208,7 @@ namespace Hunspell.Utilities
         public static string ToStringTerminated(this StringBuilder @this, int startIndex)
         {
             var terminatedIndex = @this.IndexOf('\0', startIndex);
-            if(terminatedIndex >= 0)
+            if (terminatedIndex >= 0)
             {
                 return @this.ToString(startIndex, terminatedIndex - startIndex);
             }

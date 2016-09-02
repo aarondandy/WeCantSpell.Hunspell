@@ -1374,8 +1374,6 @@ namespace Hunspell
         private int MapChars(List<string> wlst, string word, int cpdSuggest)
         {
             var candidate = string.Empty;
-            long timeLimit;
-            int timer;
 
             int wl = word.Length;
             if (wl < 2)
@@ -1388,15 +1386,72 @@ namespace Hunspell
                 return wlst.Count;
             }
 
-            timeLimit = Environment.TickCount;
-            timer = MinTimer;
-
+            long? timeLimit = Environment.TickCount;
+            int? timer = MinTimer;
             return MapRelated(word, ref candidate, 0, wlst, cpdSuggest, ref timer, ref timeLimit);
         }
 
-        private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, int cpdSuggest, ref int timer, ref long timeLimit)
+        private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, int cpdSuggest, ref int? timer, ref long? timeLimit)
         {
-            throw new NotImplementedException();
+            if (wn >= word.Length)
+            {
+                var cwrd = 1;
+                for (var m = 0; m < wlst.Count; m++)
+                {
+                    if (wlst[m] == candidate)
+                    {
+                        cwrd = 0;
+                        break;
+                    }
+                }
+
+                if (cwrd != 0 && CheckWord(candidate, cpdSuggest, ref timer, ref timeLimit) != 0)
+                {
+                    if (wlst.Count < MaxSuggestions)
+                    {
+                        wlst.Add(candidate);
+                    }
+                }
+
+                return wlst.Count;
+            }
+
+            var inMap = 0;
+            if (Affix.HasMapTableEntries)
+            {
+                for (var j = 0; j < Affix.MapTable.Length; j++)
+                {
+                    var mapEntry = Affix.MapTable[j];
+                    for (var k = 0; k < mapEntry.Length; k++)
+                    {
+                        var len = mapEntry[k].Length;
+                        if (StringExtensions.EqualsOffset(mapEntry[k], 0, word, wn, len))
+                        {
+                            inMap = 1;
+                            var cn = candidate.Length;
+                            for (var l = 0; l < mapEntry.Length; l++)
+                            {
+                                candidate.Substring(0, cn);
+                                candidate += mapEntry[l];
+                                MapRelated(word, ref candidate, wn + len, wlst, cpdSuggest, ref timer, ref timeLimit);
+
+                                if (timer.HasValue && timer.GetValueOrDefault() == 0)
+                                {
+                                    return wlst.Count;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (inMap == 0)
+            {
+                candidate += word[wn];
+                MapRelated(word, ref candidate, wn + 1, wlst, cpdSuggest, ref timer, ref timeLimit);
+            }
+
+            return wlst.Count;
         }
 
         private void TestSug(List<string> wlst, string candidate, int cpdSuggest)
