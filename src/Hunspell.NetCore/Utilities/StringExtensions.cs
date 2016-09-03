@@ -241,5 +241,19 @@ namespace Hunspell.Utilities
 
             return -1;
         }
+
+        public static char GetCharOrTerminator(this string @this, int index)
+        {
+            return index < @this.Length
+                ? @this[index]
+                : '\0';
+        }
+
+        public static char GetCharOrTerminator(this StringBuilder @this, int index)
+        {
+            return index < @this.Length
+                ? @this[index]
+                : '\0';
+        }
     }
 }

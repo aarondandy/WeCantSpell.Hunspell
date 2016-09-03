@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 
 namespace Hunspell.Utilities
 {
@@ -44,6 +45,22 @@ namespace Hunspell.Utilities
             }
 
             return true;
+        }
+
+        public static int IndexOf<T>(this ImmutableArray<T> items, Func<T, bool> predicate)
+        {
+            if (!items.IsDefaultOrEmpty)
+            {
+                for (var i = 0; i < items.Length; i++)
+                {
+                    if (predicate(items[i]))
+                    {
+                        return i;
+                    }
+                }
+            }
+
+            return -1;
         }
     }
 }

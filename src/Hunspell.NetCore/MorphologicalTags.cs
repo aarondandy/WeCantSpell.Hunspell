@@ -21,5 +21,6 @@ namespace Hunspell
         public static readonly string Flag = "fl:";
         [Obsolete("I don't think this will be used.")]
         public static readonly string HashEntry = "_H:";
+        public static readonly int TagLength = Stem.Length;
     }
 }

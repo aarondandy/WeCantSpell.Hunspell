@@ -70,6 +70,7 @@
     <Compile Include="HunspellQuery.cs" />
     <Compile Include="IHunspellLineReader.cs" />
     <Compile Include="MorphologicalTags.cs" />
+    <Compile Include="NGramOptions.cs" />
     <Compile Include="SpecialFlags.cs" />
     <Compile Include="SpellCheckResult.cs" />
     <Compile Include="SpellCheckResultType.cs" />

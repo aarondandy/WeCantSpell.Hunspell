@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -25,6 +26,12 @@ namespace Hunspell
         private const int MaxWordUtf8Len = MaxWordLen * 3;
 
         private const int MaxSuggestions = 15;
+
+        private const int MaxRoots = 100;
+
+        private const int MaxPhoneTLen = 256;
+
+        private const int MaxPhoneTUtf8Len = MaxPhoneTLen * 4;
 
         /// <summary>
         /// Timelimit: max ~1/4 sec (process time on Linux) for a time consuming function.
@@ -640,14 +647,14 @@ namespace Hunspell
                         w += slst[j].Substring(pos + 1);
                         var info = CheckDetails(w).Info;
 
-                        // TODO: this section is probably a bug in the original
-                        if (info.HasFlag(SpellCheckResultType.Compound) && info.HasFlag(SpellCheckResultType.Forbidden))
+                        // NOTE: this section is probably a bug in the original
+                        var desiredChar = info.HasFlag(SpellCheckResultType.Compound) && info.HasFlag(SpellCheckResultType.Forbidden)
+                            ? ' '
+                            : '-';
+
+                        if(slst[j][pos] != desiredChar)
                         {
-                            slst[pos] = " "; // TODO: possible index out of range
-                        }
-                        else
-                        {
-                            slst[pos] = "-"; // TODO: possible index out of range
+                            slst[j] = slst[j].Substring(0, pos) + desiredChar + slst[j].Substring(pos + 1);
                         }
                     }
                 }
@@ -1688,9 +1695,640 @@ namespace Hunspell
             return wlst.Count;
         }
 
+        private struct NGramSuggestSearchRoot
+        {
+            public NGramSuggestSearchRoot(int i)
+            {
+                Root = null;
+                Score = -100 * i;
+                RootPhon = null;
+                ScorePhone = Score;
+            }
+
+            public DictionaryEntry Root;
+
+            public string RootPhon;
+
+            public int Score;
+
+            public int ScorePhone;
+        }
+
+        /// <summary>
+        /// Generate a set of suggestions for very poorly spelled words.
+        /// </summary>
         private void NGramSuggest(List<string> wlst, string w)
         {
+            int lval;
+            int sc;
+            int lp, lpphon;
+            var nonbmp = 0;
+
+            // exhaustively search through all root words
+            // keeping track of the MAX_ROOTS most similar root words
+            var roots = new NGramSuggestSearchRoot[MaxRoots];
+            for (var i = 0; i < roots.Length; i++)
+            {
+                roots[i] = new NGramSuggestSearchRoot(i);
+            }
+
+            lp = MaxRoots - 1;
+            lpphon = MaxRoots - 1;
+            var low = NGramOptions.Lowering;
+
+            string w2;
+            var word = w;
+
+            // word reversing wrapper for complex prefixes
+            if (Affix.ComplexPrefixes)
+            {
+                w2 = w;
+                w2 = w2.Reverse();
+                word = w2;
+            }
+
+            var nc = word.Length;
+            var n = nc;
+
+            // set character based ngram suggestion for words with non-BMP Unicode
+            // characters
+            if (n == -1)
+            {
+                n = nc;
+                nonbmp = 1;
+                low = 0;
+            }
+
+            var col = -1;
+            string target = string.Empty;
+            string candidate = string.Empty;
+            if (Affix.HasPhoneEntires)
+            {
+                candidate = word;
+                if (nonbmp == 0)
+                {
+                    MakeAllCap2(ref candidate);
+                }
+
+                target = Phonet(candidate);
+            }
+
+            foreach (var hp in Dictionary.Entries.Values.SelectMany(set => set))
+            {
+                if (hp.ContainsAnyFlags(Affix.ForbiddenWord, SpecialFlags.OnlyUpcaseFlag, Affix.NoSuggest, Affix.NoNgramSuggest, Affix.OnlyInCompound))
+                {
+                    continue;
+                }
+
+                sc = NGram(3, word, hp.Word, NGramOptions.LongerWorse | low)
+                    + LeftCommonSubstring(word, hp.Word);
+
+                // check special pronounciation
+                var f = string.Empty;
+                if (hp.Options.HasFlag(DictionaryEntryOptions.Phon) && CopyField(ref f, hp.Morphs, MorphologicalTags.Phon))
+                {
+                    var sc2 = NGram(3, word, f, NGramOptions.LongerWorse | low)
+                        + LeftCommonSubstring(word, f);
+                    if (sc2 > sc)
+                    {
+                        sc = sc2;
+                    }
+                }
+
+                var scphon = -20000;
+                if (Affix.HasPhoneEntires && sc > 2 && Math.Abs(n - hp.Word.Length) <= 3)
+                {
+                    candidate = hp.Word;
+                    MakeAllCap2(ref candidate);
+                    var target2 = Phonet(candidate);
+                    scphon = 2 * NGram(3, target, target2, NGramOptions.LongerWorse);
+                }
+
+                if (sc > roots[lp].Score)
+                {
+                    roots[lp].Score = sc;
+                    roots[lp].Root = hp;
+                    lval = sc;
+                    for (var j = 0; j < roots.Length; j++)
+                    {
+                        if (roots[j].Score < lval)
+                        {
+                            lp = j;
+                            lval = roots[j].Score;
+                        }
+                    }
+                }
+
+                if (scphon > roots[lpphon].ScorePhone)
+                {
+                    roots[lpphon].ScorePhone = scphon;
+                    roots[lpphon].RootPhon = hp.Word;
+                    lval = scphon;
+                    for (var j = 0; j < roots.Length; j++)
+                    {
+                        if (roots[j].ScorePhone < lval)
+                        {
+                            lpphon = j;
+                            lval = roots[j].ScorePhone;
+                        }
+                    }
+                }
+            }
+
+            // find minimum threshold for a passable suggestion
+            // mangle original word three differnt ways
+            // and score them to generate a minimum acceptable score
             throw new NotImplementedException();
+        }
+
+        private bool CopyField(ref string dest, IEnumerable<string> morphs, string var)
+        {
+            return CopyField(ref dest, string.Join(" ", morphs), var);
+        }
+
+        private bool CopyField(ref string dest, string morph, string var)
+        {
+            if (string.IsNullOrEmpty(morph))
+            {
+                return false;
+            }
+
+            var pos = morph.IndexOf(var, StringComparison.Ordinal);
+            if (pos < 0)
+            {
+                return false;
+            }
+
+            var builder = new StringBuilder();
+            var beg = morph.Substring(pos + MorphologicalTags.TagLength);
+
+            for (var i = 0; i < beg.Length; i++)
+            {
+                var c = beg[i];
+                if (c == ' ' || c == '\t' || c == '\n')
+                {
+                    break;
+                }
+
+                builder.Append(c);
+            }
+
+            dest = builder.ToString();
+            return true;
+        }
+
+        /// <summary>
+        /// Length of the left common substring of s1 and (decapitalised) s2.
+        /// </summary>
+        private int LeftCommonSubstring(string s1, string s2)
+        {
+            if (Affix.ComplexPrefixes)
+            {
+                var l1 = s1.Length;
+                var l2 = s2.Length;
+                if (l1 <= l2 && l1 - 1 >= 0 && s2.Length > l2 - 1 && s2[l1 - 1] == s2[l2 - 1])
+                {
+                    return 1;
+                }
+            }
+            else
+            {
+                var index1 = 0;
+                var index2 = 0;
+
+                // decapitalise dictionary word
+                if (index1 < s1.Length && index2 < s2.Length && s1[index1] != s2[index2] && s1[index1] != (Affix.Culture != null ? Affix.Culture.TextInfo.ToLower(s2[index2]) : char.ToLowerInvariant(s2[index2])))
+                {
+                    return 0;
+                }
+
+                do
+                {
+                    index1++;
+                    index2++;
+                }
+                while (index1 < s1.Length && index2 < s2.Length && s1[index1] == s2[index2]);
+                return index1;
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Generate an n-gram score comparing s1 and s2.
+        /// </summary>
+        private int NGram(int n, string s1, string s2, NGramOptions opt)
+        {
+            var nscore = 0;
+            int ns;
+            int l1;
+            int l2;
+            var test = 0;
+
+            l2 = s2.Length;
+            if (l2 == 0)
+            {
+                return 0;
+            }
+
+            l1 = s1.Length;
+            var t = s2;
+            if (opt.HasFlag(NGramOptions.Lowering))
+            {
+                MakeAllSmall2(ref t);
+            }
+
+            for (var j = 1; j <= n; j++)
+            {
+                ns = 0;
+                for (var i = 0; i <= (l1 - j); i++)
+                {
+                    var temp = s1.Substring(i, j);
+                    if (t.IndexOf(temp, StringComparison.Ordinal) >= 0)
+                    {
+                        ns++;
+                    }
+                    else if (opt.HasFlag(NGramOptions.Weighted))
+                    {
+                        ns--;
+                        test++;
+                        if (i == 0 || i == l1 - j)
+                        {
+                            ns--; // side weight
+                        }
+                    }
+                }
+                nscore = nscore + ns;
+                if (ns < 2 && !opt.HasFlag(NGramOptions.Weighted))
+                {
+                    break;
+                }
+            }
+
+            ns = 0;
+
+            if (opt.HasFlag(NGramOptions.LongerWorse))
+            {
+                ns = (l2 - l1) - 2;
+            }
+
+            if (opt.HasFlag(NGramOptions.AnyMismatch))
+            {
+                ns = Math.Abs(l2 - l1) - 2;
+            }
+
+            ns = (nscore - ((ns > 0) ? ns : 0));
+            return ns;
+        }
+
+        /// <summary>
+        /// Do phonetic transformation.
+        /// </summary>
+        /// <param name="candidate">An uppercase string.</param>
+        /// <remarks>
+        /// Phonetic transcription algorithm
+        /// see: http://aspell.net/man-html/Phonetic-Code.html
+        /// convert string to uppercase before this call
+        /// </remarks>
+        private string Phonet(string inword)
+        {
+            int i, k = 0, p, z;
+            int k0, n0, p0 = -333;
+            char c;
+
+            var len = inword.Length;
+            if (len > MaxPhoneTUtf8Len)
+            {
+                return string.Empty;
+            }
+
+            var wordCapacity = Math.Min(inword.Length, MaxPhoneTUtf8Len);
+            var word = new StringBuilder(inword, 0, wordCapacity, wordCapacity);
+
+            var target = string.Empty;
+            // check word
+            i = z = 0;
+            while ((c = word.GetCharOrTerminator(i)) != '\0')
+            {
+                int n = Affix.Phone.IndexOf(item => item.Rule.StartsWith(c));
+                var z0 = 0;
+
+                if (n >= 0 && n < Affix.Phone.Length && !string.IsNullOrEmpty(Affix.Phone[n].Rule))
+                {
+                    // check all rules for the same letter
+                    while (n < Affix.Phone.Length && Affix.Phone[n].Rule.StartsWith(c))
+                    {
+                        // check whole string
+                        k = 1; // number of found letters
+                        p = 5; // default priority
+                        var sString = Affix.Phone[n].Rule;
+                        var sIndex = 0;
+                        sIndex++; // important for (see below)  "*(s-1)"
+                        var sChar = sString.GetCharOrTerminator(sIndex);
+
+                        while (sChar != '\0' && word.GetCharOrTerminator(i + k) == sChar && !char.IsDigit(sChar) && !"(-<^$".Contains(sChar))
+                        {
+                            k++;
+                            sIndex++;
+                            sChar = sString.GetCharOrTerminator(sIndex);
+                        }
+
+                        if (sChar == '(')
+                        {
+                            // check letters in "(..)"
+                            if (
+                                MyIsAlpha(word.GetCharOrTerminator(i + k)) // NOTE: could be implied?
+                                &&
+                                sString.IndexOf(word.GetCharOrTerminator(i + k), sIndex + 1) >= 0
+                            )
+                            {
+                                k++;
+                                while (sChar != ')' && sChar != '\0')
+                                {
+                                    sIndex++;
+                                    sChar = sString.GetCharOrTerminator(sIndex);
+                                }
+
+                                sIndex++;
+                                sChar = sString.GetCharOrTerminator(sIndex);
+                            }
+                        }
+
+                        p0 = (int)sChar;
+                        k0 = k;
+
+                        while (sChar == '-' && k > 1)
+                        {
+                            k--;
+                            sIndex++;
+                            sChar = sString.GetCharOrTerminator(sIndex);
+                        }
+
+                        if (sChar == '<')
+                        {
+                            sIndex++;
+                            sChar = sString.GetCharOrTerminator(sIndex);
+                        }
+
+                        if (char.IsDigit(sChar))
+                        {
+                            // determine priority
+                            p = sChar - '0';
+                            sIndex++;
+                            sChar = sString.GetCharOrTerminator(sIndex);
+                        }
+
+                        if (sChar == '^' && sString.GetCharOrTerminator(sIndex + 1) == '^')
+                        {
+                            sIndex++;
+                            sChar = sString.GetCharOrTerminator(sIndex);
+                        }
+
+                        if (
+                            sChar == '\0'
+                            ||
+                            (
+                                sChar == '^'
+                                &&
+                                (
+                                    i == 0
+                                    ||
+                                    !MyIsAlpha(word.GetCharOrTerminator(i - 1))
+                                )
+                                &&
+                                (
+                                    sString.GetCharOrTerminator(sIndex + 1) != '$'
+                                    ||
+                                    !MyIsAlpha(word.GetCharOrTerminator(i + k0))
+                                )
+                            )
+                            ||
+                            (
+                                sChar == '$'
+                                &&
+                                i > 0
+                                &&
+                                MyIsAlpha(word.GetCharOrTerminator(i - 1))
+                                &&
+                                !MyIsAlpha(word.GetCharOrTerminator(i + k0))
+                            )
+                        )
+                        {
+                            // search for followup rules, if:
+                            // parms.followup and k > 1  and  NO '-' in searchstring
+
+                            var c0 = word.GetCharOrTerminator(i + k - 1);
+                            n0 = Affix.Phone.IndexOf(item => item.Rule.StartsWith(c0));
+
+                            if (k > 1 && n0 >= 0 && p0 != '-' && word.GetCharOrTerminator(i + k) != '\0' && !string.IsNullOrEmpty(Affix.Phone[n0].Rule))
+                            {
+                                // test follow-up rule for "word[i+k]"
+                                while (Affix.Phone[n0].Rule.StartsWith(c0))
+                                {
+                                    // check whole string
+                                    k0 = k;
+                                    p0 = 5;
+                                    sString = Affix.Phone[n0].Rule;
+                                    sIndex++;
+                                    sChar = sString.GetCharOrTerminator(sIndex);
+
+                                    while (sChar != '\0' && word.GetCharOrTerminator(i + k0) == sChar && !char.IsDigit(sChar) && !"(-<^$".Contains(sChar))
+                                    {
+                                        k0++;
+                                        sIndex++;
+                                        sChar = sString.GetCharOrTerminator(sIndex);
+                                    }
+
+                                    if (sChar == '(')
+                                    {
+                                        // check letters
+                                        if (MyIsAlpha(word.GetCharOrTerminator(i + k0)) && sString.IndexOf(word.GetCharOrTerminator(i + k0), sIndex + 1) >= 0)
+                                        {
+                                            k0++;
+                                            while (sChar != ')' && sChar != '\0')
+                                            {
+                                                sIndex++;
+                                                sChar = sString.GetCharOrTerminator(sIndex);
+                                            }
+                                            if (sChar == ')')
+                                            {
+                                                sIndex++;
+                                                sChar = sString.GetCharOrTerminator(sIndex);
+                                            }
+                                        }
+                                    }
+
+                                    while (sChar == '-')
+                                    {
+                                        // "k0" gets NOT reduced
+                                        // because "if (k0 == k)"
+                                        sIndex++;
+                                        sChar = sString.GetCharOrTerminator(sIndex);
+                                    }
+
+                                    if (sChar == '<')
+                                    {
+                                        sIndex++;
+                                        sChar = sString.GetCharOrTerminator(sIndex);
+                                    }
+
+                                    if (char.IsDigit(sChar))
+                                    {
+                                        p0 = sChar - '0';
+                                        sIndex++;
+                                        sChar = sString.GetCharOrTerminator(sIndex);
+                                    }
+
+                                    if (
+                                        sChar == '\0'
+                                        ||
+                                        (
+                                            sChar == '$'
+                                            &&
+                                            !MyIsAlpha(word.GetCharOrTerminator(i + k0))
+                                        )
+                                    )
+                                    {
+                                        if (k0 == k)
+                                        {
+                                            // this is just a piece of the string
+                                            n0 += 2;
+                                            continue;
+                                        }
+
+                                        if (p0 < p)
+                                        {
+                                            // priority too low
+                                            n0 += 2;
+                                            continue;
+                                        }
+
+                                        break;
+                                    }
+
+                                    n0 += 2;
+                                }
+
+                                if (p0 >= p && Affix.Phone[n0].Rule.StartsWith(c0))
+                                {
+                                    n += 2;
+                                    continue;
+                                }
+                            }
+
+                            // replace string
+                            sString = Affix.Phone[n + 1].Rule;
+                            sIndex = 0;
+                            sChar = sString.GetCharOrTerminator(sIndex);
+                            p0 = !string.IsNullOrEmpty(Affix.Phone[n].Rule) && Affix.Phone[n].Rule.IndexOf('<', 1) >= 0
+                                ? 1
+                                : 0;
+
+                            if (p0 == 1 && z == 0)
+                            {
+                                // rule with '<' is used
+                                if (!string.IsNullOrEmpty(target) && sChar != '\0' && (target.EndsWith(c) || target.EndsWith(sChar)))
+                                {
+                                    target = target.Substring(0, target.Length - 1);
+                                }
+
+                                z0 = 1;
+                                z = 1;
+                                k0 = 0;
+
+                                while (sChar != '\0' && word.GetCharOrTerminator(i + k0) != '\0')
+                                {
+                                    word[i + k0] = sChar;
+                                    k0++;
+                                    sIndex++;
+                                    sChar = sString.GetCharOrTerminator(sIndex);
+                                }
+
+                                if (k > k0)
+                                {
+                                    StrMove(word, i + k0, word, i + k);
+                                }
+
+                                c = word[i];
+                            }
+                            else
+                            {
+                                // no '<' rule used
+                                i += k - 1;
+                                z = 0;
+                                while (sChar != '\0' && sString.GetCharOrTerminator(sIndex + 1) != '\0' && target.Length < len)
+                                {
+                                    if (string.IsNullOrEmpty(target) || !target.EndsWith(sChar))
+                                    {
+                                        target += sChar;
+                                    }
+
+                                    sIndex++;
+                                    sChar = sString.GetCharOrTerminator(sIndex);
+                                }
+
+                                // new "actual letter"
+                                c = sChar;
+
+                                if (!string.IsNullOrEmpty(Affix.Phone[n].Rule) && Affix.Phone[n].Rule.IndexOf("^^", StringComparison.Ordinal) >= 0)
+                                {
+                                    if (c != '\0')
+                                    {
+                                        target += c;
+                                    }
+
+                                    StrMove(word, 0, word, i + 1);
+                                    len = 0;
+                                    z0 = 1;
+                                }
+                            }
+
+                            break;
+                        }
+
+                        n += 2;
+                    }
+                }
+
+                if (z0 == 0)
+                {
+                    if (k != 0 && p0 == 0 && target.Length < len && c != '\0' && (true || string.IsNullOrEmpty(target) || !target.EndsWith(c)))
+                    {
+                        // condense only double letters
+                        target += c;
+                    }
+
+                    i++;
+                    z = 0;
+                    k = 0;
+                }
+            }
+
+            return target;
+        }
+
+        private void StrMove(StringBuilder dest, int destOffset, StringBuilder src, int srcOffset)
+        {
+            var destIndex = destOffset;
+            for (var srcIndex = srcOffset; srcIndex < src.Length && destIndex < dest.Length; srcIndex++, destIndex++)
+            {
+                dest[destIndex] = src[srcIndex];
+            }
+
+            if (destIndex < dest.Length)
+            {
+                dest[destIndex] = '\0';
+            }
+        }
+
+        private bool MyIsAlpha(char ch)
+        {
+            if (ch < 128)
+            {
+                return char.IsLetter(ch);
+            }
+
+            return true;
         }
 
         private void InsertSuggestion(List<string> slst, string word)
