@@ -31,6 +31,12 @@ namespace Hunspell
         /// All of the entries that make up this group.
         /// </summary>
         public ImmutableArray<TEntry> Entries { get; }
+
+        /// <summary>
+        /// Indicates if a group has the <see cref="AffixEntryOptions.CrossProduct"/> option enabled.
+        /// </summary>
+        /// <seealso cref="AffixEntryOptions"/>
+        public bool AllowCross => Options.HasFlag(AffixEntryOptions.CrossProduct);
     }
 
     public static class AffixEntryGroup

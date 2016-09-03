@@ -33,6 +33,10 @@ namespace Hunspell
 
         private const int MaxPhoneTUtf8Len = MaxPhoneTLen * 4;
 
+        private const int MaxGuess = 200;
+
+        private const int MaxWords = 100;
+
         /// <summary>
         /// Timelimit: max ~1/4 sec (process time on Linux) for a time consuming function.
         /// </summary>
@@ -652,7 +656,7 @@ namespace Hunspell
                             ? ' '
                             : '-';
 
-                        if(slst[j][pos] != desiredChar)
+                        if (slst[j][pos] != desiredChar)
                         {
                             slst[j] = slst[j].Substring(0, pos) + desiredChar + slst[j].Substring(pos + 1);
                         }
@@ -1714,6 +1718,31 @@ namespace Hunspell
             public int ScorePhone;
         }
 
+        private struct NGramGuess
+        {
+            public NGramGuess(int i)
+            {
+                Guess = null;
+                GuessOrig = null;
+                Score = -100 * i;
+            }
+
+            public string Guess;
+
+            public string GuessOrig;
+
+            public int Score;
+        }
+
+        private struct GuessWord
+        {
+            public string Word;
+
+            public string Orig;
+
+            public bool Allow;
+        }
+
         /// <summary>
         /// Generate a set of suggestions for very poorly spelled words.
         /// </summary>
@@ -1838,7 +1867,402 @@ namespace Hunspell
             // find minimum threshold for a passable suggestion
             // mangle original word three differnt ways
             // and score them to generate a minimum acceptable score
+            int thresh = 0;
+            for (var sp = 1; sp < 4; sp++)
+            {
+                var mw = new StringBuilder(word);
+                for (var k = sp; k < n; k += 4)
+                {
+                    mw[k] = '*';
+                }
+
+                thresh += NGram(n, word, mw.ToString(), NGramOptions.AnyMismatch | low);
+            }
+            thresh /= 3;
+            thresh--;
+
+            // now expand affixes on each of these root words and
+            // and use length adjusted ngram scores to select
+            // possible suggestions
+            var guesses = new NGramGuess[MaxGuess];
+            for (var i = 0; i < guesses.Length; i++)
+            {
+                guesses[i] = new NGramGuess(i);
+            }
+
+            lp = guesses.Length - 1;
+
+            var glst = new GuessWord[MaxWords];
+            for (var i = 0; i < roots.Length; i++)
+            {
+                var rp = roots[i].Root;
+                if (rp != null)
+                {
+                    string f = string.Empty;
+                    string field = null;
+                    if (rp.Options.HasFlag(DictionaryEntryOptions.Phon) && CopyField(ref f, rp.Morphs, MorphologicalTags.Phon))
+                    {
+                        field = f;
+                    }
+
+                    int nw = ExpandRootWord(glst, rp, word, field);
+
+                    for (var k = 0; k < nw; k++)
+                    {
+                        sc = NGram(n, word, glst[k].Word, NGramOptions.AnyMismatch | low)
+                            + LeftCommonSubstring(word, glst[k].Word);
+
+                        if (sc > thresh)
+                        {
+                            if (sc > guesses[lp].Score)
+                            {
+                                if (guesses[lp].Guess != null)
+                                {
+                                    guesses[lp].Guess = null;
+                                    guesses[lp].GuessOrig = null;
+                                }
+
+                                guesses[lp].Score = sc;
+                                guesses[lp].Guess = glst[k].Word;
+                                guesses[lp].GuessOrig = glst[k].Orig;
+                                lval = sc;
+                                for (var j = 0; j < guesses.Length; j++)
+                                {
+                                    if (guesses[j].Score < lval)
+                                    {
+                                        lp = j;
+                                        lval = guesses[j].Score;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                glst[k].Word = null;
+                                glst[k].Orig = null;
+                            }
+                        }
+                        else
+                        {
+                            glst[k].Word = null;
+                            glst[k].Orig = null;
+                        }
+                    }
+                }
+            }
+
+            glst = null;
+
+            // now we are done generating guesses
+            // sort in order of decreasing score
+
+            guesses = guesses.OrderByDescending(g => g.Score).ToArray(); // NOTE: OrderBy is used because a stable sort may be required
+            roots = roots.OrderByDescending(r => r.ScorePhone).ToArray(); // NOTE: OrderBy is used because a stable sort may be required
+
+            // weight suggestions with a similarity index, based on
+            // the longest common subsequent algorithm and resort
+
+            var isSwap = 0;
+            var re = 0;
+            var fact = 1.0;
+
+            {
+                var maxd = Affix.MaxDifferency;
+                if (maxd.HasValue && maxd.GetValueOrDefault() >= 0)
+                {
+                    fact = (10.0 - maxd.GetValueOrDefault()) / 5.0;
+                }
+            }
+
             throw new NotImplementedException();
+        }
+
+        private int ExpandRootWord(GuessWord[] wlst, DictionaryEntry entry, string bad, string phon)
+        {
+            var maxn = wlst.Length;
+            var ts = entry.Word;
+            var wl = ts.Length;
+            var ap = entry.Flags;
+            var al = ap.Count;
+            var badl = bad.Length;
+
+            var nh = 0;
+            // first add root word to list
+            if (nh < maxn && !entry.ContainsAnyFlags(Affix.NeedAffix, Affix.OnlyInCompound))
+            {
+                wlst[nh].Word = MyStrDup(ts);
+                if (wlst[nh].Word == null)
+                {
+                    return 0;
+                }
+                wlst[nh].Allow = false;
+                wlst[nh].Orig = null;
+                nh++;
+                // add special phonetic version
+                if (phon != null && nh < maxn)
+                {
+                    wlst[nh].Word = MyStrDup(phon);
+                    if (wlst[nh].Word == null)
+                    {
+                        return nh - 1;
+                    }
+
+                    wlst[nh].Allow = false;
+                    wlst[nh].Orig = MyStrDup(ts);
+                    if (wlst[nh].Orig == null)
+                    {
+                        return nh - 1;
+                    }
+
+                    nh++;
+                }
+            }
+
+            // handle suffixes
+            if (Affix.HasSuffixes)
+            {
+                for (var i = 0; i < al; i++)
+                {
+                    foreach (var sptrGroup in Affix.Suffixes)
+                    {
+                        foreach (var sptr in sptrGroup.Entries)
+                        {
+                            if (
+                                sptrGroup.AFlag == ap[i]
+                                &&
+                                (
+                                    string.IsNullOrEmpty(sptr.Key)
+                                    ||
+                                    (
+                                        badl > sptr.Key.Length
+                                        &&
+                                        StringExtensions.EqualsOffset(sptr.Append, 0, bad, badl - sptr.Key.Length)
+                                    )
+                                )
+                                && // check needaffix flag
+                                !(
+                                    sptr.HasContClasses
+                                    &&
+                                    sptr.ContainsAnyContClass(Affix.NeedAffix, Affix.Circumfix, Affix.OnlyInCompound)
+                                )
+                            )
+                            {
+                                var newword = Add(sptr, ts);
+                                if (!string.IsNullOrEmpty(newword))
+                                {
+                                    if (nh < maxn)
+                                    {
+                                        wlst[nh].Word = MyStrDup(newword);
+                                        wlst[nh].Allow = sptrGroup.AllowCross;
+                                        wlst[nh].Orig = null;
+                                        nh++;
+
+                                        // add special phonetic version
+                                        if (phon != null && nh < maxn)
+                                        {
+                                            var prefix = phon;
+                                            var key = sptr.Key;
+                                            key = key.Reverse();
+                                            prefix += key;
+                                            wlst[nh].Word = MyStrDup(prefix);
+                                            if (wlst[nh].Word == null)
+                                            {
+                                                return nh - 1;
+                                            }
+                                            wlst[nh].Allow = false;
+                                            wlst[nh].Orig = MyStrDup(newword);
+                                            if (wlst[nh].Orig == null)
+                                            {
+                                                return nh - 1;
+                                            }
+                                            nh++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            var n = nh;
+
+            // handle cross products of prefixes and suffixes
+            if (Affix.HasPrefixes)
+            {
+                for (var j = 1; j < n; j++)
+                {
+                    if (wlst[j].Allow)
+                    {
+                        for (var k = 0; k < al; k++)
+                        {
+                            foreach (var pfxGroup in Affix.Prefixes)
+                            {
+                                foreach (var cptr in pfxGroup.Entries)
+                                {
+                                    if (
+                                        pfxGroup.AFlag == ap[k]
+                                        &&
+                                        pfxGroup.AllowCross
+                                        &&
+                                        (
+                                            cptr.Key.Length == 0
+                                            ||
+                                            (
+                                                badl > cptr.Key.Length
+                                                &&
+                                                StringExtensions.EqualsOffset(cptr.Key, 0, bad, 0, cptr.Key.Length)
+                                            )
+                                        )
+                                    )
+                                    {
+                                        var l1 = (wlst[j].Word?.Length).GetValueOrDefault();
+                                        var newword = Add(cptr, wlst[j].Word);
+                                        if (!string.IsNullOrEmpty(newword))
+                                        {
+                                            if (nh < maxn)
+                                            {
+                                                wlst[nh].Word = MyStrDup(newword);
+                                                wlst[nh].Allow = pfxGroup.AllowCross;
+                                                wlst[nh].Orig = null;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // now handle pure prefixes
+            if (Affix.HasPrefixes)
+            {
+                for (var m = 0; m < al; m++)
+                {
+                    foreach (var ptrGroup in Affix.Prefixes)
+                    {
+                        foreach(var ptr in ptrGroup.Entries)
+                        {
+                            if (
+                                ptrGroup.AFlag == ap[m]
+                                &&
+                                (
+                                    ptr.Key.Length == 0
+                                    ||
+                                    (
+                                        badl > ptr.Key.Length
+                                        &&
+                                        StringExtensions.EqualsOffset(ptr.Key, 0, bad, 0, ptr.Key.Length)
+                                    )
+                                )
+                                && // check needaffix flag
+                                !ptr.ContainsAnyContClass(Affix.NeedAffix, Affix.Circumfix, Affix.OnlyInCompound)
+                            )
+                            {
+                                var newword = Add(ptr, ts);
+                                if (!string.IsNullOrEmpty(newword))
+                                {
+                                    if (nh < maxn)
+                                    {
+                                        wlst[nh].Word = MyStrDup(newword);
+                                        wlst[nh].Allow = ptrGroup.AllowCross;
+                                        wlst[nh].Orig = null;
+                                        nh++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return nh;
+        }
+
+        /// <summary>
+        /// Add prefix to this word assuming conditions hold.
+        /// </summary>
+        private string Add(PrefixEntry entry, string word)
+        {
+            var len = word.Length;
+            var result = string.Empty;
+            if (
+                (
+                    len > entry.Strip.Length
+                    ||
+                    (
+                        len == 0
+                        &&
+                        Affix.FullStrip
+                    )
+                )
+                &&
+                len >= entry.Conditions.Count
+                &&
+                TestCondition(entry, word)
+                &&
+                (
+                    entry.Strip.Length == 0
+                    ||
+                    StringExtensions.EqualsOffset(word, 0, entry.Strip, 0, entry.Strip.Length)
+                )
+            )
+            {
+                // we have a match so add prefix
+                result = entry.Append;
+                result += word.Substring(entry.Strip.Length);
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Add suffix to this word assuming conditions hold.
+        /// </summary>
+        private string Add(SuffixEntry entry, string word)
+        {
+            var len = word.Length;
+            var result = string.Empty;
+            // make sure all conditions match
+            if (
+                (
+                    len > entry.Strip.Length
+                    ||
+                    (
+                        len == 0
+                        &&
+                        Affix.FullStrip
+                    )
+                )
+                &&
+                len >= entry.Conditions.Count
+                &&
+                TestCondition(entry, word)
+                &&
+                (
+                    entry.Strip.Length == 0
+                    ||
+                    StringExtensions.EqualsOffset(word, len - entry.Strip.Length, entry.Strip, 0)
+                )
+            )
+            {
+                result = word;
+                // we have a match so add suffix
+                result = result.Substring(0, result.Length - entry.Strip.Length) + entry.Append;
+            }
+            return result;
+        }
+
+        private string MyStrDup(string s)
+        {
+            if (string.IsNullOrEmpty(s))
+            {
+                return s;
+            }
+
+            var terminalPos = s.IndexOf('\0');
+            return terminalPos >= 0
+                ? s.Substring(0, terminalPos)
+                : s;
         }
 
         private bool CopyField(ref string dest, IEnumerable<string> morphs, string var)
