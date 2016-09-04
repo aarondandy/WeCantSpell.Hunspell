@@ -109,8 +109,8 @@ namespace Hunspell.Utilities
                 return true;
             }
 
-            var aRemaining = a?.Length ?? 0 - aOffset;
-            var bRemaining = b?.Length ?? 0 - bOffset;
+            var aRemaining = (a?.Length ?? 0) - aOffset;
+            var bRemaining = (b?.Length ?? 0) - bOffset;
 
             if (aRemaining != bRemaining)
             {

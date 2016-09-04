@@ -1763,8 +1763,8 @@ namespace Hunspell
                 roots[i] = new NGramSuggestSearchRoot(i);
             }
 
-            lp = MaxRoots - 1;
-            lpphon = MaxRoots - 1;
+            lp = roots.Length - 1;
+            lpphon = roots.Length - 1;
             var low = NGramOptions.Lowering;
 
             string w2;
@@ -1958,7 +1958,10 @@ namespace Hunspell
             // sort in order of decreasing score
 
             guesses = guesses.OrderByDescending(g => g.Score).ToArray(); // NOTE: OrderBy is used because a stable sort may be required
-            roots = roots.OrderByDescending(r => r.ScorePhone).ToArray(); // NOTE: OrderBy is used because a stable sort may be required
+            if (Affix.HasPhoneEntires)
+            {
+                roots = roots.OrderByDescending(r => r.ScorePhone).ToArray(); // NOTE: OrderBy is used because a stable sort may be required
+            }
 
             // weight suggestions with a similarity index, based on
             // the longest common subsequent algorithm and resort
@@ -2025,16 +2028,16 @@ namespace Hunspell
             // phonetic version
             if (Affix.HasPhoneEntires)
             {
-                for(var i = 0; i < roots.Length; i++)
+                for (var i = 0; i < roots.Length; i++)
                 {
-                    if(roots[i].RootPhon != null)
+                    if (roots[i].RootPhon != null)
                     {
                         // lowering rootphon[i]
                         string gl;
                         int len;
 
                         gl = roots[i].RootPhon;
-                        if(nonbmp == 0)
+                        if (nonbmp == 0)
                         {
                             MakeAllSmall2(ref gl);
                         }
@@ -2054,11 +2057,11 @@ namespace Hunspell
             var oldns = wlst.Count;
 
             var same = 0;
-            for(var i = 0; i < guesses.Length; i++)
+            for (var i = 0; i < guesses.Length; i++)
             {
-                if(guesses[i].Guess != null)
+                if (guesses[i].Guess != null)
                 {
-                    if(
+                    if (
                         wlst.Count < oldns + Affix.MaxNgramSuggestions
                         &&
                         wlst.Count < MaxSuggestions
@@ -2072,15 +2075,15 @@ namespace Hunspell
                     {
                         var unique = 1;
                         // leave only excellent suggestions, if exists
-                        if(guesses[i].Score > 1000)
+                        if (guesses[i].Score > 1000)
                         {
                             same = 1;
                         }
-                        else if(guesses[i].Score < -100)
+                        else if (guesses[i].Score < -100)
                         {
                             same = 1;
                             // keep the best ngram suggestions, unless in ONLYMAXDIFF mode
-                            if(
+                            if (
                                 wlst.Count > oldns
                                 ||
                                 Affix.OnlyMaxDiff
@@ -2092,7 +2095,7 @@ namespace Hunspell
                             }
                         }
 
-                        for(var j = 0; j < wlst.Count; j++)
+                        for (var j = 0; j < wlst.Count; j++)
                         {
                             // don't suggest previous suggestions or a previous suggestion with
                             // prefixes or affixes
@@ -2109,9 +2112,9 @@ namespace Hunspell
                             }
                         }
 
-                        if(unique != 0)
+                        if (unique != 0)
                         {
-                            if(guesses[i].GuessOrig != null)
+                            if (guesses[i].GuessOrig != null)
                             {
                                 wlst.Add(guesses[i].GuessOrig);
                             }
@@ -2135,22 +2138,22 @@ namespace Hunspell
             oldns = wlst.Count;
             if (Affix.HasPhoneEntires)
             {
-                for(var i = 0; i < roots.Length; i++)
+                for (var i = 0; i < roots.Length; i++)
                 {
-                    if(roots[i].RootPhon != null)
+                    if (roots[i].RootPhon != null)
                     {
-                        if(
+                        if (
                             wlst.Count < oldns + MaxPhonSugs
                             &&
                             wlst.Count < MaxSuggestions
                         )
                         {
                             var unique = 1;
-                            for(var j = 0; j < wlst.Count; j++)
+                            for (var j = 0; j < wlst.Count; j++)
                             {
                                 // don't suggest previous suggestions or a previous suggestion with
                                 // prefixes or affixes
-                                if(
+                                if (
                                     roots[i].RootPhon.Contains(wlst[j])
                                     || // check forbidden words
                                     CheckWord(roots[i].RootPhon, 0) == 0
@@ -2194,13 +2197,13 @@ namespace Hunspell
 
             for (i = 0; i < t.Length && i < s1.Length; i++)
             {
-                if(s1[i] == t[i])
+                if (s1[i] == t[i])
                 {
                     num++;
                 }
                 else
                 {
-                    if( diff < 2)
+                    if (diff < 2)
                     {
                         diffPos[diff] = i;
                     }
