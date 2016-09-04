@@ -105,8 +105,10 @@ namespace Hunspell.NetCore.Tests
             [InlineData("files/opentaal_forbiddenword2.dic", "foowordbars")]
             [InlineData("files/opentaal_forbiddenword2.dic", "foowordba")]
             [InlineData("files/opentaal_forbiddenword2.dic", "foowordbas")]
-            [InlineData("files/rep.dic", "foo")]
+            [InlineData("files/rep.dic", "vacashuns")]
             [InlineData("files/rep.dic", "foobars")]
+            [InlineData("files/rep.dic", "barfoos")]
+            [InlineData("files/ngram_utf_fix.dic", "времячко")]
             public async Task words_without_suggestions_offer_no_suggestions(string dictionaryFilePath, string word)
             {
                 var hunspell = await Hunspell.FromFileAsync(dictionaryFilePath);
@@ -122,12 +124,12 @@ namespace Hunspell.NetCore.Tests
             [InlineData("files/rep.dic", "phorm", new[] { "form" })]
             [InlineData("files/rep.dic", "fantom", new[] { "phantom" })]
             [InlineData("files/rep.dic", "vacashun", new[] { "vacation" })]
-            [InlineData("files/rep.dic", "vacashuns", new[] { "vacations" })]
             [InlineData("files/rep.dic", "alot", new[] { "a lot", "lot" })]
             [InlineData("files/rep.dic", "un'alunno", new[] { "un alunno" })]
-            [InlineData("files/rep.dic", "barfoos", new[] { "bar" })]
+            [InlineData("files/rep.dic", "foo", new[] { "bar" })]
             [InlineData("files/rep.dic", "vinteún", new[] { "vinte e un" })]
             [InlineData("files/rep.dic", "autos", new[] { "auto's", "auto" })]
+            [InlineData("files/ngram_utf_fix.dic", "человеко", new[] { "человек" })]
             public async Task words_offer_specific_suggestions(string dictionaryFilePath, string word, string[] expectedSuggestions)
             {
                 var hunspell = await Hunspell.FromFileAsync(dictionaryFilePath);
@@ -186,7 +188,8 @@ namespace Hunspell.NetCore.Tests
                 "onlyincompound",
                 "opentaal_forbiddenword1",
                 "opentaal_forbiddenword2",
-                "rep"
+                "rep",
+                "ngram_utf_fix"
             };
 
             protected static IEnumerable<SuggestionTestSet> GetSuggestionTestFileSets()

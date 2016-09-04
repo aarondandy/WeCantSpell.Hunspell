@@ -1261,7 +1261,7 @@ namespace Hunspell
             for (var k = 0; k < Affix.TryString.Length; k++)
             {
                 var tryChar = Affix.TryString[k];
-                for (var i = 0; i < candidate.Length; i++)
+                for (var i = 0; i <= candidate.Length; i++)
                 {
                     var index = candidate.Length - i;
                     candidate.Insert(index, tryChar);
