@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -29,13 +28,16 @@ namespace Hunspell
 
         private const int MaxRoots = 100;
 
+        private const int MaxWords = 100;
+
+        private const int MaxGuess = 200;
+
+        private const int MaxPhonSugs = 2;
+
         private const int MaxPhoneTLen = 256;
 
         private const int MaxPhoneTUtf8Len = MaxPhoneTLen * 4;
 
-        private const int MaxGuess = 200;
-
-        private const int MaxWords = 100;
 
         /// <summary>
         /// Timelimit: max ~1/4 sec (process time on Linux) for a time consuming function.
@@ -1973,7 +1975,338 @@ namespace Hunspell
                 }
             }
 
-            throw new NotImplementedException();
+            for (var i = 0; i < guesses.Length; i++)
+            {
+                if (guesses[i].Guess != null)
+                {
+                    // lowering guess[i]
+                    string gl;
+                    int len;
+                    gl = guesses[i].Guess;
+                    if (nonbmp == 0)
+                    {
+                        MakeAllSmall2(ref gl);
+                    }
+                    len = guesses[i].Guess.Length;
+
+                    var _lcs = LcsLen(word, gl);
+
+                    // same characters with different casing
+                    if (n == len && n == _lcs)
+                    {
+                        guesses[i].Score += 2000;
+                        break;
+                    }
+                    // using 2-gram instead of 3, and other weightening
+
+                    re = NGram(2, word, gl, NGramOptions.AnyMismatch | NGramOptions.Weighted | low)
+                        + NGram(2, gl, word, NGramOptions.AnyMismatch | NGramOptions.Weighted | low);
+
+                    guesses[i].Score =
+                        // length of longest common subsequent minus length difference
+                        2 * _lcs - Math.Abs(n - len)
+                        // weight length of the left common substring
+                        + LeftCommonSubstring(word, gl)
+                        // weight equal character positions
+                        + ((nonbmp == 0 && CommonCharacterPositions(word, gl, ref isSwap) != 0) ? 1 : 0)
+                        // swap character (not neighboring)
+                        + (isSwap != 0 ? 10 : 0)
+                        // ngram
+                        + NGram(4, word, gl, NGramOptions.AnyMismatch | low)
+                        // weighted ngrams
+                        + re
+                        // different limit for dictionaries with PHONE rules
+                        + (Affix.HasPhoneEntires ? (re < len * fact ? -1000 : 0) : (re < (n + len) * fact ? -1000 : 0));
+                }
+            }
+
+            guesses = guesses.OrderByDescending(g => g.Score).ToArray(); // NOTE: OrderBy is used because a stable sort may be required
+
+            // phonetic version
+            if (Affix.HasPhoneEntires)
+            {
+                for(var i = 0; i < roots.Length; i++)
+                {
+                    if(roots[i].RootPhon != null)
+                    {
+                        // lowering rootphon[i]
+                        string gl;
+                        int len;
+
+                        gl = roots[i].RootPhon;
+                        if(nonbmp == 0)
+                        {
+                            MakeAllSmall2(ref gl);
+                        }
+                        len = roots[i].RootPhon.Length;
+
+                        // heuristic weigthing of ngram scores
+                        roots[i].ScorePhone += 2 * LcsLen(word, gl) - Math.Abs(n - len)
+                            // weight length of the left common substring
+                            + LeftCommonSubstring(word, gl);
+                    }
+                }
+
+                roots = roots.OrderByDescending(r => r.ScorePhone).ToArray(); // NOTE: OrderBy is used because a stable sort may be required
+            }
+
+            // copy over
+            var oldns = wlst.Count;
+
+            var same = 0;
+            for(var i = 0; i < guesses.Length; i++)
+            {
+                if(guesses[i].Guess != null)
+                {
+                    if(
+                        wlst.Count < oldns + Affix.MaxNgramSuggestions
+                        &&
+                        wlst.Count < MaxSuggestions
+                        &&
+                        (
+                            same == 0
+                            ||
+                            guesses[i].Score > 1000
+                        )
+                    )
+                    {
+                        var unique = 1;
+                        // leave only excellent suggestions, if exists
+                        if(guesses[i].Score > 1000)
+                        {
+                            same = 1;
+                        }
+                        else if(guesses[i].Score < -100)
+                        {
+                            same = 1;
+                            // keep the best ngram suggestions, unless in ONLYMAXDIFF mode
+                            if(
+                                wlst.Count > oldns
+                                ||
+                                Affix.OnlyMaxDiff
+                            )
+                            {
+                                guesses[i].Guess = null;
+                                guesses[i].GuessOrig = null;
+                                continue;
+                            }
+                        }
+
+                        for(var j = 0; j < wlst.Count; j++)
+                        {
+                            // don't suggest previous suggestions or a previous suggestion with
+                            // prefixes or affixes
+                            if (
+                                (guesses[i].GuessOrig == null && guesses[i].Guess.Contains(wlst[j]))
+                                ||
+                                (guesses[i].GuessOrig != null && guesses[i].GuessOrig.Contains(wlst[j]))
+                                || // check forbidden words
+                                CheckWord(guesses[i].Guess, 0) == 0
+                            )
+                            {
+                                unique = 0;
+                                break;
+                            }
+                        }
+
+                        if(unique != 0)
+                        {
+                            if(guesses[i].GuessOrig != null)
+                            {
+                                wlst.Add(guesses[i].GuessOrig);
+                            }
+                            else
+                            {
+                                wlst.Add(guesses[i].Guess);
+                            }
+                        }
+
+                        guesses[i].Guess = null;
+                        guesses[i].GuessOrig = null;
+                    }
+                    else
+                    {
+                        guesses[i].Guess = null;
+                        guesses[i].GuessOrig = null;
+                    }
+                }
+            }
+
+            oldns = wlst.Count;
+            if (Affix.HasPhoneEntires)
+            {
+                for(var i = 0; i < roots.Length; i++)
+                {
+                    if(roots[i].RootPhon != null)
+                    {
+                        if(
+                            wlst.Count < oldns + MaxPhonSugs
+                            &&
+                            wlst.Count < MaxSuggestions
+                        )
+                        {
+                            var unique = 1;
+                            for(var j = 0; j < wlst.Count; j++)
+                            {
+                                // don't suggest previous suggestions or a previous suggestion with
+                                // prefixes or affixes
+                                if(
+                                    roots[i].RootPhon.Contains(wlst[j])
+                                    || // check forbidden words
+                                    CheckWord(roots[i].RootPhon, 0) == 0
+                                )
+                                {
+                                    unique = 0;
+                                    break;
+                                }
+                            }
+
+                            if (unique != 0)
+                            {
+                                wlst.Add(roots[i].RootPhon);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private int CommonCharacterPositions(string s1, string s2, ref int isSwap)
+        {
+            var num = 0;
+            var diff = 0;
+            var diffPos = new int[2];
+            isSwap = 0;
+
+            int i;
+            string t;
+            // decapitalize dictionary word
+            if (Affix.ComplexPrefixes)
+            {
+                var l2 = s2.Length;
+                t = s2.Substring(0, l2 - 1) + Affix.Culture.TextInfo.ToLower(s2[l2 - 1]);
+            }
+            else
+            {
+                t = s2;
+                MakeAllSmall2(ref t);
+            }
+
+            for (i = 0; i < t.Length && i < s1.Length; i++)
+            {
+                if(s1[i] == t[i])
+                {
+                    num++;
+                }
+                else
+                {
+                    if( diff < 2)
+                    {
+                        diffPos[diff] = i;
+                    }
+
+                    diff++;
+                }
+            }
+
+            if (
+                diff == 2
+                &&
+                i < s1.Length
+                &&
+                i == t.Length
+                &&
+                s1[diffPos[0]] == t[diffPos[1]]
+                &&
+                s1[diffPos[1]] == t[diffPos[0]]
+            )
+            {
+                isSwap = 1;
+            }
+
+            return num;
+        }
+
+        private int LcsLen(string s, string s2)
+        {
+            int m = 0, n = 0, i, j;
+            LongestCommonSubsequenceType[] result = null;
+            var len = 0;
+            Lcs(s, s2, ref m, ref n, ref result);
+            if (result == null)
+            {
+                return 0;
+            }
+
+            i = m;
+            j = n;
+            while (i != 0 && j != 0)
+            {
+                if (result[i * (n + 1) + j] == LongestCommonSubsequenceType.UpLeft)
+                {
+                    len++;
+                    i--;
+                    j--;
+                }
+                else if (result[i * (n + 1) + j] == LongestCommonSubsequenceType.Up)
+                {
+                    i--;
+                }
+                else
+                {
+                    j--;
+                }
+            }
+
+            result = null;
+            return len;
+        }
+
+        /// <summary>
+        /// Longest common subsequence.
+        /// </summary>
+        private void Lcs(string s, string s2, ref int l1, ref int l2, ref LongestCommonSubsequenceType[] result)
+        {
+            int n, m;
+            LongestCommonSubsequenceType[] b;
+            LongestCommonSubsequenceType[] c;
+            int i;
+            int j;
+
+            m = s.Length;
+            n = s2.Length;
+
+            c = new LongestCommonSubsequenceType[(m + 1) * (n + 1)];
+            b = new LongestCommonSubsequenceType[(m + 1) * (n + 1)];
+
+            // NOTE: arrays are already zero (Up)
+
+            for (i = 1; i <= m; i++)
+            {
+                for (j = 1; j <= n; j++)
+                {
+                    if (((s[i - 1] == s2[j - 1])))
+                    {
+                        c[i * (n + 1) + j] = c[(i - 1) * (n + 1) + j - 1] + 1;
+                        b[i * (n + 1) + j] = LongestCommonSubsequenceType.UpLeft;
+                    }
+                    else if (c[(i - 1) * (n + 1) + j] >= c[i * (n + 1) + j - 1])
+                    {
+                        c[i * (n + 1) + j] = c[(i - 1) * (n + 1) + j];
+                        b[i * (n + 1) + j] = LongestCommonSubsequenceType.Up;
+                    }
+                    else
+                    {
+                        c[i * (n + 1) + j] = c[i * (n + 1) + j - 1];
+                        b[i * (n + 1) + j] = LongestCommonSubsequenceType.UpLeft;
+                    }
+                }
+            }
+
+            result = b;
+            c = null;
+            l1 = m;
+            l2 = n;
         }
 
         private int ExpandRootWord(GuessWord[] wlst, DictionaryEntry entry, string bad, string phon)
@@ -2141,7 +2474,7 @@ namespace Hunspell
                 {
                     foreach (var ptrGroup in Affix.Prefixes)
                     {
-                        foreach(var ptr in ptrGroup.Entries)
+                        foreach (var ptr in ptrGroup.Entries)
                         {
                             if (
                                 ptrGroup.AFlag == ap[m]
