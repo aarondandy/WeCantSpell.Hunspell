@@ -1175,7 +1175,7 @@ namespace Hunspell
                 for (var aI = candidate.Length - 1; aI >= 0; aI--)
                 {
                     var tmpc = candidate[aI];
-                    if (Affix.TryString[j] != tmpc)
+                    if (Affix.TryString[j] == tmpc)
                     {
                         continue;
                     }
