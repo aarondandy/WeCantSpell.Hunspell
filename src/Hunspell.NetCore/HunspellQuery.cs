@@ -901,6 +901,12 @@ namespace Hunspell
                 // did we swap the order of chars by mistake
                 if (slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < oldSug + MaxSuggestions))
                 {
+                    SwapChar(slst, word, cpdSuggest);
+                }
+
+                // did we swap the order of non adjacent chars by mistake
+                if (slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < oldSug + MaxSuggestions))
+                {
                     LongSwapChar(slst, word, cpdSuggest);
                 }
 
@@ -1372,6 +1378,48 @@ namespace Hunspell
                         TestSug(wlst, candidate.ToString(), cpdSuggest);
                         candidate.Swap(p, q);
                     }
+                }
+            }
+
+            return wlst.Count;
+        }
+
+        /// <summary>
+        /// Error is adjacent letter were swapped.
+        /// </summary>
+        private int SwapChar(List<string> wlst, string word, int cpdSuggest)
+        {
+            var candidate = new StringBuilder(word, word.Length);
+            if (candidate.Length < 2)
+            {
+                return wlst.Count;
+            }
+
+            // try swapping adjacent chars one by one
+            for(var i = 0; i < candidate.Length - 1; i++)
+            {
+                candidate.Swap(i, i + 1);
+                TestSug(wlst, candidate.ToString(), cpdSuggest);
+                candidate.Swap(i, i + 1);
+            }
+
+            // try double swaps for short words
+            // ahev -> have, owudl -> would
+
+            if(candidate.Length == 4 || candidate.Length == 5)
+            {
+                candidate[0] = word[1];
+                candidate[1] = word[0];
+                candidate[2] = word[2];
+                candidate[candidate.Length - 2] = word[candidate.Length - 1];
+                candidate[candidate.Length - 1] = word[candidate.Length - 2];
+                TestSug(wlst, candidate.ToString(), cpdSuggest);
+                if(candidate.Length == 5)
+                {
+                    candidate[0] = word[0];
+                    candidate[1] = word[2];
+                    candidate[2] = word[1];
+                    TestSug(wlst, candidate.ToString(), cpdSuggest);
                 }
             }
 
