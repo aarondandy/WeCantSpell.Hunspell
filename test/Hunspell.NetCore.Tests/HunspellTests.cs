@@ -137,7 +137,7 @@ namespace Hunspell.NetCore.Tests
                 var actual = hunspell.Suggest(word);
 
                 actual.Should().NotBeNullOrEmpty();
-                actual.Should().StartWith(expectedSuggestions);
+                actual.ShouldBeEquivalentTo(expectedSuggestions);
             }
 
             public static IEnumerable<object[]> can_find_correct_best_suggestion_args()
@@ -169,7 +169,7 @@ namespace Hunspell.NetCore.Tests
                 var actual = hunspell.Suggest(givenWord);
 
                 actual.Should().NotBeNullOrEmpty();
-                actual.Should().StartWith(expectedSuggestions);
+                actual.ShouldBeEquivalentTo(expectedSuggestions);
             }
 
             [Fact]
