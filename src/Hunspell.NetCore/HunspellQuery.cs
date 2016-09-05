@@ -1445,7 +1445,7 @@ namespace Hunspell
                             var cn = candidate.Length;
                             for (var l = 0; l < mapEntry.Length; l++)
                             {
-                                candidate.Substring(0, cn);
+                                candidate = candidate.Substring(0, cn);
                                 candidate += mapEntry[l];
                                 MapRelated(word, ref candidate, wn + len, wlst, cpdSuggest, ref timer, ref timeLimit);
 
