@@ -566,7 +566,7 @@ namespace Hunspell
                     if (capTypeLocal == CapitalizationType.Init)
                     {
                         var str = scw;
-                        str.Insert(dotPos + 1, " ");
+                        str = str.Insert(dotPos + 1, " ");
                         InsertSuggestion(slst, str);
                     }
                 }
