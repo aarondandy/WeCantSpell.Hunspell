@@ -201,7 +201,7 @@ namespace Hunspell
         private bool AddWord(string word, ImmutableSortedSet<FlagValue> flags, ImmutableArray<string> morphs)
         {
             return AddWord(word, flags, morphs, false)
-                || AddWordCapitalized(word, flags, morphs, CapitalizationTypeUtilities.GetCapitalizationType(word));
+                || AddWordCapitalized(word, flags, morphs, CapitalizationTypeUtilities.GetCapitalizationType(word, Affix));
         }
 
         private bool AddWord(string word, ImmutableSortedSet<FlagValue> flags, ImmutableArray<string> morphs, bool onlyUpperCase)

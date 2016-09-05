@@ -32,7 +32,7 @@ namespace Hunspell
 
     public static class CapitalizationTypeUtilities
     {
-        public static CapitalizationType GetCapitalizationType(string word)
+        public static CapitalizationType GetCapitalizationType(string word, AffixConfig affix)
         {
             if (string.IsNullOrEmpty(word))
             {
@@ -50,9 +50,9 @@ namespace Hunspell
                     numberCapitalized++;
                 }
                 else if (
-                    category != UnicodeCategory.LowercaseLetter
-                    && category != UnicodeCategory.OtherLetter
-                    && category != UnicodeCategory.ModifierLetter
+                    affix == null
+                    ? char.ToUpperInvariant(word[i]) == char.ToLowerInvariant(word[i])
+                    : affix.Culture.TextInfo.ToUpper(word[i]) == affix.Culture.TextInfo.ToLower(word[i])
                 )
                 {
                     numberNeutral++;

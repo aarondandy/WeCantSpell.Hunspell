@@ -562,7 +562,7 @@ namespace Hunspell
                 if (dotPos >= 0)
                 {
                     var postDot = scw.Substring(dotPos + 1);
-                    var capTypeLocal = CapitalizationTypeUtilities.GetCapitalizationType(postDot);
+                    var capTypeLocal = CapitalizationTypeUtilities.GetCapitalizationType(postDot, Affix);
                     if (capTypeLocal == CapitalizationType.Init)
                     {
                         var str = scw;
@@ -637,6 +637,7 @@ namespace Hunspell
                 Suggest(slst, wspace, ref onlyCompoundSuggest);
                 for (var j = 0; j < slst.Count; j++)
                 {
+                    slst[j] = MakeAllCap(slst[j]);
                     slst[j] = slst[j].Replace("ß", "SS");
                 }
             }
@@ -5619,7 +5620,7 @@ namespace Hunspell
             }
 
             dest = src.Substring(qIndex, nl);
-            capType = CapitalizationTypeUtilities.GetCapitalizationType(dest);
+            capType = CapitalizationTypeUtilities.GetCapitalizationType(dest, Affix);
             return dest.Length;
         }
 
