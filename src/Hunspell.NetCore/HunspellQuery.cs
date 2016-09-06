@@ -654,7 +654,6 @@ namespace Hunspell
                         w += slst[j].Substring(pos + 1);
                         var info = CheckDetails(w).Info;
 
-                        // NOTE: this section is probably a bug in the original
                         var desiredChar = info.HasFlag(SpellCheckResultType.Compound) && info.HasFlag(SpellCheckResultType.Forbidden)
                             ? ' '
                             : '-';

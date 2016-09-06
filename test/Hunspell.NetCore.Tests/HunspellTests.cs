@@ -239,7 +239,7 @@ namespace Hunspell.NetCore.Tests
 
         protected static IEnumerable<string> GetAllDataFilePaths(string searchPattern)
         {
-            return Directory.GetFiles("files/", searchPattern);
+            return Directory.GetFiles("files/", searchPattern).OrderBy(n => n);
         }
 
         protected static readonly char[] SpaceOrTab = new[] { ' ', '\t' };
