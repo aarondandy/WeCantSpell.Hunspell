@@ -749,7 +749,6 @@ namespace Hunspell
             }
         }
 
-        [Obsolete]
         private static string ReverseCondition(string conditionText)
         {
             if (string.IsNullOrEmpty(conditionText))
@@ -814,13 +813,11 @@ namespace Hunspell
             return new string(chars);
         }
 
-        [Obsolete("This method should just be inlined")]
         private bool RedundantConditionPrefix(string text, CharacterConditionGroup conditions)
         {
             return conditions.IsOnlyPossibleMatch(text);
         }
 
-        [Obsolete]
         private bool RedundantConditionPrefix(string text, string conditions)
         {
             if (text.StartsWith(conditions))
@@ -871,13 +868,11 @@ namespace Hunspell
             return j >= conditions.Length;
         }
 
-        [Obsolete("This method should just be inlined")]
         private bool RedundantConditionSuffix(string text, CharacterConditionGroup conditions)
         {
             return conditions.IsOnlyPossibleMatch(text);
         }
 
-        [Obsolete]
         private bool RedundantConditionSuffix(string text, string conditions)
         {
             if (text.EndsWith(conditions))

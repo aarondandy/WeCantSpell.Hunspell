@@ -50,7 +50,6 @@ namespace Hunspell.Utilities
             return new string(chars);
         }
 
-        [Obsolete]
         public static string RemoveChars(this string @this, char[] remove)
         {
             if (string.IsNullOrEmpty(@this) || remove == null || remove.Length == 0)

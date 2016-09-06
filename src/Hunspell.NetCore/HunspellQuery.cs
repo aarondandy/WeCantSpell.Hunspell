@@ -851,7 +851,6 @@ namespace Hunspell
         private void Suggest(List<string> slst, string w, ref int onlyCompoundSug)
         {
             var noCompoundTwoWords = 0;
-            var wl = 0;
             var nSugOrig = slst.Count;
             string w2;
             var word = w;
@@ -1838,7 +1837,6 @@ namespace Hunspell
                 low = 0;
             }
 
-            var col = -1;
             string target = string.Empty;
             string candidate = string.Empty;
             if (Affix.HasPhoneEntires)
@@ -2792,7 +2790,7 @@ namespace Hunspell
         /// <summary>
         /// Do phonetic transformation.
         /// </summary>
-        /// <param name="candidate">An uppercase string.</param>
+        /// <param name="inword">An uppercase string.</param>
         /// <remarks>
         /// Phonetic transcription algorithm
         /// see: http://aspell.net/man-html/Phonetic-Code.html
@@ -5349,7 +5347,6 @@ namespace Hunspell
                     tmpstring += entry.Strip;
                 }
 
-                var tmpword = 0;
                 var endword = tmpstring.Length;
 
                 // now make sure all of the conditions on characters

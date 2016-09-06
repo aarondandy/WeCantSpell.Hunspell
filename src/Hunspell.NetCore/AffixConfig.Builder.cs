@@ -28,7 +28,6 @@ namespace Hunspell
             /// A string of text representing a keyboard layout.
             /// </summary>
             /// <seealso cref="AffixConfig.KeyString"/>
-            [Obsolete("This will likely change type to a data structure")]
             public string KeyString;
 
             /// <summary>
