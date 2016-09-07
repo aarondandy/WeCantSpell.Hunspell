@@ -74,6 +74,7 @@
     <Compile Include="AffixReaderTests.cs" />
     <Compile Include="CharacterConditionTests.cs" />
     <Compile Include="DictionaryReaderTests.cs" />
+    <Compile Include="EnUsWordsTests.cs" />
     <Compile Include="HunspellTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities\Utf16StringLineReader.cs" />
@@ -91,6 +92,14 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\samples\English %28American%29.aff">
+      <Link>files\English %28American%29.aff</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\samples\English %28American%29.dic">
+      <Link>files\English %28American%29.dic</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="files\hun_cover.aff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -107,6 +116,18 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\samples\English %28American%29.txt">
+      <Link>files\English %28American%29.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\hunspell-origin\tests\suggestiontest\List_of_common_misspellings.txt">
+      <Link>files\List_of_common_misspellings.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

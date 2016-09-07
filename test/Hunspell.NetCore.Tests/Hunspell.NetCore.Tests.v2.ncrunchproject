@@ -11,12 +11,13 @@
   <RunPreBuildEvents>false</RunPreBuildEvents>
   <RunPostBuildEvents>false</RunPostBuildEvents>
   <PreviouslyBuiltSuccessfully>true</PreviouslyBuiltSuccessfully>
+  <TrackFileDependencies>false</TrackFileDependencies>
   <InstrumentAssembly>true</InstrumentAssembly>
   <PreventSigningOfAssembly>false</PreventSigningOfAssembly>
   <AnalyseExecutionTimes>true</AnalyseExecutionTimes>
   <DetectStackOverflow>true</DetectStackOverflow>
   <IncludeStaticReferencesInWorkspace>true</IncludeStaticReferencesInWorkspace>
-  <DefaultTestTimeout>60000</DefaultTestTimeout>
+  <DefaultTestTimeout>120000</DefaultTestTimeout>
   <UseBuildConfiguration></UseBuildConfiguration>
   <UseBuildPlatform></UseBuildPlatform>
   <ProxyProcessPath></ProxyProcessPath>

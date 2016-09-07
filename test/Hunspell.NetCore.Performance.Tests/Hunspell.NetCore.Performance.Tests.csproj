@@ -57,6 +57,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AffixFileLoadPerfSpecs.cs" />
+    <Compile Include="DictionaryFileLoadPerfSpec.cs" />
+    <Compile Include="EnWordCheckBase.cs" />
+    <Compile Include="EnWordCheckPerfSpecs.cs" />
+    <Compile Include="EnWordSuggestPerfSpec.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -73,6 +77,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\hunspell-origin\tests\suggestiontest\List_of_common_misspellings.txt">
+      <Link>files\List_of_common_misspellings.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

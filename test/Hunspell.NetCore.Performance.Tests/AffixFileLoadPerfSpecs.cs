@@ -7,18 +7,18 @@ namespace Hunspell.NetCore.Performance.Tests
 {
     public class AffixFileLoadPerfSpecs
     {
-        internal const string CounterNameAffixFilesLoaded = "AffixFilesLoaded";
-
-        private Counter _filesLoadedCounter;
-        private string[] _affixFilePaths;
+        protected Counter AffixFilesLoaded;
+        protected string[] AffixFilePaths;
 
         [PerfSetup]
         public void Setup(BenchmarkContext context)
         {
             var testAssemblyPath = Path.GetFullPath(GetType().Assembly.Location);
             var filesDirectory = Path.Combine(Path.GetDirectoryName(testAssemblyPath), "files/");
-            _affixFilePaths = Directory.GetFiles(filesDirectory, "*.aff");
-            _filesLoadedCounter = context.GetCounter(CounterNameAffixFilesLoaded);
+            AffixFilePaths = Directory.GetFiles(filesDirectory, "*.aff")
+                .OrderBy(p => p)
+                .ToArray();
+            AffixFilesLoaded = context.GetCounter(nameof(AffixFilesLoaded));
         }
 
         [PerfBenchmark(
@@ -29,14 +29,14 @@ namespace Hunspell.NetCore.Performance.Tests
         [MemoryMeasurement(MemoryMetric.TotalBytesAllocated)]
         [GcMeasurement(GcMetric.TotalCollections, GcGeneration.AllGc)]
         [TimingMeasurement]
-        [CounterMeasurement(CounterNameAffixFilesLoaded)]
-        [CounterThroughputAssertion(CounterNameAffixFilesLoaded, MustBe.GreaterThanOrEqualTo, 2)]
+        [CounterMeasurement(nameof(AffixFilesLoaded))]
+        [CounterThroughputAssertion(nameof(AffixFilesLoaded), MustBe.GreaterThanOrEqualTo, 2)]
         public void Benchmark()
         {
-            Task.WhenAll(_affixFilePaths.Select(async (filePath) =>
+            Task.WhenAll(AffixFilePaths.Select(async filePath =>
             {
                 await AffixReader.ReadFileAsync(filePath);
-                _filesLoadedCounter.Increment();
+                AffixFilesLoaded.Increment();
             })).Wait();
         }
     }
