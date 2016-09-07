@@ -1,4 +1,4 @@
-﻿using Hunspell.Utilities;
+﻿using Hunspell.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -243,7 +243,7 @@ namespace Hunspell
 
                     if (
                         breakEntry.StartsWith('^')
-                        && StringExtensions.EqualsOffset(scw, 0, breakEntry, 1, plen - 1)
+                        && StringEx.EqualsOffset(scw, 0, breakEntry, 1, plen - 1)
                         && Check(scw.Substring(plen - 1))
                     )
                     {
@@ -252,7 +252,7 @@ namespace Hunspell
 
                     if (
                         breakEntry.EndsWith('$')
-                        && StringExtensions.EqualsOffset(scw, wl - plen + 1, breakEntry, 0, plen - 1)
+                        && StringEx.EqualsOffset(scw, wl - plen + 1, breakEntry, 0, plen - 1)
                     )
                     {
                         var suffix = scw.Substring(wl - plen + 1);
@@ -494,7 +494,7 @@ namespace Hunspell
             }
 
             // process XML input of the simplified API (see manual)
-            if (StringExtensions.EqualsOffset(word, 0, DefaultXmlToken, 0, DefaultXmlToken.Length - 3))
+            if (StringEx.EqualsOffset(word, 0, DefaultXmlToken, 0, DefaultXmlToken.Length - 3))
             {
                 throw new NotImplementedException();
             }
@@ -611,7 +611,7 @@ namespace Hunspell
                         var slen = space.Length - 1;
 
                         // different case after space (need capitalisation)
-                        if ((slen < wl) && !StringExtensions.EqualsOffset(scw, wl - slen, space, 1))
+                        if ((slen < wl) && !StringEx.EqualsOffset(scw, wl - slen, space, 1))
                         {
                             var first = slst[j].Substring(0, spaceIndex + 1);
                             var second = slst[j].Substring(spaceIndex + 1);
@@ -1485,7 +1485,7 @@ namespace Hunspell
                     for (var k = 0; k < mapEntry.Length; k++)
                     {
                         var len = mapEntry[k].Length;
-                        if (StringExtensions.EqualsOffset(mapEntry[k], 0, word, wn, len))
+                        if (StringEx.EqualsOffset(mapEntry[k], 0, word, wn, len))
                         {
                             inMap = 1;
                             var cn = candidate.Length;
@@ -2417,7 +2417,7 @@ namespace Hunspell
                                     (
                                         badl > sptr.Key.Length
                                         &&
-                                        StringExtensions.EqualsOffset(sptr.Append, 0, bad, badl - sptr.Key.Length)
+                                        StringEx.EqualsOffset(sptr.Append, 0, bad, badl - sptr.Key.Length)
                                     )
                                 )
                                 && // check needaffix flag
@@ -2492,7 +2492,7 @@ namespace Hunspell
                                             (
                                                 badl > cptr.Key.Length
                                                 &&
-                                                StringExtensions.EqualsOffset(cptr.Key, 0, bad, 0, cptr.Key.Length)
+                                                StringEx.EqualsOffset(cptr.Key, 0, bad, 0, cptr.Key.Length)
                                             )
                                         )
                                     )
@@ -2534,7 +2534,7 @@ namespace Hunspell
                                     (
                                         badl > ptr.Key.Length
                                         &&
-                                        StringExtensions.EqualsOffset(ptr.Key, 0, bad, 0, ptr.Key.Length)
+                                        StringEx.EqualsOffset(ptr.Key, 0, bad, 0, ptr.Key.Length)
                                     )
                                 )
                                 && // check needaffix flag
@@ -2586,7 +2586,7 @@ namespace Hunspell
                 (
                     entry.Strip.Length == 0
                     ||
-                    StringExtensions.EqualsOffset(word, 0, entry.Strip, 0, entry.Strip.Length)
+                    StringEx.EqualsOffset(word, 0, entry.Strip, 0, entry.Strip.Length)
                 )
             )
             {
@@ -2623,7 +2623,7 @@ namespace Hunspell
                 (
                     entry.Strip.Length == 0
                     ||
-                    StringExtensions.EqualsOffset(word, len - entry.Strip.Length, entry.Strip, 0)
+                    StringEx.EqualsOffset(word, len - entry.Strip.Length, entry.Strip, 0)
                 )
             )
             {
@@ -3402,7 +3402,8 @@ namespace Hunspell
             cmax = word.Length - cmin + 1;
 
             st = word;
-            var stChars = st.ToCharArray();
+            //var stChars = st.ToCharArray();
+            var stBuilder = new StringBuilder(st);
 
             for (i = cmin; i < cmax; i++)
             {
@@ -3427,7 +3428,7 @@ namespace Hunspell
                                 (
                                     string.IsNullOrEmpty(Affix.CompoundPatterns[scpd - 1].Pattern3)
                                     ||
-                                    !StringExtensions.EqualsOffset(word, i, Affix.CompoundPatterns[scpd - 1].Pattern3, 0, Affix.CompoundPatterns[scpd - 1].Pattern3.Length)
+                                    !StringEx.EqualsOffset(word, i, Affix.CompoundPatterns[scpd - 1].Pattern3, 0, Affix.CompoundPatterns[scpd - 1].Pattern3.Length)
                                 )
                                 ;
                                 scpd++
@@ -3444,17 +3445,17 @@ namespace Hunspell
                             var scpdPatternEntry = Affix.CompoundPatterns[scpd - 1];
 
                             var neededSize = i + scpdPatternEntry.Pattern.Length + scpdPatternEntry.Pattern2.Length + (word.Length - (i + scpdPatternEntry.Pattern3.Length));
-                            if (stChars.Length < neededSize)
-                            {
-                                Array.Resize(ref stChars, neededSize);
-                            }
 
-                            scpdPatternEntry.Pattern.CopyTo(stChars, i);
+                            stBuilder.WriteChars(scpdPatternEntry.Pattern, i);
+
                             soldi = i;
                             i += scpdPatternEntry.Pattern.Length;
-                            scpdPatternEntry.Pattern2.CopyTo(stChars, i);
-                            word.CopyTo(soldi + scpdPatternEntry.Pattern3.Length, stChars, i + scpdPatternEntry.Pattern2.Length);
-                            st = stChars.AsTerminatedString();
+
+                            stBuilder.WriteChars(scpdPatternEntry.Pattern2, i);
+
+                            stBuilder.WriteChars(soldi + scpdPatternEntry.Pattern3.Length, word, i + scpdPatternEntry.Pattern2.Length);
+
+                            st = stBuilder.AsTerminatedString();
 
                             oldlen = len;
                             len += scpdPatternEntry.Pattern.Length + scpdPatternEntry.Pattern2.Length - scpdPatternEntry.Pattern3.Length;
@@ -3464,11 +3465,11 @@ namespace Hunspell
                             cmax = len - Affix.CompoundMin + 1;
                         }
 
-                        if (i < stChars.Length)
+                        if (i < stBuilder.Length)
                         {
-                            ch = stChars[i];
-                            stChars[i] = default(char);
-                            st = stChars.AsTerminatedString();
+                            ch = stBuilder[i];
+                            stBuilder[i] = '\0';
+                            st = stBuilder.AsTerminatedString();
                         }
                         else
                         {
@@ -3652,10 +3653,10 @@ namespace Hunspell
                         )
                         {
                             // else check forbiddenwords and needaffix
-                            if (i < stChars.Length)
+                            if (i < stBuilder.Length)
                             {
-                                stChars[i] = ch;
-                                st = stChars.AsTerminatedString();
+                                stBuilder[i] = ch;
+                                st = stBuilder.AsTerminatedString();
                             }
 
                             break;
@@ -3833,10 +3834,10 @@ namespace Hunspell
                             // NEXT WORD(S)
                             rv_first = rv;
 
-                            if (i < stChars.Length)
+                            if (i < stBuilder.Length)
                             {
-                                stChars[i] = ch;
-                                st = stChars.AsTerminatedString();
+                                stBuilder[i] = ch;
+                                st = stBuilder.AsTerminatedString();
                             }
 
                             do
@@ -4215,21 +4216,21 @@ namespace Hunspell
                                         }
 
                                         // check first part
-                                        if (StringExtensions.EqualsOffset(rv.Word, 0, word, i, rv.Word.Length))
+                                        if (StringEx.EqualsOffset(rv.Word, 0, word, i, rv.Word.Length))
                                         {
                                             var r = st[i + rv.Word.Length];
-                                            if (i + rv.Word.Length < stChars.Length)
+                                            if (i + rv.Word.Length < stBuilder.Length)
                                             {
-                                                stChars[i + rv.Word.Length] = '\0';
-                                                st = stChars.AsTerminatedString();
+                                                stBuilder[i + rv.Word.Length] = '\0';
+                                                st = stBuilder.AsTerminatedString();
                                             }
 
                                             if (Affix.CheckCompoundRep && CompoundReplacementCheck(st))
                                             {
-                                                if (i + rv.Word.Length < stChars.Length)
+                                                if (i + rv.Word.Length < stBuilder.Length)
                                                 {
-                                                    stChars[i + rv.Word.Length] = r;
-                                                    st = stChars.AsTerminatedString();
+                                                    stBuilder[i + rv.Word.Length] = r;
+                                                    st = stBuilder.AsTerminatedString();
                                                 }
 
                                                 continue;
@@ -4248,7 +4249,7 @@ namespace Hunspell
                                                 if (
                                                     rv2 != null
                                                     && rv2.ContainsFlag(Affix.ForbiddenWord)
-                                                    && StringExtensions.EqualsOffset(rv2.Word, 0, st, 0, i + rv.Word.Length)
+                                                    && StringEx.EqualsOffset(rv2.Word, 0, st, 0, i + rv.Word.Length)
                                                 )
                                                 {
                                                     return null;
@@ -4256,10 +4257,10 @@ namespace Hunspell
                                             }
 
 
-                                            if (i + rv.Word.Length < stChars.Length)
+                                            if (i + rv.Word.Length < stBuilder.Length)
                                             {
-                                                stChars[i + rv.Word.Length] = r;
-                                                st = stChars.AsTerminatedString();
+                                                stBuilder[i + rv.Word.Length] = r;
+                                                st = stBuilder.AsTerminatedString();
                                             }
                                         }
                                     }
@@ -4299,18 +4300,18 @@ namespace Hunspell
                     {
                         i = soldi;
                         st = word;
-                        stChars = st.ToCharArray();
+                        stBuilder.Clear();
+                        stBuilder.Append(st);
                         soldi = 0;
                     }
                     else
                     {
-                        if (i < stChars.Length)
+                        if (i < stBuilder.Length)
                         {
-                            stChars[i] = ch;
+                            stBuilder[i] = ch;
                         }
 
-                        var zeroCharIndex = Array.IndexOf(stChars, default(char));
-                        st = new string(stChars, 0, zeroCharIndex < 0 ? stChars.Length : zeroCharIndex);
+                        st = stBuilder.AsTerminatedString();
                     }
                 }
                 while (Affix.HasCompoundRules && oldwordnum == 0 && onlycpdrule++ < 1);
@@ -5128,7 +5129,7 @@ namespace Hunspell
                             (
                                 patternEntry.Pattern.StartsWith('0')
                                 && r1.Word.Length <= pos
-                                && StringExtensions.EqualsOffset(word, pos - r1.Word.Length, r1.Word, 0, r1.Word.Length)
+                                && StringEx.EqualsOffset(word, pos - r1.Word.Length, r1.Word, 0, r1.Word.Length)
                             )
                             ||
                             (
@@ -5140,7 +5141,7 @@ namespace Hunspell
                                     ) != 0
                                 )
                                 &&
-                                StringExtensions.EqualsOffset(word, pos - len, patternEntry.Pattern, 0, len)
+                                StringEx.EqualsOffset(word, pos - len, patternEntry.Pattern, 0, len)
                             )
                         )
                     )

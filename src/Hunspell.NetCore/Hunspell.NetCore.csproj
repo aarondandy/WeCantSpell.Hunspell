@@ -69,6 +69,7 @@
     <Compile Include="Hunspell.cs" />
     <Compile Include="HunspellQuery.cs" />
     <Compile Include="IHunspellLineReader.cs" />
+    <Compile Include="Infrastructure\StringBuilderEx.cs" />
     <Compile Include="LongestCommonSubsequenceType.cs" />
     <Compile Include="MorphologicalTags.cs" />
     <Compile Include="NGramOptions.cs" />
@@ -88,11 +89,11 @@
     <Compile Include="ReplacementEntryType.cs" />
     <Compile Include="SingleReplacementEntry.cs" />
     <Compile Include="SuffixEntry.cs" />
-    <Compile Include="Utilities\ArrayExtensions.cs" />
-    <Compile Include="Utilities\CulturedStringComparer.cs" />
-    <Compile Include="Utilities\CultureInfoExtensions.cs" />
-    <Compile Include="Utilities\IntExtensions.cs" />
-    <Compile Include="Utilities\StringExtensions.cs" />
+    <Compile Include="Infrastructure\ArrayEx.cs" />
+    <Compile Include="Infrastructure\CulturedStringComparer.cs" />
+    <Compile Include="Infrastructure\CultureInfoEx.cs" />
+    <Compile Include="Infrastructure\IntEx.cs" />
+    <Compile Include="Infrastructure\StringEx.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

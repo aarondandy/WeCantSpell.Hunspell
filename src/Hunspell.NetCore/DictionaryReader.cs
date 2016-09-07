@@ -1,4 +1,4 @@
-﻿using Hunspell.Utilities;
+﻿using Hunspell.Infrastructure;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -131,7 +131,7 @@ namespace Hunspell
                 if (Affix.IsAliasF)
                 {
                     int flagAliasNumber;
-                    if (IntExtensions.TryParseInvariant(flagGroup.Value, out flagAliasNumber) && flagAliasNumber > 0 && flagAliasNumber <= Affix.AliasF.Length)
+                    if (IntEx.TryParseInvariant(flagGroup.Value, out flagAliasNumber) && flagAliasNumber > 0 && flagAliasNumber <= Affix.AliasF.Length)
                     {
                         flags = Affix.AliasF[flagAliasNumber - 1];
                     }
@@ -184,7 +184,7 @@ namespace Hunspell
             if (initLineMatch.Success)
             {
                 int expectedSize;
-                if (IntExtensions.TryParseInvariant(initLineMatch.Groups[1].Value, out expectedSize))
+                if (IntEx.TryParseInvariant(initLineMatch.Groups[1].Value, out expectedSize))
                 {
                     if (Builder.Entries == null)
                     {
@@ -206,7 +206,7 @@ namespace Hunspell
 
         private bool AddWord(string word, ImmutableSortedSet<FlagValue> flags, ImmutableArray<string> morphs, bool onlyUpperCase)
         {
-            if (!Affix.IgnoredChars.IsEmpty)
+            if (Affix.HasIgnoredChars)
             {
                 word = word.RemoveChars(Affix.IgnoredChars);
             }
@@ -242,7 +242,7 @@ namespace Hunspell
                         var originalValue = morphs[i];
                         int morphNumber;
 
-                        if (IntExtensions.TryParseInvariant(originalValue, out morphNumber) && morphNumber > 0 && morphNumber <= Affix.AliasM.Length)
+                        if (IntEx.TryParseInvariant(originalValue, out morphNumber) && morphNumber > 0 && morphNumber <= Affix.AliasM.Length)
                         {
                             morphBuilder.AddRange(Affix.AliasM[morphNumber - 1]);
                         }

@@ -1,4 +1,4 @@
-﻿using Hunspell.Utilities;
+﻿using Hunspell.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -274,7 +274,7 @@ namespace Hunspell
 
                 if (
                     possiblePreambleBytes.Length >= encodingPreamble.Length
-                    && ArrayExtensions.Equals(possiblePreambleBytes, 0, encodingPreamble, 0, encodingPreamble.Length)
+                    && ArrayEx.Equals(possiblePreambleBytes, 0, encodingPreamble, 0, encodingPreamble.Length)
                 )
                 {
                     bytesToRestore = possiblePreambleBytes.Length - encodingPreamble.Length;
@@ -421,7 +421,7 @@ namespace Hunspell
 
         private void ChangeEncoding(string encodingName)
         {
-            var newEncoding = StringExtensions.GetEncodingByName(encodingName);
+            var newEncoding = StringEx.GetEncodingByName(encodingName);
             if (newEncoding == null || ReferenceEquals(newEncoding, encoding) || encoding.Equals(newEncoding))
             {
                 return;

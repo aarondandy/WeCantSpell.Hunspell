@@ -1,4 +1,4 @@
-﻿using Hunspell.Utilities;
+﻿using Hunspell.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;

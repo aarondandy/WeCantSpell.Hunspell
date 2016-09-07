@@ -1,4 +1,4 @@
-﻿using Hunspell.Utilities;
+﻿using Hunspell.Infrastructure;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -129,7 +129,7 @@ namespace Hunspell
             }
 
             int integerValue;
-            var parsedOk = IntExtensions.TryParseInvariant(text, out integerValue);
+            var parsedOk = IntEx.TryParseInvariant(text, out integerValue);
             value = new FlagValue(integerValue);
             return parsedOk;
         }
@@ -141,7 +141,7 @@ namespace Hunspell
                 case FlagMode.Char:
                     return text == null
                         ? Enumerable.Empty<FlagValue>()
-                        : text.ToCharArray().ConvertAll(c => new FlagValue(c));
+                        : ConvertCharsToFlags(text);
                 case FlagMode.Long:
                     return ParseLongFlags(text);
                 case FlagMode.Num:
@@ -150,6 +150,17 @@ namespace Hunspell
                 default:
                     throw new NotSupportedException();
             }
+        }
+
+        private static FlagValue[] ConvertCharsToFlags(string text)
+        {
+            var result = new FlagValue[text.Length];
+            for(var i = 0; i < result.Length; i++)
+            {
+                result[i] = new FlagValue(text[i]);
+            }
+
+            return result;
         }
 
         public static IEnumerable<FlagValue> ParseLongFlags(string text)

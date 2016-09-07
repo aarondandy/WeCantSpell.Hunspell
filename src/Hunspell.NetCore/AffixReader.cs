@@ -1,4 +1,4 @@
-﻿using Hunspell.Utilities;
+﻿using Hunspell.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -186,7 +186,7 @@ namespace Hunspell
                     Builder.TryString = parameters;
                     return true;
                 case "SET": // parse in the name of the character set used by the .dict and .aff
-                    var encoding = StringExtensions.GetEncodingByName(parameters);
+                    var encoding = StringEx.GetEncodingByName(parameters);
                     if (encoding == null)
                     {
                         return false;
@@ -220,10 +220,10 @@ namespace Hunspell
                         ? TryParseFlag(parameters, out Builder.CompoundBegin)
                         : TryParseFlag(parameters, out Builder.CompoundEnd);
                 case "COMPOUNDWORDMAX": // parse in the data used by compound_check() method
-                    Builder.CompoundWordMax = IntExtensions.TryParseInvariant(parameters);
+                    Builder.CompoundWordMax = IntEx.TryParseInvariant(parameters);
                     return Builder.CompoundWordMax.HasValue;
                 case "COMPOUNDMIN": // parse in the minimal length for words in compounds
-                    Builder.CompoundMin = IntExtensions.TryParseInvariant(parameters);
+                    Builder.CompoundMin = IntEx.TryParseInvariant(parameters);
                     if (!Builder.CompoundMin.HasValue)
                     {
                         return false;
@@ -279,13 +279,13 @@ namespace Hunspell
                     Builder.Version = parameters;
                     return true;
                 case "MAXNGRAMSUGS":
-                    Builder.MaxNgramSuggestions = IntExtensions.TryParseInvariant(parameters);
+                    Builder.MaxNgramSuggestions = IntEx.TryParseInvariant(parameters);
                     return Builder.MaxNgramSuggestions.HasValue;
                 case "MAXDIFF":
-                    Builder.MaxDifferency = IntExtensions.TryParseInvariant(parameters);
+                    Builder.MaxDifferency = IntEx.TryParseInvariant(parameters);
                     return Builder.MaxDifferency.HasValue;
                 case "MAXCPDSUGS":
-                    Builder.MaxCompoundSuggestions = IntExtensions.TryParseInvariant(parameters);
+                    Builder.MaxCompoundSuggestions = IntEx.TryParseInvariant(parameters);
                     return Builder.MaxCompoundSuggestions.HasValue;
                 case "KEEPCASE": // parse in the flag used by forbidden words
                     return TryParseFlag(parameters, out Builder.KeepCase);
@@ -322,7 +322,7 @@ namespace Hunspell
                 SetInitialized(entryListType);
 
                 int expectedSize;
-                if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
+                if (IntEx.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
                 {
                     if (entries == null)
                     {
@@ -348,7 +348,7 @@ namespace Hunspell
             if (parts.Length > 0)
             {
                 int maxValue;
-                if (IntExtensions.TryParseInvariant(parts[0], out maxValue))
+                if (IntEx.TryParseInvariant(parts[0], out maxValue))
                 {
                     Builder.CompoundMaxSyllable = maxValue;
                 }
@@ -446,7 +446,7 @@ namespace Hunspell
                 SetInitialized(entryListType);
 
                 int expectedSize;
-                if (IntExtensions.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
+                if (IntEx.TryParseInvariant(parameterText, out expectedSize) && expectedSize >= 0)
                 {
                     if (entries == null)
                     {
@@ -588,7 +588,7 @@ namespace Hunspell
                 }
 
                 int expectedEntryCount;
-                IntExtensions.TryParseInvariant(lineMatchGroups[3].Value, out expectedEntryCount);
+                IntEx.TryParseInvariant(lineMatchGroups[3].Value, out expectedEntryCount);
 
                 affixGroup = new AffixEntryGroup.Builder<TEntry>
                 {
@@ -615,17 +615,18 @@ namespace Hunspell
                 }
 
                 // piece 4 - is affix string or 0 for null
-                var affixText = lineMatchGroups[5].Value;
-                var affixSlashIndex = affixText.IndexOf('/');
+                var affixInput = lineMatchGroups[5].Value;
+                var affixSlashIndex = affixInput.IndexOf('/');
+                StringBuilder affixText;
                 if (affixSlashIndex >= 0)
                 {
-                    var slashPart = affixText.Substring(affixSlashIndex + 1);
-                    affixText = affixText.Substring(0, affixSlashIndex);
+                    var slashPart = affixInput.Substring(affixSlashIndex + 1);
+                    affixText = new StringBuilder(affixInput, 0, affixSlashIndex, affixSlashIndex);
 
                     if (Builder.IsAliasF)
                     {
                         int aliasNumber;
-                        if (IntExtensions.TryParseInvariant(slashPart, out aliasNumber) && aliasNumber > 0 && aliasNumber <= Builder.AliasF.Count)
+                        if (IntEx.TryParseInvariant(slashPart, out aliasNumber) && aliasNumber > 0 && aliasNumber <= Builder.AliasF.Count)
                         {
                             contClass = Builder.AliasF[aliasNumber - 1].ToImmutableArray();
                         }
@@ -639,18 +640,24 @@ namespace Hunspell
                         contClass = ImmutableArray.CreateRange(ParseFlags(slashPart));
                     }
                 }
-                if (Builder.IgnoredChars != null)
+                else
                 {
-                    affixText = affixText.RemoveChars(Builder.IgnoredChars);
-                }
-                if (Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes))
-                {
-                    affixText = affixText.Reverse();
+                    affixText = new StringBuilder(affixInput);
                 }
 
-                if (affixText == "0")
+                if (!ArrayEx.IsNullOrEmpty(Builder.IgnoredChars))
                 {
-                    affixText = string.Empty;
+                    affixText.RemoveChars(Builder.IgnoredChars);
+                }
+
+                if (Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes))
+                {
+                    affixText.Reverse();
+                }
+
+                if (affixText.Length == 1 && affixText[0] == '0')
+                {
+                    affixText.Clear();
                 }
 
                 // piece 5 - is the conditions descriptions
@@ -700,7 +707,7 @@ namespace Hunspell
                     if (Builder.IsAliasM)
                     {
                         int morphNumber;
-                        if (IntExtensions.TryParseInvariant(morphAffixText, out morphNumber) && morphNumber > 0 && morphNumber <= Builder.AliasM.Count)
+                        if (IntEx.TryParseInvariant(morphAffixText, out morphNumber) && morphNumber > 0 && morphNumber <= Builder.AliasM.Count)
                         {
                             morph = Builder.AliasM[morphNumber - 1];
                         }
@@ -739,7 +746,7 @@ namespace Hunspell
                     Builder.HasContClass = true;
                 }
 
-                affixGroup.Entries.Add(AffixEntry.Create<TEntry>(strip, affixText, conditions, morph, contClass));
+                affixGroup.Entries.Add(AffixEntry.Create<TEntry>(strip, affixText.ToString(), conditions, morph, contClass));
 
                 return true;
             }
