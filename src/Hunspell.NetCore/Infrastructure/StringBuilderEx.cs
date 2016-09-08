@@ -222,5 +222,15 @@ namespace Hunspell.Infrastructure
             var nullTerminatorIndex = builder.IndexOfNullChar();
             return nullTerminatorIndex < 0 ? builder.ToString() : builder.ToString(0, nullTerminatorIndex);
         }
+
+        public static bool StartsWith(this StringBuilder builder, char c)
+        {
+            return builder.Length != 0 && builder[0] == c;
+        }
+
+        public static bool EndsWith(this StringBuilder builder, char c)
+        {
+            return builder.Length != 0 && builder[builder.Length - 1] == c;
+        }
     }
 }

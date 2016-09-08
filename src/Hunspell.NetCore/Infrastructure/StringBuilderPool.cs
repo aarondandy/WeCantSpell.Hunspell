@@ -24,7 +24,7 @@ namespace Hunspell.Infrastructure
 #endif
         public static StringBuilder Get(string value)
         {
-            return GetClearedBuilder()
+            return GetClearedBuilderWithCapacity(value.Length)
                 .Append(value);
         }
 

@@ -528,7 +528,7 @@ namespace Hunspell
                     }
                     else
                     {
-                        entry.AddRange(ParseFlags(parameterText.Substring(indexBegin, indexEnd - indexBegin)));
+                        entry.AddRange(ParseFlags(parameterText, indexBegin, indexEnd - indexBegin));
                     }
                 }
             }
@@ -620,13 +620,14 @@ namespace Hunspell
                 StringBuilder affixText;
                 if (affixSlashIndex >= 0)
                 {
-                    var slashPart = affixInput.Substring(affixSlashIndex + 1);
+                    var slashPartOffset = affixSlashIndex + 1;
+                    var slashPartLength = affixInput.Length - slashPartOffset;
                     affixText = StringBuilderPool.Get(affixInput, 0, affixSlashIndex);
 
                     if (Builder.IsAliasF)
                     {
                         int aliasNumber;
-                        if (IntEx.TryParseInvariant(slashPart, out aliasNumber) && aliasNumber > 0 && aliasNumber <= Builder.AliasF.Count)
+                        if (IntEx.TryParseInvariant(affixInput, slashPartOffset, slashPartLength, out aliasNumber) && aliasNumber > 0 && aliasNumber <= Builder.AliasF.Count)
                         {
                             contClass = Builder.AliasF[aliasNumber - 1].ToImmutableArray();
                         }
@@ -637,7 +638,7 @@ namespace Hunspell
                     }
                     else
                     {
-                        contClass = ImmutableArray.CreateRange(ParseFlags(slashPart));
+                        contClass = ImmutableArray.CreateRange(ParseFlags(affixInput, slashPartOffset, slashPartLength));
                     }
                 }
                 else
@@ -942,30 +943,31 @@ namespace Hunspell
                 return false;
             }
 
-            var pattern = parameters[0];
+            var patternBuilder = StringBuilderPool.Get(parameters[0]);
             var outString = parameters.Length > 1 ? parameters[1] : string.Empty;
 
             ReplacementValueType type;
-            var trailingDollar = pattern.EndsWith('$');
-            if (pattern.StartsWith('^'))
+            var hasTrailingDollar = patternBuilder.EndsWith('$');
+            if (patternBuilder.StartsWith('^'))
             {
-                if (trailingDollar)
+                if (hasTrailingDollar)
                 {
                     type = ReplacementValueType.Isol;
-                    pattern = pattern.Substring(1, pattern.Length - 2);
+                    patternBuilder.Remove(patternBuilder.Length - 1, 1);
                 }
                 else
                 {
                     type = ReplacementValueType.Ini;
-                    pattern = pattern.Substring(1);
                 }
+
+                patternBuilder.Remove(0, 1);
             }
             else
             {
-                if (trailingDollar)
+                if (hasTrailingDollar)
                 {
                     type = ReplacementValueType.Fin;
-                    pattern = pattern.SubstringFromEnd(1);
+                    patternBuilder.Remove(patternBuilder.Length - 1, 1);
                 }
                 else
                 {
@@ -973,7 +975,9 @@ namespace Hunspell
                 }
             }
 
-            entries.Add(new SingleReplacementEntry(pattern.Replace('_', ' '), outString.Replace('_', ' '), type));
+            patternBuilder.Replace('_', ' ');
+
+            entries.Add(new SingleReplacementEntry(StringBuilderPool.GetStringAndReturn(patternBuilder), outString.Replace('_', ' '), type));
 
             return true;
         }
@@ -995,7 +999,7 @@ namespace Hunspell
             var slashIndex = pattern.IndexOf('/');
             if (slashIndex >= 0)
             {
-                if (!TryParseFlag(pattern.Substring(slashIndex + 1), out condition))
+                if (!TryParseFlag(pattern, slashIndex + 1, out condition))
                 {
                     return false;
                 }
@@ -1009,7 +1013,7 @@ namespace Hunspell
                 slashIndex = pattern2.IndexOf('/');
                 if (slashIndex >= 0)
                 {
-                    if (!TryParseFlag(pattern2.Substring(slashIndex + 1), out condition2))
+                    if (!TryParseFlag(pattern2, slashIndex + 1, out condition2))
                     {
                         return false;
                     }
@@ -1057,6 +1061,11 @@ namespace Hunspell
 
         private string ReDecodeConvertedStringAsUtf8(string decoded)
         {
+            if (Builder.Encoding == Encoding.UTF8)
+            {
+                return decoded;
+            }
+
             return Encoding.UTF8.GetString(Builder.Encoding.GetBytes(decoded));
         }
 
@@ -1072,6 +1081,14 @@ namespace Hunspell
             return FlagValue.ParseFlags(text, flagMode);
         }
 
+        private IEnumerable<FlagValue> ParseFlags(string text, int startIndex, int length)
+        {
+            var flagMode = Builder.FlagMode;
+            return flagMode == FlagMode.Uni
+                ? FlagValue.ParseFlags(ReDecodeConvertedStringAsUtf8(text.Substring(startIndex, length)), FlagMode.Char)
+                : FlagValue.ParseFlags(text, startIndex, length, flagMode);
+        }
+
         private bool TryParseFlag(string text, out FlagValue value)
         {
             var flagMode = Builder.FlagMode;
@@ -1082,6 +1099,14 @@ namespace Hunspell
             }
 
             return FlagValue.TryParseFlag(text, flagMode, out value);
+        }
+
+        private bool TryParseFlag(string text, int startIndex, out FlagValue value)
+        {
+            var flagMode = Builder.FlagMode;
+            return flagMode == FlagMode.Uni
+                ? FlagValue.TryParseFlag(ReDecodeConvertedStringAsUtf8(text.Substring(startIndex)), FlagMode.Char, out value)
+                : FlagValue.TryParseFlag(text, startIndex, text.Length - startIndex, flagMode, out value);
         }
 
         private FlagValue TryParseFlag(string text)

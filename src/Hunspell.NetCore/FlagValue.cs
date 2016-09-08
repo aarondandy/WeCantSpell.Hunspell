@@ -1,10 +1,9 @@
 ﻿using Hunspell.Infrastructure;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
+using System.Runtime.CompilerServices;
 
 namespace Hunspell
 {
@@ -120,6 +119,33 @@ namespace Hunspell
             }
         }
 
+        public static bool TryParseFlag(string text, int startIndex, int length, FlagMode mode, out FlagValue value)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                value = default(FlagValue);
+                return false;
+            }
+
+            switch (mode)
+            {
+                case FlagMode.Char:
+                    value = new FlagValue(text[startIndex]);
+                    return true;
+                case FlagMode.Long:
+                    var a = text[startIndex];
+                    value = length >= 2
+                        ? new FlagValue(a, unchecked((byte)text[startIndex + 1]))
+                        : new FlagValue(a);
+                    return true;
+                case FlagMode.Num:
+                    return TryParseNumberFlag(text, startIndex, length, out value);
+                case FlagMode.Uni:
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+
         public static bool TryParseNumberFlag(string text, out FlagValue value)
         {
             if (text == null)
@@ -134,13 +160,27 @@ namespace Hunspell
             return parsedOk;
         }
 
+        public static bool TryParseNumberFlag(string text, int startIndex, int length, out FlagValue value)
+        {
+            if (text == null)
+            {
+                value = default(FlagValue);
+                return false;
+            }
+
+            int integerValue;
+            var parsedOk = IntEx.TryParseInvariant(text, startIndex, length, out integerValue);
+            value = new FlagValue(integerValue);
+            return parsedOk;
+        }
+
         public static IEnumerable<FlagValue> ParseFlags(string text, FlagMode mode)
         {
             switch (mode)
             {
                 case FlagMode.Char:
                     return text == null
-                        ? Enumerable.Empty<FlagValue>()
+                        ? ArrayEx<FlagValue>.Empty
                         : ConvertCharsToFlags(text);
                 case FlagMode.Long:
                     return ParseLongFlags(text);
@@ -152,10 +192,28 @@ namespace Hunspell
             }
         }
 
+        public static IEnumerable<FlagValue> ParseFlags(string text, int startIndex, int length, FlagMode mode)
+        {
+            switch (mode)
+            {
+                case FlagMode.Char:
+                    return text == null
+                        ? ArrayEx<FlagValue>.Empty
+                        : ConvertCharsToFlags(text, startIndex, length);
+                case FlagMode.Long:
+                    return ParseLongFlags(text, startIndex, length);
+                case FlagMode.Num:
+                    return ParseNumberFlags(text, startIndex, length);
+                case FlagMode.Uni:
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+
         private static FlagValue[] ConvertCharsToFlags(string text)
         {
             var result = new FlagValue[text.Length];
-            for(var i = 0; i < result.Length; i++)
+            for (var i = 0; i < result.Length; i++)
             {
                 result[i] = new FlagValue(text[i]);
             }
@@ -163,36 +221,63 @@ namespace Hunspell
             return result;
         }
 
-        public static IEnumerable<FlagValue> ParseLongFlags(string text)
+        private static FlagValue[] ConvertCharsToFlags(string text, int startIndex, int length)
         {
-            if (string.IsNullOrEmpty(text))
+            var result = new FlagValue[length];
+            for (var i = 0; i < result.Length; i++)
             {
-                return Enumerable.Empty<FlagValue>();
+                result[i] = new FlagValue(text[i + startIndex]);
             }
 
-            var flags = new List<FlagValue>((text.Length + 1) / 2);
-            var lastIndex = text.Length - 1;
-            for (var i = 0; i < lastIndex; i += 2)
+            return result;
+        }
+
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static List<FlagValue> ParseLongFlags(string text)
+        {
+            return ParseLongFlags(text, 0, text.Length);
+        }
+
+        public static List<FlagValue> ParseLongFlags(string text, int startIndex, int length)
+        {
+            if (length == 0 || string.IsNullOrEmpty(text))
+            {
+                return new List<FlagValue>();
+            }
+
+            var flags = new List<FlagValue>((length + 1) / 2);
+            var lastIndex = startIndex + length - 1;
+            for (var i = startIndex; i < lastIndex; i += 2)
             {
                 flags.Add(new FlagValue(text[i], unchecked((byte)text[i + 1])));
             }
 
-            if (text.Length % 2 == 1)
+            if (length % 2 == 1)
             {
-                flags.Add(new FlagValue(text[text.Length - 1]));
+                flags.Add(new FlagValue(text[lastIndex]));
             }
 
             return flags;
         }
 
-        public static IEnumerable<FlagValue> ParseNumberFlags(string text)
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static List<FlagValue> ParseNumberFlags(string text)
         {
-            if (string.IsNullOrEmpty(text))
+            return ParseNumberFlags(text, 0, text.Length);
+        }
+
+        public static List<FlagValue> ParseNumberFlags(string text, int startIndex, int length)
+        {
+            if (length == 0 || string.IsNullOrEmpty(text))
             {
-                return Enumerable.Empty<FlagValue>();
+                return new List<FlagValue>();
             }
 
-            var textParts = text.SplitOnComma();
+            var textParts = text.Substring(startIndex, length).SplitOnComma();
             var flags = new List<FlagValue>(textParts.Length);
 
             for (var i = 0; i < textParts.Length; i++)
@@ -207,6 +292,9 @@ namespace Hunspell
             return flags;
         }
 
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static implicit operator int(FlagValue flag)
         {
             return flag.value;

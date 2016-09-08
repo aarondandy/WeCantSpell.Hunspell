@@ -42,14 +42,6 @@ namespace Hunspell.Infrastructure
             return @this.Split(CommaArray);
         }
 
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static string SubstringFromEnd(this string @this, int startFromEnd)
-        {
-            return @this.Substring(0, @this.Length - startFromEnd);
-        }
-
         public static string Reverse(this string @this)
         {
             if (@this == null || @this.Length <= 1)

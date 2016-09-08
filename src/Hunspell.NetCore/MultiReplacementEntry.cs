@@ -43,27 +43,29 @@ namespace Hunspell
                 return false;
             }
 
+            var pattern1Builder = StringBuilderPool.Get(pattern1);
             ReplacementValueType type;
-            var trailingUnderscore = pattern1.EndsWith('_');
-            if (pattern1.StartsWith('_'))
+            var trailingUnderscore = pattern1Builder.EndsWith('_');
+            if (pattern1Builder.StartsWith('_'))
             {
                 if (trailingUnderscore)
                 {
                     type = ReplacementValueType.Isol;
-                    pattern1 = pattern1.Substring(1, pattern1.Length - 2);
+                    pattern1Builder.Remove(pattern1Builder.Length - 1, 1);
                 }
                 else
                 {
                     type = ReplacementValueType.Ini;
-                    pattern1 = pattern1.Substring(1);
                 }
+
+                pattern1Builder.Remove(0, 1);
             }
             else
             {
                 if (trailingUnderscore)
                 {
                     type = ReplacementValueType.Fin;
-                    pattern1 = pattern1.SubstringFromEnd(1);
+                    pattern1Builder.Remove(pattern1Builder.Length - 1, 1);
                 }
                 else
                 {
@@ -71,7 +73,9 @@ namespace Hunspell
                 }
             }
 
-            pattern1 = pattern1.Replace('_', ' ');
+            pattern1Builder.Replace('_', ' ');
+
+            pattern1 = StringBuilderPool.GetStringAndReturn(pattern1Builder);
 
             // find existing entry
             string[] entry;

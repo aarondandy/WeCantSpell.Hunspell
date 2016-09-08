@@ -255,15 +255,10 @@ namespace Hunspell
                         && StringEx.EqualsOffset(scw, wl - plen + 1, breakEntry, 0, plen - 1)
                     )
                     {
-                        var suffix = scw.Substring(wl - plen + 1);
-                        scw = scw.Substring(0, wl - plen + 1);
-
-                        if (Check(scw))
+                        if (Check(scw.Substring(0, wl - plen + 1)))
                         {
                             return new SpellCheckResult(root, resultType, true);
                         }
-
-                        scw += suffix;
                     }
                 }
 
@@ -280,28 +275,19 @@ namespace Hunspell
                             continue;
                         }
 
-                        var suffix = scw.Substring(found);
-                        scw = scw.Substring(0, found);
-
                         // examine 2 sides of the break point
-                        if (Check(scw))
+                        if (Check(scw.Substring(0, found)))
                         {
                             return new SpellCheckResult(root, resultType, true);
                         }
 
-                        scw += suffix;
-
                         // LANG_hu: spec. dash rule
                         if (Affix.Culture.IsHungarianLanguage() && breakEntry == "-")
                         {
-                            suffix = scw.Substring(found + 1);
-                            scw = scw.Substring(0, found + 1);
-                            if (Check(scw))
+                            if (Check(scw.Substring(0, found + 1)))
                             {
                                 return new SpellCheckResult(root, resultType, true);
                             }
-
-                            scw += suffix;
                         }
                     }
                 }
@@ -338,7 +324,6 @@ namespace Hunspell
                 MakeAllSmall2(ref scw);
 
                 // conversion may result in string with different len than before MakeAllSmall2 so re-scan
-
                 if (apos < scw.Length - 1)
                 {
                     var part1 = scw.Substring(0, apos + 1);
@@ -561,8 +546,7 @@ namespace Hunspell
                 var dotPos = scw.IndexOf('.');
                 if (dotPos >= 0)
                 {
-                    var postDot = scw.Substring(dotPos + 1);
-                    var capTypeLocal = CapitalizationTypeUtilities.GetCapitalizationType(postDot, Affix);
+                    var capTypeLocal = CapitalizationTypeUtilities.GetCapitalizationType(scw.Substring(dotPos + 1), Affix);
                     if (capTypeLocal == CapitalizationType.Init)
                     {
                         var str = scw;
@@ -607,11 +591,10 @@ namespace Hunspell
                     var spaceIndex = slst[j].IndexOf(' ');
                     if (spaceIndex >= 0)
                     {
-                        var space = slst[j].Substring(spaceIndex);
-                        var slen = space.Length - 1;
+                        var slen = slst[j].Length - spaceIndex - 1;
 
                         // different case after space (need capitalisation)
-                        if ((slen < wl) && !StringEx.EqualsOffset(scw, wl - slen, space, 1))
+                        if ((slen < wl) && !StringEx.EqualsOffset(scw, wl - slen, slst[j], 1 + spaceIndex))
                         {
                             var first = slst[j].Substring(0, spaceIndex + 1);
                             var second = slst[j].Substring(spaceIndex + 1);
@@ -647,13 +630,10 @@ namespace Hunspell
             {
                 for (var j = 0; j < slst.Count; j++)
                 {
-                    var pos = slst[j].IndexOf("-");
+                    var pos = slst[j].IndexOf('-');
                     if (pos >= 0)
                     {
-                        var w = slst[j].Substring(0, pos);
-                        w += slst[j].Substring(pos + 1);
-                        var info = CheckDetails(w).Info;
-
+                        var info = CheckDetails(slst[j].Substring(0, pos) + slst[j].Substring(pos + 1)).Info;
                         var desiredChar = info.HasFlag(SpellCheckResultType.Compound) && info.HasFlag(SpellCheckResultType.Forbidden)
                             ? ' '
                             : '-';
@@ -734,13 +714,9 @@ namespace Hunspell
 
                         foreach (var j in nlst)
                         {
-                            var wspace = scw.Substring(0, prevPos);
-                            wspace += j;
-                            if (!last)
-                            {
-                                wspace += "-";
-                                wspace += scw.Substring(dashPos + 1);
-                            }
+                            var wspace = last
+                                ? scw.Substring(0, prevPos) + j
+                                : scw.Substring(0, prevPos) + j + "-" + scw.Substring(dashPos + 1);
 
                             InsertSuggestion(slst, wspace);
                         }
@@ -782,9 +758,10 @@ namespace Hunspell
             // expand suggestions with dot(s)
             if (abbv != 0 && Affix.SuggestWithDots)
             {
+                var abbrAppend = word.Substring(word.Length - abbv);
                 for (var j = 0; j < slst.Count; j++)
                 {
-                    slst[j] += word.Substring(word.Length - abbv);
+                    slst[j] += abbrAppend;
                 }
             }
 
@@ -1146,8 +1123,7 @@ namespace Hunspell
                     state++;
                     if (state == 3)
                     {
-                        var candidate = word.Substring(0, i - 1);
-                        candidate += word.Substring(i + 1);
+                        var candidate = word.Substring(0, i - 1) + word.Substring(i + 1);
                         TestSug(wlst, candidate, cpdSuggest);
                         state = 0;
                     }
@@ -1507,8 +1483,7 @@ namespace Hunspell
                             var cn = candidate.Length;
                             for (var l = 0; l < mapEntry.Length; l++)
                             {
-                                candidate = candidate.Substring(0, cn);
-                                candidate += mapEntry[l];
+                                candidate = candidate.Substring(0, cn) + mapEntry[l];
                                 MapRelated(word, ref candidate, wn + len, wlst, cpdSuggest, ref timer, ref timeLimit);
 
                                 if (timer.HasValue && timer.GetValueOrDefault() == 0)
@@ -1727,10 +1702,9 @@ namespace Hunspell
                         continue;
                     }
 
-                    candidate = word;
-                    candidate = candidate.Substring(0, r);
-                    candidate += Affix.Replacements[i][type];
-                    candidate += word.Substring(r + Affix.Replacements[i].Pattern.Length);
+                    candidate = word.Substring(0, r)
+                        + Affix.Replacements[i][type]
+                        + word.Substring(r + Affix.Replacements[i].Pattern.Length);
                     TestSug(wlst, candidate, cpdSuggest);
 
                     // check REP suggestions with space
@@ -1740,12 +1714,10 @@ namespace Hunspell
                         var prev = 0;
                         while (sp >= 0)
                         {
-                            var prevChunk = candidate.Substring(prev, sp - prev);
-                            if (CheckWord(prevChunk, 0) != 0)
+                            if (CheckWord(candidate.Substring(prev, sp - prev), 0) != 0)
                             {
                                 var oldNs = wlst.Count;
-                                var postChunk = candidate.Substring(sp + 1);
-                                TestSug(wlst, postChunk, cpdSuggest);
+                                TestSug(wlst, candidate.Substring(sp + 1), cpdSuggest);
                                 if (oldNs < wlst.Count)
                                 {
                                     wlst[wlst.Count - 1] = candidate;
@@ -2607,8 +2579,7 @@ namespace Hunspell
             )
             {
                 // we have a match so add prefix
-                result = entry.Append;
-                result += word.Substring(entry.Strip.Length);
+                result = entry.Append + word.Substring(entry.Strip.Length);
             }
             return result;
         }
@@ -2643,10 +2614,10 @@ namespace Hunspell
                 )
             )
             {
-                result = word;
                 // we have a match so add suffix
-                result = result.Substring(0, result.Length - entry.Strip.Length) + entry.Append;
+                result = word.Substring(0, word.Length - entry.Strip.Length) + entry.Append;
             }
+
             return result;
         }
 
@@ -2658,9 +2629,7 @@ namespace Hunspell
             }
 
             var terminalPos = s.IndexOf('\0');
-            return terminalPos >= 0
-                ? s.Substring(0, terminalPos)
-                : s;
+            return terminalPos >= 0 ? s.Substring(0, terminalPos) : s;
         }
 
         private bool CopyField(ref string dest, IEnumerable<string> morphs, string var)
@@ -2681,12 +2650,12 @@ namespace Hunspell
                 return false;
             }
 
-            var beg = morph.Substring(pos + MorphologicalTags.TagLength);
-            var builder = StringBuilderPool.Get(beg.Length);
+            var begOffset = pos + MorphologicalTags.TagLength;
+            var builder = StringBuilderPool.Get(morph.Length - begOffset);
 
-            for (var i = 0; i < beg.Length; i++)
+            for (var i = begOffset; i < morph.Length; i++)
             {
-                var c = beg[i];
+                var c = morph[i];
                 if (c == ' ' || c == '\t' || c == '\n')
                 {
                     break;
@@ -5114,13 +5083,15 @@ namespace Hunspell
         /// </summary>
         private bool CompoundPatternCheck(string word, int pos, DictionaryEntry r1, DictionaryEntry r2, int affixed)
         {
+            var wordAfterPos = word.Substring(pos);
+
             for (var i = 0; i < Affix.CompoundPatterns.Length; i++)
             {
                 var patternEntry = Affix.CompoundPatterns[i];
                 int len;
 
                 if (
-                    IsSubset(patternEntry.Pattern2, word.Substring(pos))
+                    IsSubset(patternEntry.Pattern2, wordAfterPos)
                     &&
                     (
                         r1 == null
@@ -5230,8 +5201,7 @@ namespace Hunspell
                 // generate new root word by removing prefix and adding
                 // back any characters that would have been stripped
 
-                var tmpword = entry.Strip;
-                tmpword += word.Substring(entry.Append.Length);
+                var tmpword = entry.Strip + word.Substring(entry.Append.Length);
 
                 // now make sure all of the conditions on characters
                 // are met.  Please see the appendix at the end of
@@ -5359,12 +5329,9 @@ namespace Hunspell
                 // back any characters that would have been stripped or
                 // or null terminating the shorter string
 
-                var tmpstring = word.Substring(0, tmpl);
-
-                if (!string.IsNullOrEmpty(entry.Strip))
-                {
-                    tmpstring += entry.Strip;
-                }
+                var tmpstring = string.IsNullOrEmpty(entry.Strip)
+                    ? word.Substring(0, tmpl)
+                    : word.Substring(0, tmpl) + entry.Strip;
 
                 var endword = tmpstring.Length;
 
@@ -5453,9 +5420,7 @@ namespace Hunspell
                 // or null terminating the shorter string
 
 
-                var tmpword = word;
-                tmpword = tmpword.Substring(0, Math.Min(tmpl, tmpword.Length));
-                tmpword += se.Strip;
+                var tmpword = word.Substring(0, Math.Min(tmpl, word.Length)) + se.Strip;
                 tmpl = tmpword.Length;
 
                 // now make sure all of the conditions on characters

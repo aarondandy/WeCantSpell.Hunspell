@@ -141,7 +141,7 @@ namespace Hunspell
                         return false;
                     }
                 }
-                else if(Affix.FlagMode == FlagMode.Uni)
+                else if (Affix.FlagMode == FlagMode.Uni)
                 {
                     var utf8Flags = Encoding.UTF8.GetString(Affix.Encoding.GetBytes(flagGroup.Value));
                     flags = FlagValue.ParseFlags(utf8Flags, FlagMode.Char).ToImmutableSortedSet();
@@ -321,11 +321,20 @@ namespace Hunspell
             )
             {
                 flags = flags.Add(SpecialFlags.OnlyUpcaseFlag);
-                word =
-                    Affix.Culture.TextInfo.ToUpper(word.Substring(0, 1))
-                    + Affix.Culture.TextInfo.ToLower(word.Substring(1));
 
-                return AddWord(word, flags, morphs, true);
+                var textInfo = Affix.Culture.TextInfo;
+                var initCapBuilder = StringBuilderPool.Get(word);
+                if (initCapBuilder.Length > 0)
+                {
+                    initCapBuilder[0] = textInfo.ToUpper(initCapBuilder[0]);
+
+                    for(var i = 1; i < initCapBuilder.Length; i++)
+                    {
+                        initCapBuilder[i] = textInfo.ToLower(initCapBuilder[i]);
+                    }
+                }
+
+                return AddWord(StringBuilderPool.GetStringAndReturn(initCapBuilder), flags, morphs, true);
             }
 
             return false;

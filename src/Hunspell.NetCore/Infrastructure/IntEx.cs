@@ -15,6 +15,11 @@ namespace Hunspell.Infrastructure
             return int.TryParse(text, NumberStyles.Integer, InvariantNumberFormat, out value);
         }
 
+        public static bool TryParseInvariant(string text, int startIndex, int length, out int value)
+        {
+            return int.TryParse(text.Substring(startIndex, length), NumberStyles.Integer, InvariantNumberFormat, out value);
+        }
+
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
