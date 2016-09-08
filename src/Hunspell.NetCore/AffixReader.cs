@@ -621,7 +621,7 @@ namespace Hunspell
                 if (affixSlashIndex >= 0)
                 {
                     var slashPart = affixInput.Substring(affixSlashIndex + 1);
-                    affixText = new StringBuilder(affixInput, 0, affixSlashIndex, affixSlashIndex);
+                    affixText = StringBuilderPool.Get(affixInput, 0, affixSlashIndex);
 
                     if (Builder.IsAliasF)
                     {
@@ -642,7 +642,7 @@ namespace Hunspell
                 }
                 else
                 {
-                    affixText = new StringBuilder(affixInput);
+                    affixText = StringBuilderPool.Get(affixInput);
                 }
 
                 if (!ArrayEx.IsNullOrEmpty(Builder.IgnoredChars))
@@ -746,7 +746,7 @@ namespace Hunspell
                     Builder.HasContClass = true;
                 }
 
-                affixGroup.Entries.Add(AffixEntry.Create<TEntry>(strip, affixText.ToString(), conditions, morph, contClass));
+                affixGroup.Entries.Add(AffixEntry.Create<TEntry>(strip, StringBuilderPool.GetStringAndReturn(affixText), conditions, morph, contClass));
 
                 return true;
             }

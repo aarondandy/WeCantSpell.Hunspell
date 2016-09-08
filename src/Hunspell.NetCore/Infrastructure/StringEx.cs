@@ -69,9 +69,9 @@ namespace Hunspell.Infrastructure
                 return @this;
             }
 
-            var builder = new StringBuilder(@this);
+            var builder = StringBuilderPool.Get(@this);
             builder.RemoveChars(chars);
-            return builder.ToString();
+            return StringBuilderPool.GetStringAndReturn(builder);
         }
 
 #if !PRE_NETSTANDARD && !DEBUG
@@ -84,9 +84,9 @@ namespace Hunspell.Infrastructure
 
         public static string Replace(this string @this, int index, int removeCount, string replacement)
         {
-            var builder = new StringBuilder(@this, Math.Max(@this.Length, @this.Length + replacement.Length - removeCount));
+            var builder = StringBuilderPool.Get(@this, Math.Max(@this.Length, @this.Length + replacement.Length - removeCount));
             builder.Replace(index, removeCount, replacement);
-            return builder.ToString();
+            return StringBuilderPool.GetStringAndReturn(builder);
         }
 
         public static bool EqualsOffset(string a, int aOffset, string b, int bOffset)

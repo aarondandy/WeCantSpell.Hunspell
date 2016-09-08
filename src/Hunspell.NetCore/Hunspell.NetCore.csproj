@@ -70,6 +70,7 @@
     <Compile Include="HunspellQuery.cs" />
     <Compile Include="IHunspellLineReader.cs" />
     <Compile Include="Infrastructure\StringBuilderEx.cs" />
+    <Compile Include="Infrastructure\StringBuilderPool.cs" />
     <Compile Include="LongestCommonSubsequenceType.cs" />
     <Compile Include="MorphologicalTags.cs" />
     <Compile Include="NGramOptions.cs" />

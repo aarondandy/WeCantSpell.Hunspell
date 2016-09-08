@@ -978,7 +978,7 @@ namespace Hunspell
                 forbidden = CheckForbidden(word) ? 1 : 0;
             }
 
-            var candidate = new StringBuilder(wl + 2);
+            var candidate = StringBuilderPool.Get(wl + 2);
             candidate.Append('\0');
             candidate.Append(word);
 
@@ -1100,6 +1100,8 @@ namespace Hunspell
                 }
             }
 
+            StringBuilderPool.Return(candidate);
+
             return wlst.Count;
         }
 
@@ -1169,7 +1171,7 @@ namespace Hunspell
                 return wlst.Count;
             }
 
-            var candidate = new StringBuilder(word, word.Length);
+            var candidate = StringBuilderPool.Get(word, word.Length);
             long? timeLimit = Environment.TickCount;
             int? timer = MinTimer;
 
@@ -1196,6 +1198,8 @@ namespace Hunspell
                 }
             }
 
+            StringBuilderPool.Return(candidate);
+
             return wlst.Count;
         }
 
@@ -1204,7 +1208,7 @@ namespace Hunspell
         /// </summary>
         private int MoveChar(List<string> wlst, string word, int cpdSuggest)
         {
-            var candidate = new StringBuilder(word, word.Length);
+            var candidate = StringBuilderPool.Get(word, word.Length);
             if (candidate.Length < 2)
             {
                 return wlst.Count;
@@ -1245,6 +1249,8 @@ namespace Hunspell
                 candidate.Append(word);
             }
 
+            StringBuilderPool.Return(candidate);
+
             return wlst.Count;
         }
 
@@ -1253,7 +1259,7 @@ namespace Hunspell
         /// </summary>
         private int ForgotChar(List<string> wlst, string word, int cpdSuggest)
         {
-            var candidate = new StringBuilder(word, word.Length + 1);
+            var candidate = StringBuilderPool.Get(word, word.Length + 1);
             long? timeLimit = Environment.TickCount;
             int? timer = MinTimer;
 
@@ -1280,6 +1286,8 @@ namespace Hunspell
                 }
             }
 
+            StringBuilderPool.Return(candidate);
+
             return wlst.Count;
         }
 
@@ -1288,7 +1296,7 @@ namespace Hunspell
         /// </summary>
         private int ExtraChar(List<string> wlst, string word, int cpdSuggest)
         {
-            var candidate = new StringBuilder(word, word.Length);
+            var candidate = StringBuilderPool.Get(word, word.Length);
             if (candidate.Length < 2)
             {
                 return wlst.Count;
@@ -1304,6 +1312,8 @@ namespace Hunspell
                 candidate.Insert(index, tmpc);
             }
 
+            StringBuilderPool.Return(candidate);
+
             return wlst.Count;
         }
 
@@ -1312,7 +1322,7 @@ namespace Hunspell
         /// </summary>
         private int BadCharKey(List<string> wlst, string word, int cpdSuggest)
         {
-            var candidate = new StringBuilder(word, word.Length);
+            var candidate = StringBuilderPool.Get(word, word.Length);
 
             // swap out each char one by one and try uppercase and neighbor
             // keyboard chars in its place to see if that makes a good word
@@ -1355,8 +1365,10 @@ namespace Hunspell
 
                 candidate[i] = tmpc;
             }
-            return wlst.Count;
 
+            StringBuilderPool.Return(candidate);
+
+            return wlst.Count;
         }
 
         /// <summary>
@@ -1364,7 +1376,7 @@ namespace Hunspell
         /// </summary>
         private int LongSwapChar(List<string> wlst, string word, int cpdSuggest)
         {
-            var candidate = new StringBuilder(word, word.Length);
+            var candidate = StringBuilderPool.Get(word, word.Length);
             // try swapping not adjacent chars one by one
             for (var p = 0; p < candidate.Length; p++)
             {
@@ -1379,6 +1391,8 @@ namespace Hunspell
                 }
             }
 
+            StringBuilderPool.Return(candidate);
+
             return wlst.Count;
         }
 
@@ -1387,7 +1401,7 @@ namespace Hunspell
         /// </summary>
         private int SwapChar(List<string> wlst, string word, int cpdSuggest)
         {
-            var candidate = new StringBuilder(word, word.Length);
+            var candidate = StringBuilderPool.Get(word, word.Length);
             if (candidate.Length < 2)
             {
                 return wlst.Count;
@@ -1420,6 +1434,8 @@ namespace Hunspell
                     TestSug(wlst, candidate.ToString(), cpdSuggest);
                 }
             }
+
+            StringBuilderPool.Return(candidate);
 
             return wlst.Count;
         }
@@ -1918,13 +1934,13 @@ namespace Hunspell
             int thresh = 0;
             for (var sp = 1; sp < 4; sp++)
             {
-                var mw = new StringBuilder(word);
+                var mw = StringBuilderPool.Get(word);
                 for (var k = sp; k < n; k += 4)
                 {
                     mw[k] = '*';
                 }
 
-                thresh += NGram(n, word, mw.ToString(), NGramOptions.AnyMismatch | low);
+                thresh += NGram(n, word, StringBuilderPool.GetStringAndReturn(mw), NGramOptions.AnyMismatch | low);
             }
             thresh /= 3;
             thresh--;
@@ -2665,8 +2681,8 @@ namespace Hunspell
                 return false;
             }
 
-            var builder = new StringBuilder();
             var beg = morph.Substring(pos + MorphologicalTags.TagLength);
+            var builder = StringBuilderPool.Get(beg.Length);
 
             for (var i = 0; i < beg.Length; i++)
             {
@@ -2679,7 +2695,7 @@ namespace Hunspell
                 builder.Append(c);
             }
 
-            dest = builder.ToString();
+            dest = StringBuilderPool.GetStringAndReturn(builder);
             return true;
         }
 
@@ -2809,7 +2825,7 @@ namespace Hunspell
             }
 
             var wordCapacity = Math.Min(inword.Length, MaxPhoneTUtf8Len);
-            var word = new StringBuilder(inword, 0, wordCapacity, wordCapacity);
+            var word = StringBuilderPool.Get(inword, 0, wordCapacity);
 
             var target = string.Empty;
             // check word
@@ -3082,6 +3098,8 @@ namespace Hunspell
                 }
             }
 
+            StringBuilderPool.Return(word);
+
             return target;
         }
 
@@ -3127,9 +3145,7 @@ namespace Hunspell
             var pos = @base.IndexOf("ss", nPos, StringComparison.Ordinal);
             if (pos >= 0 && n < MaxSharps)
             {
-                // TODO: this string manipulation can be simpler
-
-                var baseBuilder = new StringBuilder(@base, @base.Length);
+                var baseBuilder = StringBuilderPool.Get(@base, @base.Length);
                 baseBuilder[pos] = 'ß';
                 baseBuilder.Remove(pos + 1, 1);
                 @base = baseBuilder.ToString();
@@ -3144,7 +3160,7 @@ namespace Hunspell
                 baseBuilder.Append(@base);
                 baseBuilder[pos] = 's';
                 baseBuilder.Insert(pos + 1, 's');
-                @base = baseBuilder.ToString();
+                @base = StringBuilderPool.GetStringAndReturn(baseBuilder);
 
                 h = SpellSharps(ref @base, pos + 2, n + 1, repNum, ref info, ref root);
                 if (h != null)
@@ -3173,9 +3189,9 @@ namespace Hunspell
                 return s;
             }
 
-            var builder = new StringBuilder(s, s.Length);
+            var builder = StringBuilderPool.Get(s, s.Length);
             builder[0] = Affix.Culture.TextInfo.ToUpper(builder[0]);
-            return builder.ToString();
+            return StringBuilderPool.GetStringAndReturn(builder);
         }
 
         private int MakeAllSmall2(ref string s)
@@ -3205,9 +3221,9 @@ namespace Hunspell
                 return s;
             }
 
-            var builder = new StringBuilder(s, s.Length);
+            var builder = StringBuilderPool.Get(s, s.Length);
             builder[0] = Affix.Culture.TextInfo.ToLower(builder[0]);
-            return builder.ToString();
+            return StringBuilderPool.GetStringAndReturn(builder);
         }
 
         private void MakeAllCap2(ref string s)
@@ -3403,7 +3419,7 @@ namespace Hunspell
 
             st = word;
             //var stChars = st.ToCharArray();
-            var stBuilder = new StringBuilder(st);
+            var stBuilder = StringBuilderPool.Get(st);
 
             for (i = cmin; i < cmax; i++)
             {
@@ -4316,6 +4332,8 @@ namespace Hunspell
                 }
                 while (Affix.HasCompoundRules && oldwordnum == 0 && onlycpdrule++ < 1);
             }
+
+            StringBuilderPool.Return(stBuilder);
 
             return null;
         }

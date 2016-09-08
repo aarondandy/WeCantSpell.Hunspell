@@ -82,7 +82,7 @@ namespace Hunspell
                 ReadPreamble();
             }
 
-            var builder = new StringBuilder();
+            var builder = StringBuilderPool.Get();
             char[] readChars = null;
             while ((readChars = ReadNextChars()) != null)
             {
@@ -97,7 +97,7 @@ namespace Hunspell
                 return null;
             }
 
-            return ProcessLine(builder.ToString());
+            return ProcessLine(StringBuilderPool.GetStringAndReturn(builder));
         }
 
         public async Task<string> ReadLineAsync()
@@ -107,7 +107,7 @@ namespace Hunspell
                 await ReadPreambleAsync();
             }
 
-            var builder = new StringBuilder();
+            var builder = StringBuilderPool.Get();
             char[] readChars = null;
             while ((readChars = await ReadNextCharsAsync()) != null)
             {
@@ -122,7 +122,7 @@ namespace Hunspell
                 return null;
             }
 
-            return ProcessLine(builder.ToString());
+            return ProcessLine(StringBuilderPool.GetStringAndReturn(builder));
         }
 
         private bool ProcessCharsForLine(char[] readChars, StringBuilder builder)
