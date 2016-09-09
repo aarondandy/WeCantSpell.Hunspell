@@ -17,19 +17,25 @@ namespace Hunspell.NetCore.Performance.Tests
             var filesDirectory = Path.Combine(Path.GetDirectoryName(testAssemblyPath), "files/");
             var dictionaryFilePaths = Directory.GetFiles(filesDirectory, "*.dic")
                 .OrderBy(p => p);
-            DictionaryLoadArguments = Task.WhenAll(dictionaryFilePaths
-                .Select(async dicFilePath => new DictionaryLoadData
-                {
-                    DictionaryFilePath = dicFilePath,
-                    Affix = await AffixReader.ReadFileAsync(Path.ChangeExtension(dicFilePath, "aff"))
-                }))
+
+            DictionaryLoadArguments = Task.WhenAll(
+                dictionaryFilePaths
+                    .Select(async dicFilePath =>
+                    {
+                        return new DictionaryLoadData
+                        {
+                            DictionaryFilePath = dicFilePath,
+                            Affix = await Task.Run(() => AffixReader.ReadFileAsync(Path.ChangeExtension(dicFilePath, "aff"))).ConfigureAwait(false)
+                        };
+                    }))
                 .Result;
+
             DictionaryFilesLoaded = context.GetCounter(nameof(DictionaryFilesLoaded));
         }
 
         [PerfBenchmark(
             Description = "Ensure that dictionary files can be loaded quickly.",
-            NumberOfIterations = 3,
+            NumberOfIterations = 1,
             RunMode = RunMode.Throughput,
             TestMode = TestMode.Measurement)]
         [MemoryMeasurement(MemoryMetric.TotalBytesAllocated)]
@@ -41,7 +47,7 @@ namespace Hunspell.NetCore.Performance.Tests
         {
             Task.WhenAll(DictionaryLoadArguments.Select(async testItem =>
             {
-                await DictionaryReader.ReadFileAsync(testItem.DictionaryFilePath, testItem.Affix);
+                await DictionaryReader.ReadFileAsync(testItem.DictionaryFilePath, testItem.Affix).ConfigureAwait(false);
                 DictionaryFilesLoaded.Increment();
             })).Wait();
         }

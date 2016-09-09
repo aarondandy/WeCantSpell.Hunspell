@@ -23,7 +23,7 @@ namespace Hunspell.NetCore.Performance.Tests
 
         [PerfBenchmark(
             Description = "Ensure that affix files can be loaded quickly.",
-            NumberOfIterations = 3,
+            NumberOfIterations = 1,
             RunMode = RunMode.Throughput,
             TestMode = TestMode.Measurement)]
         [MemoryMeasurement(MemoryMetric.TotalBytesAllocated)]
@@ -35,7 +35,7 @@ namespace Hunspell.NetCore.Performance.Tests
         {
             Task.WhenAll(AffixFilePaths.Select(async filePath =>
             {
-                await AffixReader.ReadFileAsync(filePath);
+                await AffixReader.ReadFileAsync(filePath).ConfigureAwait(false);
                 AffixFilesLoaded.Increment();
             })).Wait();
         }

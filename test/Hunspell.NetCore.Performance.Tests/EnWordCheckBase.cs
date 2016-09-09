@@ -29,7 +29,7 @@ namespace Hunspell.NetCore.Performance.Tests
                 {
                     new Func<Task>(async () =>
                     {
-                        Checker = await Hunspell.FromFileAsync(Path.Combine(filesDirectory, "English (American).dic"));
+                        Checker = await Hunspell.FromFileAsync(Path.Combine(filesDirectory, "English (American).dic")).ConfigureAwait(false);
                     }),
                     new Func<Task>(async () =>
                     {
@@ -37,7 +37,7 @@ namespace Hunspell.NetCore.Performance.Tests
                         using(var reader = new StreamReader(Path.Combine(filesDirectory, "List_of_common_misspellings.txt"), Encoding.UTF8, true))
                         {
                             string line;
-                            while((line = await reader.ReadLineAsync()) != null)
+                            while((line = await reader.ReadLineAsync().ConfigureAwait(false)) != null)
                             {
                                 Words.AddRange(line.Split(WordSplitChars, StringSplitOptions.RemoveEmptyEntries));
                             }
