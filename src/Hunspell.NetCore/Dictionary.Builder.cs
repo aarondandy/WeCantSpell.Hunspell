@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 
 namespace Hunspell
 {
@@ -8,6 +7,15 @@ namespace Hunspell
     {
         public class Builder
         {
+            public Builder()
+            {
+            }
+
+            public Builder(AffixConfig affix)
+            {
+                Affix = affix;
+            }
+
             public Dictionary<string, List<DictionaryEntry>> Entries;
 
             public AffixConfig Affix;
@@ -16,14 +24,11 @@ namespace Hunspell
             {
                 return new Dictionary
                 {
-                    Entries = EmptyIfNull(Entries).ToImmutableDictionary(pair => pair.Key, pair => pair.Value.ToImmutableArray()),
+                    Entries = Entries == null
+                        ? ImmutableDictionary<string, ImmutableArray<DictionaryEntry>>.Empty
+                        : Entries.ToImmutableDictionary(pair => pair.Key, pair => pair.Value.ToImmutableArray()),
                     Affix = Affix ?? new AffixConfig.Builder().ToAffixConfig()
                 };
-            }
-
-            private static IEnumerable<T> EmptyIfNull<T>(IEnumerable<T> items)
-            {
-                return items == null ? Enumerable.Empty<T>() : items;
             }
         }
     }

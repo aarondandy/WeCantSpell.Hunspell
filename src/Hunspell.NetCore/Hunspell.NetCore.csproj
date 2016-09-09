@@ -69,6 +69,7 @@
     <Compile Include="Hunspell.cs" />
     <Compile Include="HunspellQuery.cs" />
     <Compile Include="IHunspellLineReader.cs" />
+    <Compile Include="Infrastructure\EncodingEx.cs" />
     <Compile Include="Infrastructure\StringBuilderEx.cs" />
     <Compile Include="Infrastructure\StringBuilderPool.cs" />
     <Compile Include="LongestCommonSubsequenceType.cs" />
@@ -80,7 +81,6 @@
     <Compile Include="StaticEncodingLineReader.cs" />
     <Compile Include="DynamicEncodingLineReader.cs" />
     <Compile Include="FlagMode.cs" />
-    <Compile Include="HunspellException.cs" />
     <Compile Include="PatternEntry.cs" />
     <Compile Include="PhoneticEntry.cs" />
     <Compile Include="PrefixEntry.cs" />

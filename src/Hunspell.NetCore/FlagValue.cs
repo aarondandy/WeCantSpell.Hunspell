@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Hunspell
@@ -174,59 +173,59 @@ namespace Hunspell
             return parsedOk;
         }
 
-        public static IEnumerable<FlagValue> ParseFlags(string text, FlagMode mode)
+        public static List<FlagValue> ParseFlags(string text, FlagMode mode)
         {
-            switch (mode)
+            if (mode == FlagMode.Char)
             {
-                case FlagMode.Char:
-                    return text == null
-                        ? ArrayEx<FlagValue>.Empty
-                        : ConvertCharsToFlags(text);
-                case FlagMode.Long:
-                    return ParseLongFlags(text);
-                case FlagMode.Num:
-                    return ParseNumberFlags(text);
-                case FlagMode.Uni:
-                default:
-                    throw new NotSupportedException();
+                return text == null ? new List<FlagValue>(0) : ConvertCharsToFlags(text);
             }
+            if (mode == FlagMode.Long)
+            {
+                return ParseLongFlags(text);
+            }
+            if (mode == FlagMode.Num)
+            {
+                return ParseNumberFlags(text);
+            }
+
+            throw new NotSupportedException();
         }
 
-        public static IEnumerable<FlagValue> ParseFlags(string text, int startIndex, int length, FlagMode mode)
+        public static List<FlagValue> ParseFlags(string text, int startIndex, int length, FlagMode mode)
         {
-            switch (mode)
+            if (mode == FlagMode.Char)
             {
-                case FlagMode.Char:
-                    return text == null
-                        ? ArrayEx<FlagValue>.Empty
-                        : ConvertCharsToFlags(text, startIndex, length);
-                case FlagMode.Long:
-                    return ParseLongFlags(text, startIndex, length);
-                case FlagMode.Num:
-                    return ParseNumberFlags(text, startIndex, length);
-                case FlagMode.Uni:
-                default:
-                    throw new NotSupportedException();
+                return text == null ? new List<FlagValue>(0) : ConvertCharsToFlags(text, startIndex, length);
             }
+            if (mode == FlagMode.Long)
+            {
+                return ParseLongFlags(text, startIndex, length);
+            }
+            if (mode == FlagMode.Num)
+            {
+                return ParseNumberFlags(text, startIndex, length);
+            }
+
+            throw new NotSupportedException();
         }
 
-        private static FlagValue[] ConvertCharsToFlags(string text)
+        private static List<FlagValue> ConvertCharsToFlags(string text)
         {
-            var result = new FlagValue[text.Length];
-            for (var i = 0; i < result.Length; i++)
+            var result = new List<FlagValue>(text.Length);
+            for (var i = 0; i < text.Length; i++)
             {
-                result[i] = new FlagValue(text[i]);
+                result.Add(new FlagValue(text[i]));
             }
 
             return result;
         }
 
-        private static FlagValue[] ConvertCharsToFlags(string text, int startIndex, int length)
+        private static List<FlagValue> ConvertCharsToFlags(string text, int startIndex, int length)
         {
-            var result = new FlagValue[length];
-            for (var i = 0; i < result.Length; i++)
+            var result = new List<FlagValue>(length);
+            for (var i = 0; i < length; i++)
             {
-                result[i] = new FlagValue(text[i + startIndex]);
+                result.Add(new FlagValue(text[i + startIndex]));
             }
 
             return result;

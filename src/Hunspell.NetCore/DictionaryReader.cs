@@ -33,12 +33,7 @@ namespace Hunspell
 
         public static async Task<Dictionary> ReadAsync(IHunspellLineReader reader, AffixConfig affix)
         {
-            var builder = new Dictionary.Builder
-            {
-                Affix = affix
-            };
-
-            var readerInstance = new DictionaryReader(builder, affix);
+            var readerInstance = new DictionaryReader(new Dictionary.Builder(affix), affix);
 
             string line;
             while ((line = await reader.ReadLineAsync().ConfigureAwait(false)) != null)
@@ -46,17 +41,12 @@ namespace Hunspell
                 readerInstance.ParseLine(line);
             }
 
-            return builder.ToDictionary();
+            return readerInstance.Builder.ToDictionary();
         }
 
         public static Dictionary Read(IHunspellLineReader reader, AffixConfig affix)
         {
-            var builder = new Dictionary.Builder
-            {
-                Affix = affix
-            };
-
-            var readerInstance = new DictionaryReader(builder, affix);
+            var readerInstance = new DictionaryReader(new Dictionary.Builder(affix), affix);
 
             string line;
             while ((line = reader.ReadLine()) != null)
@@ -64,7 +54,7 @@ namespace Hunspell
                 readerInstance.ParseLine(line);
             }
 
-            return builder.ToDictionary();
+            return readerInstance.Builder.ToDictionary();
         }
 
         public static async Task<Dictionary> ReadFileAsync(string filePath)
@@ -103,7 +93,7 @@ namespace Hunspell
         {
             if (string.IsNullOrEmpty(line))
             {
-                return false;
+                return true;
             }
 
             if (!hasInitialized && AttemptToProcessInitializationLine(line))
@@ -201,7 +191,7 @@ namespace Hunspell
         private bool AddWord(string word, ImmutableSortedSet<FlagValue> flags, ImmutableArray<string> morphs)
         {
             return AddWord(word, flags, morphs, false)
-                || AddWordCapitalized(word, flags, morphs, CapitalizationTypeUtilities.GetCapitalizationType(word, Affix));
+                || AddWordCapitalized(word, flags, morphs, CapitalizationTypeEx.GetCapitalizationType(word, Affix));
         }
 
         private bool AddWord(string word, ImmutableSortedSet<FlagValue> flags, ImmutableArray<string> morphs, bool onlyUpperCase)
@@ -328,7 +318,7 @@ namespace Hunspell
                 {
                     initCapBuilder[0] = textInfo.ToUpper(initCapBuilder[0]);
 
-                    for(var i = 1; i < initCapBuilder.Length; i++)
+                    for (var i = 1; i < initCapBuilder.Length; i++)
                     {
                         initCapBuilder[i] = textInfo.ToLower(initCapBuilder[i]);
                     }

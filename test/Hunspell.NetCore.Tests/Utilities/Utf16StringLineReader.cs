@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Hunspell.NetCore.Tests.Utilities
@@ -15,6 +16,8 @@ namespace Hunspell.NetCore.Tests.Utilities
         {
             Content = text;
         }
+
+        public Encoding CurrentEncoding => Encoding.UTF8;
 
         public Task<string> ReadLineAsync()
         {

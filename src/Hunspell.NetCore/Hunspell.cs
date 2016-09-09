@@ -28,7 +28,7 @@ namespace Hunspell
 
         public static async Task<Hunspell> FromFileAsync(string dictionaryFilePath)
         {
-            var dictionary = await DictionaryReader.ReadFileAsync(dictionaryFilePath);
+            var dictionary = await DictionaryReader.ReadFileAsync(dictionaryFilePath).ConfigureAwait(false);
             return new Hunspell(dictionary);
         }
 

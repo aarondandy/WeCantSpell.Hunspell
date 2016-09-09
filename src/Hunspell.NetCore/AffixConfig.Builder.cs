@@ -414,7 +414,7 @@ namespace Hunspell
 
             private static IEnumerable<T> EmptyIfNull<T>(IEnumerable<T> items)
             {
-                return items == null ? Enumerable.Empty<T>() : items;
+                return items ?? Enumerable.Empty<T>();
             }
 
             private static Dictionary<K, V> EmptyIfNull<K, V>(Dictionary<K, V> items)

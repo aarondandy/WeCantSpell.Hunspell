@@ -174,23 +174,17 @@ namespace Hunspell
                 );
         }
 
-        public bool ContainsAnyContClass(params FlagValue[] flags)
+        public bool ContainsAnyContClass(FlagValue a, FlagValue b, FlagValue c)
         {
-            if (!HasContClasses || flags == null || flags.Length == 0)
-            {
-                return false;
-            }
-
-            for (var i = 0; i < flags.Length; i++)
-            {
-                var flag = flags[i];
-                if (flag.HasValue && ContClass.Contains(flag))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return HasContClasses
+                &&
+                (
+                    (a.HasValue && ContClass.Contains(a))
+                    ||
+                    (b.HasValue && ContClass.Contains(b))
+                    ||
+                    (c.HasValue && ContClass.Contains(c))
+                );
         }
     }
 }

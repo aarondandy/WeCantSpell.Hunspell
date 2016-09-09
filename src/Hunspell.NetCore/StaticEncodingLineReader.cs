@@ -27,6 +27,8 @@ namespace Hunspell
         private readonly Stream stream;
         private readonly StreamReader reader;
 
+        public Encoding CurrentEncoding => reader.CurrentEncoding;
+
         public static List<string> ReadLines(string filePath, Encoding defaultEncoding)
         {
             using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))

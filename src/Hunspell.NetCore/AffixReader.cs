@@ -8,14 +8,16 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 
 namespace Hunspell
 {
     public sealed class AffixReader
     {
-        private AffixReader(AffixConfig.Builder builder)
+        private AffixReader(AffixConfig.Builder builder, IHunspellLineReader reader)
         {
             Builder = builder;
+            Reader = reader;
         }
 
         private static readonly Regex LineStringParseRegex = new Regex(@"^[ \t]*(\w+)[ \t]+(.+)[ \t]*$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -60,40 +62,50 @@ namespace Hunspell
 
         private AffixConfig.Builder Builder { get; }
 
+        private IHunspellLineReader Reader { get; }
+
         private List<string> Warnings { get; } = new List<string>();
 
         private EntryListType Initialized { get; set; } = EntryListType.None;
 
         public static async Task<AffixConfig> ReadAsync(IHunspellLineReader reader)
         {
-            var builder = new AffixConfig.Builder();
-            var readerInstance = new AffixReader(builder);
+            var readerInstance = new AffixReader(new AffixConfig.Builder(), reader);
 
-            string line;
-            while ((line = await reader.ReadLineAsync().ConfigureAwait(false)) != null)
-            {
-                readerInstance.ParseLine(line);
-            }
+            await readerInstance.ReadToEndAsync().ConfigureAwait(false);
 
             readerInstance.AddDefaultBreakTableIfEmpty();
 
-            return builder.ToAffixConfig();
+            return readerInstance.Builder.ToAffixConfig();
+        }
+
+        private async Task ReadToEndAsync()
+        {
+            string line;
+            while ((line = await Reader.ReadLineAsync().ConfigureAwait(false)) != null)
+            {
+                ParseLine(line);
+            }
         }
 
         public static AffixConfig Read(IHunspellLineReader reader)
         {
-            var builder = new AffixConfig.Builder();
-            var readerInstance = new AffixReader(builder);
+            var readerInstance = new AffixReader(new AffixConfig.Builder(), reader);
 
-            string line;
-            while ((line = reader.ReadLine()) != null)
-            {
-                readerInstance.ParseLine(line);
-            }
+            readerInstance.ReadToEnd();
 
             readerInstance.AddDefaultBreakTableIfEmpty();
 
-            return builder.ToAffixConfig();
+            return readerInstance.Builder.ToAffixConfig();
+        }
+
+        private void ReadToEnd()
+        {
+            string line;
+            while ((line = Reader.ReadLine()) != null)
+            {
+                ParseLine(line);
+            }
         }
 
         public static async Task<AffixConfig> ReadFileAsync(string filePath)
@@ -118,12 +130,12 @@ namespace Hunspell
         {
             if (string.IsNullOrEmpty(line))
             {
-                return false;
+                return true;
             }
 
             if (CommentLineRegex.IsMatch(line))
             {
-                return false;
+                return true;
             }
 
             AffixConfigOptions option;
@@ -146,11 +158,17 @@ namespace Hunspell
             return false;
         }
 
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private bool IsInitialized(EntryListType flags)
         {
             return Initialized.HasFlag(flags);
         }
 
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private void SetInitialized(EntryListType flags)
         {
             Initialized |= flags;
@@ -174,7 +192,7 @@ namespace Hunspell
 
         private bool TryHandleParameterizedCommand(string name, string parameters)
         {
-            var commandName = CultureInfo.InvariantCulture.TextInfo.ToUpper(name);
+            var commandName = name.ToUpperInvariant();
             switch (commandName)
             {
                 case "FLAG": // parse in the try string
@@ -186,7 +204,7 @@ namespace Hunspell
                     Builder.TryString = parameters;
                     return true;
                 case "SET": // parse in the name of the character set used by the .dict and .aff
-                    var encoding = StringEx.GetEncodingByName(parameters);
+                    var encoding = EncodingEx.GetEncodingByName(parameters);
                     if (encoding == null)
                     {
                         return false;
@@ -341,6 +359,8 @@ namespace Hunspell
             return parse(parameterText, entries);
         }
 
+        private static readonly char[] DefaultCompoundVowels = new[] { 'A', 'E', 'I', 'O', 'U', 'a', 'e', 'i', 'o', 'u' };
+
         private bool TryParseCompoundSyllable(string parameters)
         {
             var parts = parameters.SplitOnTabOrSpace();
@@ -358,9 +378,16 @@ namespace Hunspell
                 }
             }
 
-            var compoundVowels = (parts.Length > 1 ? parts[1] : "AEIOUaeiou").ToCharArray();
-            Array.Sort(compoundVowels);
-            Builder.CompoundVowels = compoundVowels;
+            if(parts.Length > 1)
+            {
+                var vowelChars = parts[1].ToCharArray();
+                Array.Sort(vowelChars);
+                Builder.CompoundVowels = vowelChars;
+            }
+            else
+            {
+                Builder.CompoundVowels = (char[])DefaultCompoundVowels.Clone();
+            }
 
             return true;
         }
@@ -407,7 +434,7 @@ namespace Hunspell
 
             entries.Add(new PhoneticEntry(
                     parts[0],
-                    parts.Length >= 2 ? parts[1].Replace("_", string.Empty) : string.Empty));
+                    parts.Length >= 2 ? parts[1].Replace("_", string.Empty) : string.Empty) );
 
             return true;
         }
@@ -481,7 +508,7 @@ namespace Hunspell
 
         private bool TryParseAliasF(string parameterText, List<ImmutableSortedSet<FlagValue>> entries)
         {
-            entries.Add(ParseFlags(parameterText).OrderBy(x => x).ToImmutableSortedSet());
+            entries.Add(ParseFlags(parameterText).ToImmutableSortedSet());
             return true;
         }
 
@@ -534,7 +561,7 @@ namespace Hunspell
             }
             else
             {
-                entry = ParseFlags(parameterText).ToList();
+                entry = ParseFlags(parameterText);
             }
 
             entries.Add(entry);
@@ -609,7 +636,7 @@ namespace Hunspell
                 {
                     strip = string.Empty;
                 }
-                if (Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes))
+                else if (Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes))
                 {
                     strip = strip.Reverse();
                 }
@@ -665,7 +692,6 @@ namespace Hunspell
                 var conditionText = lineMatchGroups[6].Value;
                 if (Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes))
                 {
-                    conditionText = conditionText.Reverse();
                     conditionText = ReverseCondition(conditionText);
                 }
 
@@ -691,13 +717,6 @@ namespace Hunspell
                     {
                         conditions = CharacterConditionGroup.AllowAnySingleCharacter;
                     }
-                }
-
-                if (typeof(TEntry) == typeof(SuffixEntry))
-                {
-                    // conditions = conditions.Reversed(); // TODO: it would be best if this reverse could be avoided
-                    conditionText = conditionText.Reverse(); // TODO: should stop using condition text
-                    conditionText = ReverseCondition(conditionText);
                 }
 
                 // piece 6
@@ -764,9 +783,11 @@ namespace Hunspell
                 return conditionText;
             }
 
-            bool neg = false;
-            var chars = conditionText.ToCharArray();
+            var chars = StringBuilderPool.Get(conditionText);
+            chars.Reverse();
+            var neg = false;
             var lastIndex = chars.Length - 1;
+
             for (int k = lastIndex; k >= 0; k--)
             {
                 switch (chars[k])
@@ -818,7 +839,7 @@ namespace Hunspell
                 }
             }
 
-            return new string(chars);
+            return StringBuilderPool.GetStringAndReturn(chars);
         }
 
         private bool RedundantConditionPrefix(string text, CharacterConditionGroup conditions)
@@ -990,11 +1011,11 @@ namespace Hunspell
                 return false;
             }
 
-            string pattern = parameters[0];
+            var pattern = parameters[0];
             string pattern2 = null;
             string pattern3 = null;
-            FlagValue condition = new FlagValue();
-            FlagValue condition2 = new FlagValue();
+            var condition = default(FlagValue);
+            var condition2 = default(FlagValue);
 
             var slashIndex = pattern.IndexOf('/');
             if (slashIndex >= 0)
@@ -1061,15 +1082,17 @@ namespace Hunspell
 
         private string ReDecodeConvertedStringAsUtf8(string decoded)
         {
-            if (Builder.Encoding == Encoding.UTF8)
+            var encoding = Builder.Encoding ?? Reader.CurrentEncoding;
+
+            if (encoding == Encoding.UTF8)
             {
                 return decoded;
             }
 
-            return Encoding.UTF8.GetString(Builder.Encoding.GetBytes(decoded));
+            return Encoding.UTF8.GetString(encoding.GetBytes(decoded));
         }
 
-        private IEnumerable<FlagValue> ParseFlags(string text)
+        private List<FlagValue> ParseFlags(string text)
         {
             var flagMode = Builder.FlagMode;
             if (flagMode == FlagMode.Uni)
@@ -1081,7 +1104,7 @@ namespace Hunspell
             return FlagValue.ParseFlags(text, flagMode);
         }
 
-        private IEnumerable<FlagValue> ParseFlags(string text, int startIndex, int length)
+        private List<FlagValue> ParseFlags(string text, int startIndex, int length)
         {
             var flagMode = Builder.FlagMode;
             return flagMode == FlagMode.Uni

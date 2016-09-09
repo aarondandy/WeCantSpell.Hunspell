@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Hunspell
@@ -19,6 +20,11 @@ namespace Hunspell
         /// </summary>
         /// <returns></returns>
         string ReadLine();
+
+        /// <summary>
+        /// Gets the current encoding that the reader is using to decode text.
+        /// </summary>
+        Encoding CurrentEncoding { get; }
     }
 
     public static class HunspellLineReaderExtensions

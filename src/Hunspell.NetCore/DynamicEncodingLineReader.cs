@@ -57,6 +57,8 @@ namespace Hunspell
         private int bufferIndex = -1;
         private bool hasCheckedForPreamble = false;
 
+        public Encoding CurrentEncoding => encoding;
+
         public static List<string> ReadLines(string filePath, Encoding defaultEncoding)
         {
             using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
@@ -104,12 +106,12 @@ namespace Hunspell
         {
             if (!hasCheckedForPreamble)
             {
-                await ReadPreambleAsync();
+                await ReadPreambleAsync().ConfigureAwait(false);
             }
 
             var builder = StringBuilderPool.Get();
             char[] readChars = null;
-            while ((readChars = await ReadNextCharsAsync()) != null)
+            while ((readChars = await ReadNextCharsAsync().ConfigureAwait(false)) != null)
             {
                 if (ProcessCharsForLine(readChars, builder))
                 {
@@ -200,7 +202,7 @@ namespace Hunspell
 
             while (bytesConsumed < maxBytes)
             {
-                var nextBytes = await ReadBytesAsync(1);
+                var nextBytes = await ReadBytesAsync(1).ConfigureAwait(false);
                 if (nextBytes == null || nextBytes.Length == 0)
                 {
                     return null;
@@ -252,7 +254,7 @@ namespace Hunspell
 
         private async Task<bool> ReadPreambleAsync()
         {
-            var possiblePreambleBytes = await ReadBytesAsync(MaxPreambleBytes);
+            var possiblePreambleBytes = await ReadBytesAsync(MaxPreambleBytes).ConfigureAwait(false);
             return HandlePreambleBytes(possiblePreambleBytes);
         }
 
@@ -316,7 +318,7 @@ namespace Hunspell
 
             while (bytesNeeded > 0)
             {
-                if (!await PrepareBufferAsync())
+                if (!await PrepareBufferAsync().ConfigureAwait(false))
                 {
                     return null;
                 }
@@ -367,7 +369,7 @@ namespace Hunspell
             }
 
             buffer = new byte[bufferMaxSize];
-            var readBytesCount = await stream.ReadAsync(buffer, 0, buffer.Length);
+            var readBytesCount = await stream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
 
             return HandlePrepareBufferRead(readBytesCount);
         }
@@ -421,7 +423,7 @@ namespace Hunspell
 
         private void ChangeEncoding(string encodingName)
         {
-            var newEncoding = StringEx.GetEncodingByName(encodingName);
+            var newEncoding = EncodingEx.GetEncodingByName(encodingName);
             if (newEncoding == null || ReferenceEquals(newEncoding, encoding) || encoding.Equals(newEncoding))
             {
                 return;

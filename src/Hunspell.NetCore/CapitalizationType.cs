@@ -30,7 +30,7 @@ namespace Hunspell
         HuhInit = 4
     }
 
-    public static class CapitalizationTypeUtilities
+    public static class CapitalizationTypeEx
     {
         public static CapitalizationType GetCapitalizationType(string word, AffixConfig affix)
         {
