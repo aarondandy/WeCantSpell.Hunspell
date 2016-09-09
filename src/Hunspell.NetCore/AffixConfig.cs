@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Hunspell
@@ -21,6 +22,8 @@ namespace Hunspell
 
         private const string DefaultKeyString = "qwertyuiop|asdfghjkl|zxcvbnm";
 
+        private AffixConfigOptions _options;
+
         /// <summary>
         /// The flag type.
         /// </summary>
@@ -36,7 +39,35 @@ namespace Hunspell
         /// <summary>
         /// Various affix options.
         /// </summary>
-        public AffixConfigOptions Options { get; private set; }
+        public AffixConfigOptions Options
+        {
+#if !PRE_NETSTANDARD && !DEBUG
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get
+            {
+                return _options;
+            }
+            private set
+            {
+                _options = value;
+                ComplexPrefixes = _options.HasFlag(AffixConfigOptions.ComplexPrefixes);
+                CompoundMoreSuffixes = _options.HasFlag(AffixConfigOptions.CompoundMoreSuffixes);
+                CheckCompoundDup = _options.HasFlag(AffixConfigOptions.CheckCompoundDup);
+                CheckCompoundRep = _options.HasFlag(AffixConfigOptions.CheckCompoundRep);
+                CheckCompoundTriple = _options.HasFlag(AffixConfigOptions.CheckCompoundTriple);
+                SimplifiedTriple = _options.HasFlag(AffixConfigOptions.SimplifiedTriple);
+                CheckCompoundCase = _options.HasFlag(AffixConfigOptions.CheckCompoundCase);
+                CheckNum = _options.HasFlag(AffixConfigOptions.CheckNum);
+                OnlyMaxDiff = _options.HasFlag(AffixConfigOptions.OnlyMaxDiff);
+                NoSplitSuggestions = _options.HasFlag(AffixConfigOptions.NoSplitSuggestions);
+                FullStrip = _options.HasFlag(AffixConfigOptions.FullStrip);
+                SuggestWithDots = _options.HasFlag(AffixConfigOptions.SuggestWithDots);
+                ForbidWarn = _options.HasFlag(AffixConfigOptions.ForbidWarn);
+                CheckSharps = _options.HasFlag(AffixConfigOptions.CheckSharps);
+                SimplifiedCompound = _options.HasFlag(AffixConfigOptions.SimplifiedCompound);
+            }
+        }
 
         /// <summary>
         /// Indicates agglutinative languages with right-to-left writing system.
@@ -46,19 +77,19 @@ namespace Hunspell
         /// languages with right-to-left writing system.
         /// </remarks>
         /// <seealso cref="AffixConfigOptions.ComplexPrefixes"/>
-        public bool ComplexPrefixes => Options.HasFlag(AffixConfigOptions.ComplexPrefixes);
+        public bool ComplexPrefixes { get; private set; }
 
         /// <summary>
         /// Allow twofold suffixes within compounds.
         /// </summary>
         /// <seealso cref="AffixConfigOptions.CompoundMoreSuffixes"/>
-        public bool CompoundMoreSuffixes => Options.HasFlag(AffixConfigOptions.CompoundMoreSuffixes);
+        public bool CompoundMoreSuffixes { get; private set; }
 
         /// <summary>
         /// Forbid word duplication in compounds (e.g. foofoo).
         /// </summary>
         /// <seealso cref="AffixConfigOptions.CheckCompoundDup"/>
-        public bool CheckCompoundDup => Options.HasFlag(AffixConfigOptions.CheckCompoundDup);
+        public bool CheckCompoundDup { get; private set; }
 
         /// <summary>
         /// Forbid compounding if the compound word may be a non compound word with a REP fault.
@@ -70,7 +101,7 @@ namespace Hunspell
         /// </remarks>
         /// <seealso cref="Replacements"/>
         /// <seealso cref="AffixConfigOptions.CheckCompoundRep"/>
-        public bool CheckCompoundRep => Options.HasFlag(AffixConfigOptions.CheckCompoundRep);
+        public bool CheckCompoundRep { get; private set; }
 
         /// <summary>
         /// Forbid compounding if the compound word contains triple repeating letters.
@@ -81,7 +112,7 @@ namespace Hunspell
         /// in UTF-8 encoding(works only for 7-bit ASCII characters).
         /// </remarks>
         /// <seealso cref="AffixConfigOptions.CheckCompoundTriple"/>
-        public bool CheckCompoundTriple => Options.HasFlag(AffixConfigOptions.CheckCompoundTriple);
+        public bool CheckCompoundTriple { get; private set; }
 
         /// <summary>
         /// Allow simplified 2-letter forms of the compounds forbidden by <see cref="CheckCompoundTriple"/>.
@@ -91,32 +122,32 @@ namespace Hunspell
         /// the old German orthography: Schiff|fahrt -> Schiffahrt).
         /// </remarks>
         /// <seealso cref="AffixConfigOptions.SimplifiedTriple"/>
-        public bool SimplifiedTriple => Options.HasFlag(AffixConfigOptions.SimplifiedTriple);
+        public bool SimplifiedTriple { get; private set; }
 
         /// <summary>
         /// Forbid upper case characters at word boundaries in compounds.
         /// </summary>
         /// <seealso cref="AffixConfigOptions.CheckCompoundCase"/>
-        public bool CheckCompoundCase => Options.HasFlag(AffixConfigOptions.CheckCompoundCase);
+        public bool CheckCompoundCase { get; private set; }
 
         /// <summary>
         /// A flag used by the controlled compound words.
         /// </summary>
         /// <seealso cref="AffixConfigOptions.CheckNum"/>
-        public bool CheckNum => Options.HasFlag(AffixConfigOptions.CheckNum);
+        public bool CheckNum { get; private set; }
 
         /// <summary>
         /// Remove all bad n-gram suggestions (default mode keeps one).
         /// </summary>
         /// <seealso cref="MaxDifferency"/>
         /// <seealso cref="AffixConfigOptions.OnlyMaxDiff"/>
-        public bool OnlyMaxDiff => Options.HasFlag(AffixConfigOptions.OnlyMaxDiff);
+        public bool OnlyMaxDiff { get; private set; }
 
         /// <summary>
         /// Disable word suggestions with spaces.
         /// </summary>
         /// <seealso cref="AffixConfigOptions.NoSplitSuggestions"/>
-        public bool NoSplitSuggestions => Options.HasFlag(AffixConfigOptions.NoSplitSuggestions);
+        public bool NoSplitSuggestions { get; private set; }
 
         /// <summary>
         /// Indicates that affix rules can strip full words.
@@ -127,7 +158,7 @@ namespace Hunspell
         /// Note: conditions may be word length without <see cref="FullStrip"/>, too.
         /// </remarks>
         /// <seealso cref="AffixConfigOptions.FullStrip"/>
-        public bool FullStrip => Options.HasFlag(AffixConfigOptions.FullStrip);
+        public bool FullStrip { get; private set; }
 
         /// <summary>
         /// Add dot(s) to suggestions, if input word terminates in dot(s).
@@ -137,7 +168,7 @@ namespace Hunspell
         /// has an automatic dot expansion mechanism.
         /// </remarks>
         /// <seealso cref="AffixConfigOptions.SuggestWithDots"/>
-        public bool SuggestWithDots => Options.HasFlag(AffixConfigOptions.SuggestWithDots);
+        public bool SuggestWithDots { get; private set; }
 
         /// <summary>
         /// When active, words marked with the <see cref="Warn"/> flag aren't accepted by the spell checker.
@@ -146,7 +177,7 @@ namespace Hunspell
         /// Words with flag <see cref="Warn"/> aren't accepted by the spell checker using this parameter.
         /// </remarks>
         /// <seealso cref="AffixConfigOptions.ForbidWarn"/>
-        public bool ForbidWarn => Options.HasFlag(AffixConfigOptions.ForbidWarn);
+        public bool ForbidWarn { get; private set; }
 
         /// <summary>
         /// Indicates SS letter pair in uppercased (German) words may be upper case sharp s (ß).
@@ -159,9 +190,9 @@ namespace Hunspell
         /// </remarks>
         /// <seealso cref="KeepCase"/>
         /// <seealso cref="AffixConfigOptions.CheckSharps"/>
-        public bool CheckSharps => Options.HasFlag(AffixConfigOptions.CheckSharps);
+        public bool CheckSharps { get; private set; }
 
-        public bool SimplifiedCompound => Options.HasFlag(AffixConfigOptions.SimplifiedCompound);
+        public bool SimplifiedCompound { get; private set; }
 
         /// <summary>
         /// A string of text representing a keyboard layout.

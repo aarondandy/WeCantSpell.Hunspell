@@ -31,7 +31,7 @@ namespace Hunspell.NetCore.Performance.Tests
         [TimingMeasurement]
         [CounterMeasurement(nameof(AffixFilesLoaded))]
         [CounterThroughputAssertion(nameof(AffixFilesLoaded), MustBe.GreaterThanOrEqualTo, 2)]
-        public void Benchmark()
+        public void Benchmark(BenchmarkContext context)
         {
             Task.WhenAll(AffixFilePaths.Select(async filePath =>
             {

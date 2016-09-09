@@ -205,23 +205,20 @@ namespace Hunspell
             {
                 word = word.Reverse();
 
-                if (morphs.Length != 0 && !Affix.IsAliasM)
+                if (!morphs.IsDefaultOrEmpty && !Affix.IsAliasM)
                 {
-                    if (Affix.ComplexPrefixes)
+                    var morphBuilder = ImmutableArray.CreateBuilder<string>(morphs.Length);
+                    for (int i = morphs.Length - 1; i >= 0; i--)
                     {
-                        var morphBuilder = ImmutableArray.CreateBuilder<string>(morphs.Length);
-                        for (int i = morphs.Length - 1; i >= 0; i--)
-                        {
-                            morphBuilder.Add(morphs[i].Reverse());
-                        }
-
-                        morphs = morphBuilder.ToImmutableArray();
+                        morphBuilder.Add(morphs[i].Reverse());
                     }
+
+                    morphs = morphBuilder.ToImmutableArray();
                 }
             }
 
             DictionaryEntryOptions options;
-            if (morphs.Length != 0)
+            if (!morphs.IsDefaultOrEmpty)
             {
                 if (Affix.IsAliasM)
                 {

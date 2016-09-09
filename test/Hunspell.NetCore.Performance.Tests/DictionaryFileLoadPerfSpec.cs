@@ -42,8 +42,8 @@ namespace Hunspell.NetCore.Performance.Tests
         [GcMeasurement(GcMetric.TotalCollections, GcGeneration.AllGc)]
         [TimingMeasurement]
         [CounterMeasurement(nameof(DictionaryFilesLoaded))]
-        [CounterThroughputAssertion(nameof(DictionaryFilesLoaded), MustBe.GreaterThanOrEqualTo, 3)]
-        public void Benchmark()
+        [CounterThroughputAssertion(nameof(DictionaryFilesLoaded), MustBe.GreaterThanOrEqualTo, 2)]
+        public void Benchmark(BenchmarkContext context)
         {
             Task.WhenAll(DictionaryLoadArguments.Select(async testItem =>
             {

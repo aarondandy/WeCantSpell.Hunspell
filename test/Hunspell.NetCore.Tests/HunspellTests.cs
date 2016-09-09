@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using System.Collections.Immutable;
 
 namespace Hunspell.NetCore.Tests
 {
@@ -43,7 +44,7 @@ namespace Hunspell.NetCore.Tests
                     {
                         [dictionaryWord] = new List<DictionaryEntry>
                         {
-                            new DictionaryEntry(dictionaryWord, Enumerable.Empty<FlagValue>(), Enumerable.Empty<string>(), DictionaryEntryOptions.None)
+                            new DictionaryEntry(dictionaryWord, ImmutableSortedSet<FlagValue>.Empty, ImmutableArray<string>.Empty, DictionaryEntryOptions.None)
                         }
                     }
                 }.ToDictionary();

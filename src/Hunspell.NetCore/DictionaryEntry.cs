@@ -1,15 +1,14 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 
 namespace Hunspell
 {
     public class DictionaryEntry
     {
-        public DictionaryEntry(string word, IEnumerable<FlagValue> flags, IEnumerable<string> morphs, DictionaryEntryOptions options)
+        public DictionaryEntry(string word, ImmutableSortedSet<FlagValue> flags, ImmutableArray<string> morphs, DictionaryEntryOptions options)
         {
             Word = word;
-            Flags = flags == null ? ImmutableSortedSet<FlagValue>.Empty : flags.ToImmutableSortedSet();
-            Morphs = morphs == null ? ImmutableArray<string>.Empty : morphs.ToImmutableArray();
+            Flags = flags;
+            Morphs = morphs;
             Options = options;
         }
 

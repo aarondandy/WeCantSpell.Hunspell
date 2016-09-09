@@ -50,9 +50,9 @@ namespace Hunspell
                     numberCapitalized++;
                 }
                 else if (
-                    affix == null
-                    ? char.ToUpperInvariant(word[i]) == char.ToLowerInvariant(word[i])
-                    : affix.Culture.TextInfo.ToUpper(word[i]) == affix.Culture.TextInfo.ToLower(word[i])
+                    category != UnicodeCategory.LowercaseLetter
+                    ||
+                    affix.Culture.TextInfo.ToUpper(word[i]) == word[i]
                 )
                 {
                     numberNeutral++;
