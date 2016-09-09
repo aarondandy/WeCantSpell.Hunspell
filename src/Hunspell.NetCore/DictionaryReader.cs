@@ -59,16 +59,33 @@ namespace Hunspell
 
         public static async Task<Dictionary> ReadFileAsync(string filePath)
         {
-            var affixFilePath = Path.ChangeExtension(filePath, "aff");
+            var affixFilePath = FindAffixFilePath(filePath);
             var affix = await AffixReader.ReadFileAsync(affixFilePath).ConfigureAwait(false);
             return await ReadFileAsync(filePath, affix).ConfigureAwait(false);
         }
 
         public static Dictionary ReadFile(string filePath)
         {
-            var affixFilePath = Path.ChangeExtension(filePath, "aff");
+            var affixFilePath = FindAffixFilePath(filePath);
             var affix = AffixReader.ReadFile(affixFilePath);
             return ReadFile(filePath, affix);
+        }
+
+        public static string FindAffixFilePath(string dictionaryFilePath)
+        {
+            var directoryName = Path.GetDirectoryName(dictionaryFilePath);
+            if (!string.IsNullOrEmpty(directoryName))
+            {
+                var locatedAffFile = Directory.GetFiles(directoryName, Path.GetFileNameWithoutExtension(dictionaryFilePath) + ".*", SearchOption.TopDirectoryOnly)
+                    .FirstOrDefault(affFilePath => ".AFF".Equals(Path.GetExtension(affFilePath), System.StringComparison.OrdinalIgnoreCase));
+
+                if (locatedAffFile != null)
+                {
+                    return locatedAffFile;
+                }
+            }
+
+            return Path.ChangeExtension(dictionaryFilePath, "aff");
         }
 
         public static async Task<Dictionary> ReadFileAsync(string filePath, AffixConfig affix)

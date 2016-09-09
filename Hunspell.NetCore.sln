@@ -20,6 +20,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hunspell.NetCore.Tests", "t
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hunspell.NetCore.Performance.Tests", "test\Hunspell.NetCore.Performance.Tests\Hunspell.NetCore.Performance.Tests.csproj", "{0D9B92F4-F669-427A-95FB-14FC6A555973}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hunspell.NetCore.Performance.TestHarness", "test\Hunspell.NetCore.Performance.TestHarness\Hunspell.NetCore.Performance.TestHarness.csproj", "{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE}"
+EndProject
 Global
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true
@@ -45,6 +47,10 @@ Global
 		{0D9B92F4-F669-427A-95FB-14FC6A555973}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0D9B92F4-F669-427A-95FB-14FC6A555973}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0D9B92F4-F669-427A-95FB-14FC6A555973}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -54,5 +60,6 @@ Global
 		{1650CC3A-03F8-48B0-962C-5EAC0D6A4EC9} = {7DB151C3-9662-414F-84EF-7C6BD40C8AC6}
 		{9BBF7BFD-2EA4-4C17-8D38-ECACFBBBC922} = {97D2DB91-AE3A-44AE-9FA3-43557AA8F5FD}
 		{0D9B92F4-F669-427A-95FB-14FC6A555973} = {97D2DB91-AE3A-44AE-9FA3-43557AA8F5FD}
+		{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE} = {97D2DB91-AE3A-44AE-9FA3-43557AA8F5FD}
 	EndGlobalSection
 EndGlobal

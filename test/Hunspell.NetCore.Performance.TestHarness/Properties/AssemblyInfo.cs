@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Hunspell.NetCore.Performance.Tests")]
+[assembly: AssemblyTitle("Hunspell.NetCore.Performance.TestHarness")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("0d9b92f4-f669-427a-95fb-14fc6a555973")]
+[assembly: Guid("0002e7c7-3ef1-4ad9-a8e6-31c93df165de")]
 
 // Version information for an assembly consists of the following four values:
 //
