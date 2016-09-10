@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
+using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
@@ -22,13 +24,51 @@ namespace Hunspell
 
             public Dictionary ToDictionary()
             {
-                return new Dictionary
+                var affix = Affix ?? new AffixConfig.Builder().ToAffixConfig();
+
+                var nGramRestrictedFlags =
+                    new[]
+                    {
+                        affix.ForbiddenWord,
+                        affix.NoSuggest,
+                        affix.NoNgramSuggest,
+                        affix.OnlyInCompound,
+                        SpecialFlags.OnlyUpcaseFlag
+                    }
+                    .Where(f => f.HasValue)
+                    .ToImmutableSortedSet();
+
+                var result = new Dictionary(affix)
                 {
-                    Entries = Entries == null
-                        ? ImmutableDictionary<string, ImmutableArray<DictionaryEntry>>.Empty
-                        : Entries.ToImmutableDictionary(pair => pair.Key, pair => pair.Value.ToImmutableArray()),
-                    Affix = Affix ?? new AffixConfig.Builder().ToAffixConfig()
+                    NGramRestrictedFlags = nGramRestrictedFlags
                 };
+
+                var lookupRootBuilder = ImmutableDictionary.CreateBuilder<string, ImmutableArray<DictionaryEntry>>();
+                var nGramRestrictedEntriesBuilder = ImmutableHashSet.CreateBuilder<DictionaryEntry>();
+
+                if (Entries != null)
+                {
+                    foreach (var rootSet in Entries)
+                    {
+                        var rootWord = rootSet.Key;
+                        var rootEntries = rootSet.Value;
+
+                        lookupRootBuilder.Add(rootWord, rootEntries.ToImmutableArray());
+
+                        foreach (var entry in rootEntries)
+                        {
+                            if (nGramRestrictedFlags.ContainsAny(entry.Flags))
+                            {
+                                nGramRestrictedEntriesBuilder.Add(entry);
+                            }
+                        }
+                    }
+                }
+
+                result.EntriesByRoot = lookupRootBuilder.ToImmutable();
+                result.NGramRestrictedEntries = nGramRestrictedEntriesBuilder.ToImmutable();
+
+                return result;
             }
         }
     }

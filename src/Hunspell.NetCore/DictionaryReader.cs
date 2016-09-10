@@ -173,7 +173,7 @@ namespace Hunspell
                     morphBuilder.Add(morphGroup.Captures[i].Value);
                 }
 
-                morphs = morphBuilder.ToImmutableArray();
+                morphs = morphBuilder.MoveToOrCreateImmutable();
             }
             else
             {
@@ -230,7 +230,7 @@ namespace Hunspell
                         morphBuilder.Add(morphs[i].Reverse());
                     }
 
-                    morphs = morphBuilder.ToImmutableArray();
+                    morphs = morphBuilder.MoveToOrCreateImmutable();
                 }
             }
 
@@ -256,7 +256,7 @@ namespace Hunspell
                         }
                     }
 
-                    morphs = morphBuilder.ToImmutableArray();
+                    morphs = morphBuilder.MoveToOrCreateImmutable();
                 }
                 else
                 {

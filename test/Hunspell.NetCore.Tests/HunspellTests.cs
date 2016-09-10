@@ -132,6 +132,7 @@ namespace Hunspell.NetCore.Tests
             [InlineData("files/rep.dic", "autos", new[] { "auto's", "auto" })]
             [InlineData("files/ngram_utf_fix.dic", "человеко", new[] { "человек" })]
             [InlineData("files/utf8_nonbmp.dic", "𐏑𐏒𐏒", new[] { "𐏑 𐏒𐏒", "𐏒𐏑", "𐏒𐏒" })]
+            [InlineData("files/phone.dic", "Brasillian", new[] { "Brasilia", "Xxxxxxxxxx", "Brilliant", "Brazilian", "Brassily", "Brilliance" })]
             public async Task words_offer_specific_suggestions(string dictionaryFilePath, string word, string[] expectedSuggestions)
             {
                 var hunspell = await Hunspell.FromFileAsync(dictionaryFilePath);
@@ -192,7 +193,8 @@ namespace Hunspell.NetCore.Tests
                 "opentaal_forbiddenword2",
                 "rep",
                 "ngram_utf_fix",
-                "utf8_nonbmp"
+                "utf8_nonbmp",
+                "phone"
             };
 
             protected static IEnumerable<SuggestionTestSet> GetSuggestionTestFileSets()

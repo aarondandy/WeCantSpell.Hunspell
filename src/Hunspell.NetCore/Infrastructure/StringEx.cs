@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace Hunspell.Infrastructure
 {
@@ -119,6 +118,28 @@ namespace Hunspell.Infrastructure
         public static char GetCharOrTerminator(this string @this, int index)
         {
             return index < @this.Length ? @this[index] : '\0';
+        }
+
+        public static bool ContainsSubstringOrdinal(this string @this, string value, int startIndex, int length)
+        {
+            if (value.Length == 0)
+            {
+                return true;
+            }
+
+            var firstChar = value[startIndex];
+            var firstCharIndex = @this.IndexOf(firstChar);
+            while (firstCharIndex >= 0)
+            {
+                if (EqualsOffset(@this, firstCharIndex, value, startIndex, length))
+                {
+                    return true;
+                }
+
+                firstCharIndex = firstCharIndex = @this.IndexOf(firstChar, firstCharIndex + 1);
+            }
+
+            return false;
         }
     }
 }

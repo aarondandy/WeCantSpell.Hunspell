@@ -122,7 +122,7 @@ namespace Hunspell
         {
             var word = WordToCheck;
 
-            if (string.IsNullOrEmpty(word) || Dictionary.Entries.Count == 0)
+            if (string.IsNullOrEmpty(word) || !Dictionary.HasEntries)
             {
                 return new SpellCheckResult(false);
             }
@@ -473,7 +473,7 @@ namespace Hunspell
             var slst = new List<string>();
 
             int onlyCompoundSuggest = 0;
-            if (Dictionary.Entries.IsEmpty)
+            if (!Dictionary.HasEntries)
             {
                 return slst;
             }
@@ -1495,7 +1495,7 @@ namespace Hunspell
         private void TestSug(List<string> wlst, string candidate, int cpdSuggest, ref int? timer, ref long? timeLimit)
         {
             if (
-                wlst.Count != MaxSuggestions
+                wlst.Count < MaxSuggestions
                 &&
                 !wlst.Contains(candidate)
                 &&
@@ -1793,13 +1793,8 @@ namespace Hunspell
                 target = Phonet(candidate);
             }
 
-            foreach (var hp in Dictionary.Entries.Values.SelectMany(set => set))
+            foreach (var hp in Dictionary.NGramAllowedEntries)
             {
-                if (hp.ContainsAnyFlags(Affix.ForbiddenWord, SpecialFlags.OnlyUpcaseFlag, Affix.NoSuggest, Affix.NoNgramSuggest, Affix.OnlyInCompound))
-                {
-                    continue;
-                }
-
                 sc = NGram(3, word, hp.Word, NGramOptions.LongerWorse | low)
                     + LeftCommonSubstring(word, hp.Word);
 
@@ -2648,65 +2643,65 @@ namespace Hunspell
         {
             var nscore = 0;
             int ns;
-            int l1;
-            int l2;
             var test = 0;
 
-            l2 = s2.Length;
-            if (l2 == 0)
+            if (s2.Length == 0)
             {
                 return 0;
             }
 
-            l1 = s1.Length;
-            var t = s2;
-            if (opt.HasFlag(NGramOptions.Lowering))
-            {
-                MakeAllSmall2(ref t);
-            }
+            var t = opt.HasFlag(NGramOptions.Lowering)
+                ? MakeAllSmall(s2)
+                : s2;
 
+            var optHasWeightedFlag = opt.HasFlag(NGramOptions.Weighted);
             for (var j = 1; j <= n; j++)
             {
                 ns = 0;
-                for (var i = 0; i <= (l1 - j); i++)
+                var s1LenLessJ = s1.Length - j;
+                for (var i = 0; i <= s1LenLessJ; i++)
                 {
-                    var temp = s1.Substring(i, j);
-                    if (t.IndexOf(temp, StringComparison.Ordinal) >= 0)
+                    if (t.ContainsSubstringOrdinal(s1, i, j))
                     {
                         ns++;
                     }
-                    else if (opt.HasFlag(NGramOptions.Weighted))
+                    else if (optHasWeightedFlag)
                     {
                         ns--;
                         test++;
-                        if (i == 0 || i == l1 - j)
+                        if (i == 0 || i == s1LenLessJ)
                         {
                             ns--; // side weight
                         }
                     }
                 }
+
                 nscore = nscore + ns;
-                if (ns < 2 && !opt.HasFlag(NGramOptions.Weighted))
+                if (ns < 2 && !optHasWeightedFlag)
                 {
                     break;
                 }
             }
 
-            ns = 0;
-
-            if (opt.HasFlag(NGramOptions.LongerWorse))
-            {
-                ns = (l2 - l1) - 2;
-            }
-
             if (opt.HasFlag(NGramOptions.AnyMismatch))
             {
-                ns = Math.Abs(l2 - l1) - 2;
+                ns = Math.Abs(s2.Length - s1.Length) - 2;
+            }
+            else if (opt.HasFlag(NGramOptions.LongerWorse))
+            {
+                ns = (s2.Length - s1.Length) - 2;
+            }
+            else
+            {
+                ns = 0;
             }
 
-            ns = (nscore - ((ns > 0) ? ns : 0));
+            if (ns > 0)
+            {
+                nscore -= ns;
+            }
 
-            return ns;
+            return nscore;
         }
 
         /// <summary>
@@ -3185,8 +3180,8 @@ namespace Hunspell
 
             // look word in hash table
             DictionaryEntry he = null;
-            ImmutableArray<DictionaryEntry> entries;
-            if (Dictionary.Entries.TryGetValue(word, out entries))
+            var entries = Dictionary.FindEntriesByRootWord(word);
+            if (!entries.IsDefaultOrEmpty)
             {
                 he = entries.First();
 
@@ -4698,8 +4693,7 @@ namespace Hunspell
 
         private ImmutableArray<DictionaryEntry> Lookup(string word)
         {
-            ImmutableArray<DictionaryEntry> entries;
-            return Dictionary.Entries.TryGetValue(word, out entries) ? entries : ImmutableArray<DictionaryEntry>.Empty;
+            return Dictionary.FindEntriesByRootWord(word);
         }
 
         private class MetacharData

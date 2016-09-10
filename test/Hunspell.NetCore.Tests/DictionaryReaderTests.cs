@@ -20,10 +20,8 @@ namespace Hunspell.NetCore.Tests
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
                 actual.Affix.Should().NotBeNull();
-                actual.Entries.Should().HaveCount(1);
-                var hashEntries = actual.Entries.Values.Single();
-                hashEntries.Should().HaveCount(1);
-                var entry = hashEntries.Single();
+                actual.AllEntries.Should().HaveCount(1);
+                var entry = actual.AllEntries.Single();
                 entry.Flags.Should().BeNullOrEmpty();
                 entry.Morphs.Should().BeNullOrEmpty();
                 entry.Options.Should().Be(DictionaryEntryOptions.None);
@@ -37,11 +35,10 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(2);
-                actual.Entries.Keys.ShouldBeEquivalentTo(new[] { "weg", "wege" });
-                actual.Entries["weg"][0].Flags.Should().ContainInOrder(new[] { 'Q', 'o', 'z' });
-                actual.Entries["weg"][1].Flags.Should().ContainInOrder(new[] { 'P' });
-                actual.Entries["wege"][0].Flags.Should().BeEmpty();
+                actual.RootWords.ShouldBeEquivalentTo(new[] { "weg", "wege" });
+                actual["weg"][0].Flags.Should().ContainInOrder(new[] { 'Q', 'o', 'z' });
+                actual["weg"][1].Flags.Should().ContainInOrder(new[] { 'P' });
+                actual["wege"][0].Flags.Should().BeEmpty();
             }
 
             [Fact]
@@ -51,10 +48,10 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(1);
-                actual.Entries["Mull"].Should().HaveCount(2);
-                actual.Entries["Mull"][0].Flags.Should().ContainInOrder(new[] { 'e', 'h' });
-                actual.Entries["Mull"][1].Flags.Should().ContainInOrder(new[] { 'S' });
+                actual.RootWords.Should().HaveCount(1);
+                actual["Mull"].Should().HaveCount(2);
+                actual["Mull"][0].Flags.Should().ContainInOrder(new[] { 'e', 'h' });
+                actual["Mull"][1].Flags.Should().ContainInOrder(new[] { 'S' });
             }
 
             [Fact]
@@ -64,10 +61,10 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(3);
-                actual.Entries["arbeits"][0].Flags.Should().ContainInOrder(new[] { 'v' });
-                actual.Entries["scheu"][0].Flags.Should().ContainInOrder(new[] { 'A', 'w' });
-                actual.Entries["farbig"][0].Flags.Should().ContainInOrder(new[] { 'A' });
+                actual.RootWords.Should().HaveCount(3);
+                actual["arbeits"][0].Flags.Should().ContainInOrder(new[] { 'v' });
+                actual["scheu"][0].Flags.Should().ContainInOrder(new[] { 'A', 'w' });
+                actual["farbig"][0].Flags.Should().ContainInOrder(new[] { 'A' });
             }
 
             [Fact]
@@ -77,9 +74,9 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(2);
-                actual.Entries["أرى"][0].Flags.Should().ContainInOrder(new[] { 'x' });
-                actual.Entries["أيار"][0].Flags.Should().ContainInOrder(new[] { 'x' });
+                actual.RootWords.Should().HaveCount(2);
+                actual["أرى"][0].Flags.Should().ContainInOrder(new[] { 'x' });
+                actual["أيار"][0].Flags.Should().ContainInOrder(new[] { 'x' });
             }
 
             [Fact]
@@ -89,8 +86,8 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(1);
-                actual.Entries["foo"][0].Flags.Should().ContainInOrder(new[] { 'A', 'B' });
+                actual.RootWords.Should().HaveCount(1);
+                actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'A', 'B' });
             }
 
             [Fact]
@@ -100,9 +97,9 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(1);
-                actual.Entries["foo"][0].Flags.Should().ContainInOrder(new[] { 'A', 'B' });
-                actual.Entries["foo"][0].Morphs.Should().ContainInOrder(new[] { "po:noun", "xx:other_data" });
+                actual.RootWords.Should().HaveCount(1);
+                actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'A', 'B' });
+                actual["foo"][0].Morphs.Should().ContainInOrder(new[] { "po:noun", "xx:other_data" });
             }
 
             [Fact]
@@ -113,9 +110,9 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(1);
-                actual.Entries["oruo"][0].Flags.Should().ContainInOrder(new[] { 'B', 'C' });
-                actual.Entries["oruo"][0].Morphs.Should().OnlyContain(x => x == reversedStem);
+                actual.RootWords.Should().HaveCount(1);
+                actual["oruo"][0].Flags.Should().ContainInOrder(new[] { 'B', 'C' });
+                actual["oruo"][0].Morphs.Should().OnlyContain(x => x == reversedStem);
             }
 
             [Fact]
@@ -125,15 +122,15 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(4);
-                actual.Entries["OpenOffice.org"].Should().HaveCount(1);
-                actual.Entries["OpenOffice.org"][0].Flags.Should().BeEmpty();
-                actual.Entries["Openoffice.org"].Should().HaveCount(1);
-                actual.Entries["Openoffice.org"][0].Flags.Should().ContainInOrder(new[] { SpecialFlags.OnlyUpcaseFlag });
-                actual.Entries["UNICEF"].Should().HaveCount(1);
-                actual.Entries["UNICEF"][0].Flags.Should().ContainInOrder(new[] { 'S' });
-                actual.Entries["Unicef"].Should().HaveCount(1);
-                actual.Entries["Unicef"][0].Flags.Should().ContainInOrder(new[] { 'S', (char)SpecialFlags.OnlyUpcaseFlag });
+                actual.RootWords.Should().HaveCount(4);
+                actual["OpenOffice.org"].Should().HaveCount(1);
+                actual["OpenOffice.org"][0].Flags.Should().BeEmpty();
+                actual["Openoffice.org"].Should().HaveCount(1);
+                actual["Openoffice.org"][0].Flags.Should().ContainInOrder(new[] { SpecialFlags.OnlyUpcaseFlag });
+                actual["UNICEF"].Should().HaveCount(1);
+                actual["UNICEF"][0].Flags.Should().ContainInOrder(new[] { 'S' });
+                actual["Unicef"].Should().HaveCount(1);
+                actual["Unicef"][0].Flags.Should().ContainInOrder(new[] { 'S', (char)SpecialFlags.OnlyUpcaseFlag });
             }
 
             [Fact]
@@ -143,11 +140,11 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(4);
-                actual.Entries["iPod"][0].Flags.Should().ContainInOrder(new[] { 's' });
-                actual.Entries["Ipod"][0].Flags.Should().ContainInOrder(new[] { 's', (char)SpecialFlags.OnlyUpcaseFlag });
-                actual.Entries["iPodos"][0].Flags.Should().ContainInOrder(new[] { '*' });
-                actual.Entries["ipodos"][0].Flags.Should().BeEmpty();
+                actual.RootWords.Should().HaveCount(4);
+                actual["iPod"][0].Flags.Should().ContainInOrder(new[] { 's' });
+                actual["Ipod"][0].Flags.Should().ContainInOrder(new[] { 's', (char)SpecialFlags.OnlyUpcaseFlag });
+                actual["iPodos"][0].Flags.Should().ContainInOrder(new[] { '*' });
+                actual["ipodos"][0].Flags.Should().BeEmpty();
             }
 
             [Fact]
@@ -157,13 +154,13 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(6);
-                actual.Entries["UNESCO"][0].Flags.Should().ContainInOrder(new[] { 'S' });
-                actual.Entries["Unesco"][0].Flags.Should().ContainInOrder(new[] { 'S' });
-                actual.Entries["Nasa"][0].Flags.Should().ContainInOrder(new[] { 'S' });
-                actual.Entries["NASA"][0].Flags.Should().ContainInOrder(new[] { 'S' });
-                actual.Entries["ACTS"][0].Flags.Should().BeEmpty();
-                actual.Entries["act"][0].Flags.Should().ContainInOrder(new[] { 's' });
+                actual.RootWords.Should().HaveCount(6);
+                actual["UNESCO"][0].Flags.Should().ContainInOrder(new[] { 'S' });
+                actual["Unesco"][0].Flags.Should().ContainInOrder(new[] { 'S' });
+                actual["Nasa"][0].Flags.Should().ContainInOrder(new[] { 'S' });
+                actual["NASA"][0].Flags.Should().ContainInOrder(new[] { 'S' });
+                actual["ACTS"][0].Flags.Should().BeEmpty();
+                actual["act"][0].Flags.Should().ContainInOrder(new[] { 's' });
             }
 
             [Fact]
@@ -173,15 +170,15 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(4);
-                actual.Entries["OpenOffice.org"].Should().HaveCount(1);
-                actual.Entries["OpenOffice.org"][0].Flags.Should().BeEmpty();
-                actual.Entries["Openoffice.org"].Should().HaveCount(1);
-                actual.Entries["Openoffice.org"][0].Flags.Should().ContainInOrder(new[] { SpecialFlags.OnlyUpcaseFlag });
-                actual.Entries["UNICEF"].Should().HaveCount(1);
-                actual.Entries["UNICEF"][0].Flags.Should().ContainInOrder(new[] { 'S' });
-                actual.Entries["Unicef"].Should().HaveCount(1);
-                actual.Entries["Unicef"][0].Flags.Should().ContainInOrder(new[] { 'S', (char)SpecialFlags.OnlyUpcaseFlag });
+                actual.RootWords.Should().HaveCount(4);
+                actual["OpenOffice.org"].Should().HaveCount(1);
+                actual["OpenOffice.org"][0].Flags.Should().BeEmpty();
+                actual["Openoffice.org"].Should().HaveCount(1);
+                actual["Openoffice.org"][0].Flags.Should().ContainInOrder(new[] { SpecialFlags.OnlyUpcaseFlag });
+                actual["UNICEF"].Should().HaveCount(1);
+                actual["UNICEF"][0].Flags.Should().ContainInOrder(new[] { 'S' });
+                actual["Unicef"].Should().HaveCount(1);
+                actual["Unicef"][0].Flags.Should().ContainInOrder(new[] { 'S', (char)SpecialFlags.OnlyUpcaseFlag });
             }
 
             [Fact]
@@ -191,8 +188,8 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(1);
-                actual.Entries["ب"][0].Word.Should().Be("ب");
+                actual.RootWords.Should().HaveCount(1);
+                actual["ب"][0].Word.Should().Be("ب");
             }
 
             [Fact]
@@ -202,8 +199,8 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(28);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(28);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "created",
                     "create",
                     "imply",
@@ -227,18 +224,18 @@ namespace Hunspell.NetCore.Tests
                     "etc",
                     "won't",
                     "lip",
-                    //ext", // duplicate
+                    //"text", // duplicate
                     "horrifying",
                     "speech",
                     "suggest",
                     "uncreate",
-                    "Hunspell");
+                    "Hunspell" });
 
-                actual.Entries["create"][0].Flags.Should().ContainInOrder(new int[] { 'X', 'K', 'V', 'N', 'G', 'A', 'D', 'S' }.OrderBy(x => x));
-                actual.Entries["Hunspell"][0].Flags.Should().BeEmpty();
-                actual.Entries["text"][0].Flags.Should().BeEmpty();
-                actual.Entries["FAQ"][0].Flags.Should().ContainInOrder(new int[] { 'M', 'S' });
-                actual.Entries["Faq"][0].Flags.Should().ContainInOrder(new int[] { 'M', 'S', SpecialFlags.OnlyUpcaseFlag });
+                actual["create"][0].Flags.Should().ContainInOrder(new int[] { 'X', 'K', 'V', 'N', 'G', 'A', 'D', 'S' }.OrderBy(x => x));
+                actual["Hunspell"][0].Flags.Should().BeEmpty();
+                actual["text"][0].Flags.Should().BeEmpty();
+                actual["FAQ"][0].Flags.Should().ContainInOrder(new int[] { 'M', 'S' });
+                actual["Faq"][0].Flags.Should().ContainInOrder(new int[] { 'M', 'S', SpecialFlags.OnlyUpcaseFlag });
             }
 
             [Fact]
@@ -248,8 +245,8 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(28);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(28);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "created",
                     "create",
                     "imply",
@@ -273,18 +270,18 @@ namespace Hunspell.NetCore.Tests
                     "etc",
                     "won’t",
                     "lip",
-                    "text", // duplicate
+                    //"text", // duplicate
                     "horrifying",
                     "speech",
                     "suggest",
                     "uncreate",
-                    "Hunspell");
+                    "Hunspell" });
 
-                actual.Entries["create"][0].Flags.Should().ContainInOrder(new int[] { 'X', 'K', 'V', 'N', 'G', 'A', 'D', 'S' }.OrderBy(x => x));
-                actual.Entries["Hunspell"][0].Flags.Should().BeEmpty();
-                actual.Entries["text"][0].Flags.Should().BeEmpty();
-                actual.Entries["FAQ"][0].Flags.Should().ContainInOrder(new int[] { 'M', 'S' });
-                actual.Entries["Faq"][0].Flags.Should().ContainInOrder(new int[] { 'M', 'S', SpecialFlags.OnlyUpcaseFlag });
+                actual["create"][0].Flags.Should().ContainInOrder(new int[] { 'X', 'K', 'V', 'N', 'G', 'A', 'D', 'S' }.OrderBy(x => x));
+                actual["Hunspell"][0].Flags.Should().BeEmpty();
+                actual["text"][0].Flags.Should().BeEmpty();
+                actual["FAQ"][0].Flags.Should().ContainInOrder(new int[] { 'M', 'S' });
+                actual["Faq"][0].Flags.Should().ContainInOrder(new int[] { 'M', 'S', SpecialFlags.OnlyUpcaseFlag });
             }
 
             [Fact]
@@ -294,11 +291,11 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(3);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(3);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "foo",
                     "bar",
-                    "fox-bax");
+                    "fox-bax" });
             }
 
             [Fact]
@@ -308,17 +305,17 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(5);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(5);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "foo",
                     "Bar",
                     "BAZ",
                     "Baz",
-                    "-");
+                    "-" });
 
-                actual.Entries["BAZ"][0].Flags.Should().ContainInOrder(new[] { 'A' });
-                actual.Entries["Baz"][0].Flags.Should().ContainInOrder(new[] { 'A', (char)SpecialFlags.OnlyUpcaseFlag });
-                actual.Entries["-"][0].Flags.Should().ContainInOrder(new[] { 'A' });
+                actual["BAZ"][0].Flags.Should().ContainInOrder(new[] { 'A' });
+                actual["Baz"][0].Flags.Should().ContainInOrder(new[] { 'A', (char)SpecialFlags.OnlyUpcaseFlag });
+                actual["-"][0].Flags.Should().ContainInOrder(new[] { 'A' });
             }
 
             [Fact]
@@ -328,9 +325,8 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(2);
-                actual.Entries.Should().ContainKey("áoó");
-                actual.Entries.Should().ContainKey("Óoá");
+                actual.RootWords.Should().HaveCount(2);
+                actual.RootWords.ShouldBeEquivalentTo(new[] { "áoó", "Óoá" });
             }
 
             [Fact]
@@ -340,19 +336,19 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(7);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(7);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "sUrya",
                     "Surya",
                     "udayaM",
                     "Udayam",
                     "pEru",
                     "Peru",
-                    "unna");
+                    "unna" });
 
-                actual.Entries["pEru"][0].Flags.Should().ContainInOrder(new[] { 'B', 'x' });
-                actual.Entries["Peru"][0].Flags.Should().ContainInOrder(new[] { 'B', 'x', (char)SpecialFlags.OnlyUpcaseFlag });
-                actual.Entries["unna"][0].Flags.Should().ContainInOrder(new[] { 'B', 'x' });
+                actual["pEru"][0].Flags.Should().ContainInOrder(new[] { 'B', 'x' });
+                actual["Peru"][0].Flags.Should().ContainInOrder(new[] { 'B', 'x', (char)SpecialFlags.OnlyUpcaseFlag });
+                actual["unna"][0].Flags.Should().ContainInOrder(new[] { 'B', 'x' });
             }
 
             [Fact]
@@ -362,12 +358,12 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(4);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(4);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "foo",
                     "opera",
                     "eel",
-                    "bare");
+                    "bare" });
             }
 
             [Fact]
@@ -377,16 +373,16 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(6);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(6);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "müßig",
                     "Ausstoß",
                     "Abstoß.",
                     "Außenabmessung",
                     "Prozessionsstraße",
-                    "Außenmaße");
+                    "Außenmaße" });
 
-                actual.Entries["müßig"][0].Flags.Should().ContainInOrder(new[] { 'k' });
+                actual["müßig"][0].Flags.Should().ContainInOrder(new[] { 'k' });
             }
 
             [Fact]
@@ -396,10 +392,9 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(1);
-                actual.Entries.Should().ContainKey("nagy");
-                actual.Entries["nagy"][0].Flags.Should().ContainInOrder(new[] { 'C' });
-                actual.Entries["nagy"][0].Morphs.Should().ContainInOrder(new[] { "po:adj" });
+                actual.RootWords.Should().HaveCount(1);
+                actual["nagy"][0].Flags.Should().ContainInOrder(new[] { 'C' });
+                actual["nagy"][0].Morphs.Should().ContainInOrder(new[] { "po:adj" });
             }
 
             [Fact]
@@ -409,11 +404,11 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(3);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(3);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "c:a",
                     "S:t",
-                    "foo");
+                    "foo" });
             }
 
             [Fact]
@@ -423,10 +418,9 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(1);
-                actual.Entries.Should().ContainKey("oruo");
-                actual.Entries["oruo"][0].Flags.Should().ContainInOrder(new[] { 'B', 'C' });
-                actual.Entries["oruo"][0].Morphs.Should().ContainInOrder(new[] { "]1_mets[" });
+                actual.RootWords.Should().HaveCount(1);
+                actual["oruo"][0].Flags.Should().ContainInOrder(new[] { 'B', 'C' });
+                actual["oruo"][0].Morphs.Should().ContainInOrder(new[] { "]1_mets[" });
             }
 
             [Fact]
@@ -436,11 +430,9 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(2);
-                actual.Entries.Should().ContainKey("foo");
-                actual.Entries["foo"][0].Flags.Should().ContainInOrder(new[] { 'X', 'P', 'S' }.OrderBy(x => x));
-                actual.Entries.Should().ContainKey("bar");
-                actual.Entries["bar"][0].Flags.Should().ContainInOrder(new[] { 'X', 'P', 'S' }.OrderBy(x => x));
+                actual.RootWords.Should().HaveCount(2);
+                actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'X', 'P', 'S' }.OrderBy(x => x));
+                actual["bar"][0].Flags.Should().ContainInOrder(new[] { 'X', 'P', 'S' }.OrderBy(x => x));
             }
 
             [Fact]
@@ -450,8 +442,8 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(23);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(23);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "0",
                     "1",
                     "2",
@@ -474,7 +466,7 @@ namespace Hunspell.NetCore.Tests
                     "6th",
                     "7th",
                     "8th",
-                    "9th");
+                    "9th" });
             }
 
             [Fact]
@@ -484,8 +476,8 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(13);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(13);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "0",
                     "1",
                     "2",
@@ -498,16 +490,16 @@ namespace Hunspell.NetCore.Tests
                     "9",
                     ".",
                     "%",
-                    "‰");
+                    "‰" });
 
-                actual.Entries["0"][0].Flags.Should().ContainInOrder(new[] { 'N' });
-                actual.Entries["0"][0].Morphs.ShouldBeEquivalentTo(new[] { "po:num" });
-                actual.Entries["."][0].Flags.Should().ContainInOrder(new[] { '.' });
-                actual.Entries["."][0].Morphs.ShouldBeEquivalentTo(new[] { "po:sign_dot" });
-                actual.Entries["%"][0].Flags.Should().ContainInOrder(new[] { '%' });
-                actual.Entries["%"][0].Morphs.ShouldBeEquivalentTo(new[] { "po:sign_percent" });
-                actual.Entries["‰"][0].Flags.Should().ContainInOrder(new[] { '%' });
-                actual.Entries["‰"][0].Morphs.ShouldBeEquivalentTo(new[] { "po:sign_per_mille" });
+                actual["0"][0].Flags.Should().ContainInOrder(new[] { 'N' });
+                actual["0"][0].Morphs.ShouldBeEquivalentTo(new[] { "po:num" });
+                actual["."][0].Flags.Should().ContainInOrder(new[] { '.' });
+                actual["."][0].Morphs.ShouldBeEquivalentTo(new[] { "po:sign_dot" });
+                actual["%"][0].Flags.Should().ContainInOrder(new[] { '%' });
+                actual["%"][0].Morphs.ShouldBeEquivalentTo(new[] { "po:sign_percent" });
+                actual["‰"][0].Flags.Should().ContainInOrder(new[] { '%' });
+                actual["‰"][0].Morphs.ShouldBeEquivalentTo(new[] { "po:sign_per_mille" });
             }
 
             [Fact]
@@ -517,8 +509,8 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(23);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(23);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "0",
                     "1",
                     "2",
@@ -541,10 +533,10 @@ namespace Hunspell.NetCore.Tests
                     "6th",
                     "7th",
                     "8th",
-                    "9th");
-                actual.Entries["0"][0].Flags.Should().ContainInOrder(new[] { 'n' << 8 | 'n', 'm' << 8 | 'm' }.OrderBy(x => x));
-                actual.Entries["3rd"][0].Flags.Should().ContainInOrder(new[] { 'p' << 8 | 'p' });
-                actual.Entries["9th"][0].Flags.Should().ContainInOrder(new[] { 'p' << 8 | 'p', 't' << 8 | 't' }.OrderBy(x => x));
+                    "9th" });
+                actual["0"][0].Flags.Should().ContainInOrder(new[] { 'n' << 8 | 'n', 'm' << 8 | 'm' }.OrderBy(x => x));
+                actual["3rd"][0].Flags.Should().ContainInOrder(new[] { 'p' << 8 | 'p' });
+                actual["9th"][0].Flags.Should().ContainInOrder(new[] { 'p' << 8 | 'p', 't' << 8 | 't' }.OrderBy(x => x));
             }
 
             [Fact]
@@ -554,8 +546,8 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(23);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(23);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "0",
                     "1",
                     "2",
@@ -578,10 +570,10 @@ namespace Hunspell.NetCore.Tests
                     "6th",
                     "7th",
                     "8th",
-                    "9th");
-                actual.Entries["0"][0].Flags.Should().ContainInOrder(new[] { 1001, 2002 });
-                actual.Entries["1st"][0].Flags.Should().ContainInOrder(new[] { 2000 });
-                actual.Entries["9th"][0].Flags.Should().ContainInOrder(new[] { 2000, 2001 });
+                    "9th" });
+                actual["0"][0].Flags.Should().ContainInOrder(new[] { 1001, 2002 });
+                actual["1st"][0].Flags.Should().ContainInOrder(new[] { 2000 });
+                actual["9th"][0].Flags.Should().ContainInOrder(new[] { 2000, 2001 });
             }
 
             [Fact]
@@ -591,8 +583,8 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(1);
-                actual.Entries["óőó"][0].Flags.Should().ContainInOrder(new[] { 'P', 'S' });
+                actual.RootWords.Should().HaveCount(1);
+                actual["óőó"][0].Flags.Should().ContainInOrder(new[] { 'P', 'S' });
             }
 
             [Fact]
@@ -602,12 +594,12 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(1);
-                actual.Entries["drink"].Should().HaveCount(2);
-                actual.Entries["drink"][0].Flags.Should().ContainInOrder(new[] { 'Q', 'R' });
-                actual.Entries["drink"][0].Morphs.ShouldBeEquivalentTo(new[] { "po:verb" });
-                actual.Entries["drink"][1].Flags.Should().ContainInOrder(new[] { 'S' });
-                actual.Entries["drink"][1].Morphs.ShouldBeEquivalentTo(new[] { "po:noun" });
+                actual.RootWords.Should().HaveCount(1);
+                actual["drink"].Should().HaveCount(2);
+                actual["drink"][0].Flags.Should().ContainInOrder(new[] { 'Q', 'R' });
+                actual["drink"][0].Morphs.ShouldBeEquivalentTo(new[] { "po:verb" });
+                actual["drink"][1].Flags.Should().ContainInOrder(new[] { 'S' });
+                actual["drink"][1].Morphs.ShouldBeEquivalentTo(new[] { "po:noun" });
             }
 
             [Fact]
@@ -617,8 +609,8 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(11);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(11);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "0",
                     "1",
                     "2",
@@ -629,9 +621,9 @@ namespace Hunspell.NetCore.Tests
                     "7",
                     "8",
                     "9",
-                    "-jährig");
-                actual.Entries["0"][0].Flags.Should().ContainInOrder(new[] { 'a' });
-                actual.Entries["-jährig"][0].Flags.Should().ContainInOrder(new[] { 'b', 'c' });
+                    "-jährig" });
+                actual["0"][0].Flags.Should().ContainInOrder(new[] { 'a' });
+                actual["-jährig"][0].Flags.Should().ContainInOrder(new[] { 'b', 'c' });
             }
 
             [Fact]
@@ -641,8 +633,8 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(1);
-                actual.Entries["foo"][0].Flags.Should().ContainInOrder(new[] { '3', 'A', });
+                actual.RootWords.Should().HaveCount(1);
+                actual["foo"][0].Flags.Should().ContainInOrder(new[] { '3', 'A', });
             }
 
             [Fact]
@@ -652,8 +644,8 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(1);
-                actual.Entries["foo"][0].Flags.Should().ContainInOrder(new[] { 'z' << 8 | 'x', '0' << 8 | '9' }.OrderBy(x => x));
+                actual.RootWords.Should().HaveCount(1);
+                actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'z' << 8 | 'x', '0' << 8 | '9' }.OrderBy(x => x));
             }
 
             [Fact]
@@ -663,8 +655,8 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(1);
-                actual.Entries["foo"][0].Flags.Should().ContainInOrder(new[] { 999, 54321 });
+                actual.RootWords.Should().HaveCount(1);
+                actual["foo"][0].Flags.Should().ContainInOrder(new[] { 999, 54321 });
             }
 
             [Fact]
@@ -674,8 +666,8 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(1);
-                actual.Entries["foo"][0].Flags.Should().ContainInOrder(new[] { 'A', 'Ü' });
+                actual.RootWords.Should().HaveCount(1);
+                actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'A', 'Ü' });
             }
 
             [Fact]
@@ -685,12 +677,12 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(2);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(2);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "gata",
-                    "kontoret");
-                actual.Entries["gata"][0].Flags.Should().ContainInOrder(new[] { 'A' });
-                actual.Entries["kontoret"][0].Flags.Should().ContainInOrder(new object[] { 'X' });
+                    "kontoret" });
+                actual["gata"][0].Flags.Should().ContainInOrder(new[] { 'A' });
+                actual["kontoret"][0].Flags.Should().ContainInOrder(new object[] { 'X' });
             }
 
             [Fact]
@@ -701,24 +693,24 @@ namespace Hunspell.NetCore.Tests
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
 
-                actual.Entries.Should().HaveCount(4);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(4);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "foo",
                     "bar",
                     "bars",
-                    "foos");
-                actual.Entries["foo"][0].Flags.Should().ContainInOrder(new[] { 'S' });
-                actual.Entries["foo"][0].Morphs.ShouldBeEquivalentTo(new[] { "[1]" });
-                actual.Entries["foo"][1].Flags.Should().ContainInOrder(new[] { 'X', 'Y' });
-                actual.Entries["foo"][1].Morphs.ShouldBeEquivalentTo(new[] { "[2]" });
-                actual.Entries["foo"][2].Flags.Should().ContainInOrder(new[] { 'Y' });
-                actual.Entries["foo"][2].Morphs.ShouldBeEquivalentTo(new[] { "[3]" });
-                actual.Entries["foo"][3].Flags.Should().ContainInOrder(new[] { 'S' });
-                actual.Entries["foo"][3].Morphs.ShouldBeEquivalentTo(new[] { "[4]" });
-                actual.Entries["bar"][0].Flags.Should().ContainInOrder(new[] { 'S', 'Y' });
-                actual.Entries["bar"][0].Morphs.ShouldBeEquivalentTo(new[] { "[5]" });
-                actual.Entries["bars"][0].Flags.Should().ContainInOrder(new[] { 'X' });
-                actual.Entries["foos"][0].Flags.Should().ContainInOrder(new[] { 'X' });
+                    "foos" });
+                actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'S' });
+                actual["foo"][0].Morphs.ShouldBeEquivalentTo(new[] { "[1]" });
+                actual["foo"][1].Flags.Should().ContainInOrder(new[] { 'X', 'Y' });
+                actual["foo"][1].Morphs.ShouldBeEquivalentTo(new[] { "[2]" });
+                actual["foo"][2].Flags.Should().ContainInOrder(new[] { 'Y' });
+                actual["foo"][2].Morphs.ShouldBeEquivalentTo(new[] { "[3]" });
+                actual["foo"][3].Flags.Should().ContainInOrder(new[] { 'S' });
+                actual["foo"][3].Morphs.ShouldBeEquivalentTo(new[] { "[4]" });
+                actual["bar"][0].Flags.Should().ContainInOrder(new[] { 'S', 'Y' });
+                actual["bar"][0].Morphs.ShouldBeEquivalentTo(new[] { "[5]" });
+                actual["bars"][0].Flags.Should().ContainInOrder(new[] { 'X' });
+                actual["foos"][0].Flags.Should().ContainInOrder(new[] { 'X' });
             }
 
             [Fact]
@@ -728,12 +720,12 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(4);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(4);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "foo",
                     "bar",
                     "Baz",
-                    "Boo");
+                    "Boo" });
             }
 
             [Fact]
@@ -743,12 +735,12 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(4);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(4);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "Chișinău",
                     "Țepes",
                     "ț",
-                    "Ș");
+                    "Ș" });
             }
 
             [Fact]
@@ -758,10 +750,10 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(2);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(2);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "xmpl",
-                    "xprssn");
+                    "xprssn" });
             }
 
             [Fact]
@@ -788,8 +780,8 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(9);
-                actual.Entries.Should().ContainKeys(expectedWords);
+                actual.RootWords.Should().HaveCount(9);
+                actual.RootWords.ShouldBeEquivalentTo(expectedWords);
             }
 
             [Fact]
@@ -799,14 +791,14 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(2);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(2);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "ijs",
-                    "Ijs");
-                actual.Entries["ijs"].Should().HaveCount(1);
-                actual.Entries["ijs"][0].Flags.Should().ContainInOrder(new[] { 'i' });
-                actual.Entries["Ijs"].Should().HaveCount(1);
-                actual.Entries["Ijs"][0].Flags.Should().ContainInOrder(new[] { '*' });
+                    "Ijs" });
+                actual["ijs"].Should().HaveCount(1);
+                actual["ijs"][0].Flags.Should().ContainInOrder(new[] { 'i' });
+                actual["Ijs"].Should().HaveCount(1);
+                actual["Ijs"][0].Flags.Should().ContainInOrder(new[] { '*' });
             }
 
             [Fact]
@@ -816,13 +808,13 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(4);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(4);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "foo",
                     "Bar",
                     "baz.",
-                    "Quux.");
-                actual.Entries["baz."][0].Flags.Should().ContainInOrder(new[] { 'A' });
+                    "Quux." });
+                actual["baz."][0].Flags.Should().ContainInOrder(new[] { 'A' });
             }
 
             [Fact]
@@ -832,10 +824,10 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(2);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(2);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "들어오세요",
-                    "안녕하세요");
+                    "안녕하세요" });
             }
 
             [Fact]
@@ -845,11 +837,11 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(3);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(3);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "Frühstück",
                     "tükörfúró",
-                    "groß");
+                    "groß" });
             }
 
             [Fact]
@@ -859,8 +851,8 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(8);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(8);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "drink",
                     "drank",
                     "drunk",
@@ -868,15 +860,15 @@ namespace Hunspell.NetCore.Tests
                     "ate",
                     "eaten",
                     "phenomenon",
-                    "phenomena");
+                    "phenomena" });
 
-                actual.Entries["drink"].Should().HaveCount(2);
-                actual.Entries["drink"][0].Flags.Should().ContainInOrder(new[] { 'S' });
-                actual.Entries["drink"][0].Morphs.ShouldBeEquivalentTo(new[] { "po:noun" });
-                actual.Entries["drink"][1].Flags.Should().ContainInOrder(new[] { 'Q', 'R' });
-                actual.Entries["drink"][1].Morphs.Should().BeEquivalentTo(new[] { "po:verb", "al:drank", "al:drunk", "ts:present" });
-                actual.Entries["eaten"][0].Flags.Should().BeEmpty();
-                actual.Entries["eaten"][0].Morphs.Should().BeEquivalentTo(new[] { "po:verb", "st:eat", "is:past_2" });
+                actual["drink"].Should().HaveCount(2);
+                actual["drink"][0].Flags.Should().ContainInOrder(new[] { 'S' });
+                actual["drink"][0].Morphs.ShouldBeEquivalentTo(new[] { "po:noun" });
+                actual["drink"][1].Flags.Should().ContainInOrder(new[] { 'Q', 'R' });
+                actual["drink"][1].Morphs.Should().BeEquivalentTo(new[] { "po:verb", "al:drank", "al:drunk", "ts:present" });
+                actual["eaten"][0].Flags.Should().BeEmpty();
+                actual["eaten"][0].Morphs.Should().BeEquivalentTo(new[] { "po:verb", "st:eat", "is:past_2" });
             }
 
             [Fact]
@@ -886,12 +878,12 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(4);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(4);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "अलम्",
                     "क्यार",
                     "न्न",
-                    "र्‌य");
+                    "र्‌य" });
             }
 
             [Fact]
@@ -901,9 +893,8 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(1);
-                actual.Entries.Should().ContainKey("человек");
-                actual.Entries["человек"][0].Flags.Should().ContainInOrder(new[] { 2022, 2000, 101 }.OrderBy(x => x));
+                actual.RootWords.Should().HaveCount(1);
+                actual["человек"][0].Flags.Should().ContainInOrder(new[] { 2022, 2000, 101 }.OrderBy(x => x));
             }
 
             [Fact]
@@ -913,8 +904,8 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(10);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(10);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "Brasilia",
                     "brassily",
                     "Brazilian",
@@ -924,9 +915,9 @@ namespace Hunspell.NetCore.Tests
                     "brain",
                     "brass",
                     "Churchillian",
-                    "xxxxxxxxxx");
-                actual.Entries["xxxxxxxxxx"][0].Flags.Should().BeEmpty();
-                actual.Entries["xxxxxxxxxx"][0].Morphs.ShouldBeEquivalentTo(new[] { "ph:Brasilia" });
+                    "xxxxxxxxxx" });
+                actual["xxxxxxxxxx"][0].Flags.Should().BeEmpty();
+                actual["xxxxxxxxxx"][0].Morphs.ShouldBeEquivalentTo(new[] { "ph:Brasilia" });
             }
 
             [Fact]
@@ -936,16 +927,16 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(4);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(4);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "/",
                     "1/2",
                     "http://",
-                    "/usr/share/myspell/");
-                actual.Entries["/"][0].Flags.Should().BeEmpty();
-                actual.Entries["1/2"][0].Flags.Should().BeEmpty();
-                actual.Entries["http://"][0].Flags.Should().BeEmpty();
-                actual.Entries["/usr/share/myspell/"][0].Flags.Should().BeEmpty();
+                    "/usr/share/myspell/" });
+                actual["/"][0].Flags.Should().BeEmpty();
+                actual["1/2"][0].Flags.Should().BeEmpty();
+                actual["http://"][0].Flags.Should().BeEmpty();
+                actual["/usr/share/myspell/"][0].Flags.Should().BeEmpty();
             }
 
             [Fact]
@@ -955,8 +946,8 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(11);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(11);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "NASA",
                     "Gandhi",
                     "grateful",
@@ -967,9 +958,9 @@ namespace Hunspell.NetCore.Tests
                     "have",
                     "which",
                     "McDonald",
-                    "Mcdonald");
-                actual.Entries["McDonald"][0].Flags.Should().BeEmpty();
-                actual.Entries["Mcdonald"][0].Flags.ShouldBeEquivalentTo(new[] { SpecialFlags.OnlyUpcaseFlag });
+                    "Mcdonald" });
+                actual["McDonald"][0].Flags.Should().BeEmpty();
+                actual["Mcdonald"][0].Flags.ShouldBeEquivalentTo(new[] { SpecialFlags.OnlyUpcaseFlag });
             }
 
             [Fact]
@@ -979,8 +970,8 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(1);
-                actual.Entries.Should().ContainKey("apéritif");
+                actual.RootWords.Should().HaveCount(1);
+                actual.RootWords.Should().ContainSingle("apéritif");
             }
 
             [Fact]
@@ -990,8 +981,8 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(1);
-                actual.Entries.Should().ContainKey("apéritif");
+                actual.RootWords.Should().HaveCount(1);
+                actual.RootWords.Should().ContainSingle("apéritif");
             }
 
             [Fact]
@@ -1001,12 +992,12 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(4);
-                actual.Entries.Should().ContainKeys(
+                actual.RootWords.Should().HaveCount(4);
+                actual.RootWords.ShouldBeEquivalentTo(new[] {
                     "𐏑",
                     "𐏒",
                     "𐏒𐏑",
-                    "𐏒𐏒");
+                    "𐏒𐏒" });
             }
 
             [Fact]
@@ -1016,9 +1007,9 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(2);
-                actual.Entries.Should().ContainKeys("foo", "bar");
-                actual.Entries["foo"][0].Flags.Should().ContainInOrder(new[] { 'A', 'W' });
+                actual.RootWords.Should().HaveCount(2);
+                actual.RootWords.ShouldBeEquivalentTo(new[] { "foo", "bar" });
+                actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'A', 'W' });
             }
 
             [Fact]
@@ -1028,12 +1019,12 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await DictionaryReader.ReadFileAsync(filePath);
 
-                actual.Entries.Should().HaveCount(2);
-                actual.Entries.Should().ContainKeys("foo", "bar");
-                actual.Entries["foo"][0].Flags.Should().ContainInOrder(new[] { 'X', 'A' }.OrderBy(x => x));
-                actual.Entries["foo"][0].Morphs.ShouldBeEquivalentTo(new[] { "<FOO" });
-                actual.Entries["bar"][0].Flags.Should().ContainInOrder(new[] { 'X', 'A', 'B', 'C' }.OrderBy(x => x));
-                actual.Entries["bar"][0].Morphs.ShouldBeEquivalentTo(new[] { "<BAR" });
+                actual.RootWords.Should().HaveCount(2);
+                actual.RootWords.ShouldBeEquivalentTo(new[] { "foo", "bar" });
+                actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'X', 'A' }.OrderBy(x => x));
+                actual["foo"][0].Morphs.ShouldBeEquivalentTo(new[] { "<FOO" });
+                actual["bar"][0].Flags.Should().ContainInOrder(new[] { 'X', 'A', 'B', 'C' }.OrderBy(x => x));
+                actual["bar"][0].Morphs.ShouldBeEquivalentTo(new[] { "<BAR" });
             }
 
             public static IEnumerable<object[]> can_read_file_without_exception_args =>

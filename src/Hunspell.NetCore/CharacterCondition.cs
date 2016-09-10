@@ -56,7 +56,7 @@ namespace Hunspell
                 builder.Add(ParseSingle(captures[captureIndex].Value));
             }
 
-            return new CharacterConditionGroup(builder.ToImmutable());
+            return new CharacterConditionGroup(builder.MoveToOrCreateImmutable());
         }
 
         private static CharacterCondition ParseSingle(string text)
