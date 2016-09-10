@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Hunspell
 {
-    public class Hunspell
+    public sealed class Hunspell
     {
         public Hunspell(Dictionary dictionary)
         {

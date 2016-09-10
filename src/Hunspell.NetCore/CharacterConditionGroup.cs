@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
 namespace Hunspell
 {
-    public class CharacterConditionGroup : IReadOnlyList<CharacterCondition>
+    public sealed class CharacterConditionGroup : IReadOnlyList<CharacterCondition>
     {
         public static readonly CharacterConditionGroup Empty = new CharacterConditionGroup(ImmutableArray<CharacterCondition>.Empty);
 

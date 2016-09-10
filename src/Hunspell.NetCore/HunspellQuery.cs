@@ -3298,7 +3298,6 @@ namespace Hunspell
             int oldnumsyllable, oldnumsyllable2, oldwordnum, oldwordnum2;
             DictionaryEntry rv = null;
             DictionaryEntry rv_first = null;
-            string st;
             char ch = '\0';
             int cmin;
             int cmax;
@@ -3319,9 +3318,7 @@ namespace Hunspell
             cmin = Affix.CompoundMin;
             cmax = word.Length - cmin + 1;
 
-            st = word;
-            //var stChars = st.ToCharArray();
-            var stBuilder = StringBuilderPool.Get(st);
+            var st = new SimulatedCString(word);
 
             for (i = cmin; i < cmax; i++)
             {
@@ -3364,16 +3361,14 @@ namespace Hunspell
 
                             var neededSize = i + scpdPatternEntry.Pattern.Length + scpdPatternEntry.Pattern2.Length + (word.Length - (i + scpdPatternEntry.Pattern3.Length));
 
-                            stBuilder.WriteChars(scpdPatternEntry.Pattern, i);
+                            st.WriteChars(scpdPatternEntry.Pattern, i);
 
                             soldi = i;
                             i += scpdPatternEntry.Pattern.Length;
 
-                            stBuilder.WriteChars(scpdPatternEntry.Pattern2, i);
+                            st.WriteChars(scpdPatternEntry.Pattern2, i);
 
-                            stBuilder.WriteChars(soldi + scpdPatternEntry.Pattern3.Length, word, i + scpdPatternEntry.Pattern2.Length);
-
-                            st = stBuilder.AsTerminatedString();
+                            st.WriteChars(soldi + scpdPatternEntry.Pattern3.Length, word, i + scpdPatternEntry.Pattern2.Length);
 
                             oldlen = len;
                             len += scpdPatternEntry.Pattern.Length + scpdPatternEntry.Pattern2.Length - scpdPatternEntry.Pattern3.Length;
@@ -3383,11 +3378,10 @@ namespace Hunspell
                             cmax = len - Affix.CompoundMin + 1;
                         }
 
-                        if (i < stBuilder.Length)
+                        if (i < st.BufferLength)
                         {
-                            ch = stBuilder[i];
-                            stBuilder[i] = '\0';
-                            st = stBuilder.AsTerminatedString();
+                            ch = st[i];
+                            st[i] = '\0';
                         }
                         else
                         {
@@ -3400,7 +3394,7 @@ namespace Hunspell
                         // FIRST WORD
 
                         affixed = 1;
-                        var searchEntries = Lookup(st); // perhaps without prefix
+                        var searchEntries = Lookup(st.ToString()); // perhaps without prefix
                         var searchEntriesIndex = 0;
 
                         rv = searchEntriesIndex < searchEntries.Length ? searchEntries[searchEntriesIndex] : null;
@@ -3571,10 +3565,9 @@ namespace Hunspell
                         )
                         {
                             // else check forbiddenwords and needaffix
-                            if (i < stBuilder.Length)
+                            if (i < st.BufferLength)
                             {
-                                stBuilder[i] = ch;
-                                st = stBuilder.AsTerminatedString();
+                                st[i] = ch;
                             }
 
                             break;
@@ -3643,6 +3636,7 @@ namespace Hunspell
                             )
                         )
                         {
+                            st.Destroy();
                             return null;
                         }
 
@@ -3752,10 +3746,9 @@ namespace Hunspell
                             // NEXT WORD(S)
                             rv_first = rv;
 
-                            if (i < stBuilder.Length)
+                            if (i < st.BufferLength)
                             {
-                                stBuilder[i] = ch;
-                                st = stBuilder.AsTerminatedString();
+                                st[i] = ch;
                             }
 
                             do
@@ -3828,6 +3821,7 @@ namespace Hunspell
                                     && words[wnum + 1] != null
                                 )
                                 {
+                                    st.Destroy();
                                     return rv_first;
                                 }
 
@@ -3862,6 +3856,7 @@ namespace Hunspell
                                     )
                                 )
                                 {
+                                    st.Destroy();
                                     return null;
                                 }
 
@@ -3905,6 +3900,8 @@ namespace Hunspell
                                     )
                                 )
                                 {
+                                    st.Destroy();
+
                                     // forbid compound word, if it is a non compound word with typical fault
                                     if (Affix.CheckCompoundRep && CompoundReplacementCheck(word.Substring(0, len)))
                                     {
@@ -3937,6 +3934,7 @@ namespace Hunspell
                                     rv = AffixCheck(word.Substring(i), new FlagValue(), CompoundOptions.End);
                                     if (rv != null && DefCompoundCheck(ref words, wnum + 1, rv, null, 1))
                                     {
+                                        st.Destroy();
                                         return rv_first;
                                     }
 
@@ -4007,6 +4005,7 @@ namespace Hunspell
                                     )
                                 )
                                 {
+                                    st.Destroy();
                                     return null;
                                 }
 
@@ -4087,6 +4086,8 @@ namespace Hunspell
                                     )
                                 )
                                 {
+                                    st.Destroy();
+
                                     // forbid compound word, if it is a non compound word with typical fault
                                     if (Affix.CheckCompoundRep && CompoundReplacementCheck(word.Substring(0, len)))
                                     {
@@ -4130,6 +4131,7 @@ namespace Hunspell
                                     {
                                         if (Affix.CheckCompoundRep && CompoundReplacementCheck(word))
                                         {
+                                            st.Destroy();
                                             return null;
                                         }
 
@@ -4137,18 +4139,16 @@ namespace Hunspell
                                         if (StringEx.EqualsOffset(rv.Word, 0, word, i, rv.Word.Length))
                                         {
                                             var r = st[i + rv.Word.Length];
-                                            if (i + rv.Word.Length < stBuilder.Length)
+                                            if (i + rv.Word.Length < st.BufferLength)
                                             {
-                                                stBuilder[i + rv.Word.Length] = '\0';
-                                                st = stBuilder.AsTerminatedString();
+                                                st[i + rv.Word.Length] = '\0';
                                             }
 
                                             if (Affix.CheckCompoundRep && CompoundReplacementCheck(st))
                                             {
-                                                if (i + rv.Word.Length < stBuilder.Length)
+                                                if (i + rv.Word.Length < st.BufferLength)
                                                 {
-                                                    stBuilder[i + rv.Word.Length] = r;
-                                                    st = stBuilder.AsTerminatedString();
+                                                    st[i + rv.Word.Length] = r;
                                                 }
 
                                                 continue;
@@ -4170,19 +4170,20 @@ namespace Hunspell
                                                     && StringEx.EqualsOffset(rv2.Word, 0, st, 0, i + rv.Word.Length)
                                                 )
                                                 {
+                                                    st.Destroy();
                                                     return null;
                                                 }
                                             }
 
 
-                                            if (i + rv.Word.Length < stBuilder.Length)
+                                            if (i + rv.Word.Length < st.BufferLength)
                                             {
-                                                stBuilder[i + rv.Word.Length] = r;
-                                                st = stBuilder.AsTerminatedString();
+                                                st[i + rv.Word.Length] = r;
                                             }
                                         }
                                     }
 
+                                    st.Destroy();
                                     return rv_first;
                                 }
                             }
@@ -4217,26 +4218,21 @@ namespace Hunspell
                     if (soldi != 0)
                     {
                         i = soldi;
-                        st = word;
-                        stBuilder.Clear();
-                        stBuilder.Append(st);
+                        st.Assign(word);
                         soldi = 0;
                     }
                     else
                     {
-                        if (i < stBuilder.Length)
+                        if (i < st.BufferLength)
                         {
-                            stBuilder[i] = ch;
+                            st[i] = ch;
                         }
-
-                        st = stBuilder.AsTerminatedString();
                     }
                 }
                 while (Affix.HasCompoundRules && oldwordnum == 0 && onlycpdrule++ < 1);
             }
 
-            StringBuilderPool.Return(stBuilder);
-
+            st.Destroy();
             return null;
         }
 

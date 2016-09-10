@@ -9,7 +9,7 @@ namespace Hunspell
 {
     public partial class AffixConfig
     {
-        public class Builder
+        public sealed class Builder
         {
             /// <summary>
             /// Various affix options.

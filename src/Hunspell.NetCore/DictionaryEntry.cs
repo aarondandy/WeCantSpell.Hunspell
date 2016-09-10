@@ -2,7 +2,7 @@
 
 namespace Hunspell
 {
-    public class DictionaryEntry
+    public sealed class DictionaryEntry
     {
         public DictionaryEntry(string word, ImmutableSortedSet<FlagValue> flags, ImmutableArray<string> morphs, DictionaryEntryOptions options)
         {

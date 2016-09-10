@@ -7,7 +7,7 @@ namespace Hunspell
 {
     public partial class Dictionary
     {
-        public class Builder
+        public sealed class Builder
         {
             public Builder()
             {

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Hunspell
 {
-    public class StaticEncodingLineReader : IHunspellLineReader, IDisposable
+    public sealed class StaticEncodingLineReader : IHunspellLineReader, IDisposable
     {
         public StaticEncodingLineReader(Stream stream, Encoding encoding)
         {

@@ -22,7 +22,7 @@ namespace Hunspell.NetCore.Performance.Tests
         [GcMeasurement(GcMetric.TotalCollections, GcGeneration.AllGc)]
         [TimingMeasurement]
         [CounterMeasurement(nameof(SuggestionQueries))]
-        [CounterThroughputAssertion(nameof(SuggestionQueries), MustBe.GreaterThanOrEqualTo, 1000)]
+        [CounterThroughputAssertion(nameof(SuggestionQueries), MustBe.GreaterThanOrEqualTo, 200000)]
         public void Benchmark(BenchmarkContext context)
         {
             foreach (var word in Words)

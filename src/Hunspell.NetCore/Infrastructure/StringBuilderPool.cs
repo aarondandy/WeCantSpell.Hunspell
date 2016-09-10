@@ -67,7 +67,7 @@ namespace Hunspell.Infrastructure
 #endif
         public static void Return(StringBuilder builder)
         {
-            if (builder.Capacity <= MaxCachedBuilderCapacity)
+            if (builder != null && builder.Capacity <= MaxCachedBuilderCapacity)
             {
                 ThreadCache = builder;
             }

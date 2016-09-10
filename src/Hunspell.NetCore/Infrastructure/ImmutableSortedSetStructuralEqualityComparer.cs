@@ -4,7 +4,7 @@ using System.Collections.Immutable;
 
 namespace Hunspell.Infrastructure
 {
-    internal class ImmutableSortedSetStructuralEqualityComparer<T> : IEqualityComparer<ImmutableSortedSet<T>>
+    internal sealed class ImmutableSortedSetStructuralEqualityComparer<T> : IEqualityComparer<ImmutableSortedSet<T>>
         where T : IEquatable<T>
     {
         public static ImmutableSortedSetStructuralEqualityComparer<T> Default = new ImmutableSortedSetStructuralEqualityComparer<T>();

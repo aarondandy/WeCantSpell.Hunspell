@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Hunspell
 {
-    public partial class Dictionary
+    public sealed partial class Dictionary
     {
         private Dictionary(AffixConfig affix)
         {

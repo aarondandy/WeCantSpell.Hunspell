@@ -73,6 +73,7 @@
     <Compile Include="Infrastructure\ImmutableArrayStructuralEqualityComparer.cs" />
     <Compile Include="Infrastructure\ImmutableEx.cs" />
     <Compile Include="Infrastructure\ImmutableSortedSetStructuralEqualityComparer.cs" />
+    <Compile Include="Infrastructure\SimulatedCString.cs" />
     <Compile Include="Infrastructure\StringBuilderEx.cs" />
     <Compile Include="Infrastructure\StringBuilderPool.cs" />
     <Compile Include="Infrastructure\Swapper.cs" />
