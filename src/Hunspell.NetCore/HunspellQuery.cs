@@ -39,7 +39,6 @@ namespace Hunspell
 
         private const int MaxPhoneTUtf8Len = MaxPhoneTLen * 4;
 
-
         /// <summary>
         /// Timelimit: max ~1/4 sec (process time on Linux) for a time consuming function.
         /// </summary>

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 
 namespace Hunspell
 {
@@ -20,10 +21,6 @@ namespace Hunspell
         private static readonly Regex InitialLineRegex = new Regex(
             @"^\s*(\d+)\s*(?:[#].*)?$",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
-        private static readonly Regex WordLineRegex = new Regex(
-            @"^[\t ]*(?<word>[^\t ]+?)((?<!\\)[/](?<flags>[^\t ]+))?([\t ]+(?<morphs>[^\t ]+))*[\t ]*$",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture);
 
         private Dictionary.Builder Builder { get; }
 
@@ -123,22 +120,19 @@ namespace Hunspell
                 Builder.Entries = new Dictionary<string, List<DictionaryEntry>>();
             }
 
-            var match = WordLineRegex.Match(line);
-            if (!match.Success)
+            var parsed = ParsedWordLine.Parse(line);
+            if (string.IsNullOrEmpty(parsed.Word))
             {
                 return false;
             }
 
-            var word = match.Groups["word"].Value.Replace(@"\/", @"/");
-
-            var flagGroup = match.Groups["flags"];
             ImmutableSortedSet<FlagValue> flags;
-            if (flagGroup.Success)
+            if (!string.IsNullOrEmpty(parsed.Flags))
             {
                 if (Affix.IsAliasF)
                 {
                     int flagAliasNumber;
-                    if (IntEx.TryParseInvariant(flagGroup.Value, out flagAliasNumber) && flagAliasNumber > 0 && flagAliasNumber <= Affix.AliasF.Length)
+                    if (IntEx.TryParseInvariant(parsed.Flags, out flagAliasNumber) && flagAliasNumber > 0 && flagAliasNumber <= Affix.AliasF.Length)
                     {
                         flags = Affix.AliasF[flagAliasNumber - 1];
                     }
@@ -150,12 +144,12 @@ namespace Hunspell
                 }
                 else if (Affix.FlagMode == FlagMode.Uni)
                 {
-                    var utf8Flags = Encoding.UTF8.GetString(Affix.Encoding.GetBytes(flagGroup.Value));
+                    var utf8Flags = Encoding.UTF8.GetString(Affix.Encoding.GetBytes(parsed.Flags));
                     flags = FlagValue.ParseFlags(utf8Flags, FlagMode.Char).ToImmutableSortedSet();
                 }
                 else
                 {
-                    flags = FlagValue.ParseFlags(flagGroup.Value, Affix.FlagMode).ToImmutableSortedSet();
+                    flags = FlagValue.ParseFlags(parsed.Flags, Affix.FlagMode).ToImmutableSortedSet();
                 }
             }
             else
@@ -164,13 +158,12 @@ namespace Hunspell
             }
 
             ImmutableArray<string> morphs;
-            var morphGroup = match.Groups["morphs"];
-            if (morphGroup.Success)
+            if (parsed.Morphs != null && parsed.Morphs.Length != 0)
             {
-                var morphBuilder = ImmutableArray.CreateBuilder<string>(morphGroup.Captures.Count);
-                for (int i = 0; i < morphGroup.Captures.Count; i++)
+                var morphBuilder = ImmutableArray.CreateBuilder<string>(parsed.Morphs.Length);
+                for (int i = 0; i < parsed.Morphs.Length; i++)
                 {
-                    morphBuilder.Add(morphGroup.Captures[i].Value);
+                    morphBuilder.Add(parsed.Morphs[i]);
                 }
 
                 morphs = morphBuilder.MoveToOrCreateImmutable();
@@ -180,7 +173,7 @@ namespace Hunspell
                 morphs = ImmutableArray<string>.Empty;
             }
 
-            return AddWord(word, flags, morphs);
+            return AddWord(parsed.Word, flags, morphs);
         }
 
         private bool AttemptToProcessInitializationLine(string line)
@@ -342,6 +335,128 @@ namespace Hunspell
             }
 
             return false;
+        }
+
+        private struct ParsedWordLine
+        {
+            public string Word;
+            public string Flags;
+            public string[] Morphs;
+
+            private static readonly Regex MorphPartRegex = new Regex(
+                @"\G([\t ]+(?<morphs>[^\t ]+))*[\t ]*$",
+                RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture);
+
+            public static ParsedWordLine Parse(string line)
+            {
+                var firstNonDelimiterPosition = IndexOfNonDelimiter(line, 0);
+                if (firstNonDelimiterPosition >= 0)
+                {
+                    var endOfWordAndFlagsPosition = IndexOfDelimiter(line, firstNonDelimiterPosition + 1);
+                    if (endOfWordAndFlagsPosition < 0)
+                    {
+                        endOfWordAndFlagsPosition = line.Length;
+                    }
+
+                    var flagsDelimiterPosition = IndexOfFlagsDelimiter(line, firstNonDelimiterPosition, endOfWordAndFlagsPosition);
+
+                    string word;
+                    string flagsPart;
+                    if (flagsDelimiterPosition < 0)
+                    {
+                        word = line.Substring(firstNonDelimiterPosition, endOfWordAndFlagsPosition - firstNonDelimiterPosition);
+                        flagsPart = null;
+                    }
+                    else
+                    {
+                        word = line.Substring(firstNonDelimiterPosition, flagsDelimiterPosition - firstNonDelimiterPosition);
+                        flagsPart = line.Substring(flagsDelimiterPosition + 1, endOfWordAndFlagsPosition - flagsDelimiterPosition - 1);
+                    }
+
+                    if (!string.IsNullOrEmpty(word))
+                    {
+                        var morphGroup = endOfWordAndFlagsPosition >= 0 && endOfWordAndFlagsPosition != line.Length
+                            ? MorphPartRegex.Match(line, endOfWordAndFlagsPosition).Groups["morphs"]
+                            : null;
+
+                        return new ParsedWordLine
+                        {
+                            Word = word.Replace(@"\/", @"/"),
+                            Flags = flagsPart,
+                            Morphs = morphGroup != null && morphGroup.Success ? GetCapturesAsTest(morphGroup.Captures) : null
+                        };
+                    }
+                }
+
+                return default(ParsedWordLine);
+            }
+
+            private static string[] GetCapturesAsTest(CaptureCollection collection)
+            {
+                var results = new string[collection.Count];
+                for (var i = 0; i < collection.Count; i++)
+                {
+                    results[i] = collection[i].Value;
+                }
+
+                return results;
+            }
+
+            private static int IndexOfFlagsDelimiter(string text, int startIndex, int boundaryIndex)
+            {
+                // NOTE: the first character is ignored as a single slash should be treated as a word
+                for (var i = startIndex + 1; i < boundaryIndex; i++)
+                {
+                    if (text[i] == '/' && text[i - 1] != '\\')
+                    {
+                        return i;
+                    }
+                }
+
+                return -1;
+            }
+
+            private static int IndexOfNonDelimiter(string text, int startIndex)
+            {
+                for (var i = startIndex; i < text.Length; i++)
+                {
+                    if (IsNotDelimiter(text[i]))
+                    {
+                        return i;
+                    }
+                }
+
+                return -1;
+            }
+
+            private static int IndexOfDelimiter(string text, int startIndex)
+            {
+                for (var i = startIndex; i < text.Length; i++)
+                {
+                    if (IsDelimiter(text[i]))
+                    {
+                        return i;
+                    }
+                }
+
+                return -1;
+            }
+
+#if !PRE_NETSTANDARD && !DEBUG
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            private static bool IsDelimiter(char c)
+            {
+                return c == ' ' || c == '\t';
+            }
+
+#if !PRE_NETSTANDARD && !DEBUG
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            private static bool IsNotDelimiter(char c)
+            {
+                return c != ' ' && c != '\t';
+            }
         }
     }
 }

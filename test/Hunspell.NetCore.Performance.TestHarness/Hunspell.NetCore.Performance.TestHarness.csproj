@@ -51,14 +51,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\samples\English %28American%29.aff">
-      <Link>English %28American%29.aff</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\samples\English %28American%29.dic">
-      <Link>English %28American%29.dic</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
@@ -70,11 +62,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\hunspell-origin\tests\suggestiontest\List_of_common_misspellings.txt">
-      <Link>List_of_common_misspellings.txt</Link>
+      <Link>files\List_of_common_misspellings.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="..\..\samples\English %28American%29.txt">
-      <Link>English %28American%29.txt</Link>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\samples\*.*">
+      <Link>files\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
