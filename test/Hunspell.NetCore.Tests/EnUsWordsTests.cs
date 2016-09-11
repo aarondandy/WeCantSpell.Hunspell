@@ -14,8 +14,8 @@ namespace Hunspell.NetCore.Tests
         [Fact]
         public async Task most_wrong_words_are_not_found()
         {
-            var words = await LoadMistakesAsync();
-            var spell = await LoadEnUsAsync();
+            var words = await LoadMistakesAsync().ConfigureAwait(false);
+            var spell = await LoadEnUsAsync().ConfigureAwait(false);
 
             var negativeCases = new List<CommonSpellingMistake>();
             foreach(var word in words)
@@ -32,8 +32,8 @@ namespace Hunspell.NetCore.Tests
         [Fact]
         public async Task most_correct_words_are_found()
         {
-            var words = await LoadMistakesAsync();
-            var spell = await LoadEnUsAsync();
+            var words = await LoadMistakesAsync().ConfigureAwait(false);
+            var spell = await LoadEnUsAsync().ConfigureAwait(false);
 
             var negativeCases = new List<CommonSpellingMistake>();
             foreach (var word in words)
@@ -50,11 +50,11 @@ namespace Hunspell.NetCore.Tests
         [Fact]
         public async Task most_correct_words_are_suggested_for_wrong_words()
         {
-            var words = await LoadMistakesAsync();
-            words = words.Take(words.Count / 100).ToList(); // TODO: remove when performance gets better
-            var spell = await LoadEnUsAsync();
+            var words = await LoadMistakesAsync().ConfigureAwait(false);
+            words = words.Take(10).ToList(); // TODO: remove when performance gets better
+            var spell = await LoadEnUsAsync().ConfigureAwait(false);
 
-            var negativeCases = new List<Tuple<CommonSpellingMistake,List<string>>>();
+            var negativeCases = new List<CommonSpellingMistake>();
             foreach (var word in words)
             {
                 if (spell.Check(word.Correct) && !spell.Check(word.Wrong))
@@ -62,7 +62,7 @@ namespace Hunspell.NetCore.Tests
                     var suggestions = spell.Suggest(word.Wrong);
                     if (!suggestions.Contains(word.Correct))
                     {
-                        negativeCases.Add(Tuple.Create(word, suggestions));
+                        negativeCases.Add(word);
                     }
                 }
             }
@@ -81,7 +81,7 @@ namespace Hunspell.NetCore.Tests
             using (var fileReader = new StreamReader("files/List_of_common_misspellings.txt", Encoding.UTF8, true))
             {
                 string line;
-                while ((line = await fileReader.ReadLineAsync()) != null)
+                while ((line = await fileReader.ReadLineAsync().ConfigureAwait(false)) != null)
                 {
                     if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#") || line.StartsWith("["))
                     {

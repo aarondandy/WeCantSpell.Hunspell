@@ -36,6 +36,70 @@ namespace Hunspell
 
     internal static class MultiReplacementEntryExtensions
     {
+        public static bool TryConvert(this ImmutableSortedDictionary<string, MultiReplacementEntry> entries, string input, out string converted)
+        {
+            var convertedBuilder = StringBuilderPool.Get(input.Length);
+
+            var appliedConversion = false;
+            for (var i = 0; i < input.Length; i++)
+            {
+                var replacementEntry = entries.FindLargestMatchingConversion(input.Substring(i));
+                var replacementText = replacementEntry == null
+                    ? string.Empty
+                    : ExtractReplacementText(input.Length - i, replacementEntry, i == 0);
+
+                if (replacementText.Length == 0)
+                {
+                    convertedBuilder.Append(input[i]);
+                }
+                else
+                {
+                    convertedBuilder.Append(replacementText);
+                    i += replacementEntry.Pattern.Length - 1;
+                    appliedConversion = true;
+                }
+            }
+
+            converted = StringBuilderPool.GetStringAndReturn(convertedBuilder);
+
+            return appliedConversion;
+        }
+
+        public static string ExtractReplacementText(int remainingCharactersToReplace, ReplacementEntry entry, bool atStart)
+        {
+            var type = remainingCharactersToReplace == entry.Pattern.Length
+                ? (atStart ? ReplacementValueType.Isol : ReplacementValueType.Fin)
+                : (atStart ? ReplacementValueType.Ini : ReplacementValueType.Med);
+
+            while (type != ReplacementValueType.Med && string.IsNullOrEmpty(entry[type]))
+            {
+                type = (type == ReplacementValueType.Fin && !atStart) ? ReplacementValueType.Med : type - 1;
+            }
+
+            return entry[type] ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Finds a conversion matching the longest version of the given <paramref name="text"/> from the left.
+        /// </summary>
+        /// <param name="text">The text to find a matching input conversion for.</param>
+        /// <param name="conversions">The conversions to search within.</param>
+        /// <returns>The best matching input conversion.</returns>
+        /// <seealso cref="MultiReplacementEntry"/>
+        public static MultiReplacementEntry FindLargestMatchingConversion(this ImmutableSortedDictionary<string, MultiReplacementEntry> conversions, string text)
+        {
+            for (var searchLength = text.Length; searchLength > 0; searchLength--)
+            {
+                MultiReplacementEntry entry = null;
+                if (conversions.TryGetValue(text.Substring(0, searchLength), out entry))
+                {
+                    return entry;
+                }
+            }
+
+            return null;
+        }
+
         public static bool AddReplacementEntry(this Dictionary<string, string[]> list, string pattern1, string pattern2)
         {
             if (string.IsNullOrEmpty(pattern1) || pattern2 == null)

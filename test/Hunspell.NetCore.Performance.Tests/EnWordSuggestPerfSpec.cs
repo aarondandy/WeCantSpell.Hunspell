@@ -1,4 +1,5 @@
-﻿using NBench;
+﻿using System.Linq;
+using NBench;
 
 namespace Hunspell.NetCore.Performance.Tests
 {
@@ -22,12 +23,12 @@ namespace Hunspell.NetCore.Performance.Tests
         [GcMeasurement(GcMetric.TotalCollections, GcGeneration.AllGc)]
         [TimingMeasurement]
         [CounterMeasurement(nameof(SuggestionQueries))]
-        [CounterThroughputAssertion(nameof(SuggestionQueries), MustBe.GreaterThanOrEqualTo, 200000)]
+        [CounterThroughputAssertion(nameof(SuggestionQueries), MustBe.GreaterThanOrEqualTo, 30)]
         public void Benchmark(BenchmarkContext context)
         {
-            foreach (var word in Words)
+            foreach (var word in Words.Take(100)) // TODO: remove the limit to allow the entire list
             {
-                var result = Checker.Check(word);
+                var result = Checker.Suggest(word);
                 SuggestionQueries.Increment();
             }
         }

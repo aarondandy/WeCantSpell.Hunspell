@@ -141,5 +141,69 @@ namespace Hunspell.Infrastructure
 
             return false;
         }
+
+        public static string ConcatSubstring(string str0, int startIndex0, int count0, string str1)
+        {
+            var builder = StringBuilderPool.Get(str1.Length + count0);
+
+            builder.Append(str0, startIndex0, count0);
+            builder.Append(str1);
+
+            return StringBuilderPool.GetStringAndReturn(builder);
+        }
+
+        public static string ConcatSubstring(string str0, string str1, int startIndex1, int count1)
+        {
+            var builder = StringBuilderPool.Get(str0.Length + count1);
+
+            builder.Append(str0);
+            builder.Append(str1, startIndex1, count1);
+
+            return StringBuilderPool.GetStringAndReturn(builder);
+        }
+
+        public static bool IsReverseSubset(string s1, string s2)
+        {
+            var len = s2.Length;
+            var index1 = 0;
+            var index2 = len - 1;
+            while
+            (
+                len > 0
+                &&
+                index1 < s1.Length
+                &&
+                (
+                    (s1[index1] == s2[index2])
+                    ||
+                    (s1[index1] == '.')
+                )
+            )
+            {
+                index1++;
+                index2--;
+                len--;
+            }
+
+            return index1 >= s1.Length;
+        }
+
+        public static bool IsSubset(string s1, string s2)
+        {
+            if (s1.Length > s2.Length)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < s1.Length; i++)
+            {
+                if (s1[i] != '.' && s1[i] != s2[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 }

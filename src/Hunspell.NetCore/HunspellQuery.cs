@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using System.Runtime.CompilerServices;
 
 namespace Hunspell
 {
@@ -144,7 +145,7 @@ namespace Hunspell
 
             // input conversion
             string convertedWord;
-            if (!Affix.HasInputConversions || !TryConvertInput(word, out convertedWord))
+            if (!Affix.HasInputConversions || !Affix.InputConversions.TryConvert(word, out convertedWord))
             {
                 convertedWord = word;
             }
@@ -162,7 +163,7 @@ namespace Hunspell
             }
 
             var resultType = SpellCheckResultType.None;
-            var root = string.Empty;
+            string root = null;
 
             DictionaryEntry rv;
 
@@ -173,16 +174,16 @@ namespace Hunspell
                     resultType |= SpellCheckResultType.OrigCap;
                 }
 
-                rv = CheckWord(scw, ref resultType, ref root);
+                rv = CheckWord(scw, ref resultType, out root);
                 if (abbv != 0 && rv == null)
                 {
                     var u8buffer = scw + ".";
-                    rv = CheckWord(u8buffer, ref resultType, ref root);
+                    rv = CheckWord(u8buffer, ref resultType, out root);
                 }
             }
             else if (capType == CapitalizationType.All)
             {
-                rv = CheckDetailsAllCap(abbv, ref scw, ref resultType, ref root);
+                rv = CheckDetailsAllCap(abbv, ref scw, ref resultType, out root);
             }
             else
             {
@@ -191,7 +192,7 @@ namespace Hunspell
 
             if (capType == CapitalizationType.Init || (capType == CapitalizationType.All && rv == null))
             {
-                rv = CheckDetailsInitCap(abbv, capType, ref scw, ref resultType, ref root);
+                rv = CheckDetailsInitCap(abbv, capType, ref scw, ref resultType, out root);
             }
 
             if (rv != null)
@@ -296,10 +297,10 @@ namespace Hunspell
             return new SpellCheckResult(root, resultType, false);
         }
 
-        private DictionaryEntry CheckDetailsAllCap(int abbv, ref string scw, ref SpellCheckResultType resultType, ref string root)
+        private DictionaryEntry CheckDetailsAllCap(int abbv, ref string scw, ref SpellCheckResultType resultType, out string root)
         {
             resultType |= SpellCheckResultType.OrigCap;
-            var rv = CheckWord(scw, ref resultType, ref root);
+            var rv = CheckWord(scw, ref resultType, out root);
             if (rv != null)
             {
                 return rv;
@@ -308,7 +309,7 @@ namespace Hunspell
             if (abbv != 0)
             {
                 var u8buffer = scw + ".";
-                rv = CheckWord(u8buffer, ref resultType, ref root);
+                rv = CheckWord(u8buffer, ref resultType, out root);
                 if (rv != null)
                 {
                     return rv;
@@ -321,24 +322,20 @@ namespace Hunspell
             var apos = scw.IndexOf('\'');
             if (apos >= 0)
             {
-                MakeAllSmall2(ref scw);
+                scw = MakeAllSmall(scw);
 
                 // conversion may result in string with different len than before MakeAllSmall2 so re-scan
                 if (apos < scw.Length - 1)
                 {
-                    var part1 = scw.Substring(0, apos + 1);
-                    var part2 = scw.Substring(apos + 1);
-
-                    MakeInitCap2(ref part2);
-                    scw = part1 + part2;
-                    rv = CheckWord(scw, ref resultType, ref root);
+                    scw = StringEx.ConcatSubstring(scw, 0, apos + 1, MakeInitCap(scw.Substring(apos + 1)));
+                    rv = CheckWord(scw, ref resultType, out root);
                     if (rv != null)
                     {
                         return rv;
                     }
 
-                    MakeInitCap2(ref scw);
-                    rv = CheckWord(scw, ref resultType, ref root);
+                    scw = MakeInitCap(scw);
+                    rv = CheckWord(scw, ref resultType, out root);
                     if (rv != null)
                     {
                         return rv;
@@ -348,24 +345,23 @@ namespace Hunspell
 
             if (Affix.CheckSharps && scw.Contains("SS"))
             {
-                MakeAllSmall2(ref scw);
-
+                scw = MakeAllSmall(scw);
                 var u8buffer = scw;
-                rv = SpellSharps(ref u8buffer, 0, 0, 0, ref resultType, ref root);
+                rv = SpellSharps(ref u8buffer, 0, 0, 0, ref resultType, out root);
                 if (rv == null)
                 {
-                    MakeInitCap2(ref scw);
-                    rv = SpellSharps(ref scw, 0, 0, 0, ref resultType, ref root);
+                    scw = MakeInitCap(scw);
+                    rv = SpellSharps(ref scw, 0, 0, 0, ref resultType, out root);
                 }
 
                 if (abbv != 0 && rv == null)
                 {
                     u8buffer += ".";
-                    rv = SpellSharps(ref u8buffer, 0, 0, 0, ref resultType, ref root);
+                    rv = SpellSharps(ref u8buffer, 0, 0, 0, ref resultType, out root);
                     if (rv == null)
                     {
                         u8buffer = scw + ".";
-                        rv = SpellSharps(ref u8buffer, 0, 0, 0, ref resultType, ref root);
+                        rv = SpellSharps(ref u8buffer, 0, 0, 0, ref resultType, out root);
                     }
                 }
             }
@@ -373,19 +369,18 @@ namespace Hunspell
             return rv;
         }
 
-        private DictionaryEntry CheckDetailsInitCap(int abbv, CapitalizationType capType, ref string scw, ref SpellCheckResultType resultType, ref string root)
+        private DictionaryEntry CheckDetailsInitCap(int abbv, CapitalizationType capType, ref string scw, ref SpellCheckResultType resultType, out string root)
         {
             resultType |= SpellCheckResultType.OrigCap;
-            MakeAllSmall2(ref scw);
-            var u8buffer = scw;
-            MakeInitCap2(ref scw);
+            var u8buffer = MakeAllSmall(scw);
+            scw = MakeInitCap(u8buffer);
 
             if (capType == CapitalizationType.Init)
             {
                 resultType |= SpellCheckResultType.InitCap;
             }
 
-            var rv = CheckWord(scw, ref resultType, ref root);
+            var rv = CheckWord(scw, ref resultType, out root);
 
             if (capType == CapitalizationType.Init)
             {
@@ -412,12 +407,12 @@ namespace Hunspell
                 return rv;
             }
 
-            rv = CheckWord(u8buffer, ref resultType, ref root);
+            rv = CheckWord(u8buffer, ref resultType, out root);
 
             if (abbv != 0 && rv == null)
             {
                 u8buffer += ".";
-                rv = CheckWord(u8buffer, ref resultType, ref root);
+                rv = CheckWord(u8buffer, ref resultType, out root);
                 if (rv == null)
                 {
                     u8buffer = scw;
@@ -427,7 +422,7 @@ namespace Hunspell
                         resultType |= SpellCheckResultType.InitCap;
                     }
 
-                    rv = CheckWord(u8buffer, ref resultType, ref root);
+                    rv = CheckWord(u8buffer, ref resultType, out root);
 
                     if (capType == CapitalizationType.Init)
                     {
@@ -492,11 +487,11 @@ namespace Hunspell
             CapitalizationType capType;
             int abbv;
             string scw;
-            string root = null;
+            string root;
 
             // input conversion
             string convertedWord;
-            if (!Affix.HasInputConversions || !TryConvertInput(word, out convertedWord))
+            if (!Affix.HasInputConversions || !Affix.InputConversions.TryConvert(word, out convertedWord))
             {
                 convertedWord = word;
             }
@@ -512,7 +507,7 @@ namespace Hunspell
             if (capType == CapitalizationType.None && Affix.ForceUpperCase.HasValue)
             {
                 var info = SpellCheckResultType.OrigCap;
-                if (CheckWord(scw, ref info, ref root) != null)
+                if (CheckWord(scw, ref info, out root) != null)
                 {
                     var form = scw;
                     form = MakeInitCap(form);
@@ -529,9 +524,7 @@ namespace Hunspell
             {
                 capWords = 1;
                 Suggest(slst, scw, ref onlyCompoundSuggest);
-                var wspace = scw;
-                MakeAllSmall2(ref wspace);
-                Suggest(slst, wspace, ref onlyCompoundSuggest);
+                Suggest(slst, MakeAllSmall(scw), ref onlyCompoundSuggest);
             }
             else if (capType == CapitalizationType.Huh || capType == CapitalizationType.HuhInit)
             {
@@ -555,17 +548,13 @@ namespace Hunspell
                     }
                 }
 
-                string wspace;
                 if (capType == CapitalizationType.HuhInit)
                 {
                     // TheOpenOffice.org -> The OpenOffice.org
-                    wspace = scw;
-                    MakeInitSmall2(ref wspace);
-                    Suggest(slst, wspace, ref onlyCompoundSuggest);
+                    Suggest(slst, MakeInitSmall(scw), ref onlyCompoundSuggest);
                 }
 
-                wspace = scw;
-                MakeAllSmall2(ref wspace);
+                var wspace = MakeAllSmall(scw);
                 if (Check(wspace))
                 {
                     InsertSuggestion(slst, wspace);
@@ -576,7 +565,7 @@ namespace Hunspell
 
                 if (capType == CapitalizationType.HuhInit)
                 {
-                    MakeInitCap2(ref wspace);
+                    wspace = MakeInitCap(wspace);
                     if (Check(wspace))
                     {
                         InsertSuggestion(slst, wspace);
@@ -596,27 +585,24 @@ namespace Hunspell
                         // different case after space (need capitalisation)
                         if ((slen < wl) && !StringEx.EqualsOffset(scw, wl - slen, slst[j], 1 + spaceIndex))
                         {
-                            var first = slst[j].Substring(0, spaceIndex + 1);
-                            var second = slst[j].Substring(spaceIndex + 1);
-                            MakeInitCap2(ref second);
+                            var removed = slst[j];
                             // set as first suggestion
                             slst.RemoveAt(j);
-                            slst.Insert(0, first + second);
+                            slst.Insert(0, StringEx.ConcatSubstring(removed, 0, spaceIndex + 1, MakeInitCap(removed.Substring(spaceIndex + 1))));
                         }
                     }
                 }
             }
             else if (capType == CapitalizationType.All)
             {
-                var wspace = scw;
-                MakeAllSmall2(ref wspace);
+                var wspace = MakeAllSmall(scw);
                 Suggest(slst, wspace, ref onlyCompoundSuggest);
                 if (Affix.KeepCase.HasValue && Check(wspace))
                 {
                     InsertSuggestion(slst, wspace);
                 }
 
-                MakeInitCap2(ref wspace);
+                wspace = MakeInitCap(wspace);
                 Suggest(slst, wspace, ref onlyCompoundSuggest);
                 for (var j = 0; j < slst.Count; j++)
                 {
@@ -659,21 +645,16 @@ namespace Hunspell
                         capWords = 1;
                     }
 
-                    var wspace = scw;
-                    MakeAllSmall2(ref wspace);
-                    NGramSuggest(slst, wspace);
+                    NGramSuggest(slst, MakeAllSmall(scw));
                 }
                 else if (capType == CapitalizationType.Init)
                 {
                     capWords = 1;
-                    var wspace = scw;
-                    MakeAllSmall2(ref wspace);
-                    NGramSuggest(slst, wspace);
+                    NGramSuggest(slst, MakeAllSmall(scw));
                 }
                 else if (capType == CapitalizationType.All)
                 {
-                    var wspace = scw;
-                    MakeAllSmall2(ref wspace);
+                    var wspace = MakeAllSmall(scw);
                     var oldns = slst.Count;
                     NGramSuggest(slst, wspace);
                     for (var j = oldns; j < slst.Count; j++)
@@ -775,9 +756,7 @@ namespace Hunspell
                     {
                         if (!slst[j].Contains(' ') && !Check(slst[j]))
                         {
-                            string s;
-                            s = slst[j];
-                            MakeAllSmall2(ref s);
+                            var s = MakeAllSmall(slst[j]);
                             if (Check(s))
                             {
                                 slst[l] = s;
@@ -785,7 +764,7 @@ namespace Hunspell
                             }
                             else
                             {
-                                MakeInitCap2(ref s);
+                                s = MakeInitCap(s);
                                 if (Check(s))
                                 {
                                     slst[l] = s;
@@ -815,7 +794,7 @@ namespace Hunspell
                 for (var j = 0; j < slst.Count; j++)
                 {
                     string wspace;
-                    if (TryConvertOutput(slst[j], out wspace))
+                    if (Affix.OutputConversions.TryConvert(slst[j], out wspace))
                     {
                         slst[j] = wspace;
                     }
@@ -827,23 +806,26 @@ namespace Hunspell
 
         private void Suggest(List<string> slst, string w, ref int onlyCompoundSug)
         {
-            var noCompoundTwoWords = 0;
+            var noCompoundTwoWords = false;
             var nSugOrig = slst.Count;
-            string w2;
-            var word = w;
             var oldSug = 0;
 
             // word reversing wrapper for complex prefixes
+            string word;
             if (Affix.ComplexPrefixes)
             {
-                w2 = w.Reverse();
-                word = w2;
+                word = w.Reverse();
+            }
+            else
+            {
+                word = w;
             }
 
-            for (var cpdSuggest = 0; cpdSuggest < 2 && noCompoundTwoWords == 0; cpdSuggest++)
+            var cpdSuggest = false;
+            do
             {
                 // limit compound suggestion
-                if (cpdSuggest > 0)
+                if (cpdSuggest)
                 {
                     oldSug = slst.Count;
                 }
@@ -857,79 +839,94 @@ namespace Hunspell
                 }
 
                 // perhaps we made a typical fault of spelling
-                if (slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < sugLimit))
+                if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                 {
                     ReplChars(slst, word, cpdSuggest);
                 }
 
                 // perhaps we made chose the wrong char from a related set
-                if (slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < sugLimit))
+                if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                 {
                     MapChars(slst, word, cpdSuggest);
                 }
 
                 // only suggest compound words when no other suggestion
-                if (cpdSuggest == 0 && slst.Count > nSugOrig)
+                if (!cpdSuggest && slst.Count > nSugOrig)
                 {
-                    noCompoundTwoWords = 1;
+                    noCompoundTwoWords = true;
                 }
 
                 // did we swap the order of chars by mistake
-                if (slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < sugLimit))
+                if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                 {
                     SwapChar(slst, word, cpdSuggest);
                 }
 
                 // did we swap the order of non adjacent chars by mistake
-                if (slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < sugLimit))
+                if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                 {
                     LongSwapChar(slst, word, cpdSuggest);
                 }
 
                 // did we just hit the wrong key in place of a good char (case and keyboard)
-                if (slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < sugLimit))
+                if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                 {
                     BadCharKey(slst, word, cpdSuggest);
                 }
 
                 // did we add a char that should not be there
-                if (slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < sugLimit))
+                if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                 {
                     ExtraChar(slst, word, cpdSuggest);
                 }
 
                 // did we forgot a char
-                if (slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < sugLimit))
+                if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                 {
                     ForgotChar(slst, word, cpdSuggest);
                 }
 
                 // did we move a char
-                if (slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < sugLimit))
+                if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                 {
                     MoveChar(slst, word, cpdSuggest);
                 }
 
                 // did we just hit the wrong key in place of a good char
-                if (slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < sugLimit))
+                if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                 {
                     BadChar(slst, word, cpdSuggest);
                 }
 
                 // did we double two characters
-                if (slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < sugLimit))
+                if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                 {
                     DoubleTwoChars(slst, word, cpdSuggest);
                 }
 
                 // perhaps we forgot to hit space and two words ran together
-                if (!Affix.NoSplitSuggestions && slst.Count < MaxSuggestions && (cpdSuggest == 0 || slst.Count < sugLimit))
+                if (!Affix.NoSplitSuggestions && slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                 {
                     TwoWords(slst, word, cpdSuggest);
                 }
-            }
 
-            if (noCompoundTwoWords == 0 && slst.Count != 0)
+                if (noCompoundTwoWords)
+                {
+                    break;
+                }
+
+                if (cpdSuggest)
+                {
+                    break;
+                }
+                else
+                {
+                    cpdSuggest = true;
+                }
+            }
+            while (!noCompoundTwoWords);
+
+            if (!noCompoundTwoWords && slst.Count != 0)
             {
                 onlyCompoundSug = 1;
             }
@@ -938,7 +935,7 @@ namespace Hunspell
         /// <summary>
         /// Error is should have been two words.
         /// </summary>
-        private int TwoWords(List<string> wlst, string word, int cpdSuggest)
+        private int TwoWords(List<string> wlst, string word, bool cpdSuggest)
         {
             int c2;
             int cwrd;
@@ -1096,7 +1093,7 @@ namespace Hunspell
         /// <summary>
         /// perhaps we doubled two characters (pattern aba -> ababa, for example vacation -> vacacation)
         /// </summary>
-        private int DoubleTwoChars(List<string> wlst, string word, int cpdSuggest)
+        private int DoubleTwoChars(List<string> wlst, string word, bool cpdSuggest)
         {
             var state = 0;
             if (word.Length < 5)
@@ -1127,7 +1124,7 @@ namespace Hunspell
         /// <summary>
         /// Error is wrong char in place of correct one.
         /// </summary>
-        private int BadChar(List<string> wlst, string word, int cpdSuggest)
+        private int BadChar(List<string> wlst, string word, bool cpdSuggest)
         {
             if (string.IsNullOrEmpty(Affix.TryString))
             {
@@ -1170,7 +1167,7 @@ namespace Hunspell
         /// <summary>
         /// Error is a letter was moved.
         /// </summary>
-        private int MoveChar(List<string> wlst, string word, int cpdSuggest)
+        private int MoveChar(List<string> wlst, string word, bool cpdSuggest)
         {
             if (word.Length < 2)
             {
@@ -1222,7 +1219,7 @@ namespace Hunspell
         /// <summary>
         /// Error is missing a letter it needs.
         /// </summary>
-        private int ForgotChar(List<string> wlst, string word, int cpdSuggest)
+        private int ForgotChar(List<string> wlst, string word, bool cpdSuggest)
         {
             if (string.IsNullOrEmpty(Affix.TryString))
             {
@@ -1257,7 +1254,7 @@ namespace Hunspell
         /// <summary>
         /// Error is word has an extra letter it does not need.
         /// </summary>
-        private int ExtraChar(List<string> wlst, string word, int cpdSuggest)
+        private int ExtraChar(List<string> wlst, string word, bool cpdSuggest)
         {
             if (word.Length < 2)
             {
@@ -1282,7 +1279,7 @@ namespace Hunspell
         /// <summary>
         /// error is wrong char in place of correct one (case and keyboard related version)
         /// </summary>
-        private int BadCharKey(List<string> wlst, string word, int cpdSuggest)
+        private int BadCharKey(List<string> wlst, string word, bool cpdSuggest)
         {
             var candidate = StringBuilderPool.Get(word, word.Length);
 
@@ -1336,7 +1333,7 @@ namespace Hunspell
         /// <summary>
         /// Error is not adjacent letter were swapped.
         /// </summary>
-        private int LongSwapChar(List<string> wlst, string word, int cpdSuggest)
+        private int LongSwapChar(List<string> wlst, string word, bool cpdSuggest)
         {
             var candidate = StringBuilderPool.Get(word, word.Length);
             // try swapping not adjacent chars one by one
@@ -1361,7 +1358,7 @@ namespace Hunspell
         /// <summary>
         /// Error is adjacent letter were swapped.
         /// </summary>
-        private int SwapChar(List<string> wlst, string word, int cpdSuggest)
+        private int SwapChar(List<string> wlst, string word, bool cpdSuggest)
         {
             if (word.Length < 2)
             {
@@ -1402,14 +1399,12 @@ namespace Hunspell
             return wlst.Count;
         }
 
-        private void CapChars(List<string> wlst, string word, int cpdSuggest)
+        private void CapChars(List<string> wlst, string word, bool cpdSuggest)
         {
-            var candidate = word;
-            MakeAllCap2(ref candidate);
-            TestSug(wlst, candidate, cpdSuggest);
+            TestSug(wlst, MakeAllCap(word), cpdSuggest);
         }
 
-        private int MapChars(List<string> wlst, string word, int cpdSuggest)
+        private int MapChars(List<string> wlst, string word, bool cpdSuggest)
         {
             if (word.Length < 2 || !Affix.HasMapTableEntries)
             {
@@ -1423,21 +1418,21 @@ namespace Hunspell
             return MapRelated(word, ref candidate, 0, wlst, cpdSuggest, ref timer, ref timeLimit);
         }
 
-        private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, int cpdSuggest, ref int? timer, ref long? timeLimit)
+        private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest, ref int? timer, ref long? timeLimit)
         {
             if (wn >= word.Length)
             {
-                var cwrd = 1;
+                var cwrd = true;
                 for (var m = 0; m < wlst.Count; m++)
                 {
                     if (wlst[m] == candidate)
                     {
-                        cwrd = 0;
+                        cwrd = false;
                         break;
                     }
                 }
 
-                if (cwrd != 0 && CheckWord(candidate, cpdSuggest, ref timer, ref timeLimit) != 0)
+                if (cwrd && CheckWord(candidate, cpdSuggest, ref timer, ref timeLimit) != 0)
                 {
                     if (wlst.Count < MaxSuggestions)
                     {
@@ -1448,7 +1443,7 @@ namespace Hunspell
                 return wlst.Count;
             }
 
-            var inMap = 0;
+            var inMap = false;
             if (Affix.HasMapTableEntries)
             {
                 for (var j = 0; j < Affix.MapTable.Length; j++)
@@ -1459,7 +1454,7 @@ namespace Hunspell
                         var len = mapEntry[k].Length;
                         if (StringEx.EqualsOffset(mapEntry[k], 0, word, wn, len))
                         {
-                            inMap = 1;
+                            inMap = true;
                             var cn = candidate.Length;
                             for (var l = 0; l < mapEntry.Length; l++)
                             {
@@ -1476,7 +1471,7 @@ namespace Hunspell
                 }
             }
 
-            if (inMap == 0)
+            if (!inMap)
             {
                 candidate += word[wn];
                 MapRelated(word, ref candidate, wn + 1, wlst, cpdSuggest, ref timer, ref timeLimit);
@@ -1485,14 +1480,14 @@ namespace Hunspell
             return wlst.Count;
         }
 
-        private void TestSug(List<string> wlst, string candidate, int cpdSuggest)
+        private void TestSug(List<string> wlst, string candidate, bool cpdSuggest)
         {
             int? timer = null;
             long? timeLimit = null;
             TestSug(wlst, candidate, cpdSuggest, ref timer, ref timeLimit);
         }
 
-        private void TestSug(List<string> wlst, string candidate, int cpdSuggest, ref int? timer, ref long? timeLimit)
+        private void TestSug(List<string> wlst, string candidate, bool cpdSuggest, ref int? timer, ref long? timeLimit)
         {
             if (
                 wlst.Count < MaxSuggestions
@@ -1506,7 +1501,7 @@ namespace Hunspell
             }
         }
 
-        private int CheckWord(string word, int cpdSuggest)
+        private int CheckWord(string word, bool cpdSuggest)
         {
             int? timer = null;
             long? timeLimit = null;
@@ -1522,7 +1517,7 @@ namespace Hunspell
         /// return value 2 and 3 marks compounding with hyphen (-)
         /// `3' marks roots without suffix
         /// </remarks>
-        private int CheckWord(string word, int cpdSuggest, ref int? timer, ref long? timeLimit)
+        private int CheckWord(string word, bool cpdSuggest, ref int? timer, ref long? timeLimit)
         {
             // check time limit
             if (timer.HasValue)
@@ -1539,10 +1534,9 @@ namespace Hunspell
                 }
             }
 
-            DictionaryEntry rv = null;
-            int noSuffix = 0;
+            DictionaryEntry rv;
 
-            if (cpdSuggest == 1)
+            if (cpdSuggest)
             {
                 if (Affix.HasCompound)
                 {
@@ -1598,12 +1592,14 @@ namespace Hunspell
                 rv = PrefixCheck(word, CompoundOptions.Not, default(FlagValue)); // only prefix, and prefix + suffix XXX
             }
 
+            bool noSuffix;
             if (rv != null)
             {
-                noSuffix = 1;
+                noSuffix = true;
             }
             else
             {
+                noSuffix = false;
                 rv = SuffixCheck(word, AffixEntryOptions.None, null, null, default(FlagValue), default(FlagValue), CompoundOptions.Not); // only suffix
             }
 
@@ -1627,7 +1623,7 @@ namespace Hunspell
                 // XXX obsolete
                 if (rv.ContainsFlag(Affix.CompoundFlag))
                 {
-                    return 2 + noSuffix;
+                    return noSuffix ? 3 : 2;
                 }
 
                 return 1;
@@ -1640,7 +1636,7 @@ namespace Hunspell
         /// Suggestions for a typical fault of spelling, that
         /// differs with more, than 1 letter from the right form.
         /// </summary>
-        private int ReplChars(List<string> wlst, string word, int cpdSuggest)
+        private int ReplChars(List<string> wlst, string word, bool cpdSuggest)
         {
             if (word.Length < 2 || !Affix.HasReplacements)
             {
@@ -1684,7 +1680,7 @@ namespace Hunspell
                         var prev = 0;
                         while (sp >= 0)
                         {
-                            if (CheckWord(candidate.Substring(prev, sp - prev), 0) != 0)
+                            if (CheckWord(candidate.Substring(prev, sp - prev), false) != 0)
                             {
                                 var oldNs = wlst.Count;
                                 TestSug(wlst, candidate.Substring(sp + 1), cpdSuggest);
@@ -1760,37 +1756,43 @@ namespace Hunspell
 
             // exhaustively search through all root words
             // keeping track of the MAX_ROOTS most similar root words
-            var roots = new NGramSuggestSearchRoot[MaxRoots];
+            var roots = new NGramSuggestSearchRoot[MaxRoots]; // TODO: this shoudl come from a pool
             for (var i = 0; i < roots.Length; i++)
             {
                 roots[i] = new NGramSuggestSearchRoot(i);
             }
 
             var lp = roots.Length - 1;
-            var lpphon = roots.Length - 1;
-            var low = NGramOptions.Lowering;
-
-            string w2 = string.Empty;
-            var word = w;
+            var lpphon = lp;
+            const NGramOptions low = NGramOptions.Lowering;
 
             // word reversing wrapper for complex prefixes
+            string w2;
+            string word;
             if (Affix.ComplexPrefixes)
             {
-                w2 = w;
-                w2 = w2.Reverse();
+                w2 = w.Reverse();
                 word = w2;
+            }
+            else
+            {
+                w2 = string.Empty;
+                word = w;
             }
 
             var n = word.Length;
 
-            var target = string.Empty;
-            var candidate = string.Empty;
+            string candidate;
+            string target;
             if (Affix.HasPhoneEntires)
             {
-                candidate = word;
-                MakeAllCap2(ref candidate);
-
+                candidate = MakeAllCap(word);
                 target = Phonet(candidate);
+            }
+            else
+            {
+                candidate = string.Empty;
+                target = string.Empty;
             }
 
             foreach (var hp in Dictionary.NGramAllowedEntries)
@@ -1814,8 +1816,7 @@ namespace Hunspell
                 var scphon = -20000;
                 if (Affix.HasPhoneEntires && sc > 2 && Math.Abs(n - hp.Word.Length) <= 3)
                 {
-                    candidate = hp.Word;
-                    MakeAllCap2(ref candidate);
+                    candidate = MakeAllCap(hp.Word);
                     var target2 = Phonet(candidate);
                     scphon = 2 * NGram(3, target, target2, NGramOptions.LongerWorse);
                 }
@@ -1968,8 +1969,7 @@ namespace Hunspell
                 if (guesses[i].Guess != null)
                 {
                     // lowering guess[i]
-                    var gl = guesses[i].Guess;
-                    MakeAllSmall2(ref gl);
+                    var gl = MakeAllSmall(guesses[i].Guess);
                     var len = guesses[i].Guess.Length;
 
                     var _lcs = LcsLen(word, gl);
@@ -2013,8 +2013,7 @@ namespace Hunspell
                     if (roots[i].RootPhon != null)
                     {
                         // lowering rootphon[i]
-                        var gl = roots[i].RootPhon;
-                        MakeAllSmall2(ref gl);
+                        var gl = MakeAllSmall(roots[i].RootPhon);
                         var len = roots[i].RootPhon.Length;
 
                         // heuristic weigthing of ngram scores
@@ -2078,7 +2077,7 @@ namespace Hunspell
                                 ||
                                 (guesses[i].GuessOrig != null && guesses[i].GuessOrig.Contains(wlst[j]))
                                 || // check forbidden words
-                                CheckWord(guesses[i].Guess, 0) == 0
+                                CheckWord(guesses[i].Guess, false) == 0
                             )
                             {
                                 unique = false;
@@ -2130,7 +2129,7 @@ namespace Hunspell
                                 if (
                                     roots[i].RootPhon.Contains(wlst[j])
                                     || // check forbidden words
-                                    CheckWord(roots[i].RootPhon, 0) == 0
+                                    CheckWord(roots[i].RootPhon, false) == 0
                                 )
                                 {
                                     unique = false;
@@ -2150,8 +2149,6 @@ namespace Hunspell
 
         private int CommonCharacterPositions(string s1, string s2, ref bool isSwap)
         {
-            isSwap = false;
-
             // decapitalize dictionary word
             string t;
             if (Affix.ComplexPrefixes)
@@ -2161,13 +2158,13 @@ namespace Hunspell
             }
             else
             {
-                t = s2;
-                MakeAllSmall2(ref t);
+                t = MakeAllSmall(s2);
             }
 
             var num = 0;
             var diff = 0;
-            var diffPos = new int[2];
+            var diffPos0 = 0;
+            var diffPos1 = 0;
             int i;
             for (i = 0; i < t.Length && i < s1.Length; i++)
             {
@@ -2177,34 +2174,36 @@ namespace Hunspell
                 }
                 else
                 {
-                    if (diff < 2)
+                    if (diff == 0)
                     {
-                        diffPos[diff] = i;
+                        diffPos0 = i;
+                    }
+                    else if (diff == 1)
+                    {
+                        diffPos1 = i;
                     }
 
                     diff++;
                 }
             }
 
-            if (
-                diff == 2
-                &&
-                i < s1.Length
-                &&
-                i == t.Length
-                &&
-                s1[diffPos[0]] == t[diffPos[1]]
-                &&
-                s1[diffPos[1]] == t[diffPos[0]]
-            )
-            {
-                isSwap = true;
-            }
+            isSwap =
+                (
+                    diff == 2
+                    &&
+                    i < s1.Length
+                    &&
+                    i == t.Length
+                    &&
+                    s1[diffPos0] == t[diffPos1]
+                    &&
+                    s1[diffPos1] == t[diffPos0]
+                );
 
             return num;
         }
 
-        private int LcsLen(string s, string s2)
+        private static int LcsLen(string s, string s2)
         {
             int m, n;
             LongestCommonSubsequenceType[] result;
@@ -2242,7 +2241,7 @@ namespace Hunspell
         /// <summary>
         /// Longest common subsequence.
         /// </summary>
-        private void Lcs(string s, string s2, out int m, out int n, out LongestCommonSubsequenceType[] b)
+        private static void Lcs(string s, string s2, out int m, out int n, out LongestCommonSubsequenceType[] b)
         {
             m = s.Length;
             n = s2.Length;
@@ -2276,27 +2275,23 @@ namespace Hunspell
 
         private int ExpandRootWord(GuessWord[] wlst, DictionaryEntry entry, string bad, string phon)
         {
-            var maxn = wlst.Length;
-            var ts = entry.Word;
-            var wl = ts.Length;
-            var ap = entry.Flags;
-            var al = ap.Count;
-            var badl = bad.Length;
-
             var nh = 0;
             // first add root word to list
-            if (nh < maxn && !entry.ContainsAnyFlags(Affix.NeedAffix, Affix.OnlyInCompound))
+            if (nh < wlst.Length && !entry.ContainsAnyFlags(Affix.NeedAffix, Affix.OnlyInCompound))
             {
-                wlst[nh].Word = MyStrDup(ts);
+                var dupTs = MyStrDup(entry.Word);
+                wlst[nh].Word = dupTs;
                 if (wlst[nh].Word == null)
                 {
                     return 0;
                 }
+
                 wlst[nh].Allow = false;
                 wlst[nh].Orig = null;
                 nh++;
+
                 // add special phonetic version
-                if (phon != null && nh < maxn)
+                if (phon != null && nh < wlst.Length)
                 {
                     wlst[nh].Word = MyStrDup(phon);
                     if (wlst[nh].Word == null)
@@ -2305,7 +2300,7 @@ namespace Hunspell
                     }
 
                     wlst[nh].Allow = false;
-                    wlst[nh].Orig = MyStrDup(ts);
+                    wlst[nh].Orig = dupTs;
                     if (wlst[nh].Orig == null)
                     {
                         return nh - 1;
@@ -2318,22 +2313,22 @@ namespace Hunspell
             // handle suffixes
             if (Affix.HasSuffixes)
             {
-                for (var i = 0; i < al; i++)
+                for (var i = 0; i < entry.Flags.Count; i++)
                 {
                     foreach (var sptrGroup in Affix.Suffixes)
                     {
                         foreach (var sptr in sptrGroup.Entries)
                         {
                             if (
-                                sptrGroup.AFlag == ap[i]
+                                sptrGroup.AFlag == entry.Flags[i]
                                 &&
                                 (
                                     string.IsNullOrEmpty(sptr.Key)
                                     ||
                                     (
-                                        badl > sptr.Key.Length
+                                        bad.Length > sptr.Key.Length
                                         &&
-                                        StringEx.EqualsOffset(sptr.Append, 0, bad, badl - sptr.Key.Length)
+                                        StringEx.EqualsOffset(sptr.Append, 0, bad, bad.Length - sptr.Key.Length)
                                     )
                                 )
                                 && // check needaffix flag
@@ -2344,10 +2339,10 @@ namespace Hunspell
                                 )
                             )
                             {
-                                var newword = Add(sptr, ts);
+                                var newword = Add(sptr, entry.Word);
                                 if (!string.IsNullOrEmpty(newword))
                                 {
-                                    if (nh < maxn)
+                                    if (nh < wlst.Length)
                                     {
                                         wlst[nh].Word = MyStrDup(newword);
                                         wlst[nh].Allow = sptrGroup.AllowCross;
@@ -2355,7 +2350,7 @@ namespace Hunspell
                                         nh++;
 
                                         // add special phonetic version
-                                        if (phon != null && nh < maxn)
+                                        if (phon != null && nh < wlst.Length)
                                         {
                                             var prefix = phon;
                                             var key = sptr.Key;
@@ -2391,14 +2386,14 @@ namespace Hunspell
                 {
                     if (wlst[j].Allow)
                     {
-                        for (var k = 0; k < al; k++)
+                        for (var k = 0; k < entry.Flags.Count; k++)
                         {
                             foreach (var pfxGroup in Affix.Prefixes)
                             {
                                 foreach (var cptr in pfxGroup.Entries)
                                 {
                                     if (
-                                        pfxGroup.AFlag == ap[k]
+                                        pfxGroup.AFlag == entry.Flags[k]
                                         &&
                                         pfxGroup.AllowCross
                                         &&
@@ -2406,7 +2401,7 @@ namespace Hunspell
                                             cptr.Key.Length == 0
                                             ||
                                             (
-                                                badl > cptr.Key.Length
+                                                bad.Length > cptr.Key.Length
                                                 &&
                                                 StringEx.EqualsOffset(cptr.Key, 0, bad, 0, cptr.Key.Length)
                                             )
@@ -2417,7 +2412,7 @@ namespace Hunspell
                                         var newword = Add(cptr, wlst[j].Word);
                                         if (!string.IsNullOrEmpty(newword))
                                         {
-                                            if (nh < maxn)
+                                            if (nh < wlst.Length)
                                             {
                                                 wlst[nh].Word = MyStrDup(newword);
                                                 wlst[nh].Allow = pfxGroup.AllowCross;
@@ -2435,20 +2430,20 @@ namespace Hunspell
             // now handle pure prefixes
             if (Affix.HasPrefixes)
             {
-                for (var m = 0; m < al; m++)
+                for (var m = 0; m < entry.Flags.Count; m++)
                 {
                     foreach (var ptrGroup in Affix.Prefixes)
                     {
                         foreach (var ptr in ptrGroup.Entries)
                         {
                             if (
-                                ptrGroup.AFlag == ap[m]
+                                ptrGroup.AFlag == entry.Flags[m]
                                 &&
                                 (
                                     ptr.Key.Length == 0
                                     ||
                                     (
-                                        badl > ptr.Key.Length
+                                        bad.Length > ptr.Key.Length
                                         &&
                                         StringEx.EqualsOffset(ptr.Key, 0, bad, 0, ptr.Key.Length)
                                     )
@@ -2457,10 +2452,10 @@ namespace Hunspell
                                 !ptr.ContainsAnyContClass(Affix.NeedAffix, Affix.Circumfix, Affix.OnlyInCompound)
                             )
                             {
-                                var newword = Add(ptr, ts);
+                                var newword = Add(ptr, entry.Word);
                                 if (!string.IsNullOrEmpty(newword))
                                 {
-                                    if (nh < maxn)
+                                    if (nh < wlst.Length)
                                     {
                                         wlst[nh].Word = MyStrDup(newword);
                                         wlst[nh].Allow = ptrGroup.AllowCross;
@@ -2482,34 +2477,31 @@ namespace Hunspell
         /// </summary>
         private string Add(PrefixEntry entry, string word)
         {
-            var len = word.Length;
-            var result = string.Empty;
-            if (
+            return
                 (
-                    len > entry.Strip.Length
-                    ||
                     (
-                        len == 0
-                        &&
-                        Affix.FullStrip
+                        word.Length > entry.Strip.Length
+                        ||
+                        (
+                            word.Length == 0
+                            &&
+                            Affix.FullStrip
+                        )
+                    )
+                    &&
+                    word.Length >= entry.Conditions.Count
+                    &&
+                    TestCondition(entry, word)
+                    &&
+                    (
+                        entry.Strip.Length == 0
+                        ||
+                        StringEx.EqualsOffset(word, 0, entry.Strip, 0, entry.Strip.Length)
                     )
                 )
-                &&
-                len >= entry.Conditions.Count
-                &&
-                TestCondition(entry, word)
-                &&
-                (
-                    entry.Strip.Length == 0
-                    ||
-                    StringEx.EqualsOffset(word, 0, entry.Strip, 0, entry.Strip.Length)
-                )
-            )
-            {
                 // we have a match so add prefix
-                result = entry.Append + word.Substring(entry.Strip.Length);
-            }
-            return result;
+                ? StringEx.ConcatSubstring(entry.Append, word, entry.Strip.Length, word.Length - entry.Strip.Length)
+                : string.Empty;
         }
 
         /// <summary>
@@ -2517,40 +2509,32 @@ namespace Hunspell
         /// </summary>
         private string Add(SuffixEntry entry, string word)
         {
-            var len = word.Length;
-            string result;
             // make sure all conditions match
-            if (
+            return
                 (
-                    len > entry.Strip.Length
-                    ||
                     (
-                        len == 0
-                        &&
-                        Affix.FullStrip
+                        word.Length > entry.Strip.Length
+                        ||
+                        (
+                            word.Length == 0
+                            &&
+                            Affix.FullStrip
+                        )
+                    )
+                    &&
+                    word.Length >= entry.Conditions.Count
+                    &&
+                    TestCondition(entry, word)
+                    &&
+                    (
+                        entry.Strip.Length == 0
+                        ||
+                        StringEx.EqualsOffset(word, word.Length - entry.Strip.Length, entry.Strip, 0)
                     )
                 )
-                &&
-                len >= entry.Conditions.Count
-                &&
-                TestCondition(entry, word)
-                &&
-                (
-                    entry.Strip.Length == 0
-                    ||
-                    StringEx.EqualsOffset(word, len - entry.Strip.Length, entry.Strip, 0)
-                )
-            )
-            {
                 // we have a match so add suffix
-                result = word.Substring(0, word.Length - entry.Strip.Length) + entry.Append;
-            }
-            else
-            {
-                result = string.Empty;
-            }
-
-            return result;
+                ? StringEx.ConcatSubstring(word, 0, word.Length - entry.Strip.Length, entry.Append)
+                : string.Empty;
         }
 
         private string MyStrDup(string s)
@@ -2564,6 +2548,9 @@ namespace Hunspell
             return terminalPos >= 0 ? s.Substring(0, terminalPos) : s;
         }
 
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private bool CopyField(ref string dest, IEnumerable<string> morphs, string var)
         {
             return CopyField(ref dest, string.Join(" ", morphs), var);
@@ -2618,7 +2605,7 @@ namespace Hunspell
                 var index2 = 0;
 
                 // decapitalise dictionary word
-                if (index1 < s1.Length && index2 < s2.Length && s1[index1] != s2[index2] && s1[index1] != (Affix.Culture != null ? Affix.Culture.TextInfo.ToLower(s2[index2]) : char.ToLowerInvariant(s2[index2])))
+                if (index1 < s1.Length && index2 < s2.Length && s1[index1] != s2[index2] && s1[index1] != Affix.Culture.TextInfo.ToLower(s2[index2]))
                 {
                     return 0;
                 }
@@ -2641,10 +2628,6 @@ namespace Hunspell
         /// </summary>
         private int NGram(int n, string s1, string s2, NGramOptions opt)
         {
-            var nscore = 0;
-            int ns;
-            var test = 0;
-
             if (s2.Length == 0)
             {
                 return 0;
@@ -2654,35 +2637,11 @@ namespace Hunspell
                 ? MakeAllSmall(s2)
                 : s2;
 
-            var optHasWeightedFlag = opt.HasFlag(NGramOptions.Weighted);
-            for (var j = 1; j <= n; j++)
-            {
-                ns = 0;
-                var s1LenLessJ = s1.Length - j;
-                for (var i = 0; i <= s1LenLessJ; i++)
-                {
-                    if (t.ContainsSubstringOrdinal(s1, i, j))
-                    {
-                        ns++;
-                    }
-                    else if (optHasWeightedFlag)
-                    {
-                        ns--;
-                        test++;
-                        if (i == 0 || i == s1LenLessJ)
-                        {
-                            ns--; // side weight
-                        }
-                    }
-                }
+            var nscore = opt.HasFlag(NGramOptions.Weighted)
+                ? NGramWeightedSearch(n, s1, t)
+                : NGramNonWeightedSearch(n, s1, t);
 
-                nscore = nscore + ns;
-                if (ns < 2 && !optHasWeightedFlag)
-                {
-                    break;
-                }
-            }
-
+            int ns;
             if (opt.HasFlag(NGramOptions.AnyMismatch))
             {
                 ns = Math.Abs(s2.Length - s1.Length) - 2;
@@ -2693,12 +2652,85 @@ namespace Hunspell
             }
             else
             {
-                ns = 0;
+                return nscore;
             }
 
-            if (ns > 0)
+            return ns > 0
+                ? nscore - ns
+                : nscore;
+        }
+
+        private static int NGramWeightedSearch(int n, string s1, string t)
+        {
+            int ns;
+            int nscore = 0;
+            for (var j = 1; j <= n; j++)
             {
-                nscore -= ns;
+                ns = 0;
+                var s1LenLessJ = s1.Length - j;
+                if (0 <= s1LenLessJ)
+                {
+                    if (t.ContainsSubstringOrdinal(s1, 0, j))
+                    {
+                        ns++;
+                    }
+                    else
+                    {
+                        ns -= 2;
+                    }
+
+                    for (var i = 1; i < s1LenLessJ; i++)
+                    {
+                        if (t.ContainsSubstringOrdinal(s1, i, j))
+                        {
+                            ns++;
+                        }
+                        else
+                        {
+                            ns--;
+                        }
+                    }
+
+                    if (0 != s1LenLessJ)
+                    {
+                        if (t.ContainsSubstringOrdinal(s1, s1LenLessJ, j))
+                        {
+                            ns++;
+                        }
+                        else
+                        {
+                            ns -= 2;
+                        }
+                    }
+                }
+
+                nscore += ns;
+            }
+
+            return nscore;
+        }
+
+        private static int NGramNonWeightedSearch(int n, string s1, string t)
+        {
+            int ns;
+            int nscore = 0;
+            for (var j = 1; j <= n; j++)
+            {
+                ns = 0;
+                var s1LenLessJ = s1.Length - j;
+                for (var i = 0; i <= s1LenLessJ; i++)
+                {
+                    if (t.ContainsSubstringOrdinal(s1, i, j))
+                    {
+                        ns++;
+                    }
+                }
+
+                nscore += ns;
+                if (ns < 2)
+                {
+                    break;
+                }
             }
 
             return nscore;
@@ -2715,10 +2747,6 @@ namespace Hunspell
         /// </remarks>
         private string Phonet(string inword)
         {
-            int i, k = 0, p, z;
-            int k0, p0 = -333;
-            char c;
-
             var len = inword.Length;
             if (len > MaxPhoneTUtf8Len)
             {
@@ -2727,14 +2755,20 @@ namespace Hunspell
 
             var wordCapacity = Math.Min(inword.Length, MaxPhoneTUtf8Len);
             var word = StringBuilderPool.Get(inword, 0, wordCapacity);
-
             var target = StringBuilderPool.Get();
 
             // check word
-            i = z = 0;
+            var i = 0;
+            var z = false;
+            var p0 = -333;
+            var k = 0;
+            int p;
+            int k0;
+            char c;
+
             while ((c = word.GetCharOrTerminator(i)) != '\0')
             {
-                var z0 = 0;
+                var z0 = false;
 
                 // check all rules for the same letter
                 foreach (var phoneEntry in Affix.Phone.Where(pe => pe.Rule.StartsWith(c)))
@@ -2925,7 +2959,7 @@ namespace Hunspell
                             ? 1
                             : 0;
 
-                        if (p0 == 1 && z == 0)
+                        if (p0 == 1 && !z)
                         {
                             // rule with '<' is used
                             if (target.Length != 0 && sChar != '\0' && (target.EndsWith(c) || target.EndsWith(sChar)))
@@ -2933,8 +2967,8 @@ namespace Hunspell
                                 target.Remove(target.Length - 1, 1);
                             }
 
-                            z0 = 1;
-                            z = 1;
+                            z0 = true;
+                            z = true;
                             k0 = 0;
 
                             while (sChar != '\0' && word.GetCharOrTerminator(i + k0) != '\0')
@@ -2955,7 +2989,7 @@ namespace Hunspell
                         {
                             // no '<' rule used
                             i += k - 1;
-                            z = 0;
+                            z = false;
                             while (sChar != '\0' && sString.GetCharOrTerminator(sIndex + 1) != '\0' && target.Length < len)
                             {
                                 if (target.Length == 0 || !target.EndsWith(sChar))
@@ -2978,7 +3012,7 @@ namespace Hunspell
 
                                 StrMove(word, 0, word, i + 1);
                                 len = 0;
-                                z0 = 1;
+                                z0 = true;
                             }
                         }
 
@@ -2986,7 +3020,7 @@ namespace Hunspell
                     }
                 }
 
-                if (z0 == 0)
+                if (!z0)
                 {
                     if (k != 0 && p0 == 0 && target.Length < len && c != '\0' && (true || target.Length == 0 || !target.EndsWith(c)))
                     {
@@ -2995,7 +3029,7 @@ namespace Hunspell
                     }
 
                     i++;
-                    z = 0;
+                    z = false;
                     k = 0;
                 }
             }
@@ -3019,17 +3053,18 @@ namespace Hunspell
             }
         }
 
-        private bool MyIsAlpha(char ch)
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static bool MyIsAlpha(char ch)
         {
-            if (ch < 128)
-            {
-                return char.IsLetter(ch);
-            }
-
-            return true;
+            return ch < 128 || char.IsLetter(ch);
         }
 
-        private void InsertSuggestion(List<string> slst, string word)
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static void InsertSuggestion(List<string> slst, string word)
         {
             slst.Insert(0, word);
         }
@@ -3042,7 +3077,7 @@ namespace Hunspell
         /// <summary>
         /// Recursive search for right ss - sharp s permutations
         /// </summary>
-        private DictionaryEntry SpellSharps(ref string @base, int nPos, int n, int repNum, ref SpellCheckResultType info, ref string root)
+        private DictionaryEntry SpellSharps(ref string @base, int nPos, int n, int repNum, ref SpellCheckResultType info, out string root)
         {
             var pos = @base.IndexOf("ss", nPos, StringComparison.Ordinal);
             if (pos >= 0 && n < MaxSharps)
@@ -3052,7 +3087,7 @@ namespace Hunspell
                 baseBuilder.Remove(pos + 1, 1);
                 @base = baseBuilder.ToString();
 
-                var h = SpellSharps(ref @base, pos + 1, n + 1, repNum + 1, ref info, ref root);
+                var h = SpellSharps(ref @base, pos + 1, n + 1, repNum + 1, ref info, out root);
                 if (h != null)
                 {
                     return h;
@@ -3064,7 +3099,7 @@ namespace Hunspell
                 baseBuilder.Insert(pos + 1, 's');
                 @base = StringBuilderPool.GetStringAndReturn(baseBuilder);
 
-                h = SpellSharps(ref @base, pos + 2, n + 1, repNum, ref info, ref root);
+                h = SpellSharps(ref @base, pos + 2, n + 1, repNum, ref info, out root);
                 if (h != null)
                 {
                     return h;
@@ -3072,16 +3107,11 @@ namespace Hunspell
             }
             else if (repNum > 0)
             {
-                return CheckWord(@base, ref info, ref root);
+                return CheckWord(@base, ref info, out root);
             }
 
+            root = null;
             return null;
-        }
-
-        private int MakeInitCap2(ref string s)
-        {
-            s = MakeInitCap(s);
-            return s.Length;
         }
 
         private string MakeInitCap(string s)
@@ -3096,24 +3126,12 @@ namespace Hunspell
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
-        private int MakeAllSmall2(ref string s)
-        {
-            s = MakeAllSmall(s);
-            return s.Length;
-        }
-
         /// <summary>
         /// Convert to all little.
         /// </summary>
         private string MakeAllSmall(string s)
         {
             return Affix.Culture.TextInfo.ToLower(s);
-        }
-
-        private int MakeInitSmall2(ref string s)
-        {
-            s = MakeInitSmall(s);
-            return s.Length;
         }
 
         private string MakeInitSmall(string s)
@@ -3128,35 +3146,31 @@ namespace Hunspell
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
-        private void MakeAllCap2(ref string s)
-        {
-            s = MakeAllCap(s);
-        }
-
         private string MakeAllCap(string s)
         {
             return Affix.Culture.TextInfo.ToUpper(s);
         }
 
-        private DictionaryEntry CheckWord(string w, ref SpellCheckResultType info, ref string root)
+        private DictionaryEntry CheckWord(string w, ref SpellCheckResultType info, out string root)
         {
-            var useBuffer = false;
-            string w2 = string.Empty;
+            root = null;
+            string w2;
             string word;
-
+            bool useBuffer;
             if (Affix.HasIgnoredChars)
             {
-                w2 = w;
-                w2 = w2.RemoveChars(Affix.IgnoredChars);
+                w2 = w.RemoveChars(Affix.IgnoredChars);
                 word = w2;
                 useBuffer = true;
             }
             else
             {
+                w2 = string.Empty;
                 word = w;
+                useBuffer = false;
             }
 
-            if (string.IsNullOrEmpty(word))
+            if (word.Length == 0)
             {
                 return null;
             }
@@ -3179,9 +3193,13 @@ namespace Hunspell
             }
 
             // look word in hash table
-            DictionaryEntry he = null;
+            DictionaryEntry he;
             var entries = Dictionary.FindEntriesByRootWord(word);
-            if (!entries.IsDefaultOrEmpty)
+            if (entries.IsDefaultOrEmpty)
+            {
+                he = null;
+            }
+            else
             {
                 he = entries.First();
 
@@ -3202,7 +3220,8 @@ namespace Hunspell
                 var heIndex = 0;
                 while (
                     he != null
-                    && he.HasFlags
+                    &&
+                    he.HasFlags
                     &&
                     (
                         he.ContainsFlag(Affix.NeedAffix)
@@ -3226,7 +3245,7 @@ namespace Hunspell
             if (he == null)
             {
                 // try stripping off affixes
-                he = AffixCheck(word, new FlagValue(), CompoundOptions.Not);
+                he = AffixCheck(word, default(FlagValue), CompoundOptions.Not);
 
                 // check compound restriction and onlyupcase
                 if (
@@ -3248,16 +3267,14 @@ namespace Hunspell
                     if (he.ContainsFlag(Affix.ForbiddenWord))
                     {
                         info |= SpellCheckResultType.Forbidden;
+
                         return null;
                     }
 
-                    if (root != null)
+                    root = he.Word;
+                    if (Affix.ComplexPrefixes)
                     {
-                        root = he.Word;
-                        if (Affix.ComplexPrefixes)
-                        {
-                            root = root.Reverse();
-                        }
+                        root = root.Reverse();
                     }
                 }
                 else if (Affix.HasCompound)
@@ -3275,13 +3292,10 @@ namespace Hunspell
 
                     if (he != null)
                     {
-                        if (root != null)
+                        root = he.Word;
+                        if (Affix.ComplexPrefixes)
                         {
-                            root = he.Word;
-                            if (Affix.ComplexPrefixes)
-                            {
-                                root = root.Reverse();
-                            }
+                            root = root.Reverse();
                         }
 
                         info |= SpellCheckResultType.Compound;
@@ -3292,44 +3306,38 @@ namespace Hunspell
             return he;
         }
 
-        private DictionaryEntry CompoundCheck(string word, int wordnum, int numsyllable, int maxwordnum, int wnum, Dictionary<int, DictionaryEntry> words, ref Dictionary<int, DictionaryEntry> rwords, int huMovRule, int isSug, ref SpellCheckResultType info)
+        private DictionaryEntry CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, int wnum, Dictionary<int, DictionaryEntry> words, ref Dictionary<int, DictionaryEntry> rwords, int huMovRule, int isSug, ref SpellCheckResultType info)
         {
-            int i;
             int oldnumsyllable, oldnumsyllable2, oldwordnum, oldwordnum2;
-            DictionaryEntry rv = null;
-            DictionaryEntry rv_first = null;
-            char ch = '\0';
-            int cmin;
-            int cmax;
+            DictionaryEntry rv;
+            DictionaryEntry rvFirst;
+            var ch = '\0';
             var striple = false;
-            int scpd = 0;
-            int soldi = 0;
-            int oldcmin = 0;
-            int oldcmax = 0;
-            int oldlen = 0;
-            var checkedstriple = false;
-            int affixed = 0;
+            var scpd = 0;
+            var soldi = 0;
+            var oldcmin = 0;
+            var oldcmax = 0;
+            var oldlen = 0;
+            var checkedStriple = false;
+            var affixed = false;
 
             var oldwords = words;
             var len = word.Length;
-
-            int checked_prefix;
-
-            cmin = Affix.CompoundMin;
-            cmax = word.Length - cmin + 1;
+            var cmin = Affix.CompoundMin;
+            var cmax = word.Length - cmin + 1;
 
             var st = new SimulatedCString(word);
 
-            for (i = cmin; i < cmax; i++)
+            for (var i = cmin; i < cmax; i++)
             {
                 words = oldwords;
-                var onlycpdrule = words != null ? 1 : 0;
+                var onlycpdrule = words != null;
                 do // onlycpdrule loop
                 {
 
-                    oldnumsyllable = numsyllable;
-                    oldwordnum = wordnum;
-                    checked_prefix = 0;
+                    oldnumsyllable = numSyllable;
+                    oldwordnum = wordNum;
+                    var checkedPrefix = false;
 
                     do // simplified checkcompoundpattern loop
                     {
@@ -3393,7 +3401,7 @@ namespace Hunspell
 
                         // FIRST WORD
 
-                        affixed = 1;
+                        affixed = true;
                         var searchEntries = Lookup(st.ToString()); // perhaps without prefix
                         var searchEntriesIndex = 0;
 
@@ -3409,38 +3417,49 @@ namespace Hunspell
                                 ||
                                 !(
                                     (
-                                        onlycpdrule == 0
-                                        && words == null
-                                        && rv.ContainsFlag(Affix.CompoundFlag)
+                                        !onlycpdrule
+                                        &&
+                                        words == null
+                                        &&
+                                        rv.ContainsFlag(Affix.CompoundFlag)
                                     )
                                     ||
                                     (
-                                        wordnum == 0
-                                        && onlycpdrule == 0
-                                        && rv.ContainsFlag(Affix.CompoundBegin)
+                                        wordNum == 0
+                                        &&
+                                        !onlycpdrule
+                                        &&
+                                        rv.ContainsFlag(Affix.CompoundBegin)
                                     )
                                     ||
                                     (
-                                        wordnum != 0
-                                        && onlycpdrule == 0
-                                        && words == null
-                                        && rv.ContainsFlag(Affix.CompoundMiddle)
+                                        wordNum != 0
+                                        &&
+                                        !onlycpdrule
+                                        &&
+                                        words == null
+                                        &&
+                                        rv.ContainsFlag(Affix.CompoundMiddle)
                                     )
                                     ||
                                     (
                                         Affix.HasCompoundRules
-                                        && onlycpdrule != 0
+                                        &&
+                                        onlycpdrule
                                         &&
                                         (
                                             (
                                                 words == null
-                                                && wordnum == 0
-                                                && DefCompoundCheck(ref words, wnum, rv, rwords, 0)
+                                                &&
+                                                wordNum == 0
+                                                &&
+                                                DefCompoundCheck(ref words, wnum, rv, rwords, 0)
                                             )
                                             ||
                                             (
                                                 words != null
-                                                && DefCompoundCheck(ref words, wnum, rv, rwords, 0)
+                                                &&
+                                                DefCompoundCheck(ref words, wnum, rv, rwords, 0)
                                             )
                                         )
                                     )
@@ -3448,8 +3467,10 @@ namespace Hunspell
                                 ||
                                 (
                                     scpd != 0
-                                    && Affix.CompoundPatterns[scpd - 1].Condition.HasValue
-                                    && !rv.ContainsFlag(Affix.CompoundPatterns[scpd - 1].Condition)
+                                    &&
+                                    Affix.CompoundPatterns[scpd - 1].Condition.HasValue
+                                    &&
+                                    !rv.ContainsFlag(Affix.CompoundPatterns[scpd - 1].Condition)
                                 )
                             )
                         )
@@ -3460,12 +3481,12 @@ namespace Hunspell
 
                         if (rv != null)
                         {
-                            affixed = 0;
+                            affixed = false;
                         }
 
                         if (rv == null)
                         {
-                            if (onlycpdrule != 0)
+                            if (onlycpdrule)
                             {
                                 break;
                             }
@@ -3492,9 +3513,12 @@ namespace Hunspell
                                             ) != null
                                         )
                                     )
-                                    && huMovRule == 0
-                                    && Suffix != null
-                                    && Suffix.ContainsAnyContClass(Affix.CompoundForbidFlag, Affix.CompoundEnd)
+                                    &&
+                                    huMovRule == 0
+                                    &&
+                                    Suffix != null
+                                    &&
+                                    Suffix.ContainsAnyContClass(Affix.CompoundForbidFlag, Affix.CompoundEnd)
                                 )
                                 {
                                     rv = null;
@@ -3505,8 +3529,9 @@ namespace Hunspell
                                 rv != null
                                 ||
                                 (
-                                    wordnum == 0
-                                    && Affix.CompoundBegin.HasValue
+                                    wordNum == 0
+                                    &&
+                                    Affix.CompoundBegin.HasValue
                                     &&
                                     (
                                         (
@@ -3528,8 +3553,9 @@ namespace Hunspell
                                 )
                                 ||
                                 (
-                                    wordnum > 0
-                                    && Affix.CompoundMiddle.HasValue
+                                    wordNum > 0
+                                    &&
+                                    Affix.CompoundMiddle.HasValue
                                     &&
                                     (
                                         (
@@ -3551,7 +3577,7 @@ namespace Hunspell
                                 )
                             )
                             {
-                                checked_prefix = 1;
+                                checkedPrefix = true;
                             }
                         }
                         else if (
@@ -3576,8 +3602,10 @@ namespace Hunspell
                         // check non_compound flag in suffix and prefix
                         if (
                             rv != null
-                            && huMovRule == 0
-                            && Affix.CompoundForbidFlag.HasValue
+                            &&
+                            huMovRule == 0
+                            &&
+                            Affix.CompoundForbidFlag.HasValue
                             &&
                             (
                                 (Prefix != null && Prefix.ContainsContClass(Affix.CompoundForbidFlag))
@@ -3592,9 +3620,12 @@ namespace Hunspell
                         // check compoundend flag in suffix and prefix
                         if (
                             rv != null
-                            && checked_prefix == 0
-                            && Affix.CompoundEnd.HasValue
-                            && huMovRule == 0
+                            &&
+                            !checkedPrefix
+                            &&
+                            Affix.CompoundEnd.HasValue
+                            &&
+                            huMovRule == 0
                             &&
                             (
                                 (Prefix != null && Prefix.ContainsContClass(Affix.CompoundEnd))
@@ -3609,10 +3640,14 @@ namespace Hunspell
                         // check compoundmiddle flag in suffix and prefix
                         if (
                             rv != null
-                            && checked_prefix == 0
-                            && wordnum == 0
-                            && Affix.CompoundMiddle.HasValue
-                            && huMovRule == 0
+                            &&
+                            !checkedPrefix
+                            &&
+                            wordNum == 0
+                            &&
+                            Affix.CompoundMiddle.HasValue
+                            &&
+                            huMovRule == 0
                             &&
                             (
                                 (Prefix != null && Prefix.ContainsContClass(Affix.CompoundMiddle))
@@ -3627,7 +3662,8 @@ namespace Hunspell
                         // check forbiddenwords
                         if (
                             rv != null
-                            && rv.HasFlags
+                            &&
+                            rv.HasFlags
                             &&
                             (
                                 rv.ContainsAnyFlags(Affix.ForbiddenWord, SpecialFlags.OnlyUpcaseFlag)
@@ -3643,7 +3679,7 @@ namespace Hunspell
                         // increment word number, if the second root has a compoundroot flag
                         if (rv != null && rv.ContainsFlag(Affix.CompoundRoot))
                         {
-                            wordnum++;
+                            wordNum++;
                         }
 
                         // first word is acceptable in compound words?
@@ -3652,12 +3688,14 @@ namespace Hunspell
                                 rv != null
                                 &&
                                 (
-                                    checked_prefix != 0
+                                    checkedPrefix
                                     ||
                                     (
                                         words != null
-                                        && words.ContainsKey(wnum)
-                                        && words[wnum] != null
+                                        &&
+                                        words.ContainsKey(wnum)
+                                        &&
+                                        words[wnum] != null
                                     )
                                     ||
                                     rv.ContainsFlag(Affix.CompoundFlag)
@@ -3668,28 +3706,34 @@ namespace Hunspell
                                     ||
                                     (
                                         huMovRule != 0
-                                        // LANG_hu section: spec. Hungarian rule
-                                        && Affix.Culture.IsHungarianLanguage()
-                                        // XXX hardwired Hungarian dictionary codes
-                                        && rv.ContainsAnyFlags(SpecialFlags.LetterF, SpecialFlags.LetterG, SpecialFlags.LetterH)
+                                        && // LANG_hu section: spec. Hungarian rule
+                                        Affix.Culture.IsHungarianLanguage()
+                                        && // XXX hardwired Hungarian dictionary codes
+                                        rv.ContainsAnyFlags(SpecialFlags.LetterF, SpecialFlags.LetterG, SpecialFlags.LetterH)
                                     ) // END of LANG_hu section
                                 )
                                 && // test CHECKCOMPOUNDPATTERN conditions
                                 (
                                     scpd == 0
-                                    || !Affix.CompoundPatterns[scpd - 1].Condition.HasValue
-                                    || rv.ContainsFlag(Affix.CompoundPatterns[scpd - 1].Condition)
+                                    ||
+                                    !Affix.CompoundPatterns[scpd - 1].Condition.HasValue
+                                    ||
+                                    rv.ContainsFlag(Affix.CompoundPatterns[scpd - 1].Condition)
                                 )
                                 &&
                                 !(
                                     (
                                         Affix.CheckCompoundTriple
-                                        && scpd == 0
-                                        && words == null
-                                        // test triple letters
-                                        && i > 0
-                                        && i < word.Length
-                                        && word[i - 1] == word[i]
+                                        &&
+                                        scpd == 0
+                                        &&
+                                        words == null
+                                        && // test triple letters
+                                        i > 0
+                                        &&
+                                        i < word.Length
+                                        &&
+                                        word[i - 1] == word[i]
                                         &&
                                         (
                                             (i - 2 >= 0 && word[i - 1] == word[i - 2])
@@ -3700,23 +3744,30 @@ namespace Hunspell
                                     ||
                                     (
                                         Affix.CheckCompoundCase
-                                        && scpd == 0
-                                        && words == null
-                                        && CompoundCaseCheck(word, i)
+                                        &&
+                                        scpd == 0
+                                        &&
+                                        words == null
+                                        &&
+                                        CompoundCaseCheck(word, i)
                                     )
                                 )
                             )
                             || // LANG_hu section: spec. Hungarian rule
                             (
                                 rv == null
-                                && Affix.Culture.IsHungarianLanguage()
-                                && huMovRule != 0
+                                &&
+                                huMovRule != 0
+                                &&
+                                Affix.Culture.IsHungarianLanguage()
                                 &&
                                 (
                                     rv = AffixCheck(st, new FlagValue(), CompoundOptions.Not)
                                 ) != null
-                                && Suffix != null // XXX hardwired Hungarian dic. codes
-                                && Suffix.ContainsAnyContClass(SpecialFlags.LetterXLower, SpecialFlags.LetterPercent)
+                                &&
+                                Suffix != null // XXX hardwired Hungarian dic. codes
+                                &&
+                                Suffix.ContainsAnyContClass(SpecialFlags.LetterXLower, SpecialFlags.LetterPercent)
                             )
                         )
                         {
@@ -3724,27 +3775,24 @@ namespace Hunspell
                             if (Affix.Culture.IsHungarianLanguage())
                             {
                                 // calculate syllable number of the word
-                                numsyllable += GetSyllable(st.Substring(i));
+                                numSyllable += GetSyllable(st.Substring(i));
 
                                 // - affix syllable num.
                                 // XXX only second suffix (inflections, not derivations)
                                 if (SuffixAppend != null)
                                 {
-                                    var tmp = SuffixAppend;
-                                    tmp = tmp.Reverse();
-                                    numsyllable -= GetSyllable(tmp) + SuffixExtra;
+                                    numSyllable -= GetSyllable(SuffixAppend.Reverse()) + SuffixExtra;
                                 }
 
-                                // + 1 word, if syllable number of the prefix > 1 (hungarian
-                                // convention)
+                                // + 1 word, if syllable number of the prefix > 1 (hungarian convention)
                                 if (Prefix != null && GetSyllable(Prefix.Key) > 1)
                                 {
-                                    wordnum++;
+                                    wordNum++;
                                 }
                             }
 
                             // NEXT WORD(S)
-                            rv_first = rv;
+                            rvFirst = rv;
 
                             if (i < st.BufferLength)
                             {
@@ -3760,7 +3808,7 @@ namespace Hunspell
                                 {
                                     if (striple)
                                     {
-                                        checkedstriple = true;
+                                        checkedStriple = true;
                                         i--; // check "fahrt" instead of "ahrt" in "Schiffahrt"
                                     }
                                     else if (i > 2 && word[i - 1] == word[i - 2])
@@ -3807,8 +3855,10 @@ namespace Hunspell
                                 // check FORCEUCASE
                                 if (
                                     rv != null
-                                    && rv.ContainsFlag(Affix.ForceUpperCase)
-                                    && !info.HasFlag(SpellCheckResultType.OrigCap)
+                                    &&
+                                    rv.ContainsFlag(Affix.ForceUpperCase)
+                                    &&
+                                    !info.HasFlag(SpellCheckResultType.OrigCap)
                                 )
                                 {
                                     rv = null;
@@ -3816,38 +3866,45 @@ namespace Hunspell
 
                                 if (
                                     rv != null
-                                    && words != null
-                                    && words.ContainsKey(wnum + 1)
-                                    && words[wnum + 1] != null
+                                    &&
+                                    words != null
+                                    &&
+                                    words.ContainsKey(wnum + 1)
+                                    &&
+                                    words[wnum + 1] != null
                                 )
                                 {
                                     st.Destroy();
-                                    return rv_first;
+                                    return rvFirst;
                                 }
 
-                                oldnumsyllable2 = numsyllable;
-                                oldwordnum2 = wordnum;
+                                oldnumsyllable2 = numSyllable;
+                                oldwordnum2 = wordNum;
 
                                 if (
                                     rv != null
-                                    && Affix.Culture.IsHungarianLanguage()
-                                    && rv.ContainsFlag(SpecialFlags.LetterI)
-                                    && !rv.ContainsFlag(SpecialFlags.LetterJ)
+                                    &&
+                                    Affix.Culture.IsHungarianLanguage()
+                                    &&
+                                    rv.ContainsFlag(SpecialFlags.LetterI)
+                                    &&
+                                    !rv.ContainsFlag(SpecialFlags.LetterJ)
                                 )
                                 {
-                                    numsyllable--;
+                                    numSyllable--;
                                 }
 
                                 // increment word number, if the second root has a compoundroot flag
                                 if (rv != null && rv.ContainsFlag(Affix.CompoundRoot))
                                 {
-                                    wordnum++;
+                                    wordNum++;
                                 }
 
                                 // check forbiddenwords
                                 if (
                                     rv != null
-                                    && rv.HasFlags
+                                    &&
+                                    rv.HasFlags
                                     &&
                                     (
                                         rv.ContainsAnyFlags(Affix.ForbiddenWord, SpecialFlags.OnlyUpcaseFlag)
@@ -3867,28 +3924,33 @@ namespace Hunspell
 
                                 if (
                                     rv != null
-                                    && rv.ContainsAnyFlags(Affix.CompoundFlag, Affix.CompoundEnd)
+                                    &&
+                                    rv.ContainsAnyFlags(Affix.CompoundFlag, Affix.CompoundEnd)
                                     &&
                                     (
                                         !Affix.CompoundWordMax.HasValue
                                         ||
-                                        wordnum + 1 < Affix.CompoundWordMax
+                                        wordNum + 1 < Affix.CompoundWordMax
                                         ||
                                         (
                                             Affix.CompoundMaxSyllable != 0
                                             &&
-                                            numsyllable + GetSyllable(rv.Word) <= Affix.CompoundMaxSyllable
+                                            numSyllable + GetSyllable(rv.Word) <= Affix.CompoundMaxSyllable
                                         )
                                     )
                                     && // test CHECKCOMPOUNDPATTERN
                                     (
                                         !Affix.HasCompoundPatterns
-                                        || scpd != 0
-                                        || !CompoundPatternCheck(word, i, rv_first, rv, 0)
+                                        ||
+                                        scpd != 0
+                                        ||
+                                        !CompoundPatternCheck(word, i, rvFirst, rv, false)
                                     )
                                     &&
                                     (
-                                        !Affix.CheckCompoundDup || rv != rv_first
+                                        !Affix.CheckCompoundDup
+                                        ||
+                                        rv != rvFirst
                                     )
                                     && // test CHECKCOMPOUNDPATTERN conditions
                                     (
@@ -3908,21 +3970,21 @@ namespace Hunspell
                                         return null;
                                     }
 
-                                    return rv_first;
+                                    return rvFirst;
                                 }
 
-                                numsyllable = oldnumsyllable2;
-                                wordnum = oldwordnum2;
+                                numSyllable = oldnumsyllable2;
+                                wordNum = oldwordnum2;
 
                                 // perhaps second word has prefix or/and suffix
                                 ClearSuffix();
                                 SuffixFlag = default(FlagValue);
 
-                                rv = (onlycpdrule == 0 && Affix.CompoundFlag.HasValue)
+                                rv = (!onlycpdrule && Affix.CompoundFlag.HasValue)
                                      ? AffixCheck(word.Substring(i), Affix.CompoundFlag, CompoundOptions.End)
                                      : null;
 
-                                if (rv == null && Affix.CompoundEnd.HasValue && onlycpdrule == 0)
+                                if (rv == null && Affix.CompoundEnd.HasValue && !onlycpdrule)
                                 {
                                     ClearSuffix();
                                     ClearPrefix();
@@ -3935,7 +3997,7 @@ namespace Hunspell
                                     if (rv != null && DefCompoundCheck(ref words, wnum + 1, rv, null, 1))
                                     {
                                         st.Destroy();
-                                        return rv_first;
+                                        return rvFirst;
                                     }
 
                                     rv = null;
@@ -3960,9 +4022,12 @@ namespace Hunspell
                                 // test CHECKCOMPOUNDPATTERN conditions (forbidden compounds)
                                 if (
                                     rv != null
-                                    && scpd == 0
-                                    && Affix.HasCompoundPatterns
-                                    && CompoundPatternCheck(word, i, rv_first, rv, affixed)
+                                    &&
+                                    scpd == 0
+                                    &&
+                                    Affix.HasCompoundPatterns
+                                    &&
+                                    CompoundPatternCheck(word, i, rvFirst, rv, affixed)
                                 )
                                 {
                                     rv = null;
@@ -3971,7 +4036,8 @@ namespace Hunspell
                                 // check non_compound flag in suffix and prefix
                                 if (
                                     rv != null
-                                    && Affix.CompoundForbidFlag.HasValue
+                                    &&
+                                    Affix.CompoundForbidFlag.HasValue
                                     &&
                                     (
                                         (Prefix != null && Prefix.ContainsContClass(Affix.CompoundForbidFlag))
@@ -3986,8 +4052,10 @@ namespace Hunspell
                                 // check FORCEUCASE
                                 if (
                                     rv != null
-                                    && rv.ContainsFlag(Affix.ForceUpperCase)
-                                    && !info.HasFlag(SpellCheckResultType.OrigCap)
+                                    &&
+                                    rv.ContainsFlag(Affix.ForceUpperCase)
+                                    &&
+                                    !info.HasFlag(SpellCheckResultType.OrigCap)
                                 )
                                 {
                                     rv = null;
@@ -3996,7 +4064,8 @@ namespace Hunspell
                                 // check forbiddenwords
                                 if (
                                     rv != null
-                                    && rv.HasFlags
+                                    &&
+                                    rv.HasFlags
                                     &&
                                     (
                                         rv.ContainsAnyFlags(Affix.ForbiddenWord, SpecialFlags.OnlyUpcaseFlag)
@@ -4017,22 +4086,20 @@ namespace Hunspell
                                 if (Affix.Culture.IsHungarianLanguage())
                                 {
                                     // calculate syllable number of the word
-                                    numsyllable += GetSyllable(word.Substring(i));
+                                    numSyllable += GetSyllable(word.Substring(i));
 
                                     // - affix syllable num.
                                     // XXX only second suffix (inflections, not derivations)
                                     if (SuffixAppend != null)
                                     {
-                                        var tmp = SuffixAppend;
-                                        tmp = tmp.Reverse();
-                                        numsyllable -= GetSyllable(tmp) + SuffixExtra;
+                                        numSyllable -= GetSyllable(SuffixAppend.Reverse()) + SuffixExtra;
                                     }
 
                                     // + 1 word, if syllable number of the prefix > 1 (hungarian
                                     // convention)
                                     if (Prefix != null && GetSyllable(Prefix.Key) > 1)
                                     {
-                                        wordnum++;
+                                        wordNum++;
                                     }
 
                                     // increment syllable num, if last word has a SYLLABLENUM flag
@@ -4042,17 +4109,17 @@ namespace Hunspell
                                     {
                                         if (SuffixFlag == SpecialFlags.LetterCLower)
                                         {
-                                            numsyllable += 2;
+                                            numSyllable += 2;
                                         }
                                         else if (SuffixFlag == SpecialFlags.LetterJ)
                                         {
-                                            numsyllable += 1;
+                                            numSyllable += 1;
                                         }
                                         else if (SuffixFlag == SpecialFlags.LetterI)
                                         {
                                             if (rv != null && rv.ContainsFlag(SpecialFlags.LetterJ))
                                             {
-                                                numsyllable += 1;
+                                                numSyllable += 1;
                                             }
                                         }
                                     }
@@ -4061,7 +4128,7 @@ namespace Hunspell
                                 // increment word number, if the second word has a compoundroot flag
                                 if (rv != null && rv.ContainsFlag(Affix.CompoundRoot))
                                 {
-                                    wordnum++;
+                                    wordNum++;
                                 }
 
                                 // second word is acceptable, as a word with prefix or/and suffix?
@@ -4073,16 +4140,16 @@ namespace Hunspell
                                     &&
                                     (
                                         !Affix.CompoundWordMax.HasValue
-                                        || wordnum + 1 < Affix.CompoundWordMax
+                                        || wordNum + 1 < Affix.CompoundWordMax
                                         ||
                                         (
                                             Affix.CompoundMaxSyllable != 0
-                                            && numsyllable <= Affix.CompoundMaxSyllable
+                                            && numSyllable <= Affix.CompoundMaxSyllable
                                         )
                                     )
                                     &&
                                     (
-                                        !Affix.CheckCompoundDup || rv != rv_first
+                                        !Affix.CheckCompoundDup || rv != rvFirst
                                     )
                                 )
                                 {
@@ -4094,25 +4161,25 @@ namespace Hunspell
                                         return null;
                                     }
 
-                                    return rv_first;
+                                    return rvFirst;
                                 }
 
-                                numsyllable = oldnumsyllable2;
-                                wordnum = oldwordnum2;
+                                numSyllable = oldnumsyllable2;
+                                wordNum = oldwordnum2;
 
                                 // perhaps second word is a compound word (recursive call)
-                                if (wordnum < maxwordnum)
+                                if (wordNum < maxwordnum)
                                 {
-                                    rv = CompoundCheck(st.Substring(i), wordnum + 1, numsyllable, maxwordnum, wnum + 1, words, ref rwords, 0, isSug, ref info);
+                                    rv = CompoundCheck(st.Substring(i), wordNum + 1, numSyllable, maxwordnum, wnum + 1, words, ref rwords, 0, isSug, ref info);
 
                                     if (
                                         rv != null
                                         && Affix.HasCompoundPatterns
                                         &&
                                         (
-                                            (scpd == 0 && CompoundPatternCheck(word, i, rv_first, rv, affixed))
+                                            (scpd == 0 && CompoundPatternCheck(word, i, rvFirst, rv, affixed))
                                             ||
-                                            (scpd != 0 && !CompoundPatternCheck(word, i, rv_first, rv, affixed))
+                                            (scpd != 0 && !CompoundPatternCheck(word, i, rvFirst, rv, affixed))
                                         )
                                     )
                                     {
@@ -4184,15 +4251,15 @@ namespace Hunspell
                                     }
 
                                     st.Destroy();
-                                    return rv_first;
+                                    return rvFirst;
                                 }
                             }
-                            while (striple && !checkedstriple);  // end of striple loop
+                            while (striple && !checkedStriple);  // end of striple loop
 
-                            if (checkedstriple)
+                            if (checkedStriple)
                             {
                                 i++;
-                                checkedstriple = false;
+                                checkedStriple = false;
                                 striple = false;
                             }
 
@@ -4209,11 +4276,11 @@ namespace Hunspell
 
                         scpd++;
                     }
-                    while (onlycpdrule == 0 && Affix.SimplifiedCompound && scpd <= Affix.CompoundPatterns.Length); // end of simplifiedcpd loop
+                    while (!onlycpdrule && Affix.SimplifiedCompound && scpd <= Affix.CompoundPatterns.Length); // end of simplifiedcpd loop
 
                     scpd = 0;
-                    wordnum = oldwordnum;
-                    numsyllable = oldnumsyllable;
+                    wordNum = oldwordnum;
+                    numSyllable = oldnumsyllable;
 
                     if (soldi != 0)
                     {
@@ -4229,11 +4296,24 @@ namespace Hunspell
                         }
                     }
                 }
-                while (Affix.HasCompoundRules && oldwordnum == 0 && onlycpdrule++ < 1);
+                while (Affix.HasCompoundRules && oldwordnum == 0 && !PostfixIncrement(ref onlycpdrule));
             }
 
             st.Destroy();
             return null;
+        }
+
+        private static bool PostfixIncrement(ref bool b)
+        {
+            if (b)
+            {
+                return true;
+            }
+            else
+            {
+                b = true;
+                return false;
+            }
         }
 
         /// <summary>
@@ -4280,12 +4360,11 @@ namespace Hunspell
         /// </summary>
         private DictionaryEntry PrefixCheck(string word, CompoundOptions inCompound, FlagValue needFlag)
         {
-            DictionaryEntry rv = null;
-
             ClearPrefix();
             PrefixAppend = null;
             SuffixAppend = null;
             SuffixExtra = 0;
+            DictionaryEntry rv;
 
             // first handle the special case of 0 length prefixes
             foreach (var peGroup in Affix.Prefixes)
@@ -4316,7 +4395,7 @@ namespace Hunspell
             {
                 foreach (var pptr in pptrGroup.Entries.Where(e => !string.IsNullOrEmpty(e.Key)))
                 {
-                    if (IsSubset(pptr.Key, word))
+                    if (StringEx.IsSubset(pptr.Key, word))
                     {
                         if (
                             // fogemorpheme
@@ -4346,13 +4425,14 @@ namespace Hunspell
             ClearPrefix();
             SuffixAppend = null;
             SuffixExtra = 0;
+            DictionaryEntry rv;
 
             // first handle the special case of 0 length prefixes
             foreach (var peGroup in Affix.Prefixes)
             {
-                foreach (var pe in peGroup.Entries.Where(e => string.IsNullOrEmpty(e.Key)))
+                foreach (var pe in peGroup.Entries.Where(e => e.Key.Length == 0))
                 {
-                    var rv = CheckTwoSfx(peGroup, pe, word, inCompound, needFlag);
+                    rv = CheckTwoSfx(peGroup, pe, word, inCompound, needFlag);
                     if (rv != null)
                     {
                         return rv;
@@ -4363,11 +4443,11 @@ namespace Hunspell
             // now handle the general case
             foreach (var pptrGroup in Affix.Prefixes)
             {
-                foreach (var pptr in pptrGroup.Entries.Where(e => !string.IsNullOrEmpty(e.Key)))
+                foreach (var pptr in pptrGroup.Entries.Where(e => e.Key.Length != 0))
                 {
-                    if (IsSubset(pptr.Key, word))
+                    if (StringEx.IsSubset(pptr.Key, word))
                     {
-                        var rv = CheckTwoSfx(pptrGroup, pptr, word, inCompound, needFlag);
+                        rv = CheckTwoSfx(pptrGroup, pptr, word, inCompound, needFlag);
                         if (rv != null)
                         {
                             SetPrefix(pptrGroup, pptr);
@@ -4390,7 +4470,7 @@ namespace Hunspell
             // and if there are enough chars in root word and added back strip chars
             // to meet the number of characters conditions, then test it
 
-            int tmpl = word.Length - pe.Append.Length; // length of tmpword
+            var tmpl = word.Length - pe.Append.Length; // length of tmpword
 
             if (
                 (tmpl > 0 || (tmpl == 0 && Affix.FullStrip))
@@ -4413,8 +4493,6 @@ namespace Hunspell
 
                 if (TestCondition(pe, tmpword))
                 {
-                    tmpl += pe.Strip.Length;
-
                     // prefix matched but no root word was found
                     // if CrossProduct is allowed, try again but now
                     // cross checked combined with a suffix
@@ -4446,7 +4524,7 @@ namespace Hunspell
             // first handle the special case of 0 length suffixes
             foreach (var seGroup in Affix.Suffixes)
             {
-                foreach (var se in seGroup.Entries.Where(e => string.IsNullOrEmpty(e.Key)))
+                foreach (var se in seGroup.Entries.Where(e => e.Key.Length == 0))
                 {
                     if (!cclass.HasValue || se.HasContClasses)
                     {
@@ -4508,7 +4586,7 @@ namespace Hunspell
                             )
                         )
                         {
-                            rv = CheckWordSuffix(seGroup, se, word, sfxOpts, pfxGroup, pfx, cclass, needFlag, inCompound != CompoundOptions.Not ? new FlagValue() : Affix.OnlyInCompound);
+                            rv = CheckWordSuffix(seGroup, se, word, sfxOpts, pfxGroup, pfx, cclass, needFlag, inCompound != CompoundOptions.Not ? default(FlagValue) : Affix.OnlyInCompound);
                             if (rv != null)
                             {
                                 SetSuffix(seGroup, se);
@@ -4527,9 +4605,9 @@ namespace Hunspell
 
             foreach (var sptrGroup in Affix.Suffixes)
             {
-                foreach (var sptr in sptrGroup.Entries.Where(e => !string.IsNullOrEmpty(e.Key)))
+                foreach (var sptr in sptrGroup.Entries.Where(e => e.Key.Length != 0))
                 {
-                    if (IsReverseSubset(sptr.Key, word))
+                    if (StringEx.IsReverseSubset(sptr.Key, word))
                     {
                         if (
                             (
@@ -4641,7 +4719,7 @@ namespace Hunspell
             // first handle the special case of 0 length suffixes
             foreach (var seGroup in Affix.Suffixes)
             {
-                foreach (var se in seGroup.Entries.Where(e => string.IsNullOrEmpty(e.Key)))
+                foreach (var se in seGroup.Entries.Where(e => e.Key.Length == 0))
                 {
                     if (Affix.ContClasses.Contains(seGroup.AFlag))
                     {
@@ -4662,9 +4740,9 @@ namespace Hunspell
 
             foreach (var sptrGroup in Affix.Suffixes)
             {
-                foreach (var sptr in sptrGroup.Entries.Where(e => !string.IsNullOrEmpty(e.Key)))
+                foreach (var sptr in sptrGroup.Entries.Where(e => e.Key.Length != 0))
                 {
-                    if (IsReverseSubset(sptr.Key, word))
+                    if (StringEx.IsReverseSubset(sptr.Key, word))
                     {
                         if (Affix.ContClasses.Contains(sptrGroup.AFlag))
                         {
@@ -4687,6 +4765,9 @@ namespace Hunspell
             return null;
         }
 
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private ImmutableArray<DictionaryEntry> Lookup(string word)
         {
             return Dictionary.FindEntriesByRootWord(word);
@@ -4719,11 +4800,11 @@ namespace Hunspell
             {
                 w = true;
                 words = def;
-            }
 
-            if (words == null)
-            {
-                return false;
+                if (words == null)
+                {
+                    return false;
+                }
             }
 
             var btinfo = new List<MetacharData>
@@ -4731,7 +4812,7 @@ namespace Hunspell
                 new MetacharData()
             };
 
-            int bt = 0;
+            var bt = 0;
 
             words[wnum] = rv;
 
@@ -4747,20 +4828,20 @@ namespace Hunspell
                 return false;
             }
 
-            var ok = 0;
+            var ok = false;
             foreach (var compoundRule in Affix.CompoundRules)
             {
                 foreach (var flag in compoundRule)
                 {
                     if (!flag.Equals('*') && !flag.Equals('?') && rv.ContainsFlag(flag))
                     {
-                        ok = 1;
+                        ok = true;
                         break;
                     }
                 }
             }
 
-            if (ok == 0)
+            if (!ok)
             {
                 words[wnum] = null;
                 if (w)
@@ -4775,9 +4856,8 @@ namespace Hunspell
             {
                 var pp = 0; // pattern position
                 var wp = 0; // "words" position
-                int ok2;
-                ok = 1;
-                ok2 = 1;
+                ok = true;
+                var ok2 = true;
                 do
                 {
                     while (pp < Affix.CompoundRules[i].Length && wp <= wnum)
@@ -4793,7 +4873,7 @@ namespace Hunspell
                         )
                         {
                             var wend = Affix.CompoundRules[i][pp + 1] == '?' ? wp : wnum;
-                            ok2 = 1;
+                            ok2 = true;
                             pp += 2;
                             btinfo[bt].btpp = pp;
                             btinfo[bt].btwp = wp;
@@ -4802,7 +4882,7 @@ namespace Hunspell
                             {
                                 if (!words[wp].HasFlags || !words[wp].ContainsFlag(Affix.CompoundRules[i][pp - 2]))
                                 {
-                                    ok2 = 0;
+                                    ok2 = false;
                                     break;
                                 }
 
@@ -4811,7 +4891,7 @@ namespace Hunspell
 
                             if (wp <= wnum)
                             {
-                                ok2 = 0;
+                                ok2 = false;
                             }
 
                             btinfo[bt].btnum = wp - btinfo[bt].btwp;
@@ -4821,14 +4901,14 @@ namespace Hunspell
                                 ++bt;
                                 btinfo.Add(new MetacharData());
                             }
-                            if (ok2 != 0)
+                            if (ok2)
                             {
                                 break;
                             }
                         }
                         else
                         {
-                            ok2 = 1;
+                            ok2 = true;
                             if (
                                 words[wp] == null
                                 ||
@@ -4837,7 +4917,7 @@ namespace Hunspell
                                 !words[wp].ContainsFlag(Affix.CompoundRules[i][pp])
                             )
                             {
-                                ok = 0;
+                                ok = false;
                                 break;
                             }
 
@@ -4846,12 +4926,12 @@ namespace Hunspell
 
                             if (Affix.CompoundRules[i].Length == pp && wp <= wnum)
                             {
-                                ok = 0;
+                                ok = false;
                             }
                         }
                     }
 
-                    if (ok != 0 && ok2 != 0)
+                    if (ok && ok2)
                     {
                         var r = pp;
                         while (
@@ -4880,7 +4960,7 @@ namespace Hunspell
                     {
                         do
                         {
-                            ok = 1;
+                            ok = true;
                             btinfo[bt - 1].btnum--;
                             pp = btinfo[bt - 1].btpp;
                             wp = btinfo[bt - 1].btwp + btinfo[bt - 1].btnum;
@@ -4892,8 +4972,9 @@ namespace Hunspell
                 while (bt != 0);
 
                 if (
-                    ok != 0
-                    && ok2 != 0
+                    ok
+                    &&
+                    ok2
                     &&
                     (
                         all == 0
@@ -4907,10 +4988,13 @@ namespace Hunspell
 
                 // check zero ending
                 while (
-                    ok != 0
-                    && ok2 != 0
-                    && pp < Affix.CompoundRules[i].Length
-                    && pp + 1 < Affix.CompoundRules[i].Length
+                    ok
+                    &&
+                    ok2
+                    &&
+                    pp < Affix.CompoundRules[i].Length
+                    &&
+                    pp + 1 < Affix.CompoundRules[i].Length
                     &&
                     (
                         (Affix.CompoundRules[i][pp + 1] == '*')
@@ -4923,9 +5007,11 @@ namespace Hunspell
                 }
 
                 if (
-                    ok != 0
-                    && ok2 != 0
-                    && Affix.CompoundRules[i].Length <= pp
+                    ok
+                    &&
+                    ok2
+                    &&
+                    Affix.CompoundRules[i].Length <= pp
                 )
                 {
                     return true;
@@ -4944,7 +5030,7 @@ namespace Hunspell
         /// <summary>
         /// Forbid compounding with neighbouring upper and lower case characters at word bounds.
         /// </summary>
-        private bool CompoundCaseCheck(string word, int pos)
+        private static bool CompoundCaseCheck(string word, int pos)
         {
             // NOTE: this implementation could be much simpler but an attempt is made here
             // to preserve the same result when indexes may be out of bounds
@@ -5006,7 +5092,7 @@ namespace Hunspell
         /// <summary>
         /// Forbid compoundings when there are special patterns at word bound.
         /// </summary>
-        private bool CompoundPatternCheck(string word, int pos, DictionaryEntry r1, DictionaryEntry r2, int affixed)
+        private bool CompoundPatternCheck(string word, int pos, DictionaryEntry r1, DictionaryEntry r2, bool affixed)
         {
             var wordAfterPos = word.Substring(pos);
 
@@ -5016,7 +5102,7 @@ namespace Hunspell
                 int len;
 
                 if (
-                    IsSubset(patternEntry.Pattern2, wordAfterPos)
+                    StringEx.IsSubset(patternEntry.Pattern2, wordAfterPos)
                     &&
                     (
                         r1 == null
@@ -5072,6 +5158,7 @@ namespace Hunspell
         /// Is word a non compound with a REP substitution?
         /// </summary>
         /// <seealso cref="AffixConfig.CheckCompoundRep"/>
+        /// <seealso cref="AffixConfig.Replacements"/>
         private bool CompoundReplacementCheck(string word)
         {
             if (word.Length < 2 || !Affix.HasReplacements)
@@ -5079,31 +5166,20 @@ namespace Hunspell
                 return false;
             }
 
-            for (var i = 0; i < Affix.Replacements.Length; i++)
+            foreach (var replacementEntry in Affix.Replacements)
             {
-                var replacementEntry = Affix.Replacements[i];
-                int rIndex = 0;
-                var lenp = replacementEntry.Pattern.Length;
                 // search every occurence of the pattern in the word
-                while ((rIndex = word.IndexOf(replacementEntry.Pattern, rIndex, StringComparison.Ordinal)) >= 0)
+                var rIndex = word.IndexOf(replacementEntry.Pattern, StringComparison.Ordinal);
+                while (rIndex >= 0)
                 {
-                    var candidate = word;
-                    var type = rIndex + replacementEntry.Pattern.Length == lenp
-                        ? rIndex == 0 ? ReplacementValueType.Isol : ReplacementValueType.Fin
-                        : rIndex == 0 ? ReplacementValueType.Ini : ReplacementValueType.Med;
-
+                    var type = rIndex == 0 ? ReplacementValueType.Isol : ReplacementValueType.Med;
                     var replacement = replacementEntry[type];
-                    if (replacement != null)
+                    if (replacement != null && CandidateCheck(word.Replace(rIndex, replacementEntry.Pattern.Length, replacement)))
                     {
-                        candidate = candidate.Replace(rIndex, lenp, replacement);
-
-                        if (CandidateCheck(candidate))
-                        {
-                            return true;
-                        }
+                        return true;
                     }
 
-                    rIndex++; // search for the next letter
+                    rIndex = word.IndexOf(replacementEntry.Pattern, rIndex + 1, StringComparison.Ordinal); // search for the next letter
                 }
             }
 
@@ -5124,7 +5200,7 @@ namespace Hunspell
                 // generate new root word by removing prefix and adding
                 // back any characters that would have been stripped
 
-                var tmpword = entry.Strip + word.Substring(entry.Append.Length);
+                var tmpword = StringEx.ConcatSubstring(entry.Strip, word, entry.Append.Length, word.Length - entry.Append.Length);
 
                 // now make sure all of the conditions on characters
                 // are met.  Please see the appendix at the end of
@@ -5174,53 +5250,8 @@ namespace Hunspell
             return null;
         }
 
-        private bool IsSubset(string s1, string s2)
-        {
-            if (s1.Length > s2.Length)
-            {
-                return false;
-            }
-
-            for (var i = 0; i < s1.Length; i++)
-            {
-                if (s1[i] != '.' && s1[i] != s2[i])
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        private bool IsReverseSubset(string s1, string s2)
-        {
-            var len = s2.Length;
-            var index1 = 0;
-            var index2 = len - 1;
-            while
-            (
-                len > 0
-                &&
-                index1 < s1.Length
-                &&
-                (
-                    (s1[index1] == s2[index2])
-                    ||
-                    (s1[index1] == '.')
-                )
-            )
-            {
-                index1++;
-                index2--;
-                len--;
-            }
-
-            return index1 >= s1.Length;
-        }
-
         private DictionaryEntry CheckWordSuffix(AffixEntryGroup<SuffixEntry> group, SuffixEntry entry, string word, AffixEntryOptions optFlags, AffixEntryGroup<PrefixEntry> pfxGroup, PrefixEntry pfx, FlagValue cclass, FlagValue needFlag, FlagValue badFlag)
         {
-            var ep = pfx;
             // if this suffix is being cross checked with a prefix
             // but it does not support cross products skip it
 
@@ -5239,13 +5270,9 @@ namespace Hunspell
             // it checked in test_condition()
 
             if (
-                (
-                    tmpl > 0
-                    ||
-                    (tmpl == 0 && Affix.FullStrip)
-                )
+                (tmpl > 0 || (tmpl == 0 && Affix.FullStrip))
                 &&
-                tmpl + entry.Strip.Length >= entry.Conditions.Count
+                (tmpl + entry.Strip.Length >= entry.Conditions.Count)
             )
             {
                 // generate new root word by removing suffix and adding
@@ -5254,9 +5281,7 @@ namespace Hunspell
 
                 var tmpstring = string.IsNullOrEmpty(entry.Strip)
                     ? word.Substring(0, tmpl)
-                    : word.Substring(0, tmpl) + entry.Strip;
-
-                var endword = tmpstring.Length;
+                    : StringEx.ConcatSubstring(word, 0, tmpl, entry.Strip);
 
                 // now make sure all of the conditions on characters
                 // are met.  Please see the appendix at the end of
@@ -5274,15 +5299,15 @@ namespace Hunspell
                             (
                                 he.ContainsFlag(group.AFlag)
                                 ||
-                                (ep != null && ep.ContainsContClass(group.AFlag))
+                                (pfx != null && pfx.ContainsContClass(group.AFlag))
                             )
                             &&
                             (
                                 !optFlags.HasFlag(AffixEntryOptions.CrossProduct)
                                 ||
-                                (ep != null && he.ContainsFlag(pfxGroup.AFlag))
+                                (pfx != null && he.ContainsFlag(pfxGroup.AFlag))
                                 || // enabled by prefix
-                                (ep != null && entry.ContainsContClass(pfxGroup.AFlag))
+                                (pfx != null && entry.ContainsContClass(pfxGroup.AFlag))
                             )
                             && // handle cont. class
                             (cclass == 0 || entry.ContainsContClass(cclass))
@@ -5312,8 +5337,6 @@ namespace Hunspell
         /// </summary>
         private DictionaryEntry CheckTwoSfx(AffixEntryGroup<SuffixEntry> suffixGroup, SuffixEntry se, string word, AffixEntryOptions optflags, AffixEntryGroup<PrefixEntry> pfxGroup, PrefixEntry ppfx, FlagValue needflag)
         {
-            var ep = ppfx;
-
             // if this suffix is being cross checked with a prefix
             // but it does not support cross products skip it
 
@@ -5327,7 +5350,7 @@ namespace Hunspell
             // and if there are enough chars in root word and added back strip chars
             // to meet the number of characters conditions, then test it
 
-            int tmpl = word.Length - se.Append.Length; // length of tmpword
+            var tmpl = word.Length - se.Append.Length; // length of tmpword
 
             // the second condition is not enough for UTF-8 strings
             // it checked in test_condition()
@@ -5342,9 +5365,7 @@ namespace Hunspell
                 // back any characters that would have been stripped or
                 // or null terminating the shorter string
 
-
-                var tmpword = word.Substring(0, Math.Min(tmpl, word.Length)) + se.Strip;
-                tmpl = tmpword.Length;
+                var tmpword = StringEx.ConcatSubstring(word, 0, Math.Min(tmpl, word.Length), se.Strip);
 
                 // now make sure all of the conditions on characters
                 // are met.  Please see the appendix at the end of
@@ -5352,27 +5373,12 @@ namespace Hunspell
                 // tested
 
                 // if all conditions are met then recall suffix_check
-
-                if (TestCondition(se, tmpword)) // TODO: make sure this does not require reversal
+                if (TestCondition(se, tmpword))
                 {
-                    DictionaryEntry he;
-
-                    if (ppfx != null)
-                    {
+                    var he = ppfx != null && se.ContainsContClass(pfxGroup.AFlag)
                         // handle conditional suffix
-                        if (se.ContainsContClass(pfxGroup.AFlag))
-                        {
-                            he = SuffixCheck(tmpword, AffixEntryOptions.None, null, null, suffixGroup.AFlag, needflag, CompoundOptions.Not);
-                        }
-                        else
-                        {
-                            he = SuffixCheck(tmpword, optflags, pfxGroup, ppfx, suffixGroup.AFlag, needflag, CompoundOptions.Not);
-                        }
-                    }
-                    else
-                    {
-                        he = SuffixCheck(tmpword, AffixEntryOptions.None, null, null, suffixGroup.AFlag, needflag, CompoundOptions.Not);
-                    }
+                        ? SuffixCheck(tmpword, AffixEntryOptions.None, null, null, suffixGroup.AFlag, needflag, CompoundOptions.Not)
+                        : SuffixCheck(tmpword, optflags, pfxGroup, ppfx, suffixGroup.AFlag, needflag, CompoundOptions.Not);
 
                     if (he != null)
                     {
@@ -5398,113 +5404,6 @@ namespace Hunspell
         private bool TestCondition(SuffixEntry entry, string word)
         {
             return entry.Conditions.IsEndingMatch(word);
-        }
-
-        private bool TryConvertInput(string input, out string converted)
-        {
-
-            var convertedBuilder = StringBuilderPool.Get();
-
-            var appliedConversion = false;
-            for (var i = 0; i < input.Length; i++)
-            {
-                var replacementEntry = FindLargestMatchingInputConversion(input.Substring(i));
-                var replacementText = replacementEntry == null
-                    ? string.Empty
-                    : ExtractReplacementText(input.Length - i, replacementEntry, i == 0);
-
-                if (replacementText.Length == 0)
-                {
-                    convertedBuilder.Append(input[i]);
-                }
-                else
-                {
-                    convertedBuilder.Append(replacementText);
-                    i += replacementEntry.Pattern.Length - 1;
-                    appliedConversion = true;
-                }
-            }
-
-            converted = StringBuilderPool.GetStringAndReturn(convertedBuilder);
-
-            return appliedConversion;
-        }
-
-        private bool TryConvertOutput(string input, out string converted)
-        {
-            var convertedBuilder = StringBuilderPool.Get();
-
-            var appliedConversion = false;
-            for (var i = 0; i < input.Length; i++)
-            {
-                var replacementEntry = FindLargestMatchingOutputConversion(input.Substring(i));
-                var replacementText = replacementEntry == null
-                    ? string.Empty
-                    : ExtractReplacementText(input.Length - i, replacementEntry, i == 0);
-
-                if (replacementText.Length == 0)
-                {
-                    convertedBuilder.Append(input[i]);
-                }
-                else
-                {
-                    convertedBuilder.Append(replacementText);
-                    i += replacementEntry.Pattern.Length - 1;
-                    appliedConversion = true;
-                }
-            }
-
-            converted = StringBuilderPool.GetStringAndReturn(convertedBuilder);
-
-            return appliedConversion;
-        }
-
-        /// <summary>
-        /// Finds an input conversion matching the longest version of the given <paramref name="text"/> from the left.
-        /// </summary>
-        /// <param name="text">The text to find a matching input conversion for.</param>
-        /// <returns>The best matching input conversion.</returns>
-        /// <seealso cref="AffixConfig.InputConversions"/>
-        private MultiReplacementEntry FindLargestMatchingInputConversion(string text)
-        {
-            MultiReplacementEntry entry = null;
-            for (var searchLength = text.Length; searchLength > 0; searchLength--)
-            {
-                if (Affix.InputConversions.TryGetValue(text.Substring(0, searchLength), out entry))
-                {
-                    break;
-                }
-            }
-
-            return entry;
-        }
-
-        private MultiReplacementEntry FindLargestMatchingOutputConversion(string text)
-        {
-            MultiReplacementEntry entry = null;
-            for (var searchLength = text.Length; searchLength > 0; searchLength--)
-            {
-                if (Affix.OutputConversions.TryGetValue(text.Substring(0, searchLength), out entry))
-                {
-                    break;
-                }
-            }
-
-            return entry;
-        }
-
-        private string ExtractReplacementText(int remainingCharactersToReplace, ReplacementEntry entry, bool atStart)
-        {
-            var type = remainingCharactersToReplace == entry.Pattern.Length
-                ? (atStart ? ReplacementValueType.Isol : ReplacementValueType.Fin)
-                : (atStart ? ReplacementValueType.Ini : ReplacementValueType.Med);
-
-            while (type != ReplacementValueType.Med && string.IsNullOrEmpty(entry[type]))
-            {
-                type = (type == ReplacementValueType.Fin && !atStart) ? ReplacementValueType.Med : type - 1;
-            }
-
-            return entry[type] ?? string.Empty;
         }
 
         /// <summary>
@@ -5549,13 +5448,9 @@ namespace Hunspell
         private static int CountMatchingFromLeft(string text, char character)
         {
             var count = 0;
-
-            if (text != null)
+            while (count < text.Length && text[count] == character)
             {
-                while (count < text.Length && text[count] == character)
-                {
-                    count++;
-                }
+                count++;
             }
 
             return count;
@@ -5563,11 +5458,6 @@ namespace Hunspell
 
         private static int CountMatchingFromRight(string text, char character)
         {
-            if (string.IsNullOrEmpty(text))
-            {
-                return 0;
-            }
-
             var lastIndex = text.Length - 1;
             var searchIndex = lastIndex;
             while (searchIndex >= 0 && text[searchIndex] == character)
@@ -5578,7 +5468,7 @@ namespace Hunspell
             return lastIndex - searchIndex;
         }
 
-        private bool IsNumericWord(string word)
+        private static bool IsNumericWord(string word)
         {
             int i;
             byte state = 0; // 0 = begin, 1 = number, 2 = separator
