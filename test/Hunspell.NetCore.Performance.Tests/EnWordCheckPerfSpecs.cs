@@ -15,7 +15,7 @@ namespace Hunspell.NetCore.Performance.Tests
 
         [PerfBenchmark(
             Description = "Ensure that words can be checked quickly.",
-            NumberOfIterations = 1,
+            NumberOfIterations = 3,
             RunMode = RunMode.Throughput,
             TestMode = TestMode.Measurement)]
         [MemoryMeasurement(MemoryMetric.TotalBytesAllocated)]

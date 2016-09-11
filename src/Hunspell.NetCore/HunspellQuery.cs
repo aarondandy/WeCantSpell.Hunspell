@@ -21,7 +21,7 @@ namespace Hunspell
 
         private const int MaxSharps = 5;
 
-        private const int MaxWordLen = 176;
+        internal const int MaxWordLen = 176;
 
         private const int MaxWordUtf8Len = MaxWordLen * 3;
 

@@ -48,6 +48,21 @@ namespace Hunspell
                 );
         }
 
+        public bool ContainsAnyFlags(FlagValue a, FlagValue b, FlagValue c, FlagValue d)
+        {
+            return HasFlags
+                &&
+                (
+                    (a.HasValue && Flags.Contains(a))
+                    ||
+                    (b.HasValue && Flags.Contains(b))
+                    ||
+                    (c.HasValue && Flags.Contains(c))
+                    ||
+                    (d.HasValue && Flags.Contains(d))
+                );
+        }
+
         public bool ContainsAnyFlags(params FlagValue[] flags)
         {
             if (!HasFlags || flags == null || flags.Length == 0)
