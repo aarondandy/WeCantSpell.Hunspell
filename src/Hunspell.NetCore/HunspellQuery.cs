@@ -1339,14 +1339,14 @@ namespace Hunspell
             // try swapping not adjacent chars one by one
             for (var p = 0; p < candidate.Length; p++)
             {
-                for (var q = 0; q < candidate.Length; q++)
+                for (var q = p + 1; q < candidate.Length; q++)
                 {
-                    if (p != q)
-                    {
-                        candidate.Swap(p, q);
-                        TestSug(wlst, candidate.ToString(), cpdSuggest);
-                        candidate.Swap(p, q);
-                    }
+                    var c = candidate[p];
+                    candidate[p] = candidate[q];
+                    candidate[q] = c;
+                    TestSug(wlst, candidate.ToString(), cpdSuggest);
+                    candidate[q] = candidate[p];
+                    candidate[p] = c;
                 }
             }
 
@@ -1368,11 +1368,16 @@ namespace Hunspell
             var candidate = StringBuilderPool.Get(word, word.Length);
 
             // try swapping adjacent chars one by one
-            for (var i = 0; i < candidate.Length - 1; i++)
+            var lastCandidateIndex = candidate.Length - 1;
+            for (var i = 0; i < lastCandidateIndex; i++)
             {
-                candidate.Swap(i, i + 1);
+                var nexti = i + 1;
+                var c = candidate[i];
+                candidate[i] = candidate[nexti];
+                candidate[nexti] = c;
                 TestSug(wlst, candidate.ToString(), cpdSuggest);
-                candidate.Swap(i, i + 1);
+                candidate[nexti] = candidate[i];
+                candidate[i] = c;
             }
 
             // try double swaps for short words
