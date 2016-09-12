@@ -39,6 +39,13 @@ namespace Hunspell.NetCore.Performance.Tests
                             string line;
                             while((line = await reader.ReadLineAsync().ConfigureAwait(false)) != null)
                             {
+                                line = line.Trim();
+
+                                if(line.Length == 0 || line.StartsWith("#") || line.StartsWith("["))
+                                {
+                                    continue;
+                                }
+
                                 Words.AddRange(line.Split(WordSplitChars, StringSplitOptions.RemoveEmptyEntries));
                             }
                         }
