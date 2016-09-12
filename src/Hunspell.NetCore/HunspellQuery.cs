@@ -463,14 +463,15 @@ namespace Hunspell
 
         public List<string> Suggest()
         {
-            var word = WordToCheck;
             var slst = new List<string>();
 
-            int onlyCompoundSuggest = 0;
             if (!Dictionary.HasEntries)
             {
                 return slst;
             }
+
+            var word = WordToCheck;
+            var onlyCompoundSuggest = false;
 
             // process XML input of the simplified API (see manual)
             if (StringEx.EqualsOffset(word, 0, DefaultXmlToken, 0, DefaultXmlToken.Length - 3))
@@ -486,27 +487,27 @@ namespace Hunspell
             CapitalizationType capType;
             int abbv;
             string scw;
-            string root;
+            string tempString;
 
             // input conversion
-            string convertedWord;
-            if (!Affix.HasInputConversions || !Affix.TryConvertInput(word, out convertedWord))
+            if (!Affix.HasInputConversions || !Affix.TryConvertInput(word, out tempString))
             {
-                convertedWord = word;
+                tempString = word;
             }
 
-            var wl = CleanWord2(out scw, convertedWord, out capType, out abbv);
-            if (wl == 0)
+            CleanWord2(out scw, tempString, out capType, out abbv);
+
+            if (scw.Length == 0)
             {
                 return slst;
             }
 
-            int capWords = 0;
+            var capWords = false;
 
             if (capType == CapitalizationType.None && Affix.ForceUpperCase.HasValue)
             {
                 var info = SpellCheckResultType.OrigCap;
-                if (CheckWord(scw, ref info, out root) != null)
+                if (CheckWord(scw, ref info, out tempString) != null)
                 {
                     var form = scw;
                     form = MakeInitCap(form);
@@ -521,7 +522,7 @@ namespace Hunspell
             }
             else if (capType == CapitalizationType.Init)
             {
-                capWords = 1;
+                capWords = true;
                 Suggest(slst, scw, ref onlyCompoundSuggest);
                 Suggest(slst, MakeAllSmall(scw), ref onlyCompoundSuggest);
             }
@@ -529,7 +530,7 @@ namespace Hunspell
             {
                 if (capType == CapitalizationType.HuhInit)
                 {
-                    capWords = 1;
+                    capWords = true;
                 }
 
                 Suggest(slst, scw, ref onlyCompoundSuggest);
@@ -582,7 +583,7 @@ namespace Hunspell
                         var slen = slst[j].Length - spaceIndex - 1;
 
                         // different case after space (need capitalisation)
-                        if ((slen < wl) && !StringEx.EqualsOffset(scw, wl - slen, slst[j], 1 + spaceIndex))
+                        if ((slen < scw.Length) && !StringEx.EqualsOffset(scw, scw.Length - slen, slst[j], 1 + spaceIndex))
                         {
                             var removed = slst[j];
                             // set as first suggestion
@@ -631,7 +632,7 @@ namespace Hunspell
             }
 
             // try ngram approach since found nothing or only compound words
-            if ((slst.Count == 0 || onlyCompoundSuggest != 0) && Affix.MaxNgramSuggestions != 0)
+            if ((slst.Count == 0 || onlyCompoundSuggest) && Affix.MaxNgramSuggestions != 0)
             {
                 if (capType == CapitalizationType.None)
                 {
@@ -641,14 +642,14 @@ namespace Hunspell
                 {
                     if (capType == CapitalizationType.HuhInit)
                     {
-                        capWords = 1;
+                        capWords = true;
                     }
 
                     NGramSuggest(slst, MakeAllSmall(scw));
                 }
                 else if (capType == CapitalizationType.Init)
                 {
-                    capWords = 1;
+                    capWords = true;
                     NGramSuggest(slst, MakeAllSmall(scw));
                 }
                 else if (capType == CapitalizationType.All)
@@ -727,7 +728,7 @@ namespace Hunspell
             }
 
             // capitalize
-            if (capWords != 0)
+            if (capWords)
             {
                 for (var j = 0; j < slst.Count; j++)
                 {
@@ -803,7 +804,7 @@ namespace Hunspell
             return slst;
         }
 
-        private void Suggest(List<string> slst, string w, ref int onlyCompoundSug)
+        private void Suggest(List<string> slst, string w, ref bool onlyCompoundSug)
         {
             var noCompoundTwoWords = false;
             var nSugOrig = slst.Count;
@@ -927,7 +928,7 @@ namespace Hunspell
 
             if (!noCompoundTwoWords && slst.Count != 0)
             {
-                onlyCompoundSug = 1;
+                onlyCompoundSug = true;
             }
         }
 
@@ -1734,6 +1735,15 @@ namespace Hunspell
             public string GuessOrig;
 
             public int Score;
+
+#if !PRE_NETSTANDARD && !DEBUG
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            public void ResetGuess()
+            {
+                Guess = null;
+                GuessOrig = null;
+            }
         }
 
         private struct GuessWord
@@ -1748,7 +1758,7 @@ namespace Hunspell
         /// <summary>
         /// Generate a set of suggestions for very poorly spelled words.
         /// </summary>
-        private void NGramSuggest(List<string> wlst, string w)
+        private void NGramSuggest(List<string> wlst, string word)
         {
             int lval;
             int sc;
@@ -1763,47 +1773,29 @@ namespace Hunspell
 
             var lp = roots.Length - 1;
             var lpphon = lp;
-            const NGramOptions low = NGramOptions.Lowering;
 
             // word reversing wrapper for complex prefixes
-            string w2;
-            string word;
             if (Affix.ComplexPrefixes)
             {
-                w2 = w.Reverse();
-                word = w2;
-            }
-            else
-            {
-                w2 = string.Empty;
-                word = w;
+                word = word.Reverse();
             }
 
-            var n = word.Length;
+            var hasPhoneEntries = Affix.HasPhoneEntires;
 
-            string candidate;
-            string target;
-            if (Affix.HasPhoneEntires)
-            {
-                candidate = MakeAllCap(word);
-                target = Phonet(candidate);
-            }
-            else
-            {
-                candidate = string.Empty;
-                target = string.Empty;
-            }
+            var target = hasPhoneEntries
+                ? Phonet(MakeAllCap(word))
+                : string.Empty;
 
             foreach (var hp in Dictionary.NGramAllowedEntries)
             {
-                sc = NGram(3, word, hp.Word, NGramOptions.LongerWorse | low)
+                sc = NGram(3, word, hp.Word, NGramOptions.LongerWorse | NGramOptions.Lowering)
                     + LeftCommonSubstring(word, hp.Word);
 
                 // check special pronounciation
                 var f = string.Empty;
                 if (hp.Options.HasFlag(DictionaryEntryOptions.Phon) && CopyField(ref f, hp.Morphs, MorphologicalTags.Phon))
                 {
-                    var sc2 = NGram(3, word, f, NGramOptions.LongerWorse | low)
+                    var sc2 = NGram(3, word, f, NGramOptions.LongerWorse | NGramOptions.Lowering)
                         + LeftCommonSubstring(word, f);
 
                     if (sc2 > sc)
@@ -1813,11 +1805,9 @@ namespace Hunspell
                 }
 
                 var scphon = -20000;
-                if (Affix.HasPhoneEntires && sc > 2 && Math.Abs(n - hp.Word.Length) <= 3)
+                if (hasPhoneEntries && sc > 2 && Math.Abs(word.Length - hp.Word.Length) <= 3)
                 {
-                    candidate = MakeAllCap(hp.Word);
-                    var target2 = Phonet(candidate);
-                    scphon = 2 * NGram(3, target, target2, NGramOptions.LongerWorse);
+                    scphon = NGram(3, target, Phonet(MakeAllCap(hp.Word)), NGramOptions.LongerWorse) * 2;
                 }
 
                 if (sc > roots[lp].Score)
@@ -1855,16 +1845,21 @@ namespace Hunspell
             // mangle original word three differnt ways
             // and score them to generate a minimum acceptable score
             var thresh = 0;
+            var mw = StringBuilderPool.Get(word.Length);
             for (var sp = 1; sp < 4; sp++)
             {
-                var mw = StringBuilderPool.Get(word);
-                for (var k = sp; k < n; k += 4)
+                mw.Clear();
+                mw.Append(word);
+
+                for (var k = sp; k < word.Length; k += 4)
                 {
                     mw[k] = '*';
                 }
 
-                thresh += NGram(n, word, StringBuilderPool.GetStringAndReturn(mw), NGramOptions.AnyMismatch | low);
+                thresh += NGram(word.Length, word, mw.ToString(), NGramOptions.AnyMismatch | NGramOptions.Lowering);
             }
+
+            StringBuilderPool.Return(mw);
 
             thresh /= 3;
             thresh--;
@@ -1896,7 +1891,7 @@ namespace Hunspell
 
                     for (var k = 0; k < nw; k++)
                     {
-                        sc = NGram(n, word, glst[k].Word, NGramOptions.AnyMismatch | low)
+                        sc = NGram(word.Length, word, glst[k].Word, NGramOptions.AnyMismatch | NGramOptions.Lowering)
                             + LeftCommonSubstring(word, glst[k].Word);
 
                         if (sc > thresh)
@@ -1942,10 +1937,10 @@ namespace Hunspell
             // now we are done generating guesses
             // sort in order of decreasing score
 
-            guesses = guesses.OrderByDescending(g => g.Score).ToArray(); // NOTE: OrderBy is used because a stable sort may be required
-            if (Affix.HasPhoneEntires)
+            Array.Sort(guesses, (a, b) => b.Score.CompareTo(a.Score));
+            if (hasPhoneEntries)
             {
-                roots = roots.OrderByDescending(r => r.ScorePhone).ToArray(); // NOTE: OrderBy is used because a stable sort may be required
+                Array.Sort(roots, (a, b) => b.ScorePhone.CompareTo(a.ScorePhone));
             }
 
             // weight suggestions with a similarity index, based on
@@ -1965,28 +1960,29 @@ namespace Hunspell
 
             for (var i = 0; i < guesses.Length; i++)
             {
-                if (guesses[i].Guess != null)
+                var guess = guesses[i];
+                if (guess.Guess != null)
                 {
                     // lowering guess[i]
-                    var gl = MakeAllSmall(guesses[i].Guess);
-                    var len = guesses[i].Guess.Length;
+                    var gl = MakeAllSmall(guess.Guess);
+                    var len = guess.Guess.Length;
 
                     var _lcs = LcsLen(word, gl);
 
                     // same characters with different casing
-                    if (n == len && n == _lcs)
+                    if (word.Length == len && word.Length == _lcs)
                     {
                         guesses[i].Score += 2000;
                         break;
                     }
-                    // using 2-gram instead of 3, and other weightening
 
-                    re = NGram(2, word, gl, NGramOptions.AnyMismatch | NGramOptions.Weighted | low)
-                        + NGram(2, gl, word, NGramOptions.AnyMismatch | NGramOptions.Weighted | low);
+                    // using 2-gram instead of 3, and other weightening
+                    re = NGram(2, word, gl, NGramOptions.AnyMismatch | NGramOptions.Weighted | NGramOptions.Lowering)
+                        + NGram(2, gl, word, NGramOptions.AnyMismatch | NGramOptions.Weighted | NGramOptions.Lowering);
 
                     guesses[i].Score =
                         // length of longest common subsequent minus length difference
-                        2 * _lcs - Math.Abs(n - len)
+                        2 * _lcs - Math.Abs(word.Length - len)
                         // weight length of the left common substring
                         + LeftCommonSubstring(word, gl)
                         // weight equal character positions
@@ -1994,35 +1990,36 @@ namespace Hunspell
                         // swap character (not neighboring)
                         + (isSwap ? 10 : 0)
                         // ngram
-                        + NGram(4, word, gl, NGramOptions.AnyMismatch | low)
+                        + NGram(4, word, gl, NGramOptions.AnyMismatch | NGramOptions.Lowering)
                         // weighted ngrams
                         + re
                         // different limit for dictionaries with PHONE rules
-                        + (Affix.HasPhoneEntires ? (re < len * fact ? -1000 : 0) : (re < (n + len) * fact ? -1000 : 0));
+                        + (hasPhoneEntries ? (re < len * fact ? -1000 : 0) : (re < (word.Length + len) * fact ? -1000 : 0));
                 }
             }
 
-            guesses = guesses.OrderByDescending(g => g.Score).ToArray(); // NOTE: OrderBy is used because a stable sort may be required
+            Array.Sort(guesses, (a, b) => b.Score.CompareTo(a.Score));
 
             // phonetic version
-            if (Affix.HasPhoneEntires)
+            if (hasPhoneEntries)
             {
                 for (var i = 0; i < roots.Length; i++)
                 {
-                    if (roots[i].RootPhon != null)
+                    var root = roots[i];
+                    if (root.RootPhon != null)
                     {
                         // lowering rootphon[i]
-                        var gl = MakeAllSmall(roots[i].RootPhon);
-                        var len = roots[i].RootPhon.Length;
+                        var gl = MakeAllSmall(root.RootPhon);
+                        var len = root.RootPhon.Length;
 
                         // heuristic weigthing of ngram scores
-                        roots[i].ScorePhone += 2 * LcsLen(word, gl) - Math.Abs(n - len)
+                        roots[i].ScorePhone += 2 * LcsLen(word, gl) - Math.Abs(word.Length - len)
                             // weight length of the left common substring
                             + LeftCommonSubstring(word, gl);
                     }
                 }
 
-                roots = roots.OrderByDescending(r => r.ScorePhone).ToArray(); // NOTE: OrderBy is used because a stable sort may be required
+                Array.Sort(roots, (a, b) => b.ScorePhone.CompareTo(a.ScorePhone));
             }
 
             // copy over
@@ -2031,7 +2028,8 @@ namespace Hunspell
             var same = false;
             for (var i = 0; i < guesses.Length; i++)
             {
-                if (guesses[i].Guess != null)
+                var guess = guesses[i];
+                if (guess.Guess != null)
                 {
                     if (
                         wlst.Count < oldns + Affix.MaxNgramSuggestions
@@ -2041,17 +2039,17 @@ namespace Hunspell
                         (
                             !same
                             ||
-                            guesses[i].Score > 1000
+                            guess.Score > 1000
                         )
                     )
                     {
                         var unique = true;
                         // leave only excellent suggestions, if exists
-                        if (guesses[i].Score > 1000)
+                        if (guess.Score > 1000)
                         {
                             same = true;
                         }
-                        else if (guesses[i].Score < -100)
+                        else if (guess.Score < -100)
                         {
                             same = true;
                             // keep the best ngram suggestions, unless in ONLYMAXDIFF mode
@@ -2061,8 +2059,7 @@ namespace Hunspell
                                 Affix.OnlyMaxDiff
                             )
                             {
-                                guesses[i].Guess = null;
-                                guesses[i].GuessOrig = null;
+                                guesses[i].ResetGuess();
                                 continue;
                             }
                         }
@@ -2072,11 +2069,11 @@ namespace Hunspell
                             // don't suggest previous suggestions or a previous suggestion with
                             // prefixes or affixes
                             if (
-                                (guesses[i].GuessOrig == null && guesses[i].Guess.Contains(wlst[j]))
+                                (guess.GuessOrig == null && guess.Guess.Contains(wlst[j]))
                                 ||
-                                (guesses[i].GuessOrig != null && guesses[i].GuessOrig.Contains(wlst[j]))
+                                (guess.GuessOrig != null && guess.GuessOrig.Contains(wlst[j]))
                                 || // check forbidden words
-                                CheckWord(guesses[i].Guess, false) == 0
+                                CheckWord(guess.Guess, false) == 0
                             )
                             {
                                 unique = false;
@@ -2086,33 +2083,28 @@ namespace Hunspell
 
                         if (unique)
                         {
-                            if (guesses[i].GuessOrig != null)
+                            if (guess.GuessOrig != null)
                             {
-                                wlst.Add(guesses[i].GuessOrig);
+                                wlst.Add(guess.GuessOrig);
                             }
                             else
                             {
-                                wlst.Add(guesses[i].Guess);
+                                wlst.Add(guess.Guess);
                             }
                         }
+                    }
 
-                        guesses[i].Guess = null;
-                        guesses[i].GuessOrig = null;
-                    }
-                    else
-                    {
-                        guesses[i].Guess = null;
-                        guesses[i].GuessOrig = null;
-                    }
+                    guesses[i].ResetGuess();
                 }
             }
 
             oldns = wlst.Count;
-            if (Affix.HasPhoneEntires)
+            if (hasPhoneEntries)
             {
                 for (var i = 0; i < roots.Length; i++)
                 {
-                    if (roots[i].RootPhon != null)
+                    var root = roots[i];
+                    if (root.RootPhon != null)
                     {
                         if (
                             wlst.Count < oldns + MaxPhonSugs
@@ -2126,9 +2118,9 @@ namespace Hunspell
                                 // don't suggest previous suggestions or a previous suggestion with
                                 // prefixes or affixes
                                 if (
-                                    roots[i].RootPhon.Contains(wlst[j])
+                                    root.RootPhon.Contains(wlst[j])
                                     || // check forbidden words
-                                    CheckWord(roots[i].RootPhon, false) == 0
+                                    CheckWord(root.RootPhon, false) == 0
                                 )
                                 {
                                     unique = false;
@@ -2138,7 +2130,7 @@ namespace Hunspell
 
                             if (unique)
                             {
-                                wlst.Add(roots[i].RootPhon);
+                                wlst.Add(root.RootPhon);
                             }
                         }
                     }
@@ -2600,23 +2592,17 @@ namespace Hunspell
             }
             else
             {
-                var index1 = 0;
-                var index2 = 0;
-
                 // decapitalise dictionary word
-                if (index1 < s1.Length && index2 < s2.Length && s1[index1] != s2[index2] && s1[index1] != Affix.Culture.TextInfo.ToLower(s2[index2]))
+                if (0 == s1.Length || 0 == s2.Length || s1[0] == s2[0] || s1[0] == Affix.Culture.TextInfo.ToLower(s2[0]))
                 {
-                    return 0;
-                }
+                    var index = 1;
+                    while (index < s1.Length && index < s2.Length && s1[index] == s2[index])
+                    {
+                        index++;
+                    };
 
-                do
-                {
-                    index1++;
-                    index2++;
+                    return index;
                 }
-                while (index1 < s1.Length && index2 < s2.Length && s1[index1] == s2[index2]);
-
-                return index1;
             }
 
             return 0;
@@ -2627,18 +2613,14 @@ namespace Hunspell
         /// </summary>
         private int NGram(int n, string s1, string s2, NGramOptions opt)
         {
-            if (s2.Length == 0)
+            if (opt.HasFlag(NGramOptions.Lowering))
             {
-                return 0;
+                s2 = MakeAllSmall(s2);
             }
 
-            var t = opt.HasFlag(NGramOptions.Lowering)
-                ? MakeAllSmall(s2)
-                : s2;
-
             var nscore = opt.HasFlag(NGramOptions.Weighted)
-                ? NGramWeightedSearch(n, s1, t)
-                : NGramNonWeightedSearch(n, s1, t);
+                ? NGramWeightedSearch(n, s1, s2)
+                : NGramNonWeightedSearch(n, s1, s2);
 
             int ns;
             if (opt.HasFlag(NGramOptions.AnyMismatch))
@@ -3128,6 +3110,9 @@ namespace Hunspell
         /// <summary>
         /// Convert to all little.
         /// </summary>
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private string MakeAllSmall(string s)
         {
             return Affix.Culture.TextInfo.ToLower(s);
@@ -3145,6 +3130,9 @@ namespace Hunspell
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private string MakeAllCap(string s)
         {
             return Affix.Culture.TextInfo.ToUpper(s);

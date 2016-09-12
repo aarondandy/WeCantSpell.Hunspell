@@ -71,12 +71,7 @@ namespace Hunspell.Infrastructure
 
         public override string ToString()
         {
-            if (toStringCache == null)
-            {
-                toStringCache = Buffer.ToStringTerminated();
-            }
-
-            return toStringCache;
+            return toStringCache ?? (toStringCache = Buffer.ToStringTerminated());
         }
 
         public static implicit operator string(SimulatedCString cString)

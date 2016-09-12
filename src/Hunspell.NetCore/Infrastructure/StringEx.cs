@@ -122,11 +122,6 @@ namespace Hunspell.Infrastructure
 
         public static bool ContainsSubstringOrdinal(this string @this, string value, int startIndex, int length)
         {
-            if (value.Length == 0)
-            {
-                return true;
-            }
-
             var firstChar = value[startIndex];
             var firstCharIndex = @this.IndexOf(firstChar);
             while (firstCharIndex >= 0)

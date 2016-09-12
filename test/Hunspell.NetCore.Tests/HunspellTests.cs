@@ -143,15 +143,15 @@ namespace Hunspell.NetCore.Tests
             }
 
             [Theory]
-            [InlineData("files/phone.dic", "Brasillian", new[] { "Brasilia", "Xxxxxxxxxx", "Brilliant", "Brazilian", "Brassily" })]
-            public async Task words_offer_at_least_suggestions(string dictionaryFilePath, string word, string[] expectedSuggestions)
+            [InlineData("files/phone.dic", "Brasillian", new[] { "Brasilia", "Xxxxxxxxxx", "Brilliant", "Brazilian", "Brassily", "Brilliance" })]
+            public async Task words_offer_at_least_suggestions_in_any_order(string dictionaryFilePath, string word, string[] expectedSuggestions)
             {
                 var hunspell = await Hunspell.FromFileAsync(dictionaryFilePath);
 
                 var actual = hunspell.Suggest(word);
 
                 actual.Should().NotBeNullOrEmpty();
-                actual.Should().StartWith(expectedSuggestions);
+                actual.Should().Contain(expectedSuggestions);
             }
 
             public static IEnumerable<object[]> can_find_correct_best_suggestion_args()
