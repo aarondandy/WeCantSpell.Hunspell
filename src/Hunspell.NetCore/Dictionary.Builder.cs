@@ -18,11 +18,21 @@ namespace Hunspell
                 Affix = affix;
             }
 
-            public Dictionary<string, List<DictionaryEntry>> Entries;
+            public Dictionary<string, ImmutableArray<DictionaryEntry>> EntriesByRoot;
 
             public AffixConfig Affix;
 
-            public Dictionary ToDictionary()
+            public Dictionary ToImmutable()
+            {
+                return ToImmutable(destructive: false);
+            }
+
+            public Dictionary MoveToImmutable()
+            {
+                return ToImmutable(destructive: true);
+            }
+
+            private Dictionary ToImmutable(bool destructive)
             {
                 var affix = Affix ?? new AffixConfig.Builder().ToAffixConfig();
 
@@ -40,35 +50,45 @@ namespace Hunspell
 
                 var result = new Dictionary(affix)
                 {
-                    NGramRestrictedFlags = nGramRestrictedFlags
+                    NGramRestrictedFlags = nGramRestrictedFlags,
                 };
 
-                var lookupRootBuilder = ImmutableDictionary.CreateBuilder<string, ImmutableArray<DictionaryEntry>>();
-                var nGramRestrictedEntriesBuilder = ImmutableHashSet.CreateBuilder<DictionaryEntry>();
-
-                if (Entries != null)
+                if (destructive)
                 {
-                    foreach (var rootSet in Entries)
+                    result.EntriesByRoot = EntriesByRoot ?? new Dictionary<string, ImmutableArray<DictionaryEntry>>();
+                    EntriesByRoot = null;
+                }
+                else
+                {
+                    result.EntriesByRoot = EntriesByRoot == null
+                        ? new Dictionary<string, ImmutableArray<DictionaryEntry>>()
+                        : new Dictionary<string, ImmutableArray<DictionaryEntry>>(EntriesByRoot);
+                }
+
+                var nGramRestrictedEntries = new HashSet<DictionaryEntry>();
+
+                foreach (var rootSet in result.EntriesByRoot)
+                {
+                    foreach (var entry in rootSet.Value)
                     {
-                        var rootWord = rootSet.Key;
-                        var rootEntries = rootSet.Value;
-
-                        lookupRootBuilder.Add(rootWord, rootEntries.ToImmutableArray());
-
-                        foreach (var entry in rootEntries)
+                        if (nGramRestrictedFlags.ContainsAny(entry.Flags))
                         {
-                            if (nGramRestrictedFlags.ContainsAny(entry.Flags))
-                            {
-                                nGramRestrictedEntriesBuilder.Add(entry);
-                            }
+                            nGramRestrictedEntries.Add(entry);
                         }
                     }
                 }
 
-                result.EntriesByRoot = lookupRootBuilder.ToImmutable();
-                result.NGramRestrictedEntries = nGramRestrictedEntriesBuilder.ToImmutable();
+                result.NGramRestrictedEntries = nGramRestrictedEntries;
 
                 return result;
+            }
+
+            public void InitializeEntriesByRoot(int expectedSize)
+            {
+                EntriesByRoot = expectedSize < 0
+                    ? new Dictionary<string, ImmutableArray<DictionaryEntry>>()
+                    // PERF: because we add more entries than we are told about, we add 10% to the expected size
+                    : new Dictionary<string, ImmutableArray<DictionaryEntry>>((expectedSize / 100) + expectedSize);
             }
         }
     }

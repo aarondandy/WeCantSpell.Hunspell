@@ -21,7 +21,7 @@ namespace Hunspell.NetCore.Tests
             [InlineData("-")]
             public void cant_find_words_in_empty_dictioanry(string word)
             {
-                var dictionary = new Dictionary.Builder().ToDictionary();
+                var dictionary = new Dictionary.Builder().ToImmutable();
                 var hunspell = new Hunspell(dictionary);
 
                 var actual = hunspell.Check(word);
@@ -38,16 +38,16 @@ namespace Hunspell.NetCore.Tests
             public void can_find_words_in_single_word_dictioanry(string searchWord, string dictionaryWord)
             {
                 var expected = searchWord == dictionaryWord;
-                var dictionary = new Dictionary.Builder
-                {
-                    Entries = new Dictionary<string, List<DictionaryEntry>>
-                    {
-                        [dictionaryWord] = new List<DictionaryEntry>
-                        {
-                            new DictionaryEntry(dictionaryWord, ImmutableSortedSet<FlagValue>.Empty, ImmutableArray<string>.Empty, DictionaryEntryOptions.None)
-                        }
-                    }
-                }.ToDictionary();
+                var dictionaryBuilder = new Dictionary.Builder();
+                dictionaryBuilder.InitializeEntriesByRoot(1);
+                dictionaryBuilder.EntriesByRoot[dictionaryWord] = ImmutableArray.Create(
+                    new DictionaryEntry(
+                        dictionaryWord,
+                        ImmutableSortedSet<FlagValue>.Empty,
+                        ImmutableArray<string>.Empty,
+                        DictionaryEntryOptions.None));
+
+                var dictionary = dictionaryBuilder.ToImmutable();
                 var hunspell = new Hunspell(dictionary);
 
                 var actual = hunspell.Check(searchWord);
@@ -132,7 +132,6 @@ namespace Hunspell.NetCore.Tests
             [InlineData("files/rep.dic", "autos", new[] { "auto's", "auto" })]
             [InlineData("files/ngram_utf_fix.dic", "человеко", new[] { "человек" })]
             [InlineData("files/utf8_nonbmp.dic", "𐏑𐏒𐏒", new[] { "𐏑 𐏒𐏒", "𐏒𐏑", "𐏒𐏒" })]
-            [InlineData("files/phone.dic", "Brasillian", new[] { "Brasilia", "Xxxxxxxxxx", "Brilliant", "Brazilian", "Brassily", "Brilliance" })]
             public async Task words_offer_specific_suggestions(string dictionaryFilePath, string word, string[] expectedSuggestions)
             {
                 var hunspell = await Hunspell.FromFileAsync(dictionaryFilePath);
@@ -141,6 +140,18 @@ namespace Hunspell.NetCore.Tests
 
                 actual.Should().NotBeNullOrEmpty();
                 actual.ShouldBeEquivalentTo(expectedSuggestions);
+            }
+
+            [Theory]
+            [InlineData("files/phone.dic", "Brasillian", new[] { "Brasilia", "Xxxxxxxxxx", "Brilliant", "Brazilian", "Brassily" })]
+            public async Task words_offer_at_least_suggestions(string dictionaryFilePath, string word, string[] expectedSuggestions)
+            {
+                var hunspell = await Hunspell.FromFileAsync(dictionaryFilePath);
+
+                var actual = hunspell.Suggest(word);
+
+                actual.Should().NotBeNullOrEmpty();
+                actual.Should().StartWith(expectedSuggestions);
             }
 
             public static IEnumerable<object[]> can_find_correct_best_suggestion_args()

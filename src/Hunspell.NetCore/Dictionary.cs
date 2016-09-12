@@ -14,19 +14,21 @@ namespace Hunspell
 
         public AffixConfig Affix { get; private set; }
 
-        private ImmutableDictionary<string, ImmutableArray<DictionaryEntry>> EntriesByRoot { get; set; }
+        private Dictionary<string, ImmutableArray<DictionaryEntry>> EntriesByRoot { get; set; }
 
         private ImmutableSortedSet<FlagValue> NGramRestrictedFlags { get; set; }
 
-        private ImmutableHashSet<DictionaryEntry> NGramRestrictedEntries { get; set; }
+        private HashSet<DictionaryEntry> NGramRestrictedEntries { get; set; }
 
-        public IEnumerable<DictionaryEntry> NGramAllowedEntries => AllEntries.Where(entry => !NGramRestrictedEntries.Contains(entry));
+        public IEnumerable<DictionaryEntry> NGramAllowedEntries => NGramRestrictedEntries == null
+            ? AllEntries
+            : AllEntries.Where(entry => !NGramRestrictedEntries.Contains(entry));
 
         public IEnumerable<DictionaryEntry> AllEntries => EntriesByRoot.Values.SelectMany(set => set);
 
         public IEnumerable<string> RootWords => EntriesByRoot.Keys;
 
-        public bool HasEntries => !EntriesByRoot.IsEmpty;
+        public bool HasEntries => EntriesByRoot.Count != 0;
 
         public ImmutableArray<DictionaryEntry> this[string rootWord] => FindEntriesByRootWord(rootWord);
 

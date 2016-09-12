@@ -38,7 +38,7 @@ namespace Hunspell
                 readerInstance.ParseLine(line);
             }
 
-            return readerInstance.Builder.ToDictionary();
+            return readerInstance.Builder.MoveToImmutable();
         }
 
         public static Dictionary Read(IHunspellLineReader reader, AffixConfig affix)
@@ -51,7 +51,7 @@ namespace Hunspell
                 readerInstance.ParseLine(line);
             }
 
-            return readerInstance.Builder.ToDictionary();
+            return readerInstance.Builder.MoveToImmutable();
         }
 
         public static async Task<Dictionary> ReadFileAsync(string filePath)
@@ -115,9 +115,9 @@ namespace Hunspell
                 return true;
             }
 
-            if (Builder.Entries == null)
+            if (Builder.EntriesByRoot == null)
             {
-                Builder.Entries = new Dictionary<string, List<DictionaryEntry>>();
+                Builder.InitializeEntriesByRoot(-1);
             }
 
             var parsed = ParsedWordLine.Parse(line);
@@ -186,9 +186,9 @@ namespace Hunspell
                 int expectedSize;
                 if (IntEx.TryParseInvariant(initLineMatch.Groups[1].Value, out expectedSize))
                 {
-                    if (Builder.Entries == null)
+                    if (Builder.EntriesByRoot == null)
                     {
-                        Builder.Entries = new Dictionary<string, List<DictionaryEntry>>(expectedSize);
+                        Builder.InitializeEntriesByRoot(expectedSize);
                     }
 
                     return true;
@@ -266,15 +266,16 @@ namespace Hunspell
                 options = DictionaryEntryOptions.None;
             }
 
-            List<DictionaryEntry> entryList;
-            if (!Builder.Entries.TryGetValue(word, out entryList) || entryList == null)
+            bool saveEntryList = false;
+            ImmutableArray<DictionaryEntry> entryList;
+            if (!Builder.EntriesByRoot.TryGetValue(word, out entryList))
             {
-                entryList = new List<DictionaryEntry>();
-                Builder.Entries[word] = entryList;
+                saveEntryList = true;
+                entryList = ImmutableArray<DictionaryEntry>.Empty;
             }
 
             var upperCaseHomonym = false;
-            for (var i = 0; i < entryList.Count; i++)
+            for (var i = 0; i < entryList.Length; i++)
             {
                 var existingEntry = entryList[i];
 
@@ -283,7 +284,8 @@ namespace Hunspell
                     if (existingEntry.ContainsFlag(SpecialFlags.OnlyUpcaseFlag))
                     {
                         existingEntry = new DictionaryEntry(existingEntry.Word, flags, existingEntry.Morphs, existingEntry.Options);
-                        entryList[i] = existingEntry;
+                        entryList = entryList.SetItem(i, existingEntry);
+                        Builder.EntriesByRoot[word] = entryList;
                         return false;
                     }
                 }
@@ -295,7 +297,13 @@ namespace Hunspell
 
             if (!upperCaseHomonym)
             {
-                entryList.Add(new DictionaryEntry(word, flags, morphs, options));
+                saveEntryList = true;
+                entryList = entryList.Add(new DictionaryEntry(word, flags, morphs, options));
+            }
+
+            if (saveEntryList)
+            {
+                Builder.EntriesByRoot[word] = entryList;
             }
 
             return false;

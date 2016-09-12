@@ -12,7 +12,7 @@ namespace Hunspell.NetCore.Performance.TestHarness
 
         static void Main(string[] args)
         {
-            DictionaryLoads();
+            //DictionaryLoads();
             Suggestions();
         }
 
