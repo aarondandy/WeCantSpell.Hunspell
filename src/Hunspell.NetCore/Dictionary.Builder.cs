@@ -34,7 +34,7 @@ namespace Hunspell
 
             private Dictionary ToImmutable(bool destructive)
             {
-                var affix = Affix ?? new AffixConfig.Builder().ToAffixConfig();
+                var affix = Affix ?? new AffixConfig.Builder().MoveToImmutable();
 
                 var nGramRestrictedFlags =
                     new[]

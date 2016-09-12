@@ -241,7 +241,7 @@ namespace Hunspell
             /// Defines custom compound patterns with a regex-like syntax.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundRules"/>
-            public List<List<FlagValue>> CompoundRules;
+            public List<ImmutableArray<FlagValue>> CompoundRules;
 
             /// <summary>
             /// Forbid compounding, if the first word in the compound ends with endchars, and
@@ -260,19 +260,19 @@ namespace Hunspell
             /// Input conversion entries.
             /// </summary>
             /// <seealso cref="AffixConfig.InputConversions"/>
-            public Dictionary<string, string[]> InputConversions;
+            public Dictionary<string, MultiReplacementEntry> InputConversions;
 
             /// <summary>
             /// Output conversion entries.
             /// </summary>
             /// <seealso cref="AffixConfig.OutputConversions"/>
-            public Dictionary<string, string[]> OutputConversions;
+            public Dictionary<string, MultiReplacementEntry> OutputConversions;
 
             /// <summary>
             /// Mappings between related characters.
             /// </summary>
             /// <seealso cref="AffixConfig.MapTable"/>
-            public List<List<string>> MapTable;
+            public List<ImmutableArray<string>> MapTable;
 
             /// <summary>
             /// Phonetic transcription entries.
@@ -322,12 +322,28 @@ namespace Hunspell
             /// </summary>
             /// <returns>A constructed affix config.</returns>
             /// <seealso cref="AffixConfig"/>
-            public AffixConfig ToAffixConfig()
+            public AffixConfig ToImmutable()
             {
-                // TODO: ProcessPfxTreeToList and ProcessSfxTreeToList
-                // TODO: ProcessPfxOrder and ProcessSfxOrder
-                // TODO: optimize memory reuse for Immutable collections, focused on AliasF and AliasM
+                return ToImmutable(destructive: false);
+            }
 
+            /// <summary>
+            /// Constructs a <see cref="AffixConfig"/> based on the values set in the builder
+            /// destroying the builder in the process.
+            /// </summary>
+            /// <returns>A constructed affix config.</returns>
+            /// <seealso cref="AffixConfig"/>
+            /// <remarks>
+            /// This method can leave the builder in an invalid state
+            /// but provides better performance for file reads.
+            /// </remarks>
+            public AffixConfig MoveToImmutable()
+            {
+                return ToImmutable(destructive: true);
+            }
+
+            private AffixConfig ToImmutable(bool destructive)
+            {
                 var culture = CultureInfo.ReadOnly(Culture ?? CultureInfo.InvariantCulture);
 
                 var config = new AffixConfig
@@ -364,24 +380,51 @@ namespace Hunspell
                     SubStandard = SubStandard,
                     CompoundSyllableNum = CompoundSyllableNum,
                     Encoding = Encoding,
-                    Replacements = EmptyIfNull(Replacements).ToImmutableArray(),
-                    Suffixes = EmptyIfNull(Suffixes).Select(b => b.ToGroup()).ToImmutableArray(),
-                    Prefixes = EmptyIfNull(Prefixes).Select(b => b.ToGroup()).ToImmutableArray(),
-                    AliasF = EmptyIfNull(AliasF).ToImmutableArray(),
-                    AliasM = EmptyIfNull(AliasM).ToImmutableArray(),
-                    CompoundRules = EmptyIfNull(CompoundRules).Select(ToImmutableArray).ToImmutableArray(),
-                    CompoundPatterns = ToImmutableArray(CompoundPatterns),
-                    BreakTable = ToImmutableArray(BreakTable),
-                    InputConversions = EmptyIfNull(InputConversions).ToImmutableReplacementEntries(),
-                    OutputConversions = EmptyIfNull(OutputConversions).ToImmutableReplacementEntries(),
-                    MapTable = EmptyIfNull(MapTable).Select(ToImmutableArray).ToImmutableArray(),
-                    Phone = ToImmutableArray(Phone),
+                    suffixes = BuildArray(Suffixes),
+                    prefixes = BuildArray(Prefixes),
                     CompoundMaxSyllable = CompoundMaxSyllable,
                     CompoundVowels = ToImmutableSortedSet(CompoundVowels),
                     WordChars = ToImmutableSortedSet(WordChars),
                     IgnoredChars = ToImmutableSortedSet(IgnoredChars),
                     Version = Version
                 };
+
+                if (destructive)
+                {
+                    config.replacements = Replacements ?? new List<SingleReplacementEntry>(0);
+                    Replacements = null;
+                    config.aliasF = AliasF ?? new List<ImmutableSortedSet<FlagValue>>(0);
+                    AliasF = null;
+                    config.aliasM = AliasM ?? new List<ImmutableArray<string>>(0);
+                    AliasM = null;
+                    config.compoundRules = CompoundRules ?? new List<ImmutableArray<FlagValue>>(0);
+                    CompoundRules = null;
+                    config.compoundPatterns = CompoundPatterns ?? new List<PatternEntry>(0);
+                    CompoundPatterns = null;
+                    config.breakTable = BreakTable ?? new List<string>(0);
+                    BreakTable = null;
+                    config.mapTable = MapTable ?? new List<ImmutableArray<string>>(0);
+                    MapTable = null;
+                    config.phone = Phone ?? new List<PhoneticEntry>(0);
+                    Phone = null;
+                    config.inputConversions = InputConversions ?? new Dictionary<string, MultiReplacementEntry>(0);
+                    InputConversions = null;
+                    config.outputConversions = OutputConversions ?? new Dictionary<string, MultiReplacementEntry>(0);
+                    OutputConversions = null;
+                }
+                else
+                {
+                    config.replacements = Replacements == null ? new List<SingleReplacementEntry>(0) : Replacements.ToList();
+                    config.aliasF = AliasF == null ? new List<ImmutableSortedSet<FlagValue>>(0) : AliasF.ToList();
+                    config.aliasM = AliasM == null ? new List<ImmutableArray<string>>(0) : AliasM.ToList();
+                    config.compoundRules = CompoundRules == null ? new List<ImmutableArray<FlagValue>>(0) : CompoundRules.ToList();
+                    config.compoundPatterns = CompoundPatterns == null ? new List<PatternEntry>(0) : CompoundPatterns.ToList();
+                    config.breakTable = BreakTable == null ? new List<string>(0) : BreakTable.ToList();
+                    config.mapTable = MapTable == null ? new List<ImmutableArray<string>>(0) : MapTable.ToList();
+                    config.phone = Phone == null ? new List<PhoneticEntry>(0) : Phone.ToList();
+                    config.inputConversions = InputConversions == null ? new Dictionary<string, MultiReplacementEntry>(0) : new Dictionary<string, MultiReplacementEntry>(InputConversions);
+                    config.outputConversions = OutputConversions == null ? new Dictionary<string, MultiReplacementEntry>(0) : new Dictionary<string, MultiReplacementEntry>(OutputConversions);
+                }
 
                 config.ContClasses =
                     Enumerable.Concat<AffixEntry>(
@@ -407,19 +450,21 @@ namespace Hunspell
                 return items == null ? ImmutableSortedSet<T>.Empty : items.ToImmutableSortedSet();
             }
 
-            private static ImmutableArray<T> ToImmutableArray<T>(IEnumerable<T> items)
+            private static AffixEntryGroup<TEntry>[] BuildArray<TEntry>(List<AffixEntryGroup.Builder<TEntry>> builders)
+                where TEntry : AffixEntry
             {
-                return items == null ? ImmutableArray<T>.Empty : items.ToImmutableArray();
-            }
+                if (builders == null || builders.Count == 0)
+                {
+                    return ArrayEx<AffixEntryGroup<TEntry>>.Empty;
+                }
 
-            private static IEnumerable<T> EmptyIfNull<T>(IEnumerable<T> items)
-            {
-                return items ?? Enumerable.Empty<T>();
-            }
+                var result = new AffixEntryGroup<TEntry>[builders.Count];
+                for (var i = 0; i < result.Length; i++)
+                {
+                    result[i] = builders[i].ToGroup();
+                }
 
-            private static Dictionary<K, V> EmptyIfNull<K, V>(Dictionary<K, V> items)
-            {
-                return items ?? new Dictionary<K, V>();
+                return result;
             }
         }
     }

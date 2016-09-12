@@ -44,8 +44,9 @@ namespace Hunspell.NetCore.Tests
                 actual.Encoding.WebName.Should().Be("iso-8859-1");
 
                 actual.Suffixes.Should().HaveCount(4);
+                var suffixes = actual.Suffixes.ToList();
 
-                var suffixGroup1 = actual.Suffixes[0];
+                var suffixGroup1 = suffixes[0];
                 suffixGroup1.AFlag.Should().Be('N');
                 suffixGroup1.Options.Should().Be(AffixEntryOptions.CrossProduct);
                 suffixGroup1.Entries.Should().HaveCount(1);
@@ -53,7 +54,7 @@ namespace Hunspell.NetCore.Tests
                 suffixGroup1.Entries.Single().Append.Should().Be("n");
                 suffixGroup1.Entries.Single().Conditions.GetEncoded().Should().Be(".");
 
-                var suffixGroup2 = actual.Suffixes[1];
+                var suffixGroup2 = suffixes[1];
                 suffixGroup2.AFlag.Should().Be('S');
                 suffixGroup2.Options.Should().Be(AffixEntryOptions.CrossProduct);
                 suffixGroup2.Entries.Should().HaveCount(1);
@@ -61,7 +62,7 @@ namespace Hunspell.NetCore.Tests
                 suffixGroup2.Entries.Single().Append.Should().Be("s");
                 suffixGroup2.Entries.Single().Conditions.GetEncoded().Should().Be(".");
 
-                var suffixGroup3 = actual.Suffixes[2];
+                var suffixGroup3 = suffixes[2];
                 suffixGroup3.AFlag.Should().Be('P');
                 suffixGroup3.Options.Should().Be(AffixEntryOptions.CrossProduct);
                 suffixGroup3.Entries.Should().HaveCount(1);
@@ -69,7 +70,7 @@ namespace Hunspell.NetCore.Tests
                 suffixGroup3.Entries.Single().Append.Should().Be("en");
                 suffixGroup3.Entries.Single().Conditions.GetEncoded().Should().Be(".");
 
-                var suffixGroup4 = actual.Suffixes[3];
+                var suffixGroup4 = suffixes[3];
                 suffixGroup4.AFlag.Should().Be('Q');
                 suffixGroup4.Options.Should().Be(AffixEntryOptions.CrossProduct);
                 suffixGroup4.Entries.Should().HaveCount(2);
@@ -96,14 +97,14 @@ namespace Hunspell.NetCore.Tests
                 actual.MaxNgramSuggestions.Should().Be(0);
                 actual.NeedAffix.Should().Be('h');
                 actual.Suffixes.Should().HaveCount(2);
-                var suffixGroup1 = actual.Suffixes[0];
+                var suffixGroup1 = actual.Suffixes.First();
                 suffixGroup1.AFlag.Should().Be('S');
                 suffixGroup1.Options.Should().Be(AffixEntryOptions.CrossProduct);
                 suffixGroup1.Entries.Should().HaveCount(1);
                 suffixGroup1.Entries.Single().Strip.Should().BeEmpty();
                 suffixGroup1.Entries.Single().Append.Should().Be("s");
                 suffixGroup1.Entries.Single().Conditions.GetEncoded().Should().Be(".");
-                var suffixGroup2 = actual.Suffixes[1];
+                var suffixGroup2 = actual.Suffixes.Last();
                 suffixGroup2.AFlag.Should().Be('e');
                 suffixGroup2.Options.Should().Be(AffixEntryOptions.CrossProduct);
                 suffixGroup2.Entries.Should().HaveCount(1);
@@ -242,8 +243,8 @@ namespace Hunspell.NetCore.Tests
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
                 actual.AliasF.Should().HaveCount(2);
-                actual.AliasF[0].Should().ContainInOrder(new int[] { 'A', 'B' });
-                actual.AliasF[1].Should().ContainInOrder(new int[] { 'A' });
+                actual.AliasF.First().Should().ContainInOrder(new int[] { 'A', 'B' });
+                actual.AliasF.Last().Should().ContainInOrder(new int[] { 'A' });
                 actual.Suffixes.Should().HaveCount(2);
                 actual.Suffixes.First().AFlag.Should().Be('A');
                 actual.Suffixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF);
@@ -268,29 +269,29 @@ namespace Hunspell.NetCore.Tests
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
                 actual.AliasF.Should().HaveCount(2);
-                actual.AliasF[0].Should().ContainInOrder(new int[] { 'A', 'B' });
-                actual.AliasF[1].Should().ContainInOrder(new int[] { 'A' });
+                actual.AliasF.First().Should().ContainInOrder(new int[] { 'A', 'B' });
+                actual.AliasF.Last().Should().ContainInOrder(new int[] { 'A' });
 
                 actual.AliasM.Should().HaveCount(3);
-                actual.AliasM[0].Should().OnlyContain(x => x == "is:affix_x");
-                actual.AliasM[1].Should().OnlyContain(x => x == "ds:affix_y");
-                actual.AliasM[2].ShouldAllBeEquivalentTo(new[] { "po:noun", "xx:other_data" });
+                actual.AliasM.First().Should().OnlyContain(x => x == "is:affix_x");
+                actual.AliasM.Skip(1).First().Should().OnlyContain(x => x == "ds:affix_y");
+                actual.AliasM.Last().ShouldAllBeEquivalentTo(new[] { "po:noun", "xx:other_data" });
 
                 actual.Suffixes.Should().HaveCount(2);
 
-                actual.Suffixes[0].AFlag.Should().Be('A');
-                actual.Suffixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF | AffixEntryOptions.AliasM);
-                actual.Suffixes[0].Entries.Should().HaveCount(1);
-                var suffixEntry1 = actual.Suffixes[0].Entries.Single();
+                actual.Suffixes.First().AFlag.Should().Be('A');
+                actual.Suffixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF | AffixEntryOptions.AliasM);
+                actual.Suffixes.First().Entries.Should().HaveCount(1);
+                var suffixEntry1 = actual.Suffixes.First().Entries.Single();
                 suffixEntry1.Strip.Should().BeEmpty();
                 suffixEntry1.Append.Should().Be("x");
                 suffixEntry1.Conditions.GetEncoded().Should().Be(".");
                 suffixEntry1.MorphCode.Should().OnlyContain(x => x == "is:affix_x");
 
-                actual.Suffixes[1].AFlag.Should().Be('B');
-                actual.Suffixes[1].Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF | AffixEntryOptions.AliasM);
-                actual.Suffixes[1].Entries.Should().HaveCount(1);
-                var suffixEntry2 = actual.Suffixes[1].Entries.Single();
+                actual.Suffixes.Last().AFlag.Should().Be('B');
+                actual.Suffixes.Last().Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF | AffixEntryOptions.AliasM);
+                actual.Suffixes.Last().Entries.Should().HaveCount(1);
+                var suffixEntry2 = actual.Suffixes.Last().Entries.Single();
                 suffixEntry2.Strip.Should().BeEmpty();
                 suffixEntry2.Append.Should().Be("y");
                 suffixEntry2.ContClass.Should().ContainInOrder(new int[] { 'A' });
@@ -319,7 +320,7 @@ namespace Hunspell.NetCore.Tests
                 actual.Suffixes.Should().HaveCount(2);
                 actual.Prefixes.Should().HaveCount(1);
 
-                var suffixGroup1 = actual.Suffixes[0];
+                var suffixGroup1 = actual.Suffixes.First();
                 suffixGroup1.AFlag.Should().Be('A');
                 suffixGroup1.Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasM);
                 suffixGroup1.Entries.Should().HaveCount(1);
@@ -329,7 +330,7 @@ namespace Hunspell.NetCore.Tests
                 suffixEntry1.Conditions.GetEncoded().Should().Be(".");
                 suffixEntry1.MorphCode.Should().ContainSingle(Reversed(@"affix_1/"));
 
-                var suffixGroup2 = actual.Suffixes[1];
+                var suffixGroup2 = actual.Suffixes.Last();
                 suffixGroup2.AFlag.Should().Be('B');
                 suffixGroup2.Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasM);
                 suffixGroup2.Entries.Should().HaveCount(1);
@@ -340,7 +341,7 @@ namespace Hunspell.NetCore.Tests
                 suffixEntry2.Conditions.GetEncoded().Should().Be(".");
                 suffixEntry2.MorphCode.Should().ContainSingle(Reversed(@"affix_2/"));
 
-                var prefixGroup1 = actual.Prefixes[0];
+                var prefixGroup1 = actual.Prefixes.Single();
                 prefixGroup1.AFlag.Should().Be('C');
                 prefixGroup1.Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasM);
                 prefixGroup1.Entries.Should().HaveCount(1);
@@ -420,7 +421,7 @@ namespace Hunspell.NetCore.Tests
                 actual.WordChars.ShouldBeEquivalentTo(new[] { '\'' });
 
                 actual.Suffixes.Should().HaveCount(2);
-                var suffixGroup1 = actual.Suffixes[0];
+                var suffixGroup1 = actual.Suffixes.First();
                 suffixGroup1.AFlag.Should().Be('s');
                 suffixGroup1.Options.Should().Be(AffixEntryOptions.None);
                 suffixGroup1.Entries.Should().HaveCount(1);
@@ -428,7 +429,7 @@ namespace Hunspell.NetCore.Tests
                 entry1.Strip.Should().BeEmpty();
                 entry1.Append.Should().Be("s");
                 entry1.Conditions.GetEncoded().Should().Be(".");
-                var suffixGroup2 = actual.Suffixes[1];
+                var suffixGroup2 = actual.Suffixes.Last();
                 suffixGroup2.AFlag.Should().Be('S');
                 suffixGroup2.Options.Should().Be(AffixEntryOptions.None);
                 suffixGroup2.Entries.Should().HaveCount(1);
@@ -485,12 +486,13 @@ namespace Hunspell.NetCore.Tests
                 actual.Suffixes.Should().HaveCount(16);
 
                 actual.Replacements.Should().HaveCount(88);
-                actual.Replacements[0].Pattern.Should().Be("a");
-                actual.Replacements[0].OutString.Should().Be("ei");
-                actual.Replacements[0].Type.Should().Be(ReplacementValueType.Med);
-                actual.Replacements[87].Pattern.Should().Be("shun");
-                actual.Replacements[87].OutString.Should().Be("cion");
-                actual.Replacements[87].Type.Should().Be(ReplacementValueType.Med);
+                var replacements = actual.Replacements.ToList();
+                replacements[0].Pattern.Should().Be("a");
+                replacements[0].OutString.Should().Be("ei");
+                replacements[0].Type.Should().Be(ReplacementValueType.Med);
+                replacements[87].Pattern.Should().Be("shun");
+                replacements[87].OutString.Should().Be("cion");
+                replacements[87].Type.Should().Be(ReplacementValueType.Med);
             }
 
             [Fact]
@@ -580,10 +582,10 @@ namespace Hunspell.NetCore.Tests
 
                 actual.CompoundFlag.Should().Be('A');
                 actual.CompoundPatterns.Should().HaveCount(2);
-                actual.CompoundPatterns[0].Pattern.Should().Be("nny");
-                actual.CompoundPatterns[0].Pattern2.Should().Be("ny");
-                actual.CompoundPatterns[1].Pattern.Should().Be("ssz");
-                actual.CompoundPatterns[1].Pattern2.Should().Be("sz");
+                actual.CompoundPatterns.First().Pattern.Should().Be("nny");
+                actual.CompoundPatterns.First().Pattern2.Should().Be("ny");
+                actual.CompoundPatterns.Last().Pattern.Should().Be("ssz");
+                actual.CompoundPatterns.Last().Pattern2.Should().Be("sz");
                 actual.SimplifiedCompound.Should().BeFalse();
             }
 
@@ -596,12 +598,12 @@ namespace Hunspell.NetCore.Tests
 
                 actual.CompoundFlag.Should().Be('A');
                 actual.CompoundPatterns.Should().HaveCount(2);
-                actual.CompoundPatterns[0].Pattern.Should().Be("o");
-                actual.CompoundPatterns[0].Pattern2.Should().Be("b");
-                actual.CompoundPatterns[0].Pattern3.Should().Be("z");
-                actual.CompoundPatterns[1].Pattern.Should().Be("oo");
-                actual.CompoundPatterns[1].Pattern2.Should().Be("ba");
-                actual.CompoundPatterns[1].Pattern3.Should().Be("u");
+                actual.CompoundPatterns.First().Pattern.Should().Be("o");
+                actual.CompoundPatterns.First().Pattern2.Should().Be("b");
+                actual.CompoundPatterns.First().Pattern3.Should().Be("z");
+                actual.CompoundPatterns.Last().Pattern.Should().Be("oo");
+                actual.CompoundPatterns.Last().Pattern2.Should().Be("ba");
+                actual.CompoundPatterns.Last().Pattern3.Should().Be("u");
                 actual.CompoundMin.Should().Be(1);
                 actual.SimplifiedCompound.Should().BeTrue();
             }
@@ -615,11 +617,11 @@ namespace Hunspell.NetCore.Tests
 
                 actual.CompoundFlag.Should().Be('A');
                 actual.CompoundPatterns.Should().HaveCount(1);
-                actual.CompoundPatterns[0].Pattern.Should().Be("o");
-                actual.CompoundPatterns[0].Condition.Should().Be('X');
-                actual.CompoundPatterns[0].Pattern2.Should().Be("b");
-                actual.CompoundPatterns[0].Condition2.Should().Be('Y');
-                actual.CompoundPatterns[0].Pattern3.Should().Be("z");
+                actual.CompoundPatterns.Single().Pattern.Should().Be("o");
+                actual.CompoundPatterns.Single().Condition.Should().Be('X');
+                actual.CompoundPatterns.Single().Pattern2.Should().Be("b");
+                actual.CompoundPatterns.Single().Condition2.Should().Be('Y');
+                actual.CompoundPatterns.Single().Pattern3.Should().Be("z");
                 actual.CompoundMin.Should().Be(1);
                 actual.SimplifiedCompound.Should().BeTrue();
             }
@@ -634,16 +636,16 @@ namespace Hunspell.NetCore.Tests
                 actual.CompoundFlag.Should().Be('x');
                 actual.CompoundMin.Should().Be(1);
                 actual.CompoundPatterns.Should().HaveCount(2);
-                actual.CompoundPatterns[0].Pattern.Should().Be("a");
-                actual.CompoundPatterns[0].Condition.Should().Be('A');
-                actual.CompoundPatterns[0].Pattern2.Should().Be("u");
-                actual.CompoundPatterns[0].Condition2.Should().Be('A');
-                actual.CompoundPatterns[0].Pattern3.Should().Be("O");
-                actual.CompoundPatterns[1].Pattern.Should().Be("u");
-                actual.CompoundPatterns[1].Condition.Should().Be('B');
-                actual.CompoundPatterns[1].Pattern2.Should().Be("u");
-                actual.CompoundPatterns[1].Condition2.Should().Be('B');
-                actual.CompoundPatterns[1].Pattern3.Should().Be("u");
+                actual.CompoundPatterns.First().Pattern.Should().Be("a");
+                actual.CompoundPatterns.First().Condition.Should().Be('A');
+                actual.CompoundPatterns.First().Pattern2.Should().Be("u");
+                actual.CompoundPatterns.First().Condition2.Should().Be('A');
+                actual.CompoundPatterns.First().Pattern3.Should().Be("O");
+                actual.CompoundPatterns.Last().Pattern.Should().Be("u");
+                actual.CompoundPatterns.Last().Condition.Should().Be('B');
+                actual.CompoundPatterns.Last().Pattern2.Should().Be("u");
+                actual.CompoundPatterns.Last().Condition2.Should().Be('B');
+                actual.CompoundPatterns.Last().Pattern3.Should().Be("u");
                 actual.SimplifiedCompound.Should().BeTrue();
             }
 
@@ -707,39 +709,39 @@ namespace Hunspell.NetCore.Tests
                 actual.Circumfix.Should().Be('X');
 
                 actual.Prefixes.Should().HaveCount(2);
-                actual.Prefixes[0].AFlag.Should().Be('A');
-                actual.Prefixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct);
-                actual.Prefixes[0].Entries.Should().HaveCount(1);
-                var entry1 = actual.Prefixes[0].Entries[0];
+                actual.Prefixes.First().AFlag.Should().Be('A');
+                actual.Prefixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Prefixes.First().Entries.Should().HaveCount(1);
+                var entry1 = actual.Prefixes.First().Entries[0];
                 entry1.Strip.Should().BeEmpty();
                 entry1.Append.Should().Be("leg");
                 entry1.ContClass.Should().ContainInOrder(new[] { 'X' });
                 entry1.Conditions.GetEncoded().Should().Be(".");
-                actual.Prefixes[1].AFlag.Should().Be('B');
-                actual.Prefixes[1].Options.Should().Be(AffixEntryOptions.CrossProduct);
-                actual.Prefixes[1].Entries.Should().HaveCount(1);
-                var entry2 = actual.Prefixes[1].Entries[0];
+                actual.Prefixes.Last().AFlag.Should().Be('B');
+                actual.Prefixes.Last().Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Prefixes.Last().Entries.Should().HaveCount(1);
+                var entry2 = actual.Prefixes.Last().Entries[0];
                 entry2.Strip.Should().BeEmpty();
                 entry2.Append.Should().Be("legesleg");
                 entry2.ContClass.Should().ContainInOrder(new[] { 'X' });
                 entry2.Conditions.GetEncoded().Should().Be(".");
 
                 actual.Suffixes.Should().HaveCount(1);
-                actual.Suffixes[0].AFlag.Should().Be('C');
-                actual.Suffixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct);
-                actual.Suffixes[0].Entries.Should().HaveCount(3);
-                var entry3 = actual.Suffixes[0].Entries[0];
+                actual.Suffixes.First().AFlag.Should().Be('C');
+                actual.Suffixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Suffixes.First().Entries.Should().HaveCount(3);
+                var entry3 = actual.Suffixes.First().Entries[0];
                 entry3.Strip.Should().BeEmpty();
                 entry3.Append.Should().Be("obb");
                 entry3.Conditions.GetEncoded().Should().Be(".");
                 entry3.MorphCode.Should().OnlyContain(x => x == "is:COMPARATIVE");
-                var entry4 = actual.Suffixes[0].Entries[1];
+                var entry4 = actual.Suffixes.First().Entries[1];
                 entry4.Strip.Should().BeEmpty();
                 entry4.Append.Should().Be("obb");
                 entry4.ContClass.Should().ContainInOrder(new[] { 'A', 'X' });
                 entry4.Conditions.GetEncoded().Should().Be(".");
                 entry4.MorphCode.Should().OnlyContain(x => x == "is:SUPERLATIVE");
-                var entry5 = actual.Suffixes[0].Entries[2];
+                var entry5 = actual.Suffixes.First().Entries[2];
                 entry5.Strip.Should().BeEmpty();
                 entry5.Append.Should().Be("obb");
                 entry5.ContClass.Should().ContainInOrder(new[] { 'B', 'X' });
@@ -792,7 +794,7 @@ namespace Hunspell.NetCore.Tests
 
                 actual.CompoundMin.Should().Be(1);
                 actual.CompoundRules.Should().HaveCount(1);
-                actual.CompoundRules[0].Should().ContainInOrder(new[] { 'A', '*', 'B', '*', 'C', '*' });
+                actual.CompoundRules.Single().Should().ContainInOrder(new[] { 'A', '*', 'B', '*', 'C', '*' });
             }
 
             [Fact]
@@ -804,7 +806,7 @@ namespace Hunspell.NetCore.Tests
 
                 actual.CompoundMin.Should().Be(1);
                 actual.CompoundRules.Should().HaveCount(1);
-                actual.CompoundRules[0].Should().ContainInOrder(new[] { 'A', '?', 'B', '?', 'C', '?' });
+                actual.CompoundRules.Single().Should().ContainInOrder(new[] { 'A', '?', 'B', '?', 'C', '?' });
             }
 
             [Fact]
@@ -818,8 +820,8 @@ namespace Hunspell.NetCore.Tests
                 actual.CompoundMin.Should().Be(1);
                 actual.OnlyInCompound.Should().Be('c');
                 actual.CompoundRules.Should().HaveCount(2);
-                actual.CompoundRules[0].Should().ContainInOrder(new[] { 'n', '*', '1', 't' });
-                actual.CompoundRules[1].Should().ContainInOrder(new[] { 'n', '*', 'm', 'p' });
+                actual.CompoundRules.First().Should().ContainInOrder(new[] { 'n', '*', '1', 't' });
+                actual.CompoundRules.Last().Should().ContainInOrder(new[] { 'n', '*', 'm', 'p' });
             }
 
             [Fact]
@@ -831,8 +833,8 @@ namespace Hunspell.NetCore.Tests
 
                 actual.CompoundMin.Should().Be(1);
                 actual.CompoundRules.Should().HaveCount(2);
-                actual.CompoundRules[0].Should().ContainInOrder("N*%?".ToCharArray());
-                actual.CompoundRules[1].Should().ContainInOrder("NN*.NN*%?".ToCharArray());
+                actual.CompoundRules.First().Should().ContainInOrder("N*%?".ToCharArray());
+                actual.CompoundRules.Last().Should().ContainInOrder("NN*.NN*%?".ToCharArray());
                 actual.WordChars.Should().ContainInOrder("0123456789‰.".ToCharArray().OrderBy(x => x));
             }
 
@@ -845,8 +847,8 @@ namespace Hunspell.NetCore.Tests
 
                 actual.CompoundMin.Should().Be(1);
                 actual.CompoundRules.Should().HaveCount(2);
-                actual.CompoundRules[0].Should().ContainInOrder("A*A".ToCharArray());
-                actual.CompoundRules[1].Should().ContainInOrder("A*AAB*BBBC*C".ToCharArray());
+                actual.CompoundRules.First().Should().ContainInOrder("A*A".ToCharArray());
+                actual.CompoundRules.Last().Should().ContainInOrder("A*AAB*BBBC*C".ToCharArray());
             }
 
             [Fact]
@@ -860,8 +862,8 @@ namespace Hunspell.NetCore.Tests
                 actual.CompoundMin.Should().Be(1);
                 actual.OnlyInCompound.Should().Be('c' << 8 | 'c');
                 actual.CompoundRules.Should().HaveCount(2);
-                actual.CompoundRules[0].Should().ContainInOrder(new[] { 'n' << 8 | 'n', '*', '1' << 8 | '1', 't' << 8 | 't' });
-                actual.CompoundRules[1].Should().ContainInOrder(new[] { 'n' << 8 | 'n', '*', 'm' << 8 | 'm', 'p' << 8 | 'p' });
+                actual.CompoundRules.First().Should().ContainInOrder(new[] { 'n' << 8 | 'n', '*', '1' << 8 | '1', 't' << 8 | 't' });
+                actual.CompoundRules.Last().Should().ContainInOrder(new[] { 'n' << 8 | 'n', '*', 'm' << 8 | 'm', 'p' << 8 | 'p' });
             }
 
             [Fact]
@@ -875,8 +877,8 @@ namespace Hunspell.NetCore.Tests
                 actual.CompoundMin.Should().Be(1);
                 actual.OnlyInCompound.Should().Be(1000);
                 actual.CompoundRules.Should().HaveCount(2);
-                actual.CompoundRules[0].Should().ContainInOrder(new[] { 1001, '*', 1002, 2001 });
-                actual.CompoundRules[1].Should().ContainInOrder(new[] { 1001, '*', 2002, 2000 });
+                actual.CompoundRules.First().Should().ContainInOrder(new[] { 1001, '*', 1002, 2001 });
+                actual.CompoundRules.Last().Should().ContainInOrder(new[] { 1001, '*', 2002, 2000 });
             }
 
             [Fact]
@@ -912,7 +914,7 @@ namespace Hunspell.NetCore.Tests
 
                 actual.CompoundMin.Should().Be(1);
                 actual.CompoundRules.Should().HaveCount(1);
-                actual.CompoundRules[0].Should().ContainInOrder(new[] { 'a', '*', 'b' });
+                actual.CompoundRules.Single().Should().ContainInOrder(new[] { 'a', '*', 'b' });
                 actual.OnlyInCompound.Should().Be('c');
                 actual.WordChars.Should().ContainInOrder("0123456789-".ToCharArray().OrderBy(x => x));
             }
@@ -936,7 +938,7 @@ namespace Hunspell.NetCore.Tests
 
                 actual.FlagMode.Should().Be(FlagMode.Char);
                 actual.Suffixes.Should().HaveCount(3);
-                actual.Suffixes[1].AFlag.Should().Be('1');
+                actual.Suffixes.Skip(1).First().AFlag.Should().Be('1');
                 actual.Prefixes.Should().HaveCount(1);
             }
 
@@ -949,7 +951,7 @@ namespace Hunspell.NetCore.Tests
 
                 actual.FlagMode.Should().Be(FlagMode.Long);
                 actual.Suffixes.Should().HaveCount(3);
-                actual.Suffixes[1].AFlag.Should().Be('g' << 8 | '?');
+                actual.Suffixes.Skip(1).First().AFlag.Should().Be('g' << 8 | '?');
                 actual.Prefixes.Should().HaveCount(1);
             }
 
@@ -961,15 +963,15 @@ namespace Hunspell.NetCore.Tests
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
                 actual.Suffixes.Should().HaveCount(3);
-                actual.Suffixes[0].AFlag.Should().Be((char)999);
-                actual.Suffixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct);
-                actual.Suffixes[1].AFlag.Should().Be((char)214);
-                actual.Suffixes[1].Options.Should().Be(AffixEntryOptions.CrossProduct);
-                actual.Suffixes[2].AFlag.Should().Be((char)216);
-                actual.Suffixes[2].Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Suffixes.First().AFlag.Should().Be((char)999);
+                actual.Suffixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Suffixes.Skip(1).First().AFlag.Should().Be((char)214);
+                actual.Suffixes.Skip(1).First().Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Suffixes.Skip(2).First().AFlag.Should().Be((char)216);
+                actual.Suffixes.Skip(2).First().Options.Should().Be(AffixEntryOptions.CrossProduct);
                 actual.Prefixes.Should().HaveCount(1);
-                actual.Prefixes[0].AFlag.Should().Be((char)54321);
-                actual.Prefixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Prefixes.Single().AFlag.Should().Be((char)54321);
+                actual.Prefixes.Single().Options.Should().Be(AffixEntryOptions.CrossProduct);
             }
 
             [Fact]
@@ -981,12 +983,12 @@ namespace Hunspell.NetCore.Tests
 
                 actual.FlagMode.Should().Be(FlagMode.Uni);
                 actual.Suffixes.Should().HaveCount(3);
-                actual.Suffixes[0].Entries.Should().HaveCount(1);
-                actual.Suffixes[1].AFlag.Should().Be('Ö');
-                actual.Suffixes[1].Entries.Should().HaveCount(1);
-                actual.Suffixes[2].Entries.Should().HaveCount(1);
+                actual.Suffixes.First().Entries.Should().HaveCount(1);
+                actual.Suffixes.Skip(1).First().AFlag.Should().Be('Ö');
+                actual.Suffixes.Skip(1).First().Entries.Should().HaveCount(1);
+                actual.Suffixes.Skip(2).First().Entries.Should().HaveCount(1);
                 actual.Prefixes.Should().HaveCount(1);
-                actual.Prefixes[0].Entries.Should().HaveCount(1);
+                actual.Prefixes.Single().Entries.Should().HaveCount(1);
             }
 
             [Fact]
@@ -1037,17 +1039,17 @@ namespace Hunspell.NetCore.Tests
                 actual.FullStrip.Should().BeTrue();
                 actual.TryString.Should().Be("aioertnsclmdpgubzfvhÃ q'ACMSkBGPLxEyRTVÃ²IODNwFÃ©Ã¹ÃšÃ¬jUZKHWJYQX");
                 actual.Suffixes.Should().HaveCount(1);
-                actual.Suffixes[0].AFlag.Should().Be('A');
-                actual.Suffixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct);
-                var entry1 = actual.Suffixes[0].Entries[0];
+                actual.Suffixes.First().AFlag.Should().Be('A');
+                actual.Suffixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct);
+                var entry1 = actual.Suffixes.First().Entries[0];
                 entry1.Strip.Should().Be("andare");
                 entry1.Append.Should().Be("vado");
                 entry1.Conditions.GetEncoded().Should().Be(".");
-                var entry2 = actual.Suffixes[0].Entries[1];
+                var entry2 = actual.Suffixes.First().Entries[1];
                 entry2.Strip.Should().Be("andare");
                 entry2.Append.Should().Be("va");
                 entry2.Conditions.GetEncoded().Should().Be(".");
-                var entry3 = actual.Suffixes[0].Entries[2];
+                var entry3 = actual.Suffixes.First().Entries[2];
                 entry3.Strip.Should().Be("are");
                 entry3.Append.Should().Be("iamo");
                 entry3.Conditions.GetEncoded().Should().Be("andare");
@@ -1071,40 +1073,40 @@ namespace Hunspell.NetCore.Tests
 
                 actual.Suffixes.Should().HaveCount(3);
 
-                actual.Suffixes[0].AFlag.Should().Be('A');
-                actual.Suffixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct);
-                actual.Suffixes[0].Entries.Should().HaveCount(3);
-                actual.Suffixes[0].Entries[0].Strip.Should().BeEmpty();
-                actual.Suffixes[0].Entries[0].Append.Should().Be("s");
-                actual.Suffixes[0].Entries[0].Key.Should().Be("s");
-                actual.Suffixes[0].Entries[0].ContClass.Should().ContainInOrder(new[] { 'U', 'P', 'X' }.OrderBy(x => x));
-                actual.Suffixes[0].Entries[0].Conditions.GetEncoded().Should().Be(".");
-                actual.Suffixes[0].Entries[1].Append.Should().Be("s");
-                actual.Suffixes[0].Entries[1].Key.Should().Be("s");
-                actual.Suffixes[0].Entries[2].Append.Should().BeEmpty();
-                actual.Suffixes[0].Entries[2].Key.Should().BeEmpty();
+                actual.Suffixes.First().AFlag.Should().Be('A');
+                actual.Suffixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Suffixes.First().Entries.Should().HaveCount(3);
+                actual.Suffixes.First().Entries[0].Strip.Should().BeEmpty();
+                actual.Suffixes.First().Entries[0].Append.Should().Be("s");
+                actual.Suffixes.First().Entries[0].Key.Should().Be("s");
+                actual.Suffixes.First().Entries[0].ContClass.Should().ContainInOrder(new[] { 'U', 'P', 'X' }.OrderBy(x => x));
+                actual.Suffixes.First().Entries[0].Conditions.GetEncoded().Should().Be(".");
+                actual.Suffixes.First().Entries[1].Append.Should().Be("s");
+                actual.Suffixes.First().Entries[1].Key.Should().Be("s");
+                actual.Suffixes.First().Entries[2].Append.Should().BeEmpty();
+                actual.Suffixes.First().Entries[2].Key.Should().BeEmpty();
 
-                actual.Suffixes[1].AFlag.Should().Be('B');
-                actual.Suffixes[1].Entries.Should().HaveCount(2);
+                actual.Suffixes.Skip(1).First().AFlag.Should().Be('B');
+                actual.Suffixes.Skip(1).First().Entries.Should().HaveCount(2);
 
-                actual.Suffixes[2].AFlag.Should().Be('C');
-                actual.Suffixes[2].Entries.Should().HaveCount(1);
-                actual.Suffixes[2].Entries[0].Strip.Should().BeEmpty();
-                actual.Suffixes[2].Entries[0].Append.Should().Be("n");
-                actual.Suffixes[2].Entries[0].ContClass.Should().ContainInOrder(new[] { 'D', 'W' });
-                actual.Suffixes[2].Entries[0].Conditions.GetEncoded().Should().Be(".");
+                actual.Suffixes.Skip(2).First().AFlag.Should().Be('C');
+                actual.Suffixes.Skip(2).First().Entries.Should().HaveCount(1);
+                actual.Suffixes.Skip(2).First().Entries[0].Strip.Should().BeEmpty();
+                actual.Suffixes.Skip(2).First().Entries[0].Append.Should().Be("n");
+                actual.Suffixes.Skip(2).First().Entries[0].ContClass.Should().ContainInOrder(new[] { 'D', 'W' });
+                actual.Suffixes.Skip(2).First().Entries[0].Conditions.GetEncoded().Should().Be(".");
 
                 actual.ForbiddenWord.Should().Be('Z');
 
                 actual.Prefixes.Should().HaveCount(2);
-                actual.Prefixes[0].AFlag.Should().Be('-');
-                actual.Prefixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct);
-                actual.Prefixes[0].Entries.Should().HaveCount(1);
-                actual.Prefixes[0].Entries[0].Strip.Should().BeEmpty();
-                actual.Prefixes[0].Entries[0].Append.Should().Be("-");
-                actual.Prefixes[0].Entries[0].ContClass.Should().ContainInOrder(new[] { 'P' });
-                actual.Prefixes[0].Entries[0].Conditions.GetEncoded().Should().Be(".");
-                actual.Prefixes[1].Entries.Should().HaveCount(29);
+                actual.Prefixes.First().AFlag.Should().Be('-');
+                actual.Prefixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Prefixes.First().Entries.Should().HaveCount(1);
+                actual.Prefixes.First().Entries[0].Strip.Should().BeEmpty();
+                actual.Prefixes.First().Entries[0].Append.Should().Be("-");
+                actual.Prefixes.First().Entries[0].ContClass.Should().ContainInOrder(new[] { 'P' });
+                actual.Prefixes.First().Entries[0].Conditions.GetEncoded().Should().Be(".");
+                actual.Prefixes.Last().Entries.Should().HaveCount(29);
             }
 
             [Fact]
@@ -1116,13 +1118,13 @@ namespace Hunspell.NetCore.Tests
 
                 actual.InputConversions.Should().HaveCount(4);
                 actual.InputConversions.ContainsKey("ş");
-                actual.InputConversions["ş"].OutStrings[0].Should().Be("ș");
+                actual.InputConversions["ş"][0].Should().Be("ș");
                 actual.InputConversions.ContainsKey("ţ");
-                actual.InputConversions["ţ"].OutStrings[0].Should().Be("ț");
+                actual.InputConversions["ţ"][0].Should().Be("ț");
                 actual.InputConversions.ContainsKey("Ş");
-                actual.InputConversions["Ş"].OutStrings[0].Should().Be("Ș");
+                actual.InputConversions["Ş"][0].Should().Be("Ș");
                 actual.InputConversions.ContainsKey("Ţ");
-                actual.InputConversions["Ţ"].OutStrings[0].Should().Be("Ț");
+                actual.InputConversions["Ţ"][0].Should().Be("Ț");
             }
 
             [Fact]
@@ -1134,12 +1136,12 @@ namespace Hunspell.NetCore.Tests
 
                 actual.IgnoredChars.ShouldBeEquivalentTo("aeiou".ToCharArray());
                 actual.Prefixes.Should().HaveCount(1);
-                actual.Prefixes[0].AFlag.Should().Be('A');
-                actual.Prefixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct);
-                actual.Prefixes[0].Entries.Should().HaveCount(1);
-                actual.Prefixes[0].Entries[0].Strip.Should().BeEmpty();
-                actual.Prefixes[0].Entries[0].Append.Should().Be("r");
-                actual.Prefixes[0].Entries[0].Conditions.GetEncoded().Should().Be(".");
+                actual.Prefixes.Single().AFlag.Should().Be('A');
+                actual.Prefixes.Single().Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Prefixes.Single().Entries.Should().HaveCount(1);
+                actual.Prefixes.Single().Entries[0].Strip.Should().BeEmpty();
+                actual.Prefixes.Single().Entries[0].Append.Should().Be("r");
+                actual.Prefixes.Single().Entries[0].Conditions.GetEncoded().Should().Be(".");
             }
 
             [Fact]
@@ -1162,9 +1164,9 @@ namespace Hunspell.NetCore.Tests
 
                 actual.MaxNgramSuggestions.Should().Be(0);
                 actual.MapTable.Should().HaveCount(3);
-                actual.MapTable[0].ShouldBeEquivalentTo(new[] { "u", "ú", "ü" });
-                actual.MapTable[1].ShouldBeEquivalentTo(new[] { "ö", "ó", "o" });
-                actual.MapTable[2].ShouldBeEquivalentTo(new[] { "ß", "ss" });
+                actual.MapTable.First().ShouldBeEquivalentTo(new[] { "u", "ú", "ü" });
+                actual.MapTable.Skip(1).First().ShouldBeEquivalentTo(new[] { "ö", "ó", "o" });
+                actual.MapTable.Last().ShouldBeEquivalentTo(new[] { "ß", "ss" });
             }
 
             [Fact]
@@ -1175,16 +1177,16 @@ namespace Hunspell.NetCore.Tests
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
                 actual.Prefixes.Should().HaveCount(1);
-                actual.Prefixes[0].AFlag.Should().Be('P');
-                actual.Prefixes[0].Entries[0].MorphCode.ShouldBeEquivalentTo(new[] { "dp:pfx_un", "sp:un" });
+                actual.Prefixes.Single().AFlag.Should().Be('P');
+                actual.Prefixes.Single().Entries[0].MorphCode.ShouldBeEquivalentTo(new[] { "dp:pfx_un", "sp:un" });
 
                 actual.Suffixes.Should().HaveCount(3);
-                actual.Suffixes[0].AFlag.Should().Be('S');
-                actual.Suffixes[0].Entries[0].MorphCode.ShouldBeEquivalentTo(new[] { "is:plur" });
-                actual.Suffixes[1].AFlag.Should().Be('Q');
-                actual.Suffixes[1].Entries[0].MorphCode.ShouldBeEquivalentTo(new[] { "is:sg_3" });
-                actual.Suffixes[2].AFlag.Should().Be('R');
-                actual.Suffixes[2].Entries[0].MorphCode.ShouldBeEquivalentTo(new[] { "ds:der_able" });
+                actual.Suffixes.First().AFlag.Should().Be('S');
+                actual.Suffixes.First().Entries[0].MorphCode.ShouldBeEquivalentTo(new[] { "is:plur" });
+                actual.Suffixes.Skip(1).First().AFlag.Should().Be('Q');
+                actual.Suffixes.Skip(1).First().Entries[0].MorphCode.ShouldBeEquivalentTo(new[] { "is:sg_3" });
+                actual.Suffixes.Last().AFlag.Should().Be('R');
+                actual.Suffixes.Last().Entries[0].MorphCode.ShouldBeEquivalentTo(new[] { "ds:der_able" });
             }
 
             [Fact]
@@ -1197,7 +1199,7 @@ namespace Hunspell.NetCore.Tests
                 actual.NeedAffix.Should().Be('X');
                 actual.CompoundFlag.Should().Be('Y');
                 actual.Suffixes.Should().HaveCount(1);
-                actual.Suffixes[0].Entries.Should().HaveCount(1);
+                actual.Suffixes.Single().Entries.Should().HaveCount(1);
             }
 
             [Fact]
@@ -1223,19 +1225,19 @@ namespace Hunspell.NetCore.Tests
 
                 actual.InputConversions.Should().HaveCount(4);
 
-                actual.InputConversions[key1].OutStrings[0].Equals(value1_1, StringComparison.Ordinal).Should().BeTrue();
-                actual.InputConversions[key1].OutStrings[1].Should().BeNull();
-                actual.InputConversions[key1].OutStrings[2].Equals(value1_2, StringComparison.Ordinal).Should().BeTrue();
-                actual.InputConversions[key1].OutStrings[3].Should().BeNull();
+                actual.InputConversions[key1][0].Equals(value1_1, StringComparison.Ordinal).Should().BeTrue();
+                actual.InputConversions[key1][(ReplacementValueType)1].Should().BeNull();
+                actual.InputConversions[key1][(ReplacementValueType)2].Equals(value1_2, StringComparison.Ordinal).Should().BeTrue();
+                actual.InputConversions[key1][(ReplacementValueType)3].Should().BeNull();
 
-                actual.InputConversions[key2].OutStrings[0].Should().BeNull();
-                actual.InputConversions[key2].OutStrings[1].Should().BeNull();
-                actual.InputConversions[key2].OutStrings[2].Equals(value2_2, StringComparison.Ordinal).Should().BeTrue();
-                actual.InputConversions[key2].OutStrings[3].Should().BeNull();
+                actual.InputConversions[key2][0].Should().BeNull();
+                actual.InputConversions[key2][(ReplacementValueType)1].Should().BeNull();
+                actual.InputConversions[key2][(ReplacementValueType)2].Equals(value2_2, StringComparison.Ordinal).Should().BeTrue();
+                actual.InputConversions[key2][(ReplacementValueType)3].Should().BeNull();
 
-                actual.InputConversions["र्‌य"].OutStrings[0].Should().Be("र्‌य");
+                actual.InputConversions["र्‌य"][0].Should().Be("र्‌य");
 
-                actual.InputConversions["र्‌व"].OutStrings[0].Should().Be("र्‌व");
+                actual.InputConversions["र्‌व"][0].Should().Be("र्‌व");
             }
 
             [Fact]
@@ -1254,11 +1256,11 @@ namespace Hunspell.NetCore.Tests
                 actual.Prefixes.Single().Entries.Single().Conditions.GetEncoded().Should().Be(".");
 
                 actual.Suffixes.Should().HaveCount(3);
-                actual.Suffixes[1].AFlag.Should().Be(2000);
-                actual.Suffixes[1].Entries.Should().HaveCount(3);
-                actual.Suffixes[1].Entries[1].Strip.Should().BeEmpty();
-                actual.Suffixes[1].Entries[1].Append.Should().Be("ами");
-                actual.Suffixes[1].Entries[1].Conditions.GetEncoded().Should().Be(".");
+                actual.Suffixes.Skip(1).First().AFlag.Should().Be(2000);
+                actual.Suffixes.Skip(1).First().Entries.Should().HaveCount(3);
+                actual.Suffixes.Skip(1).First().Entries[1].Strip.Should().BeEmpty();
+                actual.Suffixes.Skip(1).First().Entries[1].Append.Should().Be("ами");
+                actual.Suffixes.Skip(1).First().Entries[1].Conditions.GetEncoded().Should().Be(".");
             }
 
             [Fact]
@@ -1269,13 +1271,13 @@ namespace Hunspell.NetCore.Tests
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
                 actual.OutputConversions.Should().HaveCount(7);
-                actual.OutputConversions["a"].OutStrings[0].Should().Be("A");
-                actual.OutputConversions["á"].OutStrings[0].Should().Be("Á");
-                actual.OutputConversions["b"].OutStrings[0].Should().Be("B");
-                actual.OutputConversions["c"].OutStrings[0].Should().Be("C");
-                actual.OutputConversions["d"].OutStrings[0].Should().Be("D");
-                actual.OutputConversions["e"].OutStrings[0].Should().Be("E");
-                actual.OutputConversions["é"].OutStrings[0].Should().Be("É");
+                actual.OutputConversions["a"][0].Should().Be("A");
+                actual.OutputConversions["á"][0].Should().Be("Á");
+                actual.OutputConversions["b"][0].Should().Be("B");
+                actual.OutputConversions["c"][0].Should().Be("C");
+                actual.OutputConversions["d"][0].Should().Be("D");
+                actual.OutputConversions["e"][0].Should().Be("E");
+                actual.OutputConversions["é"][0].Should().Be("É");
             }
 
             [Fact]
@@ -1289,18 +1291,18 @@ namespace Hunspell.NetCore.Tests
                 actual.CompoundFlag.Should().Be('A');
                 actual.CompoundPermitFlag.Should().Be('P');
                 actual.Suffixes.Should().HaveCount(1);
-                actual.Suffixes[0].AFlag.Should().Be('B');
-                actual.Suffixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct);
-                actual.Suffixes[0].Entries.Should().HaveCount(1);
-                actual.Suffixes[0].Entries[0].Strip.Should().BeEmpty();
-                actual.Suffixes[0].Entries[0].Append.Should().Be("s");
-                actual.Suffixes[0].Entries[0].ContClass.Should().ContainInOrder(new[] { 'O', 'P' });
-                actual.Suffixes[0].Entries[0].Conditions.GetEncoded().Should().Be(".");
+                actual.Suffixes.First().AFlag.Should().Be('B');
+                actual.Suffixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Suffixes.First().Entries.Should().HaveCount(1);
+                actual.Suffixes.First().Entries[0].Strip.Should().BeEmpty();
+                actual.Suffixes.First().Entries[0].Append.Should().Be("s");
+                actual.Suffixes.First().Entries[0].ContClass.Should().ContainInOrder(new[] { 'O', 'P' });
+                actual.Suffixes.First().Entries[0].Conditions.GetEncoded().Should().Be(".");
                 actual.CompoundPatterns.Should().HaveCount(1);
-                actual.CompoundPatterns[0].Pattern.Should().Be("0");
-                actual.CompoundPatterns[0].Condition.Should().Be('B');
-                actual.CompoundPatterns[0].Pattern2.Should().BeEmpty();
-                actual.CompoundPatterns[0].Condition2.Should().Be('A');
+                actual.CompoundPatterns.Single().Pattern.Should().Be("0");
+                actual.CompoundPatterns.Single().Condition.Should().Be('B');
+                actual.CompoundPatterns.Single().Pattern2.Should().BeEmpty();
+                actual.CompoundPatterns.Single().Condition2.Should().Be('A');
             }
 
             [Fact]
@@ -1316,22 +1318,22 @@ namespace Hunspell.NetCore.Tests
                 actual.CompoundPermitFlag.Should().Be('C' << 8 | 'p');
                 actual.OnlyInCompound.Should().Be('C' << 8 | 'x');
                 actual.CompoundPatterns.Should().HaveCount(1);
-                actual.CompoundPatterns[0].Pattern.Should().BeEmpty();
-                actual.CompoundPatterns[0].Condition.Should().Be('C' << 8 | 'h');
-                actual.CompoundPatterns[0].Pattern2.Should().BeEmpty();
-                actual.CompoundPatterns[0].Condition2.Should().Be('X' << 8 | 's');
+                actual.CompoundPatterns.Single().Pattern.Should().BeEmpty();
+                actual.CompoundPatterns.Single().Condition.Should().Be('C' << 8 | 'h');
+                actual.CompoundPatterns.Single().Pattern2.Should().BeEmpty();
+                actual.CompoundPatterns.Single().Condition2.Should().Be('X' << 8 | 's');
                 actual.Suffixes.Should().HaveCount(1);
-                actual.Suffixes[0].AFlag.Should().Be('C' << 8 | 'h');
-                actual.Suffixes[0].Options.Should().Be(AffixEntryOptions.CrossProduct);
-                actual.Suffixes[0].Entries.Should().HaveCount(2);
-                actual.Suffixes[0].Entries[0].Strip.Should().BeEmpty();
-                actual.Suffixes[0].Entries[0].Append.Should().Be("s");
-                actual.Suffixes[0].Entries[0].ContClass.Should().ContainInOrder(new[] { 'C' << 8 | 'a', 'C' << 8 | 'b', 'C' << 8 | 'x', 'C' << 8 | 'p' }.OrderBy(x => x));
-                actual.Suffixes[0].Entries[0].Conditions.GetEncoded().Should().Be(".");
-                actual.Suffixes[0].Entries[1].Strip.Should().BeEmpty();
-                actual.Suffixes[0].Entries[1].Append.Should().Be("s-");
-                actual.Suffixes[0].Entries[1].ContClass.Should().ContainInOrder(new[] { 'C' << 8 | 'a', 'C' << 8 | 'b', 'C' << 8 | 'c', 'C' << 8 | 'p' }.OrderBy(x => x));
-                actual.Suffixes[0].Entries[1].Conditions.GetEncoded().Should().Be(".");
+                actual.Suffixes.First().AFlag.Should().Be('C' << 8 | 'h');
+                actual.Suffixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct);
+                actual.Suffixes.First().Entries.Should().HaveCount(2);
+                actual.Suffixes.First().Entries[0].Strip.Should().BeEmpty();
+                actual.Suffixes.First().Entries[0].Append.Should().Be("s");
+                actual.Suffixes.First().Entries[0].ContClass.Should().ContainInOrder(new[] { 'C' << 8 | 'a', 'C' << 8 | 'b', 'C' << 8 | 'x', 'C' << 8 | 'p' }.OrderBy(x => x));
+                actual.Suffixes.First().Entries[0].Conditions.GetEncoded().Should().Be(".");
+                actual.Suffixes.First().Entries[1].Strip.Should().BeEmpty();
+                actual.Suffixes.First().Entries[1].Append.Should().Be("s-");
+                actual.Suffixes.First().Entries[1].ContClass.Should().ContainInOrder(new[] { 'C' << 8 | 'a', 'C' << 8 | 'b', 'C' << 8 | 'c', 'C' << 8 | 'p' }.OrderBy(x => x));
+                actual.Suffixes.First().Entries[1].Conditions.GetEncoded().Should().Be(".");
             }
 
             [Fact]
@@ -1368,46 +1370,47 @@ namespace Hunspell.NetCore.Tests
 
                 actual.MaxNgramSuggestions.Should().Be(0);
                 actual.Replacements.Should().HaveCount(8);
-                actual.Replacements[0].Pattern.Should().Be("f");
-                actual.Replacements[0].OutString.Should().Be("ph");
-                actual.Replacements[0].Med.Should().Be("ph");
-                actual.Replacements[0].Type.Should().Be(ReplacementValueType.Med);
+                var replacements = actual.Replacements.ToList();
+                replacements[0].Pattern.Should().Be("f");
+                replacements[0].OutString.Should().Be("ph");
+                replacements[0].Med.Should().Be("ph");
+                replacements[0].Type.Should().Be(ReplacementValueType.Med);
 
-                actual.Replacements[1].Pattern.Should().Be("ph");
-                actual.Replacements[1].OutString.Should().Be("f");
-                actual.Replacements[1].Med.Should().Be("f");
-                actual.Replacements[1].Type.Should().Be(ReplacementValueType.Med);
+                replacements[1].Pattern.Should().Be("ph");
+                replacements[1].OutString.Should().Be("f");
+                replacements[1].Med.Should().Be("f");
+                replacements[1].Type.Should().Be(ReplacementValueType.Med);
 
-                actual.Replacements[2].Pattern.Should().Be("shun");
-                actual.Replacements[2].OutString.Should().Be("tion");
-                actual.Replacements[2].Fin.Should().Be("tion");
-                actual.Replacements[2].Type.Should().Be(ReplacementValueType.Fin);
+                replacements[2].Pattern.Should().Be("shun");
+                replacements[2].OutString.Should().Be("tion");
+                replacements[2].Fin.Should().Be("tion");
+                replacements[2].Type.Should().Be(ReplacementValueType.Fin);
 
-                actual.Replacements[3].Pattern.Should().Be("alot");
-                actual.Replacements[3].OutString.Should().Be("a lot");
-                actual.Replacements[3].Isol.Should().Be("a lot");
-                actual.Replacements[3].Type.Should().Be(ReplacementValueType.Isol);
+                replacements[3].Pattern.Should().Be("alot");
+                replacements[3].OutString.Should().Be("a lot");
+                replacements[3].Isol.Should().Be("a lot");
+                replacements[3].Type.Should().Be(ReplacementValueType.Isol);
 
-                actual.Replacements[4].Pattern.Should().Be("foo");
-                actual.Replacements[4].OutString.Should().Be("bar");
-                actual.Replacements[4].Isol.Should().Be("bar");
-                actual.Replacements[4].Type.Should().Be(ReplacementValueType.Isol);
+                replacements[4].Pattern.Should().Be("foo");
+                replacements[4].OutString.Should().Be("bar");
+                replacements[4].Isol.Should().Be("bar");
+                replacements[4].Type.Should().Be(ReplacementValueType.Isol);
 
-                actual.Replacements[5].Pattern.Should().Be("'");
-                actual.Replacements[5].OutString.Should().Be(" ");
-                actual.Replacements[5].Med.Should().Be(" ");
-                actual.Replacements[5].Type.Should().Be(ReplacementValueType.Med);
+                replacements[5].Pattern.Should().Be("'");
+                replacements[5].OutString.Should().Be(" ");
+                replacements[5].Med.Should().Be(" ");
+                replacements[5].Type.Should().Be(ReplacementValueType.Med);
 
-                actual.Replacements[6].Pattern.Should().StartWith("vinte");
-                actual.Replacements[6].Pattern.Should().EndWith("n");
-                actual.Replacements[6].OutString.Should().Be("vinte e un");
-                actual.Replacements[6].Isol.Should().Be("vinte e un");
-                actual.Replacements[6].Type.Should().Be(ReplacementValueType.Isol);
+                replacements[6].Pattern.Should().StartWith("vinte");
+                replacements[6].Pattern.Should().EndWith("n");
+                replacements[6].OutString.Should().Be("vinte e un");
+                replacements[6].Isol.Should().Be("vinte e un");
+                replacements[6].Type.Should().Be(ReplacementValueType.Isol);
 
-                actual.Replacements[7].Pattern.Should().Be("s");
-                actual.Replacements[7].OutString.Should().Be("'s");
-                actual.Replacements[7].Med.Should().Be("'s");
-                actual.Replacements[7].Type.Should().Be(ReplacementValueType.Med);
+                replacements[7].Pattern.Should().Be("s");
+                replacements[7].OutString.Should().Be("'s");
+                replacements[7].Med.Should().Be("'s");
+                replacements[7].Type.Should().Be(ReplacementValueType.Med);
 
                 actual.Suffixes.Should().HaveCount(1);
                 actual.Suffixes.Single().AFlag.Should().Be('A');
@@ -1518,32 +1521,32 @@ namespace Hunspell.NetCore.Tests
 
                 actual.Suffixes.Should().HaveCount(3);
 
-                actual.Suffixes[0].AFlag.Should().Be('A');
-                actual.Suffixes[0].Entries.Should().HaveCount(1);
-                actual.Suffixes[0].Entries[0].Strip.Should().BeEmpty();
-                actual.Suffixes[0].Entries[0].Append.Should().BeEmpty();
-                actual.Suffixes[0].Entries[0].Conditions.GetEncoded().Should().Be(".");
-                actual.Suffixes[0].Entries[0].MorphCode.Should().OnlyContain(x => x == ">");
+                actual.Suffixes.First().AFlag.Should().Be('A');
+                actual.Suffixes.First().Entries.Should().HaveCount(1);
+                actual.Suffixes.First().Entries[0].Strip.Should().BeEmpty();
+                actual.Suffixes.First().Entries[0].Append.Should().BeEmpty();
+                actual.Suffixes.First().Entries[0].Conditions.GetEncoded().Should().Be(".");
+                actual.Suffixes.First().Entries[0].MorphCode.Should().OnlyContain(x => x == ">");
 
-                actual.Suffixes[1].AFlag.Should().Be('B');
-                actual.Suffixes[1].Entries.Should().HaveCount(1);
-                actual.Suffixes[1].Entries[0].Strip.Should().BeEmpty();
-                actual.Suffixes[1].Entries[0].Append.Should().BeEmpty();
-                actual.Suffixes[1].Entries[0].Conditions.GetEncoded().Should().Be(".");
-                actual.Suffixes[1].Entries[0].MorphCode.Should().OnlyContain(x => x == "<ZERO>>");
+                actual.Suffixes.Skip(1).First().AFlag.Should().Be('B');
+                actual.Suffixes.Skip(1).First().Entries.Should().HaveCount(1);
+                actual.Suffixes.Skip(1).First().Entries[0].Strip.Should().BeEmpty();
+                actual.Suffixes.Skip(1).First().Entries[0].Append.Should().BeEmpty();
+                actual.Suffixes.Skip(1).First().Entries[0].Conditions.GetEncoded().Should().Be(".");
+                actual.Suffixes.Skip(1).First().Entries[0].MorphCode.Should().OnlyContain(x => x == "<ZERO>>");
 
-                actual.Suffixes[2].AFlag.Should().Be('C');
-                actual.Suffixes[2].Entries.Should().HaveCount(2);
-                actual.Suffixes[2].Entries[0].Strip.Should().BeEmpty();
-                actual.Suffixes[2].Entries[0].Append.Should().BeEmpty();
-                actual.Suffixes[2].Entries[0].ContClass.Should().ContainInOrder(new[] { 'X', 'A', 'B' }.OrderBy(x => x));
-                actual.Suffixes[2].Entries[0].Conditions.GetEncoded().Should().Be(".");
-                actual.Suffixes[2].Entries[0].MorphCode.Should().OnlyContain(x => x == "<ZERODERIV>");
-                actual.Suffixes[2].Entries[1].Strip.Should().BeEmpty();
-                actual.Suffixes[2].Entries[1].Append.Should().Be("baz");
-                actual.Suffixes[2].Entries[1].ContClass.Should().ContainInOrder(new[] { 'X', 'A', 'B' }.OrderBy(x => x));
-                actual.Suffixes[2].Entries[1].Conditions.GetEncoded().Should().Be(".");
-                actual.Suffixes[2].Entries[1].MorphCode.Should().OnlyContain(x => x == "<DERIV>");
+                actual.Suffixes.Last().AFlag.Should().Be('C');
+                actual.Suffixes.Last().Entries.Should().HaveCount(2);
+                actual.Suffixes.Last().Entries[0].Strip.Should().BeEmpty();
+                actual.Suffixes.Last().Entries[0].Append.Should().BeEmpty();
+                actual.Suffixes.Last().Entries[0].ContClass.Should().ContainInOrder(new[] { 'X', 'A', 'B' }.OrderBy(x => x));
+                actual.Suffixes.Last().Entries[0].Conditions.GetEncoded().Should().Be(".");
+                actual.Suffixes.Last().Entries[0].MorphCode.Should().OnlyContain(x => x == "<ZERODERIV>");
+                actual.Suffixes.Last().Entries[1].Strip.Should().BeEmpty();
+                actual.Suffixes.Last().Entries[1].Append.Should().Be("baz");
+                actual.Suffixes.Last().Entries[1].ContClass.Should().ContainInOrder(new[] { 'X', 'A', 'B' }.OrderBy(x => x));
+                actual.Suffixes.Last().Entries[1].Conditions.GetEncoded().Should().Be(".");
+                actual.Suffixes.Last().Entries[1].MorphCode.Should().OnlyContain(x => x == "<DERIV>");
             }
 
             public static IEnumerable<object[]> can_read_file_without_exception_args =>

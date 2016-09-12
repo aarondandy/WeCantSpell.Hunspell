@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -22,7 +23,7 @@ namespace Hunspell
 
         private const string DefaultKeyString = "qwertyuiop|asdfghjkl|zxcvbnm";
 
-        private AffixConfigOptions _options;
+        private AffixConfigOptions options;
 
         /// <summary>
         /// The flag type.
@@ -46,26 +47,26 @@ namespace Hunspell
 #endif
             get
             {
-                return _options;
+                return options;
             }
             private set
             {
-                _options = value;
-                ComplexPrefixes = _options.HasFlag(AffixConfigOptions.ComplexPrefixes);
-                CompoundMoreSuffixes = _options.HasFlag(AffixConfigOptions.CompoundMoreSuffixes);
-                CheckCompoundDup = _options.HasFlag(AffixConfigOptions.CheckCompoundDup);
-                CheckCompoundRep = _options.HasFlag(AffixConfigOptions.CheckCompoundRep);
-                CheckCompoundTriple = _options.HasFlag(AffixConfigOptions.CheckCompoundTriple);
-                SimplifiedTriple = _options.HasFlag(AffixConfigOptions.SimplifiedTriple);
-                CheckCompoundCase = _options.HasFlag(AffixConfigOptions.CheckCompoundCase);
-                CheckNum = _options.HasFlag(AffixConfigOptions.CheckNum);
-                OnlyMaxDiff = _options.HasFlag(AffixConfigOptions.OnlyMaxDiff);
-                NoSplitSuggestions = _options.HasFlag(AffixConfigOptions.NoSplitSuggestions);
-                FullStrip = _options.HasFlag(AffixConfigOptions.FullStrip);
-                SuggestWithDots = _options.HasFlag(AffixConfigOptions.SuggestWithDots);
-                ForbidWarn = _options.HasFlag(AffixConfigOptions.ForbidWarn);
-                CheckSharps = _options.HasFlag(AffixConfigOptions.CheckSharps);
-                SimplifiedCompound = _options.HasFlag(AffixConfigOptions.SimplifiedCompound);
+                options = value;
+                ComplexPrefixes = options.HasFlag(AffixConfigOptions.ComplexPrefixes);
+                CompoundMoreSuffixes = options.HasFlag(AffixConfigOptions.CompoundMoreSuffixes);
+                CheckCompoundDup = options.HasFlag(AffixConfigOptions.CheckCompoundDup);
+                CheckCompoundRep = options.HasFlag(AffixConfigOptions.CheckCompoundRep);
+                CheckCompoundTriple = options.HasFlag(AffixConfigOptions.CheckCompoundTriple);
+                SimplifiedTriple = options.HasFlag(AffixConfigOptions.SimplifiedTriple);
+                CheckCompoundCase = options.HasFlag(AffixConfigOptions.CheckCompoundCase);
+                CheckNum = options.HasFlag(AffixConfigOptions.CheckNum);
+                OnlyMaxDiff = options.HasFlag(AffixConfigOptions.OnlyMaxDiff);
+                NoSplitSuggestions = options.HasFlag(AffixConfigOptions.NoSplitSuggestions);
+                FullStrip = options.HasFlag(AffixConfigOptions.FullStrip);
+                SuggestWithDots = options.HasFlag(AffixConfigOptions.SuggestWithDots);
+                ForbidWarn = options.HasFlag(AffixConfigOptions.ForbidWarn);
+                CheckSharps = options.HasFlag(AffixConfigOptions.CheckSharps);
+                SimplifiedCompound = options.HasFlag(AffixConfigOptions.SimplifiedCompound);
             }
         }
 
@@ -488,6 +489,8 @@ namespace Hunspell
         /// </summary>
         public Encoding Encoding { get; private set; }
 
+        private List<SingleReplacementEntry> replacements;
+
         /// <summary>
         /// Specifies modifications to try first
         /// </summary>
@@ -530,17 +533,23 @@ namespace Hunspell
         /// </code>
         /// </example>
         /// <seealso cref="CheckCompoundRep"/>
-        public ImmutableArray<SingleReplacementEntry> Replacements { get; private set; }
+        public IEnumerable<SingleReplacementEntry> Replacements => replacements;
+
+        private AffixEntryGroup<SuffixEntry>[] suffixes;
 
         /// <summary>
         /// Suffixes attached to root words to make other words.
         /// </summary>
-        public ImmutableArray<AffixEntryGroup<SuffixEntry>> Suffixes { get; private set; }
+        public IEnumerable<AffixEntryGroup<SuffixEntry>> Suffixes => suffixes;
+
+        private AffixEntryGroup<PrefixEntry>[] prefixes;
 
         /// <summary>
         /// Preffixes attached to root words to make other words.
         /// </summary>
-        public ImmutableArray<AffixEntryGroup<PrefixEntry>> Prefixes { get; private set; }
+        public IEnumerable<AffixEntryGroup<PrefixEntry>> Prefixes => prefixes;
+
+        private List<ImmutableSortedSet<FlagValue>> aliasF;
 
         /// <summary>
         /// Ordinal numbers for affix flag compression.
@@ -581,22 +590,54 @@ namespace Hunspell
         /// work/AB
         /// </code>
         /// </example>
-        public ImmutableArray<ImmutableSortedSet<FlagValue>> AliasF { get; private set; }
+        public IEnumerable<ImmutableSortedSet<FlagValue>> AliasF => aliasF;
 
         /// <summary>
         /// Inidicates if any <see cref="AliasF"/> entries have been defined.
         /// </summary>
-        public bool IsAliasF => AliasF.Length != 0;
+        public bool IsAliasF => aliasF != null && aliasF.Count != 0;
+
+        public bool TryGetAliasF(int number, out ImmutableSortedSet<FlagValue> result)
+        {
+            if (number > 0 && number <= aliasF.Count)
+            {
+                result = aliasF[number - 1];
+                return true;
+            }
+            else
+            {
+                result = default(ImmutableSortedSet<FlagValue>);
+                return false;
+            }
+        }
+
+        private List<ImmutableArray<string>> aliasM;
 
         /// <summary>
         /// Values used for morphological alias compression.
         /// </summary>
-        public ImmutableArray<ImmutableArray<string>> AliasM { get; private set; }
+        public IEnumerable<ImmutableArray<string>> AliasM => aliasM;
 
         /// <summary>
         /// Indicates if any <see cref="AliasM"/> entries have been defined.
         /// </summary>
-        public bool IsAliasM => AliasM.Length != 0;
+        public bool IsAliasM => aliasM != null && aliasM.Count != 0;
+
+        public bool TryGetAliasM(int number, out ImmutableArray<string> result)
+        {
+            if (number > 0 && number <= aliasM.Count)
+            {
+                result = aliasM[number - 1];
+                return true;
+            }
+            else
+            {
+                result = default(ImmutableArray<string>);
+                return false;
+            }
+        }
+
+        private List<ImmutableArray<FlagValue>> compoundRules;
 
         /// <summary>
         /// Defines custom compound patterns with a regex-like syntax.
@@ -624,7 +665,9 @@ namespace Hunspell
         /// flags. (Use these flags on different enhtries for words).
         /// </para>
         /// </remarks>
-        public ImmutableArray<ImmutableArray<FlagValue>> CompoundRules { get; private set; }
+        public IEnumerable<ImmutableArray<FlagValue>> CompoundRules => compoundRules;
+
+        private List<PatternEntry> compoundPatterns;
 
         /// <summary>
         /// Forbid compounding, if the first word in the compound ends with endchars, and
@@ -646,7 +689,25 @@ namespace Hunspell
         /// CHECKCOMPOUNDPATTERN 0/x /y
         /// </code>
         /// </example>
-        public ImmutableArray<PatternEntry> CompoundPatterns { get; private set; }
+        public IEnumerable<PatternEntry> CompoundPatterns => compoundPatterns;
+
+        public int CompoundPatternsCount => (compoundPatterns?.Count).GetValueOrDefault();
+
+        public bool TryGetCompoundPattern(int number, out PatternEntry result)
+        {
+            if (compoundPatterns != null && number > 0 && number <= compoundPatterns.Count)
+            {
+                result = compoundPatterns[number - 1];
+                return true;
+            }
+            else
+            {
+                result = null;
+                return false;
+            }
+        }
+
+        private List<string> breakTable;
 
         /// <summary>
         /// Defines new break points for breaking words and checking word parts separately.
@@ -704,7 +765,9 @@ namespace Hunspell
         /// </code>
         /// </example>
         /// <seealso cref="CompoundRules"/>
-        public ImmutableArray<string> BreakTable { get; private set; }
+        public IEnumerable<string> BreakTable => breakTable;
+
+        private Dictionary<string, MultiReplacementEntry> inputConversions;
 
         /// <summary>
         /// Input conversion entries.
@@ -712,12 +775,32 @@ namespace Hunspell
         /// <remarks>
         /// Useful to convert one type of quote to another one, or change ligature.
         /// </remarks>
-        public ImmutableSortedDictionary<string, MultiReplacementEntry> InputConversions { get; private set; }
+        public IReadOnlyDictionary<string, MultiReplacementEntry> InputConversions => inputConversions;
+
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public bool TryConvertInput(string text, out string converted)
+        {
+            return inputConversions.TryConvert(text, out converted);
+        }
+
+        private Dictionary<string, MultiReplacementEntry> outputConversions;
 
         /// <summary>
         /// Output conversion entries.
         /// </summary>
-        public ImmutableSortedDictionary<string, MultiReplacementEntry> OutputConversions { get; private set; }
+        public IReadOnlyDictionary<string, MultiReplacementEntry> OutputConversions => outputConversions;
+
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public bool TryConvertOutput(string text, out string converted)
+        {
+            return outputConversions.TryConvert(text, out converted);
+        }
+
+        private List<ImmutableArray<string>> mapTable;
 
         /// <summary>
         /// Mappings between related characters.
@@ -750,7 +833,9 @@ namespace Hunspell
         /// </code>
         /// </example>
         /// <seealso cref="Replacements"/>
-        public ImmutableArray<ImmutableArray<string>> MapTable { get; private set; }
+        public IEnumerable<ImmutableArray<string>> MapTable => mapTable;
+
+        private List<PhoneticEntry> phone;
 
         /// <summary>
         /// Phonetic transcription entries.
@@ -770,7 +855,7 @@ namespace Hunspell
         /// UTF-8 characters yet.
         /// </para>
         /// </remarks>
-        public ImmutableArray<PhoneticEntry> Phone { get; private set; }
+        public IEnumerable<PhoneticEntry> Phone => phone;
 
         /// <summary>
         /// Maximum syllable number, that may be in a
@@ -824,30 +909,30 @@ namespace Hunspell
 
         public bool HasCompound => CompoundFlag.HasValue || CompoundBegin.HasValue || HasCompoundRules;
 
-        public bool HasCompoundRules => !CompoundRules.IsDefaultOrEmpty;
+        public bool HasCompoundRules => compoundRules.Count != 0;
 
-        public bool HasCompoundPatterns => !CompoundPatterns.IsDefaultOrEmpty;
+        public bool HasCompoundPatterns => compoundPatterns.Count != 0;
 
         public bool HasCompoundVowels => !CompoundVowels.IsEmpty;
 
-        public bool HasReplacements => !Replacements.IsDefaultOrEmpty;
+        public bool HasReplacements => replacements.Count != 0;
 
-        public bool HasInputConversions => !InputConversions.IsEmpty;
+        public bool HasInputConversions => inputConversions.Count != 0;
 
-        public bool HasOutputConversions => !OutputConversions.IsEmpty;
+        public bool HasOutputConversions => outputConversions.Count != 0;
 
-        public bool HasBreakEntries => !BreakTable.IsDefaultOrEmpty;
+        public bool HasBreakEntries => breakTable.Count != 0;
 
         public bool HasIgnoredChars => !IgnoredChars.IsEmpty;
 
         public bool HasWordChars => !WordChars.IsEmpty;
 
-        public bool HasSuffixes => !Suffixes.IsDefaultOrEmpty;
+        public bool HasSuffixes => suffixes.Length != 0;
 
-        public bool HasPrefixes => !Prefixes.IsDefaultOrEmpty;
+        public bool HasPrefixes => prefixes.Length != 0;
 
-        public bool HasMapTableEntries => !MapTable.IsDefaultOrEmpty;
+        public bool HasMapTableEntries => mapTable.Count != 0;
 
-        public bool HasPhoneEntires => !Phone.IsDefaultOrEmpty;
+        public bool HasPhoneEntires => phone.Count != 0;
     }
 }

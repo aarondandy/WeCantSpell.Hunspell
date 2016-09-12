@@ -76,7 +76,7 @@ namespace Hunspell
 
             readerInstance.AddDefaultBreakTableIfEmpty();
 
-            return readerInstance.Builder.ToAffixConfig();
+            return readerInstance.Builder.MoveToImmutable();
         }
 
         private async Task ReadToEndAsync()
@@ -96,7 +96,7 @@ namespace Hunspell
 
             readerInstance.AddDefaultBreakTableIfEmpty();
 
-            return readerInstance.Builder.ToAffixConfig();
+            return readerInstance.Builder.MoveToImmutable();
         }
 
         private void ReadToEnd()
@@ -378,7 +378,7 @@ namespace Hunspell
                 }
             }
 
-            if(parts.Length > 1)
+            if (parts.Length > 1)
             {
                 var vowelChars = parts[1].ToCharArray();
                 Array.Sort(vowelChars);
@@ -434,14 +434,14 @@ namespace Hunspell
 
             entries.Add(new PhoneticEntry(
                     parts[0],
-                    parts.Length >= 2 ? parts[1].Replace("_", string.Empty) : string.Empty) );
+                    parts.Length >= 2 ? parts[1].Replace("_", string.Empty) : string.Empty));
 
             return true;
         }
 
-        private static bool TryParseMapEntry(string parameterText, List<List<string>> entries)
+        private static bool TryParseMapEntry(string parameterText, List<ImmutableArray<string>> entries)
         {
-            var entry = new List<string>();
+            var entryBuilder = ImmutableArray.CreateBuilder<string>();
 
             for (int k = 0; k < parameterText.Length; ++k)
             {
@@ -458,15 +458,15 @@ namespace Hunspell
                     }
                 }
 
-                entry.Add(parameterText.Substring(chb, che - chb));
+                entryBuilder.Add(parameterText.Substring(chb, che - chb));
             }
 
-            entries.Add(entry);
+            entries.Add(entryBuilder.MoveToOrCreateImmutable());
 
             return true;
         }
 
-        private bool TryParseConv(string parameterText, EntryListType entryListType, ref Dictionary<string, string[]> entries)
+        private bool TryParseConv(string parameterText, EntryListType entryListType, ref Dictionary<string, MultiReplacementEntry> entries)
         {
             if (!IsInitialized(entryListType))
             {
@@ -477,7 +477,7 @@ namespace Hunspell
                 {
                     if (entries == null)
                     {
-                        entries = new Dictionary<string, string[]>(expectedSize);
+                        entries = new Dictionary<string, MultiReplacementEntry>(expectedSize);
                     }
 
                     return true;
@@ -486,7 +486,7 @@ namespace Hunspell
 
             if (entries == null)
             {
-                entries = new Dictionary<string, string[]>();
+                entries = new Dictionary<string, MultiReplacementEntry>();
             }
 
             var parts = parameterText.SplitOnTabOrSpace();
@@ -526,14 +526,12 @@ namespace Hunspell
             return true;
         }
 
-        private bool TryParseCompoundRuleIntoList(string parameterText, List<List<FlagValue>> entries)
+        private bool TryParseCompoundRuleIntoList(string parameterText, List<ImmutableArray<FlagValue>> entries)
         {
-            List<FlagValue> entry;
+            var entryBuilder = ImmutableArray.CreateBuilder<FlagValue>();
 
             if (parameterText.Contains('('))
             {
-                entry = new List<FlagValue>();
-
                 for (var index = 0; index < parameterText.Length; index++)
                 {
                     var indexBegin = index;
@@ -551,20 +549,20 @@ namespace Hunspell
 
                     if (parameterText[indexBegin] == '*' || parameterText[indexBegin] == '?')
                     {
-                        entry.Add(new FlagValue(parameterText[indexBegin]));
+                        entryBuilder.Add(new FlagValue(parameterText[indexBegin]));
                     }
                     else
                     {
-                        entry.AddRange(ParseFlags(parameterText, indexBegin, indexEnd - indexBegin));
+                        entryBuilder.AddRange(ParseFlags(parameterText, indexBegin, indexEnd - indexBegin));
                     }
                 }
             }
             else
             {
-                entry = ParseFlags(parameterText);
+                entryBuilder.AddRange(ParseFlags(parameterText));
             }
 
-            entries.Add(entry);
+            entries.Add(entryBuilder.MoveToOrCreateImmutable());
             return true;
         }
 

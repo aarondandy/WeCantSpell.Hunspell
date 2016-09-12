@@ -144,7 +144,7 @@ namespace Hunspell
 
             // input conversion
             string convertedWord;
-            if (!Affix.HasInputConversions || !Affix.InputConversions.TryConvert(word, out convertedWord))
+            if (!Affix.HasInputConversions || !Affix.TryConvertInput(word, out convertedWord))
             {
                 convertedWord = word;
             }
@@ -490,7 +490,7 @@ namespace Hunspell
 
             // input conversion
             string convertedWord;
-            if (!Affix.HasInputConversions || !Affix.InputConversions.TryConvert(word, out convertedWord))
+            if (!Affix.HasInputConversions || !Affix.TryConvertInput(word, out convertedWord))
             {
                 convertedWord = word;
             }
@@ -793,7 +793,7 @@ namespace Hunspell
                 for (var j = 0; j < slst.Count; j++)
                 {
                     string wspace;
-                    if (Affix.OutputConversions.TryConvert(slst[j], out wspace))
+                    if (Affix.TryConvertOutput(slst[j], out wspace))
                     {
                         slst[j] = wspace;
                     }
@@ -1445,9 +1445,8 @@ namespace Hunspell
             var inMap = false;
             if (Affix.HasMapTableEntries)
             {
-                for (var j = 0; j < Affix.MapTable.Length; j++)
+                foreach (var mapEntry in Affix.MapTable)
                 {
-                    var mapEntry = Affix.MapTable[j];
                     for (var k = 0; k < mapEntry.Length; k++)
                     {
                         var len = mapEntry[k].Length;
@@ -1642,24 +1641,25 @@ namespace Hunspell
                 return wlst.Count;
             }
 
-            for (var i = 0; i < Affix.Replacements.Length; i++)
+            //for (var i = 0; i < Affix.Replacements.Length; i++)
+            foreach (var replacement in Affix.Replacements)
             {
                 var r = 0;
                 // search every occurence of the pattern in the word
-                while ((r = word.IndexOf(Affix.Replacements[i].Pattern, r, StringComparison.Ordinal)) >= 0)
+                while ((r = word.IndexOf(replacement.Pattern, r, StringComparison.Ordinal)) >= 0)
                 {
                     var type = (r == 0) ? ReplacementValueType.Ini : ReplacementValueType.Med;
-                    if (r - 0 + Affix.Replacements[i].Pattern.Length == word.Length)
+                    if (r - 0 + replacement.Pattern.Length == word.Length)
                     {
                         type += 2;
                     }
 
-                    while (type != 0 && string.IsNullOrEmpty(Affix.Replacements[i][type]))
+                    while (type != 0 && string.IsNullOrEmpty(replacement[type]))
                     {
                         type = (type == ReplacementValueType.Fin && r != 0) ? ReplacementValueType.Med : type - 1;
                     }
 
-                    var @out = Affix.Replacements[i][type];
+                    var @out = replacement[type];
                     if (string.IsNullOrEmpty(@out))
                     {
                         r++;
@@ -1667,8 +1667,8 @@ namespace Hunspell
                     }
 
                     var candidate = word.Substring(0, r)
-                        + Affix.Replacements[i][type]
-                        + word.Substring(r + Affix.Replacements[i].Pattern.Length);
+                        + replacement[type]
+                        + word.Substring(r + replacement.Pattern.Length);
 
                     TestSug(wlst, candidate, cpdSuggest);
 
@@ -3340,17 +3340,17 @@ namespace Hunspell
 
                     do // simplified checkcompoundpattern loop
                     {
-
+                        PatternEntry scpdPatternEntry;
                         if (scpd > 0)
                         {
                             for (
                                 ;
-                                scpd <= Affix.CompoundPatterns.Length
+                                Affix.TryGetCompoundPattern(scpd, out scpdPatternEntry)
                                 &&
                                 (
-                                    string.IsNullOrEmpty(Affix.CompoundPatterns[scpd - 1].Pattern3)
+                                    string.IsNullOrEmpty(scpdPatternEntry.Pattern3)
                                     ||
-                                    !StringEx.EqualsOffset(word, i, Affix.CompoundPatterns[scpd - 1].Pattern3, 0, Affix.CompoundPatterns[scpd - 1].Pattern3.Length)
+                                    !StringEx.EqualsOffset(word, i, scpdPatternEntry.Pattern3, 0, scpdPatternEntry.Pattern3.Length)
                                 )
                                 ;
                                 scpd++
@@ -3359,12 +3359,12 @@ namespace Hunspell
                                 ;
                             }
 
-                            if (scpd > Affix.CompoundPatterns.Length)
+                            if (scpd > Affix.CompoundPatternsCount)
                             {
                                 break; // break simplified checkcompoundpattern loop
                             }
 
-                            var scpdPatternEntry = Affix.CompoundPatterns[scpd - 1];
+                            Affix.TryGetCompoundPattern(scpd, out scpdPatternEntry);
 
                             var neededSize = i + scpdPatternEntry.Pattern.Length + scpdPatternEntry.Pattern2.Length + (word.Length - (i + scpdPatternEntry.Pattern3.Length));
 
@@ -3383,6 +3383,10 @@ namespace Hunspell
                             oldcmax = cmax;
                             cmin = Affix.CompoundMin;
                             cmax = len - Affix.CompoundMin + 1;
+                        }
+                        else
+                        {
+                            scpdPatternEntry = null;
                         }
 
                         if (i < st.BufferLength)
@@ -3467,9 +3471,9 @@ namespace Hunspell
                                 (
                                     scpd != 0
                                     &&
-                                    Affix.CompoundPatterns[scpd - 1].Condition.HasValue
+                                    scpdPatternEntry.Condition.HasValue
                                     &&
-                                    !rv.ContainsFlag(Affix.CompoundPatterns[scpd - 1].Condition)
+                                    !rv.ContainsFlag(scpdPatternEntry.Condition)
                                 )
                             )
                         )
@@ -3715,9 +3719,9 @@ namespace Hunspell
                                 (
                                     scpd == 0
                                     ||
-                                    !Affix.CompoundPatterns[scpd - 1].Condition.HasValue
+                                    !scpdPatternEntry.Condition.HasValue
                                     ||
-                                    rv.ContainsFlag(Affix.CompoundPatterns[scpd - 1].Condition)
+                                    rv.ContainsFlag(scpdPatternEntry.Condition)
                                 )
                                 &&
                                 !(
@@ -3841,8 +3845,8 @@ namespace Hunspell
                                         ||
                                         (
                                             scpd != 0
-                                            && Affix.CompoundPatterns[scpd - 1].Condition2.HasValue
-                                            && !rv.ContainsFlag(Affix.CompoundPatterns[scpd - 1].Condition2)
+                                            && scpdPatternEntry.Condition2.HasValue
+                                            && !rv.ContainsFlag(scpdPatternEntry.Condition2)
                                         )
                                     )
                                 )
@@ -3955,9 +3959,9 @@ namespace Hunspell
                                     (
                                         scpd == 0
                                         ||
-                                        !Affix.CompoundPatterns[scpd - 1].Condition2.HasValue
+                                        !scpdPatternEntry.Condition2.HasValue
                                         ||
-                                        rv.ContainsFlag(Affix.CompoundPatterns[scpd - 1].Condition2)
+                                        rv.ContainsFlag(scpdPatternEntry.Condition2)
                                     )
                                 )
                                 {
@@ -4009,9 +4013,9 @@ namespace Hunspell
                                     !(
                                         scpd == 0
                                         ||
-                                        !Affix.CompoundPatterns[scpd - 1].Condition2.HasValue
+                                        !scpdPatternEntry.Condition2.HasValue
                                         ||
-                                        rv.ContainsFlag(Affix.CompoundPatterns[scpd - 1].Condition2)
+                                        rv.ContainsFlag(scpdPatternEntry.Condition2)
                                     )
                                 )
                                 {
@@ -4275,7 +4279,7 @@ namespace Hunspell
 
                         scpd++;
                     }
-                    while (!onlycpdrule && Affix.SimplifiedCompound && scpd <= Affix.CompoundPatterns.Length); // end of simplifiedcpd loop
+                    while (!onlycpdrule && Affix.SimplifiedCompound && scpd <= Affix.CompoundPatternsCount); // end of simplifiedcpd loop
 
                     scpd = 0;
                     wordNum = oldwordnum;
@@ -4851,7 +4855,7 @@ namespace Hunspell
                 return false;
             }
 
-            for (var i = 0; i < Affix.CompoundRules.Length; i++)
+            foreach (var compoundRule in Affix.CompoundRules)
             {
                 var pp = 0; // pattern position
                 var wp = 0; // "words" position
@@ -4859,19 +4863,19 @@ namespace Hunspell
                 var ok2 = true;
                 do
                 {
-                    while (pp < Affix.CompoundRules[i].Length && wp <= wnum)
+                    while (pp < compoundRule.Length && wp <= wnum)
                     {
                         if (
-                            pp + 1 < Affix.CompoundRules[i].Length
+                            pp + 1 < compoundRule.Length
                             &&
                             (
-                                Affix.CompoundRules[i][pp + 1] == '*'
+                                compoundRule[pp + 1] == '*'
                                 ||
-                                Affix.CompoundRules[i][pp + 1] == '?'
+                                compoundRule[pp + 1] == '?'
                             )
                         )
                         {
-                            var wend = Affix.CompoundRules[i][pp + 1] == '?' ? wp : wnum;
+                            var wend = compoundRule[pp + 1] == '?' ? wp : wnum;
                             ok2 = true;
                             pp += 2;
                             btinfo[bt].btpp = pp;
@@ -4879,7 +4883,7 @@ namespace Hunspell
 
                             while (wp <= wend)
                             {
-                                if (!words[wp].HasFlags || !words[wp].ContainsFlag(Affix.CompoundRules[i][pp - 2]))
+                                if (!words[wp].HasFlags || !words[wp].ContainsFlag(compoundRule[pp - 2]))
                                 {
                                     ok2 = false;
                                     break;
@@ -4913,7 +4917,7 @@ namespace Hunspell
                                 ||
                                 !words[wp].HasFlags
                                 ||
-                                !words[wp].ContainsFlag(Affix.CompoundRules[i][pp])
+                                !words[wp].ContainsFlag(compoundRule[pp])
                             )
                             {
                                 ok = false;
@@ -4923,7 +4927,7 @@ namespace Hunspell
                             pp++;
                             wp++;
 
-                            if (Affix.CompoundRules[i].Length == pp && wp <= wnum)
+                            if (compoundRule.Length == pp && wp <= wnum)
                             {
                                 ok = false;
                             }
@@ -4934,21 +4938,21 @@ namespace Hunspell
                     {
                         var r = pp;
                         while (
-                            Affix.CompoundRules[i].Length > r
+                            compoundRule.Length > r
                             &&
-                            r + 1 < Affix.CompoundRules[i].Length
+                            r + 1 < compoundRule.Length
                             &&
                             (
-                                Affix.CompoundRules[i][r + 1] == '*'
+                                compoundRule[r + 1] == '*'
                                 ||
-                                Affix.CompoundRules[i][r + 1] == '?'
+                                compoundRule[r + 1] == '?'
                             )
                         )
                         {
                             r += 2;
                         }
 
-                        if (Affix.CompoundRules[i].Length <= r)
+                        if (compoundRule.Length <= r)
                         {
                             return true;
                         }
@@ -4978,7 +4982,7 @@ namespace Hunspell
                     (
                         all == 0
                         ||
-                        Affix.CompoundRules[i].Length <= pp
+                        compoundRule.Length <= pp
                     )
                 )
                 {
@@ -4991,14 +4995,14 @@ namespace Hunspell
                     &&
                     ok2
                     &&
-                    pp < Affix.CompoundRules[i].Length
+                    pp < compoundRule.Length
                     &&
-                    pp + 1 < Affix.CompoundRules[i].Length
+                    pp + 1 < compoundRule.Length
                     &&
                     (
-                        (Affix.CompoundRules[i][pp + 1] == '*')
+                        (compoundRule[pp + 1] == '*')
                         ||
-                        (Affix.CompoundRules[i][pp + 1] == '?')
+                        (compoundRule[pp + 1] == '?')
                     )
                 )
                 {
@@ -5010,7 +5014,7 @@ namespace Hunspell
                     &&
                     ok2
                     &&
-                    Affix.CompoundRules[i].Length <= pp
+                    compoundRule.Length <= pp
                 )
                 {
                     return true;
@@ -5095,11 +5099,9 @@ namespace Hunspell
         {
             var wordAfterPos = word.Substring(pos);
 
-            for (var i = 0; i < Affix.CompoundPatterns.Length; i++)
+            foreach (var patternEntry in Affix.CompoundPatterns)
             {
-                var patternEntry = Affix.CompoundPatterns[i];
                 int len;
-
                 if (
                     StringEx.IsSubset(patternEntry.Pattern2, wordAfterPos)
                     &&

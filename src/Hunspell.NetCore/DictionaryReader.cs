@@ -132,9 +132,10 @@ namespace Hunspell
                 if (Affix.IsAliasF)
                 {
                     int flagAliasNumber;
-                    if (IntEx.TryParseInvariant(parsed.Flags, out flagAliasNumber) && flagAliasNumber > 0 && flagAliasNumber <= Affix.AliasF.Length)
+                    ImmutableSortedSet<FlagValue> aliasedFlags;
+                    if (IntEx.TryParseInvariant(parsed.Flags, out flagAliasNumber) && Affix.TryGetAliasF(flagAliasNumber, out aliasedFlags))
                     {
-                        flags = Affix.AliasF[flagAliasNumber - 1];
+                        flags = aliasedFlags;
                     }
                     else
                     {
@@ -234,14 +235,13 @@ namespace Hunspell
                 {
                     options = DictionaryEntryOptions.AliasM;
                     var morphBuilder = ImmutableArray.CreateBuilder<string>(morphs.Length);
-                    for (int i = 0; i < morphs.Length; i++)
+                    foreach (var originalValue in morphs)
                     {
-                        var originalValue = morphs[i];
                         int morphNumber;
-
-                        if (IntEx.TryParseInvariant(originalValue, out morphNumber) && morphNumber > 0 && morphNumber <= Affix.AliasM.Length)
+                        ImmutableArray<string> aliasedMorph;
+                        if (IntEx.TryParseInvariant(originalValue, out morphNumber) && Affix.TryGetAliasM(morphNumber, out aliasedMorph))
                         {
-                            morphBuilder.AddRange(Affix.AliasM[morphNumber - 1]);
+                            morphBuilder.AddRange(aliasedMorph);
                         }
                         else
                         {

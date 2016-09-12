@@ -1,56 +1,137 @@
 ﻿using Hunspell.Infrastructure;
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 
 namespace Hunspell
 {
     public sealed class MultiReplacementEntry : ReplacementEntry
     {
-        public MultiReplacementEntry(string pattern, string[] outStrings)
+        public MultiReplacementEntry(string pattern)
             : base(pattern)
         {
-            if (outStrings.Length < 4)
-            {
-                throw new ArgumentException(nameof(outStrings));
-            }
-
-            OutStrings = ImmutableArray.Create(outStrings);
         }
 
-        /// <summary>
-        /// Med, ini, fin, isol .
-        /// </summary>
-        public ImmutableArray<string> OutStrings { get; }
+        public MultiReplacementEntry(string pattern, ReplacementValueType type, string value)
+            : base(pattern)
+        {
+            if (type == ReplacementValueType.Med)
+            {
+                med = value;
+            }
+            else if (type == ReplacementValueType.Ini)
+            {
+                ini = value;
+            }
+            else if (type == ReplacementValueType.Fin)
+            {
+                fin = value;
+            }
+            else if (type == ReplacementValueType.Isol)
+            {
+                isol = value;
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException(nameof(type));
+            }
+        }
 
-        public override string Med => this[ReplacementValueType.Med];
+        private string med;
+        private string ini;
+        private string fin;
+        private string isol;
 
-        public override string Ini => this[ReplacementValueType.Ini];
+        public override string Med => med;
 
-        public override string Fin => this[ReplacementValueType.Fin];
+        public override string Ini => ini;
 
-        public override string Isol => this[ReplacementValueType.Isol];
+        public override string Fin => fin;
 
-        public override string this[ReplacementValueType type] => OutStrings[(int)type];
+        public override string Isol => isol;
+
+        public override string this[ReplacementValueType type]
+        {
+            get
+            {
+                if (type == ReplacementValueType.Med)
+                {
+                    return med;
+                }
+                if (type == ReplacementValueType.Ini)
+                {
+                    return ini;
+                }
+                if (type == ReplacementValueType.Fin)
+                {
+                    return fin;
+                }
+                if (type == ReplacementValueType.Isol)
+                {
+                    return isol;
+                }
+
+                throw new ArgumentOutOfRangeException(nameof(type));
+            }
+        }
+
+        public MultiReplacementEntry With(ReplacementValueType type, string value)
+        {
+            var result = new MultiReplacementEntry(Pattern);
+
+            if (type == ReplacementValueType.Med)
+            {
+                result.med = value;
+                result.ini = ini;
+                result.fin = fin;
+                result.isol = isol;
+            }
+            else if (type == ReplacementValueType.Ini)
+            {
+                result.med = med;
+                result.ini = value;
+                result.fin = fin;
+                result.isol = isol;
+            }
+            else if (type == ReplacementValueType.Fin)
+            {
+                result.med = med;
+                result.ini = ini;
+                result.fin = value;
+                result.isol = isol;
+            }
+            else if (type == ReplacementValueType.Isol)
+            {
+                result.med = med;
+                result.ini = ini;
+                result.fin = fin;
+                result.isol = value;
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException(nameof(type));
+            }
+
+            return result;
+        }
     }
 
     internal static class MultiReplacementEntryExtensions
     {
-        public static bool TryConvert(this ImmutableSortedDictionary<string, MultiReplacementEntry> entries, string input, out string converted)
+        public static bool TryConvert(this Dictionary<string, MultiReplacementEntry> entries, string text, out string converted)
         {
-            var convertedBuilder = StringBuilderPool.Get(input.Length);
+            var convertedBuilder = StringBuilderPool.Get(text.Length);
 
             var appliedConversion = false;
-            for (var i = 0; i < input.Length; i++)
+            for (var i = 0; i < text.Length; i++)
             {
-                var replacementEntry = entries.FindLargestMatchingConversion(input.Substring(i));
+                var replacementEntry = entries.FindLargestMatchingConversion(text.Substring(i));
                 var replacementText = replacementEntry == null
                     ? string.Empty
-                    : ExtractReplacementText(input.Length - i, replacementEntry, i == 0);
+                    : ExtractReplacementText(text.Length - i, replacementEntry, i == 0);
 
                 if (replacementText.Length == 0)
                 {
-                    convertedBuilder.Append(input[i]);
+                    convertedBuilder.Append(text[i]);
                 }
                 else
                 {
@@ -86,7 +167,7 @@ namespace Hunspell
         /// <param name="conversions">The conversions to search within.</param>
         /// <returns>The best matching input conversion.</returns>
         /// <seealso cref="MultiReplacementEntry"/>
-        public static MultiReplacementEntry FindLargestMatchingConversion(this ImmutableSortedDictionary<string, MultiReplacementEntry> conversions, string text)
+        public static MultiReplacementEntry FindLargestMatchingConversion(this Dictionary<string, MultiReplacementEntry> conversions, string text)
         {
             for (var searchLength = text.Length; searchLength > 0; searchLength--)
             {
@@ -100,7 +181,7 @@ namespace Hunspell
             return null;
         }
 
-        public static bool AddReplacementEntry(this Dictionary<string, string[]> list, string pattern1, string pattern2)
+        public static bool AddReplacementEntry(this Dictionary<string, MultiReplacementEntry> list, string pattern1, string pattern2)
         {
             if (string.IsNullOrEmpty(pattern1) || pattern2 == null)
             {
@@ -140,24 +221,23 @@ namespace Hunspell
             pattern1Builder.Replace('_', ' ');
 
             pattern1 = StringBuilderPool.GetStringAndReturn(pattern1Builder);
+            pattern2 = pattern2.Replace('_', ' ');
 
             // find existing entry
-            string[] entry;
-            if (!list.TryGetValue(pattern1, out entry))
+            MultiReplacementEntry entry;
+            if (list.TryGetValue(pattern1, out entry))
+            {
+                entry = entry.With(type, pattern2);
+            }
+            else
             {
                 // make a new entry if none exists
-                entry = new string[4];
-                list.Add(pattern1, entry);
+                entry = new MultiReplacementEntry(pattern1, type, pattern2);
             }
 
-            entry[(int)type] = pattern2.Replace('_', ' ');
+            list[pattern1] = entry;
 
             return true;
-        }
-
-        public static ImmutableSortedDictionary<string, MultiReplacementEntry> ToImmutableReplacementEntries(this Dictionary<string, string[]> entries)
-        {
-            return entries.ToImmutableSortedDictionary(pair => pair.Key, pair => new MultiReplacementEntry(pair.Key, pair.Value), StringComparer.Ordinal);
         }
     }
 }
