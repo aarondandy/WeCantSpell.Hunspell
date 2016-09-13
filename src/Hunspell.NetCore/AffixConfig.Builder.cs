@@ -380,8 +380,6 @@ namespace Hunspell
                     SubStandard = SubStandard,
                     CompoundSyllableNum = CompoundSyllableNum,
                     Encoding = Encoding,
-                    suffixes = BuildArray(Suffixes),
-                    prefixes = BuildArray(Prefixes),
                     CompoundMaxSyllable = CompoundMaxSyllable,
                     CompoundVowels = ToImmutableSortedSet(CompoundVowels),
                     WordChars = ToImmutableSortedSet(WordChars),
@@ -426,14 +424,89 @@ namespace Hunspell
                     config.outputConversions = OutputConversions == null ? new Dictionary<string, MultiReplacementEntry>(0) : new Dictionary<string, MultiReplacementEntry>(OutputConversions);
                 }
 
+                BuildAffixCollections(
+                    Prefixes,
+                    out config.prefixes,
+                    out config.prefixesByFlag,
+                    out config.prefixFlagsWithEmptyKeys,
+                    out config.prefixFlagsByIndexedKeyCharacter);
+
+                BuildAffixCollections(
+                    Suffixes,
+                    out config.suffixes,
+                    out config.suffixesByFlag,
+                    out config.suffixFlagsWithEmptyKeys,
+                    out config.suffixFlagsByIndexedKeyCharacter);
+
                 config.ContClasses =
                     Enumerable.Concat<AffixEntry>(
-                        config.Prefixes.SelectMany(g => g.Entries),
-                        config.Suffixes.SelectMany(g => g.Entries))
+                        config.prefixes.SelectMany(g => g.Entries),
+                        config.suffixes.SelectMany(g => g.Entries))
                     .SelectMany(e => e.ContClass)
                     .ToImmutableSortedSet();
 
                 return config;
+            }
+
+            private void BuildAffixCollections<TEntry>(
+                List<AffixEntryGroup.Builder<TEntry>> builders,
+                out AffixEntryGroup<TEntry>[] entries,
+                out Dictionary<FlagValue, AffixEntryGroup<TEntry>> entriesByFlag,
+                out List<FlagValue> flagsWithEmptyKeys,
+                out Dictionary<char, List<FlagValue>> flagsByIndexedKeyCharacter)
+                where TEntry : AffixEntry
+            {
+                if (builders == null || builders.Count == 0)
+                {
+                    entries = ArrayEx<AffixEntryGroup<TEntry>>.Empty;
+                    entriesByFlag = new Dictionary<FlagValue, AffixEntryGroup<TEntry>>(0);
+                    flagsWithEmptyKeys = new List<FlagValue>(0);
+                    flagsByIndexedKeyCharacter = new Dictionary<char, List<FlagValue>>(0);
+                    return;
+                }
+
+                entries = new AffixEntryGroup<TEntry>[builders.Count];
+                entriesByFlag = new Dictionary<FlagValue, AffixEntryGroup<TEntry>>(entries.Length);
+                flagsWithEmptyKeys = new List<FlagValue>();
+                flagsByIndexedKeyCharacter = new Dictionary<char, List<FlagValue>>();
+
+                for (var i = 0; i < entries.Length; i++)
+                {
+                    var group = builders[i].ToGroup();
+                    entries[i] = group;
+                    entriesByFlag.Add(group.AFlag, group);
+
+                    var hasEmptyKey = false;
+                    foreach (var entry in group.Entries)
+                    {
+                        var key = entry.Key;
+                        if (string.IsNullOrEmpty(key))
+                        {
+                            hasEmptyKey = true;
+                        }
+                        else
+                        {
+                            var indexedChar = key[0];
+                            List<FlagValue> keyedFlags;
+                            if (flagsByIndexedKeyCharacter.TryGetValue(indexedChar, out keyedFlags))
+                            {
+                                if (!keyedFlags.Contains(group.AFlag))
+                                {
+                                    keyedFlags.Add(group.AFlag);
+                                }
+                            }
+                            else
+                            {
+                                flagsByIndexedKeyCharacter.Add(indexedChar, new List<FlagValue> { group.AFlag });
+                            }
+                        }
+                    }
+
+                    if (hasEmptyKey)
+                    {
+                        flagsWithEmptyKeys.Add(group.AFlag);
+                    }
+                }
             }
 
             /// <summary>
@@ -448,23 +521,6 @@ namespace Hunspell
             private static ImmutableSortedSet<T> ToImmutableSortedSet<T>(IEnumerable<T> items)
             {
                 return items == null ? ImmutableSortedSet<T>.Empty : items.ToImmutableSortedSet();
-            }
-
-            private static AffixEntryGroup<TEntry>[] BuildArray<TEntry>(List<AffixEntryGroup.Builder<TEntry>> builders)
-                where TEntry : AffixEntry
-            {
-                if (builders == null || builders.Count == 0)
-                {
-                    return ArrayEx<AffixEntryGroup<TEntry>>.Empty;
-                }
-
-                var result = new AffixEntryGroup<TEntry>[builders.Count];
-                for (var i = 0; i < result.Length; i++)
-                {
-                    result[i] = builders[i].ToGroup();
-                }
-
-                return result;
             }
         }
     }

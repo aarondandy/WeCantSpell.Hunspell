@@ -55,6 +55,7 @@
     <Compile Include="AffixEntryGroup.cs" />
     <Compile Include="AffixEntryOptions.cs" />
     <Compile Include="AffixConfig.cs" />
+    <Compile Include="AffixEntryWithDetail.cs" />
     <Compile Include="AffixReader.cs" />
     <Compile Include="CapitalizationType.cs" />
     <Compile Include="CharacterCondition.cs" />

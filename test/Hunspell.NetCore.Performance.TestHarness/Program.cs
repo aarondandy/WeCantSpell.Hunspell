@@ -29,20 +29,14 @@ namespace Hunspell.NetCore.Performance.TestHarness
         {
             var hunspell = Hunspell.FromFile("files/English (American).dic");
             var words = ReadWords().ToList();
-            var correctCount = 0;
 
-            for (var i = 0; i < 100; i++)
+            for (var i = 0; i < 1000; i++)
             {
                 foreach (var word in words)
                 {
-                    if (hunspell.Check(word))
-                    {
-                        correctCount++;
-                    }
+                    hunspell.Check(word);
                 }
             }
-
-            Console.WriteLine(correctCount);
         }
 
         static void Suggestions()

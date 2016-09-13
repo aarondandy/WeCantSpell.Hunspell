@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
@@ -934,5 +936,124 @@ namespace Hunspell
         public bool HasMapTableEntries => mapTable.Count != 0;
 
         public bool HasPhoneEntires => phone.Count != 0;
+
+        private Dictionary<FlagValue, AffixEntryGroup<PrefixEntry>> prefixesByFlag;
+
+        private List<FlagValue> prefixFlagsWithEmptyKeys;
+
+        private Dictionary<char, List<FlagValue>> prefixFlagsByIndexedKeyCharacter;
+
+        private Dictionary<FlagValue, AffixEntryGroup<SuffixEntry>> suffixesByFlag;
+
+        private List<FlagValue> suffixFlagsWithEmptyKeys;
+
+        private Dictionary<char, List<FlagValue>> suffixFlagsByIndexedKeyCharacter;
+
+        public IEnumerable<AffixEntryWithDetail<PrefixEntry>> GetPrefixesWithoutKeys()
+        {
+            return prefixFlagsWithEmptyKeys
+                .Select(GetPrefixesByFlag)
+                .SelectMany(g => g.Entries
+                    .Where(e => e.Key.Length == 0)
+                    .Select(e => new AffixEntryWithDetail<PrefixEntry>(g, e)));
+        }
+
+        public IEnumerable<AffixEntryWithDetail<PrefixEntry>> GetPrefixesWithKeySubset(string word)
+        {
+            List<FlagValue> dotFlags;
+            prefixFlagsByIndexedKeyCharacter.TryGetValue('.', out dotFlags);
+
+            List<FlagValue> characterFlags;
+            if (word.Length != 0 && word[0] != '.')
+            {
+                prefixFlagsByIndexedKeyCharacter.TryGetValue(word[0], out characterFlags);
+            }
+            else
+            {
+                characterFlags = null;
+            }
+
+            return FastUnion(dotFlags, characterFlags)
+                .Select(GetPrefixesByFlag)
+                .SelectMany(g => g.Entries
+                    .Where(e => StringEx.IsSubset(e.Key, word))
+                    .Select(e => new AffixEntryWithDetail<PrefixEntry>(g, e)));
+        }
+
+        public AffixEntryGroup<PrefixEntry> GetPrefixesByFlag(FlagValue aFlag)
+        {
+            AffixEntryGroup<PrefixEntry> result;
+            prefixesByFlag.TryGetValue(aFlag, out result);
+            return result;
+        }
+
+        public IEnumerable<AffixEntryWithDetail<SuffixEntry>> GetSuffixesWithoutKeys()
+        {
+            return suffixFlagsWithEmptyKeys
+                .Select(GetSuffixesByFlag)
+                .SelectMany(g => g.Entries
+                    .Where(e => e.Key.Length == 0)
+                    .Select(e => new AffixEntryWithDetail<SuffixEntry>(g, e)));
+        }
+
+        public IEnumerable<AffixEntryWithDetail<SuffixEntry>> GetSuffixesWithReverseKeySubset(string word)
+        {
+            List<FlagValue> dotFlags;
+            suffixFlagsByIndexedKeyCharacter.TryGetValue('.', out dotFlags);
+
+            List<FlagValue> characterFlags;
+            if (word.Length != 0 && word[word.Length - 1] != '.')
+            {
+                suffixFlagsByIndexedKeyCharacter.TryGetValue(word[word.Length - 1], out characterFlags);
+            }
+            else
+            {
+                characterFlags = null;
+            }
+
+            return FastUnion(dotFlags, characterFlags)
+                .Select(GetSuffixesByFlag)
+                .SelectMany(g => g.Entries
+                    .Where(e => StringEx.IsReverseSubset(e.Key, word))
+                    .Select(e => new AffixEntryWithDetail<SuffixEntry>(g, e)));
+        }
+
+        public AffixEntryGroup<SuffixEntry> GetSuffixesByFlag(FlagValue aFlag)
+        {
+            AffixEntryGroup<SuffixEntry> result;
+            suffixesByFlag.TryGetValue(aFlag, out result);
+            return result;
+        }
+
+        private static IEnumerable<T> FastUnion<T>(List<T> a, List<T> b)
+        {
+            if (a == null)
+            {
+                if (b == null)
+                {
+                    return Enumerable.Empty<T>();
+                }
+                else
+                {
+                    return b;
+                }
+            }
+            else
+            {
+                if (b == null)
+                {
+                    return a;
+                }
+                else
+                {
+                    if (ReferenceEquals(a, b))
+                    {
+                        return a;
+                    }
+
+                    return Enumerable.Union(a, b);
+                }
+            }
+        }
     }
 }
