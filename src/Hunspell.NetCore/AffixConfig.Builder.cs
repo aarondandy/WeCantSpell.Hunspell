@@ -354,6 +354,7 @@ namespace Hunspell
                     TryString = TryString ?? string.Empty,
                     Language = Language ?? string.Empty,
                     Culture = culture,
+                    IsHungarian = culture.IsHungarianLanguage(),
                     StringComparer = new CulturedStringComparer(culture),
                     CompoundFlag = CompoundFlag,
                     CompoundBegin = CompoundBegin,

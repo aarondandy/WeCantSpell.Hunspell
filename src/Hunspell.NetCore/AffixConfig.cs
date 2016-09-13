@@ -904,6 +904,8 @@ namespace Hunspell
         /// <seealso cref="AffixEntry.ContClass"/>
         public ImmutableSortedSet<FlagValue> ContClasses { get; private set; }
 
+        public bool IsHungarian { get; private set; }
+
         /// <summary>
         /// Indicates that some of the affix entries have "cont class".
         /// </summary>
