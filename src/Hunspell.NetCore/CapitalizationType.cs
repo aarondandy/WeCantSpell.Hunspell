@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+﻿using System.Runtime.CompilerServices;
 
 namespace Hunspell
 {
@@ -39,48 +39,101 @@ namespace Hunspell
                 return CapitalizationType.None;
             }
 
-            var numberCapitalized = 0;
-            var numberNeutral = 0;
-            UnicodeCategory category;
-            for (int i = 0; i < word.Length; i++)
+            int numberCapitalized = 0;
+            int numberNeutral = 0;
+            bool hasLower = false;
+            var c = word[0];
+            if (char.IsUpper(c))
             {
-                category = CharUnicodeInfo.GetUnicodeCategory(word, i);
-                if (category == UnicodeCategory.UppercaseLetter || category == UnicodeCategory.TitlecaseLetter)
+                numberCapitalized = 1;
+
+                for (int i = 1; i < word.Length; i++)
                 {
-                    numberCapitalized++;
+                    c = word[i];
+
+                    if (char.IsUpper(c))
+                    {
+                        numberCapitalized++;
+                    }
+                    else if (CharIsNeutral(c, affix))
+                    {
+                        numberNeutral++;
+                    }
+                    else
+                    {
+                        hasLower = true;
+                    }
+
+                    if (hasLower && numberCapitalized > 1)
+                    {
+                        break;
+                    }
                 }
-                else if (
-                    category != UnicodeCategory.LowercaseLetter
-                    ||
-                    affix.Culture.TextInfo.ToUpper(word[i]) == word[i]
-                )
+
+                if (numberCapitalized == 1)
                 {
-                    numberNeutral++;
+                    return CapitalizationType.Init;
                 }
-            }
+                if (numberCapitalized == word.Length || (numberCapitalized + numberNeutral) == word.Length)
+                {
+                    return CapitalizationType.All;
+                }
 
-            if (numberCapitalized == 0)
-            {
-                return CapitalizationType.None;
-            }
-
-            category = CharUnicodeInfo.GetUnicodeCategory(word, 0);
-            var firstIsCapitalized = category == UnicodeCategory.UppercaseLetter || category == UnicodeCategory.TitlecaseLetter;
-
-            if (numberCapitalized == 1 && firstIsCapitalized)
-            {
-                return CapitalizationType.Init;
-            }
-            if (numberCapitalized == word.Length || (numberCapitalized + numberNeutral) == word.Length)
-            {
-                return CapitalizationType.All;
-            }
-            if (numberCapitalized > 1 && firstIsCapitalized)
-            {
                 return CapitalizationType.HuhInit;
             }
+            else
+            {
+                if (CharIsNeutral(c, affix))
+                {
+                    numberNeutral = 1;
+                }
+                else
+                {
+                    hasLower = true;
+                }
 
-            return CapitalizationType.Huh;
+                for (int i = 1; i < word.Length; i++)
+                {
+                    c = word[i];
+
+                    if (char.IsUpper(c))
+                    {
+                        numberCapitalized++;
+                    }
+                    else if (CharIsNeutral(c, affix))
+                    {
+                        numberNeutral++;
+                    }
+                    else
+                    {
+                        hasLower = true;
+                    }
+
+                    if (hasLower && numberCapitalized != 0)
+                    {
+                        break;
+                    }
+                }
+
+                if (numberCapitalized == 0)
+                {
+                    return CapitalizationType.None;
+                }
+                if (numberCapitalized == word.Length || (numberCapitalized + numberNeutral) == word.Length)
+                {
+                    return CapitalizationType.All;
+                }
+
+                return CapitalizationType.Huh;
+            }
+        }
+
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static bool CharIsNeutral(char c, AffixConfig affix)
+        {
+            return !char.IsLower(c) || (c > 127 && affix.Culture.TextInfo.ToUpper(c) == c);
         }
     }
 }
