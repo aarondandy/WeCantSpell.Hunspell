@@ -537,19 +537,15 @@ namespace Hunspell
         /// <seealso cref="CheckCompoundRep"/>
         public IEnumerable<SingleReplacementEntry> Replacements => replacements;
 
-        private AffixEntryGroup<SuffixEntry>[] suffixes;
-
         /// <summary>
         /// Suffixes attached to root words to make other words.
         /// </summary>
-        public IEnumerable<AffixEntryGroup<SuffixEntry>> Suffixes => suffixes;
-
-        private AffixEntryGroup<PrefixEntry>[] prefixes;
+        public IEnumerable<AffixEntryGroup<SuffixEntry>> Suffixes => suffixesByFlag.Values;
 
         /// <summary>
         /// Preffixes attached to root words to make other words.
         /// </summary>
-        public IEnumerable<AffixEntryGroup<PrefixEntry>> Prefixes => prefixes;
+        public IEnumerable<AffixEntryGroup<PrefixEntry>> Prefixes => prefixesByFlag.Values;
 
         private List<FlagSet> aliasF;
 
@@ -931,9 +927,9 @@ namespace Hunspell
 
         public bool HasWordChars => !WordChars.IsEmpty;
 
-        public bool HasSuffixes => suffixes.Length != 0;
+        public bool HasSuffixes => suffixesByFlag.Count != 0;
 
-        public bool HasPrefixes => prefixes.Length != 0;
+        public bool HasPrefixes => prefixesByFlag.Count != 0;
 
         public bool HasMapTableEntries => mapTable.Count != 0;
 

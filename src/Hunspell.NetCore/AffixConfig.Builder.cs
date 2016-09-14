@@ -428,20 +428,18 @@ namespace Hunspell
 
                 BuildAffixCollections(
                     Prefixes,
-                    out config.prefixes,
                     out config.prefixesByFlag,
                     out config.prefixesWithEmptyKeys,
                     out config.prefixesByIndexedKeyCharacter);
 
                 BuildAffixCollections(
                     Suffixes,
-                    out config.suffixes,
                     out config.suffixesByFlag,
                     out config.suffixesWithEmptyKeys,
                     out config.suffixsByIndexedKeyCharacter);
 
                 config.ContClasses = FlagSet.Create(
-                    Enumerable.Concat<AffixEntry>(config.prefixes.SelectMany(g => g.Entries), config.suffixes.SelectMany(g => g.Entries))
+                    Enumerable.Concat<AffixEntry>(config.prefixesByFlag.Values.SelectMany(g => g.Entries), config.suffixesByFlag.Values.SelectMany(g => g.Entries))
                     .SelectMany(e => e.ContClass));
 
                 return config;
@@ -449,7 +447,6 @@ namespace Hunspell
 
             private void BuildAffixCollections<TEntry>(
                 List<AffixEntryGroup.Builder<TEntry>> builders,
-                out AffixEntryGroup<TEntry>[] entries,
                 out Dictionary<FlagValue, AffixEntryGroup<TEntry>> entriesByFlag,
                 out List<AffixEntryWithDetail<TEntry>> affixesWithEmptyKeys,
                 out Dictionary<char, List<AffixEntryWithDetail<TEntry>>> affixesByIndexedKeyCharacter)
@@ -457,22 +454,19 @@ namespace Hunspell
             {
                 if (builders == null || builders.Count == 0)
                 {
-                    entries = ArrayEx<AffixEntryGroup<TEntry>>.Empty;
                     entriesByFlag = new Dictionary<FlagValue, AffixEntryGroup<TEntry>>(0);
                     affixesWithEmptyKeys = new List<AffixEntryWithDetail<TEntry>>(0);
                     affixesByIndexedKeyCharacter = new Dictionary<char, List<AffixEntryWithDetail<TEntry>>>(0);
                     return;
                 }
 
-                entries = new AffixEntryGroup<TEntry>[builders.Count];
-                entriesByFlag = new Dictionary<FlagValue, AffixEntryGroup<TEntry>>(entries.Length);
+                entriesByFlag = new Dictionary<FlagValue, AffixEntryGroup<TEntry>>(builders.Count);
                 affixesWithEmptyKeys = new List<AffixEntryWithDetail<TEntry>>();
                 affixesByIndexedKeyCharacter = new Dictionary<char, List<AffixEntryWithDetail<TEntry>>>();
 
-                for (var i = 0; i < entries.Length; i++)
+                for (var i = 0; i < builders.Count; i++)
                 {
                     var group = builders[i].ToGroup();
-                    entries[i] = group;
                     entriesByFlag.Add(group.AFlag, group);
 
                     foreach (var entry in group.Entries)
