@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Hunspell
+﻿namespace Hunspell
 {
     public static class SpecialFlags
     {

@@ -506,9 +506,9 @@ namespace Hunspell
             return true;
         }
 
-        private bool TryParseAliasF(string parameterText, List<ImmutableSortedSet<FlagValue>> entries)
+        private bool TryParseAliasF(string parameterText, List<FlagSet> entries)
         {
-            entries.Add(ParseFlags(parameterText).ToImmutableSortedSet());
+            entries.Add(ParseFlags(parameterText));
             return true;
         }
 
@@ -553,13 +553,13 @@ namespace Hunspell
                     }
                     else
                     {
-                        entryBuilder.AddRange(ParseFlags(parameterText, indexBegin, indexEnd - indexBegin));
+                        entryBuilder.AddRange(ParseFlagsInOrder(parameterText, indexBegin, indexEnd - indexBegin));
                     }
                 }
             }
             else
             {
-                entryBuilder.AddRange(ParseFlags(parameterText));
+                entryBuilder.AddRange(ParseFlagsInOrder(parameterText));
             }
 
             entries.Add(entryBuilder.MoveToOrCreateImmutable());
@@ -589,7 +589,7 @@ namespace Hunspell
             }
 
             var affixGroup = groups.FindLast(g => g.AFlag == characterFlag);
-            var contClass = ImmutableArray<FlagValue>.Empty;
+            var contClass = FlagSet.Empty;
 
             if (lineMatchGroups[2].Success && lineMatchGroups[3].Success)
             {
@@ -654,7 +654,7 @@ namespace Hunspell
                         int aliasNumber;
                         if (IntEx.TryParseInvariant(affixInput, slashPartOffset, slashPartLength, out aliasNumber) && aliasNumber > 0 && aliasNumber <= Builder.AliasF.Count)
                         {
-                            contClass = Builder.AliasF[aliasNumber - 1].ToImmutableArray();
+                            contClass = Builder.AliasF[aliasNumber - 1];
                         }
                         else
                         {
@@ -663,7 +663,7 @@ namespace Hunspell
                     }
                     else
                     {
-                        contClass = ImmutableArray.CreateRange(ParseFlags(affixInput, slashPartOffset, slashPartLength));
+                        contClass = ParseFlags(affixInput, slashPartOffset, slashPartLength);
                     }
                 }
                 else
@@ -759,7 +759,7 @@ namespace Hunspell
                     };
                 }
 
-                if (!Builder.HasContClass && contClass.Length != 0)
+                if (!Builder.HasContClass && contClass.HasFlags)
                 {
                     Builder.HasContClass = true;
                 }
@@ -1090,7 +1090,9 @@ namespace Hunspell
             return Encoding.UTF8.GetString(encoding.GetBytes(decoded));
         }
 
-        private List<FlagValue> ParseFlags(string text)
+        private FlagSet ParseFlags(string text) => FlagSet.TakeArray(ParseFlagsInOrder(text));
+
+        private FlagValue[] ParseFlagsInOrder(string text)
         {
             var flagMode = Builder.FlagMode;
             if (flagMode == FlagMode.Uni)
@@ -1099,15 +1101,17 @@ namespace Hunspell
                 flagMode = FlagMode.Char;
             }
 
-            return FlagValue.ParseFlags(text, flagMode);
+            return FlagValue.ParseFlagsInOrder(text, flagMode);
         }
 
-        private List<FlagValue> ParseFlags(string text, int startIndex, int length)
+        private FlagSet ParseFlags(string text, int startIndex, int length) => FlagSet.TakeArray(ParseFlagsInOrder(text, startIndex, length));
+
+        private FlagValue[] ParseFlagsInOrder(string text, int startIndex, int length)
         {
             var flagMode = Builder.FlagMode;
             return flagMode == FlagMode.Uni
-                ? FlagValue.ParseFlags(ReDecodeConvertedStringAsUtf8(text.Substring(startIndex, length)), FlagMode.Char)
-                : FlagValue.ParseFlags(text, startIndex, length, flagMode);
+                ? FlagValue.ParseFlagsInOrder(ReDecodeConvertedStringAsUtf8(text.Substring(startIndex, length)), FlagMode.Char)
+                : FlagValue.ParseFlagsInOrder(text, startIndex, length, flagMode);
         }
 
         private bool TryParseFlag(string text, out FlagValue value)

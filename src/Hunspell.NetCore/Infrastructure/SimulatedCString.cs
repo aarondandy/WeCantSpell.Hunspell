@@ -4,11 +4,6 @@ namespace Hunspell.Infrastructure
 {
     internal sealed class SimulatedCString
     {
-        public SimulatedCString()
-        {
-            Buffer = StringBuilderPool.Get();
-        }
-
         public SimulatedCString(string text)
         {
             Buffer = StringBuilderPool.Get(text);

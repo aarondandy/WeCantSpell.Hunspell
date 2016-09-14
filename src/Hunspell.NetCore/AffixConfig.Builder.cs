@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
@@ -219,7 +220,7 @@ namespace Hunspell
             /// Ordinal numbers for affix flag compression.
             /// </summary>
             /// <seealso cref="AffixConfig.AliasF"/>
-            public List<ImmutableSortedSet<FlagValue>> AliasF;
+            public List<FlagSet> AliasF;
 
             /// <summary>
             /// Inidicates if any <see cref="AliasF"/> entries have been defined.
@@ -354,7 +355,7 @@ namespace Hunspell
                     TryString = TryString ?? string.Empty,
                     Language = Language ?? string.Empty,
                     Culture = culture,
-                    IsHungarian = culture.IsHungarianLanguage(),
+                    IsHungarian = string.Equals(culture?.TwoLetterISOLanguageName, "HU", StringComparison.OrdinalIgnoreCase),
                     StringComparer = new CulturedStringComparer(culture),
                     CompoundFlag = CompoundFlag,
                     CompoundBegin = CompoundBegin,
@@ -392,7 +393,7 @@ namespace Hunspell
                 {
                     config.replacements = Replacements ?? new List<SingleReplacementEntry>(0);
                     Replacements = null;
-                    config.aliasF = AliasF ?? new List<ImmutableSortedSet<FlagValue>>(0);
+                    config.aliasF = AliasF ?? new List<FlagSet>(0);
                     AliasF = null;
                     config.aliasM = AliasM ?? new List<ImmutableArray<string>>(0);
                     AliasM = null;
@@ -414,7 +415,7 @@ namespace Hunspell
                 else
                 {
                     config.replacements = Replacements == null ? new List<SingleReplacementEntry>(0) : Replacements.ToList();
-                    config.aliasF = AliasF == null ? new List<ImmutableSortedSet<FlagValue>>(0) : AliasF.ToList();
+                    config.aliasF = AliasF == null ? new List<FlagSet>(0) : AliasF.ToList();
                     config.aliasM = AliasM == null ? new List<ImmutableArray<string>>(0) : AliasM.ToList();
                     config.compoundRules = CompoundRules == null ? new List<ImmutableArray<FlagValue>>(0) : CompoundRules.ToList();
                     config.compoundPatterns = CompoundPatterns == null ? new List<PatternEntry>(0) : CompoundPatterns.ToList();
@@ -439,12 +440,9 @@ namespace Hunspell
                     out config.suffixesWithEmptyKeys,
                     out config.suffixsByIndexedKeyCharacter);
 
-                config.ContClasses =
-                    Enumerable.Concat<AffixEntry>(
-                        config.prefixes.SelectMany(g => g.Entries),
-                        config.suffixes.SelectMany(g => g.Entries))
-                    .SelectMany(e => e.ContClass)
-                    .ToImmutableSortedSet();
+                config.ContClasses = FlagSet.Create(
+                    Enumerable.Concat<AffixEntry>(config.prefixes.SelectMany(g => g.Entries), config.suffixes.SelectMany(g => g.Entries))
+                    .SelectMany(e => e.ContClass));
 
                 return config;
             }

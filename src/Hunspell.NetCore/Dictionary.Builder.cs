@@ -18,7 +18,7 @@ namespace Hunspell
                 Affix = affix;
             }
 
-            public Dictionary<string, ImmutableArray<DictionaryEntry>> EntriesByRoot;
+            public Dictionary<string, DictionaryEntrySet> EntriesByRoot;
 
             public AffixConfig Affix;
 
@@ -36,8 +36,7 @@ namespace Hunspell
             {
                 var affix = Affix ?? new AffixConfig.Builder().MoveToImmutable();
 
-                var nGramRestrictedFlags =
-                    new[]
+                var nGramRestrictedFlags = FlagSet.Create(new[]
                     {
                         affix.ForbiddenWord,
                         affix.NoSuggest,
@@ -45,8 +44,7 @@ namespace Hunspell
                         affix.OnlyInCompound,
                         SpecialFlags.OnlyUpcaseFlag
                     }
-                    .Where(f => f.HasValue)
-                    .ToImmutableSortedSet();
+                    .Where(f => f.HasValue));
 
                 var result = new Dictionary(affix)
                 {
@@ -55,14 +53,14 @@ namespace Hunspell
 
                 if (destructive)
                 {
-                    result.EntriesByRoot = EntriesByRoot ?? new Dictionary<string, ImmutableArray<DictionaryEntry>>();
+                    result.EntriesByRoot = EntriesByRoot ?? new Dictionary<string, DictionaryEntrySet>();
                     EntriesByRoot = null;
                 }
                 else
                 {
                     result.EntriesByRoot = EntriesByRoot == null
-                        ? new Dictionary<string, ImmutableArray<DictionaryEntry>>()
-                        : new Dictionary<string, ImmutableArray<DictionaryEntry>>(EntriesByRoot);
+                        ? new Dictionary<string, DictionaryEntrySet>()
+                        : new Dictionary<string, DictionaryEntrySet>(EntriesByRoot);
                 }
 
                 var nGramRestrictedEntries = new HashSet<DictionaryEntry>();
@@ -86,9 +84,9 @@ namespace Hunspell
             public void InitializeEntriesByRoot(int expectedSize)
             {
                 EntriesByRoot = expectedSize < 0
-                    ? new Dictionary<string, ImmutableArray<DictionaryEntry>>()
+                    ? new Dictionary<string, DictionaryEntrySet>()
                     // PERF: because we add more entries than we are told about, we add 10% to the expected size
-                    : new Dictionary<string, ImmutableArray<DictionaryEntry>>((expectedSize / 100) + expectedSize);
+                    : new Dictionary<string, DictionaryEntrySet>((expectedSize / 100) + expectedSize);
             }
         }
     }

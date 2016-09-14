@@ -126,13 +126,13 @@ namespace Hunspell
                 return false;
             }
 
-            ImmutableSortedSet<FlagValue> flags;
+            FlagSet flags;
             if (!string.IsNullOrEmpty(parsed.Flags))
             {
                 if (Affix.IsAliasF)
                 {
                     int flagAliasNumber;
-                    ImmutableSortedSet<FlagValue> aliasedFlags;
+                    FlagSet aliasedFlags;
                     if (IntEx.TryParseInvariant(parsed.Flags, out flagAliasNumber) && Affix.TryGetAliasF(flagAliasNumber, out aliasedFlags))
                     {
                         flags = aliasedFlags;
@@ -146,16 +146,16 @@ namespace Hunspell
                 else if (Affix.FlagMode == FlagMode.Uni)
                 {
                     var utf8Flags = Encoding.UTF8.GetString(Affix.Encoding.GetBytes(parsed.Flags));
-                    flags = FlagValue.ParseFlags(utf8Flags, FlagMode.Char).ToImmutableSortedSet();
+                    flags = FlagValue.ParseFlags(utf8Flags, FlagMode.Char);
                 }
                 else
                 {
-                    flags = FlagValue.ParseFlags(parsed.Flags, Affix.FlagMode).ToImmutableSortedSet();
+                    flags = FlagValue.ParseFlags(parsed.Flags, Affix.FlagMode);
                 }
             }
             else
             {
-                flags = ImmutableSortedSet<FlagValue>.Empty;
+                flags = FlagSet.Empty;
             }
 
             ImmutableArray<string> morphs;
@@ -199,13 +199,13 @@ namespace Hunspell
             return false;
         }
 
-        private bool AddWord(string word, ImmutableSortedSet<FlagValue> flags, ImmutableArray<string> morphs)
+        private bool AddWord(string word, FlagSet flags, ImmutableArray<string> morphs)
         {
             return AddWord(word, flags, morphs, false)
                 || AddWordCapitalized(word, flags, morphs, CapitalizationTypeEx.GetCapitalizationType(word, Affix));
         }
 
-        private bool AddWord(string word, ImmutableSortedSet<FlagValue> flags, ImmutableArray<string> morphs, bool onlyUpperCase)
+        private bool AddWord(string word, FlagSet flags, ImmutableArray<string> morphs, bool onlyUpperCase)
         {
             if (Affix.HasIgnoredChars)
             {
@@ -267,15 +267,15 @@ namespace Hunspell
             }
 
             bool saveEntryList = false;
-            ImmutableArray<DictionaryEntry> entryList;
+            DictionaryEntrySet entryList;
             if (!Builder.EntriesByRoot.TryGetValue(word, out entryList))
             {
                 saveEntryList = true;
-                entryList = ImmutableArray<DictionaryEntry>.Empty;
+                entryList = DictionaryEntrySet.Empty;
             }
 
             var upperCaseHomonym = false;
-            for (var i = 0; i < entryList.Length; i++)
+            for (var i = 0; i < entryList.Count; i++)
             {
                 var existingEntry = entryList[i];
 
@@ -284,8 +284,7 @@ namespace Hunspell
                     if (existingEntry.ContainsFlag(SpecialFlags.OnlyUpcaseFlag))
                     {
                         existingEntry = new DictionaryEntry(existingEntry.Word, flags, existingEntry.Morphs, existingEntry.Options);
-                        entryList = entryList.SetItem(i, existingEntry);
-                        Builder.EntriesByRoot[word] = entryList;
+                        entryList.DestructiveReplace(i, existingEntry);
                         return false;
                     }
                 }
@@ -298,7 +297,7 @@ namespace Hunspell
             if (!upperCaseHomonym)
             {
                 saveEntryList = true;
-                entryList = entryList.Add(new DictionaryEntry(word, flags, morphs, options));
+                entryList = DictionaryEntrySet.CopyWithItemAdded(entryList, new DictionaryEntry(word, flags, morphs, options));
             }
 
             if (saveEntryList)
@@ -309,7 +308,7 @@ namespace Hunspell
             return false;
         }
 
-        private bool AddWordCapitalized(string word, ImmutableSortedSet<FlagValue> flags, ImmutableArray<string> morphs, CapitalizationType capType)
+        private bool AddWordCapitalized(string word, FlagSet flags, ImmutableArray<string> morphs, CapitalizationType capType)
         {
             // add inner capitalized forms to handle the following allcap forms:
             // Mixed caps: OpenOffice.org -> OPENOFFICE.ORG
@@ -319,13 +318,13 @@ namespace Hunspell
                 (
                     capType == CapitalizationType.Huh
                     || capType == CapitalizationType.HuhInit
-                    || (capType == CapitalizationType.All && !flags.IsEmpty)
+                    || (capType == CapitalizationType.All && flags.HasFlags)
                 )
                 &&
                 !flags.Contains(Affix.ForbiddenWord)
             )
             {
-                flags = flags.Add(SpecialFlags.OnlyUpcaseFlag);
+                flags = FlagSet.Combine(flags, SpecialFlags.OnlyUpcaseFlag);
 
                 var textInfo = Affix.Culture.TextInfo;
                 var initCapBuilder = StringBuilderPool.Get(word);

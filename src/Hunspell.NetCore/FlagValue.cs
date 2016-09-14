@@ -14,6 +14,8 @@ namespace Hunspell
         IComparable<int>,
         IComparable<char>
     {
+        private int value;
+
         public FlagValue(int value)
         {
             this.value = value;
@@ -28,8 +30,6 @@ namespace Hunspell
         {
             this.value = unchecked(a << 8 | b);
         }
-
-        private int value;
 
         public bool HasValue => value != 0;
 
@@ -173,89 +173,102 @@ namespace Hunspell
             return parsedOk;
         }
 
-        public static List<FlagValue> ParseFlags(string text, FlagMode mode)
+        public static FlagSet ParseFlags(string text, FlagMode mode) => FlagSet.TakeArray(ParseFlagsInOrder(text, mode));
+
+        public static FlagValue[] ParseFlagsInOrder(string text, FlagMode mode)
         {
             if (mode == FlagMode.Char)
             {
-                return text == null ? new List<FlagValue>(0) : ConvertCharsToFlags(text);
+                return text == null ? ArrayEx<FlagValue>.Empty : ConvertCharsToFlagsInOrder(text);
             }
             if (mode == FlagMode.Long)
             {
-                return ParseLongFlags(text);
+                return ParseLongFlagsInOrder(text);
             }
             if (mode == FlagMode.Num)
             {
-                return ParseNumberFlags(text);
+                return ParseNumberFlagsInOrder(text);
             }
 
             throw new NotSupportedException();
         }
 
-        public static List<FlagValue> ParseFlags(string text, int startIndex, int length, FlagMode mode)
+        public static FlagSet ParseFlags(string text, int startIndex, int length, FlagMode mode) => FlagSet.TakeArray(ParseFlagsInOrder(text, startIndex, length, mode));
+
+        public static FlagValue[] ParseFlagsInOrder(string text, int startIndex, int length, FlagMode mode)
         {
             if (mode == FlagMode.Char)
             {
-                return text == null ? new List<FlagValue>(0) : ConvertCharsToFlags(text, startIndex, length);
+                return text == null ? ArrayEx<FlagValue>.Empty : ConvertCharsToFlagsInOrder(text, startIndex, length);
             }
             if (mode == FlagMode.Long)
             {
-                return ParseLongFlags(text, startIndex, length);
+                return ParseLongFlagsInOrder(text, startIndex, length);
             }
             if (mode == FlagMode.Num)
             {
-                return ParseNumberFlags(text, startIndex, length);
+                return ParseNumberFlagsInOrder(text, startIndex, length);
             }
 
             throw new NotSupportedException();
         }
 
-        private static List<FlagValue> ConvertCharsToFlags(string text)
+        private static FlagSet ConvertCharsToFlags(string text) => FlagSet.TakeArray(ConvertCharsToFlagsInOrder(text));
+
+        private static FlagValue[] ConvertCharsToFlagsInOrder(string text)
         {
-            var result = new List<FlagValue>(text.Length);
+            var values = new FlagValue[text.Length];
             for (var i = 0; i < text.Length; i++)
             {
-                result.Add(new FlagValue(text[i]));
+                values[i] = new FlagValue(text[i]);
             }
 
-            return result;
+            return values;
         }
 
-        private static List<FlagValue> ConvertCharsToFlags(string text, int startIndex, int length)
+        private static FlagSet ConvertCharsToFlags(string text, int startIndex, int length) => FlagSet.TakeArray(ConvertCharsToFlagsInOrder(text, startIndex, length));
+
+        private static FlagValue[] ConvertCharsToFlagsInOrder(string text, int startIndex, int length)
         {
-            var result = new List<FlagValue>(length);
+            var values = new FlagValue[length];
             for (var i = 0; i < length; i++)
             {
-                result.Add(new FlagValue(text[i + startIndex]));
+                values[i] = new FlagValue(text[i + startIndex]);
             }
 
-            return result;
+            return values;
         }
 
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static List<FlagValue> ParseLongFlags(string text)
-        {
-            return ParseLongFlags(text, 0, text.Length);
-        }
+        public static FlagSet ParseLongFlags(string text) => ParseLongFlags(text, 0, text.Length);
 
-        public static List<FlagValue> ParseLongFlags(string text, int startIndex, int length)
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static FlagValue[] ParseLongFlagsInOrder(string text) => ParseLongFlagsInOrder(text, 0, text.Length);
+
+        public static FlagSet ParseLongFlags(string text, int startIndex, int length) => FlagSet.TakeArray(ParseLongFlagsInOrder(text, startIndex, length));
+
+        public static FlagValue[] ParseLongFlagsInOrder(string text, int startIndex, int length)
         {
             if (length == 0 || string.IsNullOrEmpty(text))
             {
-                return new List<FlagValue>();
+                return ArrayEx<FlagValue>.Empty;
             }
 
-            var flags = new List<FlagValue>((length + 1) / 2);
+            var flags = new FlagValue[(length + 1) / 2];
+            var flagWriteIndex = 0;
             var lastIndex = startIndex + length - 1;
-            for (var i = startIndex; i < lastIndex; i += 2)
+            for (var i = startIndex; i < lastIndex; i += 2, flagWriteIndex++)
             {
-                flags.Add(new FlagValue(text[i], unchecked((byte)text[i + 1])));
+                flags[flagWriteIndex] = new FlagValue(text[i], unchecked((byte)text[i + 1]));
             }
 
-            if (length % 2 == 1)
+            if (flagWriteIndex < flags.Length)
             {
-                flags.Add(new FlagValue(text[lastIndex]));
+                flags[flagWriteIndex] = new FlagValue(text[lastIndex]);
             }
 
             return flags;
@@ -264,16 +277,20 @@ namespace Hunspell
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static List<FlagValue> ParseNumberFlags(string text)
-        {
-            return ParseNumberFlags(text, 0, text.Length);
-        }
+        public static FlagSet ParseNumberFlags(string text) => ParseNumberFlags(text, 0, text.Length);
 
-        public static List<FlagValue> ParseNumberFlags(string text, int startIndex, int length)
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static FlagValue[] ParseNumberFlagsInOrder(string text) => ParseNumberFlagsInOrder(text, 0, text.Length);
+
+        public static FlagSet ParseNumberFlags(string text, int startIndex, int length) => FlagSet.TakeArray(ParseNumberFlagsInOrder(text, startIndex, length));
+
+        public static FlagValue[] ParseNumberFlagsInOrder(string text, int startIndex, int length)
         {
             if (length == 0 || string.IsNullOrEmpty(text))
             {
-                return new List<FlagValue>();
+                return ArrayEx<FlagValue>.Empty;
             }
 
             var textParts = text.Substring(startIndex, length).SplitOnComma();
@@ -288,7 +305,7 @@ namespace Hunspell
                 }
             }
 
-            return flags;
+            return flags.ToArray();
         }
 
 #if !PRE_NETSTANDARD && !DEBUG

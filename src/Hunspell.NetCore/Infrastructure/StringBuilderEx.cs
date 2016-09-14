@@ -214,15 +214,6 @@ namespace Hunspell.Infrastructure
             }
         }
 
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static string AsTerminatedString(this StringBuilder builder)
-        {
-            var nullTerminatorIndex = builder.IndexOfNullChar();
-            return nullTerminatorIndex < 0 ? builder.ToString() : builder.ToString(0, nullTerminatorIndex);
-        }
-
         public static bool StartsWith(this StringBuilder builder, char c)
         {
             return builder.Length != 0 && builder[0] == c;

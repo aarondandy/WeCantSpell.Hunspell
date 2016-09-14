@@ -1596,7 +1596,7 @@ namespace Hunspell
                     if (rv.ContainsAnyFlags(Affix.NeedAffix, SpecialFlags.OnlyUpcaseFlag, Affix.OnlyInCompound))
                     {
                         rvIndex++;
-                        rv = rvIndex < rvs.Length ? rvs[rvIndex] : null;
+                        rv = rvIndex < rvs.Count ? rvs[rvIndex] : null;
                     }
                     else
                     {
@@ -3194,7 +3194,7 @@ namespace Hunspell
             // look word in hash table
             DictionaryEntry he;
             var entries = Dictionary.FindEntriesByRootWord(word);
-            if (entries.IsDefaultOrEmpty)
+            if (entries.IsEmpty)
             {
                 he = null;
             }
@@ -3236,7 +3236,7 @@ namespace Hunspell
                 )
                 {
                     heIndex++;
-                    he = heIndex < entries.Length ? entries[heIndex] : null;
+                    he = heIndex < entries.Count ? entries[heIndex] : null;
                 }
             }
 
@@ -3408,7 +3408,7 @@ namespace Hunspell
                         var searchEntries = Lookup(st.ToString()); // perhaps without prefix
                         var searchEntriesIndex = 0;
 
-                        rv = searchEntriesIndex < searchEntries.Length ? searchEntries[searchEntriesIndex] : null;
+                        rv = searchEntriesIndex < searchEntries.Count ? searchEntries[searchEntriesIndex] : null;
 
                         // search homonym with compound flag
                         while (
@@ -3479,7 +3479,7 @@ namespace Hunspell
                         )
                         {
                             searchEntriesIndex++;
-                            rv = searchEntriesIndex < searchEntries.Length ? searchEntries[searchEntriesIndex] : null;
+                            rv = searchEntriesIndex < searchEntries.Count ? searchEntries[searchEntriesIndex] : null;
                         }
 
                         if (rv != null)
@@ -3823,7 +3823,7 @@ namespace Hunspell
                                 var homonyms = Lookup(st.Substring(i));  // perhaps without prefix
                                 var homonymIndex = 0;
 
-                                rv = homonymIndex < homonyms.Length ? homonyms[homonymIndex] : null;
+                                rv = homonymIndex < homonyms.Count ? homonyms[homonymIndex] : null;
                                 // search homonym with compound flag
                                 while (
                                     rv != null
@@ -3852,7 +3852,7 @@ namespace Hunspell
                                 )
                                 {
                                     homonymIndex++;
-                                    rv = homonymIndex < homonyms.Length ? homonyms[homonymIndex] : null;
+                                    rv = homonymIndex < homonyms.Count ? homonyms[homonymIndex] : null;
                                 }
 
                                 // check FORCEUCASE
@@ -4731,7 +4731,7 @@ namespace Hunspell
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        private ImmutableArray<DictionaryEntry> Lookup(string word)
+        private DictionaryEntrySet Lookup(string word)
         {
             return Dictionary.FindEntriesByRootWord(word);
         }
@@ -5352,7 +5352,7 @@ namespace Hunspell
 
         private bool CandidateCheck(string word)
         {
-            return !Lookup(word).IsDefaultOrEmpty
+            return Lookup(word).HasEntries
                 || AffixCheck(word, new FlagValue(), CompoundOptions.Not) != null;
         }
 

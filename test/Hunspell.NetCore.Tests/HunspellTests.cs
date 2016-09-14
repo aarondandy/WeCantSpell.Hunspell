@@ -40,12 +40,12 @@ namespace Hunspell.NetCore.Tests
                 var expected = searchWord == dictionaryWord;
                 var dictionaryBuilder = new Dictionary.Builder();
                 dictionaryBuilder.InitializeEntriesByRoot(1);
-                dictionaryBuilder.EntriesByRoot[dictionaryWord] = ImmutableArray.Create(
+                dictionaryBuilder.EntriesByRoot[dictionaryWord] = DictionaryEntrySet.TakeArray(new[] {
                     new DictionaryEntry(
                         dictionaryWord,
-                        ImmutableSortedSet<FlagValue>.Empty,
+                        FlagSet.Empty,
                         ImmutableArray<string>.Empty,
-                        DictionaryEntryOptions.None));
+                        DictionaryEntryOptions.None) });
 
                 var dictionary = dictionaryBuilder.ToImmutable();
                 var hunspell = new Hunspell(dictionary);

@@ -551,7 +551,7 @@ namespace Hunspell
         /// </summary>
         public IEnumerable<AffixEntryGroup<PrefixEntry>> Prefixes => prefixes;
 
-        private List<ImmutableSortedSet<FlagValue>> aliasF;
+        private List<FlagSet> aliasF;
 
         /// <summary>
         /// Ordinal numbers for affix flag compression.
@@ -592,14 +592,14 @@ namespace Hunspell
         /// work/AB
         /// </code>
         /// </example>
-        public IEnumerable<ImmutableSortedSet<FlagValue>> AliasF => aliasF;
+        public IEnumerable<FlagSet> AliasF => aliasF;
 
         /// <summary>
         /// Inidicates if any <see cref="AliasF"/> entries have been defined.
         /// </summary>
         public bool IsAliasF => aliasF != null && aliasF.Count != 0;
 
-        public bool TryGetAliasF(int number, out ImmutableSortedSet<FlagValue> result)
+        public bool TryGetAliasF(int number, out FlagSet result)
         {
             if (number > 0 && number <= aliasF.Count)
             {
@@ -608,7 +608,7 @@ namespace Hunspell
             }
             else
             {
-                result = default(ImmutableSortedSet<FlagValue>);
+                result = null;
                 return false;
             }
         }
@@ -902,14 +902,14 @@ namespace Hunspell
         /// The set of used affix cont classes.
         /// </summary>
         /// <seealso cref="AffixEntry.ContClass"/>
-        public ImmutableSortedSet<FlagValue> ContClasses { get; private set; }
+        public FlagSet ContClasses { get; private set; }
 
         public bool IsHungarian { get; private set; }
 
         /// <summary>
         /// Indicates that some of the affix entries have "cont class".
         /// </summary>
-        public bool HasContClass => !ContClasses.IsEmpty;
+        public bool HasContClass => ContClasses.HasFlags;
 
         public bool HasCompound => CompoundFlag.HasValue || CompoundBegin.HasValue || HasCompoundRules;
 

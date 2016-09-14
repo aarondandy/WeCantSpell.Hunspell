@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 
 namespace Hunspell
@@ -14,13 +13,14 @@ namespace Hunspell
 
         public AffixConfig Affix { get; private set; }
 
-        private Dictionary<string, ImmutableArray<DictionaryEntry>> EntriesByRoot { get; set; }
+        private Dictionary<string, DictionaryEntrySet> EntriesByRoot { get; set; }
 
-        private ImmutableSortedSet<FlagValue> NGramRestrictedFlags { get; set; }
+        private FlagSet NGramRestrictedFlags { get; set; }
 
         private HashSet<DictionaryEntry> NGramRestrictedEntries { get; set; }
 
-        public IEnumerable<DictionaryEntry> NGramAllowedEntries => NGramRestrictedEntries == null
+        public IEnumerable<DictionaryEntry> NGramAllowedEntries =>
+            NGramRestrictedEntries == null || NGramRestrictedEntries.Count == 0
             ? AllEntries
             : AllEntries.Where(entry => !NGramRestrictedEntries.Contains(entry));
 
@@ -30,14 +30,14 @@ namespace Hunspell
 
         public bool HasEntries => EntriesByRoot.Count != 0;
 
-        public ImmutableArray<DictionaryEntry> this[string rootWord] => FindEntriesByRootWord(rootWord);
+        public DictionaryEntrySet this[string rootWord] => FindEntriesByRootWord(rootWord);
 
-        public ImmutableArray<DictionaryEntry> FindEntriesByRootWord(string rootWord)
+        public DictionaryEntrySet FindEntriesByRootWord(string rootWord)
         {
-            ImmutableArray<DictionaryEntry> result;
+            DictionaryEntrySet result;
             if (!EntriesByRoot.TryGetValue(rootWord, out result))
             {
-                result = ImmutableArray<DictionaryEntry>.Empty;
+                result = DictionaryEntrySet.Empty;
             }
 
             return result;

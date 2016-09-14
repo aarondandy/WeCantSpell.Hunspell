@@ -65,7 +65,9 @@
     <Compile Include="Dictionary.cs" />
     <Compile Include="DictionaryEntry.cs" />
     <Compile Include="DictionaryEntryOptions.cs" />
+    <Compile Include="DictionaryEntrySet.cs" />
     <Compile Include="DictionaryReader.cs" />
+    <Compile Include="FlagSet.cs" />
     <Compile Include="FlagValue.cs" />
     <Compile Include="Hunspell.cs" />
     <Compile Include="HunspellQuery.cs" />
@@ -98,7 +100,6 @@
     <Compile Include="SuffixEntry.cs" />
     <Compile Include="Infrastructure\ArrayEx.cs" />
     <Compile Include="Infrastructure\CulturedStringComparer.cs" />
-    <Compile Include="Infrastructure\CultureInfoEx.cs" />
     <Compile Include="Infrastructure\IntEx.cs" />
     <Compile Include="Infrastructure\StringEx.cs" />
   </ItemGroup>

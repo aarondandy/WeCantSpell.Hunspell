@@ -135,9 +135,9 @@ namespace Hunspell
         /// </remarks>
         public string Strip { get; private set; }
 
-        public ImmutableSortedSet<FlagValue> ContClass { get; private set; }
+        public FlagSet ContClass { get; private set; }
 
-        public bool HasContClasses => !ContClass.IsEmpty;
+        public bool HasContClasses => ContClass.HasFlags;
 
         public abstract string Key { get; }
 
@@ -147,7 +147,7 @@ namespace Hunspell
             string affixText,
             CharacterConditionGroup conditions,
             IEnumerable<string> morph,
-            IEnumerable<FlagValue> contClass
+            FlagSet contClass
         )
             where TEntry : AffixEntry, new()
         {
@@ -157,7 +157,7 @@ namespace Hunspell
                 Append = affixText,
                 Conditions = conditions,
                 MorphCode = morph == null ? ImmutableArray<string>.Empty : morph.ToImmutableArray(),
-                ContClass = contClass == null ? ImmutableSortedSet<FlagValue>.Empty : contClass.ToImmutableSortedSet()
+                ContClass = contClass ?? FlagSet.Empty
             };
         }
 
@@ -165,26 +165,12 @@ namespace Hunspell
 
         public bool ContainsAnyContClass(FlagValue a, FlagValue b)
         {
-            return HasContClasses
-                &&
-                (
-                    (a.HasValue && ContClass.Contains(a))
-                    ||
-                    (b.HasValue && ContClass.Contains(b))
-                );
+            return HasContClasses && ContClass.ContainsAny(a,b);
         }
 
         public bool ContainsAnyContClass(FlagValue a, FlagValue b, FlagValue c)
         {
-            return HasContClasses
-                &&
-                (
-                    (a.HasValue && ContClass.Contains(a))
-                    ||
-                    (b.HasValue && ContClass.Contains(b))
-                    ||
-                    (c.HasValue && ContClass.Contains(c))
-                );
+            return HasContClasses && ContClass.ContainsAny(a, b, c);
         }
     }
 }
