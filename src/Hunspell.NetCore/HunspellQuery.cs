@@ -4328,27 +4328,26 @@ namespace Hunspell
         {
             // check all prefixes (also crossed with suffixes if allowed)
             var rv = PrefixCheck(word, inCompound, needFlag);
-            if (rv != null)
+            if (rv == null)
             {
-                return rv;
-            }
 
-            // if still not found check all suffixes
-            rv = SuffixCheck(word, 0, null, default(FlagValue), needFlag, inCompound);
+                // if still not found check all suffixes
+                rv = SuffixCheck(word, 0, null, default(FlagValue), needFlag, inCompound);
 
-            if (Affix.HasContClass)
-            {
-                ClearSuffix();
-                ClearPrefix();
-
-                if (rv == null)
+                if (Affix.HasContClass)
                 {
-                    rv =
-                        // if still not found check all two-level suffixes
-                        SuffixCheckTwoSfx(word, 0, null, needFlag)
-                        ??
-                        // if still not found check all two-level prefixes
-                        PrefixCheckTwoSfx(word, CompoundOptions.Not, needFlag);
+                    ClearSuffix();
+                    ClearPrefix();
+
+                    if (rv == null)
+                    {
+                        rv =
+                            // if still not found check all two-level suffixes
+                            SuffixCheckTwoSfx(word, 0, null, needFlag)
+                            ??
+                            // if still not found check all two-level prefixes
+                            PrefixCheckTwoSfx(word, CompoundOptions.Not, needFlag);
+                    }
                 }
             }
 

@@ -941,45 +941,38 @@ namespace Hunspell
 
         private Dictionary<FlagValue, AffixEntryGroup<PrefixEntry>> prefixesByFlag;
 
-        private List<FlagValue> prefixFlagsWithEmptyKeys;
+        private List<AffixEntryWithDetail<PrefixEntry>> prefixesWithEmptyKeys;
 
-        private Dictionary<char, List<FlagValue>> prefixFlagsByIndexedKeyCharacter;
+        private Dictionary<char, List<AffixEntryWithDetail<PrefixEntry>>> prefixesByIndexedKeyCharacter;
 
         private Dictionary<FlagValue, AffixEntryGroup<SuffixEntry>> suffixesByFlag;
 
-        private List<FlagValue> suffixFlagsWithEmptyKeys;
+        private List<AffixEntryWithDetail<SuffixEntry>> suffixesWithEmptyKeys;
 
-        private Dictionary<char, List<FlagValue>> suffixFlagsByIndexedKeyCharacter;
+        private Dictionary<char, List<AffixEntryWithDetail<SuffixEntry>>> suffixsByIndexedKeyCharacter;
 
         public IEnumerable<AffixEntryWithDetail<PrefixEntry>> GetPrefixesWithoutKeys()
         {
-            return prefixFlagsWithEmptyKeys
-                .Select(GetPrefixesByFlag)
-                .SelectMany(g => g.Entries
-                    .Where(e => e.Key.Length == 0)
-                    .Select(e => new AffixEntryWithDetail<PrefixEntry>(g, e)));
+            return prefixesWithEmptyKeys;
         }
 
         public IEnumerable<AffixEntryWithDetail<PrefixEntry>> GetPrefixesWithKeySubset(string word)
         {
-            List<FlagValue> dotFlags;
-            prefixFlagsByIndexedKeyCharacter.TryGetValue('.', out dotFlags);
+            List<AffixEntryWithDetail<PrefixEntry>> dotAffixes;
+            prefixesByIndexedKeyCharacter.TryGetValue('.', out dotAffixes);
 
-            List<FlagValue> characterFlags;
+            List<AffixEntryWithDetail<PrefixEntry>> characterAffixes;
             if (word.Length != 0 && word[0] != '.')
             {
-                prefixFlagsByIndexedKeyCharacter.TryGetValue(word[0], out characterFlags);
+                prefixesByIndexedKeyCharacter.TryGetValue(word[0], out characterAffixes);
             }
             else
             {
-                characterFlags = null;
+                characterAffixes = null;
             }
 
-            return FastUnion(dotFlags, characterFlags)
-                .Select(GetPrefixesByFlag)
-                .SelectMany(g => g.Entries
-                    .Where(e => StringEx.IsSubset(e.Key, word))
-                    .Select(e => new AffixEntryWithDetail<PrefixEntry>(g, e)));
+            return FastUnion(dotAffixes, characterAffixes)
+                .Where(e => StringEx.IsSubset(e.Key, word));
         }
 
         public AffixEntryGroup<PrefixEntry> GetPrefixesByFlag(FlagValue aFlag)
@@ -991,33 +984,26 @@ namespace Hunspell
 
         public IEnumerable<AffixEntryWithDetail<SuffixEntry>> GetSuffixesWithoutKeys()
         {
-            return suffixFlagsWithEmptyKeys
-                .Select(GetSuffixesByFlag)
-                .SelectMany(g => g.Entries
-                    .Where(e => e.Key.Length == 0)
-                    .Select(e => new AffixEntryWithDetail<SuffixEntry>(g, e)));
+            return suffixesWithEmptyKeys;
         }
 
         public IEnumerable<AffixEntryWithDetail<SuffixEntry>> GetSuffixesWithReverseKeySubset(string word)
         {
-            List<FlagValue> dotFlags;
-            suffixFlagsByIndexedKeyCharacter.TryGetValue('.', out dotFlags);
+            List<AffixEntryWithDetail<SuffixEntry>> dotAffixes;
+            suffixsByIndexedKeyCharacter.TryGetValue('.', out dotAffixes);
 
-            List<FlagValue> characterFlags;
+            List<AffixEntryWithDetail<SuffixEntry>> characterAffixes;
             if (word.Length != 0 && word[word.Length - 1] != '.')
             {
-                suffixFlagsByIndexedKeyCharacter.TryGetValue(word[word.Length - 1], out characterFlags);
+                suffixsByIndexedKeyCharacter.TryGetValue(word[word.Length - 1], out characterAffixes);
             }
             else
             {
-                characterFlags = null;
+                characterAffixes = null;
             }
 
-            return FastUnion(dotFlags, characterFlags)
-                .Select(GetSuffixesByFlag)
-                .SelectMany(g => g.Entries
-                    .Where(e => StringEx.IsReverseSubset(e.Key, word))
-                    .Select(e => new AffixEntryWithDetail<SuffixEntry>(g, e)));
+            return FastUnion(dotAffixes, characterAffixes)
+                .Where(e => StringEx.IsReverseSubset(e.Key, word));
         }
 
         public AffixEntryGroup<SuffixEntry> GetSuffixesByFlag(FlagValue aFlag)

@@ -429,15 +429,15 @@ namespace Hunspell
                     Prefixes,
                     out config.prefixes,
                     out config.prefixesByFlag,
-                    out config.prefixFlagsWithEmptyKeys,
-                    out config.prefixFlagsByIndexedKeyCharacter);
+                    out config.prefixesWithEmptyKeys,
+                    out config.prefixesByIndexedKeyCharacter);
 
                 BuildAffixCollections(
                     Suffixes,
                     out config.suffixes,
                     out config.suffixesByFlag,
-                    out config.suffixFlagsWithEmptyKeys,
-                    out config.suffixFlagsByIndexedKeyCharacter);
+                    out config.suffixesWithEmptyKeys,
+                    out config.suffixsByIndexedKeyCharacter);
 
                 config.ContClasses =
                     Enumerable.Concat<AffixEntry>(
@@ -453,23 +453,23 @@ namespace Hunspell
                 List<AffixEntryGroup.Builder<TEntry>> builders,
                 out AffixEntryGroup<TEntry>[] entries,
                 out Dictionary<FlagValue, AffixEntryGroup<TEntry>> entriesByFlag,
-                out List<FlagValue> flagsWithEmptyKeys,
-                out Dictionary<char, List<FlagValue>> flagsByIndexedKeyCharacter)
+                out List<AffixEntryWithDetail<TEntry>> affixesWithEmptyKeys,
+                out Dictionary<char, List<AffixEntryWithDetail<TEntry>>> affixesByIndexedKeyCharacter)
                 where TEntry : AffixEntry
             {
                 if (builders == null || builders.Count == 0)
                 {
                     entries = ArrayEx<AffixEntryGroup<TEntry>>.Empty;
                     entriesByFlag = new Dictionary<FlagValue, AffixEntryGroup<TEntry>>(0);
-                    flagsWithEmptyKeys = new List<FlagValue>(0);
-                    flagsByIndexedKeyCharacter = new Dictionary<char, List<FlagValue>>(0);
+                    affixesWithEmptyKeys = new List<AffixEntryWithDetail<TEntry>>(0);
+                    affixesByIndexedKeyCharacter = new Dictionary<char, List<AffixEntryWithDetail<TEntry>>>(0);
                     return;
                 }
 
                 entries = new AffixEntryGroup<TEntry>[builders.Count];
                 entriesByFlag = new Dictionary<FlagValue, AffixEntryGroup<TEntry>>(entries.Length);
-                flagsWithEmptyKeys = new List<FlagValue>();
-                flagsByIndexedKeyCharacter = new Dictionary<char, List<FlagValue>>();
+                affixesWithEmptyKeys = new List<AffixEntryWithDetail<TEntry>>();
+                affixesByIndexedKeyCharacter = new Dictionary<char, List<AffixEntryWithDetail<TEntry>>>();
 
                 for (var i = 0; i < entries.Length; i++)
                 {
@@ -477,35 +477,30 @@ namespace Hunspell
                     entries[i] = group;
                     entriesByFlag.Add(group.AFlag, group);
 
-                    var hasEmptyKey = false;
                     foreach (var entry in group.Entries)
                     {
                         var key = entry.Key;
+                        var entryWithDetail = new AffixEntryWithDetail<TEntry>(group, entry);
                         if (string.IsNullOrEmpty(key))
                         {
-                            hasEmptyKey = true;
+                            affixesWithEmptyKeys.Add(entryWithDetail);
                         }
                         else
                         {
                             var indexedChar = key[0];
-                            List<FlagValue> keyedFlags;
-                            if (flagsByIndexedKeyCharacter.TryGetValue(indexedChar, out keyedFlags))
+                            List<AffixEntryWithDetail<TEntry>> keyedAffixes;
+                            if (affixesByIndexedKeyCharacter.TryGetValue(indexedChar, out keyedAffixes))
                             {
-                                if (!keyedFlags.Contains(group.AFlag))
-                                {
-                                    keyedFlags.Add(group.AFlag);
-                                }
+                                keyedAffixes.Add(entryWithDetail);
                             }
                             else
                             {
-                                flagsByIndexedKeyCharacter.Add(indexedChar, new List<FlagValue> { group.AFlag });
+                                affixesByIndexedKeyCharacter.Add(indexedChar, new List<AffixEntryWithDetail<TEntry>>
+                                {
+                                    entryWithDetail
+                                });
                             }
                         }
-                    }
-
-                    if (hasEmptyKey)
-                    {
-                        flagsWithEmptyKeys.Add(group.AFlag);
                     }
                 }
             }
