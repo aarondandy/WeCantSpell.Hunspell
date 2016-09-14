@@ -231,7 +231,7 @@ namespace Hunspell
             /// Values used for morphological alias compression.
             /// </summary>
             /// <seealso cref="AffixConfig.AliasM"/>
-            public List<ImmutableArray<string>> AliasM;
+            public List<MorphSet> AliasM;
 
             /// <summary>
             /// Indicates if any <see cref="AliasM"/> entries have been defined.
@@ -395,7 +395,7 @@ namespace Hunspell
                     Replacements = null;
                     config.aliasF = AliasF ?? new List<FlagSet>(0);
                     AliasF = null;
-                    config.aliasM = AliasM ?? new List<ImmutableArray<string>>(0);
+                    config.aliasM = AliasM ?? new List<MorphSet>(0);
                     AliasM = null;
                     config.compoundRules = CompoundRules ?? new List<ImmutableArray<FlagValue>>(0);
                     CompoundRules = null;
@@ -416,7 +416,7 @@ namespace Hunspell
                 {
                     config.replacements = Replacements == null ? new List<SingleReplacementEntry>(0) : Replacements.ToList();
                     config.aliasF = AliasF == null ? new List<FlagSet>(0) : AliasF.ToList();
-                    config.aliasM = AliasM == null ? new List<ImmutableArray<string>>(0) : AliasM.ToList();
+                    config.aliasM = AliasM == null ? new List<MorphSet>(0) : AliasM.ToList();
                     config.compoundRules = CompoundRules == null ? new List<ImmutableArray<FlagValue>>(0) : CompoundRules.ToList();
                     config.compoundPatterns = CompoundPatterns == null ? new List<PatternEntry>(0) : CompoundPatterns.ToList();
                     config.breakTable = BreakTable == null ? new List<string>(0) : BreakTable.ToList();

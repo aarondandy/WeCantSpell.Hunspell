@@ -7,7 +7,7 @@ using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
-    public class FlagSet :
+    public sealed class FlagSet :
         IReadOnlyList<FlagValue>
     {
         public static readonly FlagSet Empty = new FlagSet(ArrayEx<FlagValue>.Empty);

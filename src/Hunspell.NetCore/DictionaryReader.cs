@@ -158,20 +158,20 @@ namespace Hunspell
                 flags = FlagSet.Empty;
             }
 
-            ImmutableArray<string> morphs;
+            MorphSet morphs;
             if (parsed.Morphs != null && parsed.Morphs.Length != 0)
             {
-                var morphBuilder = ImmutableArray.CreateBuilder<string>(parsed.Morphs.Length);
+                var morphValues = new string[parsed.Morphs.Length];
                 for (int i = 0; i < parsed.Morphs.Length; i++)
                 {
-                    morphBuilder.Add(parsed.Morphs[i]);
+                    morphValues[i] = parsed.Morphs[i];
                 }
 
-                morphs = morphBuilder.MoveToOrCreateImmutable();
+                morphs = MorphSet.TakeArray(morphValues);
             }
             else
             {
-                morphs = ImmutableArray<string>.Empty;
+                morphs = MorphSet.Empty;
             }
 
             return AddWord(parsed.Word, flags, morphs);
@@ -199,13 +199,13 @@ namespace Hunspell
             return false;
         }
 
-        private bool AddWord(string word, FlagSet flags, ImmutableArray<string> morphs)
+        private bool AddWord(string word, FlagSet flags, MorphSet morphs)
         {
             return AddWord(word, flags, morphs, false)
                 || AddWordCapitalized(word, flags, morphs, CapitalizationTypeEx.GetCapitalizationType(word, Affix));
         }
 
-        private bool AddWord(string word, FlagSet flags, ImmutableArray<string> morphs, bool onlyUpperCase)
+        private bool AddWord(string word, FlagSet flags, MorphSet morphs, bool onlyUpperCase)
         {
             if (Affix.HasIgnoredChars)
             {
@@ -216,29 +216,29 @@ namespace Hunspell
             {
                 word = word.Reverse();
 
-                if (!morphs.IsDefaultOrEmpty && !Affix.IsAliasM)
+                if (morphs.HasMorphs && !Affix.IsAliasM)
                 {
-                    var morphBuilder = ImmutableArray.CreateBuilder<string>(morphs.Length);
-                    for (int i = morphs.Length - 1; i >= 0; i--)
+                    var newMorphs = new string[morphs.Count];
+                    for (int i = 0; i < morphs.Count; i++)
                     {
-                        morphBuilder.Add(morphs[i].Reverse());
+                        newMorphs[i] = morphs[morphs.Count - i - 1].Reverse();
                     }
 
-                    morphs = morphBuilder.MoveToOrCreateImmutable();
+                    morphs = MorphSet.TakeArray(newMorphs);
                 }
             }
 
             DictionaryEntryOptions options;
-            if (!morphs.IsDefaultOrEmpty)
+            if (morphs.HasMorphs)
             {
                 if (Affix.IsAliasM)
                 {
                     options = DictionaryEntryOptions.AliasM;
-                    var morphBuilder = ImmutableArray.CreateBuilder<string>(morphs.Length);
+                    var morphBuilder = new List<string>();
                     foreach (var originalValue in morphs)
                     {
                         int morphNumber;
-                        ImmutableArray<string> aliasedMorph;
+                        MorphSet aliasedMorph;
                         if (IntEx.TryParseInvariant(originalValue, out morphNumber) && Affix.TryGetAliasM(morphNumber, out aliasedMorph))
                         {
                             morphBuilder.AddRange(aliasedMorph);
@@ -249,7 +249,7 @@ namespace Hunspell
                         }
                     }
 
-                    morphs = morphBuilder.MoveToOrCreateImmutable();
+                    morphs = MorphSet.Create(morphBuilder);
                 }
                 else
                 {
@@ -308,7 +308,7 @@ namespace Hunspell
             return false;
         }
 
-        private bool AddWordCapitalized(string word, FlagSet flags, ImmutableArray<string> morphs, CapitalizationType capType)
+        private bool AddWordCapitalized(string word, FlagSet flags, MorphSet morphs, CapitalizationType capType)
         {
             // add inner capitalized forms to handle the following allcap forms:
             // Mixed caps: OpenOffice.org -> OPENOFFICE.ORG

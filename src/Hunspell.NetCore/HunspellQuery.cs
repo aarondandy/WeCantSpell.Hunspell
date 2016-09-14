@@ -2548,9 +2548,9 @@ namespace Hunspell
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        private bool CopyField(ref string dest, IEnumerable<string> morphs, string var)
+        private bool CopyField(ref string dest, MorphSet morphs, string var)
         {
-            return CopyField(ref dest, string.Join(" ", morphs), var);
+            return CopyField(ref dest, morphs.Join(" "), var);
         }
 
         private bool CopyField(ref string dest, string morph, string var)

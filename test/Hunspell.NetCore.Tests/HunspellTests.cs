@@ -44,7 +44,7 @@ namespace Hunspell.NetCore.Tests
                     new DictionaryEntry(
                         dictionaryWord,
                         FlagSet.Empty,
-                        ImmutableArray<string>.Empty,
+                        MorphSet.Empty,
                         DictionaryEntryOptions.None) });
 
                 var dictionary = dictionaryBuilder.ToImmutable();

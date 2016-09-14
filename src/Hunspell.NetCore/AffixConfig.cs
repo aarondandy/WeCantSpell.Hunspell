@@ -609,19 +609,19 @@ namespace Hunspell
             }
         }
 
-        private List<ImmutableArray<string>> aliasM;
+        private List<MorphSet> aliasM;
 
         /// <summary>
         /// Values used for morphological alias compression.
         /// </summary>
-        public IEnumerable<ImmutableArray<string>> AliasM => aliasM;
+        public IEnumerable<MorphSet> AliasM => aliasM;
 
         /// <summary>
         /// Indicates if any <see cref="AliasM"/> entries have been defined.
         /// </summary>
         public bool IsAliasM => aliasM != null && aliasM.Count != 0;
 
-        public bool TryGetAliasM(int number, out ImmutableArray<string> result)
+        public bool TryGetAliasM(int number, out MorphSet result)
         {
             if (number > 0 && number <= aliasM.Count)
             {
@@ -630,7 +630,7 @@ namespace Hunspell
             }
             else
             {
-                result = default(ImmutableArray<string>);
+                result = MorphSet.Empty;
                 return false;
             }
         }

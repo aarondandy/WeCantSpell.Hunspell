@@ -4,7 +4,7 @@ namespace Hunspell
 {
     public sealed class DictionaryEntry
     {
-        public DictionaryEntry(string word, FlagSet flags, ImmutableArray<string> morphs, DictionaryEntryOptions options)
+        public DictionaryEntry(string word, FlagSet flags, MorphSet morphs, DictionaryEntryOptions options)
         {
             Word = word;
             Flags = flags;
@@ -16,7 +16,7 @@ namespace Hunspell
 
         public FlagSet Flags { get; }
 
-        public ImmutableArray<string> Morphs { get; }
+        public MorphSet Morphs { get; }
 
         public DictionaryEntryOptions Options { get; }
 

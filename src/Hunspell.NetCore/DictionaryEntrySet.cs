@@ -5,7 +5,7 @@ using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
-    public class DictionaryEntrySet :
+    public sealed class DictionaryEntrySet :
         IReadOnlyList<DictionaryEntry>
     {
         public static readonly DictionaryEntrySet Empty = TakeArray(ArrayEx<DictionaryEntry>.Empty);

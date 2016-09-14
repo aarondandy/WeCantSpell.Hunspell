@@ -82,6 +82,7 @@
     <Compile Include="Infrastructure\Swapper.cs" />
     <Compile Include="LongestCommonSubsequenceType.cs" />
     <Compile Include="MorphologicalTags.cs" />
+    <Compile Include="MorphSet.cs" />
     <Compile Include="NGramOptions.cs" />
     <Compile Include="SpecialFlags.cs" />
     <Compile Include="SpellCheckResult.cs" />

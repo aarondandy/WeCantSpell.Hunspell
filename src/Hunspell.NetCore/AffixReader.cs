@@ -512,7 +512,7 @@ namespace Hunspell
             return true;
         }
 
-        private bool TryParseAliasM(string parameterText, List<ImmutableArray<string>> entries)
+        private bool TryParseAliasM(string parameterText, List<MorphSet> entries)
         {
             if (Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes))
             {
@@ -521,7 +521,7 @@ namespace Hunspell
 
             var parts = parameterText.SplitOnTabOrSpace();
 
-            entries.Add(parts.ToImmutableArray());
+            entries.Add(MorphSet.TakeArray(parts));
 
             return true;
         }
@@ -718,7 +718,7 @@ namespace Hunspell
                 }
 
                 // piece 6
-                ImmutableArray<string> morph;
+                MorphSet morph;
                 if (lineMatchGroups[7].Success)
                 {
                     var morphAffixText = lineMatchGroups[7].Value;
@@ -741,12 +741,12 @@ namespace Hunspell
                             morphAffixText = morphAffixText.Reverse();
                         }
 
-                        morph = morphAffixText.SplitOnTabOrSpace().ToImmutableArray();
+                        morph = MorphSet.TakeArray(morphAffixText.SplitOnTabOrSpace());
                     }
                 }
                 else
                 {
-                    morph = ImmutableArray<string>.Empty;
+                    morph = MorphSet.Empty;
                 }
 
                 if (affixGroup == null)
