@@ -13,9 +13,6 @@ namespace Hunspell
 
         private DictionaryEntry[] entries;
 
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private DictionaryEntrySet(DictionaryEntry[] entries)
         {
             this.entries = entries;
@@ -29,9 +26,6 @@ namespace Hunspell
 
         public bool HasEntries => entries.Length != 0;
 
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static DictionaryEntrySet TakeArray(DictionaryEntry[] entries) => new DictionaryEntrySet(entries);
 
         public static DictionaryEntrySet CopyWithItemReplaced(DictionaryEntrySet source, int index, DictionaryEntry replacement)
@@ -62,7 +56,9 @@ namespace Hunspell
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public IEnumerator<DictionaryEntry> GetEnumerator() => ((IEnumerable<DictionaryEntry>)entries).GetEnumerator();
+        public FastEnumerator<DictionaryEntry> GetEnumerator() => new FastEnumerator<DictionaryEntry>(entries);
+
+        IEnumerator<DictionaryEntry> IEnumerable<DictionaryEntry>.GetEnumerator() => ((IEnumerable<DictionaryEntry>)entries).GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => entries.GetEnumerator();
 

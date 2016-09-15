@@ -14,9 +14,6 @@ namespace Hunspell
 
         private FlagValue[] values;
 
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private FlagSet(FlagValue[] values)
         {
             this.values = values;
@@ -83,9 +80,6 @@ namespace Hunspell
 
         public bool Contains(FlagValue value) => value.HasValue && Array.BinarySearch(values, value) >= 0;
 
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public bool ContainsAny(FlagSet values) => ContainsAny(this, values);
 
         public bool ContainsAny(FlagValue a, FlagValue b) =>
@@ -112,7 +106,9 @@ namespace Hunspell
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public IEnumerator<FlagValue> GetEnumerator() => ((IEnumerable<FlagValue>)values).GetEnumerator();
+        public FastEnumerator<FlagValue> GetEnumerator() => new FastEnumerator<FlagValue>(values);
+
+        IEnumerator<FlagValue> IEnumerable<FlagValue>.GetEnumerator() => ((IEnumerable<FlagValue>)values).GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => values.GetEnumerator();
     }

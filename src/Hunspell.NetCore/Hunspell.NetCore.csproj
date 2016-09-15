@@ -74,6 +74,7 @@
     <Compile Include="HunspellQuery.cs" />
     <Compile Include="IHunspellLineReader.cs" />
     <Compile Include="Infrastructure\EncodingEx.cs" />
+    <Compile Include="Infrastructure\FastEnumerator.cs" />
     <Compile Include="Infrastructure\ImmutableArrayStructuralEqualityComparer.cs" />
     <Compile Include="Infrastructure\ImmutableEx.cs" />
     <Compile Include="Infrastructure\ImmutableSortedSetStructuralEqualityComparer.cs" />

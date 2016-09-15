@@ -8,13 +8,10 @@ namespace Hunspell
     public sealed class MorphSet
         : IReadOnlyList<string>
     {
-        public static readonly MorphSet Empty = MorphSet.TakeArray(ArrayEx<string>.Empty);
+        public static readonly MorphSet Empty = TakeArray(ArrayEx<string>.Empty);
 
         private readonly string[] morphs;
 
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private MorphSet(string[] morphs)
         {
             this.morphs = morphs;
@@ -26,25 +23,18 @@ namespace Hunspell
 
         public bool HasMorphs => morphs.Length != 0;
 
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static MorphSet TakeArray(string[] morphs) => new MorphSet(morphs);
 
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static MorphSet Create(List<string> morphs) => TakeArray(morphs.ToArray());
 
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public string Join(string seperator) => string.Join(seperator, morphs);
 
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)morphs).GetEnumerator();
+        public FastEnumerator<string> GetEnumerator() => new FastEnumerator<string>(morphs);
+
+        IEnumerator<string> IEnumerable<string>.GetEnumerator() => ((IEnumerable<string>)morphs).GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => morphs.GetEnumerator();
     }
