@@ -4823,10 +4823,10 @@ namespace Hunspell
                 var ok2 = true;
                 do
                 {
-                    while (pp < compoundRule.Length && wp <= wnum)
+                    while (pp < compoundRule.Count && wp <= wnum)
                     {
                         if (
-                            pp + 1 < compoundRule.Length
+                            pp + 1 < compoundRule.Count
                             &&
                             (
                                 compoundRule[pp + 1] == '*'
@@ -4887,7 +4887,7 @@ namespace Hunspell
                             pp++;
                             wp++;
 
-                            if (compoundRule.Length == pp && wp <= wnum)
+                            if (compoundRule.Count == pp && wp <= wnum)
                             {
                                 ok = false;
                             }
@@ -4898,9 +4898,9 @@ namespace Hunspell
                     {
                         var r = pp;
                         while (
-                            compoundRule.Length > r
+                            compoundRule.Count > r
                             &&
-                            r + 1 < compoundRule.Length
+                            r + 1 < compoundRule.Count
                             &&
                             (
                                 compoundRule[r + 1] == '*'
@@ -4912,7 +4912,7 @@ namespace Hunspell
                             r += 2;
                         }
 
-                        if (compoundRule.Length <= r)
+                        if (compoundRule.Count <= r)
                         {
                             return true;
                         }
@@ -4942,7 +4942,7 @@ namespace Hunspell
                     (
                         all == 0
                         ||
-                        compoundRule.Length <= pp
+                        compoundRule.Count <= pp
                     )
                 )
                 {
@@ -4955,7 +4955,7 @@ namespace Hunspell
                     &&
                     ok2
                     &&
-                    pp + 1 < compoundRule.Length
+                    pp + 1 < compoundRule.Count
                     &&
                     (
                         (compoundRule[pp + 1] == '*')
@@ -4972,7 +4972,7 @@ namespace Hunspell
                     &&
                     ok2
                     &&
-                    compoundRule.Length <= pp
+                    compoundRule.Count <= pp
                 )
                 {
                     return true;

@@ -635,7 +635,7 @@ namespace Hunspell
             }
         }
 
-        private List<ImmutableArray<FlagValue>> compoundRules;
+        private List<CompoundRule> compoundRules;
 
         /// <summary>
         /// Defines custom compound patterns with a regex-like syntax.
@@ -663,7 +663,7 @@ namespace Hunspell
         /// flags. (Use these flags on different enhtries for words).
         /// </para>
         /// </remarks>
-        public IEnumerable<ImmutableArray<FlagValue>> CompoundRules => compoundRules;
+        public IEnumerable<CompoundRule> CompoundRules => compoundRules;
 
         private List<PatternEntry> compoundPatterns;
 

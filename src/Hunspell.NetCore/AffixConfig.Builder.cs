@@ -242,7 +242,7 @@ namespace Hunspell
             /// Defines custom compound patterns with a regex-like syntax.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundRules"/>
-            public List<ImmutableArray<FlagValue>> CompoundRules;
+            public List<CompoundRule> CompoundRules;
 
             /// <summary>
             /// Forbid compounding, if the first word in the compound ends with endchars, and
@@ -397,7 +397,7 @@ namespace Hunspell
                     AliasF = null;
                     config.aliasM = AliasM ?? new List<MorphSet>(0);
                     AliasM = null;
-                    config.compoundRules = CompoundRules ?? new List<ImmutableArray<FlagValue>>(0);
+                    config.compoundRules = CompoundRules ?? new List<CompoundRule>(0);
                     CompoundRules = null;
                     config.compoundPatterns = CompoundPatterns ?? new List<PatternEntry>(0);
                     CompoundPatterns = null;
@@ -417,7 +417,7 @@ namespace Hunspell
                     config.replacements = Replacements == null ? new List<SingleReplacementEntry>(0) : Replacements.ToList();
                     config.aliasF = AliasF == null ? new List<FlagSet>(0) : AliasF.ToList();
                     config.aliasM = AliasM == null ? new List<MorphSet>(0) : AliasM.ToList();
-                    config.compoundRules = CompoundRules == null ? new List<ImmutableArray<FlagValue>>(0) : CompoundRules.ToList();
+                    config.compoundRules = CompoundRules == null ? new List<CompoundRule>(0) : CompoundRules.ToList();
                     config.compoundPatterns = CompoundPatterns == null ? new List<PatternEntry>(0) : CompoundPatterns.ToList();
                     config.breakTable = BreakTable == null ? new List<string>(0) : BreakTable.ToList();
                     config.mapTable = MapTable == null ? new List<ImmutableArray<string>>(0) : MapTable.ToList();

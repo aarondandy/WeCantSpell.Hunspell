@@ -83,6 +83,9 @@ namespace Hunspell
 
         public bool Contains(FlagValue value) => value.HasValue && Array.BinarySearch(values, value) >= 0;
 
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public bool ContainsAny(FlagSet values) => ContainsAny(this, values);
 
         public bool ContainsAny(FlagValue a, FlagValue b) =>
@@ -106,6 +109,9 @@ namespace Hunspell
                 ||
                 (d.HasValue && Contains(d));
 
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public IEnumerator<FlagValue> GetEnumerator() => ((IEnumerable<FlagValue>)values).GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => values.GetEnumerator();

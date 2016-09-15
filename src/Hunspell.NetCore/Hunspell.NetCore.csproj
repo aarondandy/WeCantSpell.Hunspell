@@ -61,6 +61,7 @@
     <Compile Include="CharacterCondition.cs" />
     <Compile Include="CharacterConditionGroup.cs" />
     <Compile Include="CompoundOptions.cs" />
+    <Compile Include="CompoundRule.cs" />
     <Compile Include="Dictionary.Builder.cs" />
     <Compile Include="Dictionary.cs" />
     <Compile Include="DictionaryEntry.cs" />

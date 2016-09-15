@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Hunspell.Infrastructure;
 
 namespace Hunspell
@@ -12,6 +13,9 @@ namespace Hunspell
 
         private DictionaryEntry[] entries;
 
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private DictionaryEntrySet(DictionaryEntry[] entries)
         {
             this.entries = entries;
@@ -25,6 +29,9 @@ namespace Hunspell
 
         public bool HasEntries => entries.Length != 0;
 
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static DictionaryEntrySet TakeArray(DictionaryEntry[] entries) => new DictionaryEntrySet(entries);
 
         public static DictionaryEntrySet CopyWithItemReplaced(DictionaryEntrySet source, int index, DictionaryEntry replacement)
@@ -52,10 +59,16 @@ namespace Hunspell
             return TakeArray(newEntries);
         }
 
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public IEnumerator<DictionaryEntry> GetEnumerator() => ((IEnumerable<DictionaryEntry>)entries).GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => entries.GetEnumerator();
 
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         internal void DestructiveReplace(int index, DictionaryEntry entry)
         {
             entries[index] = entry;

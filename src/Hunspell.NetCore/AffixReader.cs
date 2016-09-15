@@ -526,9 +526,9 @@ namespace Hunspell
             return true;
         }
 
-        private bool TryParseCompoundRuleIntoList(string parameterText, List<ImmutableArray<FlagValue>> entries)
+        private bool TryParseCompoundRuleIntoList(string parameterText, List<CompoundRule> entries)
         {
-            var entryBuilder = ImmutableArray.CreateBuilder<FlagValue>();
+            var entryBuilder = new List<FlagValue>();
 
             if (parameterText.Contains('('))
             {
@@ -562,7 +562,7 @@ namespace Hunspell
                 entryBuilder.AddRange(ParseFlagsInOrder(parameterText));
             }
 
-            entries.Add(entryBuilder.MoveToOrCreateImmutable());
+            entries.Add(CompoundRule.Create(entryBuilder));
             return true;
         }
 
