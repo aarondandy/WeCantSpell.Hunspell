@@ -10,6 +10,7 @@ namespace Hunspell.Infrastructure
         }
 
         private StringBuilder Buffer;
+
         private string toStringCache = null;
 
         public char this[int index]

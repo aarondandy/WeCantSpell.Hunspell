@@ -19,18 +19,12 @@ namespace Hunspell.Infrastructure
             return GetClearedBuilder();
         }
 
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static StringBuilder Get(string value)
         {
             return GetClearedBuilderWithCapacity(value.Length)
                 .Append(value);
         }
 
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static StringBuilder Get(string value, int capacity)
         {
             return GetClearedBuilderWithCapacity(capacity)
@@ -53,9 +47,6 @@ namespace Hunspell.Infrastructure
             return Get(value, valueStartIndex, valueLength, valueLength);
         }
 
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static StringBuilder Get(string value, int valueStartIndex, int valueLength, int capacity)
         {
             return GetClearedBuilderWithCapacity(capacity)
@@ -101,25 +92,22 @@ namespace Hunspell.Infrastructure
 
         private static StringBuilder GetClearedBuilderWithCapacity(int capacity)
         {
-            var result = ThreadCache;
-            if (result == null || capacity > MaxCachedBuilderCapacity)
+            if (capacity <= MaxCachedBuilderCapacity)
             {
-                result = new StringBuilder(capacity);
-            }
-            else
-            {
-                ThreadCache = null;
-                if (result.Capacity < capacity)
+                var result = ThreadCache;
+                if (result != null)
                 {
-                    result = new StringBuilder(capacity);
-                }
-                else
-                {
-                    result.Clear();
+                    ThreadCache = null;
+                    if (result.Capacity >= capacity)
+                    {
+                        result.Clear();
+                        return result;
+                    }
+
                 }
             }
 
-            return result;
+            return new StringBuilder(capacity);
         }
     }
 }

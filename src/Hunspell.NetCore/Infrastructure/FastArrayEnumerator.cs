@@ -7,6 +7,9 @@ namespace Hunspell.Infrastructure
         private readonly T[] values;
         private int index;
 
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public FastArrayEnumerator(T[] values)
         {
             this.values = values;

@@ -11,34 +11,22 @@ namespace Hunspell.Infrastructure
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static bool StartsWith(this string @this, char character)
-        {
-            return @this.Length != 0 && @this[0] == character;
-        }
+        public static bool StartsWith(this string @this, char character) => @this.Length != 0 && @this[0] == character;
 
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static bool EndsWith(this string @this, char character)
-        {
-            return @this.Length != 0 && @this[@this.Length - 1] == character;
-        }
+        public static bool EndsWith(this string @this, char character) => @this.Length != 0 && @this[@this.Length - 1] == character;
 
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static string[] SplitOnTabOrSpace(this string @this)
-        {
-            return @this.Split(SpaceOrTab, StringSplitOptions.RemoveEmptyEntries);
-        }
+        public static string[] SplitOnTabOrSpace(this string @this) => @this.Split(SpaceOrTab, StringSplitOptions.RemoveEmptyEntries);
 
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static string[] SplitOnComma(this string @this)
-        {
-            return @this.Split(CommaArray);
-        }
+        public static string[] SplitOnComma(this string @this) => @this.Split(CommaArray);
 
         public static string Reverse(this string @this)
         {
@@ -67,10 +55,7 @@ namespace Hunspell.Infrastructure
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static bool Contains(this string @this, char c)
-        {
-            return @this.IndexOf(c) >= 0;
-        }
+        public static bool Contains(this string @this, char c) => @this.IndexOf(c) >= 0;
 
         public static string Replace(this string @this, int index, int removeCount, string replacement)
         {
@@ -105,19 +90,21 @@ namespace Hunspell.Infrastructure
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static bool EqualsOffset(string a, int aOffset, string b, int bOffset, int length)
-        {
-            return (ReferenceEquals(a, b) && aOffset == bOffset && length >= 0)
-                || string.CompareOrdinal(a, aOffset, b, bOffset, length) == 0;
-        }
+        public static bool EqualsOffset(string a, int aOffset, string b, int bOffset, int length) =>
+            (
+                aOffset == bOffset
+                &&
+                ReferenceEquals(a, b)
+                &&
+                length >= 0
+            )
+            ||
+            string.CompareOrdinal(a, aOffset, b, bOffset, length) == 0;
 
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static char GetCharOrTerminator(this string @this, int index)
-        {
-            return index < @this.Length ? @this[index] : '\0';
-        }
+        public static char GetCharOrTerminator(this string @this, int index) => index < @this.Length ? @this[index] : '\0';
 
         public static bool ContainsSubstringOrdinal(this string @this, string value, int startIndex, int length)
         {
