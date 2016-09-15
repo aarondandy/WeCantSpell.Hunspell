@@ -50,13 +50,13 @@ namespace Hunspell
             }
 
             var captures = match.Groups[1].Captures;
-            var builder = ImmutableArray.CreateBuilder<CharacterCondition>(captures.Count);
+            var conditions = new CharacterCondition[captures.Count];
             for (var captureIndex = 0; captureIndex < captures.Count; captureIndex++)
             {
-                builder.Add(ParseSingle(captures[captureIndex].Value));
+                conditions[captureIndex] = ParseSingle(captures[captureIndex].Value);
             }
 
-            return new CharacterConditionGroup(builder.MoveToOrCreateImmutable());
+            return CharacterConditionGroup.TakeArray(conditions);
         }
 
         private static CharacterCondition ParseSingle(string text)

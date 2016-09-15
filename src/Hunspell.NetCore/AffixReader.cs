@@ -220,10 +220,10 @@ namespace Hunspell
                     Builder.CompoundSyllableNum = parameters;
                     return true;
                 case "WORDCHARS": // parse in the extra word characters
-                    Builder.WordChars = parameters.ToCharArray();
+                    Builder.WordChars = CharacterCollection.Create(parameters);
                     return true;
                 case "IGNORE": // parse in the ignored characters (for example, Arabic optional diacretics characters)
-                    Builder.IgnoredChars = parameters.ToCharArray();
+                    Builder.IgnoredChars = CharacterCollection.Create(parameters);
                     return true;
                 case "COMPOUNDFLAG": // parse in the flag used by the controlled compound words
                     return TryParseFlag(parameters, out Builder.CompoundFlag);
@@ -359,7 +359,7 @@ namespace Hunspell
             return parse(parameterText, entries);
         }
 
-        private static readonly char[] DefaultCompoundVowels = new[] { 'A', 'E', 'I', 'O', 'U', 'a', 'e', 'i', 'o', 'u' };
+        private static readonly CharacterCollection DefaultCompoundVowels = CharacterCollection.TakeArray(new[] { 'A', 'E', 'I', 'O', 'U', 'a', 'e', 'i', 'o', 'u' });
 
         private bool TryParseCompoundSyllable(string parameters)
         {
@@ -378,16 +378,10 @@ namespace Hunspell
                 }
             }
 
-            if (parts.Length > 1)
-            {
-                var vowelChars = parts[1].ToCharArray();
-                Array.Sort(vowelChars);
-                Builder.CompoundVowels = vowelChars;
-            }
-            else
-            {
-                Builder.CompoundVowels = (char[])DefaultCompoundVowels.Clone();
-            }
+            Builder.CompoundVowels =
+                1 < parts.Length
+                ? CharacterCollection.Create(parts[1])
+                : DefaultCompoundVowels;
 
             return true;
         }
@@ -439,9 +433,9 @@ namespace Hunspell
             return true;
         }
 
-        private static bool TryParseMapEntry(string parameterText, List<ImmutableArray<string>> entries)
+        private static bool TryParseMapEntry(string parameterText, List<MapEntry> entries)
         {
-            var entryBuilder = ImmutableArray.CreateBuilder<string>();
+            var values = new List<string>(parameterText.Length);
 
             for (int k = 0; k < parameterText.Length; ++k)
             {
@@ -458,10 +452,10 @@ namespace Hunspell
                     }
                 }
 
-                entryBuilder.Add(parameterText.Substring(chb, che - chb));
+                values.Add(parameterText.Substring(chb, che - chb));
             }
 
-            entries.Add(entryBuilder.MoveToOrCreateImmutable());
+            entries.Add(MapEntry.Create(values));
 
             return true;
         }
@@ -671,7 +665,7 @@ namespace Hunspell
                     affixText = StringBuilderPool.Get(affixInput);
                 }
 
-                if (!ArrayEx.IsNullOrEmpty(Builder.IgnoredChars))
+                if (Builder.IgnoredChars != null && Builder.IgnoredChars.HasChars)
                 {
                     affixText.RemoveChars(Builder.IgnoredChars);
                 }

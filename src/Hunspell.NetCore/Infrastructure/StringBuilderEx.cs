@@ -85,7 +85,7 @@ namespace Hunspell.Infrastructure
             return index < @this.Length ? @this[index] : '\0';
         }
 
-        public static void RemoveChars(this StringBuilder @this, char[] chars)
+        public static void RemoveChars(this StringBuilder @this, CharacterCollection chars)
         {
             var nextWriteLocation = 0;
             for (var searchLocation = 0; searchLocation < @this.Length; searchLocation++)

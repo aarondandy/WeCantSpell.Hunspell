@@ -1,69 +1,62 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
     public sealed class CharacterConditionGroup : IReadOnlyList<CharacterCondition>
     {
-        public static readonly CharacterConditionGroup Empty = new CharacterConditionGroup(ImmutableArray<CharacterCondition>.Empty);
+        public static readonly CharacterConditionGroup Empty = CharacterConditionGroup.TakeArray(ArrayEx<CharacterCondition>.Empty);
 
-        public static readonly CharacterConditionGroup AllowAnySingleCharacter = new CharacterConditionGroup(ImmutableArray.Create(CharacterCondition.AllowAny));
+        public static readonly CharacterConditionGroup AllowAnySingleCharacter = CharacterConditionGroup.Create(CharacterCondition.AllowAny);
 
-        public CharacterConditionGroup(ImmutableArray<CharacterCondition> conditions)
+        private CharacterConditionGroup(CharacterCondition[] conditions)
         {
-            Conditions = conditions;
+            this.conditions = conditions;
         }
 
-        public CharacterConditionGroup(IEnumerable<CharacterCondition> conditions)
-            : this(conditions.ToImmutableArray())
-        {
-        }
+        private readonly CharacterCondition[] conditions;
 
-        private ImmutableArray<CharacterCondition> Conditions { get; }
+        public int Count => conditions.Length;
 
-        public int Count => Conditions.Length;
+        public CharacterCondition this[int index] => conditions[index];
 
-        public CharacterCondition this[int index] => Conditions[index];
+        public bool AllowsAnySingleCharacter => conditions.Length == 1 && conditions[0].AllowsAny;
 
-        public bool AllowsAnySingleCharacter => Conditions.Length == 1 && Conditions[0].AllowsAny;
+        public static CharacterConditionGroup TakeArray(CharacterCondition[] conditions) => new CharacterConditionGroup(conditions);
 
-        public IEnumerator<CharacterCondition> GetEnumerator()
-        {
-            return ((IEnumerable<CharacterCondition>)Conditions).GetEnumerator();
-        }
+        public static CharacterConditionGroup Create(CharacterCondition condition) => TakeArray(new[] { condition });
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return ((IEnumerable)Conditions).GetEnumerator();
-        }
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public FastArrayEnumerator<CharacterCondition> GetEnumerator() => new FastArrayEnumerator<CharacterCondition>(conditions);
 
-        public string GetEncoded()
-        {
-            return string.Concat(Conditions.Select(c => c.GetEncoded()));
-        }
+        IEnumerator<CharacterCondition> IEnumerable<CharacterCondition>.GetEnumerator() => ((IEnumerable<CharacterCondition>)conditions).GetEnumerator();
 
-        public override string ToString()
-        {
-            return GetEncoded();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => conditions.GetEnumerator();
+
+        public string GetEncoded() => string.Concat(conditions.Select(c => c.GetEncoded()));
+
+        public override string ToString() => GetEncoded();
 
         /// <summary>
-        /// Determines if the start of the given <paramref name="text"/> matches the <see cref="Conditions"/>.
+        /// Determines if the start of the given <paramref name="text"/> matches the conditions.
         /// </summary>
         /// <param name="text">The text to check.</param>
-        /// <returns>True when the start of the <paramref name="text"/> is matched by the <see cref="Conditions"/>.</returns>
+        /// <returns>True when the start of the <paramref name="text"/> is matched by the conditions.</returns>
         public bool IsStartingMatch(string text)
         {
-            if (string.IsNullOrEmpty(text) || Conditions.Length > text.Length)
+            if (string.IsNullOrEmpty(text) || conditions.Length > text.Length)
             {
                 return false;
             }
 
-            for (int i = 0; i < Conditions.Length; i++)
+            for (int i = 0; i < conditions.Length; i++)
             {
-                if (!Conditions[i].IsMatch(text[i]))
+                if (!conditions[i].IsMatch(text[i]))
                 {
                     return false;
                 }
@@ -73,20 +66,20 @@ namespace Hunspell
         }
 
         /// <summary>
-        /// Determines if the end of the given <paramref name="text"/> matches the <see cref="Conditions"/>.
+        /// Determines if the end of the given <paramref name="text"/> matches the conditions.
         /// </summary>
         /// <param name="text">The text to check.</param>
-        /// <returns>True when the end of the <paramref name="text"/> is matched by the <see cref="Conditions"/>.</returns>
+        /// <returns>True when the end of the <paramref name="text"/> is matched by the conditions.</returns>
         public bool IsEndingMatch(string text)
         {
-            if (string.IsNullOrEmpty(text) || Conditions.Length > text.Length)
+            if (string.IsNullOrEmpty(text) || conditions.Length > text.Length)
             {
                 return false;
             }
 
-            for (int textIndex = text.Length - 1, conditionIndex = Conditions.Length - 1; conditionIndex >= 0; --textIndex, --conditionIndex)
+            for (int textIndex = text.Length - 1, conditionIndex = conditions.Length - 1; conditionIndex >= 0; --textIndex, --conditionIndex)
             {
-                if (!Conditions[conditionIndex].IsMatch(text[textIndex]))
+                if (!conditions[conditionIndex].IsMatch(text[textIndex]))
                 {
                     return false;
                 }
@@ -97,14 +90,14 @@ namespace Hunspell
 
         public bool IsOnlyPossibleMatch(string text)
         {
-            if (string.IsNullOrEmpty(text) || Conditions.Length != text.Length)
+            if (string.IsNullOrEmpty(text) || conditions.Length != text.Length)
             {
                 return false;
             }
 
             for (var i = 0; i < text.Length; i++)
             {
-                var condition = Conditions[i];
+                var condition = conditions[i];
                 if (!condition.PermitsSingleCharacter || condition.Characters[0] != text[i])
                 {
                     return false;

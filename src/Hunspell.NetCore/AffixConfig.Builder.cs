@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -273,7 +272,7 @@ namespace Hunspell
             /// Mappings between related characters.
             /// </summary>
             /// <seealso cref="AffixConfig.MapTable"/>
-            public List<ImmutableArray<string>> MapTable;
+            public List<MapEntry> MapTable;
 
             /// <summary>
             /// Phonetic transcription entries.
@@ -292,20 +291,20 @@ namespace Hunspell
             /// Voewls for calculating syllables.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundVowels"/>
-            public char[] CompoundVowels { get; set; }
+            public CharacterCollection CompoundVowels { get; set; }
 
             /// <summary>
             /// Extra word characters.
             /// </summary>
             /// <seealso cref="AffixConfig.WordChars"/>
-            public char[] WordChars { get; set; }
+            public CharacterCollection WordChars { get; set; }
 
             /// <summary>
             /// Ignored characters (for example, Arabic optional diacretics characters)
             /// for dictionary words, affixes and input words.
             /// </summary>
             /// <seealso cref="AffixConfig.IgnoredChars"/>
-            public char[] IgnoredChars { get; set; }
+            public CharacterCollection IgnoredChars { get; set; }
 
             /// <summary>
             /// Affix and dictionary file version string.
@@ -383,9 +382,9 @@ namespace Hunspell
                     CompoundSyllableNum = CompoundSyllableNum,
                     Encoding = Encoding,
                     CompoundMaxSyllable = CompoundMaxSyllable,
-                    CompoundVowels = ToImmutableSortedSet(CompoundVowels),
-                    WordChars = ToImmutableSortedSet(WordChars),
-                    IgnoredChars = ToImmutableSortedSet(IgnoredChars),
+                    CompoundVowels = CompoundVowels ?? CharacterCollection.Empty,
+                    WordChars = WordChars ?? CharacterCollection.Empty,
+                    IgnoredChars = IgnoredChars ?? CharacterCollection.Empty,
                     Version = Version
                 };
 
@@ -403,7 +402,7 @@ namespace Hunspell
                     CompoundPatterns = null;
                     config.breakTable = BreakTable ?? new List<string>(0);
                     BreakTable = null;
-                    config.mapTable = MapTable ?? new List<ImmutableArray<string>>(0);
+                    config.mapTable = MapTable ?? new List<MapEntry>(0);
                     MapTable = null;
                     config.phone = Phone ?? new List<PhoneticEntry>(0);
                     Phone = null;
@@ -420,7 +419,7 @@ namespace Hunspell
                     config.compoundRules = CompoundRules == null ? new List<CompoundRule>(0) : CompoundRules.ToList();
                     config.compoundPatterns = CompoundPatterns == null ? new List<PatternEntry>(0) : CompoundPatterns.ToList();
                     config.breakTable = BreakTable == null ? new List<string>(0) : BreakTable.ToList();
-                    config.mapTable = MapTable == null ? new List<ImmutableArray<string>>(0) : MapTable.ToList();
+                    config.mapTable = MapTable == null ? new List<MapEntry>(0) : MapTable.ToList();
                     config.phone = Phone == null ? new List<PhoneticEntry>(0) : Phone.ToList();
                     config.inputConversions = InputConversions == null ? new Dictionary<string, MultiReplacementEntry>(0) : new Dictionary<string, MultiReplacementEntry>(InputConversions);
                     config.outputConversions = OutputConversions == null ? new Dictionary<string, MultiReplacementEntry>(0) : new Dictionary<string, MultiReplacementEntry>(OutputConversions);
@@ -504,11 +503,6 @@ namespace Hunspell
             public void EnableOptions(AffixConfigOptions options)
             {
                 Options |= options;
-            }
-
-            private static ImmutableSortedSet<T> ToImmutableSortedSet<T>(IEnumerable<T> items)
-            {
-                return items == null ? ImmutableSortedSet<T>.Empty : items.ToImmutableSortedSet();
             }
         }
     }

@@ -56,7 +56,7 @@ namespace Hunspell
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public FastEnumerator<DictionaryEntry> GetEnumerator() => new FastEnumerator<DictionaryEntry>(entries);
+        public FastArrayEnumerator<DictionaryEntry> GetEnumerator() => new FastArrayEnumerator<DictionaryEntry>(entries);
 
         IEnumerator<DictionaryEntry> IEnumerable<DictionaryEntry>.GetEnumerator() => ((IEnumerable<DictionaryEntry>)entries).GetEnumerator();
 

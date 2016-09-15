@@ -53,7 +53,7 @@ namespace Hunspell.Infrastructure
             return new string(chars);
         }
 
-        public static string RemoveChars(this string @this, ImmutableSortedSet<char> chars)
+        public static string RemoveChars(this string @this, CharacterCollection chars)
         {
             if (string.IsNullOrEmpty(@this) || chars == null || chars.IsEmpty)
             {

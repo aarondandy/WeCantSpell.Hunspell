@@ -2,12 +2,12 @@
 
 namespace Hunspell.Infrastructure
 {
-    public struct FastEnumerator<T>
+    public struct FastArrayEnumerator<T>
     {
         private readonly T[] values;
         private int index;
 
-        public FastEnumerator(T[] values)
+        public FastArrayEnumerator(T[] values)
         {
             this.values = values;
             index = -1;

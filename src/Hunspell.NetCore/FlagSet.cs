@@ -12,7 +12,7 @@ namespace Hunspell
     {
         public static readonly FlagSet Empty = new FlagSet(ArrayEx<FlagValue>.Empty);
 
-        private FlagValue[] values;
+        private readonly FlagValue[] values;
 
         private FlagSet(FlagValue[] values)
         {
@@ -106,7 +106,7 @@ namespace Hunspell
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public FastEnumerator<FlagValue> GetEnumerator() => new FastEnumerator<FlagValue>(values);
+        public FastArrayEnumerator<FlagValue> GetEnumerator() => new FastArrayEnumerator<FlagValue>(values);
 
         IEnumerator<FlagValue> IEnumerable<FlagValue>.GetEnumerator() => ((IEnumerable<FlagValue>)values).GetEnumerator();
 

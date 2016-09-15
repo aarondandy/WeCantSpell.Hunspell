@@ -74,8 +74,7 @@
     <Compile Include="HunspellQuery.cs" />
     <Compile Include="IHunspellLineReader.cs" />
     <Compile Include="Infrastructure\EncodingEx.cs" />
-    <Compile Include="Infrastructure\FastEnumerator.cs" />
-    <Compile Include="Infrastructure\ImmutableArrayStructuralEqualityComparer.cs" />
+    <Compile Include="Infrastructure\FastArrayEnumerator.cs" />
     <Compile Include="Infrastructure\ImmutableEx.cs" />
     <Compile Include="Infrastructure\ImmutableSortedSetStructuralEqualityComparer.cs" />
     <Compile Include="Infrastructure\SimulatedCString.cs" />
@@ -83,9 +82,11 @@
     <Compile Include="Infrastructure\StringBuilderPool.cs" />
     <Compile Include="Infrastructure\Swapper.cs" />
     <Compile Include="LongestCommonSubsequenceType.cs" />
+    <Compile Include="MapEntry.cs" />
     <Compile Include="MorphologicalTags.cs" />
     <Compile Include="MorphSet.cs" />
     <Compile Include="NGramOptions.cs" />
+    <Compile Include="CharacterCollection.cs" />
     <Compile Include="SpecialFlags.cs" />
     <Compile Include="SpellCheckResult.cs" />
     <Compile Include="SpellCheckResultType.cs" />

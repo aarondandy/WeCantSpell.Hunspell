@@ -32,7 +32,7 @@ namespace Hunspell
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public FastEnumerator<string> GetEnumerator() => new FastEnumerator<string>(morphs);
+        public FastArrayEnumerator<string> GetEnumerator() => new FastArrayEnumerator<string>(morphs);
 
         IEnumerator<string> IEnumerable<string>.GetEnumerator() => ((IEnumerable<string>)morphs).GetEnumerator();
 

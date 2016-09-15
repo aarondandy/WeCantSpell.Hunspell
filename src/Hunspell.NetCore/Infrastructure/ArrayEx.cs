@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 
 namespace Hunspell.Infrastructure
 {
@@ -32,14 +31,6 @@ namespace Hunspell.Infrastructure
             }
 
             return true;
-        }
-
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static bool IsNullOrEmpty<T>(T[] array)
-        {
-            return array == null || array.Length == 0;
         }
     }
 

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -798,7 +797,7 @@ namespace Hunspell
             return outputConversions.TryConvert(text, out converted);
         }
 
-        private List<ImmutableArray<string>> mapTable;
+        private List<MapEntry> mapTable;
 
         /// <summary>
         /// Mappings between related characters.
@@ -831,7 +830,7 @@ namespace Hunspell
         /// </code>
         /// </example>
         /// <seealso cref="Replacements"/>
-        public IEnumerable<ImmutableArray<string>> MapTable => mapTable;
+        public IEnumerable<MapEntry> MapTable => mapTable;
 
         private List<PhoneticEntry> phone;
 
@@ -866,7 +865,7 @@ namespace Hunspell
         /// Voewls for calculating syllables.
         /// </summary>
         /// <seealso cref="CompoundMaxSyllable"/>
-        public ImmutableSortedSet<char> CompoundVowels { get; private set; }
+        public CharacterCollection CompoundVowels { get; private set; }
 
         /// <summary>
         /// Extra word characters.
@@ -877,7 +876,7 @@ namespace Hunspell
         /// For example, dot, dash, n-dash, numbers, percent sign
         /// are word character in Hungarian.
         /// </remarks>
-        public ImmutableSortedSet<char> WordChars { get; private set; }
+        public CharacterCollection WordChars { get; private set; }
 
         /// <summary>
         /// Ignored characters (for example, Arabic optional diacretics characters)
@@ -887,7 +886,7 @@ namespace Hunspell
         /// Useful for optional characters, as Arabic (harakat) or Hebrew (niqqud) diacritical marks (see
         /// tests/ignore.* test dictionary in Hunspell distribution).
         /// </remarks>
-        public ImmutableSortedSet<char> IgnoredChars { get; private set; }
+        public CharacterCollection IgnoredChars { get; private set; }
 
         /// <summary>
         /// Affix and dictionary file version string.
@@ -913,7 +912,7 @@ namespace Hunspell
 
         public bool HasCompoundPatterns => compoundPatterns.Count != 0;
 
-        public bool HasCompoundVowels => !CompoundVowels.IsEmpty;
+        public bool HasCompoundVowels => CompoundVowels.HasChars;
 
         public bool HasReplacements => replacements.Count != 0;
 
@@ -923,9 +922,9 @@ namespace Hunspell
 
         public bool HasBreakEntries => breakTable.Count != 0;
 
-        public bool HasIgnoredChars => !IgnoredChars.IsEmpty;
+        public bool HasIgnoredChars => IgnoredChars.HasChars;
 
-        public bool HasWordChars => !WordChars.IsEmpty;
+        public bool HasWordChars => WordChars.HasChars;
 
         public bool HasSuffixes => suffixesByFlag.Count != 0;
 
