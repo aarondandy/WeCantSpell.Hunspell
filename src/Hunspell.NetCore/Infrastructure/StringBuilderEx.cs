@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Immutable;
-using System.Linq;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Hunspell.Infrastructure
@@ -16,11 +13,11 @@ namespace Hunspell.Infrastructure
 #if DEBUG
             if (indexA < 0 || indexA > @this.Length)
             {
-                throw new ArgumentOutOfRangeException(nameof(indexA));
+                throw new System.ArgumentOutOfRangeException(nameof(indexA));
             }
             if (indexB < 0 || indexB > @this.Length)
             {
-                throw new ArgumentOutOfRangeException(nameof(indexB));
+                throw new System.ArgumentOutOfRangeException(nameof(indexB));
             }
 #endif
 
@@ -85,7 +82,7 @@ namespace Hunspell.Infrastructure
             return index < @this.Length ? @this[index] : '\0';
         }
 
-        public static void RemoveChars(this StringBuilder @this, CharacterCollection chars)
+        public static void RemoveChars(this StringBuilder @this, CharacterSet chars)
         {
             var nextWriteLocation = 0;
             for (var searchLocation = 0; searchLocation < @this.Length; searchLocation++)

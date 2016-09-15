@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Collections.Immutable;
 
 namespace Hunspell
 {
@@ -108,9 +107,9 @@ namespace Hunspell
         /// <summary>
         /// Optional morphological fields separated by spaces or tabulators.
         /// </summary>
-        public ImmutableArray<string> MorphCode { get; private set; }
+        public MorphSet MorphCode { get; private set; }
 
-        public bool HasMorphCode => !MorphCode.IsDefaultOrEmpty;
+        public bool HasMorphCode => MorphCode.HasMorphs;
 
         /// <summary>
         /// Text matching conditions that are to be met.
@@ -145,7 +144,7 @@ namespace Hunspell
             string strip,
             string affixText,
             CharacterConditionGroup conditions,
-            IEnumerable<string> morph,
+            MorphSet morph,
             FlagSet contClass
         )
             where TEntry : AffixEntry, new()
@@ -155,21 +154,15 @@ namespace Hunspell
                 Strip = strip,
                 Append = affixText,
                 Conditions = conditions,
-                MorphCode = morph == null ? ImmutableArray<string>.Empty : morph.ToImmutableArray(),
+                MorphCode = morph ?? MorphSet.Empty,
                 ContClass = contClass ?? FlagSet.Empty
             };
         }
 
         public bool ContainsContClass(FlagValue flag) => flag.HasValue && ContClass.Contains(flag);
 
-        public bool ContainsAnyContClass(FlagValue a, FlagValue b)
-        {
-            return HasContClasses && ContClass.ContainsAny(a,b);
-        }
+        public bool ContainsAnyContClass(FlagValue a, FlagValue b) => HasContClasses && ContClass.ContainsAny(a,b);
 
-        public bool ContainsAnyContClass(FlagValue a, FlagValue b, FlagValue c)
-        {
-            return HasContClasses && ContClass.ContainsAny(a, b, c);
-        }
+        public bool ContainsAnyContClass(FlagValue a, FlagValue b, FlagValue c) => HasContClasses && ContClass.ContainsAny(a, b, c);
     }
 }

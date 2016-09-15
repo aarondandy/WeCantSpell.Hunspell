@@ -1,7 +1,8 @@
 ﻿using Hunspell.Infrastructure;
 using System;
-using System.Collections.Immutable;
 using System.Text.RegularExpressions;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Hunspell
 {
@@ -11,30 +12,36 @@ namespace Hunspell
             @"^(\[[^\]]*\]|\.|[^\[\]\.])*$",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-        public CharacterCondition(ImmutableSortedSet<char> characters, bool restricted)
+        public static readonly CharacterCondition AllowAny = new CharacterCondition(CharacterSet.Empty, true);
+
+        public CharacterCondition(CharacterSet characters, bool restricted)
         {
             Characters = characters;
             Restricted = restricted;
         }
 
-        public CharacterCondition(char c, bool restricted)
-            : this(ImmutableSortedSet.Create(c), restricted)
+        private CharacterCondition(char character, bool restricted)
+            : this(CharacterSet.Create(character), restricted)
         {
         }
 
-        public CharacterCondition(char[] characters, bool restricted)
-            : this(ImmutableSortedSet.Create(characters), restricted)
+        private CharacterCondition(char[] characters, bool restricted)
+            : this(CharacterSet.TakeArray(characters), restricted)
         {
         }
 
-        public static readonly CharacterCondition AllowAny = new CharacterCondition(ImmutableSortedSet<char>.Empty, true);
-
-        public ImmutableSortedSet<char> Characters { get; }
+        public CharacterSet Characters { get; }
 
         /// <summary>
         /// Indicates that the <see cref="Characters"/> are restricted when <c>true</c>.
         /// </summary>
         public bool Restricted { get; }
+
+        public static CharacterCondition TakeArray(char[] characters, bool restricted) => new CharacterCondition(characters, restricted);
+
+        public static CharacterCondition Create(char character, bool restricted) => new CharacterCondition(character, restricted);
+
+        public static CharacterCondition Create(IEnumerable<char> characters, bool restricted) => TakeArray(characters.ToArray(), restricted);
 
         public static CharacterConditionGroup Parse(string text)
         {
@@ -74,7 +81,7 @@ namespace Hunspell
                     return AllowAny;
                 }
 
-                return new CharacterCondition(singleChar, false);
+                return Create(singleChar, false);
             }
 
             if (!text.StartsWith('[') || !text.EndsWith(']'))
@@ -84,17 +91,17 @@ namespace Hunspell
 
             if (text[1] == '^')
             {
-                return new CharacterCondition(text.ToCharArray(2, text.Length - 3), true);
+                return TakeArray(text.ToCharArray(2, text.Length - 3), true);
             }
             else
             {
-                return new CharacterCondition(text.ToCharArray(1, text.Length - 2), false);
+                return TakeArray(text.ToCharArray(1, text.Length - 2), false);
             }
         }
 
         public bool IsMatch(char c)
         {
-            var isInList = (Characters?.Contains(c)).GetValueOrDefault();
+            var isInList = Characters != null && Characters.Contains(c);
 
             if (Restricted)
             {
@@ -133,9 +140,6 @@ namespace Hunspell
             return (Restricted ? "[^" : "[") + lettersText + "]";
         }
 
-        public override string ToString()
-        {
-            return GetEncoded();
-        }
+        public override string ToString() => GetEncoded();
     }
 }

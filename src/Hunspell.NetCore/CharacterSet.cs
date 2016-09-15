@@ -6,14 +6,14 @@ using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
-    public sealed class CharacterCollection :
+    public sealed class CharacterSet :
         IReadOnlyCollection<char>
     {
-        public static readonly CharacterCollection Empty = new CharacterCollection(ArrayEx<char>.Empty);
+        public static readonly CharacterSet Empty = new CharacterSet(ArrayEx<char>.Empty);
 
         private readonly char[] values;
 
-        private CharacterCollection(char[] values)
+        private CharacterSet(char[] values)
         {
             this.values = values;
         }
@@ -26,13 +26,15 @@ namespace Hunspell
 
         public bool IsEmpty => values.Length == 0;
 
-        public static CharacterCollection TakeArray(char[] values)
+        public static CharacterSet TakeArray(char[] values)
         {
             Array.Sort(values);
-            return new CharacterCollection(values);
+            return new CharacterSet(values);
         }
 
-        public static CharacterCollection Create(string values) => TakeArray(values.ToCharArray());
+        public static CharacterSet Create(string values) => TakeArray(values.ToCharArray());
+
+        public static CharacterSet Create(char value) => TakeArray(new[] { value });
 
         public bool Contains(char value) => Array.BinarySearch(values, value) >= 0;
 

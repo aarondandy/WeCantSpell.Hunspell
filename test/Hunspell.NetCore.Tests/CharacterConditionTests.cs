@@ -229,7 +229,7 @@ namespace Hunspell.NetCore.Tests
             [InlineData('오', 'ي', false)]
             public void single_character_allows_exactly_that_character(char allowedLetter, char givenLetter, bool expected)
             {
-                var condition = new CharacterCondition(allowedLetter, false);
+                var condition = CharacterCondition.Create(allowedLetter, false);
 
                 var actual = condition.IsMatch(givenLetter);
 
@@ -248,7 +248,7 @@ namespace Hunspell.NetCore.Tests
             [InlineData(new[] { 'x', 'y', 'z' }, 'z', true)]
             public void range_allows_only_specified_characters(char[] range, char givenLetter, bool expected)
             {
-                var condition = new CharacterCondition(range, false);
+                var condition = CharacterCondition.Create(range, false);
 
                 var actual = condition.IsMatch(givenLetter);
 
@@ -267,7 +267,7 @@ namespace Hunspell.NetCore.Tests
             [InlineData(new[] { 'x', 'y', 'z' }, 'z', false)]
             public void range_resricts_specified_characters(char[] range, char givenLetter, bool expected)
             {
-                var condition = new CharacterCondition(range, true);
+                var condition = CharacterCondition.Create(range, true);
 
                 var actual = condition.IsMatch(givenLetter);
 

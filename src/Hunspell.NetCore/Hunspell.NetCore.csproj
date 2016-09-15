@@ -52,6 +52,7 @@
     <Compile Include="AffixConfigOptions.cs" />
     <Compile Include="AffixConfig.Builder.cs" />
     <Compile Include="AffixEntry.cs" />
+    <Compile Include="AffixEntryCollection.cs" />
     <Compile Include="AffixEntryGroup.cs" />
     <Compile Include="AffixEntryOptions.cs" />
     <Compile Include="AffixConfig.cs" />
@@ -84,7 +85,7 @@
     <Compile Include="MorphologicalTags.cs" />
     <Compile Include="MorphSet.cs" />
     <Compile Include="NGramOptions.cs" />
-    <Compile Include="CharacterCollection.cs" />
+    <Compile Include="CharacterSet.cs" />
     <Compile Include="SpecialFlags.cs" />
     <Compile Include="SpellCheckResult.cs" />
     <Compile Include="SpellCheckResultType.cs" />

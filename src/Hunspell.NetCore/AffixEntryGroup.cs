@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Collections.Immutable;
 
 namespace Hunspell
 {
@@ -10,11 +9,11 @@ namespace Hunspell
     public sealed class AffixEntryGroup<TEntry>
         where TEntry : AffixEntry
     {
-        public AffixEntryGroup(FlagValue aFlag, AffixEntryOptions options, IEnumerable<TEntry> entries)
+        public AffixEntryGroup(FlagValue aFlag, AffixEntryOptions options, AffixEntryCollection<TEntry> entries)
         {
             AFlag = aFlag;
             Options = options;
-            Entries = ImmutableArray.CreateRange(entries);
+            Entries = entries;
         }
 
         /// <summary>
@@ -30,7 +29,7 @@ namespace Hunspell
         /// <summary>
         /// All of the entries that make up this group.
         /// </summary>
-        public ImmutableArray<TEntry> Entries { get; }
+        public AffixEntryCollection<TEntry> Entries { get; }
 
         /// <summary>
         /// Indicates if a group has the <see cref="AffixEntryOptions.CrossProduct"/> option enabled.
@@ -42,7 +41,7 @@ namespace Hunspell
     public static class AffixEntryGroup
     {
         public sealed class Builder<TEntry>
-            where TEntry: AffixEntry
+            where TEntry : AffixEntry
         {
             /// <summary>
             /// ID used to represent the affix group.
@@ -61,7 +60,7 @@ namespace Hunspell
 
             public AffixEntryGroup<TEntry> ToGroup()
             {
-                return new AffixEntryGroup<TEntry>(AFlag, Options, Entries);
+                return new AffixEntryGroup<TEntry>(AFlag, Options, AffixEntryCollection<TEntry>.Create(Entries));
             }
         }
     }

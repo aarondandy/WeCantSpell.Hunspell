@@ -1,7 +1,6 @@
 ﻿using Hunspell.Infrastructure;
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -220,10 +219,10 @@ namespace Hunspell
                     Builder.CompoundSyllableNum = parameters;
                     return true;
                 case "WORDCHARS": // parse in the extra word characters
-                    Builder.WordChars = CharacterCollection.Create(parameters);
+                    Builder.WordChars = CharacterSet.Create(parameters);
                     return true;
                 case "IGNORE": // parse in the ignored characters (for example, Arabic optional diacretics characters)
-                    Builder.IgnoredChars = CharacterCollection.Create(parameters);
+                    Builder.IgnoredChars = CharacterSet.Create(parameters);
                     return true;
                 case "COMPOUNDFLAG": // parse in the flag used by the controlled compound words
                     return TryParseFlag(parameters, out Builder.CompoundFlag);
@@ -359,7 +358,7 @@ namespace Hunspell
             return parse(parameterText, entries);
         }
 
-        private static readonly CharacterCollection DefaultCompoundVowels = CharacterCollection.TakeArray(new[] { 'A', 'E', 'I', 'O', 'U', 'a', 'e', 'i', 'o', 'u' });
+        private static readonly CharacterSet DefaultCompoundVowels = CharacterSet.TakeArray(new[] { 'A', 'E', 'I', 'O', 'U', 'a', 'e', 'i', 'o', 'u' });
 
         private bool TryParseCompoundSyllable(string parameters)
         {
@@ -380,7 +379,7 @@ namespace Hunspell
 
             Builder.CompoundVowels =
                 1 < parts.Length
-                ? CharacterCollection.Create(parts[1])
+                ? CharacterSet.Create(parts[1])
                 : DefaultCompoundVowels;
 
             return true;

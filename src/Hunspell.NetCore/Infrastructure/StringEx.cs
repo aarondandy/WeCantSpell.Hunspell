@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 
 namespace Hunspell.Infrastructure
@@ -53,7 +52,7 @@ namespace Hunspell.Infrastructure
             return new string(chars);
         }
 
-        public static string RemoveChars(this string @this, CharacterCollection chars)
+        public static string RemoveChars(this string @this, CharacterSet chars)
         {
             if (string.IsNullOrEmpty(@this) || chars == null || chars.IsEmpty)
             {

@@ -291,20 +291,20 @@ namespace Hunspell
             /// Voewls for calculating syllables.
             /// </summary>
             /// <seealso cref="AffixConfig.CompoundVowels"/>
-            public CharacterCollection CompoundVowels { get; set; }
+            public CharacterSet CompoundVowels { get; set; }
 
             /// <summary>
             /// Extra word characters.
             /// </summary>
             /// <seealso cref="AffixConfig.WordChars"/>
-            public CharacterCollection WordChars { get; set; }
+            public CharacterSet WordChars { get; set; }
 
             /// <summary>
             /// Ignored characters (for example, Arabic optional diacretics characters)
             /// for dictionary words, affixes and input words.
             /// </summary>
             /// <seealso cref="AffixConfig.IgnoredChars"/>
-            public CharacterCollection IgnoredChars { get; set; }
+            public CharacterSet IgnoredChars { get; set; }
 
             /// <summary>
             /// Affix and dictionary file version string.
@@ -382,9 +382,9 @@ namespace Hunspell
                     CompoundSyllableNum = CompoundSyllableNum,
                     Encoding = Encoding,
                     CompoundMaxSyllable = CompoundMaxSyllable,
-                    CompoundVowels = CompoundVowels ?? CharacterCollection.Empty,
-                    WordChars = WordChars ?? CharacterCollection.Empty,
-                    IgnoredChars = IgnoredChars ?? CharacterCollection.Empty,
+                    CompoundVowels = CompoundVowels ?? CharacterSet.Empty,
+                    WordChars = WordChars ?? CharacterSet.Empty,
+                    IgnoredChars = IgnoredChars ?? CharacterSet.Empty,
                     Version = Version
                 };
 

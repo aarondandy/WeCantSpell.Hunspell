@@ -1,6 +1,4 @@
-﻿using System.Collections.Immutable;
-
-namespace Hunspell
+﻿namespace Hunspell
 {
     public sealed class DictionaryEntry
     {
