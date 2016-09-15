@@ -101,22 +101,6 @@ namespace Hunspell.Infrastructure
             @this.Remove(nextWriteLocation, @this.Length - nextWriteLocation);
         }
 
-        public static void RemoveChars(this StringBuilder @this, ImmutableSortedSet<char> chars)
-        {
-            var nextWriteLocation = 0;
-            for (var searchLocation = 0; searchLocation < @this.Length; searchLocation++)
-            {
-                var c = @this[searchLocation];
-                if (!chars.Contains(c))
-                {
-                    @this[nextWriteLocation] = c;
-                    nextWriteLocation++;
-                }
-            }
-
-            @this.Remove(nextWriteLocation, @this.Length - nextWriteLocation);
-        }
-
         public static void Reverse(this StringBuilder @this)
         {
             if (@this == null || @this.Length <= 1)

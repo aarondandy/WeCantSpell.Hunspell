@@ -157,28 +157,6 @@ namespace Hunspell.Infrastructure
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
-        public static string ConcatSubstring(string str0, int startIndex0, int count0, string str1, char c2, string str3, int startIndex3, int count3)
-        {
-            var builder = StringBuilderPool.Get(count0 + str1.Length + 1 + count3);
-
-            builder.Append(str0, startIndex0, count0);
-            builder.Append(str1);
-            builder.Append(c2);
-            builder.Append(str3, startIndex3, count3);
-
-            return StringBuilderPool.GetStringAndReturn(builder);
-        }
-
-        public static string ConcatSubstring(string str0, int startIndex0, int count0, string str1, int startIndex1, int count1)
-        {
-            var builder = StringBuilderPool.Get(count0 + count1);
-
-            builder.Append(str0, startIndex0, count0);
-            builder.Append(str1, startIndex1, count1);
-
-            return StringBuilderPool.GetStringAndReturn(builder);
-        }
-
         public static bool IsReverseSubset(string s1, string s2)
         {
             var len = s2.Length;

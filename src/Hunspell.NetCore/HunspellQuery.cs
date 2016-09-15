@@ -1466,17 +1466,16 @@ namespace Hunspell
             {
                 foreach (var mapEntry in Affix.MapTable)
                 {
-                    for (var k = 0; k < mapEntry.Count; k++)
+                    foreach (var mapEntryValue in mapEntry)
                     {
-                        var len = mapEntry[k].Length;
-                        if (StringEx.EqualsOffset(mapEntry[k], 0, word, wn, len))
+                        if (StringEx.EqualsOffset(mapEntryValue, 0, word, wn, mapEntryValue.Length))
                         {
                             inMap = true;
-                            var cn = candidate.Length;
-                            for (var l = 0; l < mapEntry.Count; l++)
+                            var candidatePrefix = candidate;
+                            foreach (var otherMapEntryValue in mapEntry)
                             {
-                                candidate = candidate.Substring(0, cn) + mapEntry[l];
-                                MapRelated(word, ref candidate, wn + len, wlst, cpdSuggest, ref timer, ref timeLimit);
+                                candidate = candidatePrefix + otherMapEntryValue;
+                                MapRelated(word, ref candidate, wn + mapEntryValue.Length, wlst, cpdSuggest, ref timer, ref timeLimit);
 
                                 if (timer.HasValue && timer.GetValueOrDefault() == 0)
                                 {
