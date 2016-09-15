@@ -39,42 +39,45 @@ namespace Hunspell
                 return CapitalizationType.None;
             }
 
-            int numberCapitalized = 0;
-            int numberNeutral = 0;
-            bool hasLower = false;
+            var hasFoundMoreCaps = false;
+            var firstIsUpper = false;
+            var hasLower = false;
             var c = word[0];
             if (char.IsUpper(c))
             {
-                numberCapitalized = 1;
+                firstIsUpper = true;
+            }
+            else if (!CharIsNeutral(c, affix))
+            {
+                hasLower = true;
+            }
 
-                for (int i = 1; i < word.Length; i++)
+            for (int i = 1; i < word.Length; i++)
+            {
+                c = word[i];
+
+                if (char.IsUpper(c))
                 {
-                    c = word[i];
-
-                    if (char.IsUpper(c))
-                    {
-                        numberCapitalized++;
-                    }
-                    else if (CharIsNeutral(c, affix))
-                    {
-                        numberNeutral++;
-                    }
-                    else
-                    {
-                        hasLower = true;
-                    }
-
-                    if (hasLower && numberCapitalized > 1)
-                    {
-                        break;
-                    }
+                    hasFoundMoreCaps = true;
+                }
+                else if (!CharIsNeutral(c, affix))
+                {
+                    hasLower = true;
                 }
 
-                if (numberCapitalized == 1)
+                if (hasLower && hasFoundMoreCaps)
+                {
+                    break;
+                }
+            }
+
+            if (firstIsUpper)
+            {
+                if (!hasFoundMoreCaps)
                 {
                     return CapitalizationType.Init;
                 }
-                if (numberCapitalized == word.Length || (numberCapitalized + numberNeutral) == word.Length)
+                if (!hasLower)
                 {
                     return CapitalizationType.All;
                 }
@@ -83,43 +86,11 @@ namespace Hunspell
             }
             else
             {
-                if (CharIsNeutral(c, affix))
-                {
-                    numberNeutral = 1;
-                }
-                else
-                {
-                    hasLower = true;
-                }
-
-                for (int i = 1; i < word.Length; i++)
-                {
-                    c = word[i];
-
-                    if (char.IsUpper(c))
-                    {
-                        numberCapitalized++;
-                    }
-                    else if (CharIsNeutral(c, affix))
-                    {
-                        numberNeutral++;
-                    }
-                    else
-                    {
-                        hasLower = true;
-                    }
-
-                    if (hasLower && numberCapitalized != 0)
-                    {
-                        break;
-                    }
-                }
-
-                if (numberCapitalized == 0)
+                if (!hasFoundMoreCaps)
                 {
                     return CapitalizationType.None;
                 }
-                if (numberCapitalized == word.Length || (numberCapitalized + numberNeutral) == word.Length)
+                if (!hasLower)
                 {
                     return CapitalizationType.All;
                 }
@@ -131,9 +102,7 @@ namespace Hunspell
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        private static bool CharIsNeutral(char c, AffixConfig affix)
-        {
-            return !char.IsLower(c) || (c > 127 && affix.Culture.TextInfo.ToUpper(c) == c);
-        }
+        private static bool CharIsNeutral(char c, AffixConfig affix) =>
+            !char.IsLower(c) || (c > 127 && affix.Culture.TextInfo.ToUpper(c) == c);
     }
 }

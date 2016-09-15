@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Hunspell.Infrastructure;
 
@@ -322,10 +323,7 @@ namespace Hunspell
             /// </summary>
             /// <returns>A constructed affix config.</returns>
             /// <seealso cref="AffixConfig"/>
-            public AffixConfig ToImmutable()
-            {
-                return ToImmutable(destructive: false);
-            }
+            public AffixConfig ToImmutable() => ToImmutable(destructive: false);
 
             /// <summary>
             /// Constructs a <see cref="AffixConfig"/> based on the values set in the builder
@@ -337,10 +335,7 @@ namespace Hunspell
             /// This method can leave the builder in an invalid state
             /// but provides better performance for file reads.
             /// </remarks>
-            public AffixConfig MoveToImmutable()
-            {
-                return ToImmutable(destructive: true);
-            }
+            public AffixConfig MoveToImmutable() => ToImmutable(destructive: true);
 
             private AffixConfig ToImmutable(bool destructive)
             {
@@ -500,6 +495,9 @@ namespace Hunspell
             /// Enables the given <paramref name="options"/> bits.
             /// </summary>
             /// <param name="options">Various bit options to enable.</param>
+#if !PRE_NETSTANDARD && !DEBUG
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public void EnableOptions(AffixConfigOptions options)
             {
                 Options |= options;

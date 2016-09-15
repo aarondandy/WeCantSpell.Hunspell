@@ -58,10 +58,7 @@ namespace Hunspell
             /// </summary>
             public List<TEntry> Entries { get; set; }
 
-            public AffixEntryGroup<TEntry> ToGroup()
-            {
-                return new AffixEntryGroup<TEntry>(AFlag, Options, AffixEntryCollection<TEntry>.Create(Entries));
-            }
+            public AffixEntryGroup<TEntry> ToGroup() => new AffixEntryGroup<TEntry>(AFlag, Options, AffixEntryCollection<TEntry>.Create(Entries));
         }
     }
 }

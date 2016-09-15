@@ -109,8 +109,6 @@ namespace Hunspell
         /// </summary>
         public MorphSet MorphCode { get; private set; }
 
-        public bool HasMorphCode => MorphCode.HasMorphs;
-
         /// <summary>
         /// Text matching conditions that are to be met.
         /// </summary>
@@ -135,9 +133,11 @@ namespace Hunspell
 
         public FlagSet ContClass { get; private set; }
 
-        public bool HasContClasses => ContClass.HasFlags;
-
         public abstract string Key { get; }
+
+        public bool HasMorphCode => MorphCode.HasMorphs;
+
+        public bool HasContClasses => ContClass.HasFlags;
 
         public static TEntry Create<TEntry>
         (

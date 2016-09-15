@@ -194,6 +194,9 @@ namespace Hunspell
         /// <seealso cref="AffixConfigOptions.CheckSharps"/>
         public bool CheckSharps { get; private set; }
 
+        /// <summary>
+        /// Indicates that simplified coumpounds are enabled.
+        /// </summary>
         public bool SimplifiedCompound { get; private set; }
 
         /// <summary>
@@ -490,8 +493,6 @@ namespace Hunspell
         /// </summary>
         public Encoding Encoding { get; private set; }
 
-        private List<SingleReplacementEntry> replacements;
-
         /// <summary>
         /// Specifies modifications to try first
         /// </summary>
@@ -536,6 +537,8 @@ namespace Hunspell
         /// <seealso cref="CheckCompoundRep"/>
         public IEnumerable<SingleReplacementEntry> Replacements => replacements;
 
+        private List<SingleReplacementEntry> replacements;
+
         /// <summary>
         /// Suffixes attached to root words to make other words.
         /// </summary>
@@ -546,7 +549,17 @@ namespace Hunspell
         /// </summary>
         public IEnumerable<AffixEntryGroup<PrefixEntry>> Prefixes => prefixesByFlag.Values;
 
-        private List<FlagSet> aliasF;
+        private Dictionary<FlagValue, AffixEntryGroup<PrefixEntry>> prefixesByFlag;
+
+        private List<AffixEntryWithDetail<PrefixEntry>> prefixesWithEmptyKeys;
+
+        private Dictionary<char, List<AffixEntryWithDetail<PrefixEntry>>> prefixesByIndexedKeyCharacter;
+
+        private Dictionary<FlagValue, AffixEntryGroup<SuffixEntry>> suffixesByFlag;
+
+        private List<AffixEntryWithDetail<SuffixEntry>> suffixesWithEmptyKeys;
+
+        private Dictionary<char, List<AffixEntryWithDetail<SuffixEntry>>> suffixsByIndexedKeyCharacter;
 
         /// <summary>
         /// Ordinal numbers for affix flag compression.
@@ -589,24 +602,12 @@ namespace Hunspell
         /// </example>
         public IEnumerable<FlagSet> AliasF => aliasF;
 
+        private List<FlagSet> aliasF;
+
         /// <summary>
         /// Inidicates if any <see cref="AliasF"/> entries have been defined.
         /// </summary>
         public bool IsAliasF => aliasF != null && aliasF.Count != 0;
-
-        public bool TryGetAliasF(int number, out FlagSet result)
-        {
-            if (number > 0 && number <= aliasF.Count)
-            {
-                result = aliasF[number - 1];
-                return true;
-            }
-            else
-            {
-                result = null;
-                return false;
-            }
-        }
 
         private List<MorphSet> aliasM;
 
@@ -619,22 +620,6 @@ namespace Hunspell
         /// Indicates if any <see cref="AliasM"/> entries have been defined.
         /// </summary>
         public bool IsAliasM => aliasM != null && aliasM.Count != 0;
-
-        public bool TryGetAliasM(int number, out MorphSet result)
-        {
-            if (number > 0 && number <= aliasM.Count)
-            {
-                result = aliasM[number - 1];
-                return true;
-            }
-            else
-            {
-                result = MorphSet.Empty;
-                return false;
-            }
-        }
-
-        private List<CompoundRule> compoundRules;
 
         /// <summary>
         /// Defines custom compound patterns with a regex-like syntax.
@@ -664,7 +649,7 @@ namespace Hunspell
         /// </remarks>
         public IEnumerable<CompoundRule> CompoundRules => compoundRules;
 
-        private List<PatternEntry> compoundPatterns;
+        private List<CompoundRule> compoundRules;
 
         /// <summary>
         /// Forbid compounding, if the first word in the compound ends with endchars, and
@@ -688,23 +673,9 @@ namespace Hunspell
         /// </example>
         public IEnumerable<PatternEntry> CompoundPatterns => compoundPatterns;
 
+        private List<PatternEntry> compoundPatterns;
+
         public int CompoundPatternsCount => (compoundPatterns?.Count).GetValueOrDefault();
-
-        public bool TryGetCompoundPattern(int number, out PatternEntry result)
-        {
-            if (compoundPatterns != null && number > 0 && number <= compoundPatterns.Count)
-            {
-                result = compoundPatterns[number - 1];
-                return true;
-            }
-            else
-            {
-                result = null;
-                return false;
-            }
-        }
-
-        private List<string> breakTable;
 
         /// <summary>
         /// Defines new break points for breaking words and checking word parts separately.
@@ -764,7 +735,7 @@ namespace Hunspell
         /// <seealso cref="CompoundRules"/>
         public IEnumerable<string> BreakTable => breakTable;
 
-        private Dictionary<string, MultiReplacementEntry> inputConversions;
+        private List<string> breakTable;
 
         /// <summary>
         /// Input conversion entries.
@@ -774,30 +745,14 @@ namespace Hunspell
         /// </remarks>
         public IReadOnlyDictionary<string, MultiReplacementEntry> InputConversions => inputConversions;
 
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public bool TryConvertInput(string text, out string converted)
-        {
-            return inputConversions.TryConvert(text, out converted);
-        }
-
-        private Dictionary<string, MultiReplacementEntry> outputConversions;
+        private Dictionary<string, MultiReplacementEntry> inputConversions;
 
         /// <summary>
         /// Output conversion entries.
         /// </summary>
         public IReadOnlyDictionary<string, MultiReplacementEntry> OutputConversions => outputConversions;
 
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public bool TryConvertOutput(string text, out string converted)
-        {
-            return outputConversions.TryConvert(text, out converted);
-        }
-
-        private List<MapEntry> mapTable;
+        private Dictionary<string, MultiReplacementEntry> outputConversions;
 
         /// <summary>
         /// Mappings between related characters.
@@ -832,7 +787,7 @@ namespace Hunspell
         /// <seealso cref="Replacements"/>
         public IEnumerable<MapEntry> MapTable => mapTable;
 
-        private List<PhoneticEntry> phone;
+        private List<MapEntry> mapTable;
 
         /// <summary>
         /// Phonetic transcription entries.
@@ -853,6 +808,8 @@ namespace Hunspell
         /// </para>
         /// </remarks>
         public IEnumerable<PhoneticEntry> Phone => phone;
+
+        private List<PhoneticEntry> phone;
 
         /// <summary>
         /// Maximum syllable number, that may be in a
@@ -934,22 +891,59 @@ namespace Hunspell
 
         public bool HasPhoneEntires => phone.Count != 0;
 
-        private Dictionary<FlagValue, AffixEntryGroup<PrefixEntry>> prefixesByFlag;
-
-        private List<AffixEntryWithDetail<PrefixEntry>> prefixesWithEmptyKeys;
-
-        private Dictionary<char, List<AffixEntryWithDetail<PrefixEntry>>> prefixesByIndexedKeyCharacter;
-
-        private Dictionary<FlagValue, AffixEntryGroup<SuffixEntry>> suffixesByFlag;
-
-        private List<AffixEntryWithDetail<SuffixEntry>> suffixesWithEmptyKeys;
-
-        private Dictionary<char, List<AffixEntryWithDetail<SuffixEntry>>> suffixsByIndexedKeyCharacter;
-
-        public IEnumerable<AffixEntryWithDetail<PrefixEntry>> GetPrefixesWithoutKeys()
+        public bool TryGetAliasF(int number, out FlagSet result)
         {
-            return prefixesWithEmptyKeys;
+            if (number > 0 && number <= aliasF.Count)
+            {
+                result = aliasF[number - 1];
+                return true;
+            }
+            else
+            {
+                result = null;
+                return false;
+            }
         }
+
+        public bool TryGetAliasM(int number, out MorphSet result)
+        {
+            if (number > 0 && number <= aliasM.Count)
+            {
+                result = aliasM[number - 1];
+                return true;
+            }
+            else
+            {
+                result = MorphSet.Empty;
+                return false;
+            }
+        }
+
+        public bool TryGetCompoundPattern(int number, out PatternEntry result)
+        {
+            if (number > 0 && number <= compoundPatterns.Count)
+            {
+                result = compoundPatterns[number - 1];
+                return true;
+            }
+            else
+            {
+                result = null;
+                return false;
+            }
+        }
+
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public bool TryConvertInput(string text, out string converted) => inputConversions.TryConvert(text, out converted);
+
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public bool TryConvertOutput(string text, out string converted) => outputConversions.TryConvert(text, out converted);
+
+        public IEnumerable<AffixEntryWithDetail<PrefixEntry>> GetPrefixesWithoutKeys() => prefixesWithEmptyKeys;
 
         public IEnumerable<AffixEntryWithDetail<PrefixEntry>> GetPrefixesWithKeySubset(string word)
         {

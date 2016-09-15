@@ -19,7 +19,7 @@ namespace Hunspell
 
         AliasM = 1 << 3,
 
-        [Obsolete("This flag should be used because this port should not preallocate arrays of a fixed size.")]
+        [Obsolete("This flag should not be used because this port should not need it.")]
         LongCond = 1 << 4
     }
 }
