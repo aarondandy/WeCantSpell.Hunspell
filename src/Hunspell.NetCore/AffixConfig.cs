@@ -951,7 +951,7 @@ namespace Hunspell
             prefixesByIndexedKeyCharacter.TryGetValue('.', out dotAffixes);
 
             List<AffixEntryWithDetail<PrefixEntry>> characterAffixes;
-            if (word.Length != 0 && word[0] != '.')
+            if (!word.StartsWith('.'))
             {
                 prefixesByIndexedKeyCharacter.TryGetValue(word[0], out characterAffixes);
             }
@@ -982,7 +982,7 @@ namespace Hunspell
             suffixsByIndexedKeyCharacter.TryGetValue('.', out dotAffixes);
 
             List<AffixEntryWithDetail<SuffixEntry>> characterAffixes;
-            if (word.Length != 0 && word[word.Length - 1] != '.')
+            if (!word.EndsWith('.'))
             {
                 suffixsByIndexedKeyCharacter.TryGetValue(word[word.Length - 1], out characterAffixes);
             }

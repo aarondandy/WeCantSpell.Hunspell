@@ -4363,6 +4363,13 @@ namespace Hunspell
             SuffixExtra = 0;
             DictionaryEntry rv;
 
+            var isEndCompound = inCompound == CompoundOptions.End;
+            if (isEndCompound && !Affix.CompoundPermitFlag.HasValue)
+            {
+                // not possible to permit prefixes in compounds
+                return null;
+            }
+
             // first handle the special case of 0 length prefixes
             foreach (var pe in Affix.GetPrefixesWithoutKeys())
             {
@@ -4371,7 +4378,7 @@ namespace Hunspell
                     (inCompound != CompoundOptions.Not || !pe.ContainsContClass(Affix.OnlyInCompound))
                     &&
                     // permit prefixes in compounds
-                    (inCompound != CompoundOptions.End || pe.ContainsContClass(Affix.CompoundPermitFlag))
+                    (!isEndCompound || pe.ContainsContClass(Affix.CompoundPermitFlag))
                 )
                 {
                     // check prefix
@@ -4392,7 +4399,7 @@ namespace Hunspell
                     (inCompound != CompoundOptions.Not || !pptr.ContainsContClass(Affix.OnlyInCompound))
                     &&
                     // permit prefixes in compounds
-                    (inCompound != CompoundOptions.End || pptr.ContainsContClass(Affix.CompoundPermitFlag))
+                    (!isEndCompound || pptr.ContainsContClass(Affix.CompoundPermitFlag))
                 )
                 {
                     // check prefix
@@ -4493,88 +4500,96 @@ namespace Hunspell
 
         private DictionaryEntry SuffixCheck(string word, AffixEntryOptions sfxOpts, AffixEntryWithDetail<PrefixEntry> pfx, FlagValue cclass, FlagValue needFlag, CompoundOptions inCompound)
         {
-            DictionaryEntry rv = null;
+            DictionaryEntry rv;
 
             if (!Affix.HasSuffixes)
             {
                 return null;
             }
 
+            var isBeginCompound = inCompound == CompoundOptions.Begin;
+            if (isBeginCompound && !Affix.CompoundPermitFlag.HasValue)
+            {
+                // not possible to be signed with compoundpermitflag flag
+                return null;
+            }
+
             // first handle the special case of 0 length suffixes
             foreach (var se in Affix.GetSuffixesWithoutKeys())
             {
-                if (!cclass.HasValue || se.HasContClasses)
-                {
-                    // suffixes are not allowed in beginning of compounds
-                    if (
+                // suffixes are not allowed in beginning of compounds
+                if (
+                    (!cclass.HasValue || se.HasContClasses)
+                    &&
+                    (
+                        !isBeginCompound
+                        ||
+                        // except when signed with compoundpermitflag flag
+                        se.ContainsContClass(Affix.CompoundPermitFlag)
+                    )
+                    &&
+                    // fogemorpheme
+                    (
+                        inCompound != CompoundOptions.Not
+                        ||
+                        !se.ContainsContClass(Affix.OnlyInCompound)
+                    )
+                    &&
+                    // needaffix on prefix or first suffix
+                    (
+                        cclass.HasValue
+                        ||
+                        !se.ContainsContClass(Affix.NeedAffix)
+                        ||
                         (
-                            inCompound != CompoundOptions.Begin
-                            ||
-                            // except when signed with compoundpermitflag flag
-                            se.ContainsContClass(Affix.CompoundPermitFlag)
-                        )
-                        &&
-                        (
-                            !Affix.Circumfix.HasValue
-                            ||
-                            // no circumfix flag in prefix and suffix
-                            (
-                                (
-                                    pfx == null
-                                    ||
-                                    !pfx.HasContClasses
-                                    ||
-                                    !pfx.ContainsContClass(Affix.Circumfix)
-                                )
-                                &&
-                                (
-                                    !se.HasContClasses
-                                    ||
-                                    !se.ContainsContClass(Affix.Circumfix)
-                                )
-                            )
-                            ||
-                            // circumfix flag in prefix AND suffix
-                            (
-                                pfx != null
-                                && pfx.ContainsContClass(Affix.Circumfix)
-                                && se.ContainsContClass(Affix.Circumfix)
-                            )
-                        )
-                        &&
-                        // fogemorpheme
-                        (
-                            inCompound != CompoundOptions.Not
-                            ||
-                            !se.ContainsContClass(Affix.OnlyInCompound)
-                        )
-                        &&
-                        // needaffix on prefix or first suffix
-                        (
-                            cclass.HasValue
-                            ||
-                            !se.ContainsContClass(Affix.NeedAffix)
-                            ||
-                            (
-                                pfx != null
-                                &&
-                                !pfx.ContainsContClass(Affix.NeedAffix)
-                            )
+                            pfx != null
+                            &&
+                            !pfx.ContainsContClass(Affix.NeedAffix)
                         )
                     )
+                    &&
+                    (
+                        !Affix.Circumfix.HasValue
+                        ||
+                        // no circumfix flag in prefix and suffix
+                        (
+                            (
+                                pfx == null
+                                ||
+                                !pfx.HasContClasses
+                                ||
+                                !pfx.ContainsContClass(Affix.Circumfix)
+                            )
+                            &&
+                            (
+                                !se.HasContClasses
+                                ||
+                                !se.ContainsContClass(Affix.Circumfix)
+                            )
+                        )
+                        ||
+                        // circumfix flag in prefix AND suffix
+                        (
+                            pfx != null
+                            &&
+                            pfx.ContainsContClass(Affix.Circumfix)
+                            &&
+                            se.ContainsContClass(Affix.Circumfix)
+                        )
+                    )
+                )
+                {
+                    rv = CheckWordSuffix(se, word, sfxOpts, pfx, cclass, needFlag, inCompound != CompoundOptions.Not ? default(FlagValue) : Affix.OnlyInCompound);
+                    if (rv != null)
                     {
-                        rv = CheckWordSuffix(se, word, sfxOpts, pfx, cclass, needFlag, inCompound != CompoundOptions.Not ? default(FlagValue) : Affix.OnlyInCompound);
-                        if (rv != null)
-                        {
-                            SetSuffix(se);
-                            return rv;
-                        }
+                        SetSuffix(se);
+                        return rv;
                     }
                 }
             }
 
             // now handle the general case
-            if (string.IsNullOrEmpty(word))
+            if (word.Length == 0)
             {
                 return null;
             }
@@ -4584,10 +4599,38 @@ namespace Hunspell
                 if (
                     (
                         // suffixes are not allowed in beginning of compounds
-                        inCompound != CompoundOptions.Begin
+                        !isBeginCompound
                         ||
                         // except when signed with compoundpermitflag flag
                         sptr.ContainsContClass(Affix.CompoundPermitFlag)
+                    )
+                    &&
+                    // fogemorpheme
+                    (
+                        inCompound != CompoundOptions.Not
+                        ||
+                        !sptr.ContainsContClass(Affix.OnlyInCompound)
+                    )
+                    &&
+                    (
+                        inCompound != CompoundOptions.End
+                        ||
+                        pfx != null
+                        ||
+                        !sptr.ContainsContClass(Affix.OnlyInCompound)
+                    )
+                    &&
+                    // needaffix on prefix or first suffix
+                    (
+                        cclass.HasValue
+                        ||
+                        !sptr.ContainsContClass(Affix.NeedAffix)
+                        ||
+                        (
+                            pfx != null
+                            &&
+                            !pfx.ContainsContClass(Affix.NeedAffix)
+                        )
                     )
                     &&
                     (
@@ -4613,65 +4656,38 @@ namespace Hunspell
                         // circumfix flag in prefix AND suffix
                         (
                             pfx != null
-                            && pfx.ContainsContClass(Affix.Circumfix)
-                            && sptr.ContainsContClass(Affix.Circumfix)
-                        )
-                    )
-                    &&
-                    // fogemorpheme
-                    (
-                        inCompound != CompoundOptions.Not
-                        ||
-                        !sptr.ContainsContClass(Affix.OnlyInCompound)
-                    )
-                    &&
-                    // needaffix on prefix or first suffix
-                    (
-                        cclass.HasValue
-                        ||
-                        !sptr.ContainsContClass(Affix.NeedAffix)
-                        ||
-                        (
-                            pfx != null
                             &&
-                            !pfx.ContainsContClass(Affix.NeedAffix)
+                            pfx.ContainsContClass(Affix.Circumfix)
+                            &&
+                            sptr.ContainsContClass(Affix.Circumfix)
                         )
                     )
                 )
                 {
-                    if (
-                        inCompound != CompoundOptions.End
-                        ||
-                        pfx != null
-                        ||
-                        !sptr.ContainsContClass(Affix.OnlyInCompound)
-                    )
+                    rv = CheckWordSuffix(sptr, word, sfxOpts, pfx, cclass, needFlag, (inCompound != CompoundOptions.Not ? default(FlagValue) : Affix.OnlyInCompound));
+                    if (rv != null)
                     {
-                        rv = CheckWordSuffix(sptr, word, sfxOpts, pfx, cclass, needFlag, (inCompound != CompoundOptions.Not ? default(FlagValue) : Affix.OnlyInCompound));
-                        if (rv != null)
+                        SetSuffix(sptr);
+                        SuffixFlag = sptr.AFlag;
+
+                        if (!sptr.HasContClasses)
                         {
-                            SetSuffix(sptr);
-                            SuffixFlag = sptr.AFlag;
-
-                            if (!sptr.HasContClasses)
-                            {
-                                SuffixAppend = sptr.Key;
-                            }
-                            else if (
-                                Affix.IsHungarian
-                                && sptr.Key.Length >= 2
-                                && sptr.Key[0] == 'i'
-                                && sptr.Key[1] != 'y'
-                                && sptr.Key[1] != 't'
-                            )
-                            {
-                                // LANG_hu section: spec. Hungarian rule
-                                SuffixExtra = 1;
-                            }
-
-                            // END of LANG_hu section
-                            return rv;
+                            SuffixAppend = sptr.Key;
                         }
+                        else if (
+                            Affix.IsHungarian
+                            && sptr.Key.Length >= 2
+                            && sptr.Key[0] == 'i'
+                            && sptr.Key[1] != 'y'
+                            && sptr.Key[1] != 't'
+                        )
+                        {
+                            // LANG_hu section: spec. Hungarian rule
+                            SuffixExtra = 1;
+                        }
+
+                        // END of LANG_hu section
+                        return rv;
                     }
                 }
             }
