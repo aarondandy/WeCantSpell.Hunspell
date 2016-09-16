@@ -145,28 +145,20 @@ namespace Hunspell.Infrastructure
 
         public static bool IsReverseSubset(string s1, string s2)
         {
-            var len = s2.Length;
-            var index1 = 0;
-            var index2 = len - 1;
-            while
-            (
-                len > 0
-                &&
-                index1 < s1.Length
-                &&
-                (
-                    (s1[index1] == s2[index2])
-                    ||
-                    (s1[index1] == '.')
-                )
-            )
+            if(s2.Length < s1.Length)
             {
-                index1++;
-                index2--;
-                len--;
+                return false;
             }
 
-            return index1 >= s1.Length;
+            for(int index1 = 0, index2 = s2.Length-1; index1 < s1.Length; index1++,index2--)
+            {
+                if(s1[index1] != s2[index2] && s1[index1] != '.')
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public static bool IsSubset(string s1, string s2)
