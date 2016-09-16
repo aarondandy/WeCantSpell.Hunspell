@@ -3343,7 +3343,7 @@ namespace Hunspell
                         {
                             for (
                                 ;
-                                Affix.TryGetCompoundPattern(scpd, out scpdPatternEntry)
+                                Affix.CompoundPatterns.TryGetPattern(scpd, out scpdPatternEntry)
                                 &&
                                 (
                                     string.IsNullOrEmpty(scpdPatternEntry.Pattern3)
@@ -3357,12 +3357,12 @@ namespace Hunspell
                                 ;
                             }
 
-                            if (scpd > Affix.CompoundPatternsCount)
+                            if (scpd > Affix.CompoundPatterns.Count)
                             {
                                 break; // break simplified checkcompoundpattern loop
                             }
 
-                            Affix.TryGetCompoundPattern(scpd, out scpdPatternEntry);
+                            Affix.CompoundPatterns.TryGetPattern(scpd, out scpdPatternEntry);
 
                             var neededSize = i + scpdPatternEntry.Pattern.Length + scpdPatternEntry.Pattern2.Length + (word.Length - (i + scpdPatternEntry.Pattern3.Length));
 
@@ -3939,11 +3939,11 @@ namespace Hunspell
                                     )
                                     && // test CHECKCOMPOUNDPATTERN
                                     (
-                                        !Affix.HasCompoundPatterns
+                                        !Affix.CompoundPatterns.HasPatterns
                                         ||
                                         scpd != 0
                                         ||
-                                        !CompoundPatternCheck(word, i, rvFirst, rv, false)
+                                        !Affix.CompoundPatterns.Check(word, i, rvFirst, rv, false)
                                     )
                                     &&
                                     (
@@ -4023,9 +4023,9 @@ namespace Hunspell
                                     &&
                                     scpd == 0
                                     &&
-                                    Affix.HasCompoundPatterns
+                                    Affix.CompoundPatterns.HasPatterns
                                     &&
-                                    CompoundPatternCheck(word, i, rvFirst, rv, affixed)
+                                    Affix.CompoundPatterns.Check(word, i, rvFirst, rv, affixed)
                                 )
                                 {
                                     rv = null;
@@ -4172,12 +4172,12 @@ namespace Hunspell
 
                                     if (
                                         rv != null
-                                        && Affix.HasCompoundPatterns
+                                        && Affix.CompoundPatterns.HasPatterns
                                         &&
                                         (
-                                            (scpd == 0 && CompoundPatternCheck(word, i, rvFirst, rv, affixed))
+                                            (scpd == 0 && Affix.CompoundPatterns.Check(word, i, rvFirst, rv, affixed))
                                             ||
-                                            (scpd != 0 && !CompoundPatternCheck(word, i, rvFirst, rv, affixed))
+                                            (scpd != 0 && !Affix.CompoundPatterns.Check(word, i, rvFirst, rv, affixed))
                                         )
                                     )
                                     {
@@ -4273,7 +4273,7 @@ namespace Hunspell
 
                         scpd++;
                     }
-                    while (!onlycpdrule && Affix.SimplifiedCompound && scpd <= Affix.CompoundPatternsCount); // end of simplifiedcpd loop
+                    while (!onlycpdrule && Affix.SimplifiedCompound && scpd <= Affix.CompoundPatterns.Count); // end of simplifiedcpd loop
 
                     scpd = 0;
                     wordNum = oldwordnum;
@@ -4851,69 +4851,6 @@ namespace Hunspell
             }
 
             return num;
-        }
-
-        /// <summary>
-        /// Forbid compoundings when there are special patterns at word bound.
-        /// </summary>
-        private bool CompoundPatternCheck(string word, int pos, DictionaryEntry r1, DictionaryEntry r2, bool affixed)
-        {
-            var wordAfterPos = word.Substring(pos);
-
-            foreach (var patternEntry in Affix.CompoundPatterns)
-            {
-                int len;
-                if (
-                    StringEx.IsSubset(patternEntry.Pattern2, wordAfterPos)
-                    &&
-                    (
-                        r1 == null
-                        ||
-                        !patternEntry.Condition.HasValue
-                        ||
-                        r1.ContainsFlag(patternEntry.Condition)
-                    )
-                    &&
-                    (
-                        r2 == null
-                        ||
-                        !patternEntry.Condition2.HasValue
-                        ||
-                        r2.ContainsFlag(patternEntry.Condition2)
-                    )
-                    &&
-                    // zero length pattern => only TESTAFF
-                    // zero pattern (0/flag) => unmodified stem (zero affixes allowed)
-                    (
-                        string.IsNullOrEmpty(patternEntry.Pattern)
-                        ||
-                        (
-                            (
-                                patternEntry.Pattern.StartsWith('0')
-                                && r1.Word.Length <= pos
-                                && StringEx.EqualsOffset(word, pos - r1.Word.Length, r1.Word, 0, r1.Word.Length)
-                            )
-                            ||
-                            (
-                                !patternEntry.Pattern.StartsWith('0')
-                                &&
-                                (
-                                    (
-                                        len = patternEntry.Pattern.Length
-                                    ) != 0
-                                )
-                                &&
-                                StringEx.EqualsOffset(word, pos - len, patternEntry.Pattern, 0, len)
-                            )
-                        )
-                    )
-                )
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         /// <summary>

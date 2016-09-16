@@ -667,11 +667,7 @@ namespace Hunspell
         /// CHECKCOMPOUNDPATTERN 0/x /y
         /// </code>
         /// </example>
-        public ReadOnlyListWrapper<PatternEntry> CompoundPatterns => new ReadOnlyListWrapper<PatternEntry>(compoundPatterns);
-
-        private List<PatternEntry> compoundPatterns;
-
-        public int CompoundPatternsCount => (compoundPatterns?.Count).GetValueOrDefault();
+        public CompoundPatternTable CompoundPatterns { get; private set; }
 
         /// <summary>
         /// Defines new break points for breaking words and checking word parts separately.
@@ -861,8 +857,6 @@ namespace Hunspell
 
         public bool HasCompound => CompoundFlag.HasValue || CompoundBegin.HasValue || CompoundRules.HasRules;
 
-        public bool HasCompoundPatterns => compoundPatterns.Count != 0;
-
         public bool HasCompoundVowels => CompoundVowels.HasChars;
 
         public bool HasInputConversions => inputConversions.Count != 0;
@@ -907,20 +901,6 @@ namespace Hunspell
             else
             {
                 result = MorphSet.Empty;
-                return false;
-            }
-        }
-
-        public bool TryGetCompoundPattern(int number, out PatternEntry result)
-        {
-            if (number > 0 && number <= compoundPatterns.Count)
-            {
-                result = compoundPatterns[number - 1];
-                return true;
-            }
-            else
-            {
-                result = null;
                 return false;
             }
         }

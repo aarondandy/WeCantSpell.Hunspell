@@ -393,7 +393,7 @@ namespace Hunspell
                     AliasM = null;
                     config.CompoundRules = CompoundRules == null ? CompoundRuleTable.Empty : CompoundRuleTable.TakeList(CompoundRules);
                     CompoundRules = null;
-                    config.compoundPatterns = CompoundPatterns ?? new List<PatternEntry>(0);
+                    config.CompoundPatterns = CompoundPatterns == null ? CompoundPatternTable.Empty : CompoundPatternTable.TakeList(CompoundPatterns);
                     CompoundPatterns = null;
                     config.breakTable = BreakTable ?? new List<string>(0);
                     BreakTable = null;
@@ -412,7 +412,7 @@ namespace Hunspell
                     config.aliasF = AliasF == null ? new List<FlagSet>(0) : AliasF.ToList();
                     config.aliasM = AliasM == null ? new List<MorphSet>(0) : AliasM.ToList();
                     config.CompoundRules = CompoundRuleTable.Create(CompoundRules);
-                    config.compoundPatterns = CompoundPatterns == null ? new List<PatternEntry>(0) : CompoundPatterns.ToList();
+                    config.CompoundPatterns = CompoundPatternTable.Create(CompoundPatterns);
                     config.breakTable = BreakTable == null ? new List<string>(0) : BreakTable.ToList();
                     config.mapTable = MapTable == null ? new List<MapEntry>(0) : MapTable.ToList();
                     config.phone = Phone == null ? new List<PhoneticEntry>(0) : Phone.ToList();
