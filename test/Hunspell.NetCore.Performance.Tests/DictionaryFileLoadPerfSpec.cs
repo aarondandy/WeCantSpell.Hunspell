@@ -16,7 +16,8 @@ namespace Hunspell.NetCore.Performance.Tests
             var testAssemblyPath = Path.GetFullPath(GetType().Assembly.Location);
             var filesDirectory = Path.Combine(Path.GetDirectoryName(testAssemblyPath), "files/");
             var dictionaryFilePaths = Directory.GetFiles(filesDirectory, "*.dic")
-                .OrderBy(p => p);
+                .OrderBy(p => p)
+                .Where((_, i) => i % 10 == 0);
 
             DictionaryLoadArguments = Task.WhenAll(
                 dictionaryFilePaths
