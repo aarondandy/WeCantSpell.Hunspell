@@ -152,7 +152,7 @@ namespace Hunspell.Infrastructure
 
             for(int index1 = 0, index2 = s2.Length-1; index1 < s1.Length; index1++,index2--)
             {
-                if(s1[index1] != s2[index2] && s1[index1] != '.')
+                if(s1[index1] != '.' && s1[index1] != s2[index2])
                 {
                     return false;
                 }

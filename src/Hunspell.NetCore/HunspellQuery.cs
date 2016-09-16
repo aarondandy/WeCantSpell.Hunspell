@@ -5213,7 +5213,12 @@ namespace Hunspell
             // if this suffix is being cross checked with a prefix
             // but it does not support cross products skip it
 
-            if (optFlags.HasFlag(AffixEntryOptions.CrossProduct) && !entry.Options.HasFlag(AffixEntryOptions.CrossProduct))
+            var optFlagsHasCrossProduct = optFlags.HasFlag(AffixEntryOptions.CrossProduct);
+            if (
+                (optFlagsHasCrossProduct && !entry.Options.HasFlag(AffixEntryOptions.CrossProduct))
+                ||
+                (cclass.HasValue && !entry.ContainsContClass(cclass)) // ! handle cont. class
+            )
             {
                 return null;
             }
@@ -5228,7 +5233,7 @@ namespace Hunspell
             // it checked in test_condition()
 
             if (
-                (tmpl > 0 || (tmpl == 0 && Affix.FullStrip))
+                (tmpl > 0 || (Affix.FullStrip && tmpl == 0))
                 &&
                 (tmpl + entry.Strip.Length >= entry.Conditions.Count)
             )
@@ -5248,7 +5253,6 @@ namespace Hunspell
 
                 // if all conditions are met then check if resulting
                 // root word in the dictionary
-
                 if (entry.Conditions.IsEndingMatch(tmpstring))
                 {
                     foreach (var he in Lookup(tmpstring))
@@ -5261,14 +5265,18 @@ namespace Hunspell
                             )
                             &&
                             (
-                                !optFlags.HasFlag(AffixEntryOptions.CrossProduct)
+                                !optFlagsHasCrossProduct
                                 ||
-                                (pfx != null && he.ContainsFlag(pfx.AFlag))
-                                || // enabled by prefix
-                                (pfx != null && entry.ContainsContClass(pfx.AFlag))
+                                (
+                                    pfx != null
+                                    &&
+                                    (
+                                        he.ContainsFlag(pfx.AFlag)
+                                        ||
+                                        entry.ContainsContClass(pfx.AFlag) // enabled by prefix
+                                    )
+                                )
                             )
-                            && // handle cont. class
-                            (cclass == 0 || entry.ContainsContClass(cclass))
                             && // check only in compound homonyms (bad flags)
                             !he.ContainsFlag(badFlag)
                             && // handle required flag

@@ -72,12 +72,12 @@ namespace Hunspell
         /// <returns>True when the end of the <paramref name="text"/> is matched by the conditions.</returns>
         public bool IsEndingMatch(string text)
         {
-            if (string.IsNullOrEmpty(text) || conditions.Length > text.Length)
+            if (conditions.Length > text.Length)
             {
                 return false;
             }
 
-            for (int textIndex = text.Length - 1, conditionIndex = conditions.Length - 1; conditionIndex >= 0; --textIndex, --conditionIndex)
+            for (int conditionIndex = conditions.Length - 1, textIndex = text.Length - 1; conditionIndex >= 0; conditionIndex--, textIndex--)
             {
                 if (!conditions[conditionIndex].IsMatch(text[textIndex]))
                 {
