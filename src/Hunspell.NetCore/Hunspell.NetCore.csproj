@@ -58,6 +58,7 @@
     <Compile Include="AffixConfig.cs" />
     <Compile Include="AffixEntryWithDetail.cs" />
     <Compile Include="AffixReader.cs" />
+    <Compile Include="BreakTable.cs" />
     <Compile Include="CapitalizationType.cs" />
     <Compile Include="CharacterCondition.cs" />
     <Compile Include="CharacterConditionGroup.cs" />

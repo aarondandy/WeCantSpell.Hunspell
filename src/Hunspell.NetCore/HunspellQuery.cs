@@ -161,8 +161,7 @@ namespace Hunspell
                 convertedWord = word;
             }
 
-            var wl = CleanWord2(out scw, convertedWord, out capType, out abbv);
-            if (wl == 0)
+            if (CleanWord2(out scw, convertedWord, out capType, out abbv) == 0)
             {
                 return new SpellCheckResult(false);
             }
@@ -223,32 +222,19 @@ namespace Hunspell
             }
 
             // recursive breaking at break points
-            if (Affix.HasBreakEntries)
+            if (Affix.BreakPoints.HasBreaks)
             {
-                int nbr = 0;
-                wl = scw.Length;
-
                 // calculate break points for recursion limit
-                foreach (var breakEntry in Affix.BreakTable)
-                {
-                    int pos = 0;
-                    while ((pos = scw.IndexOf(breakEntry, pos, StringComparison.Ordinal)) >= 0)
-                    {
-                        nbr++;
-                        pos += breakEntry.Length;
-                    }
-                }
-
-                if (nbr >= 10)
+                if (Affix.BreakPoints.FindRecursionLimit(scw) >= 10)
                 {
                     return new SpellCheckResult(root, resultType, false);
                 }
 
                 // check boundary patterns (^begin and end$)
-                foreach (var breakEntry in Affix.BreakTable)
+                foreach (var breakEntry in Affix.BreakPoints)
                 {
                     var pLastIndex = breakEntry.Length - 1;
-                    if (breakEntry.Length == 1 || breakEntry.Length > wl)
+                    if (breakEntry.Length == 1 || breakEntry.Length > scw.Length)
                     {
                         continue;
                     }
@@ -264,7 +250,7 @@ namespace Hunspell
                         return new SpellCheckResult(root, resultType, true);
                     }
 
-                    var wlLessBreakIndex = wl + 1 - breakEntry.Length;
+                    var wlLessBreakIndex = scw.Length + 1 - breakEntry.Length;
                     if (
                         breakEntry.EndsWith('$')
                         &&
@@ -279,14 +265,12 @@ namespace Hunspell
                 }
 
                 // other patterns
-                foreach (var breakEntry in Affix.BreakTable)
+                foreach (var breakEntry in Affix.BreakPoints)
                 {
-                    var plen = breakEntry.Length;
                     var found = scw.IndexOf(breakEntry, StringComparison.Ordinal);
-
-                    if (found > 0 && found < wl - plen)
+                    if (found > 0 && found < scw.Length - breakEntry.Length)
                     {
-                        if (!Check(scw.Substring(found + plen)))
+                        if (!Check(scw.Substring(found + breakEntry.Length)))
                         {
                             continue;
                         }
@@ -298,7 +282,7 @@ namespace Hunspell
                         }
 
                         // LANG_hu: spec. dash rule
-                        if (Affix.IsHungarian && breakEntry == "-")
+                        if (Affix.IsHungarian && "-".Equals(breakEntry, StringComparison.Ordinal))
                         {
                             if (Check(scw.Substring(0, found + 1)))
                             {

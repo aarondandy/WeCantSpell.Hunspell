@@ -725,9 +725,7 @@ namespace Hunspell
         /// </code>
         /// </example>
         /// <seealso cref="CompoundRules"/>
-        public ReadOnlyListWrapper<string> BreakTable => new ReadOnlyListWrapper<string>(breakTable);
-
-        private List<string> breakTable;
+        public BreakTable BreakPoints { get; private set; }
 
         /// <summary>
         /// Input conversion entries.
@@ -862,8 +860,6 @@ namespace Hunspell
         public bool HasInputConversions => inputConversions.Count != 0;
 
         public bool HasOutputConversions => outputConversions.Count != 0;
-
-        public bool HasBreakEntries => breakTable.Count != 0;
 
         public bool HasIgnoredChars => IgnoredChars.HasChars;
 

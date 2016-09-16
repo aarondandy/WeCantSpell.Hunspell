@@ -177,14 +177,14 @@ namespace Hunspell
         {
             if (!IsInitialized(EntryListType.Break))
             {
-                if (Builder.BreakTable == null)
+                if (Builder.BreakPoints == null)
                 {
-                    Builder.BreakTable = new List<string>(DefaultBreakTableEntries.Length);
+                    Builder.BreakPoints = new List<string>(DefaultBreakTableEntries.Length);
                 }
 
-                if (Builder.BreakTable.Count == 0)
+                if (Builder.BreakPoints.Count == 0)
                 {
-                    Builder.BreakTable.AddRange(DefaultBreakTableEntries);
+                    Builder.BreakPoints.AddRange(DefaultBreakTableEntries);
                 }
             }
         }
@@ -291,7 +291,7 @@ namespace Hunspell
                 case "MAP": // parse in the related character map table
                     return TryParseStandardListItem(EntryListType.Map, parameters, ref Builder.MapTable, TryParseMapEntry);
                 case "BREAK": // parse in the word breakpoints table
-                    return TryParseStandardListItem(EntryListType.Break, parameters, ref Builder.BreakTable, TryParseBreak);
+                    return TryParseStandardListItem(EntryListType.Break, parameters, ref Builder.BreakPoints, TryParseBreak);
                 case "VERSION":
                     Builder.Version = parameters;
                     return true;

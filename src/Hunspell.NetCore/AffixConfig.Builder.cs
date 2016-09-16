@@ -254,8 +254,8 @@ namespace Hunspell
             /// <summary>
             /// Defines new break points for breaking words and checking word parts separately.
             /// </summary>
-            /// <seealso cref="AffixConfig.BreakTable"/>
-            public List<string> BreakTable;
+            /// <seealso cref="AffixConfig.BreakPoints"/>
+            public List<string> BreakPoints;
 
             /// <summary>
             /// Input conversion entries.
@@ -380,7 +380,8 @@ namespace Hunspell
                     CompoundVowels = CompoundVowels ?? CharacterSet.Empty,
                     WordChars = WordChars ?? CharacterSet.Empty,
                     IgnoredChars = IgnoredChars ?? CharacterSet.Empty,
-                    Version = Version
+                    Version = Version,
+                    BreakPoints = BreakTable.Create(BreakPoints)
                 };
 
                 if (destructive)
@@ -395,8 +396,6 @@ namespace Hunspell
                     CompoundRules = null;
                     config.CompoundPatterns = CompoundPatterns == null ? CompoundPatternTable.Empty : CompoundPatternTable.TakeList(CompoundPatterns);
                     CompoundPatterns = null;
-                    config.breakTable = BreakTable ?? new List<string>(0);
-                    BreakTable = null;
                     config.mapTable = MapTable ?? new List<MapEntry>(0);
                     MapTable = null;
                     config.phone = Phone ?? new List<PhoneticEntry>(0);
@@ -413,7 +412,6 @@ namespace Hunspell
                     config.aliasM = AliasM == null ? new List<MorphSet>(0) : AliasM.ToList();
                     config.CompoundRules = CompoundRuleTable.Create(CompoundRules);
                     config.CompoundPatterns = CompoundPatternTable.Create(CompoundPatterns);
-                    config.breakTable = BreakTable == null ? new List<string>(0) : BreakTable.ToList();
                     config.mapTable = MapTable == null ? new List<MapEntry>(0) : MapTable.ToList();
                     config.phone = Phone == null ? new List<PhoneticEntry>(0) : Phone.ToList();
                     config.inputConversions = InputConversions == null ? new Dictionary<string, MultiReplacementEntry>(0) : new Dictionary<string, MultiReplacementEntry>(InputConversions);

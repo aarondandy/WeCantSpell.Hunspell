@@ -517,7 +517,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.BreakTable.ShouldBeEquivalentTo(new[]
+                actual.BreakPoints.ShouldBeEquivalentTo(new[]
                 {
                     "-",
                     "–"
@@ -548,7 +548,7 @@ namespace Hunspell.NetCore.Tests
                 actual.MaxNgramSuggestions.Should().Be(0);
                 actual.WordChars.ShouldBeEquivalentTo(new[] { '-' });
                 actual.TryString.Should().Be("ot");
-                actual.BreakTable.Should().HaveCount(0);
+                actual.BreakPoints.Should().HaveCount(0);
             }
 
             [Fact]
