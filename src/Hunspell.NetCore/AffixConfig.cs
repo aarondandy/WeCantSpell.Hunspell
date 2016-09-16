@@ -535,7 +535,7 @@ namespace Hunspell
         /// </code>
         /// </example>
         /// <seealso cref="CheckCompoundRep"/>
-        public IEnumerable<SingleReplacementEntry> Replacements => replacements;
+        public ReadOnlyListWrapper<SingleReplacementEntry> Replacements => new ReadOnlyListWrapper<SingleReplacementEntry>(replacements);
 
         private List<SingleReplacementEntry> replacements;
 
@@ -647,7 +647,7 @@ namespace Hunspell
         /// flags. (Use these flags on different enhtries for words).
         /// </para>
         /// </remarks>
-        public IEnumerable<CompoundRule> CompoundRules => compoundRules;
+        public ReadOnlyListWrapper<CompoundRule> CompoundRules => new ReadOnlyListWrapper<CompoundRule>(compoundRules);
 
         private List<CompoundRule> compoundRules;
 
@@ -671,7 +671,7 @@ namespace Hunspell
         /// CHECKCOMPOUNDPATTERN 0/x /y
         /// </code>
         /// </example>
-        public IEnumerable<PatternEntry> CompoundPatterns => compoundPatterns;
+        public ReadOnlyListWrapper<PatternEntry> CompoundPatterns => new ReadOnlyListWrapper<PatternEntry>(compoundPatterns);
 
         private List<PatternEntry> compoundPatterns;
 
@@ -733,7 +733,7 @@ namespace Hunspell
         /// </code>
         /// </example>
         /// <seealso cref="CompoundRules"/>
-        public IEnumerable<string> BreakTable => breakTable;
+        public ReadOnlyListWrapper<string> BreakTable => new ReadOnlyListWrapper<string>(breakTable);
 
         private List<string> breakTable;
 
@@ -785,7 +785,7 @@ namespace Hunspell
         /// </code>
         /// </example>
         /// <seealso cref="Replacements"/>
-        public IEnumerable<MapEntry> MapTable => mapTable;
+        public ReadOnlyListWrapper<MapEntry> MapTable => new ReadOnlyListWrapper<MapEntry>(mapTable);
 
         private List<MapEntry> mapTable;
 
@@ -807,7 +807,7 @@ namespace Hunspell
         /// UTF-8 characters yet.
         /// </para>
         /// </remarks>
-        public IEnumerable<PhoneticEntry> Phone => phone;
+        public ReadOnlyListWrapper<PhoneticEntry> Phone => new ReadOnlyListWrapper<PhoneticEntry>(phone);
 
         private List<PhoneticEntry> phone;
 
@@ -943,7 +943,8 @@ namespace Hunspell
 #endif
         public bool TryConvertOutput(string text, out string converted) => outputConversions.TryConvert(text, out converted);
 
-        public IEnumerable<AffixEntryWithDetail<PrefixEntry>> GetPrefixesWithoutKeys() => prefixesWithEmptyKeys;
+        public ReadOnlyListWrapper<AffixEntryWithDetail<PrefixEntry>> GetPrefixesWithoutKeys() =>
+            new ReadOnlyListWrapper<AffixEntryWithDetail<PrefixEntry>>(prefixesWithEmptyKeys);
 
         public IEnumerable<AffixEntryWithDetail<PrefixEntry>> GetPrefixesWithKeySubset(string word)
         {
@@ -971,10 +972,8 @@ namespace Hunspell
             return result;
         }
 
-        public IEnumerable<AffixEntryWithDetail<SuffixEntry>> GetSuffixesWithoutKeys()
-        {
-            return suffixesWithEmptyKeys;
-        }
+        public ReadOnlyListWrapper<AffixEntryWithDetail<SuffixEntry>> GetSuffixesWithoutKeys() =>
+            new ReadOnlyListWrapper<AffixEntryWithDetail<SuffixEntry>>(suffixesWithEmptyKeys);
 
         public IEnumerable<AffixEntryWithDetail<SuffixEntry>> GetSuffixesWithReverseKeySubset(string word)
         {

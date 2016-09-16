@@ -5360,7 +5360,7 @@ namespace Hunspell
         private bool CandidateCheck(string word)
         {
             return Lookup(word).HasEntries
-                || AffixCheck(word, new FlagValue(), CompoundOptions.Not) != null;
+                || AffixCheck(word, default(FlagValue), CompoundOptions.Not) != null;
         }
 
         private bool TestCondition(PrefixEntry entry, string word)
