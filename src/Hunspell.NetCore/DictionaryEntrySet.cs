@@ -53,6 +53,11 @@ namespace Hunspell
             return TakeArray(newEntries);
         }
 
+        public DictionaryEntry FirstOrDefault()
+        {
+            return entries.Length != 0 ? entries[0] : null;
+        }
+
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif

@@ -20,7 +20,7 @@
 
         public bool HasFlags => Flags.HasFlags;
 
-        public bool ContainsFlag(FlagValue flag) => flag.HasValue && Flags.Contains(flag);
+        public bool ContainsFlag(FlagValue flag) => Flags.Contains(flag);
 
         public bool ContainsAnyFlags(FlagValue a, FlagValue b) => HasFlags && Flags.ContainsAny(a, b);
 

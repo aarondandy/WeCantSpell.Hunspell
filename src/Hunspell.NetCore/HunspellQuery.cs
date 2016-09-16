@@ -1558,7 +1558,7 @@ namespace Hunspell
                     DictionaryEntry rv2;
                     var rwords = new Dictionary<int, DictionaryEntry>(); // buffer for COMPOUND pattern checking
                     var info = SpellCheckResultType.None;
-                    rv = CompoundCheck(word, 0, 0, 100, 0, null, ref rwords, 0, 1, ref info);
+                    rv = CompoundCheck(word, 0, 0, 100, 0, null, ref rwords, false, 1, ref info);
                     if (
                         rv != null
                         &&
@@ -3278,13 +3278,13 @@ namespace Hunspell
                 {
                     // try check compound word
                     var rwords = new Dictionary<int, DictionaryEntry>();
-                    he = CompoundCheck(word, 0, 0, 100, 0, null, ref rwords, 0, 0, ref info);
+                    he = CompoundCheck(word, 0, 0, 100, 0, null, ref rwords, false, 0, ref info);
 
                     if (he == null && word.EndsWith('-') && Affix.IsHungarian)
                     {
                         // LANG_hu section: `moving rule' with last dash
                         var dup = word.Substring(0, word.Length - 1);
-                        he = CompoundCheck(dup, -5, 0, 100, 0, null, ref rwords, 1, 0, ref info);
+                        he = CompoundCheck(dup, -5, 0, 100, 0, null, ref rwords, true, 0, ref info);
                     }
 
                     if (he != null)
@@ -3303,7 +3303,7 @@ namespace Hunspell
             return he;
         }
 
-        private DictionaryEntry CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, int wnum, Dictionary<int, DictionaryEntry> words, ref Dictionary<int, DictionaryEntry> rwords, int huMovRule, int isSug, ref SpellCheckResultType info)
+        private DictionaryEntry CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, int wnum, Dictionary<int, DictionaryEntry> words, ref Dictionary<int, DictionaryEntry> rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
         {
             int oldnumsyllable, oldnumsyllable2, oldwordnum, oldwordnum2;
             DictionaryEntry rv;
@@ -3403,15 +3403,15 @@ namespace Hunspell
                         // FIRST WORD
 
                         affixed = true;
-                        var searchEntries = Lookup(st.ToString()); // perhaps without prefix
-                        var searchEntriesIndex = 0;
+                        var searchEntriesEnumerator = Lookup(st.ToString()).GetEnumerator(); // perhaps without prefix
 
-                        rv = searchEntriesIndex < searchEntries.Count ? searchEntries[searchEntriesIndex] : null;
+                        rv = searchEntriesEnumerator.MoveNext() ? searchEntriesEnumerator.Current : null;
 
                         // search homonym with compound flag
                         while (
                             rv != null
-                            && huMovRule == 0
+                            &&
+                            !huMovRule
                             &&
                             (
                                 rv.ContainsFlag(Affix.NeedAffix)
@@ -3454,13 +3454,13 @@ namespace Hunspell
                                                 &&
                                                 wordNum == 0
                                                 &&
-                                                DefCompoundCheck(ref words, wnum, rv, rwords, 0)
+                                                DefCompoundCheck(ref words, wnum, rv, rwords, false)
                                             )
                                             ||
                                             (
                                                 words != null
                                                 &&
-                                                DefCompoundCheck(ref words, wnum, rv, rwords, 0)
+                                                DefCompoundCheck(ref words, wnum, rv, rwords, false)
                                             )
                                         )
                                     )
@@ -3476,8 +3476,7 @@ namespace Hunspell
                             )
                         )
                         {
-                            searchEntriesIndex++;
-                            rv = searchEntriesIndex < searchEntries.Count ? searchEntries[searchEntriesIndex] : null;
+                            rv = searchEntriesEnumerator.MoveNext() ? searchEntriesEnumerator.Current : null;
                         }
 
                         if (rv != null)
@@ -3496,14 +3495,14 @@ namespace Hunspell
                                 Affix.CompoundFlag.HasValue
                                 &&
                                 (
-                                    rv = PrefixCheck(st, huMovRule != 0 ? CompoundOptions.Other : CompoundOptions.Begin, Affix.CompoundFlag)
+                                    rv = PrefixCheck(st, huMovRule ? CompoundOptions.Other : CompoundOptions.Begin, Affix.CompoundFlag)
                                 ) == null
                             )
                             {
                                 if (
                                     (
                                         (
-                                            rv = SuffixCheck(st, 0, null, new FlagValue(), Affix.CompoundFlag, huMovRule != 0 ? CompoundOptions.Other : CompoundOptions.Begin)
+                                            rv = SuffixCheck(st, 0, null, new FlagValue(), Affix.CompoundFlag, huMovRule ? CompoundOptions.Other : CompoundOptions.Begin)
                                         ) != null
                                         ||
                                         (
@@ -3515,7 +3514,7 @@ namespace Hunspell
                                         )
                                     )
                                     &&
-                                    huMovRule == 0
+                                    !huMovRule
                                     &&
                                     Suffix != null
                                     &&
@@ -3536,7 +3535,7 @@ namespace Hunspell
                                     &&
                                     (
                                         (
-                                            rv = SuffixCheck(st, 0, null, default(FlagValue), Affix.CompoundBegin, huMovRule != 0 ? CompoundOptions.Other : CompoundOptions.Begin)
+                                            rv = SuffixCheck(st, 0, null, default(FlagValue), Affix.CompoundBegin, huMovRule ? CompoundOptions.Other : CompoundOptions.Begin)
                                         ) != null
                                         ||
                                         (
@@ -3548,7 +3547,7 @@ namespace Hunspell
                                         )
                                         || // twofold suffixes + compound
                                         (
-                                            rv = PrefixCheck(st, huMovRule != 0 ? CompoundOptions.Other : CompoundOptions.Begin, Affix.CompoundBegin)
+                                            rv = PrefixCheck(st, huMovRule ? CompoundOptions.Other : CompoundOptions.Begin, Affix.CompoundBegin)
                                         ) != null
                                     )
                                 )
@@ -3560,7 +3559,7 @@ namespace Hunspell
                                     &&
                                     (
                                         (
-                                            rv = SuffixCheck(st, 0, null, default(FlagValue), Affix.CompoundMiddle, huMovRule != 0 ? CompoundOptions.Other : CompoundOptions.Begin)
+                                            rv = SuffixCheck(st, 0, null, default(FlagValue), Affix.CompoundMiddle, huMovRule ? CompoundOptions.Other : CompoundOptions.Begin)
                                         ) != null
                                         ||
                                         (
@@ -3572,7 +3571,7 @@ namespace Hunspell
                                         )
                                         || // twofold suffixes + compound
                                         (
-                                            rv = PrefixCheck(st, huMovRule != 0 ? CompoundOptions.Other : CompoundOptions.Begin, Affix.CompoundMiddle)
+                                            rv = PrefixCheck(st, huMovRule ? CompoundOptions.Other : CompoundOptions.Begin, Affix.CompoundMiddle)
                                         ) != null
                                     )
                                 )
@@ -3604,7 +3603,7 @@ namespace Hunspell
                         if (
                             rv != null
                             &&
-                            huMovRule == 0
+                            !huMovRule
                             &&
                             Affix.CompoundForbidFlag.HasValue
                             &&
@@ -3626,7 +3625,7 @@ namespace Hunspell
                             &&
                             Affix.CompoundEnd.HasValue
                             &&
-                            huMovRule == 0
+                            !huMovRule
                             &&
                             (
                                 (Prefix != null && Prefix.ContainsContClass(Affix.CompoundEnd))
@@ -3648,7 +3647,7 @@ namespace Hunspell
                             &&
                             Affix.CompoundMiddle.HasValue
                             &&
-                            huMovRule == 0
+                            !huMovRule
                             &&
                             (
                                 (Prefix != null && Prefix.ContainsContClass(Affix.CompoundMiddle))
@@ -3706,7 +3705,7 @@ namespace Hunspell
                                     (oldwordnum > 0 && rv.ContainsFlag(Affix.CompoundMiddle))
                                     ||
                                     (
-                                        huMovRule != 0
+                                        huMovRule
                                         && // LANG_hu section: spec. Hungarian rule
                                         Affix.IsHungarian
                                         && // XXX hardwired Hungarian dictionary codes
@@ -3758,7 +3757,7 @@ namespace Hunspell
                             (
                                 rv == null
                                 &&
-                                huMovRule != 0
+                                huMovRule
                                 &&
                                 Affix.IsHungarian
                                 &&
@@ -3818,10 +3817,10 @@ namespace Hunspell
                                     }
                                 }
 
-                                var homonyms = Lookup(st.Substring(i));  // perhaps without prefix
-                                var homonymIndex = 0;
+                                var homonymEnumerator = Lookup(st.Substring(i)).GetEnumerator();  // perhaps without prefix
 
-                                rv = homonymIndex < homonyms.Count ? homonyms[homonymIndex] : null;
+                                rv = homonymEnumerator.MoveNext() ? homonymEnumerator.Current : null;
+
                                 // search homonym with compound flag
                                 while (
                                     rv != null
@@ -3837,7 +3836,7 @@ namespace Hunspell
                                             (
                                                 Affix.HasCompoundRules
                                                 && words != null
-                                                && DefCompoundCheck(ref words, wnum + 1, rv, null, 1)
+                                                && DefCompoundCheck(ref words, wnum + 1, rv, null, true)
                                             )
                                         )
                                         ||
@@ -3849,8 +3848,7 @@ namespace Hunspell
                                     )
                                 )
                                 {
-                                    homonymIndex++;
-                                    rv = homonymIndex < homonyms.Count ? homonyms[homonymIndex] : null;
+                                    rv = homonymEnumerator.MoveNext() ? homonymEnumerator.Current : null;
                                 }
 
                                 // check FORCEUCASE
@@ -3994,7 +3992,7 @@ namespace Hunspell
                                 if (rv == null && Affix.HasCompoundRules && words != null)
                                 {
                                     rv = AffixCheck(word.Substring(i), new FlagValue(), CompoundOptions.End);
-                                    if (rv != null && DefCompoundCheck(ref words, wnum + 1, rv, null, 1))
+                                    if (rv != null && DefCompoundCheck(ref words, wnum + 1, rv, null, true))
                                     {
                                         st.Destroy();
                                         return rvFirst;
@@ -4170,7 +4168,7 @@ namespace Hunspell
                                 // perhaps second word is a compound word (recursive call)
                                 if (wordNum < maxwordnum)
                                 {
-                                    rv = CompoundCheck(st.Substring(i), wordNum + 1, numSyllable, maxwordnum, wnum + 1, words, ref rwords, 0, isSug, ref info);
+                                    rv = CompoundCheck(st.Substring(i), wordNum + 1, numSyllable, maxwordnum, wnum + 1, words, ref rwords, false, isSug, ref info);
 
                                     if (
                                         rv != null
@@ -4223,8 +4221,7 @@ namespace Hunspell
 
                                             if (Affix.ForbiddenWord.HasValue)
                                             {
-                                                var rv2 = Lookup(word)
-                                                    .FirstOrDefault();
+                                                var rv2 = Lookup(word).FirstOrDefault();
 
                                                 if (rv2 == null)
                                                 {
@@ -4296,27 +4293,11 @@ namespace Hunspell
                         }
                     }
                 }
-                while (Affix.HasCompoundRules && oldwordnum == 0 && !PostfixIncrement(ref onlycpdrule));
+                while (Affix.HasCompoundRules && oldwordnum == 0 && !BoolEx.PostfixIncrement(ref onlycpdrule));
             }
 
             st.Destroy();
             return null;
-        }
-
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        private static bool PostfixIncrement(ref bool b)
-        {
-            if (b)
-            {
-                return true;
-            }
-            else
-            {
-                b = true;
-                return false;
-            }
         }
 
         /// <summary>
@@ -4514,6 +4495,8 @@ namespace Hunspell
                 return null;
             }
 
+            var checkWordCclassFlag = inCompound != CompoundOptions.Not ? default(FlagValue) : Affix.OnlyInCompound;
+
             // first handle the special case of 0 length suffixes
             foreach (var se in Affix.GetSuffixesWithoutKeys())
             {
@@ -4579,7 +4562,7 @@ namespace Hunspell
                     )
                 )
                 {
-                    rv = CheckWordSuffix(se, word, sfxOpts, pfx, cclass, needFlag, inCompound != CompoundOptions.Not ? default(FlagValue) : Affix.OnlyInCompound);
+                    rv = CheckWordSuffix(se, word, sfxOpts, pfx, cclass, needFlag, checkWordCclassFlag);
                     if (rv != null)
                     {
                         SetSuffix(se);
@@ -4664,7 +4647,7 @@ namespace Hunspell
                     )
                 )
                 {
-                    rv = CheckWordSuffix(sptr, word, sfxOpts, pfx, cclass, needFlag, (inCompound != CompoundOptions.Not ? default(FlagValue) : Affix.OnlyInCompound));
+                    rv = CheckWordSuffix(sptr, word, sfxOpts, pfx, cclass, needFlag, checkWordCclassFlag);
                     if (rv != null)
                     {
                         SetSuffix(sptr);
@@ -4769,7 +4752,7 @@ namespace Hunspell
         /// <summary>
         /// Compound check patterns.
         /// </summary>
-        private bool DefCompoundCheck(ref Dictionary<int, DictionaryEntry> words, int wnum, DictionaryEntry rv, Dictionary<int, DictionaryEntry> def, int all)
+        private bool DefCompoundCheck(ref Dictionary<int, DictionaryEntry> words, int wnum, DictionaryEntry rv, Dictionary<int, DictionaryEntry> def, bool all)
         {
             var w = false;
 
@@ -4954,7 +4937,7 @@ namespace Hunspell
                     ok2
                     &&
                     (
-                        all == 0
+                        !all
                         ||
                         compoundRule.Count <= pp
                     )
@@ -5234,6 +5217,8 @@ namespace Hunspell
                 (optFlagsHasCrossProduct && !entry.Options.HasFlag(AffixEntryOptions.CrossProduct))
                 ||
                 (cclass.HasValue && !entry.ContainsContClass(cclass)) // ! handle cont. class
+                ||
+                (optFlagsHasCrossProduct && pfx == null) // enabled by prefix is impossible
             )
             {
                 return null;
