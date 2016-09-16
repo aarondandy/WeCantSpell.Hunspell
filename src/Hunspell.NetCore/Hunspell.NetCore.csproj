@@ -90,6 +90,7 @@
     <Compile Include="MapEntry.cs" />
     <Compile Include="MorphologicalTags.cs" />
     <Compile Include="MorphSet.cs" />
+    <Compile Include="MultiReplacementTable.cs" />
     <Compile Include="NGramOptions.cs" />
     <Compile Include="CharacterSet.cs" />
     <Compile Include="SingleReplacementTable.cs" />

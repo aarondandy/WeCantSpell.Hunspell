@@ -156,7 +156,7 @@ namespace Hunspell
 
             // input conversion
             string convertedWord;
-            if (!Affix.HasInputConversions || !Affix.TryConvertInput(word, out convertedWord))
+            if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out convertedWord))
             {
                 convertedWord = word;
             }
@@ -489,7 +489,7 @@ namespace Hunspell
             string tempString;
 
             // input conversion
-            if (!Affix.HasInputConversions || !Affix.TryConvertInput(word, out tempString))
+            if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out tempString))
             {
                 tempString = word;
             }
@@ -783,12 +783,12 @@ namespace Hunspell
             slst = slst.Distinct(Affix.StringComparer).ToList();
 
             // output conversion
-            if (Affix.HasOutputConversions)
+            if (Affix.OutputConversions.HasReplacements)
             {
                 for (var j = 0; j < slst.Count; j++)
                 {
                     string wspace;
-                    if (Affix.TryConvertOutput(slst[j], out wspace))
+                    if (Affix.OutputConversions.TryConvert(slst[j], out wspace))
                     {
                         slst[j] = wspace;
                     }

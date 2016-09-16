@@ -400,9 +400,9 @@ namespace Hunspell
                     MapTable = null;
                     config.phone = Phone ?? new List<PhoneticEntry>(0);
                     Phone = null;
-                    config.inputConversions = InputConversions ?? new Dictionary<string, MultiReplacementEntry>(0);
+                    config.InputConversions = MultiReplacementTable.TakeDictionary(InputConversions);
                     InputConversions = null;
-                    config.outputConversions = OutputConversions ?? new Dictionary<string, MultiReplacementEntry>(0);
+                    config.OutputConversions = MultiReplacementTable.TakeDictionary(OutputConversions);
                     OutputConversions = null;
                 }
                 else
@@ -414,8 +414,8 @@ namespace Hunspell
                     config.CompoundPatterns = CompoundPatternTable.Create(CompoundPatterns);
                     config.mapTable = MapTable == null ? new List<MapEntry>(0) : MapTable.ToList();
                     config.phone = Phone == null ? new List<PhoneticEntry>(0) : Phone.ToList();
-                    config.inputConversions = InputConversions == null ? new Dictionary<string, MultiReplacementEntry>(0) : new Dictionary<string, MultiReplacementEntry>(InputConversions);
-                    config.outputConversions = OutputConversions == null ? new Dictionary<string, MultiReplacementEntry>(0) : new Dictionary<string, MultiReplacementEntry>(OutputConversions);
+                    config.InputConversions = InputConversions == null ? MultiReplacementTable.Empty : MultiReplacementTable.Create(InputConversions);
+                    config.OutputConversions = OutputConversions == null ? MultiReplacementTable.Empty : MultiReplacementTable.Create(OutputConversions);
                 }
 
                 BuildAffixCollections(

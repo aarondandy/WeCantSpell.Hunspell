@@ -733,16 +733,12 @@ namespace Hunspell
         /// <remarks>
         /// Useful to convert one type of quote to another one, or change ligature.
         /// </remarks>
-        public IReadOnlyDictionary<string, MultiReplacementEntry> InputConversions => inputConversions;
-
-        private Dictionary<string, MultiReplacementEntry> inputConversions;
+        public MultiReplacementTable InputConversions { get; private set; }
 
         /// <summary>
         /// Output conversion entries.
         /// </summary>
-        public IReadOnlyDictionary<string, MultiReplacementEntry> OutputConversions => outputConversions;
-
-        private Dictionary<string, MultiReplacementEntry> outputConversions;
+        public MultiReplacementTable OutputConversions { get; private set; }
 
         /// <summary>
         /// Mappings between related characters.
@@ -857,10 +853,6 @@ namespace Hunspell
 
         public bool HasCompoundVowels => CompoundVowels.HasChars;
 
-        public bool HasInputConversions => inputConversions.Count != 0;
-
-        public bool HasOutputConversions => outputConversions.Count != 0;
-
         public bool HasIgnoredChars => IgnoredChars.HasChars;
 
         public bool HasWordChars => WordChars.HasChars;
@@ -901,15 +893,6 @@ namespace Hunspell
             }
         }
 
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public bool TryConvertInput(string text, out string converted) => inputConversions.TryConvert(text, out converted);
-
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public bool TryConvertOutput(string text, out string converted) => outputConversions.TryConvert(text, out converted);
 
         public ReadOnlyListWrapper<AffixEntryWithDetail<PrefixEntry>> GetPrefixesWithoutKeys() =>
             new ReadOnlyListWrapper<AffixEntryWithDetail<PrefixEntry>>(prefixesWithEmptyKeys);

@@ -22,5 +22,19 @@
         public abstract string Isol { get; }
 
         public abstract string this[ReplacementValueType type] { get; }
+
+        public string ExtractReplacementText(int remainingCharactersToReplace, bool atStart)
+        {
+            var type = remainingCharactersToReplace == Pattern.Length
+                ? (atStart ? ReplacementValueType.Isol : ReplacementValueType.Fin)
+                : (atStart ? ReplacementValueType.Ini : ReplacementValueType.Med);
+
+            while (type != ReplacementValueType.Med && string.IsNullOrEmpty(this[type]))
+            {
+                type = (type == ReplacementValueType.Fin && !atStart) ? ReplacementValueType.Med : type - 1;
+            }
+
+            return this[type] ?? string.Empty;
+        }
     }
 }
