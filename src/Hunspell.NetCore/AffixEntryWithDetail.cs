@@ -2,7 +2,7 @@
 
 namespace Hunspell
 {
-    public class AffixEntryWithDetail<TEntry>
+    public sealed class AffixEntryWithDetail<TEntry>
         where TEntry : AffixEntry
     {
         public AffixEntryWithDetail(AffixEntryGroup<TEntry> group, TEntry entry)

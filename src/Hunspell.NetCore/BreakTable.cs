@@ -7,7 +7,7 @@ using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
-    public class BreakTable :
+    public sealed class BreakTable :
         IReadOnlyList<string>
     {
         public static readonly BreakTable Empty = TakeArray(ArrayEx<string>.Empty);

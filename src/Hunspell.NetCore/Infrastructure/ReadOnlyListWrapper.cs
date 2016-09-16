@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace Hunspell.Infrastructure
 {
-    public class ReadOnlyListWrapper<T> :
+    public sealed class ReadOnlyListWrapper<T> :
         IReadOnlyList<T>
     {
         private List<T> items;

@@ -6,7 +6,7 @@ using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
-    public class CompoundRuleTable :
+    public sealed class CompoundRuleTable :
         IReadOnlyList<CompoundRule>
     {
         public static readonly CompoundRuleTable Empty = TakeList(new List<CompoundRule>(0));

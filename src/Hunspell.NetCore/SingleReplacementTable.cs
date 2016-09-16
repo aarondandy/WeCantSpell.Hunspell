@@ -6,7 +6,7 @@ using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
-    public class SingleReplacementTable :
+    public sealed class SingleReplacementTable :
         IReadOnlyList<SingleReplacementEntry>
     {
         public static readonly SingleReplacementTable Empty = TakeList(new List<SingleReplacementEntry>(0));
