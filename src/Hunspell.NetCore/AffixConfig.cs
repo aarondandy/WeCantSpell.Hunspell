@@ -26,6 +26,18 @@ namespace Hunspell
 
         private AffixConfigOptions options;
 
+        private Dictionary<FlagValue, AffixEntryGroup<PrefixEntry>> prefixesByFlag;
+
+        private List<AffixEntryWithDetail<PrefixEntry>> prefixesWithEmptyKeys;
+
+        private Dictionary<char, List<AffixEntryWithDetail<PrefixEntry>>> prefixesByIndexedKeyCharacter;
+
+        private Dictionary<FlagValue, AffixEntryGroup<SuffixEntry>> suffixesByFlag;
+
+        private List<AffixEntryWithDetail<SuffixEntry>> suffixesWithEmptyKeys;
+
+        private Dictionary<char, List<AffixEntryWithDetail<SuffixEntry>>> suffixsByIndexedKeyCharacter;
+
         /// <summary>
         /// The flag type.
         /// </summary>
@@ -547,18 +559,6 @@ namespace Hunspell
         /// </summary>
         public IEnumerable<AffixEntryGroup<PrefixEntry>> Prefixes => prefixesByFlag.Values;
 
-        private Dictionary<FlagValue, AffixEntryGroup<PrefixEntry>> prefixesByFlag;
-
-        private List<AffixEntryWithDetail<PrefixEntry>> prefixesWithEmptyKeys;
-
-        private Dictionary<char, List<AffixEntryWithDetail<PrefixEntry>>> prefixesByIndexedKeyCharacter;
-
-        private Dictionary<FlagValue, AffixEntryGroup<SuffixEntry>> suffixesByFlag;
-
-        private List<AffixEntryWithDetail<SuffixEntry>> suffixesWithEmptyKeys;
-
-        private Dictionary<char, List<AffixEntryWithDetail<SuffixEntry>>> suffixsByIndexedKeyCharacter;
-
         /// <summary>
         /// Ordinal numbers for affix flag compression.
         /// </summary>
@@ -645,9 +645,7 @@ namespace Hunspell
         /// flags. (Use these flags on different enhtries for words).
         /// </para>
         /// </remarks>
-        public ReadOnlyListWrapper<CompoundRule> CompoundRules => new ReadOnlyListWrapper<CompoundRule>(compoundRules);
-
-        private List<CompoundRule> compoundRules;
+        public CompoundRuleTable CompoundRules { get; private set; }
 
         /// <summary>
         /// Forbid compounding, if the first word in the compound ends with endchars, and
@@ -861,9 +859,7 @@ namespace Hunspell
         /// </summary>
         public bool HasContClass => ContClasses.HasFlags;
 
-        public bool HasCompound => CompoundFlag.HasValue || CompoundBegin.HasValue || HasCompoundRules;
-
-        public bool HasCompoundRules => compoundRules.Count != 0;
+        public bool HasCompound => CompoundFlag.HasValue || CompoundBegin.HasValue || CompoundRules.HasRules;
 
         public bool HasCompoundPatterns => compoundPatterns.Count != 0;
 
