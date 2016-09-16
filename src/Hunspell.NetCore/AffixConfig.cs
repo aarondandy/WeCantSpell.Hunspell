@@ -535,9 +535,7 @@ namespace Hunspell
         /// </code>
         /// </example>
         /// <seealso cref="CheckCompoundRep"/>
-        public ReadOnlyListWrapper<SingleReplacementEntry> Replacements => new ReadOnlyListWrapper<SingleReplacementEntry>(replacements);
-
-        private List<SingleReplacementEntry> replacements;
+        public SingleReplacementTable Replacements { get; private set; }
 
         /// <summary>
         /// Suffixes attached to root words to make other words.
@@ -870,8 +868,6 @@ namespace Hunspell
         public bool HasCompoundPatterns => compoundPatterns.Count != 0;
 
         public bool HasCompoundVowels => CompoundVowels.HasChars;
-
-        public bool HasReplacements => replacements.Count != 0;
 
         public bool HasInputConversions => inputConversions.Count != 0;
 

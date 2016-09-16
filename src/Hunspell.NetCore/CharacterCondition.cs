@@ -37,7 +37,7 @@ namespace Hunspell
         /// </summary>
         public bool Restricted { get; }
 
-        public static CharacterCondition TakeArray(char[] characters, bool restricted) => new CharacterCondition(characters, restricted);
+        internal static CharacterCondition TakeArray(char[] characters, bool restricted) => new CharacterCondition(characters, restricted);
 
         public static CharacterCondition Create(char character, bool restricted) => new CharacterCondition(character, restricted);
 

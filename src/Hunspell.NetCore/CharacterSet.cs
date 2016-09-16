@@ -26,7 +26,7 @@ namespace Hunspell
 
         public bool IsEmpty => values.Length == 0;
 
-        public static CharacterSet TakeArray(char[] values)
+        internal static CharacterSet TakeArray(char[] values)
         {
             Array.Sort(values);
             return new CharacterSet(values);

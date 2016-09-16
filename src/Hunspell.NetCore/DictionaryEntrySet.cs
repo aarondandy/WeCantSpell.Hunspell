@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Hunspell.Infrastructure;
 
@@ -26,7 +27,9 @@ namespace Hunspell
 
         public bool HasEntries => entries.Length != 0;
 
-        public static DictionaryEntrySet TakeArray(DictionaryEntry[] entries) => new DictionaryEntrySet(entries);
+        internal static DictionaryEntrySet TakeArray(DictionaryEntry[] entries) => new DictionaryEntrySet(entries);
+
+        public static DictionaryEntrySet Create(IEnumerable<DictionaryEntry> entries) => TakeArray(entries.ToArray());
 
         public static DictionaryEntrySet CopyWithItemReplaced(DictionaryEntrySet source, int index, DictionaryEntry replacement)
         {

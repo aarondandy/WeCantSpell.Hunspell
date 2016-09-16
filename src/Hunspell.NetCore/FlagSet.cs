@@ -27,7 +27,7 @@ namespace Hunspell
 
         public int Count => values.Length;
 
-        public static FlagSet TakeArray(FlagValue[] values)
+        internal static FlagSet TakeArray(FlagValue[] values)
         {
             Array.Sort(values);
             return new FlagSet(values);

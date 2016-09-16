@@ -25,7 +25,7 @@ namespace Hunspell
 
         public bool AllowsAnySingleCharacter => conditions.Length == 1 && conditions[0].AllowsAny;
 
-        public static CharacterConditionGroup TakeArray(CharacterCondition[] conditions) => new CharacterConditionGroup(conditions);
+        internal static CharacterConditionGroup TakeArray(CharacterCondition[] conditions) => new CharacterConditionGroup(conditions);
 
         public static CharacterConditionGroup Create(CharacterCondition condition) => TakeArray(new[] { condition });
 

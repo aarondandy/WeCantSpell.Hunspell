@@ -22,7 +22,7 @@ namespace Hunspell
 
         public int Count => entries.Length;
 
-        public static AffixEntryCollection<TEntry> TakeArray(TEntry[] entries) => new AffixEntryCollection<TEntry>(entries);
+        internal static AffixEntryCollection<TEntry> TakeArray(TEntry[] entries) => new AffixEntryCollection<TEntry>(entries);
 
         public static AffixEntryCollection<TEntry> Create(List<TEntry> entries) => TakeArray(entries.ToArray());
 

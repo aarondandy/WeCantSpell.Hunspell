@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Hunspell.Infrastructure;
 
@@ -23,9 +24,11 @@ namespace Hunspell
 
         public bool HasMorphs => morphs.Length != 0;
 
-        public static MorphSet TakeArray(string[] morphs) => new MorphSet(morphs);
+        internal static MorphSet TakeArray(string[] morphs) => new MorphSet(morphs);
 
         public static MorphSet Create(List<string> morphs) => TakeArray(morphs.ToArray());
+
+        public static MorphSet Create(IEnumerable<string> morphs) => TakeArray(morphs.ToArray());
 
         public string Join(string seperator) => string.Join(seperator, morphs);
 

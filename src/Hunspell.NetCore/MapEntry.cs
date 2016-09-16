@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Hunspell.Infrastructure;
 
@@ -21,9 +22,11 @@ namespace Hunspell
 
         public int Count => values.Length;
 
-        public static MapEntry TakeArray(string[] values) => new MapEntry(values);
+        internal static MapEntry TakeArray(string[] values) => new MapEntry(values);
 
         public static MapEntry Create(List<string> values) => TakeArray(values.ToArray());
+
+        public static MapEntry Create(IEnumerable<string> values) => TakeArray(values.ToArray());
 
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -19,7 +19,7 @@ namespace Hunspell
 
         public int Count => values.Length;
 
-        public static CompoundRule TakeArray(FlagValue[] values) => new CompoundRule(values);
+        internal static CompoundRule TakeArray(FlagValue[] values) => new CompoundRule(values);
 
         public static CompoundRule Create(List<FlagValue> values) => TakeArray(values.ToArray());
 

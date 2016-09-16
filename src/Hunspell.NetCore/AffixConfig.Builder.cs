@@ -385,7 +385,7 @@ namespace Hunspell
 
                 if (destructive)
                 {
-                    config.replacements = Replacements ?? new List<SingleReplacementEntry>(0);
+                    config.Replacements = Replacements == null ? SingleReplacementTable.Empty : SingleReplacementTable.TakeList(Replacements);
                     Replacements = null;
                     config.aliasF = AliasF ?? new List<FlagSet>(0);
                     AliasF = null;
@@ -408,7 +408,7 @@ namespace Hunspell
                 }
                 else
                 {
-                    config.replacements = Replacements == null ? new List<SingleReplacementEntry>(0) : Replacements.ToList();
+                    config.Replacements = Replacements == null ? SingleReplacementTable.Empty : SingleReplacementTable.Create(Replacements);
                     config.aliasF = AliasF == null ? new List<FlagSet>(0) : AliasF.ToList();
                     config.aliasM = AliasM == null ? new List<MorphSet>(0) : AliasM.ToList();
                     config.compoundRules = CompoundRules == null ? new List<CompoundRule>(0) : CompoundRules.ToList();

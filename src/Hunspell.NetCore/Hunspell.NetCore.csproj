@@ -89,6 +89,7 @@
     <Compile Include="MorphSet.cs" />
     <Compile Include="NGramOptions.cs" />
     <Compile Include="CharacterSet.cs" />
+    <Compile Include="SingleReplacementTable.cs" />
     <Compile Include="SpecialFlags.cs" />
     <Compile Include="SpellCheckResult.cs" />
     <Compile Include="SpellCheckResultType.cs" />

@@ -1653,7 +1653,7 @@ namespace Hunspell
         /// </summary>
         private int ReplChars(List<string> wlst, string word, bool cpdSuggest)
         {
-            if (word.Length < 2 || !Affix.HasReplacements)
+            if (word.Length < 2 || !Affix.Replacements.HasReplacements)
             {
                 return wlst.Count;
             }
@@ -5117,7 +5117,7 @@ namespace Hunspell
         /// <seealso cref="AffixConfig.Replacements"/>
         private bool CompoundReplacementCheck(string word)
         {
-            if (word.Length < 2 || !Affix.HasReplacements)
+            if (word.Length < 2 || !Affix.Replacements.HasReplacements)
             {
                 return false;
             }
