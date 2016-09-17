@@ -289,7 +289,7 @@ namespace Hunspell
                 case "COMPOUNDRULE": // parse in the defcompound table
                     return TryParseStandardListItem(EntryListType.CompoundRules, parameters, ref Builder.CompoundRules, TryParseCompoundRuleIntoList);
                 case "MAP": // parse in the related character map table
-                    return TryParseStandardListItem(EntryListType.Map, parameters, ref Builder.MapTable, TryParseMapEntry);
+                    return TryParseStandardListItem(EntryListType.Map, parameters, ref Builder.RelatedCharacterMap, TryParseMapEntry);
                 case "BREAK": // parse in the word breakpoints table
                     return TryParseStandardListItem(EntryListType.Break, parameters, ref Builder.BreakPoints, TryParseBreak);
                 case "VERSION":

@@ -206,7 +206,7 @@ namespace Hunspell
 
         private bool AddWord(string word, FlagSet flags, MorphSet morphs, bool onlyUpperCase)
         {
-            if (Affix.HasIgnoredChars)
+            if (Affix.IgnoredChars.HasChars)
             {
                 word = word.RemoveChars(Affix.IgnoredChars);
             }

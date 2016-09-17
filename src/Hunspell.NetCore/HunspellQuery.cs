@@ -1407,7 +1407,7 @@ namespace Hunspell
 
         private int MapChars(List<string> wlst, string word, bool cpdSuggest)
         {
-            if (word.Length < 2 || !Affix.HasMapTableEntries)
+            if (word.Length < 2 || Affix.RelatedCharacterMap.IsEmpty)
             {
                 return wlst.Count;
             }
@@ -1445,9 +1445,9 @@ namespace Hunspell
             }
 
             var inMap = false;
-            if (Affix.HasMapTableEntries)
+            if (Affix.RelatedCharacterMap.HasEntries)
             {
-                foreach (var mapEntry in Affix.MapTable)
+                foreach (var mapEntry in Affix.RelatedCharacterMap)
                 {
                     foreach (var mapEntryValue in mapEntry)
                     {
@@ -1602,7 +1602,7 @@ namespace Hunspell
                 rv = SuffixCheck(word, AffixEntryOptions.None, null, default(FlagValue), default(FlagValue), CompoundOptions.Not); // only suffix
             }
 
-            if (Affix.HasContClass && rv == null)
+            if (Affix.ContClasses.HasFlags && rv == null)
             {
                 rv = SuffixCheckTwoSfx(word, AffixEntryOptions.None, null, default(FlagValue));
                 if (rv == null)
@@ -1785,7 +1785,7 @@ namespace Hunspell
                 word = word.Reverse();
             }
 
-            var hasPhoneEntries = Affix.HasPhoneEntires;
+            var hasPhoneEntries = Affix.Phone.HasEntries;
 
             var target = hasPhoneEntries
                 ? Phonet(MakeAllCap(word))
@@ -3138,7 +3138,7 @@ namespace Hunspell
             string w2;
             string word;
             bool useBuffer;
-            if (Affix.HasIgnoredChars)
+            if (Affix.IgnoredChars.HasChars)
             {
                 w2 = w.RemoveChars(Affix.IgnoredChars);
                 word = w2;
@@ -4297,7 +4297,7 @@ namespace Hunspell
                 // if still not found check all suffixes
                 rv = SuffixCheck(word, 0, null, default(FlagValue), needFlag, inCompound);
 
-                if (Affix.HasContClass)
+                if (Affix.ContClasses.HasFlags)
                 {
                     ClearSuffix();
                     ClearPrefix();
@@ -4819,7 +4819,7 @@ namespace Hunspell
         /// </summary>
         private int GetSyllable(string word)
         {
-            if (Affix.CompoundMaxSyllable == 0 || !Affix.HasCompoundVowels)
+            if (Affix.CompoundMaxSyllable == 0 || Affix.CompoundVowels.IsEmpty)
             {
                 return 0;
             }

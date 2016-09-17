@@ -1163,10 +1163,10 @@ namespace Hunspell.NetCore.Tests
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
                 actual.MaxNgramSuggestions.Should().Be(0);
-                actual.MapTable.Should().HaveCount(3);
-                actual.MapTable.First().ShouldBeEquivalentTo(new[] { "u", "ú", "ü" });
-                actual.MapTable.Skip(1).First().ShouldBeEquivalentTo(new[] { "ö", "ó", "o" });
-                actual.MapTable.Last().ShouldBeEquivalentTo(new[] { "ß", "ss" });
+                actual.RelatedCharacterMap.Should().HaveCount(3);
+                actual.RelatedCharacterMap.First().ShouldBeEquivalentTo(new[] { "u", "ú", "ü" });
+                actual.RelatedCharacterMap.Skip(1).First().ShouldBeEquivalentTo(new[] { "ö", "ó", "o" });
+                actual.RelatedCharacterMap.Last().ShouldBeEquivalentTo(new[] { "ß", "ss" });
             }
 
             [Fact]

@@ -771,9 +771,7 @@ namespace Hunspell
         /// </code>
         /// </example>
         /// <seealso cref="Replacements"/>
-        public ReadOnlyListWrapper<MapEntry> MapTable => new ReadOnlyListWrapper<MapEntry>(mapTable);
-
-        private List<MapEntry> mapTable;
+        public MapTable RelatedCharacterMap { get; private set; }
 
         /// <summary>
         /// Phonetic transcription entries.
@@ -793,9 +791,7 @@ namespace Hunspell
         /// UTF-8 characters yet.
         /// </para>
         /// </remarks>
-        public ReadOnlyListWrapper<PhoneticEntry> Phone => new ReadOnlyListWrapper<PhoneticEntry>(phone);
-
-        private List<PhoneticEntry> phone;
+        public PhoneTable Phone { get; private set; }
 
         /// <summary>
         /// Maximum syllable number, that may be in a
@@ -837,33 +833,18 @@ namespace Hunspell
         public string Version { get; private set; }
 
         /// <summary>
-        /// The set of used affix cont classes.
+        /// The set of cont classes used across all affixes.
         /// </summary>
         /// <seealso cref="AffixEntry.ContClass"/>
         public FlagSet ContClasses { get; private set; }
 
         public bool IsHungarian { get; private set; }
 
-        /// <summary>
-        /// Indicates that some of the affix entries have "cont class".
-        /// </summary>
-        public bool HasContClass => ContClasses.HasFlags;
-
         public bool HasCompound => CompoundFlag.HasValue || CompoundBegin.HasValue || CompoundRules.HasRules;
-
-        public bool HasCompoundVowels => CompoundVowels.HasChars;
-
-        public bool HasIgnoredChars => IgnoredChars.HasChars;
-
-        public bool HasWordChars => WordChars.HasChars;
 
         public bool HasSuffixes => suffixesByFlag.Count != 0;
 
         public bool HasPrefixes => prefixesByFlag.Count != 0;
-
-        public bool HasMapTableEntries => mapTable.Count != 0;
-
-        public bool HasPhoneEntires => phone.Count != 0;
 
         public bool TryGetAliasF(int number, out FlagSet result)
         {
@@ -892,7 +873,6 @@ namespace Hunspell
                 return false;
             }
         }
-
 
         public ReadOnlyListWrapper<AffixEntryWithDetail<PrefixEntry>> GetPrefixesWithoutKeys() =>
             new ReadOnlyListWrapper<AffixEntryWithDetail<PrefixEntry>>(prefixesWithEmptyKeys);

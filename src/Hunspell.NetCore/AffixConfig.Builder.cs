@@ -272,8 +272,8 @@ namespace Hunspell
             /// <summary>
             /// Mappings between related characters.
             /// </summary>
-            /// <seealso cref="AffixConfig.MapTable"/>
-            public List<MapEntry> MapTable;
+            /// <seealso cref="AffixConfig.RelatedCharacterMap"/>
+            public List<MapEntry> RelatedCharacterMap;
 
             /// <summary>
             /// Phonetic transcription entries.
@@ -396,9 +396,9 @@ namespace Hunspell
                     CompoundRules = null;
                     config.CompoundPatterns = CompoundPatterns == null ? CompoundPatternTable.Empty : CompoundPatternTable.TakeList(CompoundPatterns);
                     CompoundPatterns = null;
-                    config.mapTable = MapTable ?? new List<MapEntry>(0);
-                    MapTable = null;
-                    config.phone = Phone ?? new List<PhoneticEntry>(0);
+                    config.RelatedCharacterMap = MapTable.TakeList(RelatedCharacterMap);
+                    RelatedCharacterMap = null;
+                    config.Phone = PhoneTable.TakeList(Phone);
                     Phone = null;
                     config.InputConversions = MultiReplacementTable.TakeDictionary(InputConversions);
                     InputConversions = null;
@@ -412,8 +412,8 @@ namespace Hunspell
                     config.aliasM = AliasM == null ? new List<MorphSet>(0) : AliasM.ToList();
                     config.CompoundRules = CompoundRuleTable.Create(CompoundRules);
                     config.CompoundPatterns = CompoundPatternTable.Create(CompoundPatterns);
-                    config.mapTable = MapTable == null ? new List<MapEntry>(0) : MapTable.ToList();
-                    config.phone = Phone == null ? new List<PhoneticEntry>(0) : Phone.ToList();
+                    config.RelatedCharacterMap = MapTable.Create(RelatedCharacterMap);
+                    config.Phone = PhoneTable.Create(Phone);
                     config.InputConversions = InputConversions == null ? MultiReplacementTable.Empty : MultiReplacementTable.Create(InputConversions);
                     config.OutputConversions = OutputConversions == null ? MultiReplacementTable.Empty : MultiReplacementTable.Create(OutputConversions);
                 }
