@@ -13,8 +13,10 @@ namespace Hunspell
         {
         }
 
-        internal static SingleReplacementTable TakeList(List<SingleReplacementEntry> replacements) => replacements == null ? Empty : new SingleReplacementTable(replacements);
+        internal static SingleReplacementTable TakeList(List<SingleReplacementEntry> replacements) =>
+            replacements == null ? Empty : new SingleReplacementTable(replacements);
 
-        public static SingleReplacementTable Create(IEnumerable<SingleReplacementEntry> replacements) => replacements == null ? Empty : TakeList(replacements.ToList());
+        public static SingleReplacementTable Create(IEnumerable<SingleReplacementEntry> replacements) =>
+            replacements == null ? Empty : TakeList(replacements.ToList());
     }
 }

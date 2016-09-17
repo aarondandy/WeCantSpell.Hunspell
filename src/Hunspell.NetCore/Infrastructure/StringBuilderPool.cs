@@ -14,44 +14,28 @@ namespace Hunspell.Infrastructure
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static StringBuilder Get()
-        {
-            return GetClearedBuilder();
-        }
+        public static StringBuilder Get() => GetClearedBuilder();
 
-        public static StringBuilder Get(string value)
-        {
-            return GetClearedBuilderWithCapacity(value.Length)
-                .Append(value);
-        }
+        public static StringBuilder Get(string value) =>
+            GetClearedBuilderWithCapacity(value.Length).Append(value);
 
-        public static StringBuilder Get(string value, int capacity)
-        {
-            return GetClearedBuilderWithCapacity(capacity)
-                .Append(value);
-        }
+        public static StringBuilder Get(string value, int capacity) =>
+            GetClearedBuilderWithCapacity(capacity).Append(value);
 
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static StringBuilder Get(int capacity)
-        {
-            return GetClearedBuilderWithCapacity(capacity);
-        }
+        public static StringBuilder Get(int capacity) =>
+            GetClearedBuilderWithCapacity(capacity);
 
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static StringBuilder Get(string value, int valueStartIndex, int valueLength)
-        {
-            return Get(value, valueStartIndex, valueLength, valueLength);
-        }
+        public static StringBuilder Get(string value, int valueStartIndex, int valueLength) =>
+            Get(value, valueStartIndex, valueLength, valueLength);
 
-        public static StringBuilder Get(string value, int valueStartIndex, int valueLength, int capacity)
-        {
-            return GetClearedBuilderWithCapacity(capacity)
-                .Append(value, valueStartIndex, valueLength);
-        }
+        public static StringBuilder Get(string value, int valueStartIndex, int valueLength, int capacity) =>
+            GetClearedBuilderWithCapacity(capacity).Append(value, valueStartIndex, valueLength);
 
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

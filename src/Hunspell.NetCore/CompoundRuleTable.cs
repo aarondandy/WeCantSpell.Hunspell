@@ -13,9 +13,11 @@ namespace Hunspell
         {
         }
 
-        internal static CompoundRuleTable TakeList(List<CompoundRule> rules) => rules == null ? Empty : new CompoundRuleTable(rules);
+        internal static CompoundRuleTable TakeList(List<CompoundRule> rules) =>
+            rules == null ? Empty : new CompoundRuleTable(rules);
 
-        public static CompoundRuleTable Create(IEnumerable<CompoundRule> rules) => rules == null ? Empty : TakeList(rules.ToList());
+        public static CompoundRuleTable Create(IEnumerable<CompoundRule> rules) =>
+            rules == null ? Empty : TakeList(rules.ToList());
 
         public bool EntryContainsRuleFlags(DictionaryEntry rv)
         {

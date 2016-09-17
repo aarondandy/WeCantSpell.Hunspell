@@ -14,29 +14,7 @@ namespace Hunspell
         {
         }
 
-        private const int DefaultCompoundMinLength = 3;
-
-        private const int DefaultMaxNgramSuggestions = 4;
-
-        private const int DefaultMaxCompoundSuggestions = 3;
-
-        public static readonly Encoding DefaultEncoding = Encoding.GetEncoding("ISO8859-1");
-
-        private const string DefaultKeyString = "qwertyuiop|asdfghjkl|zxcvbnm";
-
         private AffixConfigOptions options;
-
-        private Dictionary<FlagValue, AffixEntryGroup<PrefixEntry>> prefixesByFlag;
-
-        private List<AffixEntryWithDetail<PrefixEntry>> prefixesWithEmptyKeys;
-
-        private Dictionary<char, List<AffixEntryWithDetail<PrefixEntry>>> prefixesByIndexedKeyCharacter;
-
-        private Dictionary<FlagValue, AffixEntryGroup<SuffixEntry>> suffixesByFlag;
-
-        private List<AffixEntryWithDetail<SuffixEntry>> suffixesWithEmptyKeys;
-
-        private Dictionary<char, List<AffixEntryWithDetail<SuffixEntry>>> suffixsByIndexedKeyCharacter;
 
         /// <summary>
         /// The flag type.
@@ -550,14 +528,14 @@ namespace Hunspell
         public SingleReplacementTable Replacements { get; private set; }
 
         /// <summary>
-        /// Suffixes attached to root words to make other words.
-        /// </summary>
-        public IEnumerable<AffixEntryGroup<SuffixEntry>> Suffixes => suffixesByFlag.Values;
-
-        /// <summary>
         /// Preffixes attached to root words to make other words.
         /// </summary>
-        public IEnumerable<AffixEntryGroup<PrefixEntry>> Prefixes => prefixesByFlag.Values;
+        public AffixCollection<PrefixEntry> Prefixes { get; private set; }
+
+        /// <summary>
+        /// Suffixes attached to root words to make other words.
+        /// </summary>
+        public AffixCollection<SuffixEntry> Suffixes { get; private set; }
 
         /// <summary>
         /// Ordinal numbers for affix flag compression.
@@ -842,10 +820,6 @@ namespace Hunspell
 
         public bool HasCompound => CompoundFlag.HasValue || CompoundBegin.HasValue || CompoundRules.HasItems;
 
-        public bool HasSuffixes => suffixesByFlag.Count != 0;
-
-        public bool HasPrefixes => prefixesByFlag.Count != 0;
-
         public bool TryGetAliasF(int number, out FlagSet result)
         {
             if (number > 0 && number <= aliasF.Count)
@@ -871,95 +845,6 @@ namespace Hunspell
             {
                 result = MorphSet.Empty;
                 return false;
-            }
-        }
-
-        public ReadOnlyListWrapper<AffixEntryWithDetail<PrefixEntry>> GetPrefixesWithoutKeys() =>
-            new ReadOnlyListWrapper<AffixEntryWithDetail<PrefixEntry>>(prefixesWithEmptyKeys);
-
-        public IEnumerable<AffixEntryWithDetail<PrefixEntry>> GetPrefixesWithKeySubset(string word)
-        {
-            List<AffixEntryWithDetail<PrefixEntry>> dotAffixes;
-            prefixesByIndexedKeyCharacter.TryGetValue('.', out dotAffixes);
-
-            List<AffixEntryWithDetail<PrefixEntry>> characterAffixes;
-            if (!word.StartsWith('.'))
-            {
-                prefixesByIndexedKeyCharacter.TryGetValue(word[0], out characterAffixes);
-            }
-            else
-            {
-                characterAffixes = null;
-            }
-
-            return FastUnion(dotAffixes, characterAffixes)
-                .Where(e => StringEx.IsSubset(e.Key, word));
-        }
-
-        public AffixEntryGroup<PrefixEntry> GetPrefixesByFlag(FlagValue aFlag)
-        {
-            AffixEntryGroup<PrefixEntry> result;
-            prefixesByFlag.TryGetValue(aFlag, out result);
-            return result;
-        }
-
-        public ReadOnlyListWrapper<AffixEntryWithDetail<SuffixEntry>> GetSuffixesWithoutKeys() =>
-            new ReadOnlyListWrapper<AffixEntryWithDetail<SuffixEntry>>(suffixesWithEmptyKeys);
-
-        public IEnumerable<AffixEntryWithDetail<SuffixEntry>> GetSuffixesWithReverseKeySubset(string word)
-        {
-            List<AffixEntryWithDetail<SuffixEntry>> dotAffixes;
-            suffixsByIndexedKeyCharacter.TryGetValue('.', out dotAffixes);
-
-            List<AffixEntryWithDetail<SuffixEntry>> characterAffixes;
-            if (!word.EndsWith('.'))
-            {
-                suffixsByIndexedKeyCharacter.TryGetValue(word[word.Length - 1], out characterAffixes);
-            }
-            else
-            {
-                characterAffixes = null;
-            }
-
-            return FastUnion(dotAffixes, characterAffixes)
-                .Where(e => StringEx.IsReverseSubset(e.Key, word));
-        }
-
-        public AffixEntryGroup<SuffixEntry> GetSuffixesByFlag(FlagValue aFlag)
-        {
-            AffixEntryGroup<SuffixEntry> result;
-            suffixesByFlag.TryGetValue(aFlag, out result);
-            return result;
-        }
-
-        private static IEnumerable<T> FastUnion<T>(List<T> a, List<T> b)
-        {
-            if (a == null)
-            {
-                if (b == null)
-                {
-                    return Enumerable.Empty<T>();
-                }
-                else
-                {
-                    return b;
-                }
-            }
-            else
-            {
-                if (b == null)
-                {
-                    return a;
-                }
-                else
-                {
-                    if (ReferenceEquals(a, b))
-                    {
-                        return a;
-                    }
-
-                    return Enumerable.Union(a, b);
-                }
             }
         }
     }

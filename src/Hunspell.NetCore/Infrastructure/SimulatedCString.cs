@@ -17,9 +17,7 @@ namespace Hunspell.Infrastructure
         {
             get
             {
-                return index < 0 || index >= Buffer.Length
-                    ? '\0'
-                    : Buffer[index];
+                return index < 0 || index >= Buffer.Length ? '\0' : Buffer[index];
             }
             set
             {

@@ -13,9 +13,11 @@ namespace Hunspell
         {
         }
 
-        internal static CompoundPatternTable TakeList(List<PatternEntry> patterns) => patterns == null ? Empty : new CompoundPatternTable(patterns);
+        internal static CompoundPatternTable TakeList(List<PatternEntry> patterns) =>
+            patterns == null ? Empty : new CompoundPatternTable(patterns);
 
-        public static CompoundPatternTable Create(IEnumerable<PatternEntry> patterns) => patterns == null ? Empty : TakeList(patterns.ToList());
+        public static CompoundPatternTable Create(IEnumerable<PatternEntry> patterns) =>
+            patterns == null ? Empty : TakeList(patterns.ToList());
 
         public bool TryGetPattern(int number, out PatternEntry result)
         {

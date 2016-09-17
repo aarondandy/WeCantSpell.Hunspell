@@ -323,7 +323,7 @@ namespace Hunspell
                 !flags.Contains(Affix.ForbiddenWord)
             )
             {
-                flags = FlagSet.Combine(flags, SpecialFlags.OnlyUpcaseFlag);
+                flags = FlagSet.Union(flags, SpecialFlags.OnlyUpcaseFlag);
 
                 var textInfo = Affix.Culture.TextInfo;
                 var initCapBuilder = StringBuilderPool.Get(word);

@@ -59,6 +59,8 @@ namespace Hunspell
 
         private static readonly string[] DefaultBreakTableEntries = new[] { "-", "^-", "-$" };
 
+        public static readonly Encoding DefaultEncoding = Encoding.GetEncoding("ISO8859-1");
+
         private AffixConfig.Builder Builder { get; }
 
         private IHunspellLineReader Reader { get; }
@@ -110,7 +112,7 @@ namespace Hunspell
         public static async Task<AffixConfig> ReadFileAsync(string filePath)
         {
             using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-            using (var reader = new DynamicEncodingLineReader(stream, AffixConfig.DefaultEncoding))
+            using (var reader = new DynamicEncodingLineReader(stream, DefaultEncoding))
             {
                 return await ReadAsync(reader).ConfigureAwait(false);
             }
@@ -119,7 +121,7 @@ namespace Hunspell
         public static AffixConfig ReadFile(string filePath)
         {
             using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-            using (var reader = new DynamicEncodingLineReader(stream, AffixConfig.DefaultEncoding))
+            using (var reader = new DynamicEncodingLineReader(stream, DefaultEncoding))
             {
                 return Read(reader);
             }

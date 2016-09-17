@@ -20,15 +20,9 @@ namespace Hunspell.Infrastructure
 
         private CompareInfo CompareInfo { get; }
 
-        public override int Compare(string x, string y)
-        {
-            return CompareInfo.Compare(x, y);
-        }
+        public override int Compare(string x, string y) => CompareInfo.Compare(x, y);
 
-        public override bool Equals(string x, string y)
-        {
-            return Compare(x, y) == 0;
-        }
+        public override bool Equals(string x, string y) => Compare(x, y) == 0;
 
         public override int GetHashCode(string obj)
         {

@@ -77,10 +77,8 @@ namespace Hunspell.Infrastructure
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static char GetCharOrTerminator(this StringBuilder @this, int index)
-        {
-            return index < @this.Length ? @this[index] : '\0';
-        }
+        public static char GetCharOrTerminator(this StringBuilder @this, int index) =>
+            index<@this.Length? @this[index] : '\0';
 
         public static void RemoveChars(this StringBuilder @this, CharacterSet chars)
         {
@@ -195,14 +193,10 @@ namespace Hunspell.Infrastructure
             }
         }
 
-        public static bool StartsWith(this StringBuilder builder, char c)
-        {
-            return builder.Length != 0 && builder[0] == c;
-        }
+        public static bool StartsWith(this StringBuilder builder, char c) =>
+            builder.Length != 0 && builder[0] == c;
 
-        public static bool EndsWith(this StringBuilder builder, char c)
-        {
-            return builder.Length != 0 && builder[builder.Length - 1] == c;
-        }
+        public static bool EndsWith(this StringBuilder builder, char c) =>
+            builder.Length != 0 && builder[builder.Length - 1] == c;
     }
 }

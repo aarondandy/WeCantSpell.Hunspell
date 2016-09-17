@@ -49,6 +49,7 @@
     <Compile Include="..\..\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="AffixCollection.cs" />
     <Compile Include="AffixConfigOptions.cs" />
     <Compile Include="AffixConfig.Builder.cs" />
     <Compile Include="AffixEntry.cs" />
@@ -57,6 +58,7 @@
     <Compile Include="AffixEntryOptions.cs" />
     <Compile Include="AffixConfig.cs" />
     <Compile Include="AffixEntryWithDetail.cs" />
+    <Compile Include="AffixEntryWithDetailCollection.cs" />
     <Compile Include="AffixReader.cs" />
     <Compile Include="BreakTable.cs" />
     <Compile Include="CapitalizationType.cs" />
@@ -80,10 +82,7 @@
     <Compile Include="Infrastructure\ArrayWrapper.cs" />
     <Compile Include="Infrastructure\BoolEx.cs" />
     <Compile Include="Infrastructure\EncodingEx.cs" />
-    <Compile Include="Infrastructure\FastArrayEnumerator.cs" />
-    <Compile Include="Infrastructure\FastListEnumerator.cs" />
     <Compile Include="Infrastructure\ListWrapper.cs" />
-    <Compile Include="Infrastructure\ReadOnlyListWrapper.cs" />
     <Compile Include="Infrastructure\SimulatedCString.cs" />
     <Compile Include="Infrastructure\StringBuilderEx.cs" />
     <Compile Include="Infrastructure\StringBuilderPool.cs" />

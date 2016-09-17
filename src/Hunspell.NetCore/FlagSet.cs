@@ -16,22 +16,47 @@ namespace Hunspell
 
         internal static FlagSet TakeArray(FlagValue[] values)
         {
+            if (values == null || values.Length == 0)
+            {
+                return Empty;
+            }
+
             Array.Sort(values);
             return new FlagSet(values);
         }
 
-        public static FlagSet Create(IEnumerable<FlagValue> given)
+        public static FlagSet Create(IEnumerable<FlagValue> given) =>
+            given == null ? Empty : TakeArray(given.Distinct().ToArray());
+
+        public static FlagSet Union(FlagSet a, FlagSet b)
         {
-            var values = given.Distinct().ToArray();
-            Array.Sort(values);
-            return TakeArray(values);
+            return Create(Enumerable.Concat(a, b));
         }
 
-        public static FlagSet Combine(FlagSet set, FlagValue value)
+        internal static FlagSet Union(FlagSet set, FlagValue value)
         {
-            var values = set.items.Concat(new[] { value }).Distinct().ToArray();
-            Array.Sort(values);
-            return TakeArray(values);
+            var valueIndex = Array.BinarySearch(set.items, value);
+            if (valueIndex >= 0)
+            {
+                return set;
+            }
+
+            valueIndex = ~valueIndex; // locate the best insertion point
+
+            var newItems = new FlagValue[set.items.Length + 1];
+            if (valueIndex >= set.items.Length)
+            {
+                Array.Copy(set.items, newItems, set.items.Length);
+                newItems[set.items.Length] = value;
+            }
+            else
+            {
+                Array.Copy(set.items, newItems, valueIndex);
+                Array.Copy(set.items, valueIndex, newItems, valueIndex + 1, set.items.Length - valueIndex);
+                newItems[valueIndex] = value;
+            }
+
+            return new FlagSet(newItems);
         }
 
         public static bool ContainsAny(FlagSet a, FlagSet b)

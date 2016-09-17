@@ -31,7 +31,7 @@ namespace Hunspell
             replacements == null ? Empty : new MultiReplacementTable(replacements);
 
         public static MultiReplacementTable Create(IEnumerable<KeyValuePair<string, MultiReplacementEntry>> replacements) =>
-            TakeDictionary(replacements.ToDictionary(s => s.Key, s => s.Value));
+            replacements == null ? Empty : TakeDictionary(replacements.ToDictionary(s => s.Key, s => s.Value));
 
         public bool ContainsKey(string key) => replacements.ContainsKey(key);
 

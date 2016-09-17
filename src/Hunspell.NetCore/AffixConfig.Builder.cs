@@ -12,6 +12,14 @@ namespace Hunspell
     {
         public sealed class Builder
         {
+            private const int DefaultCompoundMinLength = 3;
+
+            private const int DefaultMaxNgramSuggestions = 4;
+
+            private const int DefaultMaxCompoundSuggestions = 3;
+
+            private const string DefaultKeyString = "qwertyuiop|asdfghjkl|zxcvbnm";
+
             /// <summary>
             /// Various affix options.
             /// </summary>
@@ -196,7 +204,7 @@ namespace Hunspell
             /// The encoding to be used in morpheme, affix, and dictionary files.
             /// </summary>
             /// <seealso cref="AffixConfig.Encoding"/>
-            public Encoding Encoding = DefaultEncoding;
+            public Encoding Encoding = AffixReader.DefaultEncoding;
 
             /// <summary>
             /// Specifies modifications to try first.
@@ -386,107 +394,40 @@ namespace Hunspell
 
                 if (destructive)
                 {
-                    config.Replacements = Replacements == null ? SingleReplacementTable.Empty : SingleReplacementTable.TakeList(Replacements);
-                    Replacements = null;
+                    config.Replacements = SingleReplacementTable.TakeList(Steal(ref Replacements));
+                    config.CompoundRules = CompoundRuleTable.TakeList(Steal(ref CompoundRules));
+                    config.CompoundPatterns = CompoundPatternTable.TakeList(Steal(ref CompoundPatterns));
+                    config.RelatedCharacterMap = MapTable.TakeList(Steal(ref RelatedCharacterMap));
+                    config.Phone = PhoneTable.TakeList(Steal(ref Phone));
+                    config.InputConversions = MultiReplacementTable.TakeDictionary(Steal(ref InputConversions));
+                    config.OutputConversions = MultiReplacementTable.TakeDictionary(Steal(ref OutputConversions));
+
                     config.aliasF = AliasF ?? new List<FlagSet>(0);
                     AliasF = null;
                     config.aliasM = AliasM ?? new List<MorphSet>(0);
                     AliasM = null;
-                    config.CompoundRules = CompoundRules == null ? CompoundRuleTable.Empty : CompoundRuleTable.TakeList(CompoundRules);
-                    CompoundRules = null;
-                    config.CompoundPatterns = CompoundPatterns == null ? CompoundPatternTable.Empty : CompoundPatternTable.TakeList(CompoundPatterns);
-                    CompoundPatterns = null;
-                    config.RelatedCharacterMap = MapTable.TakeList(RelatedCharacterMap);
-                    RelatedCharacterMap = null;
-                    config.Phone = PhoneTable.TakeList(Phone);
-                    Phone = null;
-                    config.InputConversions = MultiReplacementTable.TakeDictionary(InputConversions);
-                    InputConversions = null;
-                    config.OutputConversions = MultiReplacementTable.TakeDictionary(OutputConversions);
-                    OutputConversions = null;
                 }
                 else
                 {
                     config.Replacements = SingleReplacementTable.Create(Replacements);
-                    config.aliasF = AliasF == null ? new List<FlagSet>(0) : AliasF.ToList();
-                    config.aliasM = AliasM == null ? new List<MorphSet>(0) : AliasM.ToList();
                     config.CompoundRules = CompoundRuleTable.Create(CompoundRules);
                     config.CompoundPatterns = CompoundPatternTable.Create(CompoundPatterns);
                     config.RelatedCharacterMap = MapTable.Create(RelatedCharacterMap);
                     config.Phone = PhoneTable.Create(Phone);
-                    config.InputConversions = InputConversions == null ? MultiReplacementTable.Empty : MultiReplacementTable.Create(InputConversions);
-                    config.OutputConversions = OutputConversions == null ? MultiReplacementTable.Empty : MultiReplacementTable.Create(OutputConversions);
+                    config.InputConversions = MultiReplacementTable.Create(InputConversions);
+                    config.OutputConversions = MultiReplacementTable.Create(OutputConversions);
+
+                    config.aliasF = AliasF == null ? new List<FlagSet>(0) : AliasF.ToList();
+                    config.aliasM = AliasM == null ? new List<MorphSet>(0) : AliasM.ToList();
                 }
 
-                BuildAffixCollections(
-                    Prefixes,
-                    out config.prefixesByFlag,
-                    out config.prefixesWithEmptyKeys,
-                    out config.prefixesByIndexedKeyCharacter);
+                config.Prefixes = AffixCollection<PrefixEntry>.Create(Prefixes);
 
-                BuildAffixCollections(
-                    Suffixes,
-                    out config.suffixesByFlag,
-                    out config.suffixesWithEmptyKeys,
-                    out config.suffixsByIndexedKeyCharacter);
+                config.Suffixes = AffixCollection<SuffixEntry>.Create(Suffixes);
 
-                config.ContClasses = FlagSet.Create(
-                    Enumerable.Concat<AffixEntry>(config.prefixesByFlag.Values.SelectMany(g => g.Entries), config.suffixesByFlag.Values.SelectMany(g => g.Entries))
-                    .SelectMany(e => e.ContClass));
+                config.ContClasses = FlagSet.Union(config.Prefixes.ContClasses, config.Suffixes.ContClasses);
 
                 return config;
-            }
-
-            private void BuildAffixCollections<TEntry>(
-                List<AffixEntryGroup.Builder<TEntry>> builders,
-                out Dictionary<FlagValue, AffixEntryGroup<TEntry>> entriesByFlag,
-                out List<AffixEntryWithDetail<TEntry>> affixesWithEmptyKeys,
-                out Dictionary<char, List<AffixEntryWithDetail<TEntry>>> affixesByIndexedKeyCharacter)
-                where TEntry : AffixEntry
-            {
-                if (builders == null || builders.Count == 0)
-                {
-                    entriesByFlag = new Dictionary<FlagValue, AffixEntryGroup<TEntry>>(0);
-                    affixesWithEmptyKeys = new List<AffixEntryWithDetail<TEntry>>(0);
-                    affixesByIndexedKeyCharacter = new Dictionary<char, List<AffixEntryWithDetail<TEntry>>>(0);
-                    return;
-                }
-
-                entriesByFlag = new Dictionary<FlagValue, AffixEntryGroup<TEntry>>(builders.Count);
-                affixesWithEmptyKeys = new List<AffixEntryWithDetail<TEntry>>();
-                affixesByIndexedKeyCharacter = new Dictionary<char, List<AffixEntryWithDetail<TEntry>>>();
-
-                for (var i = 0; i < builders.Count; i++)
-                {
-                    var group = builders[i].ToGroup();
-                    entriesByFlag.Add(group.AFlag, group);
-
-                    foreach (var entry in group.Entries)
-                    {
-                        var key = entry.Key;
-                        var entryWithDetail = new AffixEntryWithDetail<TEntry>(group, entry);
-                        if (string.IsNullOrEmpty(key))
-                        {
-                            affixesWithEmptyKeys.Add(entryWithDetail);
-                        }
-                        else
-                        {
-                            var indexedChar = key[0];
-                            List<AffixEntryWithDetail<TEntry>> keyedAffixes;
-                            if (affixesByIndexedKeyCharacter.TryGetValue(indexedChar, out keyedAffixes))
-                            {
-                                keyedAffixes.Add(entryWithDetail);
-                            }
-                            else
-                            {
-                                affixesByIndexedKeyCharacter.Add(indexedChar, new List<AffixEntryWithDetail<TEntry>>
-                                {
-                                    entryWithDetail
-                                });
-                            }
-                        }
-                    }
-                }
             }
 
             /// <summary>
@@ -499,6 +440,16 @@ namespace Hunspell
             public void EnableOptions(AffixConfigOptions options)
             {
                 Options |= options;
+            }
+
+#if !PRE_NETSTANDARD && !DEBUG
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            private static T Steal<T>(ref T item) where T:class
+            {
+                var value = item;
+                item = null;
+                return value;
             }
         }
     }

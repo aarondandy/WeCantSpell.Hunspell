@@ -2288,11 +2288,11 @@ namespace Hunspell
             }
 
             // handle suffixes
-            if (Affix.HasSuffixes)
+            if (Affix.Suffixes.HasAffixes)
             {
                 for (var i = 0; i < entry.Flags.Count; i++)
                 {
-                    var sptrGroup = Affix.GetSuffixesByFlag(entry.Flags[i]);
+                    var sptrGroup = Affix.Suffixes.GetByFlag(entry.Flags[i]);
                     if (sptrGroup == null)
                     {
                         continue;
@@ -2356,7 +2356,7 @@ namespace Hunspell
             var n = nh;
 
             // handle cross products of prefixes and suffixes
-            if (Affix.HasPrefixes)
+            if (Affix.Prefixes.HasAffixes)
             {
                 for (var j = 1; j < n; j++)
                 {
@@ -2367,7 +2367,7 @@ namespace Hunspell
 
                     for (var k = 0; k < entry.Flags.Count; k++)
                     {
-                        var pfxGroup = Affix.GetPrefixesByFlag(entry.Flags[k]);
+                        var pfxGroup = Affix.Prefixes.GetByFlag(entry.Flags[k]);
                         if (pfxGroup == null)
                         {
                             continue;
@@ -2406,11 +2406,11 @@ namespace Hunspell
             }
 
             // now handle pure prefixes
-            if (Affix.HasPrefixes)
+            if (Affix.Prefixes.HasAffixes)
             {
                 for (var m = 0; m < entry.Flags.Count; m++)
                 {
-                    var ptrGroup = Affix.GetPrefixesByFlag(entry.Flags[m]);
+                    var ptrGroup = Affix.Prefixes.GetByFlag(entry.Flags[m]);
                     if (ptrGroup == null)
                     {
                         continue;
@@ -4336,7 +4336,7 @@ namespace Hunspell
             }
 
             // first handle the special case of 0 length prefixes
-            foreach (var pe in Affix.GetPrefixesWithoutKeys())
+            foreach (var pe in Affix.Prefixes.AffixesWithEmptyKeys)
             {
                 if (
                     // fogemorpheme
@@ -4357,7 +4357,7 @@ namespace Hunspell
             }
 
             // now handle the general case
-            foreach (var pptr in Affix.GetPrefixesWithKeySubset(word))
+            foreach (var pptr in Affix.Prefixes.GetMatchingAffixes(word))
             {
                 if (
                     // fogemorpheme
@@ -4388,7 +4388,7 @@ namespace Hunspell
             DictionaryEntry rv;
 
             // first handle the special case of 0 length prefixes
-            foreach (var pe in Affix.GetPrefixesWithoutKeys())
+            foreach (var pe in Affix.Prefixes.AffixesWithEmptyKeys)
             {
                 rv = CheckTwoSfx(pe, word, inCompound, needFlag);
                 if (rv != null)
@@ -4398,7 +4398,7 @@ namespace Hunspell
             }
 
             // now handle the general case
-            foreach (var pptr in Affix.GetPrefixesWithKeySubset(word))
+            foreach (var pptr in Affix.Prefixes.GetMatchingAffixes(word))
             {
                 rv = CheckTwoSfx(pptr, word, inCompound, needFlag);
                 if (rv != null)
@@ -4467,7 +4467,7 @@ namespace Hunspell
         {
             DictionaryEntry rv;
 
-            if (!Affix.HasSuffixes)
+            if (Affix.Suffixes.IsEmpty)
             {
                 return null;
             }
@@ -4482,7 +4482,7 @@ namespace Hunspell
             var checkWordCclassFlag = inCompound != CompoundOptions.Not ? default(FlagValue) : Affix.OnlyInCompound;
 
             // first handle the special case of 0 length suffixes
-            foreach (var se in Affix.GetSuffixesWithoutKeys())
+            foreach (var se in Affix.Suffixes.AffixesWithEmptyKeys)
             {
                 // suffixes are not allowed in beginning of compounds
                 if (
@@ -4561,7 +4561,7 @@ namespace Hunspell
                 return null;
             }
 
-            foreach (var sptr in Affix.GetSuffixesWithReverseKeySubset(word))
+            foreach (var sptr in Affix.Suffixes.GetMatchingAffixes(word))
             {
                 if (
                     (
@@ -4670,7 +4670,7 @@ namespace Hunspell
             DictionaryEntry rv;
 
             // first handle the special case of 0 length suffixes
-            foreach (var se in Affix.GetSuffixesWithoutKeys())
+            foreach (var se in Affix.Suffixes.AffixesWithEmptyKeys)
             {
                 if (Affix.ContClasses.Contains(se.AFlag))
                 {
@@ -4688,7 +4688,7 @@ namespace Hunspell
                 return null; // FULLSTRIP
             }
 
-            foreach (var sptr in Affix.GetSuffixesWithReverseKeySubset(word))
+            foreach (var sptr in Affix.Suffixes.GetMatchingAffixes(word))
             {
                 if (Affix.ContClasses.Contains(sptr.AFlag))
                 {
