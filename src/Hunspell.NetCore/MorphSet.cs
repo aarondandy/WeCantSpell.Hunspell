@@ -1,44 +1,38 @@
-﻿using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
-    public sealed class MorphSet
-        : IReadOnlyList<string>
+    public sealed class MorphSet : ArrayWrapper<string>
     {
         public static readonly MorphSet Empty = TakeArray(ArrayEx<string>.Empty);
 
-        private readonly string[] morphs;
-
         private MorphSet(string[] morphs)
+            : base(morphs)
         {
-            this.morphs = morphs;
         }
 
-        public string this[int index] => morphs[index];
+        internal static MorphSet TakeArray(string[] morphs) => morphs == null ? Empty : new MorphSet(morphs);
 
-        public int Count => morphs.Length;
+        public static MorphSet Create(List<string> morphs) => morphs == null ? Empty : TakeArray(morphs.ToArray());
 
-        public bool HasMorphs => morphs.Length != 0;
+        public static MorphSet Create(IEnumerable<string> morphs) => morphs == null ? Empty : TakeArray(morphs.ToArray());
 
-        internal static MorphSet TakeArray(string[] morphs) => new MorphSet(morphs);
+        public string Join(string seperator) => string.Join(seperator, items);
 
-        public static MorphSet Create(List<string> morphs) => TakeArray(morphs.ToArray());
+        public bool AnyStartsWith(string text)
+        {
+            for (var i = 0; i < items.Length; i++)
+            {
+                if (items[i].StartsWith(text))
+                {
+                    return true;
+                }
+            }
 
-        public static MorphSet Create(IEnumerable<string> morphs) => TakeArray(morphs.ToArray());
-
-        public string Join(string seperator) => string.Join(seperator, morphs);
-
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public FastArrayEnumerator<string> GetEnumerator() => new FastArrayEnumerator<string>(morphs);
-
-        IEnumerator<string> IEnumerable<string>.GetEnumerator() => ((IEnumerable<string>)morphs).GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => morphs.GetEnumerator();
+            return false;
+        }
     }
 }

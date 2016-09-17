@@ -1,56 +1,27 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
-    public class CompoundPatternTable :
-        IReadOnlyList<PatternEntry>
+    public class CompoundPatternTable : ListWrapper<PatternEntry>
     {
         public static readonly CompoundPatternTable Empty = TakeList(new List<PatternEntry>(0));
 
-        private readonly List<PatternEntry> patterns;
-
         private CompoundPatternTable(List<PatternEntry> patterns)
+            : base(patterns)
         {
-            this.patterns = patterns;
         }
 
-        public PatternEntry this[int index]
-        {
-#if !PRE_NETSTANDARD && !DEBUG
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            get
-            {
-                return patterns[index];
-            }
-        }
-
-        public int Count
-        {
-#if !PRE_NETSTANDARD && !DEBUG
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            get
-            {
-                return patterns.Count;
-            }
-        }
-
-        public bool HasPatterns => patterns.Count != 0;
-
-        internal static CompoundPatternTable TakeList(List<PatternEntry> patterns) => new CompoundPatternTable(patterns);
+        internal static CompoundPatternTable TakeList(List<PatternEntry> patterns) => patterns == null ? Empty : new CompoundPatternTable(patterns);
 
         public static CompoundPatternTable Create(IEnumerable<PatternEntry> patterns) => patterns == null ? Empty : TakeList(patterns.ToList());
 
         public bool TryGetPattern(int number, out PatternEntry result)
         {
-            if (number > 0 && number <= patterns.Count)
+            if (number > 0 && number <= items.Count)
             {
-                result = patterns[number - 1];
+                result = items[number - 1];
                 return true;
             }
             else
@@ -67,7 +38,7 @@ namespace Hunspell
         {
             var wordAfterPos = word.Substring(pos);
 
-            foreach (var patternEntry in patterns)
+            foreach (var patternEntry in items)
             {
                 int len;
                 if (
@@ -122,14 +93,5 @@ namespace Hunspell
 
             return false;
         }
-
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public FastListEnumerator<PatternEntry> GetEnumerator() => new FastListEnumerator<PatternEntry>(patterns);
-
-        IEnumerator<PatternEntry> IEnumerable<PatternEntry>.GetEnumerator() => patterns.GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => patterns.GetEnumerator();
     }
 }

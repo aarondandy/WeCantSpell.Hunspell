@@ -77,10 +77,12 @@
     <Compile Include="Hunspell.cs" />
     <Compile Include="HunspellQuery.cs" />
     <Compile Include="IHunspellLineReader.cs" />
+    <Compile Include="Infrastructure\ArrayWrapper.cs" />
     <Compile Include="Infrastructure\BoolEx.cs" />
     <Compile Include="Infrastructure\EncodingEx.cs" />
     <Compile Include="Infrastructure\FastArrayEnumerator.cs" />
     <Compile Include="Infrastructure\FastListEnumerator.cs" />
+    <Compile Include="Infrastructure\ListWrapper.cs" />
     <Compile Include="Infrastructure\ReadOnlyListWrapper.cs" />
     <Compile Include="Infrastructure\SimulatedCString.cs" />
     <Compile Include="Infrastructure\StringBuilderEx.cs" />

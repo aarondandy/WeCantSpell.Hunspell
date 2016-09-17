@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -7,34 +6,23 @@ using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
-    public sealed class DictionaryEntrySet :
-        IReadOnlyList<DictionaryEntry>
+    public sealed class DictionaryEntrySet : ArrayWrapper<DictionaryEntry>
     {
         public static readonly DictionaryEntrySet Empty = TakeArray(ArrayEx<DictionaryEntry>.Empty);
 
-        private DictionaryEntry[] entries;
-
         private DictionaryEntrySet(DictionaryEntry[] entries)
+            : base(entries)
         {
-            this.entries = entries;
         }
 
-        public DictionaryEntry this[int index] => entries[index];
+        internal static DictionaryEntrySet TakeArray(DictionaryEntry[] entries) => entries == null ? Empty : new DictionaryEntrySet(entries);
 
-        public int Count => entries.Length;
-
-        public bool IsEmpty => entries.Length == 0;
-
-        public bool HasEntries => entries.Length != 0;
-
-        internal static DictionaryEntrySet TakeArray(DictionaryEntry[] entries) => new DictionaryEntrySet(entries);
-
-        public static DictionaryEntrySet Create(IEnumerable<DictionaryEntry> entries) => TakeArray(entries.ToArray());
+        public static DictionaryEntrySet Create(IEnumerable<DictionaryEntry> entries) => entries == null ? Empty : TakeArray(entries.ToArray());
 
         public static DictionaryEntrySet CopyWithItemReplaced(DictionaryEntrySet source, int index, DictionaryEntry replacement)
         {
-            var newEntries = new DictionaryEntry[source.entries.Length];
-            Array.Copy(source.entries, newEntries, newEntries.Length);
+            var newEntries = new DictionaryEntry[source.items.Length];
+            Array.Copy(source.items, newEntries, newEntries.Length);
             newEntries[index] = replacement;
             return TakeArray(newEntries);
         }
@@ -42,15 +30,15 @@ namespace Hunspell
         public static DictionaryEntrySet CopyWithItemAdded(DictionaryEntrySet source, DictionaryEntry entry)
         {
             DictionaryEntry[] newEntries;
-            if (source.entries.Length == 0)
+            if (source.items.Length == 0)
             {
                 newEntries = new[] { entry };
             }
             else
             {
-                newEntries = new DictionaryEntry[source.entries.Length + 1];
-                Array.Copy(source.entries, newEntries, source.entries.Length);
-                newEntries[source.entries.Length] = entry;
+                newEntries = new DictionaryEntry[source.items.Length + 1];
+                Array.Copy(source.items, newEntries, source.items.Length);
+                newEntries[source.items.Length] = entry;
             }
 
             return TakeArray(newEntries);
@@ -58,24 +46,15 @@ namespace Hunspell
 
         public DictionaryEntry FirstOrDefault()
         {
-            return entries.Length != 0 ? entries[0] : null;
+            return items.Length != 0 ? items[0] : null;
         }
-
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public FastArrayEnumerator<DictionaryEntry> GetEnumerator() => new FastArrayEnumerator<DictionaryEntry>(entries);
-
-        IEnumerator<DictionaryEntry> IEnumerable<DictionaryEntry>.GetEnumerator() => ((IEnumerable<DictionaryEntry>)entries).GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => entries.GetEnumerator();
 
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         internal void DestructiveReplace(int index, DictionaryEntry entry)
         {
-            entries[index] = entry;
+            items[index] = entry;
         }
     }
 }

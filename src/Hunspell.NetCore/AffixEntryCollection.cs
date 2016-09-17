@@ -1,38 +1,20 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+﻿using System.Collections.Generic;
 using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
-    public sealed class AffixEntryCollection<TEntry> :
-        IReadOnlyCollection<TEntry>
+    public sealed class AffixEntryCollection<TEntry> : ArrayWrapper<TEntry>
         where TEntry : AffixEntry
     {
         public static readonly AffixEntryCollection<TEntry> Empty = TakeArray(ArrayEx<TEntry>.Empty);
 
-        private readonly TEntry[] entries;
-
         private AffixEntryCollection(TEntry[] entries)
+            : base(entries)
         {
-            this.entries = entries;
         }
 
-        public TEntry this[int index] => entries[index];
+        internal static AffixEntryCollection<TEntry> TakeArray(TEntry[] entries) => entries == null ? Empty : new AffixEntryCollection<TEntry>(entries);
 
-        public int Count => entries.Length;
-
-        internal static AffixEntryCollection<TEntry> TakeArray(TEntry[] entries) => new AffixEntryCollection<TEntry>(entries);
-
-        public static AffixEntryCollection<TEntry> Create(List<TEntry> entries) => TakeArray(entries.ToArray());
-
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public FastArrayEnumerator<TEntry> GetEnumerator() => new FastArrayEnumerator<TEntry>(entries);
-
-        IEnumerator<TEntry> IEnumerable<TEntry>.GetEnumerator() => ((IEnumerable<TEntry>)entries).GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => entries.GetEnumerator();
+        public static AffixEntryCollection<TEntry> Create(List<TEntry> entries) => entries == null ? Empty : TakeArray(entries.ToArray());
     }
 }

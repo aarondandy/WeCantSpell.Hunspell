@@ -664,7 +664,7 @@ namespace Hunspell
                     affixText = StringBuilderPool.Get(affixInput);
                 }
 
-                if (Builder.IgnoredChars != null && Builder.IgnoredChars.HasChars)
+                if (Builder.IgnoredChars != null && Builder.IgnoredChars.HasItems)
                 {
                     affixText.RemoveChars(Builder.IgnoredChars);
                 }
@@ -752,7 +752,7 @@ namespace Hunspell
                     };
                 }
 
-                if (!Builder.HasContClass && contClass.HasFlags)
+                if (!Builder.HasContClass && contClass.HasItems)
                 {
                     Builder.HasContClass = true;
                 }

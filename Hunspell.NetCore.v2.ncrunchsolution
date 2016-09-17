@@ -9,6 +9,7 @@
   <FrameworkUtilisationTypeForMSTest>UseStaticAnalysis</FrameworkUtilisationTypeForMSTest>
   <FrameworkUtilisationTypeForXUnit2>UseDynamicAnalysis</FrameworkUtilisationTypeForXUnit2>
   <NCrunchCacheStoragePath></NCrunchCacheStoragePath>
+  <EngineModes>Run all tests automatically:BFRydWU=:BFRydWU=:BFRydWU=:False:False;Run all tests manually:BUZhbHNl:BFRydWU=:BFRydWU=:False:False;Run impacted tests automatically, others manually:CklzSW1wYWN0ZWQ=:BFRydWU=:BFRydWU=:False:True;Run pinned tests automatically, others manually:CElzUGlubmVk:BFRydWU=:BFRydWU=:True:False</EngineModes>
   <MetricsExclusionList>
 </MetricsExclusionList>
 </SolutionConfiguration>

@@ -222,7 +222,7 @@ namespace Hunspell
             }
 
             // recursive breaking at break points
-            if (Affix.BreakPoints.HasBreaks)
+            if (Affix.BreakPoints.HasItems)
             {
                 // calculate break points for recursion limit
                 if (Affix.BreakPoints.FindRecursionLimit(scw) >= 10)
@@ -1445,7 +1445,7 @@ namespace Hunspell
             }
 
             var inMap = false;
-            if (Affix.RelatedCharacterMap.HasEntries)
+            if (Affix.RelatedCharacterMap.HasItems)
             {
                 foreach (var mapEntry in Affix.RelatedCharacterMap)
                 {
@@ -1602,7 +1602,7 @@ namespace Hunspell
                 rv = SuffixCheck(word, AffixEntryOptions.None, null, default(FlagValue), default(FlagValue), CompoundOptions.Not); // only suffix
             }
 
-            if (Affix.ContClasses.HasFlags && rv == null)
+            if (Affix.ContClasses.HasItems && rv == null)
             {
                 rv = SuffixCheckTwoSfx(word, AffixEntryOptions.None, null, default(FlagValue));
                 if (rv == null)
@@ -1637,7 +1637,7 @@ namespace Hunspell
         /// </summary>
         private int ReplChars(List<string> wlst, string word, bool cpdSuggest)
         {
-            if (word.Length < 2 || !Affix.Replacements.HasReplacements)
+            if (word.Length < 2 || Affix.Replacements.IsEmpty)
             {
                 return wlst.Count;
             }
@@ -1785,7 +1785,7 @@ namespace Hunspell
                 word = word.Reverse();
             }
 
-            var hasPhoneEntries = Affix.Phone.HasEntries;
+            var hasPhoneEntries = Affix.Phone.HasItems;
 
             var target = hasPhoneEntries
                 ? Phonet(MakeAllCap(word))
@@ -2312,7 +2312,7 @@ namespace Hunspell
                             )
                             && // check needaffix flag
                             !(
-                                sptr.HasContClasses
+                                sptr.ContClass.HasItems
                                 &&
                                 sptr.ContainsAnyContClass(Affix.NeedAffix, Affix.Circumfix, Affix.OnlyInCompound)
                             )
@@ -3138,7 +3138,7 @@ namespace Hunspell
             string w2;
             string word;
             bool useBuffer;
-            if (Affix.IgnoredChars.HasChars)
+            if (Affix.IgnoredChars.HasItems)
             {
                 w2 = w.RemoveChars(Affix.IgnoredChars);
                 word = w2;
@@ -3428,7 +3428,7 @@ namespace Hunspell
                                     )
                                     ||
                                     (
-                                        Affix.CompoundRules.HasRules
+                                        Affix.CompoundRules.HasItems
                                         &&
                                         onlycpdrule
                                         &&
@@ -3818,7 +3818,7 @@ namespace Hunspell
                                             (words == null && rv.ContainsFlag(Affix.CompoundEnd))
                                             ||
                                             (
-                                                Affix.CompoundRules.HasRules
+                                                Affix.CompoundRules.HasItems
                                                 && words != null
                                                 && DefCompoundCheck(ref words, wnum + 1, rv, null, true)
                                             )
@@ -3923,7 +3923,7 @@ namespace Hunspell
                                     )
                                     && // test CHECKCOMPOUNDPATTERN
                                     (
-                                        !Affix.CompoundPatterns.HasPatterns
+                                        Affix.CompoundPatterns.IsEmpty
                                         ||
                                         scpd != 0
                                         ||
@@ -3973,7 +3973,7 @@ namespace Hunspell
                                     rv = AffixCheck(word.Substring(i), Affix.CompoundEnd, CompoundOptions.End);
                                 }
 
-                                if (rv == null && Affix.CompoundRules.HasRules && words != null)
+                                if (rv == null && Affix.CompoundRules.HasItems && words != null)
                                 {
                                     rv = AffixCheck(word.Substring(i), new FlagValue(), CompoundOptions.End);
                                     if (rv != null && DefCompoundCheck(ref words, wnum + 1, rv, null, true))
@@ -4007,7 +4007,7 @@ namespace Hunspell
                                     &&
                                     scpd == 0
                                     &&
-                                    Affix.CompoundPatterns.HasPatterns
+                                    Affix.CompoundPatterns.HasItems
                                     &&
                                     Affix.CompoundPatterns.Check(word, i, rvFirst, rv, affixed)
                                 )
@@ -4156,7 +4156,7 @@ namespace Hunspell
 
                                     if (
                                         rv != null
-                                        && Affix.CompoundPatterns.HasPatterns
+                                        && Affix.CompoundPatterns.HasItems
                                         &&
                                         (
                                             (scpd == 0 && Affix.CompoundPatterns.Check(word, i, rvFirst, rv, affixed))
@@ -4277,7 +4277,7 @@ namespace Hunspell
                         }
                     }
                 }
-                while (Affix.CompoundRules.HasRules && oldwordnum == 0 && !BoolEx.PostfixIncrement(ref onlycpdrule));
+                while (Affix.CompoundRules.HasItems && oldwordnum == 0 && !BoolEx.PostfixIncrement(ref onlycpdrule));
             }
 
             st.Destroy();
@@ -4297,7 +4297,7 @@ namespace Hunspell
                 // if still not found check all suffixes
                 rv = SuffixCheck(word, 0, null, default(FlagValue), needFlag, inCompound);
 
-                if (Affix.ContClasses.HasFlags)
+                if (Affix.ContClasses.HasItems)
                 {
                     ClearSuffix();
                     ClearPrefix();
@@ -4819,18 +4819,16 @@ namespace Hunspell
         /// </summary>
         private int GetSyllable(string word)
         {
-            if (Affix.CompoundMaxSyllable == 0 || Affix.CompoundVowels.IsEmpty)
-            {
-                return 0;
-            }
-
             var num = 0;
 
-            for (var i = 0; i < word.Length; i++)
+            if (Affix.CompoundMaxSyllable != 0 && Affix.CompoundVowels.HasItems)
             {
-                if (Affix.CompoundVowels.Contains(word[i]))
+                for (var i = 0; i < word.Length; i++)
                 {
-                    num++;
+                    if (Affix.CompoundVowels.Contains(word[i]))
+                    {
+                        num++;
+                    }
                 }
             }
 
@@ -4844,7 +4842,7 @@ namespace Hunspell
         /// <seealso cref="AffixConfig.Replacements"/>
         private bool CompoundReplacementCheck(string word)
         {
-            if (word.Length < 2 || !Affix.Replacements.HasReplacements)
+            if (word.Length < 2 || Affix.Replacements.IsEmpty)
             {
                 return false;
             }
@@ -5086,7 +5084,7 @@ namespace Hunspell
 
         private bool CandidateCheck(string word)
         {
-            return Lookup(word).HasEntries
+            return Lookup(word).HasItems
                 || AffixCheck(word, default(FlagValue), CompoundOptions.Not) != null;
         }
 

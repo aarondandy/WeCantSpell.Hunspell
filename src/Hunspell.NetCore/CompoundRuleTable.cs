@@ -1,54 +1,25 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
-    public sealed class CompoundRuleTable :
-        IReadOnlyList<CompoundRule>
+    public sealed class CompoundRuleTable : ListWrapper<CompoundRule>
     {
         public static readonly CompoundRuleTable Empty = TakeList(new List<CompoundRule>(0));
 
-        private List<CompoundRule> rules;
-
         private CompoundRuleTable(List<CompoundRule> rules)
+            : base(rules)
         {
-            this.rules = rules;
         }
 
-        public bool HasRules => rules.Count != 0;
-
-        public CompoundRule this[int index]
-        {
-#if !PRE_NETSTANDARD && !DEBUG
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            get
-            {
-                return rules[index];
-            }
-        }
-
-        public int Count
-        {
-#if !PRE_NETSTANDARD && !DEBUG
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            get
-            {
-                return rules.Count;
-            }
-        }
-
-        internal static CompoundRuleTable TakeList(List<CompoundRule> rules) => new CompoundRuleTable(rules);
+        internal static CompoundRuleTable TakeList(List<CompoundRule> rules) => rules == null ? Empty : new CompoundRuleTable(rules);
 
         public static CompoundRuleTable Create(IEnumerable<CompoundRule> rules) => rules == null ? Empty : TakeList(rules.ToList());
 
         public bool EntryContainsRuleFlags(DictionaryEntry rv)
         {
-            foreach (var rule in rules)
+            foreach (var rule in items)
             {
                 foreach (var flag in rule)
                 {
@@ -70,7 +41,7 @@ namespace Hunspell
                 new MetacharData()
             };
 
-            foreach (var compoundRule in rules)
+            foreach (var compoundRule in items)
             {
                 var pp = 0; // pattern position
                 var wp = 0; // "words" position
@@ -236,15 +207,6 @@ namespace Hunspell
 
             return false;
         }
-
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public FastListEnumerator<CompoundRule> GetEnumerator() => new FastListEnumerator<CompoundRule>(rules);
-
-        IEnumerator<CompoundRule> IEnumerable<CompoundRule>.GetEnumerator() => rules.GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => rules.GetEnumerator();
 
         private class MetacharData
         {

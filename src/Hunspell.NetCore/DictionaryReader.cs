@@ -206,7 +206,7 @@ namespace Hunspell
 
         private bool AddWord(string word, FlagSet flags, MorphSet morphs, bool onlyUpperCase)
         {
-            if (Affix.IgnoredChars.HasChars)
+            if (Affix.IgnoredChars.HasItems)
             {
                 word = word.RemoveChars(Affix.IgnoredChars);
             }
@@ -215,7 +215,7 @@ namespace Hunspell
             {
                 word = word.Reverse();
 
-                if (morphs.HasMorphs && !Affix.IsAliasM)
+                if (morphs.HasItems && !Affix.IsAliasM)
                 {
                     var newMorphs = new string[morphs.Count];
                     for (int i = 0; i < morphs.Count; i++)
@@ -228,7 +228,7 @@ namespace Hunspell
             }
 
             DictionaryEntryOptions options;
-            if (morphs.HasMorphs)
+            if (morphs.HasItems)
             {
                 if (Affix.IsAliasM)
                 {
@@ -255,7 +255,7 @@ namespace Hunspell
                     options = DictionaryEntryOptions.None;
                 }
 
-                if (morphs.Any(m => m.StartsWith(MorphologicalTags.Phon)))
+                if (morphs.AnyStartsWith(MorphologicalTags.Phon))
                 {
                     options |= DictionaryEntryOptions.Phon;
                 }
@@ -317,7 +317,7 @@ namespace Hunspell
                 (
                     capType == CapitalizationType.Huh
                     || capType == CapitalizationType.HuhInit
-                    || (capType == CapitalizationType.All && flags.HasFlags)
+                    || (capType == CapitalizationType.All && flags.HasItems)
                 )
                 &&
                 !flags.Contains(Affix.ForbiddenWord)

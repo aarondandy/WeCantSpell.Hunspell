@@ -24,7 +24,7 @@ namespace Hunspell
 
         public string Strip => AffixEntry.Strip;
 
-        public bool HasContClasses => AffixEntry.HasContClasses;
+        public bool HasContClasses => AffixEntry.ContClass.HasItems;
 
         public CharacterConditionGroup Conditions => AffixEntry.Conditions;
 

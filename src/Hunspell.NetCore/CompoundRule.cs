@@ -1,35 +1,22 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
-    public sealed class CompoundRule :
-        IReadOnlyList<FlagValue>
+    public sealed class CompoundRule : ArrayWrapper<FlagValue>
     {
-        private FlagValue[] values;
+        public static readonly CompoundRule Empty = TakeArray(ArrayEx<FlagValue>.Empty);
 
         private CompoundRule(FlagValue[] values)
+            : base(values)
         {
-            this.values = values;
         }
 
-        public FlagValue this[int index] => values[index];
+        internal static CompoundRule TakeArray(FlagValue[] values) => values == null ? Empty : new CompoundRule(values);
 
-        public int Count => values.Length;
+        public static CompoundRule Create(List<FlagValue> values) => values == null ? Empty : TakeArray(values.ToArray());
 
-        internal static CompoundRule TakeArray(FlagValue[] values) => new CompoundRule(values);
-
-        public static CompoundRule Create(List<FlagValue> values) => TakeArray(values.ToArray());
-
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public FastArrayEnumerator<FlagValue> GetEnumerator() => new FastArrayEnumerator<FlagValue>(values);
-
-        IEnumerator<FlagValue> IEnumerable<FlagValue>.GetEnumerator() => ((IEnumerable<FlagValue>)values).GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => values.GetEnumerator();
+        public static CompoundRule Create(IEnumerable<FlagValue> values) => values == null ? Empty : TakeArray(values.ToArray());
     }
 }

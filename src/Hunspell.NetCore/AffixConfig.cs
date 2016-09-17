@@ -840,7 +840,7 @@ namespace Hunspell
 
         public bool IsHungarian { get; private set; }
 
-        public bool HasCompound => CompoundFlag.HasValue || CompoundBegin.HasValue || CompoundRules.HasRules;
+        public bool HasCompound => CompoundFlag.HasValue || CompoundBegin.HasValue || CompoundRules.HasItems;
 
         public bool HasSuffixes => suffixesByFlag.Count != 0;
 

@@ -1,40 +1,22 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
-    public sealed class MapEntry :
-        IReadOnlyList<string>
+    public sealed class MapEntry : ArrayWrapper<string>
     {
         public static readonly MapEntry Empty = TakeArray(ArrayEx<string>.Empty);
 
-        private readonly string[] values;
-
         private MapEntry(string[] values)
+            : base(values)
         {
-            this.values = values;
         }
 
-        public string this[int index] => values[index];
+        internal static MapEntry TakeArray(string[] values) => values == null ? Empty : new MapEntry(values);
 
-        public int Count => values.Length;
+        public static MapEntry Create(List<string> values) => values == null ? Empty : TakeArray(values.ToArray());
 
-        internal static MapEntry TakeArray(string[] values) => new MapEntry(values);
-
-        public static MapEntry Create(List<string> values) => TakeArray(values.ToArray());
-
-        public static MapEntry Create(IEnumerable<string> values) => TakeArray(values.ToArray());
-
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public FastArrayEnumerator<string> GetEnumerator() => new FastArrayEnumerator<string>(values);
-
-        IEnumerator<string> IEnumerable<string>.GetEnumerator() => ((IEnumerable<string>)values).GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => values.GetEnumerator();
+        public static MapEntry Create(IEnumerable<string> values) => values == null ? Empty : TakeArray(values.ToArray());
     }
 }

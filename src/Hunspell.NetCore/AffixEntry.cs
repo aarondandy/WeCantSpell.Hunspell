@@ -135,10 +135,6 @@ namespace Hunspell
 
         public abstract string Key { get; }
 
-        public bool HasMorphCode => MorphCode.HasMorphs;
-
-        public bool HasContClasses => ContClass.HasFlags;
-
         public static TEntry Create<TEntry>
         (
             string strip,
@@ -161,8 +157,8 @@ namespace Hunspell
 
         public bool ContainsContClass(FlagValue flag) => flag.HasValue && ContClass.Contains(flag);
 
-        public bool ContainsAnyContClass(FlagValue a, FlagValue b) => HasContClasses && ContClass.ContainsAny(a,b);
+        public bool ContainsAnyContClass(FlagValue a, FlagValue b) => ContClass.ContainsAny(a,b);
 
-        public bool ContainsAnyContClass(FlagValue a, FlagValue b, FlagValue c) => HasContClasses && ContClass.ContainsAny(a, b, c);
+        public bool ContainsAnyContClass(FlagValue a, FlagValue b, FlagValue c) => ContClass.ContainsAny(a, b, c);
     }
 }

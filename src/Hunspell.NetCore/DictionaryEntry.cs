@@ -18,7 +18,7 @@
 
         public DictionaryEntryOptions Options { get; }
 
-        public bool HasFlags => Flags.HasFlags;
+        public bool HasFlags => Flags.HasItems;
 
         public bool ContainsFlag(FlagValue flag) => Flags.Contains(flag);
 

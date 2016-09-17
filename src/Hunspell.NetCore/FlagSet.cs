@@ -1,31 +1,18 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
-    public sealed class FlagSet :
-        IReadOnlyList<FlagValue>
+    public sealed class FlagSet : ArrayWrapper<FlagValue>
     {
         public static readonly FlagSet Empty = new FlagSet(ArrayEx<FlagValue>.Empty);
 
-        private readonly FlagValue[] values;
-
         private FlagSet(FlagValue[] values)
+            : base(values)
         {
-            this.values = values;
         }
-
-        public FlagValue this[int index] => values[index];
-
-        public bool IsEmpty => values.Length == 0;
-
-        public bool HasFlags => values.Length != 0;
-
-        public int Count => values.Length;
 
         internal static FlagSet TakeArray(FlagValue[] values)
         {
@@ -42,7 +29,7 @@ namespace Hunspell
 
         public static FlagSet Combine(FlagSet set, FlagValue value)
         {
-            var values = set.values.Concat(new[] { value }).Distinct().ToArray();
+            var values = set.items.Concat(new[] { value }).Distinct().ToArray();
             Array.Sort(values);
             return TakeArray(values);
         }
@@ -78,7 +65,7 @@ namespace Hunspell
             return false;
         }
 
-        public bool Contains(FlagValue value) => value.HasValue && Array.BinarySearch(values, value) >= 0;
+        public bool Contains(FlagValue value) => value.HasValue && Array.BinarySearch(items, value) >= 0;
 
         public bool ContainsAny(FlagSet values) => ContainsAny(this, values);
 
@@ -102,14 +89,5 @@ namespace Hunspell
                 (c.HasValue && Contains(c))
                 ||
                 (d.HasValue && Contains(d));
-
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public FastArrayEnumerator<FlagValue> GetEnumerator() => new FastArrayEnumerator<FlagValue>(values);
-
-        IEnumerator<FlagValue> IEnumerable<FlagValue>.GetEnumerator() => ((IEnumerable<FlagValue>)values).GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => values.GetEnumerator();
     }
 }
