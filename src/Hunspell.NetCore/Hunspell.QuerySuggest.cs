@@ -150,7 +150,7 @@ namespace Hunspell
                                 var removed = slst[j];
                                 // set as first suggestion
                                 slst.RemoveAt(j);
-                                slst.Insert(0, StringEx.ConcatSubstring(removed, 0, spaceIndex + 1, MakeInitCap(removed.Substring(spaceIndex + 1))));
+                                slst.Insert(0, StringEx.ConcatSubstring(removed, 0, spaceIndex + 1, MakeInitCap(removed.Subslice(spaceIndex + 1))));
                             }
                         }
                     }
@@ -257,8 +257,8 @@ namespace Hunspell
                             foreach (var j in nlst)
                             {
                                 var wspace = last
-                                    ? scw.Substring(0, prevPos) + j
-                                    : scw.Substring(0, prevPos) + j + "-" + scw.Substring(dashPos + 1);
+                                    ? StringEx.ConcatSubstring(scw, 0, prevPos, j)
+                                    : StringEx.ConcatSubstring(scw, 0, prevPos, j, '-', scw, dashPos + 1);
 
                                 InsertSuggestion(slst, wspace);
                             }
@@ -303,7 +303,7 @@ namespace Hunspell
                     var abbrAppend = word.Substring(word.Length - abbv);
                     for (var j = 0; j < slst.Count; j++)
                     {
-                        slst[j] += abbrAppend;
+                        slst[j] = StringEx.ConcatSubstring(slst[j], word, word.Length - abbv);
                     }
                 }
 
@@ -513,7 +513,7 @@ namespace Hunspell
                         state++;
                         if (state == 3)
                         {
-                            TestSug(wlst, word.Substring(0, i - 1) + word.Substring(i + 1), cpdSuggest);
+                            TestSug(wlst, StringEx.ConcatSubstring(word, 0, i - 1, word, i + 1), cpdSuggest);
                             state = 0;
                         }
                     }
@@ -1076,9 +1076,7 @@ namespace Hunspell
                             continue;
                         }
 
-                        var candidate = word.Substring(0, r)
-                            + replacement[type]
-                            + word.Substring(r + replacement.Pattern.Length);
+                        var candidate = StringEx.ConcatSubstring(word, 0, r, replacement[type], word, r + replacement.Pattern.Length);
 
                         TestSug(wlst, candidate, cpdSuggest);
 
@@ -1478,7 +1476,7 @@ namespace Hunspell
                 if (Affix.ComplexPrefixes)
                 {
                     var l2 = s2.Length;
-                    t = s2.Substring(0, l2 - 1) + Affix.Culture.TextInfo.ToLower(s2[l2 - 1]);
+                    t = StringEx.ConcatSubstring(s2, 0, l2 - 1, Affix.Culture.TextInfo.ToLower(s2[l2 - 1]));
                 }
                 else
                 {

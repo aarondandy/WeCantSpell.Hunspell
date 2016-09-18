@@ -143,6 +143,63 @@ namespace Hunspell.Infrastructure
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
+        public static string ConcatSubstring(string str0, int startIndex0, int length0, string str1, char char2, string str3, int startIndex3)
+        {
+            var length3 = str3.Length - startIndex3;
+            var builder = StringBuilderPool.Get(length0 + str1.Length + 1 + length3);
+
+            builder.Append(str0, startIndex0, length0);
+            builder.Append(str1);
+            builder.Append(char2);
+            builder.Append(str3, startIndex3, length3);
+
+            return StringBuilderPool.GetStringAndReturn(builder);
+        }
+
+        public static string ConcatSubstring(string str0, string str1, int startIndex1)
+        {
+            var length1 = str1.Length - startIndex1;
+            var builder = StringBuilderPool.Get(str0.Length + length1);
+
+            builder.Append(str0);
+            builder.Append(str1, startIndex1, length1);
+
+            return StringBuilderPool.GetStringAndReturn(builder);
+        }
+
+        public static string ConcatSubstring(string str0, int startIndex0, int length0, string str1, int startIndex1)
+        {
+            var length1 = str1.Length - startIndex1;
+            var builder = StringBuilderPool.Get(length0 + length1);
+
+            builder.Append(str0, startIndex0, length0);
+            builder.Append(str1, startIndex1, length1);
+
+            return StringBuilderPool.GetStringAndReturn(builder);
+        }
+
+        public static string ConcatSubstring(string str0, int startIndex0, int length0, string str1, string str2, int startIndex2)
+        {
+            var length2 = str2.Length - startIndex2;
+            var builder = StringBuilderPool.Get(length0 + str1.Length + length2);
+
+            builder.Append(str0, startIndex0, length0);
+            builder.Append(str1);
+            builder.Append(str2, startIndex2, length2);
+
+            return StringBuilderPool.GetStringAndReturn(builder);
+        }
+
+        public static string ConcatSubstring(string str0, int startIndex0, int length0, char char1)
+        {
+            var builder = StringBuilderPool.Get(length0 + 1);
+
+            builder.Append(str0, startIndex0, length0);
+            builder.Append(char1);
+
+            return StringBuilderPool.GetStringAndReturn(builder);
+        }
+
         public static bool IsReverseSubset(string s1, string s2)
         {
             if(s2.Length < s1.Length)

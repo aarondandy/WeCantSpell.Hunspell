@@ -44,7 +44,7 @@ namespace Hunspell
             var appliedConversion = false;
             for (var i = 0; i < text.Length; i++)
             {
-                var replacementEntry = FindLargestMatchingConversion(text.Substring(i));
+                var replacementEntry = FindLargestMatchingConversion(text.Subslice(i));
                 var replacementText = replacementEntry == null
                     ? string.Empty
                     : replacementEntry.ExtractReplacementText(text.Length - i, i == 0);
@@ -73,6 +73,26 @@ namespace Hunspell
         /// <returns>The best matching input conversion.</returns>
         /// <seealso cref="MultiReplacementEntry"/>
         public MultiReplacementEntry FindLargestMatchingConversion(string text)
+        {
+            for (var searchLength = text.Length; searchLength > 0; searchLength--)
+            {
+                MultiReplacementEntry entry = null;
+                if (replacements.TryGetValue(text.Substring(0, searchLength), out entry))
+                {
+                    return entry;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Finds a conversion matching the longest version of the given <paramref name="text"/> from the left.
+        /// </summary>
+        /// <param name="text">The text to find a matching input conversion for.</param>
+        /// <returns>The best matching input conversion.</returns>
+        /// <seealso cref="MultiReplacementEntry"/>
+        internal MultiReplacementEntry FindLargestMatchingConversion(StringSlice text)
         {
             for (var searchLength = text.Length; searchLength > 0; searchLength--)
             {

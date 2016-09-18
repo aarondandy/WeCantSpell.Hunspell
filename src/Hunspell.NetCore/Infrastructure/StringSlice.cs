@@ -70,5 +70,11 @@ namespace Hunspell.Infrastructure
         {
             return Text.IndexOf(value, Offset + startIndex, comparisonType);
         }
+
+        public string Substring(int startIndex) =>
+            Text.Substring(Offset + startIndex, Length - startIndex);
+
+        public string Substring(int startIndex, int length) =>
+            Text.Substring(Offset + startIndex, length);
     }
 }
