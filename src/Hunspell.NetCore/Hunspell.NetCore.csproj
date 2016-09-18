@@ -69,6 +69,7 @@
     <Compile Include="Infrastructure\Deduper.cs" />
     <Compile Include="Infrastructure\ListComparer.cs" />
     <Compile Include="Infrastructure\StringDeduper.cs" />
+    <Compile Include="Infrastructure\StringSlice.cs" />
     <Compile Include="PatternSet.cs" />
     <Compile Include="CompoundRule.cs" />
     <Compile Include="CompoundRuleSet.cs" />

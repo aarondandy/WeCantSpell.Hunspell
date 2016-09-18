@@ -147,6 +147,33 @@ namespace Hunspell
             }
         }
 
+        internal static bool TryParseFlag(StringSlice text, FlagMode mode, out FlagValue value)
+        {
+            if (text.IsNullOrEmpty)
+            {
+                value = default(FlagValue);
+                return false;
+            }
+
+            switch (mode)
+            {
+                case FlagMode.Char:
+                    value = new FlagValue(text.Text[text.Offset]);
+                    return true;
+                case FlagMode.Long:
+                    var a = text.Text[text.Offset];
+                    value = text.Length >= 2
+                        ? Create(a, text.Text[text.Offset + 1])
+                        : new FlagValue(a);
+                    return true;
+                case FlagMode.Num:
+                    return TryParseNumberFlag(text, out value);
+                case FlagMode.Uni:
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+
         public static bool TryParseNumberFlag(string text, out FlagValue value)
         {
             if (text != null)
@@ -169,6 +196,22 @@ namespace Hunspell
             {
                 int integerValue;
                 if (IntEx.TryParseInvariant(text, startIndex, length, out integerValue) && integerValue >= char.MinValue && integerValue <= char.MaxValue)
+                {
+                    value = new FlagValue(unchecked((char)integerValue));
+                    return true;
+                }
+            }
+
+            value = default(FlagValue);
+            return false;
+        }
+
+        internal static bool TryParseNumberFlag(StringSlice text, out FlagValue value)
+        {
+            if (!text.IsNullOrEmpty)
+            {
+                int integerValue;
+                if (IntEx.TryParseInvariant(text, out integerValue) && integerValue >= char.MinValue && integerValue <= char.MaxValue)
                 {
                     value = new FlagValue(unchecked((char)integerValue));
                     return true;
@@ -219,6 +262,26 @@ namespace Hunspell
             throw new NotSupportedException();
         }
 
+        internal static FlagSet ParseFlags(StringSlice text, FlagMode mode) => FlagSet.TakeArray(ParseFlagsInOrder(text, mode));
+
+        internal static FlagValue[] ParseFlagsInOrder(StringSlice text, FlagMode mode)
+        {
+            if (mode == FlagMode.Char)
+            {
+                return text.Length == 0 ? ArrayEx<FlagValue>.Empty : ConvertCharsToFlagsInOrder(text);
+            }
+            if (mode == FlagMode.Long)
+            {
+                return ParseLongFlagsInOrder(text);
+            }
+            if (mode == FlagMode.Num)
+            {
+                return ParseNumberFlagsInOrder(text);
+            }
+
+            throw new NotSupportedException();
+        }
+
         private static FlagSet ConvertCharsToFlags(string text) => FlagSet.TakeArray(ConvertCharsToFlagsInOrder(text));
 
         private static FlagValue[] ConvertCharsToFlagsInOrder(string text)
@@ -240,6 +303,19 @@ namespace Hunspell
             for (var i = 0; i < length; i++)
             {
                 values[i] = new FlagValue(text[startIndex + i]);
+            }
+
+            return values;
+        }
+
+        private static FlagSet ConvertCharsToFlags(StringSlice text) => FlagSet.TakeArray(ConvertCharsToFlagsInOrder(text));
+
+        private static FlagValue[] ConvertCharsToFlagsInOrder(StringSlice text)
+        {
+            var values = new FlagValue[text.Length];
+            for (var i = 0; i < values.Length; i++)
+            {
+                values[i] = new FlagValue(text.Text[text.Offset + i]);
             }
 
             return values;
@@ -280,6 +356,31 @@ namespace Hunspell
             return flags;
         }
 
+        internal static FlagSet ParseLongFlags(StringSlice text) => FlagSet.TakeArray(ParseLongFlagsInOrder(text));
+
+        internal static FlagValue[] ParseLongFlagsInOrder(StringSlice text)
+        {
+            if (text.IsNullOrEmpty)
+            {
+                return ArrayEx<FlagValue>.Empty;
+            }
+
+            var flags = new FlagValue[(text.Length + 1) / 2];
+            var flagWriteIndex = 0;
+            var lastIndex = text.Offset + text.Length - 1;
+            for (var i = text.Offset; i < lastIndex; i += 2, flagWriteIndex++)
+            {
+                flags[flagWriteIndex] = Create(text.Text[i], text.Text[i + 1]);
+            }
+
+            if (flagWriteIndex < flags.Length)
+            {
+                flags[flagWriteIndex] = new FlagValue(text.Text[lastIndex]);
+            }
+
+            return flags;
+        }
+
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
@@ -299,7 +400,31 @@ namespace Hunspell
                 return ArrayEx<FlagValue>.Empty;
             }
 
-            var textParts = text.Substring(startIndex, length).SplitOnComma();
+            var textParts = text.Subslice(startIndex, length).SplitOnComma();
+
+            var flags = new List<FlagValue>(textParts.Length);
+            for (var i = 0; i < textParts.Length; i++)
+            {
+                FlagValue value;
+                if (TryParseNumberFlag(textParts[i], out value))
+                {
+                    flags.Add(value);
+                }
+            }
+
+            return flags.ToArray();
+        }
+
+        internal static FlagSet ParseNumberFlags(StringSlice text) => FlagSet.TakeArray(ParseNumberFlagsInOrder(text));
+
+        internal static FlagValue[] ParseNumberFlagsInOrder(StringSlice text)
+        {
+            if (text.IsNullOrEmpty)
+            {
+                return ArrayEx<FlagValue>.Empty;
+            }
+
+            var textParts = text.SplitOnComma();
 
             var flags = new List<FlagValue>(textParts.Length);
             for (var i = 0; i < textParts.Length; i++)

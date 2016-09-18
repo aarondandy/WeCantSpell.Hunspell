@@ -1099,13 +1099,25 @@ namespace Hunspell
         private string ReDecodeConvertedStringAsUtf8(string decoded)
         {
             var encoding = Builder.Encoding ?? Reader.CurrentEncoding;
-
             if (encoding == Encoding.UTF8)
             {
                 return decoded;
             }
 
             return Encoding.UTF8.GetString(encoding.GetBytes(decoded));
+        }
+
+        private StringSlice ReDecodeConvertedStringAsUtf8(StringSlice decoded)
+        {
+            var encoding = Builder.Encoding ?? Reader.CurrentEncoding;
+            if (encoding == Encoding.UTF8)
+            {
+                return decoded;
+            }
+
+            var encodedBytes = new byte[encoding.GetMaxByteCount(decoded.Length)];
+            var byteEncodedCount = encoding.GetBytes(decoded.Text, decoded.Offset, decoded.Length, encodedBytes, 0);
+            return StringSlice.Create(Encoding.UTF8.GetString(encodedBytes, 0, byteEncodedCount));
         }
 
         private FlagSet ParseFlags(string text) => Builder.TakeArrayForFlagSet(ParseFlagsInOrder(text));
@@ -1128,7 +1140,7 @@ namespace Hunspell
         {
             var flagMode = Builder.FlagMode;
             return flagMode == FlagMode.Uni
-                ? FlagValue.ParseFlagsInOrder(ReDecodeConvertedStringAsUtf8(text.Substring(startIndex, length)), FlagMode.Char)
+                ? FlagValue.ParseFlagsInOrder(ReDecodeConvertedStringAsUtf8(text.Subslice(startIndex, length)), FlagMode.Char)
                 : FlagValue.ParseFlagsInOrder(text, startIndex, length, flagMode);
         }
 
@@ -1148,7 +1160,7 @@ namespace Hunspell
         {
             var flagMode = Builder.FlagMode;
             return flagMode == FlagMode.Uni
-                ? FlagValue.TryParseFlag(ReDecodeConvertedStringAsUtf8(text.Substring(startIndex)), FlagMode.Char, out value)
+                ? FlagValue.TryParseFlag(ReDecodeConvertedStringAsUtf8(text.Subslice(startIndex)), FlagMode.Char, out value)
                 : FlagValue.TryParseFlag(text, startIndex, text.Length - startIndex, flagMode, out value);
         }
 

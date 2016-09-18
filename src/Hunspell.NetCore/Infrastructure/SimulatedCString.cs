@@ -47,10 +47,9 @@ namespace Hunspell.Infrastructure
             Buffer.Append(text);
         }
 
-        public string Substring(int index)
-        {
-            return ToString().Substring(index);
-        }
+        public string Substring(int index) => ToString().Substring(index);
+
+        internal StringSlice Subslice(int index) => ToString().Subslice(index);
 
         public void Destroy()
         {

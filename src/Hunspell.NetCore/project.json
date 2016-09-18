@@ -68,6 +68,7 @@
         "define": [
           "NETSTANDARD_1_2",
           "NET_4_5_1",
+          "NET_FULL",
           "HAS_CODECONTRACTS"
         ]
       }
@@ -77,6 +78,7 @@
         "define": [
           "NETSTANDARD_1_4",
           "NET_4_6_1",
+          "NET_FULL",
           "HAS_CODECONTRACTS"
         ]
       }

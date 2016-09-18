@@ -16,7 +16,7 @@ namespace Hunspell.NetCore.Performance.Comparison
 
         [PerfBenchmark(
             Description = "How fast can Hunspell.NetCore load files?",
-            NumberOfIterations = 3,
+            NumberOfIterations = 2,
             RunMode = RunMode.Throughput,
             TestMode = TestMode.Measurement)]
         [MemoryMeasurement(MemoryMetric.TotalBytesAllocated)]

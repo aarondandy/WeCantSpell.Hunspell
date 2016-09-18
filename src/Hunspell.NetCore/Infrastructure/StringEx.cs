@@ -235,5 +235,31 @@ namespace Hunspell.Infrastructure
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool MyIsAlpha(char ch) => ch < 128 || char.IsLetter(ch);
+
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        internal static StringSlice Subslice(this string text, int offset, int length)
+        {
+            return new StringSlice
+            {
+                Text = text,
+                Offset = offset,
+                Length = length
+            };
+        }
+
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        internal static StringSlice Subslice(this string text, int offset)
+        {
+            return new StringSlice
+            {
+                Text = text,
+                Offset = offset,
+                Length = text.Length - offset
+            };
+        }
     }
 }

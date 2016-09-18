@@ -324,7 +324,7 @@ namespace Hunspell
                         if (he == null && word.EndsWith('-') && Affix.IsHungarian)
                         {
                             // LANG_hu section: `moving rule' with last dash
-                            var dup = word.Substring(0, word.Length - 1);
+                            var dup = word.Subslice(0, word.Length - 1);
                             he = CompoundCheck(dup, -5, 0, 100, 0, null, ref rwords, true, 0, ref info);
                         }
 
@@ -342,6 +342,11 @@ namespace Hunspell
                 }
 
                 return he;
+            }
+
+            protected WordEntry CompoundCheck(StringSlice word, int wordNum, int numSyllable, int maxwordnum, int wnum, Dictionary<int, WordEntry> words, ref Dictionary<int, WordEntry> rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
+            {
+                return CompoundCheck(word.ToString(), wordNum, numSyllable, maxwordnum, wnum, words, ref rwords, huMovRule, isSug, ref info);
             }
 
             protected WordEntry CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, int wnum, Dictionary<int, WordEntry> words, ref Dictionary<int, WordEntry> rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
@@ -804,7 +809,7 @@ namespace Hunspell
                                 if (Affix.IsHungarian)
                                 {
                                     // calculate syllable number of the word
-                                    numSyllable += GetSyllable(st.Substring(i));
+                                    numSyllable += GetSyllable(st.Subslice(i));
 
                                     // - affix syllable num.
                                     // XXX only second suffix (inflections, not derivations)
@@ -1876,6 +1881,27 @@ namespace Hunspell
                     for (var i = 0; i < word.Length; i++)
                     {
                         if (Affix.CompoundVowels.Contains(word[i]))
+                        {
+                            num++;
+                        }
+                    }
+                }
+
+                return num;
+            }
+
+            /// <summary>
+            /// Calculate number of syllable for compound-checking.
+            /// </summary>
+            private int GetSyllable(StringSlice word)
+            {
+                var num = 0;
+
+                if (Affix.CompoundMaxSyllable != 0 && Affix.CompoundVowels.HasItems)
+                {
+                    for (var i = 0; i < word.Length; i++)
+                    {
+                        if (Affix.CompoundVowels.Contains(word.Text[word.Offset + i]))
                         {
                             num++;
                         }
