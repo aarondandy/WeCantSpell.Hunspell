@@ -2,9 +2,9 @@
 
 namespace Hunspell
 {
-    public sealed class SingleReplacementEntry : ReplacementEntry
+    public sealed class SingleReplacement : ReplacementEntry
     {
-        public SingleReplacementEntry(string pattern, string outString, ReplacementValueType type)
+        public SingleReplacement(string pattern, string outString, ReplacementValueType type)
             : base(pattern)
         {
             OutString = outString;

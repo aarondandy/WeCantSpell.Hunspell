@@ -1,8 +1,8 @@
 ﻿namespace Hunspell
 {
-    public sealed class DictionaryEntry
+    public sealed class WordEntry
     {
-        public DictionaryEntry(string word, FlagSet flags, MorphSet morphs, DictionaryEntryOptions options)
+        public WordEntry(string word, FlagSet flags, MorphSet morphs, WordEntryOptions options)
         {
             Word = word;
             Flags = flags;
@@ -16,7 +16,7 @@
 
         public MorphSet Morphs { get; }
 
-        public DictionaryEntryOptions Options { get; }
+        public WordEntryOptions Options { get; }
 
         public bool HasFlags => Flags.HasItems;
 

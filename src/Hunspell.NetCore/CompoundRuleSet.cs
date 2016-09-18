@@ -4,22 +4,22 @@ using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
-    public sealed class CompoundRuleTable : ListWrapper<CompoundRule>
+    public sealed class CompoundRuleSet : ListWrapper<CompoundRule>
     {
-        public static readonly CompoundRuleTable Empty = TakeList(new List<CompoundRule>(0));
+        public static readonly CompoundRuleSet Empty = TakeList(new List<CompoundRule>(0));
 
-        private CompoundRuleTable(List<CompoundRule> rules)
+        private CompoundRuleSet(List<CompoundRule> rules)
             : base(rules)
         {
         }
 
-        internal static CompoundRuleTable TakeList(List<CompoundRule> rules) =>
-            rules == null ? Empty : new CompoundRuleTable(rules);
+        internal static CompoundRuleSet TakeList(List<CompoundRule> rules) =>
+            rules == null ? Empty : new CompoundRuleSet(rules);
 
-        public static CompoundRuleTable Create(IEnumerable<CompoundRule> rules) =>
+        public static CompoundRuleSet Create(IEnumerable<CompoundRule> rules) =>
             rules == null ? Empty : TakeList(rules.ToList());
 
-        public bool EntryContainsRuleFlags(DictionaryEntry rv)
+        public bool EntryContainsRuleFlags(WordEntry rv)
         {
             foreach (var rule in items)
             {
@@ -35,7 +35,7 @@ namespace Hunspell
             return false;
         }
 
-        public bool CompoundCheck(Dictionary<int, DictionaryEntry> words, int wnum, bool all)
+        public bool CompoundCheck(Dictionary<int, WordEntry> words, int wnum, bool all)
         {
             var bt = 0;
             var btinfo = new List<MetacharData>

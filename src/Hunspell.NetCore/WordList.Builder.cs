@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Hunspell
 {
-    public partial class Dictionary
+    public partial class WordList
     {
         public sealed class Builder
         {
@@ -16,21 +16,21 @@ namespace Hunspell
                 Affix = affix;
             }
 
-            public Dictionary<string, DictionaryEntrySet> EntriesByRoot;
+            public Dictionary<string, WordEntrySet> EntriesByRoot;
 
             public AffixConfig Affix;
 
-            public Dictionary ToImmutable()
+            public WordList ToImmutable()
             {
                 return ToImmutable(destructive: false);
             }
 
-            public Dictionary MoveToImmutable()
+            public WordList MoveToImmutable()
             {
                 return ToImmutable(destructive: true);
             }
 
-            private Dictionary ToImmutable(bool destructive)
+            private WordList ToImmutable(bool destructive)
             {
                 var affix = Affix ?? new AffixConfig.Builder().MoveToImmutable();
 
@@ -44,24 +44,24 @@ namespace Hunspell
                     }
                     .Where(f => f.HasValue));
 
-                var result = new Dictionary(affix)
+                var result = new WordList(affix)
                 {
                     NGramRestrictedFlags = nGramRestrictedFlags,
                 };
 
                 if (destructive)
                 {
-                    result.EntriesByRoot = EntriesByRoot ?? new Dictionary<string, DictionaryEntrySet>();
+                    result.EntriesByRoot = EntriesByRoot ?? new Dictionary<string, WordEntrySet>();
                     EntriesByRoot = null;
                 }
                 else
                 {
                     result.EntriesByRoot = EntriesByRoot == null
-                        ? new Dictionary<string, DictionaryEntrySet>()
-                        : new Dictionary<string, DictionaryEntrySet>(EntriesByRoot);
+                        ? new Dictionary<string, WordEntrySet>()
+                        : new Dictionary<string, WordEntrySet>(EntriesByRoot);
                 }
 
-                var nGramRestrictedEntries = new HashSet<DictionaryEntry>();
+                var nGramRestrictedEntries = new HashSet<WordEntry>();
 
                 foreach (var rootSet in result.EntriesByRoot)
                 {
@@ -82,9 +82,9 @@ namespace Hunspell
             public void InitializeEntriesByRoot(int expectedSize)
             {
                 EntriesByRoot = expectedSize < 0
-                    ? new Dictionary<string, DictionaryEntrySet>()
+                    ? new Dictionary<string, WordEntrySet>()
                     // PERF: because we add more entries than we are told about, we add 10% to the expected size
-                    : new Dictionary<string, DictionaryEntrySet>((expectedSize / 100) + expectedSize);
+                    : new Dictionary<string, WordEntrySet>((expectedSize / 100) + expectedSize);
             }
         }
     }

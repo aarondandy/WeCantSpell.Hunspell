@@ -4,19 +4,19 @@ using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
-    public class CompoundPatternTable : ListWrapper<PatternEntry>
+    public class PatternSet : ListWrapper<PatternEntry>
     {
-        public static readonly CompoundPatternTable Empty = TakeList(new List<PatternEntry>(0));
+        public static readonly PatternSet Empty = TakeList(new List<PatternEntry>(0));
 
-        private CompoundPatternTable(List<PatternEntry> patterns)
+        private PatternSet(List<PatternEntry> patterns)
             : base(patterns)
         {
         }
 
-        internal static CompoundPatternTable TakeList(List<PatternEntry> patterns) =>
-            patterns == null ? Empty : new CompoundPatternTable(patterns);
+        internal static PatternSet TakeList(List<PatternEntry> patterns) =>
+            patterns == null ? Empty : new PatternSet(patterns);
 
-        public static CompoundPatternTable Create(IEnumerable<PatternEntry> patterns) =>
+        public static PatternSet Create(IEnumerable<PatternEntry> patterns) =>
             patterns == null ? Empty : TakeList(patterns.ToList());
 
         public bool TryGetPattern(int number, out PatternEntry result)
@@ -36,7 +36,7 @@ namespace Hunspell
         /// <summary>
         /// Forbid compoundings when there are special patterns at word bound.
         /// </summary>
-        public bool Check(string word, int pos, DictionaryEntry r1, DictionaryEntry r2, bool affixed)
+        public bool Check(string word, int pos, WordEntry r1, WordEntry r2, bool affixed)
         {
             var wordAfterPos = word.Substring(pos);
 

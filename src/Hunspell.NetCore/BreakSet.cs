@@ -5,20 +5,20 @@ using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
-    public sealed class BreakTable : ArrayWrapper<string>
+    public sealed class BreakSet : ArrayWrapper<string>
     {
-        public static readonly BreakTable Empty = TakeArray(ArrayEx<string>.Empty);
+        public static readonly BreakSet Empty = TakeArray(ArrayEx<string>.Empty);
 
-        private BreakTable(string[] breaks)
+        private BreakSet(string[] breaks)
             : base(breaks)
         {
         }
 
-        internal static BreakTable TakeArray(string[] breaks) => breaks == null ? Empty : new BreakTable(breaks);
+        internal static BreakSet TakeArray(string[] breaks) => breaks == null ? Empty : new BreakSet(breaks);
 
-        public static BreakTable Create(List<string> breaks) => breaks == null ? Empty : TakeArray(breaks.ToArray());
+        public static BreakSet Create(List<string> breaks) => breaks == null ? Empty : TakeArray(breaks.ToArray());
 
-        public static BreakTable Create(IEnumerable<string> breaks) => breaks == null ? Empty : TakeArray(breaks.ToArray());
+        public static BreakSet Create(IEnumerable<string> breaks) => breaks == null ? Empty : TakeArray(breaks.ToArray());
 
         /// <summary>
         /// Calculate break points for recursion limit.

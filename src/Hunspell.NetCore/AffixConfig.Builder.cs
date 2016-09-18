@@ -210,7 +210,7 @@ namespace Hunspell
             /// Specifies modifications to try first.
             /// </summary>
             /// <seealso cref="AffixConfig.Replacements"/>
-            public List<SingleReplacementEntry> Replacements;
+            public List<SingleReplacement> Replacements;
 
             /// <summary>
             /// Suffixes attached to root words to make other words.
@@ -389,14 +389,14 @@ namespace Hunspell
                     WordChars = WordChars ?? CharacterSet.Empty,
                     IgnoredChars = IgnoredChars ?? CharacterSet.Empty,
                     Version = Version,
-                    BreakPoints = BreakTable.Create(BreakPoints)
+                    BreakPoints = BreakSet.Create(BreakPoints)
                 };
 
                 if (destructive)
                 {
-                    config.Replacements = SingleReplacementTable.TakeList(Steal(ref Replacements));
-                    config.CompoundRules = CompoundRuleTable.TakeList(Steal(ref CompoundRules));
-                    config.CompoundPatterns = CompoundPatternTable.TakeList(Steal(ref CompoundPatterns));
+                    config.Replacements = SingleReplacementSet.TakeList(Steal(ref Replacements));
+                    config.CompoundRules = CompoundRuleSet.TakeList(Steal(ref CompoundRules));
+                    config.CompoundPatterns = PatternSet.TakeList(Steal(ref CompoundPatterns));
                     config.RelatedCharacterMap = MapTable.TakeList(Steal(ref RelatedCharacterMap));
                     config.Phone = PhoneTable.TakeList(Steal(ref Phone));
                     config.InputConversions = MultiReplacementTable.TakeDictionary(Steal(ref InputConversions));
@@ -409,9 +409,9 @@ namespace Hunspell
                 }
                 else
                 {
-                    config.Replacements = SingleReplacementTable.Create(Replacements);
-                    config.CompoundRules = CompoundRuleTable.Create(CompoundRules);
-                    config.CompoundPatterns = CompoundPatternTable.Create(CompoundPatterns);
+                    config.Replacements = SingleReplacementSet.Create(Replacements);
+                    config.CompoundRules = CompoundRuleSet.Create(CompoundRules);
+                    config.CompoundPatterns = PatternSet.Create(CompoundPatterns);
                     config.RelatedCharacterMap = MapTable.Create(RelatedCharacterMap);
                     config.Phone = PhoneTable.Create(Phone);
                     config.InputConversions = MultiReplacementTable.Create(InputConversions);

@@ -3,7 +3,7 @@
 namespace Hunspell
 {
     [Flags]
-    public enum DictionaryEntryOptions : byte
+    public enum WordEntryOptions : byte
     {
         None = 0,
 

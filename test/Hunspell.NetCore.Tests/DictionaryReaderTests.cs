@@ -17,14 +17,14 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/1463589_utf.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.Affix.Should().NotBeNull();
                 actual.AllEntries.Should().HaveCount(1);
                 var entry = actual.AllEntries.Single();
                 entry.Flags.Should().BeNullOrEmpty();
                 entry.Morphs.Should().BeNullOrEmpty();
-                entry.Options.Should().Be(DictionaryEntryOptions.None);
+                entry.Options.Should().Be(WordEntryOptions.None);
                 entry.Word.Should().Be("Kühlschrank");
             }
 
@@ -33,7 +33,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/1592880.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.ShouldBeEquivalentTo(new[] { "weg", "wege" });
                 actual["weg"][0].Flags.Should().ContainInOrder(new[] { 'Q', 'o', 'z' });
@@ -46,7 +46,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/1695964.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(1);
                 actual["Mull"].Should().HaveCount(2);
@@ -59,7 +59,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/1706659.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(3);
                 actual["arbeits"][0].Flags.Should().ContainInOrder(new[] { 'v' });
@@ -72,7 +72,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/1975530.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(2);
                 actual["أرى"][0].Flags.Should().ContainInOrder(new[] { 'x' });
@@ -84,7 +84,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/alias.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(1);
                 actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'A', 'B' });
@@ -95,7 +95,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/alias2.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(1);
                 actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'A', 'B' });
@@ -108,7 +108,7 @@ namespace Hunspell.NetCore.Tests
                 var filePath = @"files/alias3.dic";
                 var reversedStem = new string("[stem_1]".ToCharArray().Reverse().ToArray());
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(1);
                 actual["oruo"][0].Flags.Should().ContainInOrder(new[] { 'B', 'C' });
@@ -120,7 +120,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/allcaps.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(4);
                 actual["OpenOffice.org"].Should().HaveCount(1);
@@ -138,7 +138,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/allcaps2.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(4);
                 actual["iPod"][0].Flags.Should().ContainInOrder(new[] { 's' });
@@ -152,7 +152,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/allcaps3.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(6);
                 actual["UNESCO"][0].Flags.Should().ContainInOrder(new[] { 'S' });
@@ -168,7 +168,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/allcaps_utf.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(4);
                 actual["OpenOffice.org"].Should().HaveCount(1);
@@ -186,7 +186,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/arabic.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(1);
                 actual["ب"][0].Word.Should().Be("ب");
@@ -197,7 +197,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/base.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(28);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -243,7 +243,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/base_utf.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(28);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -289,7 +289,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/break.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(3);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -303,7 +303,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/checkcompoundcase.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(5);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -323,7 +323,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/checkcompoundcaseutf.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(2);
                 actual.RootWords.ShouldBeEquivalentTo(new[] { "áoó", "Óoá" });
@@ -334,7 +334,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/checkcompoundpattern4.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(7);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -356,7 +356,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/checkcompoundtriple.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(4);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -371,7 +371,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/checksharpsutf.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(6);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -390,7 +390,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/circumfix.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(1);
                 actual["nagy"][0].Flags.Should().ContainInOrder(new[] { 'C' });
@@ -402,7 +402,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/colons_in_words.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(3);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -416,7 +416,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/complexprefixes2.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(1);
                 actual["oruo"][0].Flags.Should().ContainInOrder(new[] { 'B', 'C' });
@@ -428,7 +428,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/compoundaffix.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(2);
                 actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'X', 'P', 'S' }.OrderBy(x => x));
@@ -440,7 +440,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/compoundrule4.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(23);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -474,7 +474,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/compoundrule5.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(13);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -507,7 +507,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/compoundrule7.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(23);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -544,7 +544,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/compoundrule8.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(23);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -581,7 +581,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/condition_utf.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(1);
                 actual["óőó"][0].Flags.Should().ContainInOrder(new[] { 'P', 'S' });
@@ -592,7 +592,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/conditionalprefix.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(1);
                 actual["drink"].Should().HaveCount(2);
@@ -607,7 +607,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/digits_in_words.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(11);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -631,7 +631,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/flag.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(1);
                 actual["foo"][0].Flags.Should().ContainInOrder(new[] { '3', 'A', });
@@ -642,7 +642,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/flaglong.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(1);
                 actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'z' << 8 | 'x', '0' << 8 | '9' }.OrderBy(x => x));
@@ -653,7 +653,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/flagnum.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(1);
                 actual["foo"][0].Flags.Should().ContainInOrder(new[] { 999, 54321 });
@@ -664,7 +664,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/flagutf8.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(1);
                 actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'A', 'Ü' });
@@ -675,7 +675,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/fogemorpheme.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(2);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -690,7 +690,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/forbiddenword.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
 
                 actual.RootWords.Should().HaveCount(4);
@@ -718,7 +718,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/i58202.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(4);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -733,7 +733,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/iconv.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(4);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -748,7 +748,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/ignore.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(2);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -778,7 +778,7 @@ namespace Hunspell.NetCore.Tests
                     expectedWords = expectedWords.Select(w => w.Replace(ignoreChar.ToString(), ""));
                 }
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(9);
                 actual.RootWords.ShouldBeEquivalentTo(expectedWords);
@@ -789,7 +789,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/IJ.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(2);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -806,7 +806,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/keepcase.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(4);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -822,7 +822,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/korean.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(2);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -835,7 +835,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/maputf.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(3);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -849,7 +849,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/morph.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(8);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -876,7 +876,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/nepali.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(4);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -891,7 +891,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/ngram_utf_fix.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(1);
                 actual["человек"][0].Flags.Should().ContainInOrder(new[] { 2022, 2000, 101 }.OrderBy(x => x));
@@ -902,7 +902,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/phone.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(10);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -925,7 +925,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/slash.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(4);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -944,7 +944,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/sugutf.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(11);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -968,7 +968,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/utf8_bom.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(1);
                 actual.RootWords.Should().ContainSingle("apéritif");
@@ -979,7 +979,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/utf8_bom2.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(1);
                 actual.RootWords.Should().ContainSingle("apéritif");
@@ -990,7 +990,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/utf8_nonbmp.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(4);
                 actual.RootWords.ShouldBeEquivalentTo(new[] {
@@ -1005,7 +1005,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/warn.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(2);
                 actual.RootWords.ShouldBeEquivalentTo(new[] { "foo", "bar" });
@@ -1017,7 +1017,7 @@ namespace Hunspell.NetCore.Tests
             {
                 var filePath = @"files/zeroaffix.dic";
 
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(2);
                 actual.RootWords.ShouldBeEquivalentTo(new[] { "foo", "bar" });
@@ -1033,7 +1033,7 @@ namespace Hunspell.NetCore.Tests
             [Theory, MemberData(nameof(can_read_file_without_exception_args))]
             public async Task can_read_file_without_exception(string filePath)
             {
-                var actual = await DictionaryReader.ReadFileAsync(filePath);
+                var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.Should().NotBeNull();
             }

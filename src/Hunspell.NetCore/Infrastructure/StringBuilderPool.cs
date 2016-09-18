@@ -6,7 +6,7 @@ namespace Hunspell.Infrastructure
 {
     internal static class StringBuilderPool
     {
-        private const int MaxCachedBuilderCapacity = HunspellQueryState.MaxWordLen;
+        private const int MaxCachedBuilderCapacity = Hunspell.MaxWordLen;
 
         [ThreadStatic]
         private static StringBuilder ThreadCache;

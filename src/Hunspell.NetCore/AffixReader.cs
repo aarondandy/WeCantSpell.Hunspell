@@ -949,7 +949,7 @@ namespace Hunspell
             return false;
         }
 
-        private bool TryParseReplacements(string parameterText, List<SingleReplacementEntry> entries)
+        private bool TryParseReplacements(string parameterText, List<SingleReplacement> entries)
         {
             var parameters = parameterText.SplitOnTabOrSpace();
             if (parameters.Length == 0)
@@ -991,7 +991,7 @@ namespace Hunspell
 
             patternBuilder.Replace('_', ' ');
 
-            entries.Add(new SingleReplacementEntry(StringBuilderPool.GetStringAndReturn(patternBuilder), outString.Replace('_', ' '), type));
+            entries.Add(new SingleReplacement(StringBuilderPool.GetStringAndReturn(patternBuilder), outString.Replace('_', ' '), type));
 
             return true;
         }

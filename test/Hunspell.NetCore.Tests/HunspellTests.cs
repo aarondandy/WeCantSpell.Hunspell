@@ -20,7 +20,7 @@ namespace Hunspell.NetCore.Tests
             [InlineData("-")]
             public void cant_find_words_in_empty_dictioanry(string word)
             {
-                var dictionary = new Dictionary.Builder().ToImmutable();
+                var dictionary = new WordList.Builder().ToImmutable();
                 var hunspell = new Hunspell(dictionary);
 
                 var actual = hunspell.Check(word);
@@ -37,14 +37,14 @@ namespace Hunspell.NetCore.Tests
             public void can_find_words_in_single_word_dictioanry(string searchWord, string dictionaryWord)
             {
                 var expected = searchWord == dictionaryWord;
-                var dictionaryBuilder = new Dictionary.Builder();
+                var dictionaryBuilder = new WordList.Builder();
                 dictionaryBuilder.InitializeEntriesByRoot(1);
-                dictionaryBuilder.EntriesByRoot[dictionaryWord] = DictionaryEntrySet.TakeArray(new[] {
-                    new DictionaryEntry(
+                dictionaryBuilder.EntriesByRoot[dictionaryWord] = WordEntrySet.TakeArray(new[] {
+                    new WordEntry(
                         dictionaryWord,
                         FlagSet.Empty,
                         MorphSet.Empty,
-                        DictionaryEntryOptions.None) });
+                        WordEntryOptions.None) });
 
                 var dictionary = dictionaryBuilder.ToImmutable();
                 var hunspell = new Hunspell(dictionary);

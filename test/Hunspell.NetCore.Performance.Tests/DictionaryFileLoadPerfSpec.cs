@@ -48,7 +48,7 @@ namespace Hunspell.NetCore.Performance.Tests
         {
             Task.WhenAll(DictionaryLoadArguments.Select(async testItem =>
             {
-                await DictionaryReader.ReadFileAsync(testItem.DictionaryFilePath, testItem.Affix).ConfigureAwait(false);
+                await WordListReader.ReadFileAsync(testItem.DictionaryFilePath, testItem.Affix).ConfigureAwait(false);
                 DictionaryFilesLoaded.Increment();
             })).Wait();
         }

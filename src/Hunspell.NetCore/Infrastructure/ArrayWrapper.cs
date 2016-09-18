@@ -8,7 +8,6 @@ namespace Hunspell.Infrastructure
     public class ArrayWrapper<T> :
         IReadOnlyList<T>
     {
-
         protected readonly T[] items;
 
         protected ArrayWrapper(T[] items)

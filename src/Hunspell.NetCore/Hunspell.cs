@@ -1,50 +1,47 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace Hunspell
 {
-    public sealed class Hunspell
+    public sealed partial class Hunspell
     {
-        public Hunspell(Dictionary dictionary)
+        internal const int MaxWordLen = 176;
+
+        public Hunspell(WordList wordList)
         {
-            if (dictionary == null)
+            if (wordList == null)
             {
-                throw new ArgumentNullException(nameof(dictionary));
+                throw new ArgumentNullException(nameof(wordList));
             }
 
-            Dictionary = dictionary;
+            WordList = wordList;
         }
 
-        public Dictionary Dictionary { get; }
+        public WordList WordList { get; }
 
-        public AffixConfig Affix => Dictionary.Affix;
-
-        public static Hunspell FromFile(string dictionaryFilePath)
+        public AffixConfig Affix
         {
-            var dictionary = DictionaryReader.ReadFile(dictionaryFilePath);
-            return new Hunspell(dictionary);
+#if !PRE_NETSTANDARD && !DEBUG
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get
+            {
+                return WordList.Affix;
+            }
         }
 
-        public static async Task<Hunspell> FromFileAsync(string dictionaryFilePath)
-        {
-            var dictionary = await DictionaryReader.ReadFileAsync(dictionaryFilePath).ConfigureAwait(false);
-            return new Hunspell(dictionary);
-        }
+        public static Hunspell FromFile(string dictionaryFilePath) =>
+            new Hunspell(WordListReader.ReadFile(dictionaryFilePath));
 
-        public bool Check(string word)
-        {
-            return new HunspellQueryState(word, Affix, Dictionary).Check();
-        }
+        public static async Task<Hunspell> FromFileAsync(string dictionaryFilePath) =>
+            new Hunspell(await WordListReader.ReadFileAsync(dictionaryFilePath).ConfigureAwait(false));
 
-        public SpellCheckResult CheckDetails(string word)
-        {
-            return new HunspellQueryState(word, Affix, Dictionary).CheckDetails();
-        }
+        public bool Check(string word) => new Query(word, this).Check();
 
-        public List<string> Suggest(string word)
-        {
-            return new HunspellQueryState(word, Affix, Dictionary).Suggest();
-        }
+        public SpellCheckResult CheckDetails(string word) => new Query(word, this).CheckDetails();
+
+        public List<string> Suggest(string word) => new Query(word, this).Suggest();
     }
 }

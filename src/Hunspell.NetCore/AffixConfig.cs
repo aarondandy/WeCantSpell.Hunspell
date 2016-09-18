@@ -525,7 +525,7 @@ namespace Hunspell
         /// </code>
         /// </example>
         /// <seealso cref="CheckCompoundRep"/>
-        public SingleReplacementTable Replacements { get; private set; }
+        public SingleReplacementSet Replacements { get; private set; }
 
         /// <summary>
         /// Preffixes attached to root words to make other words.
@@ -623,7 +623,7 @@ namespace Hunspell
         /// flags. (Use these flags on different enhtries for words).
         /// </para>
         /// </remarks>
-        public CompoundRuleTable CompoundRules { get; private set; }
+        public CompoundRuleSet CompoundRules { get; private set; }
 
         /// <summary>
         /// Forbid compounding, if the first word in the compound ends with endchars, and
@@ -645,7 +645,7 @@ namespace Hunspell
         /// CHECKCOMPOUNDPATTERN 0/x /y
         /// </code>
         /// </example>
-        public CompoundPatternTable CompoundPatterns { get; private set; }
+        public PatternSet CompoundPatterns { get; private set; }
 
         /// <summary>
         /// Defines new break points for breaking words and checking word parts separately.
@@ -703,7 +703,7 @@ namespace Hunspell
         /// </code>
         /// </example>
         /// <seealso cref="CompoundRules"/>
-        public BreakTable BreakPoints { get; private set; }
+        public BreakSet BreakPoints { get; private set; }
 
         /// <summary>
         /// Input conversion entries.

@@ -9,9 +9,9 @@ using System.Runtime.CompilerServices;
 
 namespace Hunspell
 {
-    public sealed class DictionaryReader
+    public sealed class WordListReader
     {
-        private DictionaryReader(Dictionary.Builder builder, AffixConfig affix)
+        private WordListReader(WordList.Builder builder, AffixConfig affix)
         {
             Builder = builder;
             Affix = affix;
@@ -21,15 +21,15 @@ namespace Hunspell
             @"^\s*(\d+)\s*(?:[#].*)?$",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-        private Dictionary.Builder Builder { get; }
+        private WordList.Builder Builder { get; }
 
         private AffixConfig Affix { get; }
 
         private bool hasInitialized;
 
-        public static async Task<Dictionary> ReadAsync(IHunspellLineReader reader, AffixConfig affix)
+        public static async Task<WordList> ReadAsync(IHunspellLineReader reader, AffixConfig affix)
         {
-            var readerInstance = new DictionaryReader(new Dictionary.Builder(affix), affix);
+            var readerInstance = new WordListReader(new WordList.Builder(affix), affix);
 
             string line;
             while ((line = await reader.ReadLineAsync().ConfigureAwait(false)) != null)
@@ -40,9 +40,9 @@ namespace Hunspell
             return readerInstance.Builder.MoveToImmutable();
         }
 
-        public static Dictionary Read(IHunspellLineReader reader, AffixConfig affix)
+        public static WordList Read(IHunspellLineReader reader, AffixConfig affix)
         {
-            var readerInstance = new DictionaryReader(new Dictionary.Builder(affix), affix);
+            var readerInstance = new WordListReader(new WordList.Builder(affix), affix);
 
             string line;
             while ((line = reader.ReadLine()) != null)
@@ -53,14 +53,14 @@ namespace Hunspell
             return readerInstance.Builder.MoveToImmutable();
         }
 
-        public static async Task<Dictionary> ReadFileAsync(string filePath)
+        public static async Task<WordList> ReadFileAsync(string filePath)
         {
             var affixFilePath = FindAffixFilePath(filePath);
             var affix = await AffixReader.ReadFileAsync(affixFilePath).ConfigureAwait(false);
             return await ReadFileAsync(filePath, affix).ConfigureAwait(false);
         }
 
-        public static Dictionary ReadFile(string filePath)
+        public static WordList ReadFile(string filePath)
         {
             var affixFilePath = FindAffixFilePath(filePath);
             var affix = AffixReader.ReadFile(affixFilePath);
@@ -84,7 +84,7 @@ namespace Hunspell
             return Path.ChangeExtension(dictionaryFilePath, "aff");
         }
 
-        public static async Task<Dictionary> ReadFileAsync(string filePath, AffixConfig affix)
+        public static async Task<WordList> ReadFileAsync(string filePath, AffixConfig affix)
         {
             using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (var reader = new StaticEncodingLineReader(stream, affix.Encoding))
@@ -93,7 +93,7 @@ namespace Hunspell
             }
         }
 
-        public static Dictionary ReadFile(string filePath, AffixConfig affix)
+        public static WordList ReadFile(string filePath, AffixConfig affix)
         {
             using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (var reader = new StaticEncodingLineReader(stream, affix.Encoding))
@@ -227,12 +227,12 @@ namespace Hunspell
                 }
             }
 
-            DictionaryEntryOptions options;
+            WordEntryOptions options;
             if (morphs.HasItems)
             {
                 if (Affix.IsAliasM)
                 {
-                    options = DictionaryEntryOptions.AliasM;
+                    options = WordEntryOptions.AliasM;
                     var morphBuilder = new List<string>();
                     foreach (var originalValue in morphs)
                     {
@@ -252,25 +252,25 @@ namespace Hunspell
                 }
                 else
                 {
-                    options = DictionaryEntryOptions.None;
+                    options = WordEntryOptions.None;
                 }
 
                 if (morphs.AnyStartsWith(MorphologicalTags.Phon))
                 {
-                    options |= DictionaryEntryOptions.Phon;
+                    options |= WordEntryOptions.Phon;
                 }
             }
             else
             {
-                options = DictionaryEntryOptions.None;
+                options = WordEntryOptions.None;
             }
 
             bool saveEntryList = false;
-            DictionaryEntrySet entryList;
+            WordEntrySet entryList;
             if (!Builder.EntriesByRoot.TryGetValue(word, out entryList))
             {
                 saveEntryList = true;
-                entryList = DictionaryEntrySet.Empty;
+                entryList = WordEntrySet.Empty;
             }
 
             var upperCaseHomonym = false;
@@ -282,7 +282,7 @@ namespace Hunspell
                 {
                     if (existingEntry.ContainsFlag(SpecialFlags.OnlyUpcaseFlag))
                     {
-                        existingEntry = new DictionaryEntry(existingEntry.Word, flags, existingEntry.Morphs, existingEntry.Options);
+                        existingEntry = new WordEntry(existingEntry.Word, flags, existingEntry.Morphs, existingEntry.Options);
                         entryList.DestructiveReplace(i, existingEntry);
                         return false;
                     }
@@ -296,7 +296,7 @@ namespace Hunspell
             if (!upperCaseHomonym)
             {
                 saveEntryList = true;
-                entryList = DictionaryEntrySet.CopyWithItemAdded(entryList, new DictionaryEntry(word, flags, morphs, options));
+                entryList = WordEntrySet.CopyWithItemAdded(entryList, new WordEntry(word, flags, morphs, options));
             }
 
             if (saveEntryList)

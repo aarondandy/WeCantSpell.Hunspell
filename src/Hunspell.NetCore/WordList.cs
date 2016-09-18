@@ -3,40 +3,40 @@ using System.Linq;
 
 namespace Hunspell
 {
-    public sealed partial class Dictionary
+    public sealed partial class WordList
     {
-        private Dictionary(AffixConfig affix)
+        private WordList(AffixConfig affix)
         {
             Affix = affix;
         }
 
         public AffixConfig Affix { get; private set; }
 
-        private Dictionary<string, DictionaryEntrySet> EntriesByRoot { get; set; }
+        private Dictionary<string, WordEntrySet> EntriesByRoot { get; set; }
 
         private FlagSet NGramRestrictedFlags { get; set; }
 
-        private HashSet<DictionaryEntry> NGramRestrictedEntries { get; set; }
+        private HashSet<WordEntry> NGramRestrictedEntries { get; set; }
 
-        public IEnumerable<DictionaryEntry> NGramAllowedEntries =>
+        public IEnumerable<WordEntry> NGramAllowedEntries =>
             NGramRestrictedEntries == null || NGramRestrictedEntries.Count == 0
             ? AllEntries
             : AllEntries.Where(entry => !NGramRestrictedEntries.Contains(entry));
 
-        public IEnumerable<DictionaryEntry> AllEntries => EntriesByRoot.Values.SelectMany(set => set);
+        public IEnumerable<WordEntry> AllEntries => EntriesByRoot.Values.SelectMany(set => set);
 
         public IEnumerable<string> RootWords => EntriesByRoot.Keys;
 
         public bool HasEntries => EntriesByRoot.Count != 0;
 
-        public DictionaryEntrySet this[string rootWord] => FindEntriesByRootWord(rootWord);
+        public WordEntrySet this[string rootWord] => FindEntriesByRootWord(rootWord);
 
-        public DictionaryEntrySet FindEntriesByRootWord(string rootWord)
+        public WordEntrySet FindEntriesByRootWord(string rootWord)
         {
-            DictionaryEntrySet result;
+            WordEntrySet result;
             if (!EntriesByRoot.TryGetValue(rootWord, out result))
             {
-                result = DictionaryEntrySet.Empty;
+                result = WordEntrySet.Empty;
             }
 
             return result;
