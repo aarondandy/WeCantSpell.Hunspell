@@ -323,5 +323,35 @@ namespace Hunspell
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static implicit operator char(FlagValue flag) => flag.value;
+
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static bool operator !=(FlagValue a, FlagValue b) => a.value != b.value;
+
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static bool operator ==(FlagValue a, FlagValue b) => a.value == b.value;
+
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static bool operator >=(FlagValue a, FlagValue b) => a.value >= b.value;
+
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static bool operator <=(FlagValue a, FlagValue b) => a.value <= b.value;
+
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static bool operator >(FlagValue a, FlagValue b) => a.value > b.value;
+
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static bool operator <(FlagValue a, FlagValue b) => a.value < b.value;
     }
 }

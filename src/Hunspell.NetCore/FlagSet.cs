@@ -28,10 +28,7 @@ namespace Hunspell
         public static FlagSet Create(IEnumerable<FlagValue> given) =>
             given == null ? Empty : TakeArray(given.Distinct().ToArray());
 
-        public static FlagSet Union(FlagSet a, FlagSet b)
-        {
-            return Create(Enumerable.Concat(a, b));
-        }
+        public static FlagSet Union(FlagSet a, FlagSet b) => Create(Enumerable.Concat(a, b));
 
         internal static FlagSet Union(FlagSet set, FlagValue value)
         {
@@ -90,7 +87,7 @@ namespace Hunspell
             return false;
         }
 
-        public bool Contains(FlagValue value) => value.HasValue && Array.BinarySearch(items, value) >= 0;
+        public bool Contains(FlagValue value) => value.HasValue && items.Length > 0 && value >= items[0] && value <= items[items.Length -1] && Array.BinarySearch(items, value) >= 0;
 
         public bool ContainsAny(FlagSet values) => ContainsAny(this, values);
 
