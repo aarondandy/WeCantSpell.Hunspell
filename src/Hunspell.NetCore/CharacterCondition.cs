@@ -6,7 +6,8 @@ using System.Linq;
 
 namespace Hunspell
 {
-    public struct CharacterCondition
+    public struct CharacterCondition :
+        IEquatable<CharacterCondition>
     {
         private static Regex ConditionParsingRegex = new Regex(
             @"^(\[[^\]]*\]|\.|[^\[\]\.])*$",
@@ -141,5 +142,14 @@ namespace Hunspell
         }
 
         public override string ToString() => GetEncoded();
+
+        public bool Equals(CharacterCondition other) =>
+            Restricted == other.Restricted && CharacterSet.Comparer.Default.Equals(Characters, other.Characters);
+
+        public override bool Equals(object obj) =>
+            obj is CharacterCondition && Equals((CharacterCondition)obj);
+
+        public override int GetHashCode() =>
+            unchecked((Restricted.GetHashCode() * 149) ^ CharacterSet.Comparer.Default.GetHashCode(Characters));
     }
 }

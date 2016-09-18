@@ -87,7 +87,7 @@ namespace Hunspell
         {
             var affixBuilder = new AffixConfig.Builder();
             var affix = await AffixReader.ReadFileAsync(filePathAff, affixBuilder).ConfigureAwait(false);
-            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.StringDeduper);
+            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper, affixBuilder.StringDeduper);
             return await ReadFileAsync(filePathDic, affix, wordListBuilder).ConfigureAwait(false);
         }
 
@@ -95,7 +95,7 @@ namespace Hunspell
         {
             var affixBuilder = new AffixConfig.Builder();
             var affix = AffixReader.ReadFile(filePathAff, affixBuilder);
-            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.StringDeduper);
+            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper, affixBuilder.StringDeduper);
             return ReadFile(filePathDic, affix, wordListBuilder);
         }
 
@@ -181,7 +181,7 @@ namespace Hunspell
                     morphValues[i] = parsed.Morphs[i];
                 }
 
-                morphs = MorphSet.TakeArray(morphValues);
+                morphs = Builder.Dedup(MorphSet.TakeArray(morphValues));
             }
             else
             {
@@ -319,7 +319,7 @@ namespace Hunspell
                 entryList = WordEntrySet.CopyWithItemAdded(entryList, new WordEntry(
                     word,
                     flags,
-                    morphs,
+                    Builder.Dedup(morphs),
                     options));
             }
 

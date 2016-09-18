@@ -90,6 +90,8 @@ namespace Hunspell.Infrastructure
 
         public class Comparer : IEqualityComparer<ArrayWrapper<T>>
         {
+            public static readonly Comparer Default = new Comparer();
+
             public Comparer()
             {
                 ArrayComparer = ArrayComparer<T>.Default;

@@ -2177,6 +2177,14 @@ namespace Hunspell
                 capType = CapitalizationTypeEx.GetCapitalizationType(dest, Affix);
                 return dest.Length;
             }
+
+            protected enum CompoundOptions : byte
+            {
+                Not = 0,
+                Begin = 1,
+                End = 2,
+                Other = 3
+            }
         }
     }
 }

@@ -90,6 +90,8 @@ namespace Hunspell.Infrastructure
 
         public class Comparer : IEqualityComparer<ListWrapper<T>>
         {
+            public static readonly Comparer Default = new Comparer();
+
             public Comparer()
             {
                 ListComparer = ListComparer<T>.Default;

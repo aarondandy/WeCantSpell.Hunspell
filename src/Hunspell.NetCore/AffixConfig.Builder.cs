@@ -22,12 +22,21 @@ namespace Hunspell
 
             internal readonly Deduper<FlagSet> FlagSetDeduper;
 
+            internal readonly Deduper<MorphSet> MorphSetDeduper;
+
+            internal readonly Deduper<CharacterConditionGroup> CharacterConditionGroupDeduper;
+
             internal readonly StringDeduper StringDeduper;
 
             public Builder()
             {
                 FlagSetDeduper = new Deduper<FlagSet>(new FlagSet.Comparer());
                 FlagSetDeduper.Add(FlagSet.Empty);
+                MorphSetDeduper = new Deduper<MorphSet>(new MorphSet.Comparer());
+                MorphSetDeduper.Add(MorphSet.Empty);
+                CharacterConditionGroupDeduper = new Deduper<CharacterConditionGroup>(new CharacterConditionGroup.Comparer());
+                CharacterConditionGroupDeduper.Add(CharacterConditionGroup.Empty);
+                CharacterConditionGroupDeduper.Add(CharacterConditionGroup.AllowAnySingleCharacter);
                 StringDeduper = new StringDeduper();
             }
 
@@ -477,7 +486,7 @@ namespace Hunspell
                 }
             }
 
-            public void Dedup(string[] values)
+            public string[] DedupInPlace(string[] values)
             {
                 if (values != null)
                 {
@@ -486,7 +495,15 @@ namespace Hunspell
                         Dedup(ref values[i]);
                     }
                 }
+
+                return values;
             }
+
+            public MorphSet Dedup(MorphSet value) =>
+                value == null ? null : MorphSetDeduper.GetEqualOrAdd(value);
+
+            public CharacterConditionGroup Dedup(CharacterConditionGroup value) =>
+                CharacterConditionGroupDeduper.GetEqualOrAdd(value);
         }
     }
 }

@@ -524,9 +524,9 @@ namespace Hunspell
 
             var parts = parameterText.SplitOnTabOrSpace();
 
-            Builder.Dedup(parts);
+            Builder.DedupInPlace(parts);
 
-            entries.Add(MorphSet.TakeArray(parts));
+            entries.Add(Builder.Dedup(MorphSet.TakeArray(parts)));
 
             return true;
         }
@@ -746,7 +746,7 @@ namespace Hunspell
                             morphAffixText = morphAffixText.Reverse();
                         }
 
-                        morph = MorphSet.TakeArray(morphAffixText.SplitOnTabOrSpace());
+                        morph = Builder.Dedup(MorphSet.TakeArray(Builder.DedupInPlace(morphAffixText.SplitOnTabOrSpace())));
                     }
                 }
                 else
@@ -772,7 +772,7 @@ namespace Hunspell
                 affixGroup.Entries.Add(AffixEntry.Create<TEntry>(
                     Builder.Dedup(strip),
                     Builder.Dedup(StringBuilderPool.GetStringAndReturn(affixText)),
-                    conditions,
+                    Builder.Dedup(conditions),
                     morph,
                     contClass));
 

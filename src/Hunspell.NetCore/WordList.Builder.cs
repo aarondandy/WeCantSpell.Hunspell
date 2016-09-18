@@ -9,20 +9,22 @@ namespace Hunspell
         public sealed class Builder
         {
             public Builder()
-                : this(null, null, null)
+                : this(null, null, null, null)
             {
             }
 
             public Builder(AffixConfig affix)
-                : this(affix, null, null)
+                : this(affix, null, null, null)
             {
             }
 
-            internal Builder(AffixConfig affix, Deduper<FlagSet> flagSetDeduper, StringDeduper stringDeduper)
+            internal Builder(AffixConfig affix, Deduper<FlagSet> flagSetDeduper, Deduper<MorphSet> morphSet, StringDeduper stringDeduper)
             {
                 Affix = affix;
                 FlagSetDeduper = flagSetDeduper ?? new Deduper<FlagSet>(new FlagSet.Comparer());
                 StringDeduper = stringDeduper ?? new StringDeduper();
+                StringDeduper.Add(MorphologicalTags.Phon);
+                MorphSetDeduper = new Deduper<MorphSet>(new MorphSet.Comparer());
             }
 
             public Dictionary<string, WordEntrySet> EntriesByRoot;
@@ -30,6 +32,8 @@ namespace Hunspell
             public readonly AffixConfig Affix;
 
             internal readonly Deduper<FlagSet> FlagSetDeduper;
+
+            internal readonly Deduper<MorphSet> MorphSetDeduper;
 
             internal readonly StringDeduper StringDeduper;
 
@@ -107,6 +111,9 @@ namespace Hunspell
 
             public string Dedup(string value) =>
                 value == null ? null : StringDeduper.GetEqualOrAdd(value);
+
+            public MorphSet Dedup(MorphSet value) =>
+                value == null ? null : MorphSetDeduper.GetEqualOrAdd(value);
         }
     }
 }

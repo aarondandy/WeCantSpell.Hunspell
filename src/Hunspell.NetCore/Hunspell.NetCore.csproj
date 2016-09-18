@@ -64,7 +64,6 @@
     <Compile Include="CapitalizationType.cs" />
     <Compile Include="CharacterCondition.cs" />
     <Compile Include="CharacterConditionGroup.cs" />
-    <Compile Include="CompoundOptions.cs" />
     <Compile Include="Hunspell.QueryCheck.cs" />
     <Compile Include="Infrastructure\ArrayComparer.cs" />
     <Compile Include="Infrastructure\Deduper.cs" />
@@ -98,7 +97,6 @@
     <Compile Include="MorphologicalTags.cs" />
     <Compile Include="MorphSet.cs" />
     <Compile Include="MultiReplacementTable.cs" />
-    <Compile Include="NGramOptions.cs" />
     <Compile Include="CharacterSet.cs" />
     <Compile Include="PhoneTable.cs" />
     <Compile Include="SingleReplacementSet.cs" />
