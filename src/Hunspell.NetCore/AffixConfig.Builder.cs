@@ -38,6 +38,7 @@ namespace Hunspell
                 CharacterConditionGroupDeduper.Add(CharacterConditionGroup.Empty);
                 CharacterConditionGroupDeduper.Add(CharacterConditionGroup.AllowAnySingleCharacter);
                 StringDeduper = new StringDeduper();
+                StringDeduper.Add(string.Empty);
             }
 
             /// <summary>

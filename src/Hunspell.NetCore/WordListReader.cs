@@ -27,12 +27,12 @@ namespace Hunspell
 
         private bool hasInitialized;
 
-        public static async Task<WordList> ReadAsync(IHunspellLineReader reader, AffixConfig affix, WordList.Builder builder = null)
+        public static async Task<WordList> ReadAsync(IHunspellLineReader dictionaryReader, AffixConfig affix, WordList.Builder builder = null)
         {
             var readerInstance = new WordListReader(builder, affix);
 
             string line;
-            while ((line = await reader.ReadLineAsync().ConfigureAwait(false)) != null)
+            while ((line = await dictionaryReader.ReadLineAsync().ConfigureAwait(false)) != null)
             {
                 readerInstance.ParseLine(line);
             }
@@ -40,12 +40,12 @@ namespace Hunspell
             return readerInstance.Builder.MoveToImmutable();
         }
 
-        public static WordList Read(IHunspellLineReader reader, AffixConfig affix, WordList.Builder builder = null)
+        public static WordList Read(IHunspellLineReader dictionaryReader, AffixConfig affix, WordList.Builder builder = null)
         {
             var readerInstance = new WordListReader(builder, affix);
 
             string line;
-            while ((line = reader.ReadLine()) != null)
+            while ((line = dictionaryReader.ReadLine()) != null)
             {
                 readerInstance.ParseLine(line);
             }
@@ -53,17 +53,16 @@ namespace Hunspell
             return readerInstance.Builder.MoveToImmutable();
         }
 
-        public static async Task<WordList> ReadFileAsync(string filePath)
+        public static async Task<WordList> ReadFileAsync(string dictionaryFilePath)
         {
-            var affixFilePath = FindAffixFilePath(filePath);
-            return await ReadFileAsync(filePath, affixFilePath).ConfigureAwait(false);
+            var affixFilePath = FindAffixFilePath(dictionaryFilePath);
+            return await ReadFileAsync(dictionaryFilePath, affixFilePath).ConfigureAwait(false);
         }
 
-        public static WordList ReadFile(string filePath)
+        public static WordList ReadFile(string dictionaryFilePath)
         {
-            var affixFilePath = FindAffixFilePath(filePath);
-            var affix = AffixReader.ReadFile(affixFilePath);
-            return ReadFile(filePath, affix);
+            var affixFilePath = FindAffixFilePath(dictionaryFilePath);
+            return ReadFile(dictionaryFilePath, AffixReader.ReadFile(affixFilePath));
         }
 
         public static string FindAffixFilePath(string dictionaryFilePath)
@@ -83,34 +82,34 @@ namespace Hunspell
             return Path.ChangeExtension(dictionaryFilePath, "aff");
         }
 
-        public static async Task<WordList> ReadFileAsync(string filePathDic, string filePathAff)
+        public static async Task<WordList> ReadFileAsync(string dictionaryFilePath, string affixFilePath)
         {
             var affixBuilder = new AffixConfig.Builder();
-            var affix = await AffixReader.ReadFileAsync(filePathAff, affixBuilder).ConfigureAwait(false);
+            var affix = await AffixReader.ReadFileAsync(affixFilePath, affixBuilder).ConfigureAwait(false);
             var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper, affixBuilder.StringDeduper);
-            return await ReadFileAsync(filePathDic, affix, wordListBuilder).ConfigureAwait(false);
+            return await ReadFileAsync(dictionaryFilePath, affix, wordListBuilder).ConfigureAwait(false);
         }
 
-        public static WordList ReadFile(string filePathDic, string filePathAff)
+        public static WordList ReadFile(string dictionaryFilePath, string affixFilePath)
         {
             var affixBuilder = new AffixConfig.Builder();
-            var affix = AffixReader.ReadFile(filePathAff, affixBuilder);
+            var affix = AffixReader.ReadFile(affixFilePath, affixBuilder);
             var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper, affixBuilder.StringDeduper);
-            return ReadFile(filePathDic, affix, wordListBuilder);
+            return ReadFile(dictionaryFilePath, affix, wordListBuilder);
         }
 
-        public static async Task<WordList> ReadFileAsync(string filePath, AffixConfig affix, WordList.Builder builder = null)
+        public static async Task<WordList> ReadFileAsync(string dictionaryFilePath, AffixConfig affix, WordList.Builder builder = null)
         {
-            using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var stream = File.Open(dictionaryFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (var reader = new StaticEncodingLineReader(stream, affix.Encoding))
             {
                 return await ReadAsync(reader, affix, builder).ConfigureAwait(false);
             }
         }
 
-        public static WordList ReadFile(string filePath, AffixConfig affix, WordList.Builder builder = null)
+        public static WordList ReadFile(string dictionaryFilePath, AffixConfig affix, WordList.Builder builder = null)
         {
-            using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var stream = File.Open(dictionaryFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (var reader = new StaticEncodingLineReader(stream, affix.Encoding))
             {
                 return Read(reader, affix, builder);

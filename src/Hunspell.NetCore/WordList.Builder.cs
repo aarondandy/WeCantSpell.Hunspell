@@ -22,6 +22,7 @@ namespace Hunspell
             {
                 Affix = affix;
                 FlagSetDeduper = flagSetDeduper ?? new Deduper<FlagSet>(new FlagSet.Comparer());
+                FlagSetDeduper.Add(FlagSet.Empty);
                 StringDeduper = stringDeduper ?? new StringDeduper();
                 StringDeduper.Add(MorphologicalTags.Phon);
                 MorphSetDeduper = new Deduper<MorphSet>(new MorphSet.Comparer());
@@ -51,7 +52,7 @@ namespace Hunspell
             {
                 var affix = Affix ?? new AffixConfig.Builder().MoveToImmutable();
 
-                var nGramRestrictedFlags = FlagSet.Create(
+                var nGramRestrictedFlags = Dedup(FlagSet.Create(
                     new[]
                     {
                         affix.ForbiddenWord,
@@ -60,8 +61,7 @@ namespace Hunspell
                         affix.OnlyInCompound,
                         SpecialFlags.OnlyUpcaseFlag
                     }
-                    .Where(f => f.HasValue));
-                nGramRestrictedFlags = Dedup(nGramRestrictedFlags);
+                    .Where(f => f.HasValue)));
 
                 var result = new WordList(affix)
                 {
