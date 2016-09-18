@@ -27,12 +27,6 @@ namespace Hunspell.Infrastructure
             }
             else
             {
-#if NET_4_5_1 || NET_4_6_1
-                if (item.Length <= 4)
-                {
-                    item = string.IsInterned(item) ?? item;
-                }
-#endif
                 lookup[item] = item;
                 return item;
             }
