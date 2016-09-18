@@ -13,9 +13,9 @@ namespace Hunspell
 {
     public sealed class AffixReader
     {
-        private AffixReader(AffixConfig.Builder builder, IHunspellLineReader reader)
+        public AffixReader(AffixConfig.Builder builder, IHunspellLineReader reader)
         {
-            Builder = builder;
+            Builder = builder ?? new AffixConfig.Builder();
             Reader = reader;
         }
 
@@ -69,13 +69,11 @@ namespace Hunspell
 
         private EntryListType Initialized { get; set; } = EntryListType.None;
 
-        public static async Task<AffixConfig> ReadAsync(IHunspellLineReader reader)
+        public static async Task<AffixConfig> ReadAsync(IHunspellLineReader reader, AffixConfig.Builder builder = null)
         {
-            var readerInstance = new AffixReader(new AffixConfig.Builder(), reader);
+            var readerInstance = new AffixReader(builder, reader);
 
-            await readerInstance.ReadToEndAsync().ConfigureAwait(false);
-
-            readerInstance.AddDefaultBreakTableIfEmpty();
+            await readerInstance.ReadAsync().ConfigureAwait(false);
 
             return readerInstance.Builder.MoveToImmutable();
         }
@@ -89,13 +87,17 @@ namespace Hunspell
             }
         }
 
-        public static AffixConfig Read(IHunspellLineReader reader)
+        private async Task ReadAsync()
         {
-            var readerInstance = new AffixReader(new AffixConfig.Builder(), reader);
+            await ReadToEndAsync().ConfigureAwait(false);
+            AddDefaultBreakTableIfEmpty();
+        }
 
-            readerInstance.ReadToEnd();
+        public static AffixConfig Read(IHunspellLineReader reader, AffixConfig.Builder builder = null)
+        {
+            var readerInstance = new AffixReader(builder, reader);
 
-            readerInstance.AddDefaultBreakTableIfEmpty();
+            readerInstance.Read();
 
             return readerInstance.Builder.MoveToImmutable();
         }
@@ -109,21 +111,27 @@ namespace Hunspell
             }
         }
 
-        public static async Task<AffixConfig> ReadFileAsync(string filePath)
+        private void Read()
+        {
+            ReadToEnd();
+            AddDefaultBreakTableIfEmpty();
+        }
+
+        public static async Task<AffixConfig> ReadFileAsync(string filePath, AffixConfig.Builder builder = null)
         {
             using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (var reader = new DynamicEncodingLineReader(stream, DefaultEncoding))
             {
-                return await ReadAsync(reader).ConfigureAwait(false);
+                return await ReadAsync(reader, builder).ConfigureAwait(false);
             }
         }
 
-        public static AffixConfig ReadFile(string filePath)
+        public static AffixConfig ReadFile(string filePath, AffixConfig.Builder builder = null)
         {
             using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (var reader = new DynamicEncodingLineReader(stream, DefaultEncoding))
             {
-                return Read(reader);
+                return Read(reader, builder);
             }
         }
 
@@ -1085,7 +1093,7 @@ namespace Hunspell
             return Encoding.UTF8.GetString(encoding.GetBytes(decoded));
         }
 
-        private FlagSet ParseFlags(string text) => FlagSet.TakeArray(ParseFlagsInOrder(text));
+        private FlagSet ParseFlags(string text) => Builder.TakeArrayForFlagSet(ParseFlagsInOrder(text));
 
         private FlagValue[] ParseFlagsInOrder(string text)
         {
@@ -1099,7 +1107,7 @@ namespace Hunspell
             return FlagValue.ParseFlagsInOrder(text, flagMode);
         }
 
-        private FlagSet ParseFlags(string text, int startIndex, int length) => FlagSet.TakeArray(ParseFlagsInOrder(text, startIndex, length));
+        private FlagSet ParseFlags(string text, int startIndex, int length) => Builder.TakeArrayForFlagSet(ParseFlagsInOrder(text, startIndex, length));
 
         private FlagValue[] ParseFlagsInOrder(string text, int startIndex, int length)
         {

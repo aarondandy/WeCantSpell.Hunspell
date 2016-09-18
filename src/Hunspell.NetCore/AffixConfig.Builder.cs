@@ -20,6 +20,14 @@ namespace Hunspell
 
             private const string DefaultKeyString = "qwertyuiop|asdfghjkl|zxcvbnm";
 
+            internal readonly Deduper<FlagSet> FlagSetDeduper;
+
+            public Builder()
+            {
+                FlagSetDeduper = new Deduper<FlagSet>(new FlagSet.Comparer());
+                FlagSetDeduper.Add(FlagSet.Empty);
+            }
+
             /// <summary>
             /// Various affix options.
             /// </summary>
@@ -451,6 +459,9 @@ namespace Hunspell
                 item = null;
                 return value;
             }
+
+            public FlagSet TakeArrayForFlagSet(FlagValue[] values) =>
+                FlagSetDeduper.GetEqualOrAdd(FlagSet.TakeArray(values));
         }
     }
 }

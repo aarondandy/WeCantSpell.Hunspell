@@ -87,5 +87,39 @@ namespace Hunspell.Infrastructure
 #endif
             public bool MoveNext() => ++index < values.Count;
         }
+
+        public class Comparer : IEqualityComparer<ListWrapper<T>>
+        {
+            public Comparer()
+            {
+                ListComparer = ListComparer<T>.Default;
+            }
+
+            public Comparer(IEqualityComparer<T> valueComparer)
+            {
+                ListComparer = new ListComparer<T>(valueComparer);
+            }
+
+            private ListComparer<T> ListComparer { get; }
+
+            public bool Equals(ListWrapper<T> x, ListWrapper<T> y)
+            {
+                if (ReferenceEquals(x, y))
+                {
+                    return true;
+                }
+                if (x == null || y == null)
+                {
+                    return false;
+                }
+
+                return ListComparer.Equals(x.items, y.items);
+            }
+
+            public int GetHashCode(ListWrapper<T> obj)
+            {
+                return ListComparer.GetHashCode(obj.items);
+            }
+        }
     }
 }

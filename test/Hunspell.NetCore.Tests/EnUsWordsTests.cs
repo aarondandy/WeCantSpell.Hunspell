@@ -51,7 +51,7 @@ namespace Hunspell.NetCore.Tests
         public async Task most_correct_words_are_suggested_for_wrong_words()
         {
             var words = await LoadMistakesAsync().ConfigureAwait(false);
-            words = words.Take(10).ToList(); // TODO: remove when performance gets better
+            words = words.Where((_,i) => i % 11 == 0).Take(10).ToList();
             var spell = await LoadEnUsAsync().ConfigureAwait(false);
 
             var negativeCases = new List<CommonSpellingMistake>();

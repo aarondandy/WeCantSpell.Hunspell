@@ -13,7 +13,7 @@ namespace Hunspell
     {
         private WordListReader(WordList.Builder builder, AffixConfig affix)
         {
-            Builder = builder;
+            Builder = builder ?? new WordList.Builder(affix);
             Affix = affix;
         }
 
@@ -27,9 +27,9 @@ namespace Hunspell
 
         private bool hasInitialized;
 
-        public static async Task<WordList> ReadAsync(IHunspellLineReader reader, AffixConfig affix)
+        public static async Task<WordList> ReadAsync(IHunspellLineReader reader, AffixConfig affix, WordList.Builder builder = null)
         {
-            var readerInstance = new WordListReader(new WordList.Builder(affix), affix);
+            var readerInstance = new WordListReader(builder, affix);
 
             string line;
             while ((line = await reader.ReadLineAsync().ConfigureAwait(false)) != null)
@@ -40,9 +40,9 @@ namespace Hunspell
             return readerInstance.Builder.MoveToImmutable();
         }
 
-        public static WordList Read(IHunspellLineReader reader, AffixConfig affix)
+        public static WordList Read(IHunspellLineReader reader, AffixConfig affix, WordList.Builder builder = null)
         {
-            var readerInstance = new WordListReader(new WordList.Builder(affix), affix);
+            var readerInstance = new WordListReader(builder, affix);
 
             string line;
             while ((line = reader.ReadLine()) != null)
@@ -56,8 +56,7 @@ namespace Hunspell
         public static async Task<WordList> ReadFileAsync(string filePath)
         {
             var affixFilePath = FindAffixFilePath(filePath);
-            var affix = await AffixReader.ReadFileAsync(affixFilePath).ConfigureAwait(false);
-            return await ReadFileAsync(filePath, affix).ConfigureAwait(false);
+            return await ReadFileAsync(filePath, affixFilePath).ConfigureAwait(false);
         }
 
         public static WordList ReadFile(string filePath)
@@ -84,21 +83,37 @@ namespace Hunspell
             return Path.ChangeExtension(dictionaryFilePath, "aff");
         }
 
-        public static async Task<WordList> ReadFileAsync(string filePath, AffixConfig affix)
+        public static async Task<WordList> ReadFileAsync(string filePathDic, string filePathAff)
+        {
+            var affixBuilder = new AffixConfig.Builder();
+            var affix = await AffixReader.ReadFileAsync(filePathAff, affixBuilder).ConfigureAwait(false);
+            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper);
+            return await ReadFileAsync(filePathDic, affix, wordListBuilder).ConfigureAwait(false);
+        }
+
+        public static WordList ReadFile(string filePathDic, string filePathAff)
+        {
+            var affixBuilder = new AffixConfig.Builder();
+            var affix = AffixReader.ReadFile(filePathAff, affixBuilder);
+            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper);
+            return ReadFile(filePathDic, affix, wordListBuilder);
+        }
+
+        public static async Task<WordList> ReadFileAsync(string filePath, AffixConfig affix, WordList.Builder builder = null)
         {
             using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (var reader = new StaticEncodingLineReader(stream, affix.Encoding))
             {
-                return await ReadAsync(reader, affix).ConfigureAwait(false);
+                return await ReadAsync(reader, affix, builder).ConfigureAwait(false);
             }
         }
 
-        public static WordList ReadFile(string filePath, AffixConfig affix)
+        public static WordList ReadFile(string filePath, AffixConfig affix, WordList.Builder builder = null)
         {
             using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (var reader = new StaticEncodingLineReader(stream, affix.Encoding))
             {
-                return Read(reader, affix);
+                return Read(reader, affix, builder);
             }
         }
 
@@ -145,11 +160,11 @@ namespace Hunspell
                 else if (Affix.FlagMode == FlagMode.Uni)
                 {
                     var utf8Flags = Encoding.UTF8.GetString(Affix.Encoding.GetBytes(parsed.Flags));
-                    flags = FlagValue.ParseFlags(utf8Flags, FlagMode.Char);
+                    flags = Builder.FlagSetDeduper.GetEqualOrAdd(FlagValue.ParseFlags(utf8Flags, FlagMode.Char));
                 }
                 else
                 {
-                    flags = FlagValue.ParseFlags(parsed.Flags, Affix.FlagMode);
+                    flags = Builder.FlagSetDeduper.GetEqualOrAdd(FlagValue.ParseFlags(parsed.Flags, Affix.FlagMode));
                 }
             }
             else
@@ -323,7 +338,7 @@ namespace Hunspell
                 !flags.Contains(Affix.ForbiddenWord)
             )
             {
-                flags = FlagSet.Union(flags, SpecialFlags.OnlyUpcaseFlag);
+                flags = Builder.FlagSetDeduper.GetEqualOrAdd(FlagSet.Union(flags, SpecialFlags.OnlyUpcaseFlag));
 
                 var textInfo = Affix.Culture.TextInfo;
                 var initCapBuilder = StringBuilderPool.Get(word);

@@ -66,6 +66,9 @@
     <Compile Include="CharacterConditionGroup.cs" />
     <Compile Include="CompoundOptions.cs" />
     <Compile Include="Hunspell.QueryCheck.cs" />
+    <Compile Include="Infrastructure\ArrayComparer.cs" />
+    <Compile Include="Infrastructure\CollectionDeduper.cs" />
+    <Compile Include="Infrastructure\ListComparer.cs" />
     <Compile Include="PatternSet.cs" />
     <Compile Include="CompoundRule.cs" />
     <Compile Include="CompoundRuleSet.cs" />

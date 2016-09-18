@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
@@ -8,17 +9,26 @@ namespace Hunspell
         public sealed class Builder
         {
             public Builder()
+                : this(null, null)
             {
             }
 
             public Builder(AffixConfig affix)
+                : this(affix, null)
+            {
+            }
+
+            internal Builder(AffixConfig affix, Deduper<FlagSet> flagSetDeduper)
             {
                 Affix = affix;
+                FlagSetDeduper = flagSetDeduper ?? new Deduper<FlagSet>(new FlagSet.Comparer());
             }
 
             public Dictionary<string, WordEntrySet> EntriesByRoot;
 
-            public AffixConfig Affix;
+            public readonly AffixConfig Affix;
+
+            internal readonly Deduper<FlagSet> FlagSetDeduper;
 
             public WordList ToImmutable()
             {
@@ -34,7 +44,8 @@ namespace Hunspell
             {
                 var affix = Affix ?? new AffixConfig.Builder().MoveToImmutable();
 
-                var nGramRestrictedFlags = FlagSet.Create(new[]
+                var nGramRestrictedFlags = FlagSet.Create(
+                    new[]
                     {
                         affix.ForbiddenWord,
                         affix.NoSuggest,
@@ -43,6 +54,7 @@ namespace Hunspell
                         SpecialFlags.OnlyUpcaseFlag
                     }
                     .Where(f => f.HasValue));
+                nGramRestrictedFlags = FlagSetDeduper.GetEqualOrAdd(nGramRestrictedFlags);
 
                 var result = new WordList(affix)
                 {

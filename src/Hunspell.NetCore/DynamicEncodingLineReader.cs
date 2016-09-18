@@ -276,7 +276,7 @@ namespace Hunspell
 
                 if (
                     possiblePreambleBytes.Length >= encodingPreamble.Length
-                    && ArrayEx.Equals(possiblePreambleBytes, 0, encodingPreamble, 0, encodingPreamble.Length)
+                    && ArrayComparer<byte>.Default.Equals(possiblePreambleBytes, 0, encodingPreamble, 0, encodingPreamble.Length)
                 )
                 {
                     bytesToRestore = possiblePreambleBytes.Length - encodingPreamble.Length;
