@@ -37,6 +37,9 @@ namespace Hunspell.Infrastructure
         public static StringBuilder Get(string value, int valueStartIndex, int valueLength, int capacity) =>
             GetClearedBuilderWithCapacity(capacity).Append(value, valueStartIndex, valueLength);
 
+        internal static StringBuilder Get(StringSlice value) =>
+            Get(value.Text, value.Offset, value.Length, value.Length);
+
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif

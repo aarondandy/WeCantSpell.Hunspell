@@ -1,9 +1,11 @@
 ﻿using System;
-using Hunspell.Infrastructure;
+using System.Collections.Generic;
 
 namespace Hunspell.Infrastructure
 {
-    internal struct StringSlice
+    internal struct StringSlice :
+        IEquatable<string>,
+        IEquatable<StringSlice>
     {
         public static readonly StringSlice Null = new StringSlice
         {
@@ -37,7 +39,7 @@ namespace Hunspell.Infrastructure
             {
                 return Null;
             }
-            else if(text.Length == 0)
+            else if (text.Length == 0)
             {
                 return Empty;
             }
@@ -52,23 +54,89 @@ namespace Hunspell.Infrastructure
 
         public override string ToString()
         {
+            if (Text == null)
+            {
+                return null;
+            }
+
             return Length == 0 ? string.Empty : Text.Substring(Offset, Length);
         }
 
         public StringSlice[] SplitOnComma()
         {
-            var temp = Text.Substring(Offset, Length).SplitOnComma();
-            return ArrayEx.ConvertAll(temp, Create);
+            var parts = new List<StringSlice>();
+
+            int startIndex = Offset;
+            int commaIndex;
+            int partLength;
+            while ((commaIndex = IndexOfRawLimited(',', startIndex)) >= 0)
+            {
+                partLength = commaIndex - startIndex;
+                if (partLength > 0)
+                {
+                    parts.Add(new StringSlice
+                    {
+                        Text = Text,
+                        Offset = startIndex,
+                        Length = partLength
+                    });
+                }
+
+                startIndex = commaIndex + 1;
+            }
+
+            commaIndex = Offset + Length;
+            partLength = commaIndex - startIndex;
+            if (partLength > 0)
+            {
+                parts.Add(new StringSlice
+                {
+                    Text = Text,
+                    Offset = startIndex,
+                    Length = partLength
+                });
+            }
+
+            return parts.ToArray();
+        }
+
+        private int IndexOfRawLimited(char c, int rawStartIndex)
+        {
+            var index = Text.IndexOf(c, rawStartIndex);
+            return index >= Offset + Length ? -1 : index;
         }
 
         public int IndexOf(string value, StringComparison comparisonType)
         {
-            return Text.IndexOf(value, Offset, comparisonType);
+            var rawIndex = Text.IndexOf(value, Offset, comparisonType);
+            if (rawIndex < 0 || rawIndex > Offset + Length)
+            {
+                return -1;
+            }
+
+            return rawIndex - Offset;
         }
 
         public int IndexOf(string value, int startIndex, StringComparison comparisonType)
         {
-            return Text.IndexOf(value, Offset + startIndex, comparisonType);
+            var rawIndex = Text.IndexOf(value, Offset + startIndex, comparisonType);
+            if (rawIndex < 0 || rawIndex > Offset + Length)
+            {
+                return -1;
+            }
+
+            return rawIndex - Offset;
+        }
+
+        public int IndexOf(char c)
+        {
+            var rawIndex = Text.IndexOf(c, Offset);
+            if (rawIndex < 0 || rawIndex >= Offset + Length)
+            {
+                return -1;
+            }
+
+            return rawIndex - Offset;
         }
 
         public string Substring(int startIndex) =>
@@ -76,5 +144,62 @@ namespace Hunspell.Infrastructure
 
         public string Substring(int startIndex, int length) =>
             Text.Substring(Offset + startIndex, length);
+
+        public bool Equals(string other)
+        {
+            if (other == null)
+            {
+                return Text == null;
+            }
+
+            return Length == other.Length
+                && StringEx.EqualsOffset(Text, Offset, other, 0, Length);
+        }
+
+        public bool Equals(StringSlice other) =>
+            Length == other.Length
+                && StringEx.EqualsOffset(Text, Offset, other.Text, other.Offset, Length);
+
+        public override bool Equals(object obj)
+        {
+            if (obj is StringSlice)
+            {
+                return Equals((StringSlice)obj);
+            }
+
+            var stringValue = obj as string;
+            if (stringValue != null)
+            {
+                return Equals(stringValue);
+            }
+
+            return false;
+        }
+
+        public override int GetHashCode() => 0;
+
+        public char[] ToCharArray() => Text.ToCharArray(Offset, Length);
+
+        public StringSlice Subslice(int startIndex)
+        {
+            var localStartOffset = Offset + startIndex;
+
+            return new StringSlice
+            {
+                Text = Text,
+                Offset = Offset + startIndex,
+                Length = Length - startIndex
+            };
+        }
+
+        public StringSlice Subslice(int startIndex, int length)
+        {
+            return new StringSlice
+            {
+                Text = Text,
+                Offset = Offset + startIndex,
+                Length = length
+            };
+        }
     }
 }

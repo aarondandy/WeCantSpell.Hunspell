@@ -372,7 +372,7 @@ namespace Hunspell
 
         private bool TryParseCompoundSyllable(string parameters)
         {
-            var parts = parameters.SplitOnTabOrSpace();
+            var parts = parameters.SliceOnTabOrSpace();
 
             if (parts.Length > 0)
             {
@@ -966,14 +966,14 @@ namespace Hunspell
 
         private bool TryParseReplacements(string parameterText, List<SingleReplacement> entries)
         {
-            var parameters = parameterText.SplitOnTabOrSpace();
+            var parameters = parameterText.SliceOnTabOrSpace();
             if (parameters.Length == 0)
             {
                 return false;
             }
 
             var patternBuilder = StringBuilderPool.Get(parameters[0]);
-            var outString = parameters.Length > 1 ? parameters[1] : string.Empty;
+            var outString = parameters.Length > 1 ? parameters[1].ToString() : string.Empty;
 
             ReplacementValueType type;
             var hasTrailingDollar = patternBuilder.EndsWith('$');
@@ -1016,27 +1016,27 @@ namespace Hunspell
 
         private bool TryParseCheckCompoundPatternIntoCompoundPatterns(string parameterText, List<PatternEntry> entries)
         {
-            var parameters = parameterText.SplitOnTabOrSpace();
+            var parameters = parameterText.SliceOnTabOrSpace();
             if (parameters.Length == 0)
             {
                 return false;
             }
 
             var pattern = parameters[0];
-            string pattern2 = null;
-            string pattern3 = null;
+            StringSlice pattern2 = StringSlice.Null;
+            StringSlice pattern3 = StringSlice.Null;
             var condition = default(FlagValue);
             var condition2 = default(FlagValue);
 
             var slashIndex = pattern.IndexOf('/');
             if (slashIndex >= 0)
             {
-                if (!TryParseFlag(pattern, slashIndex + 1, out condition))
+                if (!TryParseFlag(pattern.Subslice(slashIndex + 1), out condition))
                 {
                     return false;
                 }
 
-                pattern = pattern.Substring(0, slashIndex);
+                pattern = pattern.Subslice(0, slashIndex);
             }
 
             if (parameters.Length >= 2)
@@ -1045,12 +1045,12 @@ namespace Hunspell
                 slashIndex = pattern2.IndexOf('/');
                 if (slashIndex >= 0)
                 {
-                    if (!TryParseFlag(pattern2, slashIndex + 1, out condition2))
+                    if (!TryParseFlag(pattern2.Subslice(slashIndex + 1), out condition2))
                     {
                         return false;
                     }
 
-                    pattern2 = pattern2.Substring(0, slashIndex);
+                    pattern2 = pattern2.Subslice(0, slashIndex);
                 }
 
                 if (parameters.Length >= 3)
@@ -1061,9 +1061,9 @@ namespace Hunspell
             }
 
             entries.Add(new PatternEntry(
-                Builder.Dedup(pattern),
-                Builder.Dedup(pattern2),
-                Builder.Dedup(pattern3),
+                Builder.Dedup(pattern.ToString()),
+                Builder.Dedup(pattern2.ToString()),
+                Builder.Dedup(pattern3.ToString()),
                 condition,
                 condition2));
 
@@ -1162,6 +1162,14 @@ namespace Hunspell
             return flagMode == FlagMode.Uni
                 ? FlagValue.TryParseFlag(ReDecodeConvertedStringAsUtf8(text.Subslice(startIndex)), FlagMode.Char, out value)
                 : FlagValue.TryParseFlag(text, startIndex, text.Length - startIndex, flagMode, out value);
+        }
+
+        private bool TryParseFlag(StringSlice text, out FlagValue value)
+        {
+            var flagMode = Builder.FlagMode;
+            return flagMode == FlagMode.Uni
+                ? FlagValue.TryParseFlag(ReDecodeConvertedStringAsUtf8(text), FlagMode.Char, out value)
+                : FlagValue.TryParseFlag(text, flagMode, out value);
         }
 
         private FlagValue TryParseFlag(string text)

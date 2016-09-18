@@ -896,6 +896,13 @@ namespace Hunspell
                 TestSug(wlst, candidate, cpdSuggest, ref timer, ref timeLimit);
             }
 
+            private void TestSug(List<string> wlst, StringSlice candidate, bool cpdSuggest)
+            {
+                int? timer = null;
+                long? timeLimit = null;
+                TestSug(wlst, candidate, cpdSuggest, ref timer, ref timeLimit);
+            }
+
             private void TestSug(List<string> wlst, string candidate, bool cpdSuggest, ref int? timer, ref long? timeLimit)
             {
                 if (
@@ -907,6 +914,22 @@ namespace Hunspell
                 )
                 {
                     wlst.Add(candidate);
+                }
+            }
+
+            private void TestSug(List<string> wlst, StringSlice candidate, bool cpdSuggest, ref int? timer, ref long? timeLimit)
+            {
+                if (
+                    wlst.Count < MaxSuggestions
+                    &&
+                    !wlst.Contains(candidate)
+                )
+                {
+                    var candidateWord = candidate.ToString();
+                    if (CheckWord(candidateWord, cpdSuggest, ref timer, ref timeLimit) != 0)
+                    {
+                        wlst.Add(candidateWord);
+                    }
                 }
             }
 
@@ -1090,7 +1113,7 @@ namespace Hunspell
                                 if (CheckWord(candidate.Substring(prev, sp - prev), false) != 0)
                                 {
                                     var oldNs = wlst.Count;
-                                    TestSug(wlst, candidate.Substring(sp + 1), cpdSuggest);
+                                    TestSug(wlst, candidate.Subslice(sp + 1), cpdSuggest);
                                     if (oldNs < wlst.Count)
                                     {
                                         wlst[wlst.Count - 1] = candidate;
@@ -2058,16 +2081,10 @@ namespace Hunspell
                 return true;
             }
 
-            private string MyStrDup(string s)
-            {
-                if (string.IsNullOrEmpty(s))
-                {
-                    return s;
-                }
-
-                var terminalPos = s.IndexOf('\0');
-                return terminalPos >= 0 ? s.Substring(0, terminalPos) : s;
-            }
+#if !PRE_NETSTANDARD && !DEBUG
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            private string MyStrDup(string s) => s;
 
             /// <summary>
             /// Length of the left common substring of s1 and (decapitalised) s2.

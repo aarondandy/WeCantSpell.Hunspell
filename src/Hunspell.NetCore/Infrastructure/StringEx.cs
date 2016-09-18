@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace Hunspell.Infrastructure
@@ -23,10 +24,56 @@ namespace Hunspell.Infrastructure
 #endif
         public static string[] SplitOnTabOrSpace(this string @this) => @this.Split(SpaceOrTab, StringSplitOptions.RemoveEmptyEntries);
 
-#if !PRE_NETSTANDARD && !DEBUG
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static string[] SplitOnComma(this string @this) => @this.Split(CommaArray);
+        public static StringSlice[] SliceOnTabOrSpace(this string @this)
+        {
+            var parts = new List<StringSlice>();
+
+            int startIndex = 0;
+            int splitIndex;
+            int partLength;
+            while ((splitIndex = IndexOfTabOrSpace(@this, startIndex)) >= 0)
+            {
+                partLength = splitIndex - startIndex;
+                if (partLength > 0)
+                {
+                    parts.Add(new StringSlice
+                    {
+                        Text = @this,
+                        Offset = startIndex,
+                        Length = partLength
+                    });
+                }
+
+                startIndex = splitIndex + 1;
+            }
+
+            partLength = @this.Length - startIndex;
+            if (partLength > 0)
+            {
+                parts.Add(new StringSlice
+                {
+                    Text = @this,
+                    Offset = startIndex,
+                    Length = partLength
+                });
+            }
+
+            return parts.ToArray();
+        }
+
+        private static int IndexOfTabOrSpace(string text, int startIndex)
+        {
+            for (var i = startIndex; i < text.Length; i++)
+            {
+                var c = text[i];
+                if (c == ' ' || c == '\t')
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
 
         public static string Reverse(this string @this)
         {
@@ -202,14 +249,14 @@ namespace Hunspell.Infrastructure
 
         public static bool IsReverseSubset(string s1, string s2)
         {
-            if(s2.Length < s1.Length)
+            if (s2.Length < s1.Length)
             {
                 return false;
             }
 
-            for(int index1 = 0, index2 = s2.Length-1; index1 < s1.Length; index1++,index2--)
+            for (int index1 = 0, index2 = s2.Length - 1; index1 < s1.Length; index1++, index2--)
             {
-                if(s1[index1] != '.' && s1[index1] != s2[index2])
+                if (s1[index1] != '.' && s1[index1] != s2[index2])
                 {
                     return false;
                 }
@@ -317,6 +364,19 @@ namespace Hunspell.Infrastructure
                 Offset = offset,
                 Length = text.Length - offset
             };
+        }
+
+        internal static bool Contains(this List<string> values, StringSlice test)
+        {
+            foreach (var value in values)
+            {
+                if (test.Equals(value))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

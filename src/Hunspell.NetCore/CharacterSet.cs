@@ -25,6 +25,8 @@ namespace Hunspell
 
         public static CharacterSet Create(string values) => values == null ? Empty : TakeArray(values.ToCharArray());
 
+        internal static CharacterSet Create(StringSlice values) => TakeArray(values.ToCharArray());
+
         public static CharacterSet Create(char value) => TakeArray(new[] { value });
 
         public bool Contains(char value) => Array.BinarySearch(items, value) >= 0;
