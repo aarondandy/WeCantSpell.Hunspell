@@ -59,6 +59,8 @@ namespace Hunspell
 
         private static readonly string[] DefaultBreakTableEntries = new[] { "-", "^-", "-$" };
 
+        private static readonly CharacterSet DefaultCompoundVowels = CharacterSet.TakeArray(new[] { 'A', 'E', 'I', 'O', 'U', 'a', 'e', 'i', 'o', 'u' });
+
         public static readonly Encoding DefaultEncoding = Encoding.GetEncoding("ISO8859-1");
 
         private AffixConfig.Builder Builder { get; }
@@ -194,7 +196,7 @@ namespace Hunspell
 
                 if (Builder.BreakPoints.Count == 0)
                 {
-                    Builder.BreakPoints.AddRange(DefaultBreakTableEntries);
+                    Builder.BreakPoints.AddRange(DefaultBreakTableEntries.Select(Builder.Dedup));
                 }
             }
         }
@@ -207,10 +209,10 @@ namespace Hunspell
                 case "FLAG": // parse in the try string
                     return TrySetFlagMode(parameters);
                 case "KEY": // parse in the keyboard string
-                    Builder.KeyString = parameters;
+                    Builder.KeyString = Builder.Dedup(parameters);
                     return true;
                 case "TRY": // parse in the try string
-                    Builder.TryString = parameters;
+                    Builder.TryString = Builder.Dedup(parameters);
                     return true;
                 case "SET": // parse in the name of the character set used by the .dict and .aff
                     var encoding = EncodingEx.GetEncodingByName(parameters);
@@ -222,11 +224,11 @@ namespace Hunspell
                     Builder.Encoding = encoding;
                     return true;
                 case "LANG": // parse in the language for language specific codes
-                    Builder.Language = parameters.Trim();
+                    Builder.Language = Builder.Dedup(parameters.Trim());
                     Builder.Culture = GetCultureFromLanguage(Builder.Language);
                     return true;
                 case "SYLLABLENUM": // parse in the flag used by compound_check() method
-                    Builder.CompoundSyllableNum = parameters;
+                    Builder.CompoundSyllableNum = Builder.Dedup(parameters);
                     return true;
                 case "WORDCHARS": // parse in the extra word characters
                     Builder.WordChars = CharacterSet.Create(parameters);
@@ -368,8 +370,6 @@ namespace Hunspell
             return parse(parameterText, entries);
         }
 
-        private static readonly CharacterSet DefaultCompoundVowels = CharacterSet.TakeArray(new[] { 'A', 'E', 'I', 'O', 'U', 'a', 'e', 'i', 'o', 'u' });
-
         private bool TryParseCompoundSyllable(string parameters)
         {
             var parts = parameters.SplitOnTabOrSpace();
@@ -426,7 +426,7 @@ namespace Hunspell
             }
         }
 
-        private static bool TryParsePhone(string parameterText, List<PhoneticEntry> entries)
+        private bool TryParsePhone(string parameterText, List<PhoneticEntry> entries)
         {
             var parts = parameterText.SplitOnTabOrSpace();
 
@@ -436,13 +436,13 @@ namespace Hunspell
             }
 
             entries.Add(new PhoneticEntry(
-                    parts[0],
-                    parts.Length >= 2 ? parts[1].Replace("_", string.Empty) : string.Empty));
+                    Builder.Dedup(parts[0]),
+                    parts.Length >= 2 ? Builder.Dedup(parts[1].Replace("_", string.Empty)) : string.Empty));
 
             return true;
         }
 
-        private static bool TryParseMapEntry(string parameterText, List<MapEntry> entries)
+        private bool TryParseMapEntry(string parameterText, List<MapEntry> entries)
         {
             var values = new List<string>(parameterText.Length);
 
@@ -461,7 +461,7 @@ namespace Hunspell
                     }
                 }
 
-                values.Add(parameterText.Substring(chb, che - chb));
+                values.Add(Builder.Dedup(parameterText.Substring(chb, che - chb)));
             }
 
             entries.Add(MapEntry.Create(values));
@@ -498,14 +498,14 @@ namespace Hunspell
                 return false;
             }
 
-            entries.AddReplacementEntry(parts[0], parts[1]);
+            entries.AddReplacementEntry(Builder.Dedup(parts[0]), Builder.Dedup(parts[1]));
 
             return true;
         }
 
-        private static bool TryParseBreak(string parameterText, List<string> entries)
+        private bool TryParseBreak(string parameterText, List<string> entries)
         {
-            entries.Add(parameterText);
+            entries.Add(Builder.Dedup(parameterText));
             return true;
         }
 
@@ -523,6 +523,8 @@ namespace Hunspell
             }
 
             var parts = parameterText.SplitOnTabOrSpace();
+
+            Builder.Dedup(parts);
 
             entries.Add(MorphSet.TakeArray(parts));
 
@@ -767,7 +769,12 @@ namespace Hunspell
                     Builder.HasContClass = true;
                 }
 
-                affixGroup.Entries.Add(AffixEntry.Create<TEntry>(strip, StringBuilderPool.GetStringAndReturn(affixText), conditions, morph, contClass));
+                affixGroup.Entries.Add(AffixEntry.Create<TEntry>(
+                    Builder.Dedup(strip),
+                    Builder.Dedup(StringBuilderPool.GetStringAndReturn(affixText)),
+                    conditions,
+                    morph,
+                    contClass));
 
                 return true;
             }
@@ -999,7 +1006,10 @@ namespace Hunspell
 
             patternBuilder.Replace('_', ' ');
 
-            entries.Add(new SingleReplacement(StringBuilderPool.GetStringAndReturn(patternBuilder), outString.Replace('_', ' '), type));
+            entries.Add(new SingleReplacement(
+                Builder.Dedup(StringBuilderPool.GetStringAndReturn(patternBuilder)),
+                Builder.Dedup(outString.Replace('_', ' ')),
+                type));
 
             return true;
         }
@@ -1050,7 +1060,12 @@ namespace Hunspell
                 }
             }
 
-            entries.Add(new PatternEntry(pattern, pattern2, pattern3, condition, condition2));
+            entries.Add(new PatternEntry(
+                Builder.Dedup(pattern),
+                Builder.Dedup(pattern2),
+                Builder.Dedup(pattern3),
+                condition,
+                condition2));
 
             return true;
         }

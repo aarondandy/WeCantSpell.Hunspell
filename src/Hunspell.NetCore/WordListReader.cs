@@ -87,7 +87,7 @@ namespace Hunspell
         {
             var affixBuilder = new AffixConfig.Builder();
             var affix = await AffixReader.ReadFileAsync(filePathAff, affixBuilder).ConfigureAwait(false);
-            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper);
+            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.StringDeduper);
             return await ReadFileAsync(filePathDic, affix, wordListBuilder).ConfigureAwait(false);
         }
 
@@ -95,7 +95,7 @@ namespace Hunspell
         {
             var affixBuilder = new AffixConfig.Builder();
             var affix = AffixReader.ReadFile(filePathAff, affixBuilder);
-            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper);
+            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.StringDeduper);
             return ReadFile(filePathDic, affix, wordListBuilder);
         }
 
@@ -160,11 +160,11 @@ namespace Hunspell
                 else if (Affix.FlagMode == FlagMode.Uni)
                 {
                     var utf8Flags = Encoding.UTF8.GetString(Affix.Encoding.GetBytes(parsed.Flags));
-                    flags = Builder.FlagSetDeduper.GetEqualOrAdd(FlagValue.ParseFlags(utf8Flags, FlagMode.Char));
+                    flags = Builder.Dedup(FlagValue.ParseFlags(utf8Flags, FlagMode.Char));
                 }
                 else
                 {
-                    flags = Builder.FlagSetDeduper.GetEqualOrAdd(FlagValue.ParseFlags(parsed.Flags, Affix.FlagMode));
+                    flags = Builder.Dedup(FlagValue.ParseFlags(parsed.Flags, Affix.FlagMode));
                 }
             }
             else
@@ -282,6 +282,7 @@ namespace Hunspell
 
             bool saveEntryList = false;
             WordEntrySet entryList;
+            word = Builder.Dedup(word);
             if (!Builder.EntriesByRoot.TryGetValue(word, out entryList))
             {
                 saveEntryList = true;
@@ -297,7 +298,11 @@ namespace Hunspell
                 {
                     if (existingEntry.ContainsFlag(SpecialFlags.OnlyUpcaseFlag))
                     {
-                        existingEntry = new WordEntry(existingEntry.Word, flags, existingEntry.Morphs, existingEntry.Options);
+                        existingEntry = new WordEntry(
+                            existingEntry.Word,
+                            flags,
+                            existingEntry.Morphs,
+                            existingEntry.Options);
                         entryList.DestructiveReplace(i, existingEntry);
                         return false;
                     }
@@ -311,7 +316,11 @@ namespace Hunspell
             if (!upperCaseHomonym)
             {
                 saveEntryList = true;
-                entryList = WordEntrySet.CopyWithItemAdded(entryList, new WordEntry(word, flags, morphs, options));
+                entryList = WordEntrySet.CopyWithItemAdded(entryList, new WordEntry(
+                    word,
+                    flags,
+                    morphs,
+                    options));
             }
 
             if (saveEntryList)
@@ -338,7 +347,7 @@ namespace Hunspell
                 !flags.Contains(Affix.ForbiddenWord)
             )
             {
-                flags = Builder.FlagSetDeduper.GetEqualOrAdd(FlagSet.Union(flags, SpecialFlags.OnlyUpcaseFlag));
+                flags = Builder.Dedup(FlagSet.Union(flags, SpecialFlags.OnlyUpcaseFlag));
 
                 var textInfo = Affix.Culture.TextInfo;
                 var initCapBuilder = StringBuilderPool.Get(word);

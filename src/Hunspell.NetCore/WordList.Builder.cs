@@ -9,19 +9,20 @@ namespace Hunspell
         public sealed class Builder
         {
             public Builder()
-                : this(null, null)
+                : this(null, null, null)
             {
             }
 
             public Builder(AffixConfig affix)
-                : this(affix, null)
+                : this(affix, null, null)
             {
             }
 
-            internal Builder(AffixConfig affix, Deduper<FlagSet> flagSetDeduper)
+            internal Builder(AffixConfig affix, Deduper<FlagSet> flagSetDeduper, StringDeduper stringDeduper)
             {
                 Affix = affix;
                 FlagSetDeduper = flagSetDeduper ?? new Deduper<FlagSet>(new FlagSet.Comparer());
+                StringDeduper = stringDeduper ?? new StringDeduper();
             }
 
             public Dictionary<string, WordEntrySet> EntriesByRoot;
@@ -29,6 +30,8 @@ namespace Hunspell
             public readonly AffixConfig Affix;
 
             internal readonly Deduper<FlagSet> FlagSetDeduper;
+
+            internal readonly StringDeduper StringDeduper;
 
             public WordList ToImmutable()
             {
@@ -54,7 +57,7 @@ namespace Hunspell
                         SpecialFlags.OnlyUpcaseFlag
                     }
                     .Where(f => f.HasValue));
-                nGramRestrictedFlags = FlagSetDeduper.GetEqualOrAdd(nGramRestrictedFlags);
+                nGramRestrictedFlags = Dedup(nGramRestrictedFlags);
 
                 var result = new WordList(affix)
                 {
@@ -98,6 +101,12 @@ namespace Hunspell
                     // PERF: because we add more entries than we are told about, we add 10% to the expected size
                     : new Dictionary<string, WordEntrySet>((expectedSize / 100) + expectedSize);
             }
+
+            public FlagSet Dedup(FlagSet value) =>
+                value == null ? null : FlagSetDeduper.GetEqualOrAdd(value);
+
+            public string Dedup(string value) =>
+                value == null ? null : StringDeduper.GetEqualOrAdd(value);
         }
     }
 }

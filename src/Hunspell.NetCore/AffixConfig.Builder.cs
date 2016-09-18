@@ -22,10 +22,13 @@ namespace Hunspell
 
             internal readonly Deduper<FlagSet> FlagSetDeduper;
 
+            internal readonly StringDeduper StringDeduper;
+
             public Builder()
             {
                 FlagSetDeduper = new Deduper<FlagSet>(new FlagSet.Comparer());
                 FlagSetDeduper.Add(FlagSet.Empty);
+                StringDeduper = new StringDeduper();
             }
 
             /// <summary>
@@ -361,9 +364,9 @@ namespace Hunspell
                 {
                     Options = Options,
                     FlagMode = FlagMode,
-                    KeyString = KeyString ?? DefaultKeyString,
-                    TryString = TryString ?? string.Empty,
-                    Language = Language ?? string.Empty,
+                    KeyString = Dedup(KeyString ?? DefaultKeyString),
+                    TryString = Dedup(TryString ?? string.Empty),
+                    Language = Dedup(Language ?? string.Empty),
                     Culture = culture,
                     IsHungarian = string.Equals(culture?.TwoLetterISOLanguageName, "HU", StringComparison.OrdinalIgnoreCase),
                     StringComparer = new CulturedStringComparer(culture),
@@ -396,7 +399,7 @@ namespace Hunspell
                     CompoundVowels = CompoundVowels ?? CharacterSet.Empty,
                     WordChars = WordChars ?? CharacterSet.Empty,
                     IgnoredChars = IgnoredChars ?? CharacterSet.Empty,
-                    Version = Version,
+                    Version = Dedup(Version),
                     BreakPoints = BreakSet.Create(BreakPoints)
                 };
 
@@ -453,7 +456,7 @@ namespace Hunspell
 #if !PRE_NETSTANDARD && !DEBUG
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            private static T Steal<T>(ref T item) where T:class
+            private static T Steal<T>(ref T item) where T : class
             {
                 var value = item;
                 item = null;
@@ -462,6 +465,28 @@ namespace Hunspell
 
             public FlagSet TakeArrayForFlagSet(FlagValue[] values) =>
                 FlagSetDeduper.GetEqualOrAdd(FlagSet.TakeArray(values));
+
+            public string Dedup(string value) =>
+                value == null ? null : StringDeduper.GetEqualOrAdd(value);
+
+            private void Dedup(ref string value)
+            {
+                if (value != null)
+                {
+                    value = StringDeduper.GetEqualOrAdd(value);
+                }
+            }
+
+            public void Dedup(string[] values)
+            {
+                if (values != null)
+                {
+                    for (var i = 0; i < values.Length; i++)
+                    {
+                        Dedup(ref values[i]);
+                    }
+                }
+            }
         }
     }
 }
