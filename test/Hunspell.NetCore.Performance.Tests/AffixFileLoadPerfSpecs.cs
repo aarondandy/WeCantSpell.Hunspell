@@ -17,7 +17,6 @@ namespace Hunspell.NetCore.Performance.Tests
             var filesDirectory = Path.Combine(Path.GetDirectoryName(testAssemblyPath), "files/");
             AffixFilePaths = Directory.GetFiles(filesDirectory, "*.aff")
                 .OrderBy(p => p)
-                .Where((_,i) => i % 10 == 0)
                 .ToArray();
             AffixFilesLoaded = context.GetCounter(nameof(AffixFilesLoaded));
         }
