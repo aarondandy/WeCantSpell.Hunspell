@@ -3309,6 +3309,8 @@ namespace Hunspell
 
             var st = new SimulatedCString(word);
 
+            var conditionBypassA = Affix.CompoundFlag.IsZero && Affix.CompoundBegin.IsZero && Affix.CompoundMiddle.IsZero;
+
             for (var i = cmin; i < cmax; i++)
             {
                 words = oldwords;
@@ -3400,54 +3402,40 @@ namespace Hunspell
                             (
                                 rv.ContainsFlag(Affix.NeedAffix)
                                 ||
-                                !(
-                                    (
-                                        !onlycpdrule
-                                        &&
-                                        words == null
-                                        &&
-                                        rv.ContainsFlag(Affix.CompoundFlag)
-                                    )
-                                    ||
-                                    (
-                                        wordNum == 0
-                                        &&
-                                        !onlycpdrule
-                                        &&
-                                        rv.ContainsFlag(Affix.CompoundBegin)
-                                    )
-                                    ||
-                                    (
-                                        wordNum != 0
-                                        &&
-                                        !onlycpdrule
-                                        &&
-                                        words == null
-                                        &&
-                                        rv.ContainsFlag(Affix.CompoundMiddle)
-                                    )
-                                    ||
-                                    (
-                                        Affix.CompoundRules.HasItems
-                                        &&
-                                        onlycpdrule
-                                        &&
-                                        (
-                                            (
-                                                words == null
-                                                &&
-                                                wordNum == 0
-                                                &&
-                                                DefCompoundCheck(ref words, wnum, rv, rwords, false)
-                                            )
+                                (
+                                    onlycpdrule
+                                        ? (
+                                            Affix.CompoundRules.IsEmpty
                                             ||
                                             (
-                                                words != null
+                                                wordNum != 0
                                                 &&
-                                                DefCompoundCheck(ref words, wnum, rv, rwords, false)
+                                                words == null
+                                            )
+                                            ||
+                                            !DefCompoundCheck(ref words, wnum, rv, rwords, false)
+                                        )
+                                        : (
+                                            conditionBypassA
+                                            ||
+                                            (
+                                                (
+                                                    words != null
+                                                    ||
+                                                    !rv.ContainsFlag(Affix.CompoundFlag)
+                                                )
+                                                &&
+                                                (
+                                                    wordNum == 0
+                                                    ? !rv.ContainsFlag(Affix.CompoundBegin)
+                                                    : (
+                                                        words != null
+                                                        ||
+                                                        !rv.ContainsFlag(Affix.CompoundMiddle)
+                                                    )
+                                                )
                                             )
                                         )
-                                    )
                                 )
                                 ||
                                 (
@@ -3700,7 +3688,7 @@ namespace Hunspell
                                 (
                                     scpd == 0
                                     ||
-                                    !scpdPatternEntry.Condition.HasValue
+                                    scpdPatternEntry.Condition.IsZero
                                     ||
                                     rv.ContainsFlag(scpdPatternEntry.Condition)
                                 )
@@ -3939,7 +3927,7 @@ namespace Hunspell
                                     (
                                         scpd == 0
                                         ||
-                                        !scpdPatternEntry.Condition2.HasValue
+                                        scpdPatternEntry.Condition2.IsZero
                                         ||
                                         rv.ContainsFlag(scpdPatternEntry.Condition2)
                                     )
@@ -3992,7 +3980,7 @@ namespace Hunspell
                                     !(
                                         scpd == 0
                                         ||
-                                        !scpdPatternEntry.Condition2.HasValue
+                                        scpdPatternEntry.Condition2.IsZero
                                         ||
                                         rv.ContainsFlag(scpdPatternEntry.Condition2)
                                     )
@@ -4329,7 +4317,7 @@ namespace Hunspell
             DictionaryEntry rv;
 
             var isEndCompound = inCompound == CompoundOptions.End;
-            if (isEndCompound && !Affix.CompoundPermitFlag.HasValue)
+            if (isEndCompound && Affix.CompoundPermitFlag.IsZero)
             {
                 // not possible to permit prefixes in compounds
                 return null;
@@ -4473,7 +4461,7 @@ namespace Hunspell
             }
 
             var isBeginCompound = inCompound == CompoundOptions.Begin;
-            if (isBeginCompound && !Affix.CompoundPermitFlag.HasValue)
+            if (isBeginCompound && Affix.CompoundPermitFlag.IsZero)
             {
                 // not possible to be signed with compoundpermitflag flag
                 return null;
@@ -4486,7 +4474,11 @@ namespace Hunspell
             {
                 // suffixes are not allowed in beginning of compounds
                 if (
-                    (!cclass.HasValue || se.HasContClasses)
+                    (
+                        cclass.IsZero
+                        ||
+                        se.HasContClasses
+                    )
                     &&
                     (
                         !isBeginCompound
@@ -4516,7 +4508,7 @@ namespace Hunspell
                     )
                     &&
                     (
-                        !Affix.Circumfix.HasValue
+                        Affix.Circumfix.IsZero
                         ||
                         // no circumfix flag in prefix and suffix
                         (
@@ -4601,7 +4593,7 @@ namespace Hunspell
                     )
                     &&
                     (
-                        !Affix.Circumfix.HasValue
+                        Affix.Circumfix.IsZero
                         ||
                         // no circumfix flag in prefix and suffix
                         (
@@ -4901,7 +4893,7 @@ namespace Hunspell
                             !entry.ContainsContClass(Affix.NeedAffix) // forbid single prefixes with needaffix flag
                             &&
                             (
-                                !needFlag.HasValue
+                                needFlag.IsZero
                                 ||
                                 dictionaryEntry.ContainsFlag(needFlag)
                                 ||
@@ -4987,7 +4979,11 @@ namespace Hunspell
                             (
                                 he.ContainsFlag(entry.AFlag)
                                 ||
-                                (pfx != null && pfx.ContainsContClass(entry.AFlag))
+                                (
+                                    pfx != null
+                                    &&
+                                    pfx.ContainsContClass(entry.AFlag)
+                                )
                             )
                             &&
                             (
@@ -5007,7 +5003,7 @@ namespace Hunspell
                             !he.ContainsFlag(badFlag)
                             && // handle required flag
                             (
-                                !needFlag.HasValue
+                                needFlag.IsZero
                                 ||
                                 he.ContainsFlag(needFlag)
                                 ||

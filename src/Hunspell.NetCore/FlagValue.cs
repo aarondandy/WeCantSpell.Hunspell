@@ -26,27 +26,44 @@ namespace Hunspell
             this.value = checked((char)value);
         }
 
-        public bool HasValue => value != 0;
-
-        public static FlagValue Create(char high, char low)
+        public bool HasValue
         {
-            return new FlagValue(unchecked((char)((high << 8) | low)));
+#if !PRE_NETSTANDARD && !DEBUG
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get
+            {
+                return value != 0;
+            }
         }
 
-        public bool Equals(FlagValue other)
+        public bool IsZero
         {
-            return other.value == value;
+#if !PRE_NETSTANDARD && !DEBUG
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get
+            {
+                return value == 0;
+            }
         }
 
-        public bool Equals(int other)
-        {
-            return other == value;
-        }
+        public static FlagValue Create(char high, char low) => new FlagValue(unchecked((char)((high << 8) | low)));
 
-        public bool Equals(char other)
-        {
-            return other == value;
-        }
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public bool Equals(FlagValue other) => other.value == value;
+
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public bool Equals(int other) => other == value;
+
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public bool Equals(char other) => other == value;
 
         public override bool Equals(object obj)
         {
@@ -66,30 +83,15 @@ namespace Hunspell
             return false;
         }
 
-        public override int GetHashCode()
-        {
-            return value.GetHashCode();
-        }
+        public override int GetHashCode() => value.GetHashCode();
 
-        public int CompareTo(FlagValue other)
-        {
-            return value.CompareTo(other.value);
-        }
+        public int CompareTo(FlagValue other) => value.CompareTo(other.value);
 
-        public int CompareTo(int other)
-        {
-            return ((int)value).CompareTo(other);
-        }
+        public int CompareTo(int other) => ((int)value).CompareTo(other);
 
-        public int CompareTo(char other)
-        {
-            return value.CompareTo(other);
-        }
+        public int CompareTo(char other) => value.CompareTo(other);
 
-        public override string ToString()
-        {
-            return ((int)value).ToString(CultureInfo.InvariantCulture);
-        }
+        public override string ToString() => ((int)value).ToString(CultureInfo.InvariantCulture);
 
         public static bool TryParseFlag(string text, FlagMode mode, out FlagValue value)
         {
@@ -315,17 +317,11 @@ namespace Hunspell
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static implicit operator int(FlagValue flag)
-        {
-            return flag.value;
-        }
+        public static implicit operator int(FlagValue flag) => flag.value;
 
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static implicit operator char(FlagValue flag)
-        {
-            return flag.value;
-        }
+        public static implicit operator char(FlagValue flag) => flag.value;
     }
 }

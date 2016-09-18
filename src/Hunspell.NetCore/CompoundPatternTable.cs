@@ -49,7 +49,7 @@ namespace Hunspell
                     (
                         r1 == null
                         ||
-                        !patternEntry.Condition.HasValue
+                        patternEntry.Condition.IsZero
                         ||
                         r1.ContainsFlag(patternEntry.Condition)
                     )
@@ -57,7 +57,7 @@ namespace Hunspell
                     (
                         r2 == null
                         ||
-                        !patternEntry.Condition2.HasValue
+                        patternEntry.Condition2.IsZero
                         ||
                         r2.ContainsFlag(patternEntry.Condition2)
                     )
