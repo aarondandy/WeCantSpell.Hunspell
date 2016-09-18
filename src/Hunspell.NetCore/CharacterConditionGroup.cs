@@ -70,6 +70,29 @@ namespace Hunspell
             return true;
         }
 
+        /// <summary>
+        /// Determines if the end of the given <paramref name="text"/> matches the conditions.
+        /// </summary>
+        /// <param name="text">The text to check.</param>
+        /// <returns>True when the end of the <paramref name="text"/> is matched by the conditions.</returns>
+        internal bool IsEndingMatch(StringSlice text)
+        {
+            if (items.Length > text.Length)
+            {
+                return false;
+            }
+
+            for (int conditionIndex = items.Length - 1, textIndex = text.Length - 1; conditionIndex >= 0; conditionIndex--, textIndex--)
+            {
+                if (!items[conditionIndex].IsMatch(text.Text[text.Offset + textIndex]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         public bool IsOnlyPossibleMatch(string text)
         {
             if (string.IsNullOrEmpty(text) || items.Length != text.Length)

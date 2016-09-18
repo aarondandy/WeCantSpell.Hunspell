@@ -52,13 +52,23 @@ namespace Hunspell.Infrastructure
 
         public override string ToString()
         {
-            return Text.Substring(Offset, Length);
+            return Length == 0 ? string.Empty : Text.Substring(Offset, Length);
         }
 
         public StringSlice[] SplitOnComma()
         {
             var temp = Text.Substring(Offset, Length).SplitOnComma();
             return ArrayEx.ConvertAll(temp, Create);
+        }
+
+        public int IndexOf(string value, StringComparison comparisonType)
+        {
+            return Text.IndexOf(value, Offset, comparisonType);
+        }
+
+        public int IndexOf(string value, int startIndex, StringComparison comparisonType)
+        {
+            return Text.IndexOf(value, Offset + startIndex, comparisonType);
         }
     }
 }

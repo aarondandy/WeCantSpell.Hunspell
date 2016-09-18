@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
@@ -34,7 +35,12 @@ namespace Hunspell
     {
         public static CapitalizationType GetCapitalizationType(string word, AffixConfig affix)
         {
-            if (string.IsNullOrEmpty(word))
+            return GetCapitalizationType(StringSlice.Create(word), affix);
+        }
+
+        internal static CapitalizationType GetCapitalizationType(StringSlice word, AffixConfig affix)
+        {
+            if (word.IsNullOrEmpty)
             {
                 return CapitalizationType.None;
             }
@@ -42,7 +48,7 @@ namespace Hunspell
             var hasFoundMoreCaps = false;
             var firstIsUpper = false;
             var hasLower = false;
-            var c = word[0];
+            var c = word.Text[word.Offset];
             if (char.IsUpper(c))
             {
                 firstIsUpper = true;
@@ -52,9 +58,10 @@ namespace Hunspell
                 hasLower = true;
             }
 
-            for (int i = 1; i < word.Length; i++)
+            var wordIndexLimit = word.Length + word.Offset;
+            for (int i = word.Offset + 1; i < wordIndexLimit; i++)
             {
-                c = word[i];
+                c = word.Text[i];
 
                 if (char.IsUpper(c))
                 {

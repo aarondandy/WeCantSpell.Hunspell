@@ -103,7 +103,7 @@ namespace Hunspell
                     var dotPos = scw.IndexOf('.');
                     if (dotPos >= 0)
                     {
-                        var capTypeLocal = CapitalizationTypeEx.GetCapitalizationType(scw.Substring(dotPos + 1), Affix);
+                        var capTypeLocal = CapitalizationTypeEx.GetCapitalizationType(scw.Subslice(dotPos + 1), Affix);
                         if (capTypeLocal == CapitalizationType.Init)
                         {
                             InsertSuggestion(slst, scw.Insert(dotPos + 1, " "));

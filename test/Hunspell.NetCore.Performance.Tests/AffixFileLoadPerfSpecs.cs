@@ -23,7 +23,7 @@ namespace Hunspell.NetCore.Performance.Tests
 
         [PerfBenchmark(
             Description = "Ensure that affix files can be loaded quickly.",
-            NumberOfIterations = 2,
+            NumberOfIterations = 1,
             RunMode = RunMode.Throughput,
             TestMode = TestMode.Measurement)]
         [MemoryMeasurement(MemoryMetric.TotalBytesAllocated)]

@@ -164,6 +164,19 @@ namespace Hunspell
                 return StringBuilderPool.GetStringAndReturn(builder);
             }
 
+            protected string MakeInitCap(StringSlice s)
+            {
+                if (s.IsNullOrEmpty)
+                {
+                    return string.Empty;
+                }
+
+                var builder = StringBuilderPool.Get(s.Length);
+                builder.Append(Affix.Culture.TextInfo.ToUpper(s.Text[s.Offset]));
+                builder.Append(s.Text, s.Offset + 1, s.Length - 1);
+                return StringBuilderPool.GetStringAndReturn(builder);
+            }
+
             /// <summary>
             /// Convert to all little.
             /// </summary>
@@ -998,7 +1011,7 @@ namespace Hunspell
                                         st.Destroy();
 
                                         // forbid compound word, if it is a non compound word with typical fault
-                                        if (Affix.CheckCompoundRep && CompoundReplacementCheck(word.Substring(0, len)))
+                                        if (Affix.CheckCompoundRep && CompoundReplacementCheck(word.Subslice(0, len)))
                                         {
                                             return null;
                                         }
@@ -1202,7 +1215,7 @@ namespace Hunspell
                                     // perhaps second word is a compound word (recursive call)
                                     if (wordNum < maxwordnum)
                                     {
-                                        rv = CompoundCheck(st.Substring(i), wordNum + 1, numSyllable, maxwordnum, wnum + 1, words, ref rwords, false, isSug, ref info);
+                                        rv = CompoundCheck(st.Subslice(i), wordNum + 1, numSyllable, maxwordnum, wnum + 1, words, ref rwords, false, isSug, ref info);
 
                                         if (
                                             rv != null
@@ -1772,6 +1785,8 @@ namespace Hunspell
 
             protected WordEntrySet Lookup(string word) => WordList.FindEntriesByRootWord(word);
 
+            internal WordEntrySet Lookup(StringSlice word) => WordList.FindEntriesByRootWord(word);
+
             /// <summary>
             /// Compound check patterns.
             /// </summary>
@@ -1943,6 +1958,42 @@ namespace Hunspell
                 return false;
             }
 
+            /// <summary>
+            /// Is word a non compound with a REP substitution?
+            /// </summary>
+            /// <seealso cref="AffixConfig.CheckCompoundRep"/>
+            /// <seealso cref="AffixConfig.Replacements"/>
+            private bool CompoundReplacementCheck(StringSlice wordSlice)
+            {
+                if (wordSlice.Length < 2 || Affix.Replacements.IsEmpty)
+                {
+                    return false;
+                }
+
+                foreach (var replacementEntry in Affix.Replacements)
+                {
+                    // search every occurence of the pattern in the word
+                    var rIndex = wordSlice.IndexOf(replacementEntry.Pattern, StringComparison.Ordinal);
+                    if (rIndex > 0)
+                    {
+                        var word = wordSlice.ToString();
+                        while (rIndex >= 0)
+                        {
+                            var type = rIndex == 0 ? ReplacementValueType.Isol : ReplacementValueType.Med;
+                            var replacement = replacementEntry[type];
+                            if (replacement != null && CandidateCheck(word.Replace(rIndex, replacementEntry.Pattern.Length, replacement)))
+                            {
+                                return true;
+                            }
+
+                            rIndex = word.IndexOf(replacementEntry.Pattern, rIndex + 1, StringComparison.Ordinal); // search for the next letter
+                        }
+                    }
+                }
+
+                return false;
+            }
+
             private WordEntry CheckWordPrefix(AffixEntryWithDetail<PrefixEntry> entry, string word, CompoundOptions inCompound, FlagValue needFlag)
             {
                 // on entry prefix is 0 length or already matches the beginning of the word.
@@ -2045,8 +2096,8 @@ namespace Hunspell
                     // or null terminating the shorter string
 
                     var tmpstring = string.IsNullOrEmpty(entry.Strip)
-                        ? word.Substring(0, tmpl)
-                        : StringEx.ConcatSubstring(word, 0, tmpl, entry.Strip);
+                        ? word.Subslice(0, tmpl)
+                        : StringSlice.Create(StringEx.ConcatSubstring(word, 0, tmpl, entry.Strip));
 
                     // now make sure all of the conditions on characters
                     // are met.  Please see the appendix at the end of

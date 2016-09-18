@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
@@ -35,6 +36,17 @@ namespace Hunspell
         {
             WordEntrySet result;
             if (!EntriesByRoot.TryGetValue(rootWord, out result))
+            {
+                result = WordEntrySet.Empty;
+            }
+
+            return result;
+        }
+
+        internal WordEntrySet FindEntriesByRootWord(StringSlice rootWord)
+        {
+            WordEntrySet result = null;
+            if (!EntriesByRoot.TryGetValue(rootWord.ToString(), out result))
             {
                 result = WordEntrySet.Empty;
             }

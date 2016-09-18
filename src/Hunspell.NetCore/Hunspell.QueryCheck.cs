@@ -212,7 +212,7 @@ namespace Hunspell
                     // conversion may result in string with different len than before MakeAllSmall2 so re-scan
                     if (apos < scw.Length - 1)
                     {
-                        scw = StringEx.ConcatSubstring(scw, 0, apos + 1, MakeInitCap(scw.Substring(apos + 1)));
+                        scw = StringEx.ConcatSubstring(scw, 0, apos + 1, MakeInitCap(scw.Subslice(apos + 1)));
                         rv = CheckWord(scw, ref resultType, out root);
                         if (rv != null)
                         {
