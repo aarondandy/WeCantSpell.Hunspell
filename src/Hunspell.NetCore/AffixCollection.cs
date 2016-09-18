@@ -10,28 +10,34 @@ namespace Hunspell
         IEnumerable<AffixEntryGroup<TEntry>>
         where TEntry : AffixEntry
     {
+
         public static readonly AffixCollection<TEntry> Empty = new AffixCollection<TEntry>
         (
             new Dictionary<FlagValue, AffixEntryGroup<TEntry>>(0),
             new Dictionary<char, AffixEntryWithDetailCollection<TEntry>>(0),
+            AffixEntryWithDetailCollection<TEntry>.Empty,
             AffixEntryWithDetailCollection<TEntry>.Empty,
             FlagSet.Empty
         );
 
         private readonly Dictionary<FlagValue, AffixEntryGroup<TEntry>> affixesByFlag;
 
-        private readonly Dictionary<char, AffixEntryWithDetailCollection<TEntry>> affixesByIndexedKeyCharacter;
+        private readonly Dictionary<char, AffixEntryWithDetailCollection<TEntry>> affixesByIndexedByKey;
+
+        private readonly AffixEntryWithDetailCollection<TEntry> affixesWithDots;
 
         private AffixCollection
         (
             Dictionary<FlagValue, AffixEntryGroup<TEntry>> affixesByFlag,
-            Dictionary<char, AffixEntryWithDetailCollection<TEntry>> affixesByIndexedKeyCharacter,
+            Dictionary<char, AffixEntryWithDetailCollection<TEntry>> affixesByIndexedByKey,
+            AffixEntryWithDetailCollection<TEntry> affixesWithDots,
             AffixEntryWithDetailCollection<TEntry> affixesWithEmptyKeys,
             FlagSet contClasses
         )
         {
             this.affixesByFlag = affixesByFlag;
-            this.affixesByIndexedKeyCharacter = affixesByIndexedKeyCharacter;
+            this.affixesByIndexedByKey = affixesByIndexedByKey;
+            this.affixesWithDots = affixesWithDots;
             AffixesWithEmptyKeys = affixesWithEmptyKeys;
             ContClasses = contClasses;
             HasAffixes = affixesByFlag.Count != 0;
@@ -54,16 +60,17 @@ namespace Hunspell
             }
 
             var affixesByFlag = new Dictionary<FlagValue, AffixEntryGroup<TEntry>>(builders.Count);
-            var affixesByIndexedKeyCharacterBuilders = new Dictionary<char, List<AffixEntryWithDetail<TEntry>>>();
+            var affixesByIndexedByKeyBuilders = new Dictionary<char, List<AffixEntryWithDetail<TEntry>>>();
+            var affixesWithDots = new List<AffixEntryWithDetail<TEntry>>();
             var affixesWithEmptyKeys = new List<AffixEntryWithDetail<TEntry>>();
             var contClasses = new HashSet<FlagValue>();
 
-            foreach(var builder in builders)
+            foreach (var builder in builders)
             {
                 var group = builder.ToGroup();
                 affixesByFlag.Add(group.AFlag, group);
 
-                foreach(var entry in group.Entries)
+                foreach (var entry in group.Entries)
                 {
                     var key = entry.Key;
                     contClasses.UnionWith(entry.ContClass);
@@ -74,34 +81,39 @@ namespace Hunspell
                     }
                     else
                     {
-                        var indexedChar = key[0];
-                        List<AffixEntryWithDetail<TEntry>> keyedAffixes;
-                        if (affixesByIndexedKeyCharacterBuilders.TryGetValue(indexedChar, out keyedAffixes))
+                        if (key.Contains('.'))
                         {
-                            keyedAffixes.Add(entryWithDetail);
+                            affixesWithDots.Add(entryWithDetail);
                         }
                         else
                         {
-                            affixesByIndexedKeyCharacterBuilders.Add(indexedChar, new List<AffixEntryWithDetail<TEntry>>
+                            var indexedKey = key[0];
+                            List<AffixEntryWithDetail<TEntry>> keyedAffixes;
+                            if (!affixesByIndexedByKeyBuilders.TryGetValue(indexedKey, out keyedAffixes))
                             {
-                                entryWithDetail
-                            });
+                                keyedAffixes = new List<AffixEntryWithDetail<TEntry>>();
+                                affixesByIndexedByKeyBuilders.Add(indexedKey, keyedAffixes);
+
+                            }
+
+                            keyedAffixes.Add(entryWithDetail);
                         }
                     }
                 }
             }
 
-            var affixesByIndexedKeyCharacter = new Dictionary<char, AffixEntryWithDetailCollection<TEntry>>(
-                affixesByIndexedKeyCharacterBuilders.Count);
-            foreach(var keyedBuilder in affixesByIndexedKeyCharacterBuilders)
+            var affixesByIndexedByKey = new Dictionary<char, AffixEntryWithDetailCollection<TEntry>>(
+                affixesByIndexedByKeyBuilders.Count);
+            foreach (var keyedBuilder in affixesByIndexedByKeyBuilders)
             {
-                affixesByIndexedKeyCharacter.Add(keyedBuilder.Key, AffixEntryWithDetailCollection<TEntry>.TakeList(keyedBuilder.Value));
+                affixesByIndexedByKey.Add(keyedBuilder.Key, AffixEntryWithDetailCollection<TEntry>.TakeList(keyedBuilder.Value));
             }
 
             return new AffixCollection<TEntry>
             (
                 affixesByFlag,
-                affixesByIndexedKeyCharacter,
+                affixesByIndexedByKey,
+                AffixEntryWithDetailCollection<TEntry>.TakeList(affixesWithDots),
                 AffixEntryWithDetailCollection<TEntry>.TakeList(affixesWithEmptyKeys),
                 FlagSet.Create(contClasses)
             );
@@ -114,81 +126,82 @@ namespace Hunspell
             return result;
         }
 
-        public IEnumerable<AffixEntryWithDetail<TEntry>> GetMatchingAffixes(string word)
+        public List<AffixEntryWithDetail<TEntry>> GetMatchingAffixes(string word)
         {
             if (string.IsNullOrEmpty(word))
             {
-                return Enumerable.Empty<AffixEntryWithDetail<TEntry>>();
+                return new List<AffixEntryWithDetail<TEntry>>(0);
             }
-
-            AffixEntryWithDetailCollection<TEntry> dotAffixes;
-            affixesByIndexedKeyCharacter.TryGetValue('.', out dotAffixes);
-
             if (typeof(TEntry) == typeof(PrefixEntry))
             {
-                AffixEntryWithDetailCollection<TEntry> characterAffixes;
-                if (!word.StartsWith('.'))
-                {
-                    affixesByIndexedKeyCharacter.TryGetValue(word[0], out characterAffixes);
-                }
-                else
-                {
-                    characterAffixes = null;
-                }
-
-                return FastUnion(dotAffixes, characterAffixes)
-                    .Where(e => StringEx.IsSubset(e.Key, word));
+                return GetMatchingPrefixes(word);
             }
-            else if (typeof(TEntry) == typeof(SuffixEntry))
+            if (typeof(TEntry) == typeof(SuffixEntry))
             {
-                AffixEntryWithDetailCollection<TEntry> characterAffixes;
-                if (!word.EndsWith('.'))
-                {
-                    affixesByIndexedKeyCharacter.TryGetValue(word[word.Length - 1], out characterAffixes);
-                }
-                else
-                {
-                    characterAffixes = null;
-                }
+                return GetMatchingSuffixes(word);
+            }
 
-                return FastUnion(dotAffixes, characterAffixes)
-                    .Where(e => StringEx.IsReverseSubset(e.Key, word));
-            }
-            else
-            {
-                throw new NotSupportedException();
-            }
+            throw new NotSupportedException();
         }
 
-        private static IEnumerable<AffixEntryWithDetail<TEntry>> FastUnion(AffixEntryWithDetailCollection<TEntry> a, AffixEntryWithDetailCollection<TEntry> b)
+        private List<AffixEntryWithDetail<TEntry>> GetMatchingPrefixes(string word)
         {
-            if (a == null)
-            {
-                if (b == null)
-                {
-                    return Enumerable.Empty<AffixEntryWithDetail<TEntry>>();
-                }
-                else
-                {
-                    return b;
-                }
-            }
-            else
-            {
-                if (b == null)
-                {
-                    return a;
-                }
-                else
-                {
-                    if (ReferenceEquals(a, b))
-                    {
-                        return a;
-                    }
+            var results = new List<AffixEntryWithDetail<TEntry>>();
 
-                    return Enumerable.Union(a, b);
+            AffixEntryWithDetailCollection<TEntry> indexedEntries;
+            if (affixesByIndexedByKey.TryGetValue(word[0], out indexedEntries))
+            {
+                foreach (var entry in indexedEntries)
+                {
+                    if (StringEx.IsSubset(entry.Key, word))
+                    {
+                        results.Add(entry);
+                    }
                 }
             }
+
+            if (affixesWithDots.HasItems)
+            {
+                foreach (var entry in affixesWithDots)
+                {
+                    if (StringEx.IsSubset(entry.Key, word))
+                    {
+                        results.Add(entry);
+                    }
+                }
+            }
+
+            return results;
+        }
+
+        private List<AffixEntryWithDetail<TEntry>> GetMatchingSuffixes(string word)
+        {
+            var results = new List<AffixEntryWithDetail<TEntry>>();
+
+            AffixEntryWithDetailCollection<TEntry> indexedEntries;
+            if (affixesByIndexedByKey.TryGetValue(word[word.Length - 1], out indexedEntries))
+            {
+                foreach (var entry in indexedEntries)
+                {
+                    if (StringEx.IsReverseSubset(entry.Key, word))
+                    {
+                        results.Add(entry);
+                    }
+                }
+            }
+
+            if (affixesWithDots.HasItems)
+            {
+                foreach (var entry in affixesWithDots)
+                {
+                    if (StringEx.IsReverseSubset(entry.Key, word))
+                    {
+                        results.Add(entry);
+                    }
+                }
+            }
+
+            return results;
         }
 
         public IEnumerator<AffixEntryGroup<TEntry>> GetEnumerator()

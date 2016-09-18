@@ -3,7 +3,7 @@
 namespace Hunspell
 {
     [Flags]
-    public enum AffixEntryOptions : short
+    public enum AffixEntryOptions : byte
     {
         None = 0,
 
