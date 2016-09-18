@@ -7,7 +7,6 @@ namespace Hunspell.Infrastructure
     internal static class StringEx
     {
         private static readonly char[] SpaceOrTab = new[] { ' ', '\t' };
-        private static readonly char[] CommaArray = new[] { ',' };
 
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

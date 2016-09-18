@@ -558,7 +558,7 @@ namespace Hunspell
                     }
                     else
                     {
-                        entryBuilder.AddRange(ParseFlagsInOrder(parameterText, indexBegin, indexEnd - indexBegin));
+                        entryBuilder.AddRange(ParseFlagsInOrder(parameterText.Subslice(indexBegin, indexEnd - indexBegin)));
                     }
                 }
             }
@@ -657,7 +657,7 @@ namespace Hunspell
                     if (Builder.IsAliasF)
                     {
                         int aliasNumber;
-                        if (IntEx.TryParseInvariant(affixInput, slashPartOffset, slashPartLength, out aliasNumber) && aliasNumber > 0 && aliasNumber <= Builder.AliasF.Count)
+                        if (IntEx.TryParseInvariant(affixInput.Subslice(slashPartOffset, slashPartLength), out aliasNumber) && aliasNumber > 0 && aliasNumber <= Builder.AliasF.Count)
                         {
                             contClass = Builder.AliasF[aliasNumber - 1];
                         }
@@ -668,7 +668,7 @@ namespace Hunspell
                     }
                     else
                     {
-                        contClass = ParseFlags(affixInput, slashPartOffset, slashPartLength);
+                        contClass = ParseFlags(affixInput.Subslice(slashPartOffset, slashPartLength));
                     }
                 }
                 else
@@ -1134,14 +1134,18 @@ namespace Hunspell
             return FlagValue.ParseFlagsInOrder(text, flagMode);
         }
 
-        private FlagSet ParseFlags(string text, int startIndex, int length) => Builder.TakeArrayForFlagSet(ParseFlagsInOrder(text, startIndex, length));
+        private FlagSet ParseFlags(StringSlice text) => Builder.TakeArrayForFlagSet(ParseFlagsInOrder(text));
 
-        private FlagValue[] ParseFlagsInOrder(string text, int startIndex, int length)
+        private FlagValue[] ParseFlagsInOrder(StringSlice text)
         {
             var flagMode = Builder.FlagMode;
-            return flagMode == FlagMode.Uni
-                ? FlagValue.ParseFlagsInOrder(ReDecodeConvertedStringAsUtf8(text.Subslice(startIndex, length)), FlagMode.Char)
-                : FlagValue.ParseFlagsInOrder(text, startIndex, length, flagMode);
+            if (flagMode == FlagMode.Uni)
+            {
+                text = ReDecodeConvertedStringAsUtf8(text);
+                flagMode = FlagMode.Char;
+            }
+
+            return FlagValue.ParseFlagsInOrder(text, flagMode);
         }
 
         private bool TryParseFlag(string text, out FlagValue value)
@@ -1154,14 +1158,6 @@ namespace Hunspell
             }
 
             return FlagValue.TryParseFlag(text, flagMode, out value);
-        }
-
-        private bool TryParseFlag(string text, int startIndex, out FlagValue value)
-        {
-            var flagMode = Builder.FlagMode;
-            return flagMode == FlagMode.Uni
-                ? FlagValue.TryParseFlag(ReDecodeConvertedStringAsUtf8(text.Subslice(startIndex)), FlagMode.Char, out value)
-                : FlagValue.TryParseFlag(text, startIndex, text.Length - startIndex, flagMode, out value);
         }
 
         private bool TryParseFlag(StringSlice text, out FlagValue value)

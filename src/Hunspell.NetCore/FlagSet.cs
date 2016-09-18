@@ -25,6 +25,9 @@ namespace Hunspell
             return new FlagSet(values);
         }
 
+        public static FlagSet Create(List<FlagValue> given) =>
+            given == null ? Empty : TakeArray(given.Distinct().ToArray());
+
         public static FlagSet Create(IEnumerable<FlagValue> given) =>
             given == null ? Empty : TakeArray(given.Distinct().ToArray());
 
