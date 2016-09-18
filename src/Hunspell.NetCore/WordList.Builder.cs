@@ -25,7 +25,8 @@ namespace Hunspell
                 FlagSetDeduper.Add(FlagSet.Empty);
                 StringDeduper = stringDeduper ?? new StringDeduper();
                 StringDeduper.Add(MorphologicalTags.Phon);
-                MorphSetDeduper = new Deduper<MorphSet>(new MorphSet.Comparer());
+                MorphSetDeduper = morphSet ?? new Deduper<MorphSet>(new MorphSet.Comparer());
+                MorphSetDeduper.Add(MorphSet.Empty);
             }
 
             public Dictionary<string, WordEntrySet> EntriesByRoot;
