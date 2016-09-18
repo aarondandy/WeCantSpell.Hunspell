@@ -4,15 +4,17 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{0D9B92F4-F669-427A-95FB-14FC6A555973}</ProjectGuid>
+    <ProjectGuid>{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Hunspell.NetCore.Performance.Tests</RootNamespace>
-    <AssemblyName>Hunspell.NetCore.Performance.Tests</AssemblyName>
+    <RootNamespace>Hunspell.NetCore.Performance.Comparison</RootNamespace>
+    <AssemblyName>Hunspell.NetCore.Performance.Comparison</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -22,12 +24,16 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="NBench, Version=0.3.1.0, Culture=neutral, processorArchitecture=MSIL">
@@ -42,6 +48,10 @@
       <HintPath>..\..\packages\NBench.Runner.0.3.1\lib\net45\NBench.Runner.exe</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="NHunspell, Version=1.2.5554.16953, Culture=neutral, PublicKeyToken=1ac793ea843b4366, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\NHunspell.1.2.5554.16953\lib\net\NHunspell.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -52,12 +62,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AffixFileLoadPerfSpecs.cs" />
-    <Compile Include="DictionaryFileLoadPerfSpec.cs" />
     <Compile Include="EnWordPerfBase.cs" />
-    <Compile Include="EnWordCheckPerfSpecs.cs" />
-    <Compile Include="EnWordSuggestPerfSpec.cs" />
+    <Compile Include="WordCheckHunspellNetCorePerfSpec.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WordCheckNHunspellPerfSpec.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Hunspell.NetCore\Hunspell.NetCore.csproj">
@@ -66,17 +78,22 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\samples\*.*">
-      <Link>files\%(Filename)%(Extension)</Link>
+    <None Include="Hunspellx64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Hunspellx86.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="..\..\hunspell-origin\tests\suggestiontest\List_of_common_misspellings.txt">
       <Link>files\List_of_common_misspellings.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\samples\*.*">
+      <Link>files\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
