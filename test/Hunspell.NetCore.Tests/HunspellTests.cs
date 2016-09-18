@@ -186,7 +186,7 @@ namespace Hunspell.NetCore.Tests
             }
 
             [Fact]
-            public async Task untested_suggestion_files_should_not_be_found()
+            public void untested_suggestion_files_should_not_be_found()
             {
                 var untestedSets = GetSuggestionTestFileSets()
                     .Where(s => s.WrongLines.Count != s.SuggestionLines.Count)

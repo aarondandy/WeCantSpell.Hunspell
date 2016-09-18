@@ -178,5 +178,62 @@ namespace Hunspell.Infrastructure
 
             return true;
         }
+
+        public static bool IsNumericWord(string word)
+        {
+            int i;
+            byte state = 0; // 0 = begin, 1 = number, 2 = separator
+            for (i = 0; i < word.Length; i++)
+            {
+                var c = word[i];
+                if (char.IsNumber(c))
+                {
+                    state = 1;
+                }
+                else if (c == ',' || c == '.' || c == '-')
+                {
+                    if (state == 2 || i == 0)
+                    {
+                        break;
+                    }
+
+                    state = 2;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return i == word.Length && state == 1;
+        }
+
+        public static int CountMatchingFromLeft(string text, char character)
+        {
+            var count = 0;
+            while (count < text.Length && text[count] == character)
+            {
+                count++;
+            }
+
+            return count;
+        }
+
+        public static int CountMatchingFromRight(string text, char character)
+        {
+            var lastIndex = text.Length - 1;
+            var searchIndex = lastIndex;
+            while (searchIndex >= 0 && text[searchIndex] == character)
+            {
+                searchIndex--;
+            }
+
+            return lastIndex - searchIndex;
+        }
+
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static bool MyIsAlpha(char ch) => ch < 128 || char.IsLetter(ch);
     }
 }

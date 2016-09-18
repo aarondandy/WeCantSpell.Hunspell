@@ -38,10 +38,10 @@ namespace Hunspell
         public static async Task<Hunspell> FromFileAsync(string dictionaryFilePath) =>
             new Hunspell(await WordListReader.ReadFileAsync(dictionaryFilePath).ConfigureAwait(false));
 
-        public bool Check(string word) => new Query(word, this).Check();
+        public bool Check(string word) => new QueryCheck(word, WordList).Check();
 
-        public SpellCheckResult CheckDetails(string word) => new Query(word, this).CheckDetails();
+        public SpellCheckResult CheckDetails(string word) => new QueryCheck(word, WordList).CheckDetails();
 
-        public List<string> Suggest(string word) => new Query(word, this).Suggest();
+        public List<string> Suggest(string word) => new QuerySuggest(word, WordList).Suggest();
     }
 }

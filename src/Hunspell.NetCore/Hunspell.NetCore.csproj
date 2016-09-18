@@ -65,6 +65,7 @@
     <Compile Include="CharacterCondition.cs" />
     <Compile Include="CharacterConditionGroup.cs" />
     <Compile Include="CompoundOptions.cs" />
+    <Compile Include="Hunspell.QueryCheck.cs" />
     <Compile Include="PatternSet.cs" />
     <Compile Include="CompoundRule.cs" />
     <Compile Include="CompoundRuleSet.cs" />
@@ -116,6 +117,9 @@
     <Compile Include="Infrastructure\CulturedStringComparer.cs" />
     <Compile Include="Infrastructure\IntEx.cs" />
     <Compile Include="Infrastructure\StringEx.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Hunspell.QuerySuggest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
