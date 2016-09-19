@@ -42,16 +42,5 @@ namespace Hunspell
 
             return result;
         }
-
-        internal WordEntrySet FindEntriesByRootWord(StringSlice rootWord)
-        {
-            WordEntrySet result = null;
-            if (!EntriesByRoot.TryGetValue(rootWord.ToString(), out result))
-            {
-                result = WordEntrySet.Empty;
-            }
-
-            return result;
-        }
     }
 }

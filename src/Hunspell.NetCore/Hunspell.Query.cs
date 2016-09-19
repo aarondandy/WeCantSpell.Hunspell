@@ -1785,8 +1785,6 @@ namespace Hunspell
 
             protected WordEntrySet Lookup(string word) => WordList.FindEntriesByRootWord(word);
 
-            internal WordEntrySet Lookup(StringSlice word) => WordList.FindEntriesByRootWord(word);
-
             /// <summary>
             /// Compound check patterns.
             /// </summary>
@@ -2108,7 +2106,7 @@ namespace Hunspell
                     // root word in the dictionary
                     if (entry.Conditions.IsEndingMatch(tmpstring))
                     {
-                        foreach (var he in Lookup(tmpstring))
+                        foreach (var he in Lookup(tmpstring.ToString()))
                         {
                             if (
                                 (
