@@ -2,7 +2,7 @@ configuration: Release
 
 install:
   - choco install gitversion.portable -pre -y
-  - git submodule -q update --init
+  - git submodule update --init --recursive
 
 assembly_info:
   patch: false
