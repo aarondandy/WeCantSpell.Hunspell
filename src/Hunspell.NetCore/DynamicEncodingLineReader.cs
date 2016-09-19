@@ -350,7 +350,7 @@ namespace Hunspell
 
         private bool PrepareBuffer()
         {
-            if (buffer != null && bufferIndex + 1 < buffer.Length)
+            if (buffer != null && bufferIndex < buffer.Length)
             {
                 return true;
             }
@@ -376,17 +376,13 @@ namespace Hunspell
 
         private bool HandlePrepareBufferRead(int readBytesCount)
         {
-            if (readBytesCount == 0)
-            {
-                return false;
-            }
-            else if (readBytesCount != buffer.Length)
+            if (readBytesCount != buffer.Length)
             {
                 Array.Resize(ref buffer, readBytesCount);
             }
 
             bufferIndex = 0;
-            return true;
+            return readBytesCount != 0;
         }
 
         private void RevertReadBytes(int count)

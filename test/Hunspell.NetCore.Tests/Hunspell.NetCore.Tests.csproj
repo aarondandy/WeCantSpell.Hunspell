@@ -70,6 +70,7 @@
     <Compile Include="AffixReaderTests.cs" />
     <Compile Include="CharacterConditionTests.cs" />
     <Compile Include="DictionaryReaderTests.cs" />
+    <Compile Include="DynamicEncodingLineReaderTests.cs" />
     <Compile Include="EnUsWordsTests.cs" />
     <Compile Include="HunspellTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
