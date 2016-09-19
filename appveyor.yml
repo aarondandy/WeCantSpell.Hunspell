@@ -1,5 +1,5 @@
 configuration: Release
-platform: Any CPU
+platform: AnyCPU
 
 install:
   - choco install gitversion.portable -pre -y
