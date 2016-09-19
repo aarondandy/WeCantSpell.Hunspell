@@ -1463,6 +1463,7 @@ namespace Hunspell.NetCore.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
+                actual.Encoding.WebName.Should().Be("iso-8859-1");
                 actual.Phone.Select(p => p.Rule).Should().BeEquivalentTo(expectedPhoneRules);
                 actual.Phone.First().Rule.Should().Be("AH(AEIOUY)-^");
                 actual.Phone.First().Replace.Should().Be("*H");
