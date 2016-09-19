@@ -27,7 +27,7 @@ namespace Hunspell.NetCore.Performance.Comparison
         {
             foreach(var filePair in TestFiles)
             {
-                var checker = Hunspell.FromFileAsync(filePair.DictionaryFilePath, filePair.AffixFilePath).Result;
+                var checker = HunspellDictionary.FromFileAsync(filePair.DictionaryFilePath, filePair.AffixFilePath).Result;
                 checker.Check(TestWord);
                 FilePairsLoaded.Increment();
             }

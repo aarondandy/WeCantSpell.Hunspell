@@ -21,7 +21,7 @@ namespace Hunspell.NetCore.Tests
             public void cant_find_words_in_empty_dictioanry(string word)
             {
                 var dictionary = new WordList.Builder().ToImmutable();
-                var hunspell = new Hunspell(dictionary);
+                var hunspell = new HunspellDictionary(dictionary);
 
                 var actual = hunspell.Check(word);
 
@@ -47,7 +47,7 @@ namespace Hunspell.NetCore.Tests
                         WordEntryOptions.None) });
 
                 var dictionary = dictionaryBuilder.ToImmutable();
-                var hunspell = new Hunspell(dictionary);
+                var hunspell = new HunspellDictionary(dictionary);
 
                 var actual = hunspell.Check(searchWord);
 
@@ -64,7 +64,7 @@ namespace Hunspell.NetCore.Tests
             [Theory, MemberData(nameof(can_find_good_words_in_dictionary_args))]
             public async Task can_find_good_words_in_dictionary(string dictionaryFilePath, string word)
             {
-                var hunspell = await Hunspell.FromFileAsync(dictionaryFilePath);
+                var hunspell = await HunspellDictionary.FromFileAsync(dictionaryFilePath);
 
                 var checkResult = hunspell.Check(word);
 
@@ -81,7 +81,7 @@ namespace Hunspell.NetCore.Tests
             [Theory, MemberData(nameof(cant_find_wrong_words_in_dictionary_args))]
             public async Task cant_find_wrong_words_in_dictionary(string dictionaryFilePath, string word)
             {
-                var hunspell = await Hunspell.FromFileAsync(dictionaryFilePath);
+                var hunspell = await HunspellDictionary.FromFileAsync(dictionaryFilePath);
 
                 var checkResult = hunspell.Check(word);
 
@@ -111,7 +111,7 @@ namespace Hunspell.NetCore.Tests
             [InlineData("files/ngram_utf_fix.dic", "времячко")]
             public async Task words_without_suggestions_offer_no_suggestions(string dictionaryFilePath, string word)
             {
-                var hunspell = await Hunspell.FromFileAsync(dictionaryFilePath);
+                var hunspell = await HunspellDictionary.FromFileAsync(dictionaryFilePath);
 
                 var actual = hunspell.Suggest(word);
 
@@ -133,7 +133,7 @@ namespace Hunspell.NetCore.Tests
             [InlineData("files/utf8_nonbmp.dic", "𐏑𐏒𐏒", new[] { "𐏑 𐏒𐏒", "𐏒𐏑", "𐏒𐏒" })]
             public async Task words_offer_specific_suggestions(string dictionaryFilePath, string word, string[] expectedSuggestions)
             {
-                var hunspell = await Hunspell.FromFileAsync(dictionaryFilePath);
+                var hunspell = await HunspellDictionary.FromFileAsync(dictionaryFilePath);
 
                 var actual = hunspell.Suggest(word);
 
@@ -145,7 +145,7 @@ namespace Hunspell.NetCore.Tests
             [InlineData("files/phone.dic", "Brasillian", new[] { "Brasilia", "Xxxxxxxxxx", "Brilliant", "Brazilian", "Brassily", "Brilliance" })]
             public async Task words_offer_at_least_suggestions_in_any_order(string dictionaryFilePath, string word, string[] expectedSuggestions)
             {
-                var hunspell = await Hunspell.FromFileAsync(dictionaryFilePath);
+                var hunspell = await HunspellDictionary.FromFileAsync(dictionaryFilePath);
 
                 var actual = hunspell.Suggest(word);
 
@@ -177,7 +177,7 @@ namespace Hunspell.NetCore.Tests
             [Theory, MemberData(nameof(can_find_correct_best_suggestion_args))]
             public async Task can_find_correct_best_suggestion(string dictionaryFilePath, string givenWord, string[] expectedSuggestions)
             {
-                var hunspell = await Hunspell.FromFileAsync(dictionaryFilePath);
+                var hunspell = await HunspellDictionary.FromFileAsync(dictionaryFilePath);
 
                 var actual = hunspell.Suggest(givenWord);
 

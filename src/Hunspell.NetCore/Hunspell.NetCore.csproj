@@ -64,7 +64,7 @@
     <Compile Include="CapitalizationType.cs" />
     <Compile Include="CharacterCondition.cs" />
     <Compile Include="CharacterConditionGroup.cs" />
-    <Compile Include="Hunspell.QueryCheck.cs" />
+    <Compile Include="HunspellDictionary.QueryCheck.cs" />
     <Compile Include="Infrastructure\ArrayComparer.cs" />
     <Compile Include="Infrastructure\Deduper.cs" />
     <Compile Include="Infrastructure\ListComparer.cs" />
@@ -82,8 +82,8 @@
     <Compile Include="WordListReader.cs" />
     <Compile Include="FlagSet.cs" />
     <Compile Include="FlagValue.cs" />
-    <Compile Include="Hunspell.cs" />
-    <Compile Include="Hunspell.Query.cs" />
+    <Compile Include="HunspellDictionary.cs" />
+    <Compile Include="HunspellDictionary.Query.cs" />
     <Compile Include="IHunspellLineReader.cs" />
     <Compile Include="Infrastructure\ArrayWrapper.cs" />
     <Compile Include="Infrastructure\BoolEx.cs" />
@@ -123,7 +123,7 @@
     <Compile Include="Infrastructure\StringEx.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Hunspell.QuerySuggest.cs" />
+    <Compile Include="HunspellDictionary.QuerySuggest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -22,12 +22,12 @@ namespace Hunspell.NetCore.Performance.TestHarness
             var filesDirectory = Path.Combine(Path.GetDirectoryName(testAssemblyPath), "files/");
             var dictionaryFilePaths = Directory.GetFiles(filesDirectory, "*.dic").OrderBy(p => p);
 
-            Task.WhenAll(dictionaryFilePaths.Select(Hunspell.FromFileAsync)).Wait();
+            Task.WhenAll(dictionaryFilePaths.Select(HunspellDictionary.FromFileAsync)).Wait();
         }
 
         static void Checks()
         {
-            var hunspell = Hunspell.FromFile("files/English (American).dic");
+            var hunspell = HunspellDictionary.FromFile("files/English (American).dic");
             var words = ReadWords().ToList();
 
             for (var i = 0; i < 1000; i++)
@@ -41,7 +41,7 @@ namespace Hunspell.NetCore.Performance.TestHarness
 
         static void Suggestions()
         {
-            var hunspell = Hunspell.FromFile("files/English (American).dic");
+            var hunspell = HunspellDictionary.FromFile("files/English (American).dic");
             var words = ReadWords()
                 .Take(500)
                 .ToList();

@@ -70,9 +70,9 @@ namespace Hunspell.NetCore.Tests
             negativeCases.Count.Should().BeLessOrEqualTo(words.Count / 10);
         }
 
-        protected Task<Hunspell> LoadEnUsAsync()
+        protected Task<HunspellDictionary> LoadEnUsAsync()
         {
-            return Hunspell.FromFileAsync("files/English (American).dic");
+            return HunspellDictionary.FromFileAsync("files/English (American).dic");
         }
 
         protected async Task<List<CommonSpellingMistake>> LoadMistakesAsync()
