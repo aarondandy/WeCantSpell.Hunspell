@@ -20,13 +20,13 @@ namespace Hunspell.NetCore.Tests
                     .Select(c => (byte)c)
                     .ToArray();
                 var expected = new List<string>
-            {
-                "ABC",
-                "DEF",
-                "GHI",
-                "JKL",
-                "MNO"
-            };
+                {
+                    "ABC",
+                    "DEF",
+                    "GHI",
+                    "JKL",
+                    "MNO"
+                };
 
                 List<string> actual;
                 using (var readStream = new MemoryStream(data))
@@ -51,13 +51,13 @@ namespace Hunspell.NetCore.Tests
                     .Select(c => (byte)c)
                     .ToArray();
                 var expected = new List<string>
-            {
-                "ABC",
-                "DEF",
-                "GHI",
-                "JKL",
-                "MNO"
-            };
+                {
+                    "ABC",
+                    "DEF",
+                    "GHI",
+                    "JKL",
+                    "MNO"
+                };
 
                 List<string> actual;
                 using (var readStream = new MemoryStream(data))
