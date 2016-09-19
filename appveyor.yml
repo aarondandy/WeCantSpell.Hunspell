@@ -1,0 +1,24 @@
+configuration: Release
+platform: Any CPU
+
+install:
+  - choco install gitversion.portable -pre -y
+
+assembly_info:
+  patch: false
+
+before_build:
+  - nuget restore
+  - ps: gitversion /l console /output buildserver /updateAssemblyInfo SharedAssemblyInfo.cs
+  - ps: |
+      $jsonpath = 'src/Hunspell.NetCore/project.json'
+      $json = Get-Content -Raw -Path $jsonpath | ConvertFrom-Json
+      $json.version = $Env:GitVersion_NuGetVersion
+      $json | ConvertTo-Json -depth 999 | Out-File $jsonpath
+
+build:
+  project: Hunspell.NetCore.sln
+
+after_build:
+  - cmd: dotnet pack src/Hunspell.NetCore -c Release
+  - cmd: appveyor PushArtifact "src/Hunspell.NetCore/bin/Release/Hunspell.NetCore.%GitVersion_NuGetVersion%.nupkg"
