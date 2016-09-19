@@ -9,7 +9,13 @@ namespace Hunspell.Infrastructure
         private const int MaxCachedBuilderCapacity = Hunspell.MaxWordLen;
 
         [ThreadStatic]
-        private static StringBuilder ThreadCache;
+        private static StringBuilder PrimaryCache;
+
+        [ThreadStatic]
+        private static StringBuilder SecondaryCache;
+
+        [ThreadStatic]
+        private static StringBuilder TertiaryCache;
 
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -47,7 +53,18 @@ namespace Hunspell.Infrastructure
         {
             if (builder != null && builder.Capacity <= MaxCachedBuilderCapacity)
             {
-                ThreadCache = builder;
+                if (PrimaryCache == null)
+                {
+                    PrimaryCache = builder;
+                }
+                else if (SecondaryCache == null)
+                {
+                    SecondaryCache = builder;
+                }
+                else
+                {
+                    TertiaryCache = builder;
+                }
             }
         }
 
@@ -63,38 +80,64 @@ namespace Hunspell.Infrastructure
 
         private static StringBuilder GetClearedBuilder()
         {
-            var result = ThreadCache;
+            var result = Steal(ref PrimaryCache);
             if (result == null)
             {
-                result = new StringBuilder();
-            }
-            else
-            {
-                ThreadCache = null;
-                result.Clear();
+                result = Steal(ref SecondaryCache);
+                if (result == null)
+                {
+                    result = Steal(ref TertiaryCache);
+                    if (result == null)
+                    {
+                        return new StringBuilder();
+                    }
+                }
             }
 
-            return result;
+            return result.Clear();
         }
 
         private static StringBuilder GetClearedBuilderWithCapacity(int capacity)
         {
-            if (capacity <= MaxCachedBuilderCapacity)
+            if (capacity > MaxCachedBuilderCapacity)
             {
-                var result = ThreadCache;
-                if (result != null)
-                {
-                    ThreadCache = null;
-                    if (result.Capacity >= capacity)
-                    {
-                        result.Clear();
-                        return result;
-                    }
-
-                }
+                return new StringBuilder(capacity);
             }
 
-            return new StringBuilder(capacity);
+            var result = PrimaryCache;
+            if (result == null || result.Capacity < capacity)
+            {
+                result = SecondaryCache;
+                if (result == null || result.Capacity < capacity)
+                {
+                    result = TertiaryCache;
+                    if (result == null || result.Capacity < capacity)
+                    {
+                        return new StringBuilder(capacity);
+                    }
+                    else
+                    {
+                        TertiaryCache = null;
+                    }
+                }
+                else
+                {
+                    SecondaryCache = null;
+                }
+            }
+            else
+            {
+                PrimaryCache = null;
+            }
+
+            return result.Clear();
+        }
+
+        private static StringBuilder Steal(ref StringBuilder source)
+        {
+            var taken = source;
+            source = null;
+            return taken;
         }
     }
 }
