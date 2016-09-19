@@ -1593,7 +1593,19 @@ namespace Hunspell.NetCore.Tests
 
                 actual.Language.Should().Be(langCode);
                 actual.Culture.Should().NotBeNull();
-                actual.Culture.Name.Should().Be(expectedCulture);
+
+                if (string.Equals(expectedCulture, actual.Culture.Name))
+                {
+                    actual.Culture.Name.Should().Be(expectedCulture);
+                }
+                else if (!string.IsNullOrEmpty(actual.Culture.Name))
+                {
+                    expectedCulture.Should().StartWith(actual.Culture.Name, "Not all platforms have the values but they should be similar.");
+                }
+                else
+                {
+                    actual.Culture.Name.Should().BeEmpty("Okay well maybe not all platforms can even keep the culture name then?");
+                }
             }
 
             [Theory]
