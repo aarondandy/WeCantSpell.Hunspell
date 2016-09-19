@@ -23,7 +23,7 @@ namespace Hunspell
 
         private static readonly Regex SingleCommandParseRegex = new Regex(@"^[ \t]*(\w+)[ \t]*$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-        private static readonly Regex CommentLineRegex = new Regex(@"^\s*[#].*", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex CommentLineRegex = new Regex(@"^\s*(#|//)", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture);
 
         private static readonly Regex AffixLineRegex = new Regex(
             @"^[\t ]*([^\t ]+)[\t ]+(?:([^\t ]+)[\t ]+([^\t ]+)|([^\t ]+)[\t ]+([^\t ]+)[\t ]+([^\t ]+)(?:[\t ]+(.+))?)[\t ]*(?:[#].*)?$",
@@ -66,8 +66,6 @@ namespace Hunspell
         private AffixConfig.Builder Builder { get; }
 
         private IHunspellLineReader Reader { get; }
-
-        private List<string> Warnings { get; } = new List<string>();
 
         private EntryListType Initialized { get; set; } = EntryListType.None;
 
@@ -166,6 +164,7 @@ namespace Hunspell
                 return true;
             }
 
+            Builder.LogWarning("Failed to parse line: " + line);
             return false;
         }
 
@@ -218,6 +217,7 @@ namespace Hunspell
                     var encoding = EncodingEx.GetEncodingByName(parameters);
                     if (encoding == null)
                     {
+                        Builder.LogWarning("Failed to get encoding: " + parameters);
                         return false;
                     }
 
@@ -255,6 +255,7 @@ namespace Hunspell
                     Builder.CompoundMin = IntEx.TryParseInvariant(parameters);
                     if (!Builder.CompoundMin.HasValue)
                     {
+                        Builder.LogWarning("Failed to parse CompoundMin: " + parameters);
                         return false;
                     }
 
@@ -340,6 +341,7 @@ namespace Hunspell
                 case "AM":
                     return TryParseStandardListItem(EntryListType.AliasM, parameters, ref Builder.AliasM, TryParseAliasM);
                 default:
+                    Builder.LogWarning($"Unknown command {commandName} with params: {parameters}");
                     return false;
             }
         }
@@ -383,6 +385,7 @@ namespace Hunspell
                 }
                 else
                 {
+                    Builder.LogWarning("Failed to parse CompoundMaxSyllable value from: " + parameters);
                     return false;
                 }
             }
@@ -432,6 +435,7 @@ namespace Hunspell
 
             if (parts.Length == 0)
             {
+                Builder.LogWarning("Failed to parse phone line: " + parameterText);
                 return false;
             }
 
@@ -495,6 +499,7 @@ namespace Hunspell
             var parts = parameterText.SplitOnTabOrSpace();
             if (parts.Length < 2)
             {
+                Builder.LogWarning($"Bad {entryListType}: {parameterText}");
                 return false;
             }
 
@@ -582,6 +587,7 @@ namespace Hunspell
             var lineMatch = AffixLineRegex.Match(parameterText);
             if (!lineMatch.Success)
             {
+                Builder.LogWarning("Failed to parse affix line: " + parameterText);
                 return false;
             }
 
@@ -590,6 +596,7 @@ namespace Hunspell
             FlagValue characterFlag;
             if (!TryParseFlag(lineMatchGroups[1].Value, out characterFlag))
             {
+                Builder.LogWarning($"Failed to parse affix flag for {lineMatchGroups[1].Value} from: {parameterText}");
                 return false;
             }
 
@@ -600,6 +607,7 @@ namespace Hunspell
             {
                 if (affixGroup != null)
                 {
+                    Builder.LogWarning($"Duplicate affix group definition for {affixGroup.AFlag} from: {parameterText}");
                     return false;
                 }
 
@@ -663,6 +671,7 @@ namespace Hunspell
                         }
                         else
                         {
+                            Builder.LogWarning($"Failed to parse contclasses from : {parameterText}");
                             return false;
                         }
                     }
@@ -736,6 +745,7 @@ namespace Hunspell
                         }
                         else
                         {
+                            Builder.LogWarning($"Failed to parse morph {morphAffixText} from: {parameterText}");
                             return false;
                         }
                     }
@@ -780,6 +790,7 @@ namespace Hunspell
             }
             else
             {
+                Builder.LogWarning("Affix line not fully parsed: " + parameterText);
                 return false;
             }
         }
@@ -870,7 +881,7 @@ namespace Hunspell
                 {
                     if (conditions[j] != text[i])
                     {
-                        Warnings.Add($"Failure checking {nameof(RedundantConditionPrefix)} .");
+                        Builder.LogWarning($"Failure checking {nameof(RedundantConditionPrefix)} with {text} and {conditions}");
                         return false;
                     }
                 }
@@ -890,13 +901,13 @@ namespace Hunspell
 
                     if (j == lastConditionIndex && conditions[j] != ']')
                     {
-                        Warnings.Add($"Failure checking {nameof(RedundantConditionPrefix)} .");
+                        Builder.LogWarning($"Failure checking {nameof(RedundantConditionPrefix)} with {text} and {conditions}");
                         return false;
                     }
 
                     if (neg == @in)
                     {
-                        Warnings.Add($"Failure checking {nameof(RedundantConditionPrefix)} .");
+                        Builder.LogWarning($"Failure checking {nameof(RedundantConditionPrefix)} with {text} and {conditions}");
                         return false;
                     }
                 }
@@ -925,7 +936,7 @@ namespace Hunspell
                 {
                     if (conditions[j] != text[i])
                     {
-                        Warnings.Add($"Failure checking {nameof(RedundantConditionSuffix)} .");
+                        Builder.LogWarning($"Failure checking {nameof(RedundantConditionSuffix)} with {text} and {conditions}");
                         return false;
                     }
                 }
@@ -943,14 +954,14 @@ namespace Hunspell
 
                     if (j == 0 && conditions[j] != '[')
                     {
-                        Warnings.Add($"Failure checking {nameof(RedundantConditionSuffix)} .");
+                        Builder.LogWarning($"Failure checking {nameof(RedundantConditionSuffix)} with {text} and {conditions}");
                         return false;
                     }
 
                     var neg = j < lastConditionIndex && conditions[j + 1] == '^';
                     if (neg == @in)
                     {
-                        Warnings.Add($"Failure checking {nameof(RedundantConditionSuffix)} .");
+                        Builder.LogWarning($"Failure checking {nameof(RedundantConditionSuffix)} with {text} and {conditions}");
                         return false;
                     }
                 }
@@ -969,6 +980,7 @@ namespace Hunspell
             var parameters = parameterText.SliceOnTabOrSpace();
             if (parameters.Length == 0)
             {
+                Builder.LogWarning("Failed to parse replacements from: " + parameterText);
                 return false;
             }
 
@@ -1019,6 +1031,7 @@ namespace Hunspell
             var parameters = parameterText.SliceOnTabOrSpace();
             if (parameters.Length == 0)
             {
+                Builder.LogWarning("Failed to parse compound pattern from: " + parameterText);
                 return false;
             }
 
@@ -1033,6 +1046,7 @@ namespace Hunspell
             {
                 if (!TryParseFlag(pattern.Subslice(slashIndex + 1), out condition))
                 {
+                    Builder.LogWarning($"Failed to parse compound pattern 1 {pattern} from: {parameterText}");
                     return false;
                 }
 
@@ -1047,6 +1061,7 @@ namespace Hunspell
                 {
                     if (!TryParseFlag(pattern2.Subslice(slashIndex + 1), out condition2))
                     {
+                        Builder.LogWarning($"Failed to parse compound pattern 2 {pattern2} from: {parameterText}");
                         return false;
                     }
 
@@ -1074,6 +1089,7 @@ namespace Hunspell
         {
             if (string.IsNullOrEmpty(modeText))
             {
+                Builder.LogWarning($"Attempt to set empty flag mode.");
                 return false;
             }
 
@@ -1082,7 +1098,7 @@ namespace Hunspell
             {
                 if (mode == Builder.FlagMode)
                 {
-                    Warnings.Add($"Redundant {nameof(Builder.FlagMode)}: {modeText}");
+                    Builder.LogWarning($"Redundant {nameof(Builder.FlagMode)}: {modeText}");
                     return false;
                 }
 
@@ -1091,7 +1107,7 @@ namespace Hunspell
             }
             else
             {
-                Warnings.Add($"Unknown {nameof(FlagMode)}: {modeText}");
+                Builder.LogWarning($"Unknown {nameof(FlagMode)}: {modeText}");
                 return false;
             }
         }

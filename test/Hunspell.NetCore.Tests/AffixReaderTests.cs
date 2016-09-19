@@ -1348,7 +1348,7 @@ namespace Hunspell.NetCore.Tests
             }
 
             [Fact]
-            public async Task can_read_phone_add()
+            public async Task can_read_phone_aff()
             {
                 var filePath = @"files/phone.aff";
                 var expectedPhoneRules = new[]
@@ -1464,6 +1464,7 @@ namespace Hunspell.NetCore.Tests
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
                 actual.Encoding.WebName.Should().Be("iso-8859-1");
+                actual.Warnings.Should().BeEmpty();
                 actual.Phone.Select(p => p.Rule).Should().BeEquivalentTo(expectedPhoneRules);
                 actual.Phone.First().Rule.Should().Be("AH(AEIOUY)-^");
                 actual.Phone.First().Replace.Should().Be("*H");
@@ -1662,12 +1663,22 @@ namespace Hunspell.NetCore.Tests
             public static IEnumerable<object[]> can_read_file_without_exception_args =>
                 Array.ConvertAll(Directory.GetFiles("files/", "*.aff"), filePath => new object[] { filePath });
 
+            public static string[] can_read_file_without_exception_warning_exceptions = new[]
+            {
+                "base_utf.aff" // this file has some strange morph lines at the bottom, maybe a bug?
+            };
+
             [Theory, MemberData(nameof(can_read_file_without_exception_args))]
             public async Task can_read_file_without_exception(string filePath)
             {
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
                 actual.Should().NotBeNull();
+
+                if (!can_read_file_without_exception_warning_exceptions.Contains(Path.GetFileName(filePath)))
+                {
+                    actual.Warnings.Should().BeEmpty();
+                }
             }
         }
 

@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
@@ -817,6 +815,8 @@ namespace Hunspell
         public FlagSet ContClasses { get; private set; }
 
         public bool IsHungarian { get; private set; }
+
+        public WarningList Warnings { get; private set; }
 
         public bool HasCompound => CompoundFlag.HasValue || CompoundBegin.HasValue || CompoundRules.HasItems;
 

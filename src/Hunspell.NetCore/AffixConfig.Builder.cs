@@ -347,6 +347,8 @@ namespace Hunspell
             /// </summary>
             public bool HasContClass { get; set; }
 
+            public List<string> Warnings;
+
             /// <summary>
             /// Constructs a <see cref="AffixConfig"/> based on the values set in the builder.
             /// </summary>
@@ -422,6 +424,7 @@ namespace Hunspell
                     config.Phone = PhoneTable.TakeList(Steal(ref Phone));
                     config.InputConversions = MultiReplacementTable.TakeDictionary(Steal(ref InputConversions));
                     config.OutputConversions = MultiReplacementTable.TakeDictionary(Steal(ref OutputConversions));
+                    config.Warnings = WarningList.TakeList(Steal(ref Warnings));
 
                     config.aliasF = AliasF ?? new List<FlagSet>(0);
                     AliasF = null;
@@ -437,6 +440,7 @@ namespace Hunspell
                     config.Phone = PhoneTable.Create(Phone);
                     config.InputConversions = MultiReplacementTable.Create(InputConversions);
                     config.OutputConversions = MultiReplacementTable.Create(OutputConversions);
+                    config.Warnings = WarningList.Create(Warnings);
 
                     config.aliasF = AliasF == null ? new List<FlagSet>(0) : AliasF.ToList();
                     config.aliasM = AliasM == null ? new List<MorphSet>(0) : AliasM.ToList();
@@ -505,6 +509,16 @@ namespace Hunspell
 
             public CharacterConditionGroup Dedup(CharacterConditionGroup value) =>
                 CharacterConditionGroupDeduper.GetEqualOrAdd(value);
+
+            public void LogWarning(string warning)
+            {
+                if (Warnings == null)
+                {
+                    Warnings = new List<string>();
+                }
+
+                Warnings.Add(warning);
+            }
         }
     }
 }

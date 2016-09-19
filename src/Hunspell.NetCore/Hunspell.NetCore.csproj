@@ -73,6 +73,7 @@
     <Compile Include="PatternSet.cs" />
     <Compile Include="CompoundRule.cs" />
     <Compile Include="CompoundRuleSet.cs" />
+    <Compile Include="WarningList.cs" />
     <Compile Include="WordList.Builder.cs" />
     <Compile Include="WordList.cs" />
     <Compile Include="WordEntry.cs" />
