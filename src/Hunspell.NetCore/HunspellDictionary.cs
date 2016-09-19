@@ -48,6 +48,6 @@ namespace Hunspell
 
         public SpellCheckResult CheckDetails(string word) => new QueryCheck(word, WordList).CheckDetails();
 
-        public List<string> Suggest(string word) => new QuerySuggest(word, WordList).Suggest();
+        public IEnumerable<string> Suggest(string word) => new QuerySuggest(word, WordList).Suggest();
     }
 }
