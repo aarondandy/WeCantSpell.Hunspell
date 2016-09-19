@@ -363,7 +363,7 @@ namespace Hunspell
 
         private async Task<bool> PrepareBufferAsync()
         {
-            if (buffer != null && bufferIndex + 1 < buffer.Length)
+            if (buffer != null && bufferIndex < buffer.Length)
             {
                 return true;
             }
