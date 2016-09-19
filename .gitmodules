@@ -1,6 +1,6 @@
 [submodule "hunspell-origin"]
 path = hunspell-origin
-url=git@github.com:hunspell/hunspell.git
+url=https://github.com/hunspell/hunspell.git
 [submodule "samples"]
-	path = samples
-	url = git@github.com:titoBouzout/Dictionaries.git
+path = samples
+url=https://github.com/titoBouzout/Dictionaries.git
