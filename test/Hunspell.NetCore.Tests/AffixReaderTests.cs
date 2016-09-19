@@ -1465,7 +1465,7 @@ namespace Hunspell.NetCore.Tests
 
                 actual.Encoding.WebName.Should().Be("iso-8859-1");
                 actual.Warnings.Should().BeEmpty();
-                actual.Phone.Select(p => p.Rule).Should().BeEquivalentTo(expectedPhoneRules);
+                actual.Phone.Select(p => p.Rule).ShouldAllBeEquivalentTo(expectedPhoneRules);
                 actual.Phone.First().Rule.Should().Be("AH(AEIOUY)-^");
                 actual.Phone.First().Replace.Should().Be("*H");
                 actual.Phone.Last().Rule.Should().Be("Z");

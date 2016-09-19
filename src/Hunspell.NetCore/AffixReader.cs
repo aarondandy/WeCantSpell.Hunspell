@@ -137,7 +137,7 @@ namespace Hunspell
 
         private bool ParseLine(string line)
         {
-            if (string.IsNullOrEmpty(line))
+            if (string.IsNullOrWhiteSpace(line))
             {
                 return true;
             }
