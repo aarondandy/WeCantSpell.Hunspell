@@ -8,6 +8,8 @@ namespace Hunspell
     {
         public static readonly MorphSet Empty = TakeArray(ArrayEx<string>.Empty);
 
+        public static readonly ArrayWrapperComparer<string, MorphSet> DefaultComparer = new ArrayWrapperComparer<string, MorphSet>();
+
         private MorphSet(string[] morphs)
             : base(morphs)
         {

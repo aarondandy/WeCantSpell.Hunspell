@@ -30,11 +30,11 @@ namespace Hunspell
 
             public Builder()
             {
-                FlagSetDeduper = new Deduper<FlagSet>(new FlagSet.Comparer());
+                FlagSetDeduper = new Deduper<FlagSet>(FlagSet.DefaultComparer);
                 FlagSetDeduper.Add(FlagSet.Empty);
-                MorphSetDeduper = new Deduper<MorphSet>(new MorphSet.Comparer());
+                MorphSetDeduper = new Deduper<MorphSet>(MorphSet.DefaultComparer);
                 MorphSetDeduper.Add(MorphSet.Empty);
-                CharacterConditionGroupDeduper = new Deduper<CharacterConditionGroup>(new CharacterConditionGroup.Comparer());
+                CharacterConditionGroupDeduper = new Deduper<CharacterConditionGroup>(CharacterConditionGroup.DefaultComparer);
                 CharacterConditionGroupDeduper.Add(CharacterConditionGroup.Empty);
                 CharacterConditionGroupDeduper.Add(CharacterConditionGroup.AllowAnySingleCharacter);
                 StringDeduper = new StringDeduper();

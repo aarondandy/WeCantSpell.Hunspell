@@ -9,6 +9,8 @@ namespace Hunspell
     {
         public static readonly FlagSet Empty = new FlagSet(ArrayEx<FlagValue>.Empty);
 
+        public static readonly ArrayWrapperComparer<FlagValue, FlagSet> DefaultComparer = new ArrayWrapperComparer<FlagValue, FlagSet>();
+
         private FlagSet(FlagValue[] values)
             : base(values)
         {

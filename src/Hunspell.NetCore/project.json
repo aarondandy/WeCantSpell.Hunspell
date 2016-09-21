@@ -63,6 +63,31 @@
     }
   },
   "frameworks": {
+    ".NETPortable, Version=v4.5, Profile=Profile7": {
+      "buildOptions": {
+        "define": [
+          "PCL",
+          "NETSTANDARD_1_1",
+          "NO_COMPILED_REGEX",
+          "NO_IO_FILE",
+          "NO_UTF32",
+          "NO_ARRAY_EMPTY"
+        ]
+      },
+      "dependencies": {
+        "NETStandard.Library": "1.6.0"
+      }
+    },
+    "net35": {
+      "buildOptions": {
+        "define": [
+          "PRE_NETSTANDARD",
+          "NET_3_5",
+          "NET_FULL",
+          "NO_ASYNC"
+        ]
+      }
+    },
     "net451": {
       "buildOptions": {
         "define": [
@@ -81,6 +106,36 @@
           "NET_FULL",
           "HAS_CODECONTRACTS"
         ]
+      }
+    },
+    "netstandard1.1": {
+      "buildOptions": {
+        "define": [
+          "NETCORE",
+          "NETSTANDARD_1_1",
+          "NO_COMPILED_REGEX",
+          "NO_IO_FILE",
+          "NO_UTF32",
+          "NO_ARRAY_EMPTY"
+        ]
+      },
+      "dependencies": {
+        "NETStandard.Library": "1.6.0"
+      }
+    },
+    "netstandard1.2": {
+      "buildOptions": {
+        "define": [
+          "NETCORE",
+          "NETSTANDARD_1_2",
+          "NO_COMPILED_REGEX",
+          "NO_IO_FILE",
+          "NO_UTF32",
+          "NO_ARRAY_EMPTY"
+        ]
+      },
+      "dependencies": {
+        "NETStandard.Library": "1.6.0"
       }
     },
     "netstandard1.3": {

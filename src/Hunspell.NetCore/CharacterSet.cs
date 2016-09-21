@@ -7,6 +7,8 @@ namespace Hunspell
     {
         public static readonly CharacterSet Empty = new CharacterSet(ArrayEx<char>.Empty);
 
+        public static readonly ArrayWrapperComparer<char, CharacterSet> DefaultComparer = new ArrayWrapperComparer<char, CharacterSet>();
+
         private CharacterSet(char[] values)
             : base(values)
         {

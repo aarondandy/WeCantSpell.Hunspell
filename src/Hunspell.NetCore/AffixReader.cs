@@ -6,8 +6,11 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
+
+#if !NO_ASYNC
+using System.Threading.Tasks;
+#endif
 
 namespace Hunspell
 {
@@ -19,15 +22,21 @@ namespace Hunspell
             Reader = reader;
         }
 
-        private static readonly Regex LineStringParseRegex = new Regex(@"^[ \t]*(\w+)[ \t]+(.+)[ \t]*$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private const RegexOptions DefaultRegexOptions =
+#if !NO_COMPILED_REGEX
+            RegexOptions.Compiled |
+#endif
+            RegexOptions.CultureInvariant;
 
-        private static readonly Regex SingleCommandParseRegex = new Regex(@"^[ \t]*(\w+)[ \t]*$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex LineStringParseRegex = new Regex(@"^[ \t]*(\w+)[ \t]+(.+)[ \t]*$", DefaultRegexOptions);
 
-        private static readonly Regex CommentLineRegex = new Regex(@"^\s*(#|//)", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture);
+        private static readonly Regex SingleCommandParseRegex = new Regex(@"^[ \t]*(\w+)[ \t]*$", DefaultRegexOptions);
+
+        private static readonly Regex CommentLineRegex = new Regex(@"^\s*(#|//)", DefaultRegexOptions | RegexOptions.ExplicitCapture);
 
         private static readonly Regex AffixLineRegex = new Regex(
             @"^[\t ]*([^\t ]+)[\t ]+(?:([^\t ]+)[\t ]+([^\t ]+)|([^\t ]+)[\t ]+([^\t ]+)[\t ]+([^\t ]+)(?:[\t ]+(.+))?)[\t ]*(?:[#].*)?$",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+            DefaultRegexOptions);
 
         private static readonly Dictionary<string, AffixConfigOptions> FileBitFlagCommandMappings = new Dictionary<string, AffixConfigOptions>(StringComparer.OrdinalIgnoreCase)
         {
@@ -69,6 +78,8 @@ namespace Hunspell
 
         private EntryListType Initialized { get; set; } = EntryListType.None;
 
+
+#if !NO_ASYNC
         public static async Task<AffixConfig> ReadAsync(IHunspellLineReader reader, AffixConfig.Builder builder = null)
         {
             var readerInstance = new AffixReader(builder, reader);
@@ -92,6 +103,7 @@ namespace Hunspell
             await ReadToEndAsync().ConfigureAwait(false);
             AddDefaultBreakTableIfEmpty();
         }
+#endif
 
         public static AffixConfig Read(IHunspellLineReader reader, AffixConfig.Builder builder = null)
         {
@@ -117,27 +129,46 @@ namespace Hunspell
             AddDefaultBreakTableIfEmpty();
         }
 
-        public static async Task<AffixConfig> ReadFileAsync(string filePath, AffixConfig.Builder builder = null)
+#if !NO_ASYNC
+        public static async Task<AffixConfig> ReadAsync(Stream stream, AffixConfig.Builder builder = null)
         {
-            using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (var reader = new DynamicEncodingLineReader(stream, DefaultEncoding))
             {
                 return await ReadAsync(reader, builder).ConfigureAwait(false);
             }
         }
-
-        public static AffixConfig ReadFile(string filePath, AffixConfig.Builder builder = null)
+#if !NO_IO_FILE
+        public static async Task<AffixConfig> ReadFileAsync(string filePath, AffixConfig.Builder builder = null)
         {
             using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                return await ReadAsync(stream, builder).ConfigureAwait(false);
+            }
+        }
+#endif
+#endif
+
+        public static AffixConfig Read(Stream stream, AffixConfig.Builder builder = null)
+        {
             using (var reader = new DynamicEncodingLineReader(stream, DefaultEncoding))
             {
                 return Read(reader, builder);
             }
         }
 
+#if !NO_IO_FILE
+        public static AffixConfig ReadFile(string filePath, AffixConfig.Builder builder = null)
+        {
+            using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                return Read(stream, builder);
+            }
+        }
+#endif
+
         private bool ParseLine(string line)
         {
-            if (string.IsNullOrWhiteSpace(line))
+            if (StringEx.IsNullOrWhiteSpace(line))
             {
                 return true;
             }
@@ -411,7 +442,11 @@ namespace Hunspell
             {
                 return new CultureInfo(language);
             }
+#if !NET_3_5
             catch (CultureNotFoundException)
+#else
+            catch (ArgumentException)
+#endif
             {
                 var dashIndex = language.IndexOf('-');
                 if (dashIndex > 0)
@@ -423,10 +458,12 @@ namespace Hunspell
                     return CultureInfo.InvariantCulture;
                 }
             }
+#if !NET_3_5
             catch (ArgumentException)
             {
                 return CultureInfo.InvariantCulture;
             }
+#endif
         }
 
         private bool TryParsePhone(string parameterText, List<PhoneticEntry> entries)
@@ -1120,7 +1157,8 @@ namespace Hunspell
                 return decoded;
             }
 
-            return Encoding.UTF8.GetString(encoding.GetBytes(decoded));
+            var encodedBytes = encoding.GetBytes(decoded);
+            return Encoding.UTF8.GetString(encodedBytes, 0, encodedBytes.Length);
         }
 
         private StringSlice ReDecodeConvertedStringAsUtf8(StringSlice decoded)
@@ -1200,7 +1238,7 @@ namespace Hunspell
         }
 
         [Flags]
-        private enum EntryListType : short
+        internal enum EntryListType : short
         {
             None = 0,
             Replacements = 1 << 0,

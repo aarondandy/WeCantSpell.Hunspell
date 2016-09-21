@@ -23,6 +23,29 @@ namespace Hunspell.Infrastructure
 #endif
         public static string[] SplitOnTabOrSpace(this string @this) => @this.Split(SpaceOrTab, StringSplitOptions.RemoveEmptyEntries);
 
+#if !PRE_NETSTANDARD && !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static bool IsNullOrWhiteSpace(string value)
+        {
+#if NET_3_5
+            if (value != null)
+            {
+                for (var i = 0; i < value.Length; i++)
+                {
+                    if (!char.IsWhiteSpace(value[i]))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+#else
+            return string.IsNullOrWhiteSpace(value);
+#endif
+        }
+
         public static StringSlice[] SliceOnTabOrSpace(this string @this)
         {
             var parts = new List<StringSlice>();

@@ -9,6 +9,8 @@ namespace Hunspell
 
         public static readonly CharacterConditionGroup AllowAnySingleCharacter = Create(CharacterCondition.AllowAny);
 
+        public static readonly ArrayWrapperComparer<CharacterCondition, CharacterConditionGroup> DefaultComparer = new ArrayWrapperComparer<CharacterCondition, CharacterConditionGroup>();
+
         private CharacterConditionGroup(CharacterCondition[] conditions)
             : base(conditions)
         {

@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+
+#if !NO_ASYNC
 using System.Threading.Tasks;
+#endif
 
 namespace Hunspell
 {
@@ -29,6 +32,7 @@ namespace Hunspell
 
         public Encoding CurrentEncoding => reader.CurrentEncoding;
 
+#if !NO_IO_FILE
         public static List<string> ReadLines(string filePath, Encoding defaultEncoding)
         {
             using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
@@ -38,6 +42,7 @@ namespace Hunspell
             }
         }
 
+#if !NO_ASYNC
         public static async Task<List<string>> ReadLinesAsync(string filePath, Encoding defaultEncoding)
         {
             using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
@@ -46,16 +51,21 @@ namespace Hunspell
                 return await reader.ReadLinesAsync().ConfigureAwait(false);
             }
         }
+#endif
+
+#endif
 
         public string ReadLine()
         {
             return reader.ReadLine();
         }
 
+#if !NO_ASYNC
         public Task<string> ReadLineAsync()
         {
             return reader.ReadLineAsync();
         }
+#endif
 
         public void Dispose()
         {

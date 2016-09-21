@@ -67,6 +67,7 @@
     <Compile Include="HunspellDictionary.QueryCheck.cs" />
     <Compile Include="Infrastructure\ArrayComparer.cs" />
     <Compile Include="Infrastructure\Deduper.cs" />
+    <Compile Include="Infrastructure\EnumEx.cs" />
     <Compile Include="Infrastructure\ListComparer.cs" />
     <Compile Include="Infrastructure\StringDeduper.cs" />
     <Compile Include="Infrastructure\StringSlice.cs" />

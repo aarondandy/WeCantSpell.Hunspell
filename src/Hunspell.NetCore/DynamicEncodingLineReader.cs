@@ -5,7 +5,10 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+
+#if !NO_ASYNC
 using System.Threading.Tasks;
+#endif
 
 namespace Hunspell
 {
@@ -16,17 +19,27 @@ namespace Hunspell
             PreambleEncodings =
                 new Encoding[]
                 {
-                    new UnicodeEncoding(true, true),
-                    new UnicodeEncoding(false, true),
-                    new UTF32Encoding(false, true),
-                    Encoding.UTF8,
-                    new UTF32Encoding(true, true)
+                    new UnicodeEncoding(true, true)
+                    ,new UnicodeEncoding(false, true)
+#if !NO_UTF32
+                    ,new UTF32Encoding(false, true)
+#endif
+                    ,Encoding.UTF8
+
+#if !NO_UTF32
+                    ,new UTF32Encoding(true, true)
+#endif
                 };
 
             MaxPreambleBytes = PreambleEncodings.Max(e => e.GetPreamble().Length);
         }
 
-        private static readonly Regex SetEncodingRegex = new Regex(@"^[\t ]*SET[\t ]+([^\t ]+)[\t ]*$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex SetEncodingRegex = new Regex(
+            @"^[\t ]*SET[\t ]+([^\t ]+)[\t ]*$",
+#if !NO_COMPILED_REGEX
+            RegexOptions.Compiled |
+#endif
+            RegexOptions.CultureInvariant);
 
         private static readonly Encoding[] PreambleEncodings;
 
@@ -59,6 +72,7 @@ namespace Hunspell
 
         public Encoding CurrentEncoding => encoding;
 
+#if !NO_IO_FILE
         public static List<string> ReadLines(string filePath, Encoding defaultEncoding)
         {
             using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
@@ -68,6 +82,7 @@ namespace Hunspell
             }
         }
 
+#if !NO_ASYNC
         public static async Task<List<string>> ReadLinesAsync(string filePath, Encoding defaultEncoding)
         {
             using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
@@ -76,6 +91,9 @@ namespace Hunspell
                 return await reader.ReadLinesAsync().ConfigureAwait(false);
             }
         }
+#endif
+
+#endif
 
         public string ReadLine()
         {
@@ -102,6 +120,7 @@ namespace Hunspell
             return ProcessLine(StringBuilderPool.GetStringAndReturn(builder));
         }
 
+#if !NO_ASYNC
         public async Task<string> ReadLineAsync()
         {
             if (!hasCheckedForPreamble)
@@ -126,6 +145,7 @@ namespace Hunspell
 
             return ProcessLine(StringBuilderPool.GetStringAndReturn(builder));
         }
+#endif
 
         private bool ProcessCharsForLine(char[] readChars, StringBuilder builder)
         {
@@ -194,6 +214,7 @@ namespace Hunspell
             return null;
         }
 
+#if !NO_ASYNC
         private async Task<char[]> ReadNextCharsAsync()
         {
             var maxBytes = encoding.GetMaxByteCount(1);
@@ -224,6 +245,7 @@ namespace Hunspell
 
             return null;
         }
+#endif
 
         private int TryDecode(byte[] bytes, char[] chars)
         {
@@ -252,11 +274,13 @@ namespace Hunspell
             return HandlePreambleBytes(possiblePreambleBytes);
         }
 
+#if !NO_ASYNC
         private async Task<bool> ReadPreambleAsync()
         {
             var possiblePreambleBytes = await ReadBytesAsync(MaxPreambleBytes).ConfigureAwait(false);
             return HandlePreambleBytes(possiblePreambleBytes);
         }
+#endif
 
         private bool HandlePreambleBytes(byte[] possiblePreambleBytes)
         {
@@ -310,6 +334,7 @@ namespace Hunspell
             return result;
         }
 
+#if !NO_ASYNC
         private async Task<byte[]> ReadBytesAsync(int count)
         {
             var result = new byte[count];
@@ -328,6 +353,7 @@ namespace Hunspell
 
             return result;
         }
+#endif
 
         private void HandleReadBytesIncrement(byte[] result, ref int bytesNeeded, ref int resultOffset)
         {
@@ -361,6 +387,7 @@ namespace Hunspell
             return HandlePrepareBufferRead(readBytesCount);
         }
 
+#if !NO_ASYNC
         private async Task<bool> PrepareBufferAsync()
         {
             if (buffer != null && bufferIndex < buffer.Length)
@@ -373,6 +400,7 @@ namespace Hunspell
 
             return HandlePrepareBufferRead(readBytesCount);
         }
+#endif
 
         private bool HandlePrepareBufferRead(int readBytesCount)
         {

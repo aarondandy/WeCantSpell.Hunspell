@@ -21,11 +21,11 @@ namespace Hunspell
             internal Builder(AffixConfig affix, Deduper<FlagSet> flagSetDeduper, Deduper<MorphSet> morphSet, StringDeduper stringDeduper)
             {
                 Affix = affix;
-                FlagSetDeduper = flagSetDeduper ?? new Deduper<FlagSet>(new FlagSet.Comparer());
+                FlagSetDeduper = flagSetDeduper ?? new Deduper<FlagSet>(FlagSet.DefaultComparer);
                 FlagSetDeduper.Add(FlagSet.Empty);
                 StringDeduper = stringDeduper ?? new StringDeduper();
                 StringDeduper.Add(MorphologicalTags.Phon);
-                MorphSetDeduper = morphSet ?? new Deduper<MorphSet>(new MorphSet.Comparer());
+                MorphSetDeduper = morphSet ?? new Deduper<MorphSet>(MorphSet.DefaultComparer);
                 MorphSetDeduper.Add(MorphSet.Empty);
             }
 

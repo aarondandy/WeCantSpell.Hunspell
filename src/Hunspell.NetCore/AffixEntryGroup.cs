@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Hunspell.Infrastructure;
 
 namespace Hunspell
 {

@@ -6,9 +6,13 @@ using System.Runtime.CompilerServices;
 namespace Hunspell.Infrastructure
 {
     public class ArrayWrapper<T> :
+#if NET_3_5
+        IEnumerable<T>
+#else
         IReadOnlyList<T>
+#endif
     {
-        protected readonly T[] items;
+        internal readonly T[] items;
 
         protected ArrayWrapper(T[] items)
         {
@@ -87,41 +91,40 @@ namespace Hunspell.Infrastructure
 #endif
             public bool MoveNext() => ++index < values.Length;
         }
+    }
 
-        public class Comparer : IEqualityComparer<ArrayWrapper<T>>
+    public class ArrayWrapperComparer<TValue, TCollection> : IEqualityComparer<TCollection>
+            where TCollection : ArrayWrapper<TValue>
+    {
+        public ArrayWrapperComparer()
         {
-            public static readonly Comparer Default = new Comparer();
+            ArrayComparer = ArrayComparer<TValue>.Default;
+        }
 
-            public Comparer()
+        public ArrayWrapperComparer(IEqualityComparer<TValue> valueComparer)
+        {
+            ArrayComparer = new ArrayComparer<TValue>(valueComparer);
+        }
+
+        private ArrayComparer<TValue> ArrayComparer { get; }
+
+        public bool Equals(TCollection x, TCollection y)
+        {
+            if (ReferenceEquals(x, y))
             {
-                ArrayComparer = ArrayComparer<T>.Default;
+                return true;
+            }
+            if (x == null || y == null)
+            {
+                return false;
             }
 
-            public Comparer(IEqualityComparer<T> valueComparer)
-            {
-                ArrayComparer = new ArrayComparer<T>(valueComparer);
-            }
+            return ArrayComparer.Equals(x.items, y.items);
+        }
 
-            private ArrayComparer<T> ArrayComparer { get; }
-
-            public bool Equals(ArrayWrapper<T> x, ArrayWrapper<T> y)
-            {
-                if (ReferenceEquals(x, y))
-                {
-                    return true;
-                }
-                if (x == null || y == null)
-                {
-                    return false;
-                }
-
-                return ArrayComparer.Equals(x.items, y.items);
-            }
-
-            public int GetHashCode(ArrayWrapper<T> obj)
-            {
-                return ArrayComparer.GetHashCode(obj.items);
-            }
+        public int GetHashCode(TCollection obj)
+        {
+            return ArrayComparer.GetHashCode(obj.items);
         }
     }
 }

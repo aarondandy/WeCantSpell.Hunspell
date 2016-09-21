@@ -11,7 +11,10 @@ namespace Hunspell
     {
         private static Regex ConditionParsingRegex = new Regex(
             @"^(\[[^\]]*\]|\.|[^\[\]\.])*$",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+#if !NO_COMPILED_REGEX
+            RegexOptions.Compiled |
+#endif
+            RegexOptions.CultureInvariant);
 
         public static readonly CharacterCondition AllowAny = new CharacterCondition(CharacterSet.Empty, true);
 
@@ -144,12 +147,12 @@ namespace Hunspell
         public override string ToString() => GetEncoded();
 
         public bool Equals(CharacterCondition other) =>
-            Restricted == other.Restricted && CharacterSet.Comparer.Default.Equals(Characters, other.Characters);
+            Restricted == other.Restricted && CharacterSet.DefaultComparer.Equals(Characters, other.Characters);
 
         public override bool Equals(object obj) =>
             obj is CharacterCondition && Equals((CharacterCondition)obj);
 
         public override int GetHashCode() =>
-            unchecked((Restricted.GetHashCode() * 149) ^ CharacterSet.Comparer.Default.GetHashCode(Characters));
+            unchecked((Restricted.GetHashCode() * 149) ^ CharacterSet.DefaultComparer.GetHashCode(Characters));
     }
 }

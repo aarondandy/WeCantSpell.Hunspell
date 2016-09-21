@@ -5,8 +5,12 @@ using Hunspell.Infrastructure;
 
 namespace Hunspell
 {
-    public class MultiReplacementTable
-        : IReadOnlyDictionary<string, MultiReplacementEntry>
+    public class MultiReplacementTable :
+#if NET_3_5
+        IEnumerable<KeyValuePair<string, MultiReplacementEntry>>
+#else
+        IReadOnlyDictionary<string, MultiReplacementEntry>
+#endif
     {
         public static readonly MultiReplacementTable Empty = TakeDictionary(new Dictionary<string, MultiReplacementEntry>(0));
 

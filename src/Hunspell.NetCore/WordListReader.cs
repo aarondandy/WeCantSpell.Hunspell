@@ -4,8 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
+
+#if !NO_ASYNC
+using System.Threading.Tasks;
+#endif
 
 namespace Hunspell
 {
@@ -19,13 +22,25 @@ namespace Hunspell
 
         private static readonly Regex InitialLineRegex = new Regex(
             @"^\s*(\d+)\s*(?:[#].*)?$",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+#if !NO_COMPILED_REGEX
+            RegexOptions.Compiled |
+#endif
+            RegexOptions.CultureInvariant);
 
         private WordList.Builder Builder { get; }
 
         private AffixConfig Affix { get; }
 
         private bool hasInitialized;
+
+#if !NO_ASYNC
+        public static async Task<WordList> ReadAsync(Stream dictionaryStream, Stream affixStream)
+        {
+            var affixBuilder = new AffixConfig.Builder();
+            var affix = await AffixReader.ReadAsync(affixStream, affixBuilder).ConfigureAwait(false);
+            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper, affixBuilder.StringDeduper);
+            return await ReadAsync(dictionaryStream, affix, wordListBuilder).ConfigureAwait(false);
+        }
 
         public static async Task<WordList> ReadAsync(IHunspellLineReader dictionaryReader, AffixConfig affix, WordList.Builder builder = null)
         {
@@ -38,6 +53,50 @@ namespace Hunspell
             }
 
             return readerInstance.Builder.MoveToImmutable();
+        }
+
+#if !NO_IO_FILE
+        public static async Task<WordList> ReadFileAsync(string dictionaryFilePath)
+        {
+            var affixFilePath = FindAffixFilePath(dictionaryFilePath);
+            return await ReadFileAsync(dictionaryFilePath, affixFilePath).ConfigureAwait(false);
+        }
+
+        public static async Task<WordList> ReadFileAsync(string dictionaryFilePath, string affixFilePath)
+        {
+            var affixBuilder = new AffixConfig.Builder();
+            var affix = await AffixReader.ReadFileAsync(affixFilePath, affixBuilder).ConfigureAwait(false);
+            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper, affixBuilder.StringDeduper);
+            return await ReadFileAsync(dictionaryFilePath, affix, wordListBuilder).ConfigureAwait(false);
+        }
+#endif
+
+        public static async Task<WordList> ReadAsync(Stream dictionaryStream, AffixConfig affix, WordList.Builder builder = null)
+        {
+            using (var reader = new StaticEncodingLineReader(dictionaryStream, affix.Encoding))
+            {
+                return await ReadAsync(reader, affix, builder).ConfigureAwait(false);
+            }
+        }
+
+#if !NO_IO_FILE
+        public static async Task<WordList> ReadFileAsync(string dictionaryFilePath, AffixConfig affix, WordList.Builder builder = null)
+        {
+            using (var stream = File.Open(dictionaryFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                return await ReadAsync(stream, affix, builder).ConfigureAwait(false);
+            }
+        }
+#endif
+
+#endif
+
+        public static WordList Read(Stream dictionaryStream, Stream affixStream)
+        {
+            var affixBuilder = new AffixConfig.Builder();
+            var affix = AffixReader.Read(affixStream, affixBuilder);
+            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper, affixBuilder.StringDeduper);
+            return Read(dictionaryStream, affix, wordListBuilder);
         }
 
         public static WordList Read(IHunspellLineReader dictionaryReader, AffixConfig affix, WordList.Builder builder = null)
@@ -53,19 +112,22 @@ namespace Hunspell
             return readerInstance.Builder.MoveToImmutable();
         }
 
-        public static async Task<WordList> ReadFileAsync(string dictionaryFilePath)
-        {
-            var affixFilePath = FindAffixFilePath(dictionaryFilePath);
-            return await ReadFileAsync(dictionaryFilePath, affixFilePath).ConfigureAwait(false);
-        }
-
+#if !NO_IO_FILE
         public static WordList ReadFile(string dictionaryFilePath)
         {
             var affixFilePath = FindAffixFilePath(dictionaryFilePath);
             return ReadFile(dictionaryFilePath, AffixReader.ReadFile(affixFilePath));
         }
 
-        public static string FindAffixFilePath(string dictionaryFilePath)
+        public static WordList ReadFile(string dictionaryFilePath, string affixFilePath)
+        {
+            var affixBuilder = new AffixConfig.Builder();
+            var affix = AffixReader.ReadFile(affixFilePath, affixBuilder);
+            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper, affixBuilder.StringDeduper);
+            return ReadFile(dictionaryFilePath, affix, wordListBuilder);
+        }
+
+        private static string FindAffixFilePath(string dictionaryFilePath)
         {
             var directoryName = Path.GetDirectoryName(dictionaryFilePath);
             if (!string.IsNullOrEmpty(directoryName))
@@ -81,40 +143,25 @@ namespace Hunspell
 
             return Path.ChangeExtension(dictionaryFilePath, "aff");
         }
+#endif
 
-        public static async Task<WordList> ReadFileAsync(string dictionaryFilePath, string affixFilePath)
+        public static WordList Read(Stream dictionaryStream, AffixConfig affix, WordList.Builder builder = null)
         {
-            var affixBuilder = new AffixConfig.Builder();
-            var affix = await AffixReader.ReadFileAsync(affixFilePath, affixBuilder).ConfigureAwait(false);
-            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper, affixBuilder.StringDeduper);
-            return await ReadFileAsync(dictionaryFilePath, affix, wordListBuilder).ConfigureAwait(false);
-        }
-
-        public static WordList ReadFile(string dictionaryFilePath, string affixFilePath)
-        {
-            var affixBuilder = new AffixConfig.Builder();
-            var affix = AffixReader.ReadFile(affixFilePath, affixBuilder);
-            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper, affixBuilder.StringDeduper);
-            return ReadFile(dictionaryFilePath, affix, wordListBuilder);
-        }
-
-        public static async Task<WordList> ReadFileAsync(string dictionaryFilePath, AffixConfig affix, WordList.Builder builder = null)
-        {
-            using (var stream = File.Open(dictionaryFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-            using (var reader = new StaticEncodingLineReader(stream, affix.Encoding))
-            {
-                return await ReadAsync(reader, affix, builder).ConfigureAwait(false);
-            }
-        }
-
-        public static WordList ReadFile(string dictionaryFilePath, AffixConfig affix, WordList.Builder builder = null)
-        {
-            using (var stream = File.Open(dictionaryFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-            using (var reader = new StaticEncodingLineReader(stream, affix.Encoding))
+            using (var reader = new StaticEncodingLineReader(dictionaryStream, affix.Encoding))
             {
                 return Read(reader, affix, builder);
             }
         }
+
+#if !NO_IO_FILE
+        public static WordList ReadFile(string dictionaryFilePath, AffixConfig affix, WordList.Builder builder = null)
+        {
+            using (var stream = File.Open(dictionaryFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                return Read(stream, affix, builder);
+            }
+        }
+#endif
 
         private bool ParseLine(string line)
         {
@@ -158,7 +205,8 @@ namespace Hunspell
                 }
                 else if (Affix.FlagMode == FlagMode.Uni)
                 {
-                    var utf8Flags = Encoding.UTF8.GetString(Affix.Encoding.GetBytes(parsed.Flags));
+                    var encodedBytes = Affix.Encoding.GetBytes(parsed.Flags);
+                    var utf8Flags = Encoding.UTF8.GetString(encodedBytes, 0, encodedBytes.Length);
                     flags = Builder.Dedup(FlagValue.ParseFlags(utf8Flags, FlagMode.Char));
                 }
                 else
@@ -374,7 +422,10 @@ namespace Hunspell
 
             private static readonly Regex MorphPartRegex = new Regex(
                 @"\G([\t ]+(?<morphs>[^\t ]+))*[\t ]*$",
-                RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture);
+#if !NO_COMPILED_REGEX
+                RegexOptions.Compiled |
+#endif
+                RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture);
 
             public static ParsedWordLine Parse(string line)
             {

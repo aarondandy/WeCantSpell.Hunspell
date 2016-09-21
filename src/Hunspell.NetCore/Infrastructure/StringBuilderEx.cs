@@ -5,6 +5,14 @@ namespace Hunspell.Infrastructure
 {
     internal static class StringBuilderEx
     {
+#if NET_3_5
+        public static StringBuilder Clear(this StringBuilder @this)
+        {
+            @this.Length = 0;
+            return @this;
+        }
+#endif
+
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
