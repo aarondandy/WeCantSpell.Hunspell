@@ -59,8 +59,8 @@ binaries and NHunspell is definitely acceptable.
 If you need better performance you should check out [NHunspell](https://www.nuget.org/packages/NHunspell/).
 
 | [Benchmark](./test/Hunspell.NetCore.Performance.Comparison/) | [Hunspell.NetCore](https://www.nuget.org/packages/Hunspell.NetCore/) | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
-|---------------------|------------------|-----------|
+|---------------------|-------------------|------------|
 | Dictionary Loads /s | 🐢 2.2            | 🐇 15.92   |
-| Words Checked /s    | 🐢 532,373        | 🐇 926,011 |
+| Words Checked /s    | 🐢 560,499        | 🐇 965,254 |
 
 _Note: Measurements taken on a Intel 6700K with a 850 PRO 256GB._

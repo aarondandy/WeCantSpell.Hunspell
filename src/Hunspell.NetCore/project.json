@@ -123,62 +123,11 @@
         "NETStandard.Library": "1.6.0"
       }
     },
-    "netstandard1.2": {
-      "buildOptions": {
-        "define": [
-          "NETCORE",
-          "NETSTANDARD_1_2",
-          "NO_COMPILED_REGEX",
-          "NO_IO_FILE",
-          "NO_UTF32",
-          "NO_ARRAY_EMPTY"
-        ]
-      },
-      "dependencies": {
-        "NETStandard.Library": "1.6.0"
-      }
-    },
     "netstandard1.3": {
       "buildOptions": {
         "define": [
           "NETCORE",
           "NETSTANDARD_1_3"
-        ]
-      },
-      "dependencies": {
-        "NETStandard.Library": "1.6.0",
-        "System.IO.FileSystem": "4.0.1"
-      }
-    },
-    "netstandard1.4": {
-      "buildOptions": {
-        "define": [
-          "NETCORE",
-          "NETSTANDARD_1_4"
-        ]
-      },
-      "dependencies": {
-        "NETStandard.Library": "1.6.0",
-        "System.IO.FileSystem": "4.0.1"
-      }
-    },
-    "netstandard1.5": {
-      "buildOptions": {
-        "define": [
-          "NETCORE",
-          "NETSTANDARD_1_5"
-        ]
-      },
-      "dependencies": {
-        "NETStandard.Library": "1.6.0",
-        "System.IO.FileSystem": "4.0.1"
-      }
-    },
-    "netstandard1.6": {
-      "buildOptions": {
-        "define": [
-          "NETCORE",
-          "NETSTANDARD_1_6"
         ]
       },
       "dependencies": {

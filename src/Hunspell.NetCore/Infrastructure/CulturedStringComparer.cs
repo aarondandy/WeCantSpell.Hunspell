@@ -26,7 +26,7 @@ namespace Hunspell.Infrastructure
 
         public override int GetHashCode(string obj)
         {
-#if NETCORE || NETSTANDARD_1_2 || NET_3_5 || PCL
+#if NETCORE || NET_4_5_1 || NET_3_5 || PCL
             return 0;
 #else
             return CompareInfo.GetHashCode(obj, CompareOptions.None);
