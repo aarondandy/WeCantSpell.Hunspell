@@ -15,7 +15,7 @@
     ],
     "repository": {
       "type": "git",
-      "url": "https://github.com/aarondandy/Hunspell.NetCore"
+      "url": "https://github.com/aarondandy/Hunspell.NetCore.git"
     },
     "licenseUrl": "https://github.com/aarondandy/Hunspell.NetCore/blob/master/license.txt",
     "projectUrl": "https://github.com/aarondandy/Hunspell.NetCore/",

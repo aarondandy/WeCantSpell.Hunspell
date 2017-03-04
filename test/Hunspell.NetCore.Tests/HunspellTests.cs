@@ -53,6 +53,21 @@ namespace Hunspell.NetCore.Tests
 
                 actual.Should().Be(expected);
             }
+
+            public static IEnumerable<object[]> checking_large_word_does_not_cause_errors_args() =>
+                GetAllDataFilePaths("*.dic").Select(filePath => new object[] { filePath });
+
+            [Theory, MemberData(nameof(checking_large_word_does_not_cause_errors_args))]
+            public async Task checking_large_word_does_not_cause_errors(string filePath)
+            {
+                // attampt to reproduce https://github.com/hunspell/hunspell/issues/446
+                var largeInput = new string('X', 102);
+                var hunspell = await HunspellDictionary.FromFileAsync(filePath);
+
+                var actual = hunspell.Check(largeInput);
+
+                actual.Should().BeFalse();
+            }
         }
 
         public class CheckGoodWords : HunspellTests
