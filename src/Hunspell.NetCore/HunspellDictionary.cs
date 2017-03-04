@@ -11,7 +11,7 @@ namespace Hunspell
 {
     public sealed partial class HunspellDictionary
     {
-        internal const int MaxWordLen = 176;
+        internal const int MaxWordLen = 100;
 
         public HunspellDictionary(WordList wordList)
         {

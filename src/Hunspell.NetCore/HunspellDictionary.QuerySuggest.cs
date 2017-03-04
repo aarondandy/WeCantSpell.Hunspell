@@ -2129,7 +2129,7 @@ namespace Hunspell
             /// </summary>
             private int NGram(int n, string s1, string s2, NGramOptions opt)
             {
-                if (s1.Length == 0 || s2.Length == 0)
+                if (s2.Length == 0)
                 {
                     return 0;
                 }
