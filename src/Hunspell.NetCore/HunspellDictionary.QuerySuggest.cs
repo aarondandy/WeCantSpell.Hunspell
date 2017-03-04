@@ -1228,7 +1228,7 @@ namespace Hunspell
                     mw.Clear();
                     mw.Append(word);
 
-                    for (var k = sp; k < word.Length; k += 4)
+                    for (var k = sp; k < mw.Length; k += 4)
                     {
                         mw[k] = '*';
                     }
@@ -1238,8 +1238,7 @@ namespace Hunspell
 
                 StringBuilderPool.Return(mw);
 
-                thresh /= 3;
-                thresh--;
+                thresh = (thresh / 3) - 1;
 
                 // now expand affixes on each of these root words and
                 // and use length adjusted ngram scores to select
@@ -1333,10 +1332,10 @@ namespace Hunspell
                         var gl = MakeAllSmall(guess.Guess);
                         var len = guess.Guess.Length;
 
-                        var _lcs = LcsLen(word, gl);
+                        var lcsLength = LcsLen(word, gl);
 
                         // same characters with different casing
-                        if (word.Length == len && word.Length == _lcs)
+                        if (word.Length == len && word.Length == lcsLength)
                         {
                             guesses[i].Score += 2000;
                             break;
@@ -1348,7 +1347,7 @@ namespace Hunspell
 
                         guesses[i].Score =
                             // length of longest common subsequent minus length difference
-                            2 * _lcs - Math.Abs(word.Length - len)
+                            (2 * lcsLength) - Math.Abs(word.Length - len)
                             // weight length of the left common substring
                             + LeftCommonSubstring(word, gl)
                             // weight equal character positions
@@ -2093,34 +2092,48 @@ namespace Hunspell
             {
                 if (Affix.ComplexPrefixes)
                 {
-                    if (s1.Length <= s2.Length && s1.Length - 1 >= 0 && s2.Length > s2.Length - 1 && s2[s1.Length - 1] == s2[s2.Length - 1])
-                    {
-                        return 1;
-                    }
+                    return LeftCommonSubstringComplex(s1, s2);
                 }
-                else
+
+                if (s1[0] != s2[0] && s1[0] != Affix.Culture.TextInfo.ToLower(s2[0]))
                 {
-                    // decapitalise dictionary word
-                    if (0 == s1.Length || 0 == s2.Length || s1[0] == s2[0] || s1[0] == Affix.Culture.TextInfo.ToLower(s2[0]))
-                    {
-                        var index = 1;
-                        while (index < s1.Length && index < s2.Length && s1[index] == s2[index])
-                        {
-                            index++;
-                        };
-
-                        return index;
-                    }
+                    return 0;
                 }
 
-                return 0;
+                var minIndex = Math.Min(s1.Length, s2.Length);
+                var index = 1;
+                while (index < minIndex && s1[index] == s2[index])
+                {
+                    index++;
+                };
+
+                return index;
             }
+
+#if !PRE_NETSTANDARD && !DEBUG
+            [MethodImpl(MethodImplOptions.NoInlining)]
+#endif
+            private static int LeftCommonSubstringComplex(string s1, string s2) =>
+                (
+                    s1.Length != 0
+                    &&
+                    s2.Length != 0
+                    &&
+                    s1[s1.Length - 1] == s2[s2.Length - 1]
+                )
+                ? 1
+                : 0;
 
             /// <summary>
             /// Generate an n-gram score comparing s1 and s2.
             /// </summary>
             private int NGram(int n, string s1, string s2, NGramOptions opt)
             {
+                if (s1.Length == 0 || s2.Length == 0)
+                {
+                    return 0;
+                }
+
                 if (opt.HasFlag(NGramOptions.Lowering))
                 {
                     s2 = MakeAllSmall(s2);
@@ -2154,49 +2167,31 @@ namespace Hunspell
 
             private static int NGramWeightedSearch(int n, string s1, string t)
             {
-                int ns;
                 int nscore = 0;
                 for (var j = 1; j <= n; j++)
                 {
-                    ns = 0;
                     var s1LenLessJ = s1.Length - j;
                     if (0 <= s1LenLessJ)
                     {
-                        if (t.ContainsSubstringOrdinal(s1, 0, j))
-                        {
-                            ns++;
-                        }
-                        else
-                        {
-                            ns -= 2;
-                        }
-
-                        for (var i = 1; i < s1LenLessJ; i++)
+                        for (var i = 0; i <= s1LenLessJ; i++)
                         {
                             if (t.ContainsSubstringOrdinal(s1, i, j))
                             {
-                                ns++;
+                                nscore++;
                             }
                             else
                             {
-                                ns--;
-                            }
-                        }
-
-                        if (0 != s1LenLessJ)
-                        {
-                            if (t.ContainsSubstringOrdinal(s1, s1LenLessJ, j))
-                            {
-                                ns++;
-                            }
-                            else
-                            {
-                                ns -= 2;
+                                if (i == 0 || i == s1LenLessJ)
+                                {
+                                    nscore -= 2;
+                                }
+                                else
+                                {
+                                    nscore--;
+                                }
                             }
                         }
                     }
-
-                    nscore += ns;
                 }
 
                 return nscore;
@@ -2204,11 +2199,10 @@ namespace Hunspell
 
             private static int NGramNonWeightedSearch(int n, string s1, string t)
             {
-                int ns;
                 int nscore = 0;
                 for (var j = 1; j <= n; j++)
                 {
-                    ns = 0;
+                    var ns = 0;
                     var s1LenLessJ = s1.Length - j;
                     for (var i = 0; i <= s1LenLessJ; i++)
                     {
