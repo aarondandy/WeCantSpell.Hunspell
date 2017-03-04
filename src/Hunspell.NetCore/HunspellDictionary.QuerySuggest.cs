@@ -2508,7 +2508,7 @@ namespace Hunspell
 
                     if (!z0)
                     {
-                        if (k != 0 && p0 == 0 && target.Length < len && c != '\0' && (true || target.Length == 0 || !target.EndsWith(c)))
+                        if (k != 0 && p0 == 0 && target.Length < len && c != '\0')
                         {
                             // condense only double letters
                             target.Append(c);
