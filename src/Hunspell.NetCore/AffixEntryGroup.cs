@@ -36,7 +36,7 @@ namespace Hunspell
         /// Indicates if a group has the <see cref="AffixEntryOptions.CrossProduct"/> option enabled.
         /// </summary>
         /// <seealso cref="AffixEntryOptions"/>
-        public bool AllowCross => Options.HasFlag(AffixEntryOptions.CrossProduct);
+        public bool AllowCross => EnumEx.HasFlag(Options, AffixEntryOptions.CrossProduct);
     }
 
     public static class AffixEntryGroup

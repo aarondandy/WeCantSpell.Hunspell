@@ -280,7 +280,7 @@ namespace Hunspell
                             he.ContainsFlag(Affix.OnlyInCompound)
                             ||
                             (
-                                info.HasFlag(SpellCheckResultType.InitCap)
+                                EnumEx.HasFlag(info, SpellCheckResultType.InitCap)
                                 &&
                                 he.ContainsFlag(SpecialFlags.OnlyUpcaseFlag)
                             )
@@ -306,7 +306,7 @@ namespace Hunspell
                         (
                             he.ContainsFlag(Affix.OnlyInCompound)
                             ||
-                            (info.HasFlag(SpellCheckResultType.InitCap) && he.ContainsFlag(SpecialFlags.OnlyUpcaseFlag))
+                            (EnumEx.HasFlag(info, SpellCheckResultType.InitCap) && he.ContainsFlag(SpecialFlags.OnlyUpcaseFlag))
                         )
                     )
                     {
@@ -904,7 +904,7 @@ namespace Hunspell
                                         &&
                                         rv.ContainsFlag(Affix.ForceUpperCase)
                                         &&
-                                        !info.HasFlag(SpellCheckResultType.OrigCap)
+                                        !EnumEx.HasFlag(info, SpellCheckResultType.OrigCap)
                                     )
                                     {
                                         rv = null;
@@ -1100,7 +1100,7 @@ namespace Hunspell
                                         &&
                                         rv.ContainsFlag(Affix.ForceUpperCase)
                                         &&
-                                        !info.HasFlag(SpellCheckResultType.OrigCap)
+                                        !EnumEx.HasFlag(info, SpellCheckResultType.OrigCap)
                                     )
                                     {
                                         rv = null;
@@ -1508,7 +1508,7 @@ namespace Hunspell
                         // if CrossProduct is allowed, try again but now
                         // cross checked combined with a suffix
 
-                        if (pe.Options.HasFlag(AffixEntryOptions.CrossProduct) && (inCompound != CompoundOptions.Begin))
+                        if (EnumEx.HasFlag(pe.Options, AffixEntryOptions.CrossProduct) && (inCompound != CompoundOptions.Begin))
                         {
                             // find hash entry of root word
                             var he = SuffixCheckTwoSfx(tmpword, AffixEntryOptions.CrossProduct, pe, needFlag);
@@ -2042,7 +2042,7 @@ namespace Hunspell
                         // if aeXPRODUCT is allowed, try again but now
                         // ross checked combined with a suffix
 
-                        if (entry.Options.HasFlag(AffixEntryOptions.CrossProduct))
+                        if (EnumEx.HasFlag(entry.Options, AffixEntryOptions.CrossProduct))
                         {
                             var he = SuffixCheck(tmpword, AffixEntryOptions.CrossProduct, entry, default(FlagValue), needFlag, inCompound);
                             if (he != null)
@@ -2062,9 +2062,9 @@ namespace Hunspell
                 // if this suffix is being cross checked with a prefix
                 // but it does not support cross products skip it
 
-                var optFlagsHasCrossProduct = optFlags.HasFlag(AffixEntryOptions.CrossProduct);
+                var optFlagsHasCrossProduct = EnumEx.HasFlag(optFlags, AffixEntryOptions.CrossProduct);
                 if (
-                    (optFlagsHasCrossProduct && !entry.Options.HasFlag(AffixEntryOptions.CrossProduct))
+                    (optFlagsHasCrossProduct && !EnumEx.HasFlag(entry.Options, AffixEntryOptions.CrossProduct))
                     ||
                     (cclass.HasValue && !entry.ContainsContClass(cclass)) // ! handle cont. class
                     ||
@@ -2161,7 +2161,7 @@ namespace Hunspell
                 // if this suffix is being cross checked with a prefix
                 // but it does not support cross products skip it
 
-                if (optflags.HasFlag(AffixEntryOptions.CrossProduct) && !se.Options.HasFlag(AffixEntryOptions.CrossProduct))
+                if (EnumEx.HasFlag(optflags, AffixEntryOptions.CrossProduct) && !EnumEx.HasFlag(se.Options, AffixEntryOptions.CrossProduct))
                 {
                     return null;
                 }

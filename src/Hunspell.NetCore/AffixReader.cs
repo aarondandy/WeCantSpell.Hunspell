@@ -202,10 +202,7 @@ namespace Hunspell
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        private bool IsInitialized(EntryListType flags)
-        {
-            return Initialized.HasFlag(flags);
-        }
+        private bool IsInitialized(EntryListType flags) => EnumEx.HasFlag(Initialized, flags);
 
 #if !PRE_NETSTANDARD && !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -272,11 +269,11 @@ namespace Hunspell
                 case "COMPOUNDMIDDLE": // parse in the flag used by compound words
                     return TryParseFlag(parameters, out Builder.CompoundMiddle);
                 case "COMPOUNDBEGIN": // parse in the flag used by compound words
-                    return Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes)
+                    return EnumEx.HasFlag(Builder.Options, AffixConfigOptions.ComplexPrefixes)
                         ? TryParseFlag(parameters, out Builder.CompoundEnd)
                         : TryParseFlag(parameters, out Builder.CompoundBegin);
                 case "COMPOUNDEND": // parse in the flag used by compound words
-                    return Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes)
+                    return EnumEx.HasFlag(Builder.Options, AffixConfigOptions.ComplexPrefixes)
                         ? TryParseFlag(parameters, out Builder.CompoundBegin)
                         : TryParseFlag(parameters, out Builder.CompoundEnd);
                 case "COMPOUNDWORDMAX": // parse in the data used by compound_check() method
@@ -359,7 +356,7 @@ namespace Hunspell
                 case "PFX":
                 case "SFX":
                     var parseAsPrefix = "PFX" == commandName;
-                    if (Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes))
+                    if (EnumEx.HasFlag(Builder.Options, AffixConfigOptions.ComplexPrefixes))
                     {
                         parseAsPrefix = !parseAsPrefix;
                     }
@@ -559,7 +556,7 @@ namespace Hunspell
 
         private bool TryParseAliasM(string parameterText, List<MorphSet> entries)
         {
-            if (Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes))
+            if (EnumEx.HasFlag(Builder.Options, AffixConfigOptions.ComplexPrefixes))
             {
                 parameterText = parameterText.Reverse();
             }
@@ -684,7 +681,7 @@ namespace Hunspell
                 {
                     strip = string.Empty;
                 }
-                else if (Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes))
+                else if (EnumEx.HasFlag(Builder.Options, AffixConfigOptions.ComplexPrefixes))
                 {
                     strip = strip.Reverse();
                 }
@@ -727,7 +724,7 @@ namespace Hunspell
                     affixText.RemoveChars(Builder.IgnoredChars);
                 }
 
-                if (Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes))
+                if (EnumEx.HasFlag(Builder.Options, AffixConfigOptions.ComplexPrefixes))
                 {
                     affixText.Reverse();
                 }
@@ -739,7 +736,7 @@ namespace Hunspell
 
                 // piece 5 - is the conditions descriptions
                 var conditionText = lineMatchGroups[6].Value;
-                if (Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes))
+                if (EnumEx.HasFlag(Builder.Options, AffixConfigOptions.ComplexPrefixes))
                 {
                     conditionText = ReverseCondition(conditionText);
                 }
@@ -788,7 +785,7 @@ namespace Hunspell
                     }
                     else
                     {
-                        if (Builder.Options.HasFlag(AffixConfigOptions.ComplexPrefixes))
+                        if (EnumEx.HasFlag(Builder.Options, AffixConfigOptions.ComplexPrefixes))
                         {
                             morphAffixText = morphAffixText.Reverse();
                         }

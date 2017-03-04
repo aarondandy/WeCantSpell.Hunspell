@@ -42,21 +42,21 @@ namespace Hunspell
             private set
             {
                 options = value;
-                ComplexPrefixes = options.HasFlag(AffixConfigOptions.ComplexPrefixes);
-                CompoundMoreSuffixes = options.HasFlag(AffixConfigOptions.CompoundMoreSuffixes);
-                CheckCompoundDup = options.HasFlag(AffixConfigOptions.CheckCompoundDup);
-                CheckCompoundRep = options.HasFlag(AffixConfigOptions.CheckCompoundRep);
-                CheckCompoundTriple = options.HasFlag(AffixConfigOptions.CheckCompoundTriple);
-                SimplifiedTriple = options.HasFlag(AffixConfigOptions.SimplifiedTriple);
-                CheckCompoundCase = options.HasFlag(AffixConfigOptions.CheckCompoundCase);
-                CheckNum = options.HasFlag(AffixConfigOptions.CheckNum);
-                OnlyMaxDiff = options.HasFlag(AffixConfigOptions.OnlyMaxDiff);
-                NoSplitSuggestions = options.HasFlag(AffixConfigOptions.NoSplitSuggestions);
-                FullStrip = options.HasFlag(AffixConfigOptions.FullStrip);
-                SuggestWithDots = options.HasFlag(AffixConfigOptions.SuggestWithDots);
-                ForbidWarn = options.HasFlag(AffixConfigOptions.ForbidWarn);
-                CheckSharps = options.HasFlag(AffixConfigOptions.CheckSharps);
-                SimplifiedCompound = options.HasFlag(AffixConfigOptions.SimplifiedCompound);
+                ComplexPrefixes = EnumEx.HasFlag(options, AffixConfigOptions.ComplexPrefixes);
+                CompoundMoreSuffixes = EnumEx.HasFlag(options, AffixConfigOptions.CompoundMoreSuffixes);
+                CheckCompoundDup = EnumEx.HasFlag(options, AffixConfigOptions.CheckCompoundDup);
+                CheckCompoundRep = EnumEx.HasFlag(options, AffixConfigOptions.CheckCompoundRep);
+                CheckCompoundTriple = EnumEx.HasFlag(options, AffixConfigOptions.CheckCompoundTriple);
+                SimplifiedTriple = EnumEx.HasFlag(options, AffixConfigOptions.SimplifiedTriple);
+                CheckCompoundCase = EnumEx.HasFlag(options, AffixConfigOptions.CheckCompoundCase);
+                CheckNum = EnumEx.HasFlag(options, AffixConfigOptions.CheckNum);
+                OnlyMaxDiff = EnumEx.HasFlag(options, AffixConfigOptions.OnlyMaxDiff);
+                NoSplitSuggestions = EnumEx.HasFlag(options, AffixConfigOptions.NoSplitSuggestions);
+                FullStrip = EnumEx.HasFlag(options, AffixConfigOptions.FullStrip);
+                SuggestWithDots = EnumEx.HasFlag(options, AffixConfigOptions.SuggestWithDots);
+                ForbidWarn = EnumEx.HasFlag(options, AffixConfigOptions.ForbidWarn);
+                CheckSharps = EnumEx.HasFlag(options, AffixConfigOptions.CheckSharps);
+                SimplifiedCompound = EnumEx.HasFlag(options, AffixConfigOptions.SimplifiedCompound);
             }
         }
 

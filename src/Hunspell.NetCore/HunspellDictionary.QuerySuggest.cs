@@ -181,7 +181,7 @@ namespace Hunspell
                         if (pos >= 0)
                         {
                             var info = CheckDetails(slst[j].Substring(0, pos) + slst[j].Substring(pos + 1)).Info;
-                            var desiredChar = info.HasFlag(SpellCheckResultType.Compound) && info.HasFlag(SpellCheckResultType.Forbidden)
+                            var desiredChar = EnumEx.HasFlag(info, SpellCheckResultType.Compound | SpellCheckResultType.Forbidden)
                                 ? ' '
                                 : '-';
 
@@ -1170,7 +1170,7 @@ namespace Hunspell
 
                     // check special pronounciation
                     var f = string.Empty;
-                    if (hp.Options.HasFlag(WordEntryOptions.Phon) && CopyField(ref f, hp.Morphs, MorphologicalTags.Phon))
+                    if (EnumEx.HasFlag(hp.Options, WordEntryOptions.Phon) && CopyField(ref f, hp.Morphs, MorphologicalTags.Phon))
                     {
                         var sc2 = NGram(3, word, f, NGramOptions.LongerWorse | NGramOptions.Lowering)
                             + LeftCommonSubstring(word, f);
@@ -1258,7 +1258,7 @@ namespace Hunspell
                     if (rp != null)
                     {
                         var field = string.Empty;
-                        if (!rp.Options.HasFlag(WordEntryOptions.Phon) || !CopyField(ref field, rp.Morphs, MorphologicalTags.Phon))
+                        if (!EnumEx.HasFlag(rp.Options, WordEntryOptions.Phon) || !CopyField(ref field, rp.Morphs, MorphologicalTags.Phon))
                         {
                             field = null;
                         }
@@ -2134,27 +2134,27 @@ namespace Hunspell
                     return 0;
                 }
 
-                if (opt.HasFlag(NGramOptions.Lowering))
+                if (EnumEx.HasFlag(opt, NGramOptions.Lowering))
                 {
                     s2 = MakeAllSmall(s2);
                 }
 
-                var nscore = opt.HasFlag(NGramOptions.Weighted)
+                var nscore = EnumEx.HasFlag(opt, NGramOptions.Weighted)
                     ? NGramWeightedSearch(n, s1, s2)
                     : NGramNonWeightedSearch(n, s1, s2);
 
                 int ns;
-                if (opt.HasFlag(NGramOptions.AnyMismatch))
+                if (EnumEx.HasFlag(opt, NGramOptions.AnyMismatch))
                 {
                     ns = Math.Abs(s2.Length - s1.Length) - 2;
                 }
-                else if (opt.HasFlag(NGramOptions.LongerWorse))
+                else if (EnumEx.HasFlag(opt, NGramOptions.LongerWorse))
                 {
                     ns = (s2.Length - s1.Length) - 2;
                 }
                 else
                 {
-                    return nscore;
+                    ns = 0;
                 }
 
                 if (ns > 0)
@@ -2608,6 +2608,7 @@ namespace Hunspell
     [Flags]
     internal enum NGramOptions : byte
     {
+        None = 0,
         LongerWorse = 1 << 0,
         AnyMismatch = 1 << 1,
         Lowering = 1 << 2,

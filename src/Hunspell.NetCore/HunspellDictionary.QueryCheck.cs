@@ -276,7 +276,7 @@ namespace Hunspell
                 // (for example, ijs -> Ijs instead of IJs in Dutch)
                 // use explicit forms in dic: Ijs/F (F = FORBIDDENWORD flag)
 
-                if (resultType.HasFlag(SpellCheckResultType.Forbidden))
+                if (EnumEx.HasFlag(resultType, SpellCheckResultType.Forbidden))
                 {
                     rv = null;
                     return rv;
