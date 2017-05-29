@@ -20,6 +20,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -28,19 +29,17 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="NBench, Version=0.3.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\NBench.Runner.0.3.1\lib\net45\NBench.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="NBench, Version=1.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\NBench.Runner.1.0.1\lib\net45\NBench.dll</HintPath>
     </Reference>
-    <Reference Include="NBench.PerformanceCounters, Version=0.3.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\NBench.PerformanceCounters.0.3.1\lib\net45\NBench.PerformanceCounters.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="NBench.PerformanceCounters, Version=1.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\NBench.PerformanceCounters.1.0.1\lib\net452\NBench.PerformanceCounters.dll</HintPath>
     </Reference>
-    <Reference Include="NBench.Runner, Version=0.3.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\NBench.Runner.0.3.1\lib\net45\NBench.Runner.exe</HintPath>
-      <Private>True</Private>
+    <Reference Include="NBench.Runner, Version=1.0.1.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\..\packages\NBench.Runner.1.0.1\lib\net45\NBench.Runner.exe</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -52,6 +51,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\..\SharedAssemblyInfo.cs">
+      <Link>Properties\SharedAssemblyInfo.cs</Link>
+    </Compile>
     <Compile Include="AffixFileLoadPerfSpecs.cs" />
     <Compile Include="DictionaryFileLoadPerfSpec.cs" />
     <Compile Include="EnWordPerfBase.cs" />
@@ -64,8 +66,6 @@
       <Link>files\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

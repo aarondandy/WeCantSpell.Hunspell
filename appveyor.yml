@@ -8,17 +8,13 @@ assembly_info:
   patch: false
 
 before_build:
-  - nuget restore
-  - ps: gitversion /l console /output buildserver /updateAssemblyInfo SharedAssemblyInfo.cs
-  - ps: |
-      $jsonpath = 'src/WeCantSpell.Hunspell/project.json'
-      $json = Get-Content -Raw -Path $jsonpath | ConvertFrom-Json
-      $json.version = $Env:GitVersion_NuGetVersion
-      $json | ConvertTo-Json -depth 999 | Out-File $jsonpath
+  - cmd: gitversion /l console /output buildserver /updateAssemblyInfo SharedAssemblyInfo.cs
 
-build:
-  project: WeCantSpell.Hunspell.sln
+build_script:
+  - cmd: dotnet restore WeCantSpell.Hunspell.sln
+  - cmd: dotnet msbuild src/WeCantSpell.Hunspell/WeCantSpell.Hunspell.csproj /p:"FrameworkPathOverride35=C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v3.5\Profile\Client;VersionPrefix=%GitVersion_NuGetVersion%;Configuration=Release"
+  - cmd: dotnet msbuild test/WeCantSpell.Hunspell.Tests/WeCantSpell.Hunspell.Tests.csproj /p:"VersionPrefix=%GitVersion_NuGetVersion%;Configuration=Release"
 
 after_build:
-  - cmd: dotnet pack src/WeCantSpell.Hunspell -c Release
+  - cmd: dotnet pack src/WeCantSpell.Hunspell/WeCantSpell.Hunspell.csproj /p:"FrameworkPathOverride35=C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v3.5\Profile\Client;VersionPrefix=%GitVersion_NuGetVersion%;Configuration=Release"
   - cmd: appveyor PushArtifact "src/WeCantSpell.Hunspell/bin/Release/WeCantSpell.Hunspell.%GitVersion_NuGetVersion%.nupkg"

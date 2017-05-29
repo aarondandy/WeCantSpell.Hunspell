@@ -3,6 +3,9 @@ using System.Globalization;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
+    /// <summary>
+    /// Provides the ability to compare text from files using their configured culture.
+    /// </summary>
     internal sealed class CulturedStringComparer : StringComparer
     {
         public CulturedStringComparer(CultureInfo culture)
