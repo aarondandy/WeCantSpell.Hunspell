@@ -1,4 +1,4 @@
-# Hunspell .NET Core
+# WeCantSpell: Hunspell
 
 A .NET port of Hunspell for .NET and .NET Core
 
@@ -13,7 +13,7 @@ A .NET port of Hunspell for .NET and .NET Core
 * Supports checking and suggesting words
 * Ported to fully managed C#
 * Confusing LGPL, GPL, MPL tri-license
-* Compatible with .NET Core
+* Compatible with .NET Core and .NET Standard
 * Compatible with multiple .NET framework versions
 * Uses .NET to handle cultures and encodings
 

@@ -1,0 +1,67 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.6
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{7DB151C3-9662-414F-84EF-7C6BD40C8AC6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{312E1AA7-E8A4-4AEB-8D9D-6327A0ED57FB}"
+	ProjectSection(SolutionItems) = preProject
+		appveyor.yml = appveyor.yml
+		GitVersion.yml = GitVersion.yml
+		SharedAssemblyInfo.cs = SharedAssemblyInfo.cs
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{97D2DB91-AE3A-44AE-9FA3-43557AA8F5FD}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeCantSpell.Hunspell", "src\WeCantSpell.Hunspell\WeCantSpell.Hunspell.csproj", "{E73EDF00-EAB6-420B-ABBA-B18283BE7064}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeCantSpell.Hunspell.Tests", "test\WeCantSpell.Hunspell.Tests\WeCantSpell.Hunspell.Tests.csproj", "{9BBF7BFD-2EA4-4C17-8D38-ECACFBBBC922}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeCantSpell.Hunspell.Performance.Tests", "test\WeCantSpell.Hunspell.Performance.Tests\WeCantSpell.Hunspell.Performance.Tests.csproj", "{0D9B92F4-F669-427A-95FB-14FC6A555973}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeCantSpell.Hunspell.Performance.TestHarness", "test\WeCantSpell.Hunspell.Performance.TestHarness\WeCantSpell.Hunspell.Performance.TestHarness.csproj", "{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeCantSpell.Hunspell.Performance.Comparison", "test\WeCantSpell.Hunspell.Performance.Comparison\WeCantSpell.Hunspell.Performance.Comparison.csproj", "{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E73EDF00-EAB6-420B-ABBA-B18283BE7064}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E73EDF00-EAB6-420B-ABBA-B18283BE7064}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E73EDF00-EAB6-420B-ABBA-B18283BE7064}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E73EDF00-EAB6-420B-ABBA-B18283BE7064}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9BBF7BFD-2EA4-4C17-8D38-ECACFBBBC922}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9BBF7BFD-2EA4-4C17-8D38-ECACFBBBC922}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9BBF7BFD-2EA4-4C17-8D38-ECACFBBBC922}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9BBF7BFD-2EA4-4C17-8D38-ECACFBBBC922}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0D9B92F4-F669-427A-95FB-14FC6A555973}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D9B92F4-F669-427A-95FB-14FC6A555973}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D9B92F4-F669-427A-95FB-14FC6A555973}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D9B92F4-F669-427A-95FB-14FC6A555973}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E73EDF00-EAB6-420B-ABBA-B18283BE7064} = {7DB151C3-9662-414F-84EF-7C6BD40C8AC6}
+		{9BBF7BFD-2EA4-4C17-8D38-ECACFBBBC922} = {97D2DB91-AE3A-44AE-9FA3-43557AA8F5FD}
+		{0D9B92F4-F669-427A-95FB-14FC6A555973} = {97D2DB91-AE3A-44AE-9FA3-43557AA8F5FD}
+		{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE} = {97D2DB91-AE3A-44AE-9FA3-43557AA8F5FD}
+		{0EBAB771-D55F-430A-ADBD-EA81D97C94AD} = {97D2DB91-AE3A-44AE-9FA3-43557AA8F5FD}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
+EndGlobal

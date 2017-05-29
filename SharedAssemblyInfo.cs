@@ -9,7 +9,7 @@
 #endif
 
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Hunspell.NetCore")]
+[assembly: AssemblyProduct("WeCantSpell.Hunspell")]
 [assembly: AssemblyCopyright("")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

@@ -1,0 +1,8 @@
+﻿<ProjectConfiguration>
+  <Settings>
+    <ImplicitProjectDependencyPathsRelativeToSolutionDirectory>
+      <Value>src\WeCantSpell.Hunspell\WeCantSpell.Hunspell.csproj</Value>
+    </ImplicitProjectDependencyPathsRelativeToSolutionDirectory>
+    <PreviouslyBuiltSuccessfully>True</PreviouslyBuiltSuccessfully>
+  </Settings>
+</ProjectConfiguration>
