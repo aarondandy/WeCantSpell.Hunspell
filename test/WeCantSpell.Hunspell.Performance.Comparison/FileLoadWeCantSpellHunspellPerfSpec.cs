@@ -2,7 +2,7 @@
 
 namespace WeCantSpell.Hunspell.Performance.Comparison
 {
-    public class FileLoadHunspellNetCorePerfSpec : FileLoadPerfBase
+    public class FileLoadWeCantSpellHunspellPerfSpec : FileLoadPerfBase
     {
         protected Counter FilePairsLoaded;
 
@@ -15,7 +15,7 @@ namespace WeCantSpell.Hunspell.Performance.Comparison
         }
 
         [PerfBenchmark(
-            Description = "How fast can Hunspell.NetCore load files?",
+            Description = "How fast can this project load files?",
             NumberOfIterations = 2,
             RunMode = RunMode.Throughput,
             TestMode = TestMode.Measurement)]

@@ -140,7 +140,7 @@ namespace WeCantSpell.Hunspell
 #if !NO_IO_FILE
         public static async Task<AffixConfig> ReadFileAsync(string filePath, AffixConfig.Builder builder = null)
         {
-            using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var stream = FileStreamEx.OpenAsyncReadFileStream(filePath))
             {
                 return await ReadAsync(stream, builder).ConfigureAwait(false);
             }
@@ -159,7 +159,7 @@ namespace WeCantSpell.Hunspell
 #if !NO_IO_FILE
         public static AffixConfig ReadFile(string filePath, AffixConfig.Builder builder = null)
         {
-            using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var stream = FileStreamEx.OpenReadFileStream(filePath))
             {
                 return Read(stream, builder);
             }

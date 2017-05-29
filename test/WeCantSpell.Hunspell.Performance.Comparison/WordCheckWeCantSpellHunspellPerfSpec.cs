@@ -22,7 +22,7 @@ namespace WeCantSpell.Hunspell.Performance.Comparison
         }
 
         [PerfBenchmark(
-            Description = "How fast can Hunspell.NetCore check English (US) words?",
+            Description = "How fast can this project check English (US) words?",
             NumberOfIterations = 3,
             RunMode = RunMode.Throughput,
             TestMode = TestMode.Measurement)]

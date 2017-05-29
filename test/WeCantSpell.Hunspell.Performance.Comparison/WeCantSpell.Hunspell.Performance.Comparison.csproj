@@ -63,7 +63,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EnWordPerfBase.cs" />
-    <Compile Include="FileLoadHunspellNetCorePerfSpec.cs" />
+    <Compile Include="FileLoadWeCantSpellHunspellPerfSpec.cs" />
     <Compile Include="FileLoadNHunspellPerfSpec.cs" />
     <Compile Include="FileLoadPerfBase.cs" />
     <Compile Include="WordCheckWeCantSpellHunspellPerfSpec.cs" />

@@ -75,7 +75,7 @@ namespace WeCantSpell.Hunspell
 #if !NO_IO_FILE
         public static List<string> ReadLines(string filePath, Encoding defaultEncoding)
         {
-            using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var stream = FileStreamEx.OpenReadFileStream(filePath))
             using (var reader = new DynamicEncodingLineReader(stream, defaultEncoding))
             {
                 return reader.ReadLines().ToList();
@@ -85,7 +85,7 @@ namespace WeCantSpell.Hunspell
 #if !NO_ASYNC
         public static async Task<List<string>> ReadLinesAsync(string filePath, Encoding defaultEncoding)
         {
-            using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var stream = FileStreamEx.OpenAsyncReadFileStream(filePath))
             using (var reader = new DynamicEncodingLineReader(stream, defaultEncoding))
             {
                 return await reader.ReadLinesAsync().ConfigureAwait(false);

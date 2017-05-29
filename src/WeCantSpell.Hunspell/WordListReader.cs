@@ -82,7 +82,7 @@ namespace WeCantSpell.Hunspell
 #if !NO_IO_FILE
         public static async Task<WordList> ReadFileAsync(string dictionaryFilePath, AffixConfig affix, WordList.Builder builder = null)
         {
-            using (var stream = File.Open(dictionaryFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var stream = FileStreamEx.OpenAsyncReadFileStream(dictionaryFilePath))
             {
                 return await ReadAsync(stream, affix, builder).ConfigureAwait(false);
             }
@@ -156,7 +156,7 @@ namespace WeCantSpell.Hunspell
 #if !NO_IO_FILE
         public static WordList ReadFile(string dictionaryFilePath, AffixConfig affix, WordList.Builder builder = null)
         {
-            using (var stream = File.Open(dictionaryFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var stream = FileStreamEx.OpenReadFileStream(dictionaryFilePath))
             {
                 return Read(stream, affix, builder);
             }
