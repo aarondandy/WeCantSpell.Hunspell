@@ -17,6 +17,8 @@ namespace WeCantSpell.Hunspell
 
         internal static WordEntrySet TakeArray(WordEntry[] entries) => entries == null ? Empty : new WordEntrySet(entries);
 
+        public static WordEntrySet Create(WordEntry entry) => TakeArray(new[] { entry });
+
         public static WordEntrySet Create(IEnumerable<WordEntry> entries) => entries == null ? Empty : TakeArray(entries.ToArray());
 
         public static WordEntrySet CopyWithItemReplaced(WordEntrySet source, int index, WordEntry replacement)

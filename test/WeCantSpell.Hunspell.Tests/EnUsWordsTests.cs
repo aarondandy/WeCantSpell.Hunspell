@@ -69,10 +69,8 @@ namespace WeCantSpell.Hunspell.Tests
             negativeCases.Count.Should().BeLessOrEqualTo(words.Count / 10);
         }
 
-        protected Task<HunspellDictionary> LoadEnUsAsync()
-        {
-            return HunspellDictionary.FromFileAsync("files/English (American).dic");
-        }
+        protected Task<WordList> LoadEnUsAsync() =>
+            WordList.CreateFromFilesAsync("files/English (American).dic");
 
         protected async Task<List<CommonSpellingMistake>> LoadMistakesAsync()
         {

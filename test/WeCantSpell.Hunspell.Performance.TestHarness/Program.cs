@@ -22,12 +22,12 @@ namespace WeCantSpell.Hunspell.Performance.TestHarness
             var filesDirectory = Path.Combine(Path.GetDirectoryName(testAssemblyPath), "files/");
             var dictionaryFilePaths = Directory.GetFiles(filesDirectory, "*.dic").OrderBy(p => p);
 
-            Task.WhenAll(dictionaryFilePaths.Select(HunspellDictionary.FromFileAsync)).Wait();
+            Task.WhenAll(dictionaryFilePaths.Select(WordList.CreateFromFilesAsync)).Wait();
         }
 
         static void Checks()
         {
-            var hunspell = HunspellDictionary.FromFile("files/English (American).dic");
+            var hunspell = WordList.CreateFromFiles("files/English (American).dic");
             var words = ReadWords().ToList();
 
             for (var i = 0; i < 1000; i++)
@@ -41,7 +41,7 @@ namespace WeCantSpell.Hunspell.Performance.TestHarness
 
         static void Suggestions()
         {
-            var hunspell = HunspellDictionary.FromFile("files/English (American).dic");
+            var hunspell = WordList.CreateFromFiles("files/English (American).dic");
             var words = ReadWords()
                 .Take(500)
                 .ToList();

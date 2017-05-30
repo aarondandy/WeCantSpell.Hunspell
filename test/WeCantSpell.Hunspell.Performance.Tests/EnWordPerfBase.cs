@@ -12,7 +12,7 @@ namespace WeCantSpell.Hunspell.Performance.Tests
     {
         protected static readonly char[] WordSplitChars = new[] { ' ', '\t', ',' };
 
-        protected HunspellDictionary Checker;
+        protected WordList Checker;
         protected List<string> Words;
 
         protected EnWordPerfBase()
@@ -29,7 +29,7 @@ namespace WeCantSpell.Hunspell.Performance.Tests
                 {
                     new Func<Task>(async () =>
                     {
-                        Checker = await HunspellDictionary.FromFileAsync(Path.Combine(filesDirectory, "English (American).dic")).ConfigureAwait(false);
+                        Checker = await WordList.CreateFromFilesAsync(Path.Combine(filesDirectory, "English (American).dic")).ConfigureAwait(false);
                     }),
                     new Func<Task>(async () =>
                     {

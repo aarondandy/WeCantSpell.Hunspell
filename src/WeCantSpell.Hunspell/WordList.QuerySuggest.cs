@@ -7,7 +7,7 @@ using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell
 {
-    public partial class HunspellDictionary
+    public partial class WordList
     {
         private sealed class QuerySuggest : Query
         {

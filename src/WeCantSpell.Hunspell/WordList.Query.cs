@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell
 {
-    public partial class HunspellDictionary
+    public partial class WordList
     {
         private abstract class Query
         {

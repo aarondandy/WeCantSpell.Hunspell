@@ -27,9 +27,8 @@ namespace WeCantSpell.Hunspell.Tests
             public void cant_find_words_in_empty_dictioanry(string word)
             {
                 var dictionary = new WordList.Builder().ToImmutable();
-                var hunspell = new HunspellDictionary(dictionary);
 
-                var actual = hunspell.Check(word);
+                var actual = dictionary.Check(word);
 
                 actual.Should().BeFalse();
             }
@@ -53,9 +52,8 @@ namespace WeCantSpell.Hunspell.Tests
                         WordEntryOptions.None) });
 
                 var dictionary = dictionaryBuilder.ToImmutable();
-                var hunspell = new HunspellDictionary(dictionary);
 
-                var actual = hunspell.Check(searchWord);
+                var actual = dictionary.Check(searchWord);
 
                 actual.Should().Be(expected);
             }
@@ -68,9 +66,9 @@ namespace WeCantSpell.Hunspell.Tests
             {
                 // attampt to reproduce https://github.com/hunspell/hunspell/issues/446
                 var largeInput = new string('X', 102);
-                var hunspell = await HunspellDictionary.FromFileAsync(filePath);
+                var dictionary = await WordList.CreateFromFilesAsync(filePath);
 
-                var actual = hunspell.Check(largeInput);
+                var actual = dictionary.Check(largeInput);
 
                 actual.Should().BeFalse();
             }
@@ -85,9 +83,9 @@ namespace WeCantSpell.Hunspell.Tests
             [Theory, MemberData(nameof(can_find_good_words_in_dictionary_args))]
             public async Task can_find_good_words_in_dictionary(string dictionaryFilePath, string word)
             {
-                var hunspell = await HunspellDictionary.FromFileAsync(dictionaryFilePath);
+                var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
 
-                var checkResult = hunspell.Check(word);
+                var checkResult = dictionary.Check(word);
 
                 checkResult.Should().BeTrue();
             }
@@ -102,9 +100,9 @@ namespace WeCantSpell.Hunspell.Tests
             [Theory, MemberData(nameof(cant_find_wrong_words_in_dictionary_args))]
             public async Task cant_find_wrong_words_in_dictionary(string dictionaryFilePath, string word)
             {
-                var hunspell = await HunspellDictionary.FromFileAsync(dictionaryFilePath);
+                var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
 
-                var checkResult = hunspell.Check(word);
+                var checkResult = dictionary.Check(word);
 
                 checkResult.Should().BeFalse();
             }
@@ -132,9 +130,9 @@ namespace WeCantSpell.Hunspell.Tests
             [InlineData("files/ngram_utf_fix.dic", "времячко")]
             public async Task words_without_suggestions_offer_no_suggestions(string dictionaryFilePath, string word)
             {
-                var hunspell = await HunspellDictionary.FromFileAsync(dictionaryFilePath);
+                var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
 
-                var actual = hunspell.Suggest(word);
+                var actual = dictionary.Suggest(word);
 
                 actual.Should().BeEmpty();
             }
@@ -154,9 +152,9 @@ namespace WeCantSpell.Hunspell.Tests
             [InlineData("files/utf8_nonbmp.dic", "𐏑𐏒𐏒", new[] { "𐏑 𐏒𐏒", "𐏒𐏑", "𐏒𐏒" })]
             public async Task words_offer_specific_suggestions(string dictionaryFilePath, string word, string[] expectedSuggestions)
             {
-                var hunspell = await HunspellDictionary.FromFileAsync(dictionaryFilePath);
+                var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
 
-                var actual = hunspell.Suggest(word);
+                var actual = dictionary.Suggest(word);
 
                 actual.Should().NotBeNullOrEmpty();
                 actual.ShouldBeEquivalentTo(expectedSuggestions);
@@ -166,9 +164,9 @@ namespace WeCantSpell.Hunspell.Tests
             [InlineData("files/phone.dic", "Brasillian", new[] { "Brasilia", "Xxxxxxxxxx", "Brilliant", "Brazilian", "Brassily", "Brilliance" })]
             public async Task words_offer_at_least_suggestions_in_any_order(string dictionaryFilePath, string word, string[] expectedSuggestions)
             {
-                var hunspell = await HunspellDictionary.FromFileAsync(dictionaryFilePath);
+                var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
 
-                var actual = hunspell.Suggest(word);
+                var actual = dictionary.Suggest(word);
 
                 actual.Should().NotBeNullOrEmpty();
                 actual.Should().Contain(expectedSuggestions);
@@ -198,9 +196,9 @@ namespace WeCantSpell.Hunspell.Tests
             [Theory, MemberData(nameof(can_find_correct_best_suggestion_args))]
             public async Task can_find_correct_best_suggestion(string dictionaryFilePath, string givenWord, string[] expectedSuggestions)
             {
-                var hunspell = await HunspellDictionary.FromFileAsync(dictionaryFilePath);
+                var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
 
-                var actual = hunspell.Suggest(givenWord);
+                var actual = dictionary.Suggest(givenWord);
 
                 actual.Should().NotBeNullOrEmpty();
                 actual.ShouldBeEquivalentTo(expectedSuggestions);

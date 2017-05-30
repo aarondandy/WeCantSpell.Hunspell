@@ -4,7 +4,7 @@ A .NET port of Hunspell for .NET and .NET Core
 
 **Download and install with NuGet: [Hunspell.NetCore](https://www.nuget.org/packages/Hunspell.NetCore/)**
 
-[![Build status](https://ci.appveyor.com/api/projects/status/23hemic5w0dxadjv?svg=true)](https://ci.appveyor.com/project/aarondandy/hunspell-netcore)
+[![Build status](https://ci.appveyor.com/api/projects/status/shfkt9mgpfhwykqv/branch/master?svg=true)](https://ci.appveyor.com/project/aarondandy/hunspell-netcore)
 [![NuGet version](https://badge.fury.io/nu/Hunspell.NetCore.svg)](https://www.nuget.org/packages/Hunspell.NetCore/)
 
 ## Features
@@ -31,17 +31,14 @@ and as a result is licensed under an MPL, LGPL, and GPL tri-license. Read the [L
 ```csharp
 using Hunspell;
 
-namespace ConsoleApp1
+public class Program
 {
-    public class Program
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
-        {
-            var hunspell = HunspellDictionary.FromFile(@"English (British).dic");
-            bool notOk = hunspell.Check("teh");
-            var suggestions = hunspell.Suggest("teh");
-            bool ok = hunspell.Check("the");
-        }
+        var dictionary = WordList.CreateFromFiles(@"English (British).dic");
+        bool notOk = dictionary.Check("teh");
+        var suggestions = dictionary.Suggest("teh");
+        bool ok = dictionary.Check("the");
     }
 }
 ```
@@ -64,3 +61,30 @@ If you need better performance you should check out [NHunspell](https://www.nuge
 | Words Checked /s    | 🐢 560,298        | 🐇 929,585 |
 
 _Note: Measurements taken on a Intel 6700K with a 850 PRO 256GB._
+
+## Specialized Examples
+
+Construct from a list:
+
+```csharp
+static void Main(string[] args)
+{
+    var words = "The quick brown fox jumps over the lazy dog".Split(' ');
+    var dictionary = WordList.CreateFromWords(words);
+    bool notOk = dictionary.Check("teh");
+}
+```
+
+Construct from streams:
+
+```csharp
+static void Main(string[] args)
+{
+    using(var dictionaryString = File.OpenRead(@"English (British).dic"))
+    using(var affixStream = File.OpenRead(@"English (British).aff"))
+    {
+        var dictionary = WordList.CreateFromStreams(dictionaryString, affixStream);
+        bool notOk = dictionary.Check("teh");
+    }
+}
+```

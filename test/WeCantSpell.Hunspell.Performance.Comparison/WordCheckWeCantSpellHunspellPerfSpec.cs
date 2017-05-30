@@ -7,7 +7,7 @@ namespace WeCantSpell.Hunspell.Performance.Comparison
     {
         private Counter WordsChecked;
 
-        private HunspellDictionary Checker;
+        private WordList Checker;
 
         [PerfSetup]
         public override void Setup(BenchmarkContext context)
@@ -16,7 +16,7 @@ namespace WeCantSpell.Hunspell.Performance.Comparison
 
             var testAssemblyPath = Path.GetFullPath(GetType().Assembly.Location);
             var filesDirectory = Path.Combine(Path.GetDirectoryName(testAssemblyPath), "files/");
-            Checker = HunspellDictionary.FromFileAsync(Path.Combine(filesDirectory, "English (American).dic")).Result;
+            Checker = WordList.CreateFromFilesAsync(Path.Combine(filesDirectory, "English (American).dic")).GetAwaiter().GetResult();
 
             WordsChecked = context.GetCounter(nameof(WordsChecked));
         }

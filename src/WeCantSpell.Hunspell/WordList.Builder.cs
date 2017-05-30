@@ -103,7 +103,7 @@ namespace WeCantSpell.Hunspell
             {
                 EntriesByRoot = expectedSize < 0
                     ? new Dictionary<string, WordEntrySet>()
-                    // PERF: because we add more entries than we are told about, we add 10% to the expected size
+                    // PERF: because we add more entries than we are told about, we add a bit more to the expected size
                     : new Dictionary<string, WordEntrySet>((expectedSize / 100) + expectedSize);
             }
 

@@ -6,7 +6,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 {
     internal static class StringBuilderPool
     {
-        private const int MaxCachedBuilderCapacity = HunspellDictionary.MaxWordLen;
+        private const int MaxCachedBuilderCapacity = WordList.MaxWordLen;
 
         [ThreadStatic]
         private static StringBuilder PrimaryCache;
