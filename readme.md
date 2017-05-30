@@ -29,7 +29,7 @@ and as a result is licensed under an MPL, LGPL, and GPL tri-license. Read the [L
 ## Quick Start Example
 
 ```csharp
-using Hunspell;
+using WeCantSpell.Hunspell;
 
 public class Program
 {
@@ -85,6 +85,27 @@ static void Main(string[] args)
     {
         var dictionary = WordList.CreateFromStreams(dictionaryString, affixStream);
         bool notOk = dictionary.Check("teh");
+    }
+}
+```
+
+## Encoding Issues
+
+The .NET Framework contains many encodings that can be handy when opening some dictionary or affix files that do not use a UTF8 encoding or were incorrectly given a UTF BOM. On a full framework platform this works out great but when using .NET Core or .NET Standard those encodings may be missing. If you suspect that there is an issue when loading dictionary and affix files you can check the `dictionary.Affix.Warnings` collection to see if there was a failure when parsing the encoding specified in the file, such as `"Failed to get encoding: ISO-8859-15"` or `"Failed to parse line: SET ISO-8859-15"`. To enable these encodings, reference the `System.Text.Encoding.CodePages` package and then use `Encoding.RegisterProvider(CodePagesEncodingProvider.Instance)` to register them before loading files.
+
+```csharp
+using System.Text;
+using WeCantSpell.Hunspell;
+
+class Program
+{
+    static Program() => Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
+    static void Main(string[] args)
+    {
+        var dictionary = WordList.CreateFromFiles(@"encoding.dic");
+        bool notOk = dictionary.Check("teh");
+        var warnings = dictionary.Affix.Warnings;
     }
 }
 ```
