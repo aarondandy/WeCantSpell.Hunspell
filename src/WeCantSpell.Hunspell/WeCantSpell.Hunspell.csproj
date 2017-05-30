@@ -9,7 +9,7 @@
     <AssemblyName>WeCantSpell.Hunspell</AssemblyName>
     <PackageId>WeCantSpell.Hunspell</PackageId>
     <PackageId>WeCantSpell.Hunspell</PackageId>
-    <PackageTags>spell;check;spell-check;hunspell;we-cant-spell</PackageTags>
+    <PackageTags>spell;check;spell-check;spelling;hunspell;we-cant-spell</PackageTags>
     <PackageProjectUrl>https://github.com/aarondandy/WeCantSpell.Hunspell/</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/aarondandy/WeCantSpell.Hunspell/blob/master/license.txt</PackageLicenseUrl>
     <RepositoryType>git</RepositoryType>
