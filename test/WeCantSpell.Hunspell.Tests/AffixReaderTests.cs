@@ -1715,7 +1715,7 @@ namespace WeCantSpell.Hunspell.Tests
                 }
                 expectedCulture = expectedCulture.Replace('_', '-');
 
-                var actual = await AffixReader.ReadAsync(new Utf16StringLineReader(textFileContents));
+                var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
 
                 actual.Language.Should().Be(langCode);
                 actual.Culture.Should().NotBeNull();
@@ -1741,7 +1741,7 @@ namespace WeCantSpell.Hunspell.Tests
             {
                 var textFileContents = "SYLLABLENUM " + parameters;
 
-                var actual = await AffixReader.ReadAsync(new Utf16StringLineReader(textFileContents));
+                var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
 
                 actual.CompoundSyllableNum.Should().Be(parameters);
             }
@@ -1754,7 +1754,7 @@ namespace WeCantSpell.Hunspell.Tests
             {
                 var textFileContents = "COMPOUNDWORDMAX " + parameters;
 
-                var actual = await AffixReader.ReadAsync(new Utf16StringLineReader(textFileContents));
+                var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
 
                 actual.CompoundWordMax.Should().Be(expected);
             }
@@ -1769,7 +1769,7 @@ namespace WeCantSpell.Hunspell.Tests
             {
                 var textFileContents = "COMPOUNDMIN " + parameters;
 
-                var actual = await AffixReader.ReadAsync(new Utf16StringLineReader(textFileContents));
+                var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
 
                 actual.CompoundMin.Should().Be(expected);
             }
@@ -1788,7 +1788,7 @@ namespace WeCantSpell.Hunspell.Tests
                 }
                 textFileContents += "COMPOUNDROOT " + parameters;
 
-                var actual = await AffixReader.ReadAsync(new Utf16StringLineReader(textFileContents));
+                var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
 
                 actual.CompoundRoot.Should().Be(expected);
             }
@@ -1804,7 +1804,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var expectedLetters = expectedLettersText.ToCharArray();
                 Array.Sort(expectedLetters);
 
-                var actual = await AffixReader.ReadAsync(new Utf16StringLineReader(textFileContents));
+                var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
 
                 actual.CompoundMaxSyllable.Should().Be(expectedNumber);
                 actual.CompoundVowels.ShouldBeEquivalentTo(expectedLetters);
@@ -1817,7 +1817,7 @@ namespace WeCantSpell.Hunspell.Tests
             {
                 var textFileContents = "NOSUGGEST " + parameters;
 
-                var actual = await AffixReader.ReadAsync(new Utf16StringLineReader(textFileContents));
+                var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
 
                 actual.NoSuggest.Should().Be(expectedFlag);
             }
@@ -1829,7 +1829,7 @@ namespace WeCantSpell.Hunspell.Tests
             {
                 var textFileContents = "NONGRAMSUGGEST " + parameters;
 
-                var actual = await AffixReader.ReadAsync(new Utf16StringLineReader(textFileContents));
+                var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
 
                 actual.NoNgramSuggest.Should().Be(expectedFlag);
             }
@@ -1841,7 +1841,7 @@ namespace WeCantSpell.Hunspell.Tests
             {
                 var textFileContents = "LEMMA_PRESENT " + parameters;
 
-                var actual = await AffixReader.ReadAsync(new Utf16StringLineReader(textFileContents));
+                var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
 
                 actual.LemmaPresent.Should().Be(expectedFlag);
             }
@@ -1853,7 +1853,7 @@ namespace WeCantSpell.Hunspell.Tests
             {
                 var textFileContents = "VERSION " + parameters;
 
-                var actual = await AffixReader.ReadAsync(new Utf16StringLineReader(textFileContents));
+                var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
 
                 actual.Version.Should().Be(expected);
             }
@@ -1866,7 +1866,7 @@ namespace WeCantSpell.Hunspell.Tests
             {
                 var textFileContents = "MAXDIFF " + parameters;
 
-                var actual = await AffixReader.ReadAsync(new Utf16StringLineReader(textFileContents));
+                var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
 
                 actual.MaxDifferency.Should().Be(expected);
             }
@@ -1879,7 +1879,7 @@ namespace WeCantSpell.Hunspell.Tests
             {
                 var textFileContents = "MAXCPDSUGS " + parameters;
 
-                var actual = await AffixReader.ReadAsync(new Utf16StringLineReader(textFileContents));
+                var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
 
                 actual.MaxCompoundSuggestions.Should().Be(expected);
             }
@@ -1891,7 +1891,7 @@ namespace WeCantSpell.Hunspell.Tests
             {
                 var textFileContents = "SUBSTANDARD " + parameters;
 
-                var actual = await AffixReader.ReadAsync(new Utf16StringLineReader(textFileContents));
+                var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
 
                 actual.SubStandard.Should().Be(expectedFlag);
             }
@@ -1901,7 +1901,7 @@ namespace WeCantSpell.Hunspell.Tests
             {
                 var textFileContents = "COMPOUNDMORESUFFIXES";
 
-                var actual = await AffixReader.ReadAsync(new Utf16StringLineReader(textFileContents));
+                var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
 
                 actual.CompoundMoreSuffixes.Should().BeTrue();
             }
@@ -1911,7 +1911,7 @@ namespace WeCantSpell.Hunspell.Tests
             {
                 var textFileContents = "CHECKNUM";
 
-                var actual = await AffixReader.ReadAsync(new Utf16StringLineReader(textFileContents));
+                var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
 
                 actual.CheckNum.Should().BeTrue();
             }
@@ -1921,7 +1921,7 @@ namespace WeCantSpell.Hunspell.Tests
             {
                 var textFileContents = "ONLYMAXDIFF";
 
-                var actual = await AffixReader.ReadAsync(new Utf16StringLineReader(textFileContents));
+                var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
 
                 actual.OnlyMaxDiff.Should().BeTrue();
             }
@@ -1931,7 +1931,7 @@ namespace WeCantSpell.Hunspell.Tests
             {
                 var textFileContents = "SUGSWITHDOTS";
 
-                var actual = await AffixReader.ReadAsync(new Utf16StringLineReader(textFileContents));
+                var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
 
                 actual.SuggestWithDots.Should().BeTrue();
             }
@@ -1941,7 +1941,7 @@ namespace WeCantSpell.Hunspell.Tests
             {
                 var textFileContents = "FORBIDWARN";
 
-                var actual = await AffixReader.ReadAsync(new Utf16StringLineReader(textFileContents));
+                var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
 
                 actual.ForbidWarn.Should().BeTrue();
             }
@@ -1951,7 +1951,7 @@ namespace WeCantSpell.Hunspell.Tests
             {
                 var textFileContents = "UNKNOWN arguments";
 
-                var actual = await AffixReader.ReadAsync(new Utf16StringLineReader(textFileContents));
+                var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
 
                 actual.Should().NotBeNull();
             }
@@ -1985,7 +1985,7 @@ namespace WeCantSpell.Hunspell.Tests
                         break;
                 }
 
-                var actual = await AffixReader.ReadAsync(new Utf16StringLineReader(textFileContents));
+                var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
 
                 actual.Replacements.Should().HaveCount(1);
                 var rep = actual.Replacements.Single();
