@@ -1,11 +1,11 @@
 # WeCantSpell: Hunspell
 
-A .NET port of Hunspell for .NET and .NET Core
+A .NET port of Hunspell for .NET, .NET Standard, and .NET Core
 
-**Download and install with NuGet: [Hunspell.NetCore](https://www.nuget.org/packages/Hunspell.NetCore/)**
+**Download and install with NuGet: [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/)**
 
-[![Build status](https://ci.appveyor.com/api/projects/status/shfkt9mgpfhwykqv/branch/master?svg=true)](https://ci.appveyor.com/project/aarondandy/hunspell-netcore)
-[![NuGet version](https://badge.fury.io/nu/Hunspell.NetCore.svg)](https://www.nuget.org/packages/Hunspell.NetCore/)
+[![Build status](https://ci.appveyor.com/api/projects/status/shfkt9mgpfhwykqv/branch/master?svg=true)](https://ci.appveyor.com/project/aarondandy/wecantspell-hunspell)
+[![NuGet version](https://badge.fury.io/nu/WeCantSpell.Hunspell.svg)](https://www.nuget.org/packages/WeCantSpell.Hunspell/)
 
 ## Features
 
@@ -55,7 +55,7 @@ The performance of this port while not fantastic relative to the original
 binaries and NHunspell is definitely acceptable.
 If you need better performance you should check out [NHunspell](https://www.nuget.org/packages/NHunspell/).
 
-| [Benchmark](./test/Hunspell.NetCore.Performance.Comparison/) | [Hunspell.NetCore](https://www.nuget.org/packages/Hunspell.NetCore/) | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
+| [Benchmark](./test/WeCantSpell.Hunspell.Performance.Comparison/) | [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/) | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
 |---------------------|-------------------|------------|
 | Dictionary Loads /s | 🐢 1.82           | 🐇 13.54   |
 | Words Checked /s    | 🐢 560,298        | 🐇 929,585 |

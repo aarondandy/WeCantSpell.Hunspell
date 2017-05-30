@@ -8,6 +8,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyName>WeCantSpell.Hunspell</AssemblyName>
     <PackageId>WeCantSpell.Hunspell</PackageId>
+    <PackageId>WeCantSpell.Hunspell</PackageId>
     <PackageTags>spell;check;spell-check;hunspell;we-cant-spell</PackageTags>
     <PackageProjectUrl>https://github.com/aarondandy/WeCantSpell.Hunspell/</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/aarondandy/WeCantSpell.Hunspell/blob/master/license.txt</PackageLicenseUrl>
@@ -22,6 +23,7 @@
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
     <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+    <Authors>aarondandy</Authors>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net35' ">
