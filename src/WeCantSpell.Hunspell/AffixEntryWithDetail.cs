@@ -28,12 +28,12 @@ namespace WeCantSpell.Hunspell
 
         public CharacterConditionGroup Conditions => AffixEntry.Conditions;
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public bool ContainsContClass(FlagValue value) => AffixEntry.ContainsContClass(value);
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public bool ContainsAnyContClass(FlagValue a, FlagValue b) => AffixEntry.ContainsAnyContClass(a, b);

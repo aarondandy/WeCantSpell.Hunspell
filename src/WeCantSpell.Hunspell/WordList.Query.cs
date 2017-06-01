@@ -66,7 +66,7 @@ namespace WeCantSpell.Hunspell
             /// </summary>
             private string SuffixAppend { get; set; }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             private void ClearPrefix()
@@ -74,7 +74,7 @@ namespace WeCantSpell.Hunspell
                 Prefix = null;
             }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             private void ClearSuffix()
@@ -82,7 +82,7 @@ namespace WeCantSpell.Hunspell
                 Suffix = null;
             }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             private void ClearSuffixAndFlag()
@@ -91,7 +91,7 @@ namespace WeCantSpell.Hunspell
                 SuffixFlag = default(FlagValue);
             }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             private void ClearSuffixAppendAndExtra()
@@ -100,7 +100,7 @@ namespace WeCantSpell.Hunspell
                 SuffixExtra = false;
             }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             private void ClearAllAppendAndExtra()
@@ -110,7 +110,7 @@ namespace WeCantSpell.Hunspell
                 SuffixExtra = false;
             }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             private void SetPrefix(AffixEntryWithDetail<PrefixEntry> entry)
@@ -118,7 +118,7 @@ namespace WeCantSpell.Hunspell
                 Prefix = entry;
             }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             private void SetSuffix(AffixEntryWithDetail<SuffixEntry> entry)
@@ -126,7 +126,7 @@ namespace WeCantSpell.Hunspell
                 Suffix = entry;
             }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             private void SetSuffixFlag(FlagValue flag)
@@ -134,7 +134,7 @@ namespace WeCantSpell.Hunspell
                 SuffixFlag = flag;
             }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             private void SetSuffixExtra(bool extra)
@@ -142,7 +142,7 @@ namespace WeCantSpell.Hunspell
                 SuffixExtra = extra;
             }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             private void SetSuffixAppend(string append)
@@ -180,7 +180,7 @@ namespace WeCantSpell.Hunspell
             /// <summary>
             /// Convert to all little.
             /// </summary>
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             protected string MakeAllSmall(string s) => Affix.Culture.TextInfo.ToLower(s);
@@ -197,7 +197,7 @@ namespace WeCantSpell.Hunspell
                 return StringBuilderPool.GetStringAndReturn(builder);
             }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             protected string MakeAllCap(string s) => Affix.Culture.TextInfo.ToUpper(s);
@@ -1523,12 +1523,12 @@ namespace WeCantSpell.Hunspell
                 return null;
             }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             protected bool TestCondition(PrefixEntry entry, string word) => entry.Conditions.IsStartingMatch(word);
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             protected bool TestCondition(SuffixEntry entry, string word) => entry.Conditions.IsEndingMatch(word);

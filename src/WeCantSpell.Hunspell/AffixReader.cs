@@ -199,12 +199,12 @@ namespace WeCantSpell.Hunspell
             return false;
         }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private bool IsInitialized(EntryListType flags) => EnumEx.HasFlag(Initialized, flags);
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private void SetInitialized(EntryListType flags)

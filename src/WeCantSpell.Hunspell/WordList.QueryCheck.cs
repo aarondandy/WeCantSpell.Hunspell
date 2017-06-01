@@ -381,7 +381,7 @@ namespace WeCantSpell.Hunspell
                 return null;
             }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             private bool IsKeepCase(WordEntry rv) => rv.ContainsFlag(Affix.KeepCase);

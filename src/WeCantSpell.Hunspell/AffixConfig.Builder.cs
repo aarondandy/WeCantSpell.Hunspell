@@ -459,7 +459,7 @@ namespace WeCantSpell.Hunspell
             /// Enables the given <paramref name="options"/> bits.
             /// </summary>
             /// <param name="options">Various bit options to enable.</param>
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             public void EnableOptions(AffixConfigOptions options)
@@ -467,7 +467,7 @@ namespace WeCantSpell.Hunspell
                 Options |= options;
             }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             private static T Steal<T>(ref T item) where T : class

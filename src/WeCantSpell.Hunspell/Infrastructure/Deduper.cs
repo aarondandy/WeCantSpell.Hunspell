@@ -13,8 +13,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public T GetEqualOrAdd(T item)
         {
-            T existing;
-            if (lookup.TryGetValue(item, out existing))
+            if (lookup.TryGetValue(item, out T existing))
             {
                 return existing;
             }
@@ -27,8 +26,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public void Add(T item)
         {
-            T existing;
-            if (!lookup.TryGetValue(item, out existing))
+            if (!lookup.ContainsKey(item))
             {
                 lookup[item] = item;
             }

@@ -7,15 +7,8 @@ namespace WeCantSpell.Hunspell.Infrastructure
     {
         public static readonly ListComparer<T> Default = new ListComparer<T>(EqualityComparer<T>.Default);
 
-        public ListComparer(IEqualityComparer<T> valueComparer)
-        {
-            if (valueComparer == null)
-            {
-                throw new ArgumentNullException(nameof(valueComparer));
-            }
-
-            ValueComparer = valueComparer;
-        }
+        public ListComparer(IEqualityComparer<T> valueComparer) =>
+            ValueComparer = valueComparer ?? throw new ArgumentNullException(nameof(valueComparer));
 
         public IEqualityComparer<T> ValueComparer { get; }
 

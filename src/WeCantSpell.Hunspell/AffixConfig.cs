@@ -32,7 +32,7 @@ namespace WeCantSpell.Hunspell
         /// </summary>
         public AffixConfigOptions Options
         {
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             get

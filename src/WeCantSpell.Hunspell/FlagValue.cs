@@ -28,7 +28,7 @@ namespace WeCantSpell.Hunspell
 
         public bool HasValue
         {
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             get
@@ -39,7 +39,7 @@ namespace WeCantSpell.Hunspell
 
         public bool IsZero
         {
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             get
@@ -50,17 +50,17 @@ namespace WeCantSpell.Hunspell
 
         public static FlagValue Create(char high, char low) => new FlagValue(unchecked((char)((high << 8) | low)));
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public bool Equals(FlagValue other) => other.value == value;
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public bool Equals(int other) => other == value;
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public bool Equals(char other) => other == value;
@@ -396,42 +396,42 @@ namespace WeCantSpell.Hunspell
             return flags;
         }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static implicit operator int(FlagValue flag) => flag.value;
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static implicit operator char(FlagValue flag) => flag.value;
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool operator !=(FlagValue a, FlagValue b) => a.value != b.value;
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool operator ==(FlagValue a, FlagValue b) => a.value == b.value;
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool operator >=(FlagValue a, FlagValue b) => a.value >= b.value;
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool operator <=(FlagValue a, FlagValue b) => a.value <= b.value;
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool operator >(FlagValue a, FlagValue b) => a.value > b.value;
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool operator <(FlagValue a, FlagValue b) => a.value < b.value;

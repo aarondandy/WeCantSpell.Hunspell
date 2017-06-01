@@ -522,7 +522,7 @@ namespace WeCantSpell.Hunspell
                 return -1;
             }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             private static bool IsDelimiter(char c)
@@ -530,7 +530,7 @@ namespace WeCantSpell.Hunspell
                 return c == ' ' || c == '\t';
             }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             private static bool IsNotDelimiter(char c)

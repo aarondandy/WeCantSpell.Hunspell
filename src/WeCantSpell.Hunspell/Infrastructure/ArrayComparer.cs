@@ -5,18 +5,10 @@ namespace WeCantSpell.Hunspell.Infrastructure
 {
     internal sealed class ArrayComparer<T> : IEqualityComparer<T[]>
     {
-
         public static readonly ArrayComparer<T> Default = new ArrayComparer<T>(EqualityComparer<T>.Default);
 
-        public ArrayComparer(IEqualityComparer<T> valueComparer)
-        {
-            if (valueComparer == null)
-            {
-                throw new ArgumentNullException(nameof(valueComparer));
-            }
-
-            ValueComparer = valueComparer;
-        }
+        public ArrayComparer(IEqualityComparer<T> valueComparer) =>
+            ValueComparer = valueComparer ?? throw new ArgumentNullException(nameof(valueComparer));
 
         public IEqualityComparer<T> ValueComparer { get; }
 

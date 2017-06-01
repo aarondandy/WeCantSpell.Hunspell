@@ -4,7 +4,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 {
     internal static class Swapper
     {
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static void Swap<T>(ref T a, ref T b)

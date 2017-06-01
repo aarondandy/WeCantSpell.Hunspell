@@ -13,7 +13,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         }
 #endif
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static void Swap(this StringBuilder @this, int indexA, int indexB)
@@ -82,7 +82,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return -1;
         }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static char GetCharOrTerminator(this StringBuilder @this, int index) =>

@@ -20,8 +20,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public string GetEqualOrAdd(string item)
         {
-            string existing;
-            if (lookup.TryGetValue(item, out existing))
+            if (lookup.TryGetValue(item, out string existing))
             {
                 return existing;
             }
@@ -34,8 +33,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public void Add(string item)
         {
-            string existing;
-            if (!lookup.TryGetValue(item, out existing))
+            if (!lookup.ContainsKey(item))
             {
                 lookup[item] = item;
             }

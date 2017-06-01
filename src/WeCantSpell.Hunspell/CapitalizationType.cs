@@ -106,7 +106,7 @@ namespace WeCantSpell.Hunspell
             }
         }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static bool CharIsNeutral(char c, AffixConfig affix) =>

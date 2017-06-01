@@ -8,22 +8,22 @@ namespace WeCantSpell.Hunspell.Infrastructure
     {
         private static readonly char[] SpaceOrTab = new[] { ' ', '\t' };
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool StartsWith(this string @this, char character) => @this.Length != 0 && @this[0] == character;
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool EndsWith(this string @this, char character) => @this.Length != 0 && @this[@this.Length - 1] == character;
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static string[] SplitOnTabOrSpace(this string @this) => @this.Split(SpaceOrTab, StringSplitOptions.RemoveEmptyEntries);
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool IsNullOrWhiteSpace(string value)
@@ -121,7 +121,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool Contains(this string @this, char c) => @this.IndexOf(c) >= 0;
@@ -156,7 +156,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return string.CompareOrdinal(a, aOffset, b, bOffset, aRemaining) == 0;
         }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool EqualsOffset(string a, int aOffset, string b, int bOffset, int length) =>
@@ -170,7 +170,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             ||
             string.CompareOrdinal(a, aOffset, b, bOffset, length) == 0;
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static char GetCharOrTerminator(this string @this, int index) => index < @this.Length ? @this[index] : '\0';
@@ -357,36 +357,32 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return lastIndex - searchIndex;
         }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool MyIsAlpha(char ch) => ch < 128 || char.IsLetter(ch);
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        internal static StringSlice Subslice(this string text, int offset, int length)
-        {
-            return new StringSlice
+        internal static StringSlice Subslice(this string text, int offset, int length) =>
+            new StringSlice
             {
                 Text = text,
                 Offset = offset,
                 Length = length
             };
-        }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        internal static StringSlice Subslice(this string text, int offset)
-        {
-            return new StringSlice
+        internal static StringSlice Subslice(this string text, int offset) =>
+            new StringSlice
             {
                 Text = text,
                 Offset = offset,
                 Length = text.Length - offset
             };
-        }
 
         internal static bool Contains(this List<string> values, StringSlice test)
         {

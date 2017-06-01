@@ -51,7 +51,7 @@ namespace WeCantSpell.Hunspell
             return items.Length != 0 ? items[0] : null;
         }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         internal void DestructiveReplace(int index, WordEntry entry)

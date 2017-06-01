@@ -2044,7 +2044,7 @@ namespace WeCantSpell.Hunspell
                     : string.Empty;
             }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             private bool CopyField(ref string dest, MorphSet morphs, string var) => CopyField(ref dest, morphs.Join(" "), var);
@@ -2080,7 +2080,7 @@ namespace WeCantSpell.Hunspell
                 return true;
             }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             private string MyStrDup(string s) => s;
@@ -2110,7 +2110,7 @@ namespace WeCantSpell.Hunspell
                 return index;
             }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.NoInlining)]
 #endif
             private static int LeftCommonSubstringComplex(string s1, string s2) =>
@@ -2539,7 +2539,7 @@ namespace WeCantSpell.Hunspell
                 }
             }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             private static void InsertSuggestion(List<string> slst, string word) => slst.Insert(0, word);
@@ -2578,7 +2578,7 @@ namespace WeCantSpell.Hunspell
 
                 public int Score;
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
                 public void ClearGuessAndOrig()

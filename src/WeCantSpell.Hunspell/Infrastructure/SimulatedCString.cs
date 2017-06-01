@@ -4,10 +4,8 @@ namespace WeCantSpell.Hunspell.Infrastructure
 {
     internal sealed class SimulatedCString
     {
-        public SimulatedCString(string text)
-        {
+        public SimulatedCString(string text) =>
             Buffer = StringBuilderPool.Get(text);
-        }
 
         private StringBuilder Buffer;
 
@@ -15,10 +13,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public char this[int index]
         {
-            get
-            {
-                return index < 0 || index >= Buffer.Length ? '\0' : Buffer[index];
-            }
+            get => index < 0 || index >= Buffer.Length ? '\0' : Buffer[index];
             set
             {
                 toStringCache = null;
@@ -62,14 +57,10 @@ namespace WeCantSpell.Hunspell.Infrastructure
             Buffer = null;
         }
 
-        public override string ToString()
-        {
-            return toStringCache ?? (toStringCache = Buffer.ToStringTerminated());
-        }
+        public override string ToString() =>
+            toStringCache ?? (toStringCache = Buffer.ToStringTerminated());
 
-        public static implicit operator string(SimulatedCString cString)
-        {
-            return cString?.ToString();
-        }
+        public static implicit operator string(SimulatedCString cString) =>
+            cString?.ToString();
     }
 }

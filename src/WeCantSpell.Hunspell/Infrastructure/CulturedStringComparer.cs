@@ -10,12 +10,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
     {
         public CulturedStringComparer(CultureInfo culture)
         {
-            if (culture == null)
-            {
-                throw new ArgumentNullException(nameof(culture));
-            }
-
-            Culture = culture;
+            Culture = culture ?? throw new ArgumentNullException(nameof(culture));
             CompareInfo = culture.CompareInfo;
         }
 

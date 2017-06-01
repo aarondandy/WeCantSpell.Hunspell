@@ -4,7 +4,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 {
     internal static class BoolEx
     {
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool PostfixIncrement(ref bool b)

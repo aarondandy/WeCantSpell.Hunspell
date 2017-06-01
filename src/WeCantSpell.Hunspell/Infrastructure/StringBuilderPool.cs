@@ -17,7 +17,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         [ThreadStatic]
         private static StringBuilder TertiaryCache;
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static StringBuilder Get() => GetClearedBuilder();
@@ -28,13 +28,13 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static StringBuilder Get(string value, int capacity) =>
             GetClearedBuilderWithCapacity(capacity).Append(value);
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static StringBuilder Get(int capacity) =>
             GetClearedBuilderWithCapacity(capacity);
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static StringBuilder Get(string value, int valueStartIndex, int valueLength) =>
@@ -46,7 +46,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         internal static StringBuilder Get(StringSlice value) =>
             Get(value.Text, value.Offset, value.Length, value.Length);
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static void Return(StringBuilder builder)
@@ -68,7 +68,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             }
         }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static string GetStringAndReturn(StringBuilder builder)

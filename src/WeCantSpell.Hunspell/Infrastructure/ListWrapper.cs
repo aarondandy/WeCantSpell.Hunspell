@@ -16,43 +16,32 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         protected ListWrapper(List<T> items)
         {
-            if (items == null)
-            {
-                throw new ArgumentNullException(nameof(items));
-            }
-
-            this.items = items;
+            this.items = items ?? throw new ArgumentNullException(nameof(items));
             HasItems = items.Count != 0;
             IsEmpty = !HasItems;
         }
 
         public T this[int index]
         {
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            get
-            {
-                return items[index];
-            }
+            get => items[index];
         }
 
         public int Count
         {
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            get
-            {
-                return items.Count;
-            }
+            get => items.Count;
         }
 
         public bool HasItems { get; }
 
         public bool IsEmpty { get; }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public Enumerator GetEnumerator() => new Enumerator(items);
@@ -64,9 +53,10 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public struct Enumerator
         {
             private readonly List<T> values;
+
             private int index;
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             public Enumerator(List<T> values)
@@ -77,16 +67,13 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
             public T Current
             {
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-                get
-                {
-                    return values[index];
-                }
+                get => values[index];
             }
 
-#if !NO_METHODIMPL && !DEBUG
+#if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             public bool MoveNext() => ++index < values.Count;
@@ -96,15 +83,11 @@ namespace WeCantSpell.Hunspell.Infrastructure
         {
             public static readonly Comparer Default = new Comparer();
 
-            public Comparer()
-            {
+            public Comparer() =>
                 ListComparer = ListComparer<T>.Default;
-            }
 
-            public Comparer(IEqualityComparer<T> valueComparer)
-            {
+            public Comparer(IEqualityComparer<T> valueComparer) =>
                 ListComparer = new ListComparer<T>(valueComparer);
-            }
 
             private ListComparer<T> ListComparer { get; }
 
@@ -122,10 +105,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return ListComparer.Equals(x.items, y.items);
             }
 
-            public int GetHashCode(ListWrapper<T> obj)
-            {
-                return ListComparer.GetHashCode(obj.items);
-            }
+            public int GetHashCode(ListWrapper<T> obj) => ListComparer.GetHashCode(obj.items);
         }
     }
 }

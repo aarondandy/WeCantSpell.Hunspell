@@ -22,16 +22,12 @@ namespace WeCantSpell.Hunspell.Infrastructure
         };
 
         public string Text;
+
         public int Offset;
+
         public int Length;
 
-        public bool IsNullOrEmpty
-        {
-            get
-            {
-                return Text == null || Length == 0;
-            }
-        }
+        public bool IsNullOrEmpty => Text == null || Length == 0;
 
         public static StringSlice Create(string text)
         {
@@ -52,15 +48,10 @@ namespace WeCantSpell.Hunspell.Infrastructure
             };
         }
 
-        public override string ToString()
-        {
-            if (Text == null)
-            {
-                return null;
-            }
-
-            return Length == 0 ? string.Empty : Text.Substring(Offset, Length);
-        }
+        public override string ToString() =>
+            Text == null
+                ? null
+                : Length == 0 ? string.Empty : Text.Substring(Offset, Length);
 
         public StringSlice[] SplitOnComma()
         {
@@ -166,9 +157,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             {
                 return Equals((StringSlice)obj);
             }
-
-            var stringValue = obj as string;
-            if (stringValue != null)
+            if (obj is string stringValue)
             {
                 return Equals(stringValue);
             }
@@ -180,26 +169,20 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public char[] ToCharArray() => Text.ToCharArray(Offset, Length);
 
-        public StringSlice Subslice(int startIndex)
-        {
-            var localStartOffset = Offset + startIndex;
-
-            return new StringSlice
+        public StringSlice Subslice(int startIndex) =>
+            new StringSlice
             {
                 Text = Text,
                 Offset = Offset + startIndex,
                 Length = Length - startIndex
             };
-        }
 
-        public StringSlice Subslice(int startIndex, int length)
-        {
-            return new StringSlice
+        public StringSlice Subslice(int startIndex, int length) =>
+            new StringSlice
             {
                 Text = Text,
                 Offset = Offset + startIndex,
                 Length = length
             };
-        }
     }
 }
