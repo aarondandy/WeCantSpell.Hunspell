@@ -80,13 +80,13 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         private static StringBuilder GetClearedBuilder()
         {
-            var result = Steal(ref PrimaryCache);
+            var result = ReferenceHelpers.Steal(ref PrimaryCache);
             if (result == null)
             {
-                result = Steal(ref SecondaryCache);
+                result = ReferenceHelpers.Steal(ref SecondaryCache);
                 if (result == null)
                 {
-                    result = Steal(ref TertiaryCache);
+                    result = ReferenceHelpers.Steal(ref TertiaryCache);
                     if (result == null)
                     {
                         return new StringBuilder();
@@ -104,38 +104,31 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return new StringBuilder(capacity);
             }
 
-            var result = PrimaryCache;
-            if (result == null || result.Capacity < capacity)
+            var result = StealForCapacity(ref PrimaryCache, capacity);
+            if (result == null)
             {
-                result = SecondaryCache;
-                if (result == null || result.Capacity < capacity)
+                result = StealForCapacity(ref SecondaryCache, capacity);
+                if (result == null)
                 {
-                    result = TertiaryCache;
-                    if (result == null || result.Capacity < capacity)
+                    result = StealForCapacity(ref TertiaryCache, capacity);
+                    if (result == null)
                     {
                         return new StringBuilder(capacity);
                     }
-                    else
-                    {
-                        TertiaryCache = null;
-                    }
                 }
-                else
-                {
-                    SecondaryCache = null;
-                }
-            }
-            else
-            {
-                PrimaryCache = null;
             }
 
             return result.Clear();
         }
 
-        private static StringBuilder Steal(ref StringBuilder source)
+        private static StringBuilder StealForCapacity(ref StringBuilder source, int minimumCapacity)
         {
             var taken = source;
+            if (taken == null || source.Capacity < minimumCapacity)
+            {
+                return null;
+            }
+
             source = null;
             return taken;
         }

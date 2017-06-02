@@ -14,6 +14,7 @@ namespace WeCantSpell.Hunspell
         internal static WarningList TakeList(List<string> warnings) =>
             new WarningList(warnings ?? new List<string>(0));
 
-        public static WarningList Create(IEnumerable<string> warnings) => warnings == null ? TakeList(null) : TakeList(warnings.ToList());
+        public static WarningList Create(IEnumerable<string> warnings) =>
+            warnings == null ? TakeList(null) : TakeList(warnings.ToList());
     }
 }

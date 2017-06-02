@@ -1,4 +1,6 @@
-﻿using System.Runtime.CompilerServices;
+﻿#if !NO_INLINE
+using System.Runtime.CompilerServices;
+#endif
 
 namespace WeCantSpell.Hunspell
 {

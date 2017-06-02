@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using WeCantSpell.Hunspell.Infrastructure;
+
+#if !NO_INLINE
+using System.Runtime.CompilerServices;
+#endif
 
 namespace WeCantSpell.Hunspell
 {
@@ -15,11 +18,13 @@ namespace WeCantSpell.Hunspell
         {
         }
 
-        internal static WordEntrySet TakeArray(WordEntry[] entries) => entries == null ? Empty : new WordEntrySet(entries);
+        internal static WordEntrySet TakeArray(WordEntry[] entries) =>
+            entries == null ? Empty : new WordEntrySet(entries);
 
         public static WordEntrySet Create(WordEntry entry) => TakeArray(new[] { entry });
 
-        public static WordEntrySet Create(IEnumerable<WordEntry> entries) => entries == null ? Empty : TakeArray(entries.ToArray());
+        public static WordEntrySet Create(IEnumerable<WordEntry> entries) =>
+            entries == null ? Empty : TakeArray(entries.ToArray());
 
         public static WordEntrySet CopyWithItemReplaced(WordEntrySet source, int index, WordEntry replacement)
         {
@@ -46,17 +51,13 @@ namespace WeCantSpell.Hunspell
             return TakeArray(newEntries);
         }
 
-        public WordEntry FirstOrDefault()
-        {
-            return items.Length != 0 ? items[0] : null;
-        }
+        public WordEntry FirstOrDefault() =>
+            items.Length != 0 ? items[0] : null;
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        internal void DestructiveReplace(int index, WordEntry entry)
-        {
+        internal void DestructiveReplace(int index, WordEntry entry) =>
             items[index] = entry;
-        }
     }
 }

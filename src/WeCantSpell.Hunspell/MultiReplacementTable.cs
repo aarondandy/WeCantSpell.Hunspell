@@ -80,8 +80,7 @@ namespace WeCantSpell.Hunspell
         {
             for (var searchLength = text.Length; searchLength > 0; searchLength--)
             {
-                MultiReplacementEntry entry = null;
-                if (replacements.TryGetValue(text.Substring(0, searchLength), out entry))
+                if (replacements.TryGetValue(text.Substring(0, searchLength), out MultiReplacementEntry entry))
                 {
                     return entry;
                 }
@@ -100,8 +99,7 @@ namespace WeCantSpell.Hunspell
         {
             for (var searchLength = text.Length; searchLength > 0; searchLength--)
             {
-                MultiReplacementEntry entry = null;
-                if (replacements.TryGetValue(text.Substring(0, searchLength), out entry))
+                if (replacements.TryGetValue(text.Substring(0, searchLength), out MultiReplacementEntry entry))
                 {
                     return entry;
                 }

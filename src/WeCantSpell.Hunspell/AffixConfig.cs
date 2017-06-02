@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Runtime.CompilerServices;
 using System.Text;
 using WeCantSpell.Hunspell.Infrastructure;
+
+#if !NO_INLINE
+using System.Runtime.CompilerServices;
+#endif
 
 namespace WeCantSpell.Hunspell
 {
@@ -35,10 +38,7 @@ namespace WeCantSpell.Hunspell
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            get
-            {
-                return options;
-            }
+            get => options;
             private set
             {
                 options = value;
@@ -823,30 +823,26 @@ namespace WeCantSpell.Hunspell
 
         public bool TryGetAliasF(int number, out FlagSet result)
         {
-            if (number > 0 && number <= aliasF.Count)
-            {
-                result = aliasF[number - 1];
-                return true;
-            }
-            else
+            if (number <= 0 || number > aliasF.Count)
             {
                 result = null;
                 return false;
             }
+
+            result = aliasF[number - 1];
+            return true;
         }
 
         public bool TryGetAliasM(int number, out MorphSet result)
         {
-            if (number > 0 && number <= aliasM.Count)
-            {
-                result = aliasM[number - 1];
-                return true;
-            }
-            else
+            if (number <= 0 || number > aliasM.Count)
             {
                 result = MorphSet.Empty;
                 return false;
             }
+
+            result = aliasM[number - 1];
+            return true;
         }
     }
 }

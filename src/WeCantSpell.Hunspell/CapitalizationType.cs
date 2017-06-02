@@ -1,5 +1,8 @@
-﻿using System.Runtime.CompilerServices;
-using WeCantSpell.Hunspell.Infrastructure;
+﻿using WeCantSpell.Hunspell.Infrastructure;
+
+#if !NO_INLINE
+using System.Runtime.CompilerServices;
+#endif
 
 namespace WeCantSpell.Hunspell
 {
@@ -33,10 +36,8 @@ namespace WeCantSpell.Hunspell
 
     public static class CapitalizationTypeEx
     {
-        public static CapitalizationType GetCapitalizationType(string word, AffixConfig affix)
-        {
-            return GetCapitalizationType(StringSlice.Create(word), affix);
-        }
+        public static CapitalizationType GetCapitalizationType(string word, AffixConfig affix) =>
+            GetCapitalizationType(StringSlice.Create(word), affix);
 
         internal static CapitalizationType GetCapitalizationType(StringSlice word, AffixConfig affix)
         {

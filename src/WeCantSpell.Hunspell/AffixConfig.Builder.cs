@@ -347,7 +347,10 @@ namespace WeCantSpell.Hunspell
             /// </summary>
             public bool HasContClass { get; set; }
 
-            public List<string> Warnings;
+            /// <summary>
+            /// A list of the warnings that were produced while reading or building an <see cref="AffixConfig"/>.
+            /// </summary>
+            public List<string> Warnings = new List<string>();
 
             /// <summary>
             /// Constructs a <see cref="AffixConfig"/> based on the values set in the builder.
@@ -417,14 +420,14 @@ namespace WeCantSpell.Hunspell
 
                 if (destructive)
                 {
-                    config.Replacements = SingleReplacementSet.TakeList(Steal(ref Replacements));
-                    config.CompoundRules = CompoundRuleSet.TakeList(Steal(ref CompoundRules));
-                    config.CompoundPatterns = PatternSet.TakeList(Steal(ref CompoundPatterns));
-                    config.RelatedCharacterMap = MapTable.TakeList(Steal(ref RelatedCharacterMap));
-                    config.Phone = PhoneTable.TakeList(Steal(ref Phone));
-                    config.InputConversions = MultiReplacementTable.TakeDictionary(Steal(ref InputConversions));
-                    config.OutputConversions = MultiReplacementTable.TakeDictionary(Steal(ref OutputConversions));
-                    config.Warnings = WarningList.TakeList(Steal(ref Warnings));
+                    config.Replacements = SingleReplacementSet.TakeList(ReferenceHelpers.Steal(ref Replacements));
+                    config.CompoundRules = CompoundRuleSet.TakeList(ReferenceHelpers.Steal(ref CompoundRules));
+                    config.CompoundPatterns = PatternSet.TakeList(ReferenceHelpers.Steal(ref CompoundPatterns));
+                    config.RelatedCharacterMap = MapTable.TakeList(ReferenceHelpers.Steal(ref RelatedCharacterMap));
+                    config.Phone = PhoneTable.TakeList(ReferenceHelpers.Steal(ref Phone));
+                    config.InputConversions = MultiReplacementTable.TakeDictionary(ReferenceHelpers.Steal(ref InputConversions));
+                    config.OutputConversions = MultiReplacementTable.TakeDictionary(ReferenceHelpers.Steal(ref OutputConversions));
+                    config.Warnings = WarningList.TakeList(ReferenceHelpers.Steal(ref Warnings));
 
                     config.aliasF = AliasF ?? new List<FlagSet>(0);
                     AliasF = null;
@@ -462,34 +465,14 @@ namespace WeCantSpell.Hunspell
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            public void EnableOptions(AffixConfigOptions options)
-            {
+            public void EnableOptions(AffixConfigOptions options) =>
                 Options |= options;
-            }
 
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            private static T Steal<T>(ref T item) where T : class
-            {
-                var value = item;
-                item = null;
-                return value;
-            }
-
-            public FlagSet TakeArrayForFlagSet(FlagValue[] values) =>
-                FlagSetDeduper.GetEqualOrAdd(FlagSet.TakeArray(values));
+            public FlagSet Dedup(FlagSet values) =>
+                FlagSetDeduper.GetEqualOrAdd(values);
 
             public string Dedup(string value) =>
                 value == null ? null : StringDeduper.GetEqualOrAdd(value);
-
-            private void Dedup(ref string value)
-            {
-                if (value != null)
-                {
-                    value = StringDeduper.GetEqualOrAdd(value);
-                }
-            }
 
             public string[] DedupInPlace(string[] values)
             {
@@ -497,7 +480,11 @@ namespace WeCantSpell.Hunspell
                 {
                     for (var i = 0; i < values.Length; i++)
                     {
-                        Dedup(ref values[i]);
+                        ref var stringValue = ref values[i];
+                        if (stringValue != null)
+                        {
+                            stringValue = StringDeduper.GetEqualOrAdd(stringValue);
+                        }
                     }
                 }
 
@@ -510,15 +497,8 @@ namespace WeCantSpell.Hunspell
             public CharacterConditionGroup Dedup(CharacterConditionGroup value) =>
                 CharacterConditionGroupDeduper.GetEqualOrAdd(value);
 
-            public void LogWarning(string warning)
-            {
-                if (Warnings == null)
-                {
-                    Warnings = new List<string>();
-                }
-
+            public void LogWarning(string warning) =>
                 Warnings.Add(warning);
-            }
         }
     }
 }

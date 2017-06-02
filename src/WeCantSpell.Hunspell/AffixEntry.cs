@@ -135,17 +135,15 @@ namespace WeCantSpell.Hunspell
 
         public abstract string Key { get; }
 
-        public static TEntry Create<TEntry>
-        (
+        public static TEntry Create<TEntry>(
             string strip,
             string affixText,
             CharacterConditionGroup conditions,
             MorphSet morph,
-            FlagSet contClass
-        )
+            FlagSet contClass)
             where TEntry : AffixEntry, new()
-        {
-            return new TEntry
+            =>
+            new TEntry
             {
                 Strip = strip,
                 Append = affixText,
@@ -153,7 +151,6 @@ namespace WeCantSpell.Hunspell
                 MorphCode = morph ?? MorphSet.Empty,
                 ContClass = contClass ?? FlagSet.Empty
             };
-        }
 
         public bool ContainsContClass(FlagValue flag) => flag.HasValue && ContClass.Contains(flag);
 

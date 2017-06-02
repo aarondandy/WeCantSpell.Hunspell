@@ -39,15 +39,11 @@ namespace WeCantSpell.Hunspell
 
             internal readonly StringDeduper StringDeduper;
 
-            public WordList ToImmutable()
-            {
-                return ToImmutable(destructive: false);
-            }
+            public WordList ToImmutable() =>
+                ToImmutable(destructive: false);
 
-            public WordList MoveToImmutable()
-            {
-                return ToImmutable(destructive: true);
-            }
+            public WordList MoveToImmutable() =>
+                ToImmutable(destructive: true);
 
             private WordList ToImmutable(bool destructive)
             {

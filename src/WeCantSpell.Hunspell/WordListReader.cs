@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Runtime.CompilerServices;
 
 #if !NO_ASYNC
 using System.Threading.Tasks;
@@ -191,9 +190,7 @@ namespace WeCantSpell.Hunspell
             {
                 if (Affix.IsAliasF)
                 {
-                    int flagAliasNumber;
-                    FlagSet aliasedFlags;
-                    if (IntEx.TryParseInvariant(parsed.Flags, out flagAliasNumber) && Affix.TryGetAliasF(flagAliasNumber, out aliasedFlags))
+                    if (IntEx.TryParseInvariant(parsed.Flags, out int flagAliasNumber) && Affix.TryGetAliasF(flagAliasNumber, out FlagSet aliasedFlags))
                     {
                         flags = aliasedFlags;
                     }
@@ -245,8 +242,7 @@ namespace WeCantSpell.Hunspell
             var initLineMatch = InitialLineRegex.Match(line);
             if (initLineMatch.Success)
             {
-                int expectedSize;
-                if (IntEx.TryParseInvariant(initLineMatch.Groups[1].Value, out expectedSize))
+                if (IntEx.TryParseInvariant(initLineMatch.Groups[1].Value, out int expectedSize))
                 {
                     if (Builder.EntriesByRoot == null)
                     {
@@ -260,11 +256,9 @@ namespace WeCantSpell.Hunspell
             return false;
         }
 
-        private bool AddWord(string word, FlagSet flags, MorphSet morphs)
-        {
-            return AddWord(word, flags, morphs, false)
-                || AddWordCapitalized(word, flags, morphs, CapitalizationTypeEx.GetCapitalizationType(word, Affix));
-        }
+        private bool AddWord(string word, FlagSet flags, MorphSet morphs) =>
+            AddWord(word, flags, morphs, false)
+            || AddWordCapitalized(word, flags, morphs, CapitalizationTypeEx.GetCapitalizationType(word, Affix));
 
         private bool AddWord(string word, FlagSet flags, MorphSet morphs, bool onlyUpperCase)
         {
@@ -298,9 +292,7 @@ namespace WeCantSpell.Hunspell
                     var morphBuilder = new List<string>();
                     foreach (var originalValue in morphs)
                     {
-                        int morphNumber;
-                        MorphSet aliasedMorph;
-                        if (IntEx.TryParseInvariant(originalValue, out morphNumber) && Affix.TryGetAliasM(morphNumber, out aliasedMorph))
+                        if (IntEx.TryParseInvariant(originalValue, out int morphNumber) && Affix.TryGetAliasM(morphNumber, out MorphSet aliasedMorph))
                         {
                             morphBuilder.AddRange(aliasedMorph);
                         }
@@ -328,9 +320,8 @@ namespace WeCantSpell.Hunspell
             }
 
             bool saveEntryList = false;
-            WordEntrySet entryList;
             word = Builder.Dedup(word);
-            if (!Builder.EntriesByRoot.TryGetValue(word, out entryList))
+            if (!Builder.EntriesByRoot.TryGetValue(word, out WordEntrySet entryList))
             {
                 saveEntryList = true;
                 entryList = WordEntrySet.Empty;
@@ -429,10 +420,10 @@ namespace WeCantSpell.Hunspell
 
             public static ParsedWordLine Parse(string line)
             {
-                var firstNonDelimiterPosition = IndexOfNonDelimiter(line, 0);
+                var firstNonDelimiterPosition = StringEx.IndexOfNonSpaceOrTab(line, 0);
                 if (firstNonDelimiterPosition >= 0)
                 {
-                    var endOfWordAndFlagsPosition = IndexOfDelimiter(line, firstNonDelimiterPosition + 1);
+                    var endOfWordAndFlagsPosition = StringEx.IndexOfSpaceOrTab(line, firstNonDelimiterPosition + 1);
                     if (endOfWordAndFlagsPosition < 0)
                     {
                         endOfWordAndFlagsPosition = line.Length;
@@ -494,48 +485,6 @@ namespace WeCantSpell.Hunspell
                 }
 
                 return -1;
-            }
-
-            private static int IndexOfNonDelimiter(string text, int startIndex)
-            {
-                for (var i = startIndex; i < text.Length; i++)
-                {
-                    if (IsNotDelimiter(text[i]))
-                    {
-                        return i;
-                    }
-                }
-
-                return -1;
-            }
-
-            private static int IndexOfDelimiter(string text, int startIndex)
-            {
-                for (var i = startIndex; i < text.Length; i++)
-                {
-                    if (IsDelimiter(text[i]))
-                    {
-                        return i;
-                    }
-                }
-
-                return -1;
-            }
-
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            private static bool IsDelimiter(char c)
-            {
-                return c == ' ' || c == '\t';
-            }
-
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            private static bool IsNotDelimiter(char c)
-            {
-                return c != ' ' && c != '\t';
             }
         }
     }

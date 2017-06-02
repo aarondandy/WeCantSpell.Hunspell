@@ -12,7 +12,7 @@ namespace WeCantSpell.Hunspell
         /// </summary>
         CrossProduct = 1 << 0,
 
-        [Obsolete("This flag should not be used as UTF16 will be used internally.")]
+        [Obsolete("This flag should not be used as .NET strings will be used internally.")]
         Utf8 = 1 << 1,
 
         AliasF = 1 << 2,

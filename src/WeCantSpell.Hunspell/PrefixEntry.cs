@@ -2,6 +2,6 @@
 {
     public sealed class PrefixEntry : AffixEntry
     {
-        public override string Key => Append;
+        public sealed override string Key => Append;
     }
 }

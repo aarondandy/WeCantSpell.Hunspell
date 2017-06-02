@@ -4,12 +4,9 @@ namespace WeCantSpell.Hunspell
 {
     public sealed class SuffixEntry : AffixEntry
     {
-        public override string Append
+        public sealed override string Append
         {
-            get
-            {
-                return base.Append;
-            }
+            get => base.Append;
             protected set
             {
                 base.Append = value;
@@ -19,6 +16,6 @@ namespace WeCantSpell.Hunspell
 
         public string RAppend { get; private set; }
 
-        public override string Key => RAppend;
+        public sealed override string Key => RAppend;
     }
 }

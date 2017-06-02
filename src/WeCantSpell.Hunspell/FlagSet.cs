@@ -78,7 +78,7 @@ namespace WeCantSpell.Hunspell
 
             if (a.Count > b.Count)
             {
-                Swapper.Swap(ref a, ref b);
+                ReferenceHelpers.Swap(ref a, ref b);
             }
 
             foreach (var item in a)

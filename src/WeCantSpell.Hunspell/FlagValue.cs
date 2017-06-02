@@ -2,7 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+
+#if !NO_INLINE
 using System.Runtime.CompilerServices;
+#endif
 
 namespace WeCantSpell.Hunspell
 {
@@ -16,25 +19,18 @@ namespace WeCantSpell.Hunspell
     {
         private char value;
 
-        public FlagValue(char value)
-        {
+        public FlagValue(char value) =>
             this.value = value;
-        }
 
-        public FlagValue(int value)
-        {
+        public FlagValue(int value) =>
             this.value = checked((char)value);
-        }
 
         public bool HasValue
         {
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            get
-            {
-                return value != 0;
-            }
+            get => value != 0;
         }
 
         public bool IsZero
@@ -42,10 +38,7 @@ namespace WeCantSpell.Hunspell
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            get
-            {
-                return value == 0;
-            }
+            get => value == 0;
         }
 
         public static FlagValue Create(char high, char low) => new FlagValue(unchecked((char)((high << 8) | low)));
@@ -67,17 +60,17 @@ namespace WeCantSpell.Hunspell
 
         public override bool Equals(object obj)
         {
-            if (obj is FlagValue)
+            if (obj is FlagValue flagValue)
             {
-                return Equals((FlagValue)obj);
+                return Equals(flagValue);
             }
-            if (obj is int)
+            if (obj is int intValue)
             {
-                return Equals((int)obj);
+                return Equals(intValue);
             }
-            if (obj is char)
+            if (obj is char charValue)
             {
-                return Equals((char)obj);
+                return Equals(charValue);
             }
 
             return false;
@@ -178,8 +171,7 @@ namespace WeCantSpell.Hunspell
         {
             if (text != null)
             {
-                int integerValue;
-                if (IntEx.TryParseInvariant(text, out integerValue) && integerValue >= char.MinValue && integerValue <= char.MaxValue)
+                if (IntEx.TryParseInvariant(text, out int integerValue) && integerValue >= char.MinValue && integerValue <= char.MaxValue)
                 {
                     value = new FlagValue(unchecked((char)integerValue));
                     return true;
@@ -194,8 +186,7 @@ namespace WeCantSpell.Hunspell
         {
             if (text != null)
             {
-                int integerValue;
-                if (IntEx.TryParseInvariant(text, startIndex, length, out integerValue) && integerValue >= char.MinValue && integerValue <= char.MaxValue)
+                if (IntEx.TryParseInvariant(text, startIndex, length, out int integerValue) && integerValue >= char.MinValue && integerValue <= char.MaxValue)
                 {
                     value = new FlagValue(unchecked((char)integerValue));
                     return true;
@@ -210,8 +201,7 @@ namespace WeCantSpell.Hunspell
         {
             if (!text.IsNullOrEmpty)
             {
-                int integerValue;
-                if (IntEx.TryParseInvariant(text, out integerValue) && integerValue >= char.MinValue && integerValue <= char.MaxValue)
+                if (IntEx.TryParseInvariant(text, out int integerValue) && integerValue >= char.MinValue && integerValue <= char.MaxValue)
                 {
                     value = new FlagValue(unchecked((char)integerValue));
                     return true;
@@ -386,8 +376,7 @@ namespace WeCantSpell.Hunspell
             var flags = new List<FlagValue>(textParts.Length);
             for (var i = 0; i < textParts.Length; i++)
             {
-                FlagValue value;
-                if (TryParseNumberFlag(textParts[i], out value))
+                if (TryParseNumberFlag(textParts[i], out FlagValue value))
                 {
                     flags.Add(value);
                 }

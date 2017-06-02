@@ -47,17 +47,8 @@ namespace WeCantSpell.Hunspell
 
         public DynamicEncodingLineReader(Stream stream, Encoding initialEncoding)
         {
-            if (stream == null)
-            {
-                throw new ArgumentNullException(nameof(stream));
-            }
-            if (initialEncoding == null)
-            {
-                throw new ArgumentNullException(nameof(initialEncoding));
-            }
-
-            this.stream = stream;
-            encoding = initialEncoding;
+            this.stream = stream ?? throw new ArgumentNullException(nameof(stream));
+            encoding = initialEncoding ?? throw new ArgumentNullException(nameof(initialEncoding));
             decoder = initialEncoding.GetDecoder();
         }
 
@@ -249,10 +240,6 @@ namespace WeCantSpell.Hunspell
 
         private int TryDecode(byte[] bytes, char[] chars)
         {
-            int bytesConverted;
-            int charsProduced;
-            bool completed;
-
             decoder.Convert(
                     bytes,
                     0,
@@ -261,9 +248,9 @@ namespace WeCantSpell.Hunspell
                     0,
                     chars.Length,
                     false,
-                    out bytesConverted,
-                    out charsProduced,
-                    out completed);
+                    out int bytesConverted,
+                    out int charsProduced,
+                    out bool completed);
 
             return charsProduced;
         }
@@ -457,9 +444,7 @@ namespace WeCantSpell.Hunspell
             encoding = newEncoding;
         }
 
-        public void Dispose()
-        {
+        public void Dispose() =>
             stream.Dispose();
-        }
     }
 }

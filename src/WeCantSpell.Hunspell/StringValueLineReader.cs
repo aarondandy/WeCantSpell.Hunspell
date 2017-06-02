@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using WeCantSpell.Hunspell.Infrastructure;
 
 #if !NO_ASYNC
 using System.Threading.Tasks;
@@ -8,10 +9,6 @@ namespace WeCantSpell.Hunspell
 {
     public sealed class StringValueLineReader : IHunspellLineReader
     {
-        private static readonly char[] LineBreakChars = new[] { '\n', '\r' };
-
-        private static bool IsLineBreakChar(char c) => c == '\n' || c == '\r';
-
         public StringValueLineReader(string text) => Content = text;
 
         private int position = 0;
@@ -28,7 +25,7 @@ namespace WeCantSpell.Hunspell
             }
 
             var startPosition = position;
-            position = Content.IndexOfAny(LineBreakChars, position);
+            position = StringEx.FirstIndexOfLineBreakChar(Content, position);
             if (position < 0)
             {
                 position = Content.Length;
@@ -36,7 +33,7 @@ namespace WeCantSpell.Hunspell
 
             var result = Content.Substring(startPosition, position - startPosition);
 
-            for (; position < Content.Length && IsLineBreakChar(Content[position]); position++) ;
+            for (; position < Content.Length && StringEx.IsLineBreakChar(Content[position]); position++) ;
 
             return result;
         }
@@ -44,5 +41,6 @@ namespace WeCantSpell.Hunspell
 #if !NO_ASYNC
         public Task<string> ReadLineAsync() => Task.FromResult(ReadLine());
 #endif
+
     }
 }

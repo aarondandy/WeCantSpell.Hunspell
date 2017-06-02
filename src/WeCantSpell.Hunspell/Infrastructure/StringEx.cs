@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+
+#if !NO_INLINE
 using System.Runtime.CompilerServices;
+#endif
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
@@ -53,7 +56,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             int startIndex = 0;
             int splitIndex;
             int partLength;
-            while ((splitIndex = IndexOfTabOrSpace(@this, startIndex)) >= 0)
+            while ((splitIndex = IndexOfSpaceOrTab(@this, startIndex)) >= 0)
             {
                 partLength = splitIndex - startIndex;
                 if (partLength > 0)
@@ -83,12 +86,29 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return parts.ToArray();
         }
 
-        private static int IndexOfTabOrSpace(string text, int startIndex)
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static bool IsSpaceOrTab(char c) => c == ' ' || c == '\t';
+
+        public static int IndexOfSpaceOrTab(string text, int startIndex)
         {
             for (var i = startIndex; i < text.Length; i++)
             {
-                var c = text[i];
-                if (c == ' ' || c == '\t')
+                if (IsSpaceOrTab(text[i]))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        public static int IndexOfNonSpaceOrTab(string text, int startIndex)
+        {
+            for (var i = startIndex; i < text.Length; i++)
+            {
+                if (!IsSpaceOrTab(text[i]))
                 {
                     return i;
                 }
@@ -396,5 +416,23 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
             return false;
         }
+
+        public static int FirstIndexOfLineBreakChar(string text, int startPosition)
+        {
+            for(var i = startPosition; i < text.Length; i++)
+            {
+                if (IsLineBreakChar(text[i]))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static bool IsLineBreakChar(char c) => c == '\n' || c == '\r';
     }
 }

@@ -11,14 +11,12 @@ namespace WeCantSpell.Hunspell
         where TEntry : AffixEntry
     {
 
-        public static readonly AffixCollection<TEntry> Empty = new AffixCollection<TEntry>
-        (
+        public static readonly AffixCollection<TEntry> Empty = new AffixCollection<TEntry>(
             new Dictionary<FlagValue, AffixEntryGroup<TEntry>>(0),
             new Dictionary<char, AffixEntryWithDetailCollection<TEntry>>(0),
             AffixEntryWithDetailCollection<TEntry>.Empty,
             AffixEntryWithDetailCollection<TEntry>.Empty,
-            FlagSet.Empty
-        );
+            FlagSet.Empty);
 
         private readonly Dictionary<FlagValue, AffixEntryGroup<TEntry>> affixesByFlag;
 
@@ -26,14 +24,12 @@ namespace WeCantSpell.Hunspell
 
         private readonly AffixEntryWithDetailCollection<TEntry> affixesWithDots;
 
-        private AffixCollection
-        (
+        private AffixCollection(
             Dictionary<FlagValue, AffixEntryGroup<TEntry>> affixesByFlag,
             Dictionary<char, AffixEntryWithDetailCollection<TEntry>> affixesByIndexedByKey,
             AffixEntryWithDetailCollection<TEntry> affixesWithDots,
             AffixEntryWithDetailCollection<TEntry> affixesWithEmptyKeys,
-            FlagSet contClasses
-        )
+            FlagSet contClasses)
         {
             this.affixesByFlag = affixesByFlag;
             this.affixesByIndexedByKey = affixesByIndexedByKey;
@@ -88,12 +84,10 @@ namespace WeCantSpell.Hunspell
                         else
                         {
                             var indexedKey = key[0];
-                            List<AffixEntryWithDetail<TEntry>> keyedAffixes;
-                            if (!affixesByIndexedByKeyBuilders.TryGetValue(indexedKey, out keyedAffixes))
+                            if (!affixesByIndexedByKeyBuilders.TryGetValue(indexedKey, out List<AffixEntryWithDetail<TEntry>> keyedAffixes))
                             {
                                 keyedAffixes = new List<AffixEntryWithDetail<TEntry>>();
                                 affixesByIndexedByKeyBuilders.Add(indexedKey, keyedAffixes);
-
                             }
 
                             keyedAffixes.Add(entryWithDetail);
@@ -121,8 +115,7 @@ namespace WeCantSpell.Hunspell
 
         public AffixEntryGroup<TEntry> GetByFlag(FlagValue flag)
         {
-            AffixEntryGroup<TEntry> result;
-            affixesByFlag.TryGetValue(flag, out result);
+            affixesByFlag.TryGetValue(flag, out AffixEntryGroup<TEntry> result);
             return result;
         }
 
@@ -148,8 +141,7 @@ namespace WeCantSpell.Hunspell
         {
             var results = new List<AffixEntryWithDetail<TEntry>>();
 
-            AffixEntryWithDetailCollection<TEntry> indexedEntries;
-            if (affixesByIndexedByKey.TryGetValue(word[0], out indexedEntries))
+            if (affixesByIndexedByKey.TryGetValue(word[0], out AffixEntryWithDetailCollection<TEntry> indexedEntries))
             {
                 foreach (var entry in indexedEntries)
                 {
@@ -178,8 +170,7 @@ namespace WeCantSpell.Hunspell
         {
             var results = new List<AffixEntryWithDetail<TEntry>>();
 
-            AffixEntryWithDetailCollection<TEntry> indexedEntries;
-            if (affixesByIndexedByKey.TryGetValue(word[word.Length - 1], out indexedEntries))
+            if (affixesByIndexedByKey.TryGetValue(word[word.Length - 1], out AffixEntryWithDetailCollection<TEntry> indexedEntries))
             {
                 foreach (var entry in indexedEntries)
                 {
@@ -204,14 +195,8 @@ namespace WeCantSpell.Hunspell
             return results;
         }
 
-        public IEnumerator<AffixEntryGroup<TEntry>> GetEnumerator()
-        {
-            return affixesByFlag.Values.GetEnumerator();
-        }
+        public IEnumerator<AffixEntryGroup<TEntry>> GetEnumerator() => affixesByFlag.Values.GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return affixesByFlag.Values.GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => affixesByFlag.Values.GetEnumerator();
     }
 }

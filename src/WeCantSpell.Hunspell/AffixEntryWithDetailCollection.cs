@@ -14,8 +14,10 @@ namespace WeCantSpell.Hunspell
         {
         }
 
-        internal static AffixEntryWithDetailCollection<TEntry> TakeList(List<AffixEntryWithDetail<TEntry>> entries) => entries == null ? Empty : new AffixEntryWithDetailCollection<TEntry>(entries);
+        internal static AffixEntryWithDetailCollection<TEntry> TakeList(List<AffixEntryWithDetail<TEntry>> entries) =>
+            entries == null ? Empty : new AffixEntryWithDetailCollection<TEntry>(entries);
 
-        public static AffixEntryWithDetailCollection<TEntry> Create(IEnumerable<AffixEntryWithDetail<TEntry>> entries) => entries == null ? Empty : new AffixEntryWithDetailCollection<TEntry>(entries.ToList());
+        public static AffixEntryWithDetailCollection<TEntry> Create(IEnumerable<AffixEntryWithDetail<TEntry>> entries) =>
+            entries == null ? Empty : new AffixEntryWithDetailCollection<TEntry>(entries.ToList());
     }
 }

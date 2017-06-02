@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.CompilerServices;
 using WeCantSpell.Hunspell.Infrastructure;
 using System.Linq;
+
+#if !NO_INLINE
+using System.Runtime.CompilerServices;
+#endif
 
 #if !NO_ASYNC
 using System.Threading;
@@ -71,10 +74,8 @@ namespace WeCantSpell.Hunspell
             return wordListBuilder.MoveToImmutable();
         }
 
-        private WordList(AffixConfig affix)
-        {
+        private WordList(AffixConfig affix) =>
             Affix = affix;
-        }
 
         public AffixConfig Affix { get; private set; }
 
@@ -105,8 +106,7 @@ namespace WeCantSpell.Hunspell
 
         public WordEntrySet FindEntriesByRootWord(string rootWord)
         {
-            WordEntrySet result;
-            if (!EntriesByRoot.TryGetValue(rootWord, out result))
+            if (!EntriesByRoot.TryGetValue(rootWord, out WordEntrySet result))
             {
                 result = WordEntrySet.Empty;
             }

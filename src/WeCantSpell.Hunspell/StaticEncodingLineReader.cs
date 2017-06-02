@@ -15,16 +15,12 @@ namespace WeCantSpell.Hunspell
     {
         public StaticEncodingLineReader(Stream stream, Encoding encoding)
         {
-            if (stream == null)
-            {
-                throw new ArgumentNullException(nameof(stream));
-            }
             if (encoding == null)
             {
                 throw new ArgumentNullException(nameof(encoding));
             }
 
-            this.stream = stream;
+            this.stream = stream ?? throw new ArgumentNullException(nameof(stream));
             reader = new StreamReader(stream, encoding, true);
         }
 
@@ -56,16 +52,10 @@ namespace WeCantSpell.Hunspell
 
 #endif
 
-        public string ReadLine()
-        {
-            return reader.ReadLine();
-        }
+        public string ReadLine() => reader.ReadLine();
 
 #if !NO_ASYNC
-        public Task<string> ReadLineAsync()
-        {
-            return reader.ReadLineAsync();
-        }
+        public Task<string> ReadLineAsync() => reader.ReadLineAsync();
 #endif
 
         public void Dispose()

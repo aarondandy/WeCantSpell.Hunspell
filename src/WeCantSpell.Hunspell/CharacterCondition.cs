@@ -41,11 +41,14 @@ namespace WeCantSpell.Hunspell
         /// </summary>
         public bool Restricted { get; }
 
-        internal static CharacterCondition TakeArray(char[] characters, bool restricted) => new CharacterCondition(characters, restricted);
+        internal static CharacterCondition TakeArray(char[] characters, bool restricted) =>
+            new CharacterCondition(characters, restricted);
 
-        public static CharacterCondition Create(char character, bool restricted) => new CharacterCondition(character, restricted);
+        public static CharacterCondition Create(char character, bool restricted) =>
+            new CharacterCondition(character, restricted);
 
-        public static CharacterCondition Create(IEnumerable<char> characters, bool restricted) => TakeArray(characters.ToArray(), restricted);
+        public static CharacterCondition Create(IEnumerable<char> characters, bool restricted) =>
+            TakeArray(characters.ToArray(), restricted);
 
         public static CharacterConditionGroup Parse(string text)
         {
@@ -93,14 +96,9 @@ namespace WeCantSpell.Hunspell
                 throw new InvalidOperationException();
             }
 
-            if (text[1] == '^')
-            {
-                return TakeArray(text.ToCharArray(2, text.Length - 3), true);
-            }
-            else
-            {
-                return TakeArray(text.ToCharArray(1, text.Length - 2), false);
-            }
+            return text[1] == '^'
+                ? TakeArray(text.ToCharArray(2, text.Length - 3), true)
+                : TakeArray(text.ToCharArray(1, text.Length - 2), false);
         }
 
         public bool IsMatch(char c)
@@ -131,15 +129,9 @@ namespace WeCantSpell.Hunspell
                 return Characters[0].ToString();
             }
 
-            string lettersText;
-            if (Characters == null || Characters.Count == 0)
-            {
-                lettersText = string.Empty;
-            }
-            else
-            {
-                lettersText = string.Concat(Characters);
-            }
+            var lettersText = (Characters == null || Characters.Count == 0)
+                ? string.Empty
+                : string.Concat(Characters);
 
             return (Restricted ? "[^" : "[") + lettersText + "]";
         }

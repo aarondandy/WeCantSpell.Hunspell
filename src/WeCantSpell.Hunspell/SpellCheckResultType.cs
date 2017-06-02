@@ -3,7 +3,7 @@
 namespace WeCantSpell.Hunspell
 {
     [Flags]
-    public enum SpellCheckResultType : short
+    public enum SpellCheckResultType : byte
     {
         None = 0,
         Compound = 1 << 0,
