@@ -10,7 +10,7 @@ namespace WeCantSpell.Hunspell.Performance.Tests
 {
     public abstract class EnWordPerfBase
     {
-        protected static readonly char[] WordSplitChars = new[] { ' ', '\t', ',' };
+        protected static readonly char[] WordSplitChars = { ' ', '\t', ',' };
 
         protected WordList Checker;
         protected List<string> Words;

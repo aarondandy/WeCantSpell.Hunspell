@@ -1,11 +1,11 @@
-﻿using FluentAssertions;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WeCantSpell.Hunspell.Tests.Utilities;
+using FluentAssertions;
+using WeCantSpell.Hunspell.Tests.Infrastructure;
 using Xunit;
 
 namespace WeCantSpell.Hunspell.Tests
@@ -274,7 +274,7 @@ namespace WeCantSpell.Hunspell.Tests
             return Directory.GetFiles("files/", searchPattern).OrderBy(n => n);
         }
 
-        protected static readonly char[] SpaceOrTab = new[] { ' ', '\t' };
+        protected static readonly char[] SpaceOrTab = { ' ', '\t' };
 
         protected static IEnumerable<object[]> ToDictionaryWordTestData(string wordFilePath)
         {

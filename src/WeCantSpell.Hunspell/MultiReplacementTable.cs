@@ -76,18 +76,8 @@ namespace WeCantSpell.Hunspell
         /// <param name="text">The text to find a matching input conversion for.</param>
         /// <returns>The best matching input conversion.</returns>
         /// <seealso cref="MultiReplacementEntry"/>
-        public MultiReplacementEntry FindLargestMatchingConversion(string text)
-        {
-            for (var searchLength = text.Length; searchLength > 0; searchLength--)
-            {
-                if (replacements.TryGetValue(text.Substring(0, searchLength), out MultiReplacementEntry entry))
-                {
-                    return entry;
-                }
-            }
-
-            return null;
-        }
+        public MultiReplacementEntry FindLargestMatchingConversion(string text) =>
+            FindLargestMatchingConversion(StringSlice.Create(text));
 
         /// <summary>
         /// Finds a conversion matching the longest version of the given <paramref name="text"/> from the left.

@@ -9,7 +9,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 {
     internal static class StringEx
     {
-        private static readonly char[] SpaceOrTab = new[] { ' ', '\t' };
+        private static readonly char[] SpaceOrTab = { ' ', '\t' };
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -245,16 +245,8 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
-        public static string ConcatSubstring(string str0, string str1, int startIndex1)
-        {
-            var length1 = str1.Length - startIndex1;
-            var builder = StringBuilderPool.Get(str0.Length + length1);
-
-            builder.Append(str0);
-            builder.Append(str1, startIndex1, length1);
-
-            return StringBuilderPool.GetStringAndReturn(builder);
-        }
+        public static string ConcatSubstring(string str0, string str1, int startIndex1) =>
+            ConcatSubstring(str0, 0, str0.Length, str1, startIndex1);
 
         public static string ConcatSubstring(string str0, int startIndex0, int length0, string str1, int startIndex1)
         {

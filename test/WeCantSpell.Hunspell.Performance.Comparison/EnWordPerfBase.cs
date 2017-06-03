@@ -8,7 +8,7 @@ namespace WeCantSpell.Hunspell.Performance.Comparison
 {
     public abstract class EnWordPerfBase
     {
-        protected static readonly char[] WordSplitChars = new[] { ' ', '\t', ',' };
+        protected static readonly char[] WordSplitChars = { ' ', '\t', ',' };
 
         protected List<string> Words;
 

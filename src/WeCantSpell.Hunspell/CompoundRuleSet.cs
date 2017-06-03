@@ -53,15 +53,7 @@ namespace WeCantSpell.Hunspell
                 {
                     while (pp < compoundRule.Count && wp <= wnum)
                     {
-                        if (
-                            pp + 1 < compoundRule.Count
-                            &&
-                            (
-                                compoundRule[pp + 1] == '*'
-                                ||
-                                compoundRule[pp + 1] == '?'
-                            )
-                        )
+                        if (pp + 1 < compoundRule.Count && compoundRule.IsWildcard(pp + 1))
                         {
                             var wend = compoundRule[pp + 1] == '?' ? wp : wnum;
                             ok2 = true;
@@ -130,11 +122,7 @@ namespace WeCantSpell.Hunspell
                             &&
                             r + 1 < compoundRule.Count
                             &&
-                            (
-                                compoundRule[r + 1] == '*'
-                                ||
-                                compoundRule[r + 1] == '?'
-                            )
+                            compoundRule.IsWildcard(r + 1)
                         )
                         {
                             r += 2;
@@ -185,11 +173,7 @@ namespace WeCantSpell.Hunspell
                     &&
                     pp + 1 < compoundRule.Count
                     &&
-                    (
-                        (compoundRule[pp + 1] == '*')
-                        ||
-                        (compoundRule[pp + 1] == '?')
-                    )
+                    compoundRule.IsWildcard(pp + 1)
                 )
                 {
                     pp += 2;

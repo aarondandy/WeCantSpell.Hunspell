@@ -98,6 +98,7 @@ namespace WeCantSpell.Hunspell
 
             var affixesByIndexedByKey = new Dictionary<char, AffixEntryWithDetailCollection<TEntry>>(
                 affixesByIndexedByKeyBuilders.Count);
+
             foreach (var keyedBuilder in affixesByIndexedByKeyBuilders)
             {
                 affixesByIndexedByKey.Add(keyedBuilder.Key, AffixEntryWithDetailCollection<TEntry>.TakeList(keyedBuilder.Value));
@@ -154,11 +155,15 @@ namespace WeCantSpell.Hunspell
 
             if (affixesWithDots.HasItems)
             {
-                foreach (var entry in affixesWithDots)
+                handleAffixesWithDots();
+                void handleAffixesWithDots()
                 {
-                    if (StringEx.IsSubset(entry.Key, word))
+                    foreach (var entry in affixesWithDots)
                     {
-                        results.Add(entry);
+                        if (StringEx.IsSubset(entry.Key, word))
+                        {
+                            results.Add(entry);
+                        }
                     }
                 }
             }
@@ -183,11 +188,15 @@ namespace WeCantSpell.Hunspell
 
             if (affixesWithDots.HasItems)
             {
-                foreach (var entry in affixesWithDots)
+                handleAffixesWithDots();
+                void handleAffixesWithDots()
                 {
-                    if (StringEx.IsReverseSubset(entry.Key, word))
+                    foreach (var entry in affixesWithDots)
                     {
-                        results.Add(entry);
+                        if (StringEx.IsReverseSubset(entry.Key, word))
+                        {
+                            results.Add(entry);
+                        }
                     }
                 }
             }

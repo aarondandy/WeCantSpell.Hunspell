@@ -1,11 +1,11 @@
-﻿using System.Linq;
-using FluentAssertions;
-using Xunit;
-using System;
-using System.Threading.Tasks;
-using WeCantSpell.Hunspell.Tests.Utilities;
-using System.IO;
+﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using FluentAssertions;
+using WeCantSpell.Hunspell.Tests.Infrastructure;
+using Xunit;
 
 namespace WeCantSpell.Hunspell.Tests
 {
@@ -1668,7 +1668,7 @@ namespace WeCantSpell.Hunspell.Tests
             public static IEnumerable<object[]> can_read_file_without_exception_args =>
                 Directory.GetFiles("files/", "*.aff").Select(filePath => new object[] { filePath });
 
-            public static string[] can_read_file_without_exception_warning_exceptions = new[]
+            public static string[] can_read_file_without_exception_warning_exceptions =
             {
                 "base_utf.aff" // this file has some strange morph lines at the bottom, maybe a bug?
             };

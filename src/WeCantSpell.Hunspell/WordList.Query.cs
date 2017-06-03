@@ -59,8 +59,6 @@ namespace WeCantSpell.Hunspell
             /// </summary>
             private bool SuffixExtra { get; set; }
 
-            private int SuffixExtraInt => SuffixExtra ? 1 : 0;
-
             /// <summary>
             /// Previous suffix for counting syllables of the suffix.
             /// </summary>
@@ -796,7 +794,7 @@ namespace WeCantSpell.Hunspell
                                     // XXX only second suffix (inflections, not derivations)
                                     if (SuffixAppend != null)
                                     {
-                                        numSyllable -= GetSyllable(SuffixAppend.Reverse()) + SuffixExtraInt;
+                                        numSyllable -= GetSyllable(SuffixAppend.Reverse()) + (SuffixExtra ? 1 : 0);
                                     }
 
                                     // + 1 word, if syllable number of the prefix > 1 (hungarian convention)
@@ -1105,7 +1103,7 @@ namespace WeCantSpell.Hunspell
                                         // XXX only second suffix (inflections, not derivations)
                                         if (SuffixAppend != null)
                                         {
-                                            numSyllable -= GetSyllable(SuffixAppend.Reverse()) + SuffixExtraInt;
+                                            numSyllable -= GetSyllable(SuffixAppend.Reverse()) + (SuffixExtra ? 1 : 0);
                                         }
 
                                         // + 1 word, if syllable number of the prefix > 1 (hungarian

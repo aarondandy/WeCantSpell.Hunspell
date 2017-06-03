@@ -78,37 +78,34 @@ namespace WeCantSpell.Hunspell
         {
             var result = new MultiReplacementEntry(Pattern);
 
-            if (type == ReplacementValueType.Med)
+            switch (type)
             {
-                result.med = value;
-                result.ini = ini;
-                result.fin = fin;
-                result.isol = isol;
-            }
-            else if (type == ReplacementValueType.Ini)
-            {
-                result.med = med;
-                result.ini = value;
-                result.fin = fin;
-                result.isol = isol;
-            }
-            else if (type == ReplacementValueType.Fin)
-            {
-                result.med = med;
-                result.ini = ini;
-                result.fin = value;
-                result.isol = isol;
-            }
-            else if (type == ReplacementValueType.Isol)
-            {
-                result.med = med;
-                result.ini = ini;
-                result.fin = fin;
-                result.isol = value;
-            }
-            else
-            {
-                throw new ArgumentOutOfRangeException(nameof(type));
+                case ReplacementValueType.Med:
+                    result.med = value;
+                    result.ini = ini;
+                    result.fin = fin;
+                    result.isol = isol;
+                    break;
+                case ReplacementValueType.Ini:
+                    result.med = med;
+                    result.ini = value;
+                    result.fin = fin;
+                    result.isol = isol;
+                    break;
+                case ReplacementValueType.Fin:
+                    result.med = med;
+                    result.ini = ini;
+                    result.fin = value;
+                    result.isol = isol;
+                    break;
+                case ReplacementValueType.Isol:
+                    result.med = med;
+                    result.ini = ini;
+                    result.fin = fin;
+                    result.isol = value;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(type));
             }
 
             return result;
@@ -160,8 +157,7 @@ namespace WeCantSpell.Hunspell
             pattern2 = pattern2.Replace('_', ' ');
 
             // find existing entry
-            MultiReplacementEntry entry;
-            if (list.TryGetValue(pattern1, out entry))
+            if (list.TryGetValue(pattern1, out MultiReplacementEntry entry))
             {
                 entry = entry.With(type, pattern2);
             }

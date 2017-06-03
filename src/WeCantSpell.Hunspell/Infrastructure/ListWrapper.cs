@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+
+#if !NO_INLINE
 using System.Runtime.CompilerServices;
+#endif
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
@@ -77,35 +80,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             public bool MoveNext() => ++index < values.Count;
-        }
-
-        public class Comparer : IEqualityComparer<ListWrapper<T>>
-        {
-            public static readonly Comparer Default = new Comparer();
-
-            public Comparer() =>
-                ListComparer = ListComparer<T>.Default;
-
-            public Comparer(IEqualityComparer<T> valueComparer) =>
-                ListComparer = new ListComparer<T>(valueComparer);
-
-            private ListComparer<T> ListComparer { get; }
-
-            public bool Equals(ListWrapper<T> x, ListWrapper<T> y)
-            {
-                if (ReferenceEquals(x, y))
-                {
-                    return true;
-                }
-                if (x == null || y == null)
-                {
-                    return false;
-                }
-
-                return ListComparer.Equals(x.items, y.items);
-            }
-
-            public int GetHashCode(ListWrapper<T> obj) => ListComparer.GetHashCode(obj.items);
         }
     }
 }

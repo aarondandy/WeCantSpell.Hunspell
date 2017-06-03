@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using WeCantSpell.Hunspell.Infrastructure;
+
+#if !NO_INLINE
+using System.Runtime.CompilerServices;
+#endif
 
 namespace WeCantSpell.Hunspell
 {
@@ -468,6 +471,10 @@ namespace WeCantSpell.Hunspell
             public void EnableOptions(AffixConfigOptions options) =>
                 Options |= options;
 
+            [Obsolete("Use Dedup(FlagSet.TakeArray(values)) instead")]
+            public FlagSet TakeArrayForFlagSet(FlagValue[] values) =>
+                Dedup(FlagSet.TakeArray(values));
+
             public FlagSet Dedup(FlagSet values) =>
                 FlagSetDeduper.GetEqualOrAdd(values);
 
@@ -480,10 +487,10 @@ namespace WeCantSpell.Hunspell
                 {
                     for (var i = 0; i < values.Length; i++)
                     {
-                        ref var stringValue = ref values[i];
-                        if (stringValue != null)
+                        ref var value = ref values[i];
+                        if (value != null)
                         {
-                            stringValue = StringDeduper.GetEqualOrAdd(stringValue);
+                            value = StringDeduper.GetEqualOrAdd(value);
                         }
                     }
                 }

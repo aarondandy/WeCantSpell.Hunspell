@@ -18,5 +18,11 @@ namespace WeCantSpell.Hunspell
         public static CompoundRule Create(List<FlagValue> values) => values == null ? Empty : TakeArray(values.ToArray());
 
         public static CompoundRule Create(IEnumerable<FlagValue> values) => values == null ? Empty : TakeArray(values.ToArray());
+
+        public bool IsWildcard(int index)
+        {
+            var value = this[index];
+            return value == '*' || value == '?';
+        }
     }
 }

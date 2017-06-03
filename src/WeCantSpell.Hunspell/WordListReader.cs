@@ -204,11 +204,11 @@ namespace WeCantSpell.Hunspell
                 {
                     var encodedBytes = Affix.Encoding.GetBytes(parsed.Flags);
                     var utf8Flags = Encoding.UTF8.GetString(encodedBytes, 0, encodedBytes.Length);
-                    flags = Builder.Dedup(FlagValue.ParseFlags(utf8Flags, FlagMode.Char));
+                    flags = Builder.Dedup(FlagSet.TakeArray(FlagValue.ParseFlagsInOrder(utf8Flags, FlagMode.Char)));
                 }
                 else
                 {
-                    flags = Builder.Dedup(FlagValue.ParseFlags(parsed.Flags, Affix.FlagMode));
+                    flags = Builder.Dedup(FlagSet.TakeArray(FlagValue.ParseFlagsInOrder(parsed.Flags, Affix.FlagMode)));
                 }
             }
             else

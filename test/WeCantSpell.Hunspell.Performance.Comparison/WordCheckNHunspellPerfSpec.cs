@@ -1,9 +1,10 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using NBench;
 
 namespace WeCantSpell.Hunspell.Performance.Comparison
 {
-    public class WordCheckNHunspellPerfSpec : EnWordPerfBase
+    public class WordCheckNHunspellPerfSpec : EnWordPerfBase, IDisposable
     {
         private Counter WordsChecked;
 
@@ -24,7 +25,7 @@ namespace WeCantSpell.Hunspell.Performance.Comparison
         }
 
         [PerfCleanup]
-        public void Cleanup()
+        public void Dispose()
         {
             Checker?.Dispose();
         }

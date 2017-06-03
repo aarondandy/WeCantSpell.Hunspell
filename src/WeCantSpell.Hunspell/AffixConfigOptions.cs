@@ -7,7 +7,7 @@ namespace WeCantSpell.Hunspell
     /// </summary>
     /// <seealso cref="AffixConfig"/>
     [Flags]
-    public enum AffixConfigOptions : int
+    public enum AffixConfigOptions : short
     {
         /// <summary>
         /// Indicates that no options are set.

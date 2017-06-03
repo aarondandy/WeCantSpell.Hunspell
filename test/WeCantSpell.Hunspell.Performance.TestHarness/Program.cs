@@ -53,7 +53,7 @@ namespace WeCantSpell.Hunspell.Performance.TestHarness
             }
         }
 
-        private static readonly char[] CommonWordSplitChars = new[] { ' ', '\t', ',' };
+        private static readonly char[] CommonWordSplitChars = { ' ', '\t', ',' };
 
         private static IEnumerable<string> ReadWords()
         {

@@ -17,7 +17,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         }
 
 #if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static T Steal<T>(ref T item) where T : class
         {

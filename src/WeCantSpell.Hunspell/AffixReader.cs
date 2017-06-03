@@ -69,7 +69,58 @@ namespace WeCantSpell.Hunspell
             {"UTF-8", FlagMode.Uni}
         };
 
-        private static readonly string[] DefaultBreakTableEntries = new[] { "-", "^-", "-$" };
+        private static readonly Dictionary<string, AffixReaderCommandKind> CommandMap =
+            new Dictionary<string, AffixReaderCommandKind>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "FLAG", AffixReaderCommandKind.Flag },
+                { "KEY", AffixReaderCommandKind.KeyString },
+                { "TRY", AffixReaderCommandKind.TryString },
+                { "SET", AffixReaderCommandKind.SetEncoding },
+                { "LANG", AffixReaderCommandKind.Language },
+                { "SYLLABLENUM", AffixReaderCommandKind.CompoundSyllableNum },
+                { "WORDCHARS", AffixReaderCommandKind.WordChars },
+                { "IGNORE", AffixReaderCommandKind.Ignore },
+                { "COMPOUNDFLAG", AffixReaderCommandKind.CompoundFlag },
+                { "COMPOUNDMIDDLE", AffixReaderCommandKind.CompoundMiddle },
+                { "COMPOUNDBEGIN", AffixReaderCommandKind.CompoundBegin },
+                { "COMPOUNDEND", AffixReaderCommandKind.CompoundEnd },
+                { "COMPOUNDWORDMAX", AffixReaderCommandKind.CompoundWordMax },
+                { "COMPOUNDMIN", AffixReaderCommandKind.CompoundMin },
+                { "COMPOUNDROOT", AffixReaderCommandKind.CompoundRoot },
+                { "COMPOUNDPERMITFLAG", AffixReaderCommandKind.CompoundPermitFlag },
+                { "COMPOUNDFORBIDFLAG", AffixReaderCommandKind.CompoundForbidFlag },
+                { "COMPOUNDSYLLABLE", AffixReaderCommandKind.CompoundSyllable },
+                { "NOSUGGEST", AffixReaderCommandKind.NoSuggest },
+                { "NONGRAMSUGGEST", AffixReaderCommandKind.NoNGramSuggest },
+                { "FORBIDDENWORD", AffixReaderCommandKind.ForbiddenWord },
+                { "LEMMA_PRESENT", AffixReaderCommandKind.LemmaPresent },
+                { "CIRCUMFIX", AffixReaderCommandKind.Circumfix },
+                { "ONLYINCOMPOUND", AffixReaderCommandKind.OnlyInCompound },
+                { "PSEUDOROOT", AffixReaderCommandKind.NeedAffix },
+                { "NEEDAFFIX", AffixReaderCommandKind.NeedAffix },
+                { "REP", AffixReaderCommandKind.Replacement },
+                { "ICONV", AffixReaderCommandKind.InputConversions },
+                { "OCONV", AffixReaderCommandKind.OutputConversions },
+                { "PHONE", AffixReaderCommandKind.Phone },
+                { "CHECKCOMPOUNDPATTERN", AffixReaderCommandKind.CheckCompoundPattern },
+                { "COMPOUNDRULE", AffixReaderCommandKind.CompoundRule },
+                { "MAP", AffixReaderCommandKind.Map },
+                { "BREAK", AffixReaderCommandKind.Break },
+                { "VERSION", AffixReaderCommandKind.Version },
+                { "MAXNGRAMSUGS", AffixReaderCommandKind.MaxNgramSuggestions },
+                { "MAXDIFF", AffixReaderCommandKind.MaxDifferency },
+                { "MAXCPDSUGS", AffixReaderCommandKind.MaxCompoundSuggestions },
+                { "KEEPCASE", AffixReaderCommandKind.KeepCase },
+                { "FORCEUCASE", AffixReaderCommandKind.ForceUpperCase },
+                { "WARN", AffixReaderCommandKind.Warn },
+                { "SUBSTANDARD", AffixReaderCommandKind.SubStandard },
+                { "PFX", AffixReaderCommandKind.Prefix },
+                { "SFX", AffixReaderCommandKind.Suffix },
+                { "AF", AffixReaderCommandKind.AliasF },
+                { "AM", AffixReaderCommandKind.AliasM }
+            };
+
+        private static readonly string[] DefaultBreakTableEntries = { "-", "^-", "-$" };
 
         private static readonly CharacterSet DefaultCompoundVowels = CharacterSet.TakeArray(new[] { 'A', 'E', 'I', 'O', 'U', 'a', 'e', 'i', 'o', 'u' });
 
@@ -222,20 +273,25 @@ namespace WeCantSpell.Hunspell
             }
         }
 
-        private bool TryHandleParameterizedCommand(string name, string parameters)
+        private bool TryHandleParameterizedCommand(string commandName, string parameters)
         {
-            var commandName = name.ToUpperInvariant();
-            switch (commandName)
+            if (commandName == null || !CommandMap.TryGetValue(commandName, out AffixReaderCommandKind command))
             {
-                case "FLAG": // parse in the try string
+                Builder.LogWarning($"Unknown command {commandName} with params: {parameters}");
+                return false;
+            }
+
+            switch (command)
+            {
+                case AffixReaderCommandKind.Flag:
                     return TrySetFlagMode(parameters);
-                case "KEY": // parse in the keyboard string
+                case AffixReaderCommandKind.KeyString:
                     Builder.KeyString = Builder.Dedup(parameters);
                     return true;
-                case "TRY": // parse in the try string
+                case AffixReaderCommandKind.TryString:
                     Builder.TryString = Builder.Dedup(parameters);
                     return true;
-                case "SET": // parse in the name of the character set used by the .dict and .aff
+                case AffixReaderCommandKind.SetEncoding:
                     var encoding = EncodingEx.GetEncodingByName(parameters);
                     if (encoding == null)
                     {
@@ -245,35 +301,35 @@ namespace WeCantSpell.Hunspell
 
                     Builder.Encoding = encoding;
                     return true;
-                case "LANG": // parse in the language for language specific codes
+                case AffixReaderCommandKind.Language:
                     Builder.Language = Builder.Dedup(parameters.Trim());
                     Builder.Culture = GetCultureFromLanguage(Builder.Language);
                     return true;
-                case "SYLLABLENUM": // parse in the flag used by compound_check() method
+                case AffixReaderCommandKind.CompoundSyllableNum:
                     Builder.CompoundSyllableNum = Builder.Dedup(parameters);
                     return true;
-                case "WORDCHARS": // parse in the extra word characters
+                case AffixReaderCommandKind.WordChars:
                     Builder.WordChars = CharacterSet.Create(parameters);
                     return true;
-                case "IGNORE": // parse in the ignored characters (for example, Arabic optional diacretics characters)
+                case AffixReaderCommandKind.Ignore:
                     Builder.IgnoredChars = CharacterSet.Create(parameters);
                     return true;
-                case "COMPOUNDFLAG": // parse in the flag used by the controlled compound words
+                case AffixReaderCommandKind.CompoundFlag:
                     return TryParseFlag(parameters, out Builder.CompoundFlag);
-                case "COMPOUNDMIDDLE": // parse in the flag used by compound words
+                case AffixReaderCommandKind.CompoundMiddle:
                     return TryParseFlag(parameters, out Builder.CompoundMiddle);
-                case "COMPOUNDBEGIN": // parse in the flag used by compound words
+                case AffixReaderCommandKind.CompoundBegin:
                     return EnumEx.HasFlag(Builder.Options, AffixConfigOptions.ComplexPrefixes)
                         ? TryParseFlag(parameters, out Builder.CompoundEnd)
                         : TryParseFlag(parameters, out Builder.CompoundBegin);
-                case "COMPOUNDEND": // parse in the flag used by compound words
+                case AffixReaderCommandKind.CompoundEnd:
                     return EnumEx.HasFlag(Builder.Options, AffixConfigOptions.ComplexPrefixes)
                         ? TryParseFlag(parameters, out Builder.CompoundBegin)
                         : TryParseFlag(parameters, out Builder.CompoundEnd);
-                case "COMPOUNDWORDMAX": // parse in the data used by compound_check() method
+                case AffixReaderCommandKind.CompoundWordMax:
                     Builder.CompoundWordMax = IntEx.TryParseInvariant(parameters);
                     return Builder.CompoundWordMax.HasValue;
-                case "COMPOUNDMIN": // parse in the minimal length for words in compounds
+                case AffixReaderCommandKind.CompoundMin:
                     Builder.CompoundMin = IntEx.TryParseInvariant(parameters);
                     if (!Builder.CompoundMin.HasValue)
                     {
@@ -287,69 +343,68 @@ namespace WeCantSpell.Hunspell
                     }
 
                     return true;
-                case "COMPOUNDROOT": // parse in the flag sign compounds in dictionary
+                case AffixReaderCommandKind.CompoundRoot:
                     return TryParseFlag(parameters, out Builder.CompoundRoot);
-                case "COMPOUNDPERMITFLAG": // parse in the flag used by compound_check() method
+                case AffixReaderCommandKind.CompoundPermitFlag:
                     return TryParseFlag(parameters, out Builder.CompoundPermitFlag);
-                case "COMPOUNDFORBIDFLAG": // parse in the flag used by compound_check() method
+                case AffixReaderCommandKind.CompoundForbidFlag:
                     return TryParseFlag(parameters, out Builder.CompoundForbidFlag);
-                case "COMPOUNDSYLLABLE": // parse in the max. words and syllables in compounds
+                case AffixReaderCommandKind.CompoundSyllable:
                     return TryParseCompoundSyllable(parameters);
-                case "NOSUGGEST":
+                case AffixReaderCommandKind.NoSuggest:
                     return TryParseFlag(parameters, out Builder.NoSuggest);
-                case "NONGRAMSUGGEST":
+                case AffixReaderCommandKind.NoNGramSuggest:
                     return TryParseFlag(parameters, out Builder.NoNgramSuggest);
-                case "FORBIDDENWORD": // parse in the flag used by forbidden words
+                case AffixReaderCommandKind.ForbiddenWord:
                     Builder.ForbiddenWord = TryParseFlag(parameters);
                     return Builder.ForbiddenWord.HasValue;
-                case "LEMMA_PRESENT": // parse in the flag used by forbidden words
+                case AffixReaderCommandKind.LemmaPresent:
                     return TryParseFlag(parameters, out Builder.LemmaPresent);
-                case "CIRCUMFIX": // parse in the flag used by circumfixes
+                case AffixReaderCommandKind.Circumfix:
                     return TryParseFlag(parameters, out Builder.Circumfix);
-                case "ONLYINCOMPOUND": // parse in the flag used by fogemorphemes
+                case AffixReaderCommandKind.OnlyInCompound:
                     return TryParseFlag(parameters, out Builder.OnlyInCompound);
-                case "PSEUDOROOT": // parse in the flag used by `needaffixs'
-                case "NEEDAFFIX": // parse in the flag used by `needaffixs'
+                case AffixReaderCommandKind.NeedAffix:
                     return TryParseFlag(parameters, out Builder.NeedAffix);
-                case "REP": // parse in the typical fault correcting table
+                case AffixReaderCommandKind.Replacement:
                     return TryParseStandardListItem(EntryListType.Replacements, parameters, ref Builder.Replacements, TryParseReplacements);
-                case "ICONV": // parse in the input conversion table
+                case AffixReaderCommandKind.InputConversions:
                     return TryParseConv(parameters, EntryListType.Iconv, ref Builder.InputConversions);
-                case "OCONV": // parse in the output conversion table
+                case AffixReaderCommandKind.OutputConversions:
                     return TryParseConv(parameters, EntryListType.Oconv, ref Builder.OutputConversions);
-                case "PHONE": // parse in the phonetic conversion table
+                case AffixReaderCommandKind.Phone:
                     return TryParseStandardListItem(EntryListType.Phone, parameters, ref Builder.Phone, TryParsePhone);
-                case "CHECKCOMPOUNDPATTERN": // parse in the checkcompoundpattern table
+                case AffixReaderCommandKind.CheckCompoundPattern:
                     return TryParseStandardListItem(EntryListType.CompoundPatterns, parameters, ref Builder.CompoundPatterns, TryParseCheckCompoundPatternIntoCompoundPatterns);
-                case "COMPOUNDRULE": // parse in the defcompound table
+                case AffixReaderCommandKind.CompoundRule:
                     return TryParseStandardListItem(EntryListType.CompoundRules, parameters, ref Builder.CompoundRules, TryParseCompoundRuleIntoList);
-                case "MAP": // parse in the related character map table
+                case AffixReaderCommandKind.Map:
                     return TryParseStandardListItem(EntryListType.Map, parameters, ref Builder.RelatedCharacterMap, TryParseMapEntry);
-                case "BREAK": // parse in the word breakpoints table
+                case AffixReaderCommandKind.Break:
                     return TryParseStandardListItem(EntryListType.Break, parameters, ref Builder.BreakPoints, TryParseBreak);
-                case "VERSION":
+                case AffixReaderCommandKind.Version:
                     Builder.Version = parameters;
                     return true;
-                case "MAXNGRAMSUGS":
+                case AffixReaderCommandKind.MaxNgramSuggestions:
                     Builder.MaxNgramSuggestions = IntEx.TryParseInvariant(parameters);
                     return Builder.MaxNgramSuggestions.HasValue;
-                case "MAXDIFF":
+                case AffixReaderCommandKind.MaxDifferency:
                     Builder.MaxDifferency = IntEx.TryParseInvariant(parameters);
                     return Builder.MaxDifferency.HasValue;
-                case "MAXCPDSUGS":
+                case AffixReaderCommandKind.MaxCompoundSuggestions:
                     Builder.MaxCompoundSuggestions = IntEx.TryParseInvariant(parameters);
                     return Builder.MaxCompoundSuggestions.HasValue;
-                case "KEEPCASE": // parse in the flag used by forbidden words
+                case AffixReaderCommandKind.KeepCase:
                     return TryParseFlag(parameters, out Builder.KeepCase);
-                case "FORCEUCASE":
+                case AffixReaderCommandKind.ForceUpperCase:
                     return TryParseFlag(parameters, out Builder.ForceUpperCase);
-                case "WARN":
+                case AffixReaderCommandKind.Warn:
                     return TryParseFlag(parameters, out Builder.Warn);
-                case "SUBSTANDARD":
+                case AffixReaderCommandKind.SubStandard:
                     return TryParseFlag(parameters, out Builder.SubStandard);
-                case "PFX":
-                case "SFX":
-                    var parseAsPrefix = "PFX" == commandName;
+                case AffixReaderCommandKind.Prefix:
+                case AffixReaderCommandKind.Suffix:
+                    var parseAsPrefix = AffixReaderCommandKind.Prefix == command;
                     if (EnumEx.HasFlag(Builder.Options, AffixConfigOptions.ComplexPrefixes))
                     {
                         parseAsPrefix = !parseAsPrefix;
@@ -358,12 +413,12 @@ namespace WeCantSpell.Hunspell
                     return parseAsPrefix
                         ? TryParseAffixIntoList(parameters, ref Builder.Prefixes)
                         : TryParseAffixIntoList(parameters, ref Builder.Suffixes);
-                case "AF":
+                case AffixReaderCommandKind.AliasF:
                     return TryParseStandardListItem(EntryListType.AliasF, parameters, ref Builder.AliasF, TryParseAliasF);
-                case "AM":
+                case AffixReaderCommandKind.AliasM:
                     return TryParseStandardListItem(EntryListType.AliasM, parameters, ref Builder.AliasM, TryParseAliasM);
                 default:
-                    Builder.LogWarning($"Unknown command {commandName} with params: {parameters}");
+                    Builder.LogWarning($"Unknown parsed command {command}");
                     return false;
             }
         }
@@ -541,7 +596,7 @@ namespace WeCantSpell.Hunspell
 
         private bool TryParseAliasF(string parameterText, List<FlagSet> entries)
         {
-            entries.Add(ParseFlags(parameterText));
+            entries.Add(Builder.Dedup(FlagSet.TakeArray(ParseFlagsInOrder(parameterText))));
             return true;
         }
 
@@ -662,7 +717,8 @@ namespace WeCantSpell.Hunspell
 
                 return true;
             }
-            else if (lineMatchGroups[4].Success && lineMatchGroups[5].Success && lineMatchGroups[6].Success)
+
+            if (lineMatchGroups[4].Success && lineMatchGroups[5].Success && lineMatchGroups[6].Success)
             {
                 // piece 3 - is string to strip or 0 for null
                 var strip = lineMatchGroups[4].Value;
@@ -699,7 +755,7 @@ namespace WeCantSpell.Hunspell
                     }
                     else
                     {
-                        contClass = ParseFlags(affixInput.Subslice(slashPartOffset, slashPartLength));
+                        contClass = Builder.Dedup(FlagSet.TakeArray(ParseFlagsInOrder(affixInput.Subslice(slashPartOffset, slashPartLength))));
                     }
                 }
                 else
@@ -735,11 +791,11 @@ namespace WeCantSpell.Hunspell
                     bool isRedundant;
                     if (typeof(TEntry) == typeof(PrefixEntry))
                     {
-                        isRedundant = RedundantConditionPrefix(strip, conditions);
+                        isRedundant = conditions.IsOnlyPossibleMatch(strip);
                     }
                     else if (typeof(TEntry) == typeof(SuffixEntry))
                     {
-                        isRedundant = RedundantConditionSuffix(strip, conditions);
+                        isRedundant = conditions.IsOnlyPossibleMatch(strip);
                     }
                     else
                     {
@@ -808,11 +864,9 @@ namespace WeCantSpell.Hunspell
 
                 return true;
             }
-            else
-            {
-                Builder.LogWarning("Affix line not fully parsed: " + parameterText);
-                return false;
-            }
+
+            Builder.LogWarning("Affix line not fully parsed: " + parameterText);
+            return false;
         }
 
         private static string ReverseCondition(string conditionText)
@@ -879,116 +933,6 @@ namespace WeCantSpell.Hunspell
             }
 
             return StringBuilderPool.GetStringAndReturn(chars);
-        }
-
-        private bool RedundantConditionPrefix(string text, CharacterConditionGroup conditions) =>
-            conditions.IsOnlyPossibleMatch(text);
-
-        private bool RedundantConditionPrefix(string text, string conditions)
-        {
-            if (text.StartsWith(conditions))
-            {
-                return true;
-            }
-
-            var lastConditionIndex = conditions.Length - 1;
-            int i, j;
-            for (i = 0, j = 0; i < text.Length && j < conditions.Length; i++, j++)
-            {
-                if (conditions[j] != '[')
-                {
-                    if (conditions[j] != text[i])
-                    {
-                        Builder.LogWarning($"Failure checking {nameof(RedundantConditionPrefix)} with {text} and {conditions}");
-                        return false;
-                    }
-                }
-                else if (j < lastConditionIndex)
-                {
-                    var neg = conditions[j + 1] == '^';
-                    var @in = false;
-
-                    do
-                    {
-                        j++;
-                        if (text[i] == conditions[j])
-                        {
-                            @in = true;
-                        }
-                    } while (j < lastConditionIndex && conditions[j] != ']');
-
-                    if (j == lastConditionIndex && conditions[j] != ']')
-                    {
-                        Builder.LogWarning($"Failure checking {nameof(RedundantConditionPrefix)} with {text} and {conditions}");
-                        return false;
-                    }
-
-                    if (neg == @in)
-                    {
-                        Builder.LogWarning($"Failure checking {nameof(RedundantConditionPrefix)} with {text} and {conditions}");
-                        return false;
-                    }
-                }
-            }
-
-            return j >= conditions.Length;
-        }
-
-        private bool RedundantConditionSuffix(string text, CharacterConditionGroup conditions) =>
-            conditions.IsOnlyPossibleMatch(text);
-
-        private bool RedundantConditionSuffix(string text, string conditions)
-        {
-            if (text.EndsWith(conditions))
-            {
-                return true;
-            }
-
-            var lastConditionIndex = conditions.Length - 1;
-            int i, j;
-            for (i = text.Length - 1, j = conditions.Length - 1; i >= 0 && j >= 0; i--, j--)
-            {
-                if (conditions[j] != ']')
-                {
-                    if (conditions[j] != text[i])
-                    {
-                        Builder.LogWarning($"Failure checking {nameof(RedundantConditionSuffix)} with {text} and {conditions}");
-                        return false;
-                    }
-                }
-                else if (j > 0)
-                {
-                    var @in = false;
-                    do
-                    {
-                        j--;
-                        if (text[i] == conditions[j])
-                        {
-                            @in = true;
-                        }
-                    } while (j > 0 && conditions[j] != '[');
-
-                    if (j == 0 && conditions[j] != '[')
-                    {
-                        Builder.LogWarning($"Failure checking {nameof(RedundantConditionSuffix)} with {text} and {conditions}");
-                        return false;
-                    }
-
-                    var neg = j < lastConditionIndex && conditions[j + 1] == '^';
-                    if (neg == @in)
-                    {
-                        Builder.LogWarning($"Failure checking {nameof(RedundantConditionSuffix)} with {text} and {conditions}");
-                        return false;
-                    }
-                }
-            }
-
-            if (j < 0)
-            {
-                return true;
-            }
-
-            return false;
         }
 
         private bool TryParseReplacements(string parameterText, List<SingleReplacement> entries)
@@ -1127,18 +1071,6 @@ namespace WeCantSpell.Hunspell
             }
         }
 
-        private string ReDecodeConvertedStringAsUtf8(string decoded)
-        {
-            var encoding = Builder.Encoding ?? Reader.CurrentEncoding;
-            if (encoding == Encoding.UTF8)
-            {
-                return decoded;
-            }
-
-            var encodedBytes = encoding.GetBytes(decoded);
-            return Encoding.UTF8.GetString(encodedBytes, 0, encodedBytes.Length);
-        }
-
         private StringSlice ReDecodeConvertedStringAsUtf8(StringSlice decoded)
         {
             var encoding = Builder.Encoding ?? Reader.CurrentEncoding;
@@ -1147,28 +1079,22 @@ namespace WeCantSpell.Hunspell
                 return decoded;
             }
 
-            var encodedBytes = new byte[encoding.GetMaxByteCount(decoded.Length)];
-            var byteEncodedCount = encoding.GetBytes(decoded.Text, decoded.Offset, decoded.Length, encodedBytes, 0);
-            return StringSlice.Create(Encoding.UTF8.GetString(encodedBytes, 0, byteEncodedCount));
-        }
-
-        private FlagSet ParseFlags(string text) =>
-            Builder.Dedup(FlagSet.TakeArray(ParseFlagsInOrder(text)));
-
-        private FlagValue[] ParseFlagsInOrder(string text)
-        {
-            var flagMode = Builder.FlagMode;
-            if (flagMode == FlagMode.Uni)
+            byte[] encodedBytes;
+            if (decoded.Text.Length == decoded.Length && decoded.Offset == 0)
             {
-                text = ReDecodeConvertedStringAsUtf8(text);
-                flagMode = FlagMode.Char;
+                encodedBytes = encoding.GetBytes(decoded.Text);
+                return StringSlice.Create(Encoding.UTF8.GetString(encodedBytes, 0, encodedBytes.Length));
             }
-
-            return FlagValue.ParseFlagsInOrder(text, flagMode);
+            else
+            {
+                encodedBytes = new byte[encoding.GetMaxByteCount(decoded.Length)];
+                var byteEncodedCount = encoding.GetBytes(decoded.Text, decoded.Offset, decoded.Length, encodedBytes, 0);
+                return StringSlice.Create(Encoding.UTF8.GetString(encodedBytes, 0, byteEncodedCount));
+            }
         }
 
-        private FlagSet ParseFlags(StringSlice text) =>
-            Builder.Dedup(FlagSet.TakeArray(ParseFlagsInOrder(text)));
+        private FlagValue[] ParseFlagsInOrder(string text) =>
+            ParseFlagsInOrder(StringSlice.Create(text));
 
         private FlagValue[] ParseFlagsInOrder(StringSlice text)
         {
@@ -1182,7 +1108,10 @@ namespace WeCantSpell.Hunspell
             return FlagValue.ParseFlagsInOrder(text, flagMode);
         }
 
-        private bool TryParseFlag(string text, out FlagValue value)
+        private bool TryParseFlag(string text, out FlagValue value) =>
+            TryParseFlag(StringSlice.Create(text), out value);
+
+        private bool TryParseFlag(StringSlice text, out FlagValue value)
         {
             var flagMode = Builder.FlagMode;
             if (flagMode == FlagMode.Uni)
@@ -1194,24 +1123,13 @@ namespace WeCantSpell.Hunspell
             return FlagValue.TryParseFlag(text, flagMode, out value);
         }
 
-        private bool TryParseFlag(StringSlice text, out FlagValue value) =>
-            Builder.FlagMode == FlagMode.Uni
-                ? FlagValue.TryParseFlag(ReDecodeConvertedStringAsUtf8(text), FlagMode.Char, out value)
-                : FlagValue.TryParseFlag(text, Builder.FlagMode, out value);
+        private FlagValue TryParseFlag(string text) =>
+            TryParseFlag(StringSlice.Create(text));
 
-        private FlagValue TryParseFlag(string text)
-        {
-            var flagMode = Builder.FlagMode;
-            if (Builder.FlagMode == FlagMode.Uni)
-            {
-                text = ReDecodeConvertedStringAsUtf8(text);
-                flagMode = FlagMode.Char;
-            }
-
-            return FlagValue.TryParseFlag(text, flagMode, out FlagValue value)
+        private FlagValue TryParseFlag(StringSlice text) =>
+            TryParseFlag(text, out FlagValue value)
                 ? value
                 : default(FlagValue);
-        }
 
         [Flags]
         internal enum EntryListType : short
@@ -1227,6 +1145,151 @@ namespace WeCantSpell.Hunspell
             Oconv = 1 << 7,
             Map = 1 << 8,
             Phone = 1 << 9
+        }
+
+        private enum AffixReaderCommandKind : byte
+        {
+            /// <summary>
+            /// parse in the try string
+            /// </summary>
+            Flag,
+            /// <summary>
+            /// parse in the keyboard string
+            /// </summary>
+            KeyString,
+            /// <summary>
+            /// parse in the try string
+            /// </summary>
+            TryString,
+            /// <summary>
+            /// parse in the name of the character set used by the .dict and .aff
+            /// </summary>
+            SetEncoding,
+            /// <summary>
+            /// parse in the language for language specific codes
+            /// </summary>
+            Language,
+            /// <summary>
+            /// parse in the flag used by compound_check() method
+            /// </summary>
+            CompoundSyllableNum,
+            /// <summary>
+            /// parse in the extra word characters
+            /// </summary>
+            WordChars,
+            /// <summary>
+            /// parse in the ignored characters (for example, Arabic optional diacretics characters)
+            /// </summary>
+            Ignore,
+            /// <summary>
+            /// parse in the flag used by the controlled compound words
+            /// </summary>
+            CompoundFlag,
+            /// <summary>
+            /// parse in the flag used by compound words
+            /// </summary>
+            CompoundMiddle,
+            /// <summary>
+            /// parse in the flag used by compound words
+            /// </summary>
+            CompoundBegin,
+            /// <summary>
+            /// parse in the flag used by compound words
+            /// </summary>
+            CompoundEnd,
+            /// <summary>
+            /// parse in the data used by compound_check() method
+            /// </summary>
+            CompoundWordMax,
+            /// <summary>
+            /// parse in the minimal length for words in compounds
+            /// </summary>
+            CompoundMin,
+            /// <summary>
+            /// parse in the flag sign compounds in dictionary
+            /// </summary>
+            CompoundRoot,
+            /// <summary>
+            /// parse in the flag used by compound_check() method
+            /// </summary>
+            CompoundPermitFlag,
+            /// <summary>
+            /// parse in the flag used by compound_check() method
+            /// </summary>
+            CompoundForbidFlag,
+            /// <summary>
+            /// parse in the max. words and syllables in compounds
+            /// </summary>
+            CompoundSyllable,
+            NoSuggest,
+            NoNGramSuggest,
+            /// <summary>
+            /// parse in the flag used by forbidden words
+            /// </summary>
+            ForbiddenWord,
+            /// <summary>
+            /// parse in the flag used by forbidden words
+            /// </summary>
+            LemmaPresent,
+            /// <summary>
+            /// parse in the flag used by circumfixes
+            /// </summary>
+            Circumfix,
+            /// <summary>
+            /// parse in the flag used by fogemorphemes
+            /// </summary>
+            OnlyInCompound,
+            /// <summary>
+            /// parse in the flag used by `needaffixs'
+            /// </summary>
+            NeedAffix,
+            /// <summary>
+            /// parse in the typical fault correcting table
+            /// </summary>
+            Replacement,
+            /// <summary>
+            /// parse in the input conversion table
+            /// </summary>
+            InputConversions,
+            /// <summary>
+            /// parse in the output conversion table
+            /// </summary>
+            OutputConversions,
+            /// <summary>
+            /// parse in the phonetic conversion table
+            /// </summary>
+            Phone,
+            /// <summary>
+            /// parse in the checkcompoundpattern table
+            /// </summary>
+            CheckCompoundPattern,
+            /// <summary>
+            /// parse in the defcompound table
+            /// </summary>
+            CompoundRule,
+            /// <summary>
+            /// parse in the related character map table
+            /// </summary>
+            Map,
+            /// <summary>
+            /// parse in the word breakpoints table
+            /// </summary>
+            Break,
+            Version,
+            MaxNgramSuggestions,
+            MaxDifferency,
+            MaxCompoundSuggestions,
+            /// <summary>
+            /// parse in the flag used by forbidden words
+            /// </summary>
+            KeepCase,
+            ForceUpperCase,
+            Warn,
+            SubStandard,
+            Prefix,
+            Suffix,
+            AliasF,
+            AliasM
         }
     }
 }

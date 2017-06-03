@@ -153,9 +153,9 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public override bool Equals(object obj)
         {
-            if (obj is StringSlice)
+            if (obj is StringSlice slice)
             {
-                return Equals((StringSlice)obj);
+                return Equals(slice);
             }
             if (obj is string stringValue)
             {
