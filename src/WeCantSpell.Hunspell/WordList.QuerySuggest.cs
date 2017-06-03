@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using WeCantSpell.Hunspell.Infrastructure;
+
+#if !NO_INLINE
+using System.Runtime.CompilerServices;
+#endif
 
 namespace WeCantSpell.Hunspell
 {
@@ -48,25 +51,19 @@ namespace WeCantSpell.Hunspell
                     return slst;
                 }
 
-                CapitalizationType capType;
-                int abbv;
-                string scw;
-                string tempString;
 
                 // input conversion
-                if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out tempString))
+                if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out string tempString))
                 {
                     tempString = word;
                 }
 
-                CleanWord2(out scw, tempString, out capType, out abbv);
+                CleanWord2(out string scw, tempString, out CapitalizationType capType, out int abbv);
 
                 if (scw.Length == 0)
                 {
                     return slst;
                 }
-
-                var capWords = false;
 
                 if (capType == CapitalizationType.None && Affix.ForceUpperCase.HasValue)
                 {
@@ -80,6 +77,7 @@ namespace WeCantSpell.Hunspell
                     }
                 }
 
+                var capWords = false;
                 if (capType == CapitalizationType.None)
                 {
                     Suggest(slst, scw, ref onlyCompoundSuggest);
@@ -92,10 +90,7 @@ namespace WeCantSpell.Hunspell
                 }
                 else if (capType == CapitalizationType.Huh || capType == CapitalizationType.HuhInit)
                 {
-                    if (capType == CapitalizationType.HuhInit)
-                    {
-                        capWords = true;
-                    }
+                    capWords = capType == CapitalizationType.HuhInit;
 
                     Suggest(slst, scw, ref onlyCompoundSuggest);
 
@@ -139,18 +134,19 @@ namespace WeCantSpell.Hunspell
                     // aNew -> "a New" (instead of "a new")
                     for (var j = prevns; j < slst.Count; j++)
                     {
-                        var spaceIndex = slst[j].IndexOf(' ');
+                        var toRemove = slst[j];
+                        var spaceIndex = toRemove.IndexOf(' ');
                         if (spaceIndex >= 0)
                         {
-                            var slen = slst[j].Length - spaceIndex - 1;
+                            var slen = toRemove.Length - spaceIndex - 1;
 
                             // different case after space (need capitalisation)
-                            if (slen < scw.Length && !StringEx.EqualsOffset(scw, scw.Length - slen, slst[j], 1 + spaceIndex))
+                            if (slen < scw.Length && !StringEx.EqualsOffset(scw, scw.Length - slen, toRemove, 1 + spaceIndex))
                             {
-                                var removed = slst[j];
                                 // set as first suggestion
-                                slst.RemoveAt(j);
-                                slst.Insert(0, StringEx.ConcatSubstring(removed, 0, spaceIndex + 1, MakeInitCap(removed.Subslice(spaceIndex + 1))));
+                                slst.RemoveFromIndexThenInsertAtFront(
+                                    j,
+                                    StringEx.ConcatSubstring(toRemove, 0, spaceIndex + 1, MakeInitCap(toRemove.Subslice(spaceIndex + 1))));
                             }
                         }
                     }
@@ -352,8 +348,7 @@ namespace WeCantSpell.Hunspell
                 {
                     for (var j = 0; j < slst.Count; j++)
                     {
-                        string wspace;
-                        if (Affix.OutputConversions.TryConvert(slst[j], out wspace))
+                        if (Affix.OutputConversions.TryConvert(slst[j], out string wspace))
                         {
                             slst[j] = wspace;
                         }
@@ -365,24 +360,19 @@ namespace WeCantSpell.Hunspell
 
             private List<string> Suggest(string word) => new QuerySuggest(word, WordList).Suggest();
 
-            private void Suggest(List<string> slst, string w, ref bool onlyCompoundSug)
+            private void Suggest(List<string> slst, string word, ref bool onlyCompoundSug)
             {
                 var noCompoundTwoWords = false;
                 var nSugOrig = slst.Count;
                 var oldSug = 0;
+                var cpdSuggest = false;
 
                 // word reversing wrapper for complex prefixes
-                string word;
                 if (Affix.ComplexPrefixes)
                 {
-                    word = w.Reverse();
-                }
-                else
-                {
-                    word = w;
+                    word = word.Reverse();
                 }
 
-                var cpdSuggest = false;
                 do
                 {
                     // limit compound suggestion
@@ -538,6 +528,7 @@ namespace WeCantSpell.Hunspell
 
                 var candidate = StringBuilderPool.Get(word, word.Length);
 
+                // TODO: find a better way to make sure this does not run over its time limit
                 long? timeLimit = Environment.TickCount;
                 int? timer = MinTimer;
 
@@ -632,6 +623,8 @@ namespace WeCantSpell.Hunspell
                 }
 
                 var candidate = StringBuilderPool.Get(word, word.Length + 1);
+
+                // TODO: find a better way to make sure this does not run over its time limit
                 int? timer = MinTimer;
                 long? timeLimit = Environment.TickCount;
 
@@ -670,10 +663,7 @@ namespace WeCantSpell.Hunspell
 
                 for (var index = candidate.Length - 1; index >= 0; index--)
                 {
-                    var tmpc = candidate[index];
-                    candidate.Remove(index, 1);
-                    TestSug(wlst, candidate.ToString(), cpdSuggest);
-                    candidate.Insert(index, tmpc);
+                    TestSug(wlst, candidate.ToStringSkippingIndex(index), cpdSuggest);
                 }
 
                 StringBuilderPool.Return(candidate);
@@ -891,6 +881,7 @@ namespace WeCantSpell.Hunspell
 
             private void TestSug(List<string> wlst, string candidate, bool cpdSuggest)
             {
+                // TODO: create a time limiting type
                 int? timer = null;
                 long? timeLimit = null;
                 TestSug(wlst, candidate, cpdSuggest, ref timer, ref timeLimit);
@@ -898,6 +889,7 @@ namespace WeCantSpell.Hunspell
 
             private void TestSug(List<string> wlst, StringSlice candidate, bool cpdSuggest)
             {
+                // TODO: create a time limiting type
                 int? timer = null;
                 long? timeLimit = null;
                 TestSug(wlst, candidate, cpdSuggest, ref timer, ref timeLimit);
@@ -935,6 +927,7 @@ namespace WeCantSpell.Hunspell
 
             private int CheckWord(string word, bool cpdSuggest)
             {
+                // TODO: create a time limiting type
                 int? timer = null;
                 long? timeLimit = null;
                 return CheckWord(word, cpdSuggest, ref timer, ref timeLimit);
@@ -951,6 +944,7 @@ namespace WeCantSpell.Hunspell
             /// </remarks>
             private int CheckWord(string word, bool cpdSuggest, ref int? timer, ref long? timeLimit)
             {
+                // TODO: create a time limiting type
                 // check time limit
                 if (timer.HasValue)
                 {
@@ -1024,14 +1018,9 @@ namespace WeCantSpell.Hunspell
                     rv = PrefixCheck(word, CompoundOptions.Not, default(FlagValue)); // only prefix, and prefix + suffix XXX
                 }
 
-                bool noSuffix;
-                if (rv != null)
+                var noSuffix = rv != null;
+                if (!noSuffix)
                 {
-                    noSuffix = true;
-                }
-                else
-                {
-                    noSuffix = false;
                     rv = SuffixCheck(word, AffixEntryOptions.None, null, default(FlagValue), default(FlagValue), CompoundOptions.Not); // only suffix
                 }
 
@@ -1075,7 +1064,6 @@ namespace WeCantSpell.Hunspell
                     return wlst.Count;
                 }
 
-                //for (var i = 0; i < Affix.Replacements.Length; i++)
                 foreach (var replacement in Affix.Replacements)
                 {
                     var r = 0;
@@ -1267,34 +1255,37 @@ namespace WeCantSpell.Hunspell
 
                         for (var k = 0; k < nw; k++)
                         {
-                            sc = NGram(word.Length, word, glst[k].Word, NGramOptions.AnyMismatch | NGramOptions.Lowering)
-                                + LeftCommonSubstring(word, glst[k].Word);
+                            ref var guessWordK = ref glst[k];
+                            sc = NGram(word.Length, word, guessWordK.Word, NGramOptions.AnyMismatch | NGramOptions.Lowering)
+                                + LeftCommonSubstring(word, guessWordK.Word);
 
                             if (sc > thresh)
                             {
-                                if (sc > guesses[lp].Score)
+                                ref var guessNGramLp = ref guesses[lp];
+                                if (sc > guessNGramLp.Score)
                                 {
-                                    guesses[lp].Score = sc;
-                                    guesses[lp].Guess = glst[k].Word;
-                                    guesses[lp].GuessOrig = glst[k].Orig;
+                                    guessNGramLp.Score = sc;
+                                    guessNGramLp.Guess = guessWordK.Word;
+                                    guessNGramLp.GuessOrig = guessWordK.Orig;
                                     lval = sc;
                                     for (var j = 0; j < guesses.Length; j++)
                                     {
-                                        if (guesses[j].Score < lval)
+                                        ref var guessNGramJ = ref guesses[j];
+                                        if (guessNGramJ.Score < lval)
                                         {
                                             lp = j;
-                                            lval = guesses[j].Score;
+                                            lval = guessNGramJ.Score;
                                         }
                                     }
                                 }
                                 else
                                 {
-                                    glst[k].ClearWordAndOrig();
+                                    guessWordK.ClearWordAndOrig();
                                 }
                             }
                             else
                             {
-                                glst[k].ClearWordAndOrig();
+                                guessWordK.ClearWordAndOrig();
                             }
                         }
                     }
@@ -1315,7 +1306,6 @@ namespace WeCantSpell.Hunspell
                 // the longest common subsequent algorithm and resort
 
                 var fact = 1.0;
-                var re = 0;
                 var isSwap = false;
 
                 if (Affix.MaxDifferency.HasValue && Affix.MaxDifferency.GetValueOrDefault() >= 0)
@@ -1342,7 +1332,7 @@ namespace WeCantSpell.Hunspell
                         }
 
                         // using 2-gram instead of 3, and other weightening
-                        re = NGram(2, word, gl, NGramOptions.AnyMismatch | NGramOptions.Weighted | NGramOptions.Lowering)
+                        var re = NGram(2, word, gl, NGramOptions.AnyMismatch | NGramOptions.Weighted | NGramOptions.Lowering)
                             + NGram(2, gl, word, NGramOptions.AnyMismatch | NGramOptions.Weighted | NGramOptions.Lowering);
 
                         guesses[i].Score =
@@ -1395,7 +1385,7 @@ namespace WeCantSpell.Hunspell
                 var same = false;
                 for (var i = 0; i < guesses.Length; i++)
                 {
-                    var guess = guesses[i];
+                    ref var guess = ref guesses[i];
                     if (guess.Guess != null)
                     {
                         if (
@@ -1424,7 +1414,7 @@ namespace WeCantSpell.Hunspell
                                     Affix.OnlyMaxDiff
                                 )
                                 {
-                                    guesses[i].ClearGuessAndOrig();
+                                    guess.ClearGuessAndOrig();
                                     continue;
                                 }
                             }
@@ -1452,7 +1442,7 @@ namespace WeCantSpell.Hunspell
                             }
                         }
 
-                        guesses[i].ClearGuessAndOrig();
+                        guess.ClearGuessAndOrig();
                     }
                 }
 
@@ -1463,7 +1453,7 @@ namespace WeCantSpell.Hunspell
                 {
                     for (var i = 0; i < roots.Length; i++)
                     {
-                        var root = roots[i];
+                        ref var root = ref roots[i];
                         if (root.RootPhon != null && wlst.Count < wlstLimit)
                         {
                             var unique = true;
@@ -1494,16 +1484,9 @@ namespace WeCantSpell.Hunspell
             private int CommonCharacterPositions(string s1, string s2, ref bool isSwap)
             {
                 // decapitalize dictionary word
-                string t;
-                if (Affix.ComplexPrefixes)
-                {
-                    var l2 = s2.Length;
-                    t = StringEx.ConcatSubstring(s2, 0, l2 - 1, Affix.Culture.TextInfo.ToLower(s2[l2 - 1]));
-                }
-                else
-                {
-                    t = MakeAllSmall(s2);
-                }
+                var t = Affix.ComplexPrefixes
+                    ? StringEx.ConcatSubstring(s2, 0, s2.Length - 1, Affix.Culture.TextInfo.ToLower(s2[s2.Length - 1]))
+                    : MakeAllSmall(s2);
 
                 var num = 0;
                 var diff = 0;
@@ -1549,16 +1532,13 @@ namespace WeCantSpell.Hunspell
 
             private static int LcsLen(string s, string s2)
             {
-                int m, n;
-                LongestCommonSubsequenceType[] result;
-                Lcs(s, s2, out m, out n, out result);
+                Lcs(s, s2, out int i, out int n, out LongestCommonSubsequenceType[] result);
 
                 if (result == null)
                 {
                     return 0;
                 }
 
-                var i = m;
                 var j = n;
                 var len = 0;
                 while (i != 0 && j != 0)
@@ -1601,21 +1581,29 @@ namespace WeCantSpell.Hunspell
                     for (var j = 1; j <= n; j++)
                     {
                         var inj = i * nNext + j;
+                        ref var cInj = ref c[inj];
+                        ref var bInj = ref b[inj];
+
                         var jPrev = j - 1;
+                        var iPrevXNNext = iPrev * nNext;
                         if (((s[iPrev] == s2[jPrev])))
                         {
-                            c[inj] = c[iPrev * nNext + jPrev] + 1;
-                            b[inj] = LongestCommonSubsequenceType.UpLeft;
+                            cInj = c[iPrevXNNext + jPrev] + 1;
+                            bInj = LongestCommonSubsequenceType.UpLeft;
+                            continue;
                         }
-                        else if (c[iPrev * nNext + j] >= c[inj - 1])
+
+                        var cIPrevXNNext = c[iPrevXNNext + j];
+                        var cInjMinux1 = c[inj - 1];
+                        if (cIPrevXNNext >= cInjMinux1)
                         {
-                            c[inj] = c[iPrev * nNext + j];
-                            b[inj] = LongestCommonSubsequenceType.Up;
+                            cInj = cIPrevXNNext;
+                            bInj = LongestCommonSubsequenceType.Up;
                         }
                         else
                         {
-                            c[inj] = c[inj - 1];
-                            b[inj] = LongestCommonSubsequenceType.UpLeft;
+                            cInj = cInjMinux1;
+                            bInj = LongestCommonSubsequenceType.UpLeft;
                         }
                     }
                 }
@@ -1627,8 +1615,7 @@ namespace WeCantSpell.Hunspell
                 // first add root word to list
                 if (nh < wlst.Length && !entry.ContainsAnyFlags(Affix.NeedAffix, Affix.OnlyInCompound))
                 {
-                    var dupTs = MyStrDup(entry.Word);
-                    wlst[nh].Word = dupTs;
+                    wlst[nh].Word = entry.Word;
                     if (wlst[nh].Word == null)
                     {
                         return 0;
@@ -1641,14 +1628,14 @@ namespace WeCantSpell.Hunspell
                     // add special phonetic version
                     if (phon != null && nh < wlst.Length)
                     {
-                        wlst[nh].Word = MyStrDup(phon);
+                        wlst[nh].Word = phon;
                         if (wlst[nh].Word == null)
                         {
                             return nh - 1;
                         }
 
                         wlst[nh].Allow = false;
-                        wlst[nh].Orig = dupTs;
+                        wlst[nh].Orig = entry.Word;
                         if (wlst[nh].Orig == null)
                         {
                             return nh - 1;
@@ -1694,7 +1681,7 @@ namespace WeCantSpell.Hunspell
                                 {
                                     if (nh < wlst.Length)
                                     {
-                                        wlst[nh].Word = MyStrDup(newword);
+                                        wlst[nh].Word = newword;
                                         wlst[nh].Allow = sptrGroup.AllowCross;
                                         wlst[nh].Orig = null;
                                         nh++;
@@ -1702,14 +1689,14 @@ namespace WeCantSpell.Hunspell
                                         // add special phonetic version
                                         if (phon != null && nh < wlst.Length)
                                         {
-                                            wlst[nh].Word = MyStrDup(phon + sptr.Key.Reverse());
+                                            wlst[nh].Word = phon + sptr.Key.Reverse();
                                             if (wlst[nh].Word == null)
                                             {
                                                 return nh - 1;
                                             }
 
                                             wlst[nh].Allow = false;
-                                            wlst[nh].Orig = MyStrDup(newword);
+                                            wlst[nh].Orig = newword;
                                             if (wlst[nh].Orig == null)
                                             {
                                                 return nh - 1;
@@ -1765,7 +1752,7 @@ namespace WeCantSpell.Hunspell
                                     {
                                         if (nh < wlst.Length)
                                         {
-                                            wlst[nh].Word = MyStrDup(newword);
+                                            wlst[nh].Word = newword;
                                             wlst[nh].Allow = pfxGroup.AllowCross;
                                             wlst[nh].Orig = null;
                                         }
@@ -1808,7 +1795,7 @@ namespace WeCantSpell.Hunspell
                                 {
                                     if (nh < wlst.Length)
                                     {
-                                        wlst[nh].Word = MyStrDup(newword);
+                                        wlst[nh].Word = newword;
                                         wlst[nh].Allow = ptrGroup.AllowCross;
                                         wlst[nh].Orig = null;
                                         nh++;
@@ -1832,9 +1819,6 @@ namespace WeCantSpell.Hunspell
                     return wlst.Count;
                 }
 
-                int c2;
-                bool cwrd;
-
                 var isHungarianAndNotForbidden = Affix.IsHungarian && !CheckForbidden(word);
 
                 var candidate = StringBuilderPool.Get(word.Length + 2);
@@ -1851,7 +1835,7 @@ namespace WeCantSpell.Hunspell
                     var c1 = CheckWord(candidate.ToStringTerminated(), cpdSuggest);
                     if (c1 != 0)
                     {
-                        c2 = CheckWord(candidate.ToStringTerminated(p + 1), cpdSuggest);
+                        var c2 = CheckWord(candidate.ToStringTerminated(p + 1), cpdSuggest);
                         if (c2 != 0)
                         {
                             candidate[p] = ' ';
@@ -1888,7 +1872,7 @@ namespace WeCantSpell.Hunspell
                                 candidate[p] = '-';
                             }
 
-                            cwrd = true;
+                            var cwrd = true;
 
                             var currentCandidateString = candidate.ToStringTerminated();
                             for (var k = 0; k < wlst.Count; k++)
@@ -2079,11 +2063,6 @@ namespace WeCantSpell.Hunspell
                 dest = StringBuilderPool.GetStringAndReturn(builder);
                 return true;
             }
-
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            private string MyStrDup(string s) => s;
 
             /// <summary>
             /// Length of the left common substring of s1 and (decapitalised) s2.

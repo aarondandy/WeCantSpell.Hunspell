@@ -69,18 +69,14 @@ namespace WeCantSpell.Hunspell
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            private void ClearPrefix()
-            {
+            private void ClearPrefix() =>
                 Prefix = null;
-            }
 
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            private void ClearSuffix()
-            {
+            private void ClearSuffix() =>
                 Suffix = null;
-            }
 
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -113,42 +109,32 @@ namespace WeCantSpell.Hunspell
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            private void SetPrefix(AffixEntryWithDetail<PrefixEntry> entry)
-            {
+            private void SetPrefix(AffixEntryWithDetail<PrefixEntry> entry) =>
                 Prefix = entry;
-            }
 
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            private void SetSuffix(AffixEntryWithDetail<SuffixEntry> entry)
-            {
+            private void SetSuffix(AffixEntryWithDetail<SuffixEntry> entry) =>
                 Suffix = entry;
-            }
 
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            private void SetSuffixFlag(FlagValue flag)
-            {
+            private void SetSuffixFlag(FlagValue flag) =>
                 SuffixFlag = flag;
-            }
 
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            private void SetSuffixExtra(bool extra)
-            {
+            private void SetSuffixExtra(bool extra) =>
                 SuffixExtra = extra;
-            }
 
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            private void SetSuffixAppend(string append)
-            {
+            private void SetSuffixAppend(string append) =>
                 SuffixAppend = append;
-            }
 
             protected bool Check(string word) => new QueryCheck(word, WordList).Check();
 
@@ -202,45 +188,29 @@ namespace WeCantSpell.Hunspell
 #endif
             protected string MakeAllCap(string s) => Affix.Culture.TextInfo.ToUpper(s);
 
-            protected WordEntry CheckWord(string w, ref SpellCheckResultType info, out string root)
+            protected WordEntry CheckWord(string word, ref SpellCheckResultType info, out string root)
             {
                 root = null;
-                string w2;
-                string word;
-                bool useBuffer;
-                if (Affix.IgnoredChars.HasItems)
-                {
-                    w2 = w.RemoveChars(Affix.IgnoredChars);
-                    word = w2;
-                    useBuffer = true;
-                }
-                else
-                {
-                    w2 = string.Empty;
-                    word = w;
-                    useBuffer = false;
-                }
 
-                if (word.Length == 0)
+                if (word == null || word.Length == 0)
                 {
                     return null;
+                }
+
+                if (Affix.IgnoredChars.HasItems)
+                {
+                    word = word.RemoveChars(Affix.IgnoredChars);
+
+                    if (word.Length == 0)
+                    {
+                        return null;
+                    }
                 }
 
                 // word reversing wrapper for complex prefixes
                 if (Affix.ComplexPrefixes)
                 {
-                    if (!useBuffer)
-                    {
-                        w2 = word;
-                        useBuffer = true;
-                    }
-
-                    w2 = w2.Reverse();
-                }
-
-                if (useBuffer)
-                {
-                    word = w2;
+                    word = word.Reverse();
                 }
 
                 // look word in hash table
@@ -357,10 +327,8 @@ namespace WeCantSpell.Hunspell
                 return he;
             }
 
-            protected WordEntry CompoundCheck(StringSlice word, int wordNum, int numSyllable, int maxwordnum, int wnum, Dictionary<int, WordEntry> words, ref Dictionary<int, WordEntry> rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
-            {
-                return CompoundCheck(word.ToString(), wordNum, numSyllable, maxwordnum, wnum, words, ref rwords, huMovRule, isSug, ref info);
-            }
+            protected WordEntry CompoundCheck(StringSlice word, int wordNum, int numSyllable, int maxwordnum, int wnum, Dictionary<int, WordEntry> words, ref Dictionary<int, WordEntry> rwords, bool huMovRule, int isSug, ref SpellCheckResultType info) =>
+                CompoundCheck(word.ToString(), wordNum, numSyllable, maxwordnum, wnum, words, ref rwords, huMovRule, isSug, ref info);
 
             protected WordEntry CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, int wnum, Dictionary<int, WordEntry> words, ref Dictionary<int, WordEntry> rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
             {
@@ -883,7 +851,7 @@ namespace WeCantSpell.Hunspell
                                                 (
                                                     Affix.CompoundRules.HasItems
                                                     && words != null
-                                                    && DefCompoundCheck(ref words, wnum + 1, rv, null, true)
+                                                    && DefCompoundCheck(words, wnum + 1, rv, true)
                                                 )
                                             )
                                             ||
@@ -1039,7 +1007,7 @@ namespace WeCantSpell.Hunspell
                                     if (rv == null && Affix.CompoundRules.HasItems && words != null)
                                     {
                                         rv = AffixCheck(word.Substring(i), new FlagValue(), CompoundOptions.End);
-                                        if (rv != null && DefCompoundCheck(ref words, wnum + 1, rv, null, true))
+                                        if (rv != null && DefCompoundCheck(words, wnum + 1, rv, true))
                                         {
                                             st.Destroy();
                                             return rvFirst;
@@ -1356,7 +1324,6 @@ namespace WeCantSpell.Hunspell
                 var rv = PrefixCheck(word, inCompound, needFlag);
                 if (rv == null)
                 {
-
                     // if still not found check all suffixes
                     rv = SuffixCheck(word, 0, null, default(FlagValue), needFlag, inCompound);
 
@@ -1790,11 +1757,9 @@ namespace WeCantSpell.Hunspell
             /// </summary>
             private bool DefCompoundCheck(ref Dictionary<int, WordEntry> words, int wnum, WordEntry rv, Dictionary<int, WordEntry> def, bool all)
             {
-                var w = false;
-
-                if (words == null)
+                var givenWordsWasNull = words == null;
+                if (givenWordsWasNull)
                 {
-                    w = true;
                     words = def;
 
                     if (words == null)
@@ -1803,17 +1768,27 @@ namespace WeCantSpell.Hunspell
                     }
                 }
 
+                var result = DefCompoundCheck(words, wnum, rv, all);
+
+                if (!result && givenWordsWasNull)
+                {
+                    words = null;
+                }
+
+                return result;
+            }
+
+            /// <summary>
+            /// Compound check patterns.
+            /// </summary>
+            private bool DefCompoundCheck(Dictionary<int, WordEntry> words, int wnum, WordEntry rv, bool all)
+            {
                 words[wnum] = rv;
 
                 // has the last word COMPOUNDRULE flag?
                 if (!rv.HasFlags)
                 {
                     words[wnum] = null;
-                    if (w)
-                    {
-                        words = null;
-                    }
-
                     return false;
                 }
 
@@ -1821,11 +1796,6 @@ namespace WeCantSpell.Hunspell
                 if (!ok)
                 {
                     words[wnum] = null;
-                    if (w)
-                    {
-                        words = null;
-                    }
-
                     return false;
                 }
 
@@ -1835,11 +1805,6 @@ namespace WeCantSpell.Hunspell
                 }
 
                 words[wnum] = null;
-                if (w)
-                {
-                    words = null;
-                }
-
                 return false;
             }
 

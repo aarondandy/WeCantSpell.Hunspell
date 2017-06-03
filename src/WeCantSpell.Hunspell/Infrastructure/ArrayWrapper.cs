@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+
+#if !NO_INLINE
 using System.Runtime.CompilerServices;
+#endif
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {

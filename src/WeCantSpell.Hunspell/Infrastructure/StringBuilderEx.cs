@@ -206,5 +206,27 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public static bool EndsWith(this StringBuilder builder, char c) =>
             builder.Length != 0 && builder[builder.Length - 1] == c;
+
+        internal static string ToStringSkippingIndex(this StringBuilder builder, int indexToSkip)
+        {
+            if (builder.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            var lastIndex = builder.Length - 1;
+
+            if (indexToSkip == 0)
+            {
+                return builder.ToString(1, lastIndex);
+            }
+
+            if (indexToSkip == lastIndex)
+            {
+                return builder.ToString(0, lastIndex);
+            }
+
+            return builder.ToString(0, indexToSkip) + builder.ToString(indexToSkip + 1, lastIndex - indexToSkip);
+        }
     }
 }

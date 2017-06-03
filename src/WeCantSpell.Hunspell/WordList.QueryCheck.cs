@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell
@@ -36,18 +35,14 @@ namespace WeCantSpell.Hunspell
                     return new SpellCheckResult(false);
                 }
 
-                CapitalizationType capType;
-                int abbv;
-                string scw;
 
                 // input conversion
-                string convertedWord;
-                if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out convertedWord))
+                if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out string convertedWord))
                 {
                     convertedWord = word;
                 }
 
-                if (CleanWord2(out scw, convertedWord, out capType, out abbv) == 0)
+                if (CleanWord2(out string scw, convertedWord, out CapitalizationType capType, out int abbv) == 0)
                 {
                     return new SpellCheckResult(false);
                 }
@@ -73,8 +68,7 @@ namespace WeCantSpell.Hunspell
                     rv = CheckWord(scw, ref resultType, out root);
                     if (abbv != 0 && rv == null)
                     {
-                        var u8buffer = scw + ".";
-                        rv = CheckWord(u8buffer, ref resultType, out root);
+                        rv = CheckWord(scw + ".", ref resultType, out root);
                     }
                 }
                 else if (capType == CapitalizationType.All)
@@ -93,18 +87,17 @@ namespace WeCantSpell.Hunspell
 
                 if (rv != null)
                 {
-                    var isFound = true;
                     if (rv.ContainsFlag(Affix.Warn))
                     {
                         resultType |= SpellCheckResultType.Warn;
 
                         if (Affix.ForbidWarn)
                         {
-                            isFound = false;
+                            return new SpellCheckResult(root, resultType, false);
                         }
                     }
 
-                    return new SpellCheckResult(root, resultType, isFound);
+                    return new SpellCheckResult(root, resultType, true);
                 }
 
                 // recursive breaking at break points
@@ -381,9 +374,6 @@ namespace WeCantSpell.Hunspell
                 return null;
             }
 
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
             private bool IsKeepCase(WordEntry rv) => rv.ContainsFlag(Affix.KeepCase);
         }
     }
