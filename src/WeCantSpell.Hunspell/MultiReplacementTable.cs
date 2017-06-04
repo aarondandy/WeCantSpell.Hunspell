@@ -16,10 +16,8 @@ namespace WeCantSpell.Hunspell
 
         private Dictionary<string, MultiReplacementEntry> replacements;
 
-        private MultiReplacementTable(Dictionary<string, MultiReplacementEntry> replacements)
-        {
+        private MultiReplacementTable(Dictionary<string, MultiReplacementEntry> replacements) =>
             this.replacements = replacements;
-        }
 
         public MultiReplacementEntry this[string key] => replacements[key];
 

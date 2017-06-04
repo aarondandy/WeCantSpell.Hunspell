@@ -299,14 +299,13 @@ namespace WeCantSpell.Hunspell
                     else if (Affix.HasCompound)
                     {
                         // try check compound word
-                        var rwords = new Dictionary<int, WordEntry>();
+                        var rwords = new Dictionary<int, WordEntry>(); // TODO: source this from a pool
                         he = CompoundCheck(word, 0, 0, 100, 0, null, ref rwords, false, 0, ref info);
 
                         if (he == null && word.EndsWith('-') && Affix.IsHungarian)
                         {
                             // LANG_hu section: `moving rule' with last dash
-                            var dup = word.Subslice(0, word.Length - 1);
-                            he = CompoundCheck(dup, -5, 0, 100, 0, null, ref rwords, true, 0, ref info);
+                            he = CompoundCheck(word.Subslice(0, word.Length - 1), -5, 0, 100, 0, null, ref rwords, true, 0, ref info);
                         }
 
                         if (he != null)
@@ -787,20 +786,24 @@ namespace WeCantSpell.Hunspell
                                 // first word is ok condition
                                 if (Affix.IsHungarian)
                                 {
-                                    // calculate syllable number of the word
-                                    numSyllable += GetSyllable(st.Subslice(i));
-
-                                    // - affix syllable num.
-                                    // XXX only second suffix (inflections, not derivations)
-                                    if (SuffixAppend != null)
+                                    countHungarianSyllables();
+                                    void countHungarianSyllables()
                                     {
-                                        numSyllable -= GetSyllable(SuffixAppend.Reverse()) + (SuffixExtra ? 1 : 0);
-                                    }
+                                        // calculate syllable number of the word
+                                        numSyllable += GetSyllable(st.Subslice(i));
 
-                                    // + 1 word, if syllable number of the prefix > 1 (hungarian convention)
-                                    if (Prefix != null && GetSyllable(Prefix.Key) > 1)
-                                    {
-                                        wordNum++;
+                                        // - affix syllable num.
+                                        // XXX only second suffix (inflections, not derivations)
+                                        if (SuffixAppend != null)
+                                        {
+                                            numSyllable -= GetSyllable(SuffixAppend.Reverse()) + (SuffixExtra ? 1 : 0);
+                                        }
+
+                                        // + 1 word, if syllable number of the prefix > 1 (hungarian convention)
+                                        if (Prefix != null && GetSyllable(Prefix.Key) > 1)
+                                        {
+                                            wordNum++;
+                                        }
                                     }
                                 }
 
@@ -1096,41 +1099,45 @@ namespace WeCantSpell.Hunspell
 
                                     if (Affix.IsHungarian)
                                     {
-                                        // calculate syllable number of the word
-                                        numSyllable += GetSyllable(word.Substring(i));
-
-                                        // - affix syllable num.
-                                        // XXX only second suffix (inflections, not derivations)
-                                        if (SuffixAppend != null)
+                                        countMoreHungarianSyllables();
+                                        void countMoreHungarianSyllables()
                                         {
-                                            numSyllable -= GetSyllable(SuffixAppend.Reverse()) + (SuffixExtra ? 1 : 0);
-                                        }
+                                            // calculate syllable number of the word
+                                            numSyllable += GetSyllable(word.Substring(i));
 
-                                        // + 1 word, if syllable number of the prefix > 1 (hungarian
-                                        // convention)
-                                        if (Prefix != null && GetSyllable(Prefix.Key) > 1)
-                                        {
-                                            wordNum++;
-                                        }
-
-                                        // increment syllable num, if last word has a SYLLABLENUM flag
-                                        // and the suffix is beginning `s'
-
-                                        if (!string.IsNullOrEmpty(Affix.CompoundSyllableNum))
-                                        {
-                                            if (SuffixFlag == SpecialFlags.LetterCLower)
+                                            // - affix syllable num.
+                                            // XXX only second suffix (inflections, not derivations)
+                                            if (SuffixAppend != null)
                                             {
-                                                numSyllable += 2;
+                                                numSyllable -= GetSyllable(SuffixAppend.Reverse()) + (SuffixExtra ? 1 : 0);
                                             }
-                                            else if (SuffixFlag == SpecialFlags.LetterJ)
+
+                                            // + 1 word, if syllable number of the prefix > 1 (hungarian
+                                            // convention)
+                                            if (Prefix != null && GetSyllable(Prefix.Key) > 1)
                                             {
-                                                numSyllable += 1;
+                                                wordNum++;
                                             }
-                                            else if (SuffixFlag == SpecialFlags.LetterI)
+
+                                            // increment syllable num, if last word has a SYLLABLENUM flag
+                                            // and the suffix is beginning `s'
+
+                                            if (!string.IsNullOrEmpty(Affix.CompoundSyllableNum))
                                             {
-                                                if (rv != null && rv.ContainsFlag(SpecialFlags.LetterJ))
+                                                if (SuffixFlag == SpecialFlags.LetterCLower)
+                                                {
+                                                    numSyllable += 2;
+                                                }
+                                                else if (SuffixFlag == SpecialFlags.LetterJ)
                                                 {
                                                     numSyllable += 1;
+                                                }
+                                                else if (SuffixFlag == SpecialFlags.LetterI)
+                                                {
+                                                    if (rv != null && rv.ContainsFlag(SpecialFlags.LetterJ))
+                                                    {
+                                                        numSyllable += 1;
+                                                    }
                                                 }
                                             }
                                         }

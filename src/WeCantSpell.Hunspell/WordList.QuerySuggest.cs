@@ -171,19 +171,23 @@ namespace WeCantSpell.Hunspell
                 // LANG_hu section: replace '-' with ' ' in Hungarian
                 if (Affix.IsHungarian)
                 {
-                    for (var j = 0; j < slst.Count; j++)
+                    handleHungarianDashSuggest();
+                    void handleHungarianDashSuggest()
                     {
-                        var pos = slst[j].IndexOf('-');
-                        if (pos >= 0)
+                        for (var j = 0; j < slst.Count; j++)
                         {
-                            var info = CheckDetails(slst[j].Substring(0, pos) + slst[j].Substring(pos + 1)).Info;
-                            var desiredChar = EnumEx.HasFlag(info, SpellCheckResultType.Compound | SpellCheckResultType.Forbidden)
-                                ? ' '
-                                : '-';
-
-                            if (slst[j][pos] != desiredChar)
+                            var pos = slst[j].IndexOf('-');
+                            if (pos >= 0)
                             {
-                                slst[j] = slst[j].Substring(0, pos) + desiredChar + slst[j].Substring(pos + 1);
+                                var info = CheckDetails(slst[j].Substring(0, pos) + slst[j].Substring(pos + 1)).Info;
+                                var desiredChar = EnumEx.HasFlag(info, SpellCheckResultType.Compound | SpellCheckResultType.Forbidden)
+                                    ? ' '
+                                    : '-';
+
+                                if (slst[j][pos] != desiredChar)
+                                {
+                                    slst[j] = slst[j].Substring(0, pos) + desiredChar + slst[j].Substring(pos + 1);
+                                }
                             }
                         }
                     }

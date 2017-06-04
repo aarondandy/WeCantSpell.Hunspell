@@ -223,16 +223,8 @@ namespace WeCantSpell.Hunspell
         internal static FlagSet ParseNumberFlags(StringSlice text) =>
             FlagSet.Create(ParseNumberFlagsInOrder(text));
 
-        private static FlagValue[] ConvertCharsToFlagsInOrder(string text)
-        {
-            var values = new FlagValue[text.Length];
-            for (var i = 0; i < text.Length; i++)
-            {
-                values[i] = new FlagValue(text[i]);
-            }
-
-            return values;
-        }
+        private static FlagValue[] ConvertCharsToFlagsInOrder(string text) =>
+            ConvertCharsToFlagsInOrder(StringSlice.Create(text));
 
         private static FlagValue[] ConvertCharsToFlagsInOrder(StringSlice text)
         {
