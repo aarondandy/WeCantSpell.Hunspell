@@ -42,9 +42,13 @@ namespace WeCantSpell.Hunspell.Infrastructure
             Buffer.Append(text);
         }
 
-        public string Substring(int index) => ToString().Substring(index);
+        public string Substring(int startIndex) => ToString().Substring(startIndex);
 
-        internal StringSlice Subslice(int index) => ToString().Subslice(index);
+        public string Substring(int startIndex, int length) => ToString().Substring(startIndex, length);
+
+        internal StringSlice Subslice(int startIndex) => ToString().Subslice(startIndex);
+
+        internal StringSlice Subslice(int startIndex, int length) => ToString().Subslice(startIndex, length);
 
         public void Destroy()
         {

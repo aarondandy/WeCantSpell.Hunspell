@@ -7,25 +7,15 @@ namespace WeCantSpell.Hunspell.Infrastructure
         IEquatable<string>,
         IEquatable<StringSlice>
     {
-        public static readonly StringSlice Null = new StringSlice
-        {
-            Text = null,
-            Offset = 0,
-            Length = 0
-        };
+        public static readonly StringSlice Null = new StringSlice(null, 0, 0);
 
-        public static readonly StringSlice Empty = new StringSlice
-        {
-            Text = string.Empty,
-            Offset = 0,
-            Length = 0
-        };
+        public static readonly StringSlice Empty = new StringSlice(string.Empty, 0, 0);
 
-        public string Text;
+        public readonly string Text;
 
-        public int Offset;
+        public readonly int Offset;
 
-        public int Length;
+        public readonly int Length;
 
         public bool IsNullOrEmpty => Text == null || Length == 0;
 
@@ -40,18 +30,24 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return Empty;
             }
 
-            return new StringSlice
-            {
-                Text = text,
-                Offset = 0,
-                Length = text.Length
-            };
+            return new StringSlice(text, 0, text.Length);
+        }
+
+        public StringSlice(string text, int startIndex, int length)
+        {
+            Text = text;
+            Offset = startIndex;
+            Length = length;
         }
 
         public override string ToString() =>
             Text == null
-                ? null
-                : Length == 0 ? string.Empty : Text.Substring(Offset, Length);
+            ? null
+            : Length == 0
+            ? string.Empty
+            : Offset == 0 && Length == Text.Length
+            ? Text
+            : Text.Substring(Offset, Length);
 
         public StringSlice[] SplitOnComma()
         {
@@ -65,12 +61,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 partLength = commaIndex - startIndex;
                 if (partLength > 0)
                 {
-                    parts.Add(new StringSlice
-                    {
-                        Text = Text,
-                        Offset = startIndex,
-                        Length = partLength
-                    });
+                    parts.Add(new StringSlice(Text, startIndex, partLength));
                 }
 
                 startIndex = commaIndex + 1;
@@ -80,12 +71,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             partLength = commaIndex - startIndex;
             if (partLength > 0)
             {
-                parts.Add(new StringSlice
-                {
-                    Text = Text,
-                    Offset = startIndex,
-                    Length = partLength
-                });
+                parts.Add(new StringSlice(Text, startIndex, partLength));
             }
 
             return parts.ToArray();
@@ -170,19 +156,9 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public char[] ToCharArray() => Text.ToCharArray(Offset, Length);
 
         public StringSlice Subslice(int startIndex) =>
-            new StringSlice
-            {
-                Text = Text,
-                Offset = Offset + startIndex,
-                Length = Length - startIndex
-            };
+            new StringSlice(Text, Offset + startIndex, Length - startIndex);
 
         public StringSlice Subslice(int startIndex, int length) =>
-            new StringSlice
-            {
-                Text = Text,
-                Offset = Offset + startIndex,
-                Length = length
-            };
+            new StringSlice(Text, Offset + startIndex, length);
     }
 }

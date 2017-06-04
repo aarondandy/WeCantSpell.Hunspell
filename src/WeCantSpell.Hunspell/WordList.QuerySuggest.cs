@@ -1042,7 +1042,7 @@ namespace WeCantSpell.Hunspell
                     while ((r = word.IndexOf(replacement.Pattern, r, StringComparison.Ordinal)) >= 0)
                     {
                         var type = (r == 0) ? ReplacementValueType.Ini : ReplacementValueType.Med;
-                        if (r - 0 + replacement.Pattern.Length == word.Length)
+                        if (r + replacement.Pattern.Length == word.Length)
                         {
                             type += 2;
                         }

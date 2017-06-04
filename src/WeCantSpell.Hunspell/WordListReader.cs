@@ -204,11 +204,11 @@ namespace WeCantSpell.Hunspell
                 {
                     var encodedBytes = Affix.Encoding.GetBytes(parsed.Flags);
                     var utf8Flags = Encoding.UTF8.GetString(encodedBytes, 0, encodedBytes.Length);
-                    flags = Builder.Dedup(FlagSet.TakeArray(FlagValue.ParseFlagsInOrder(utf8Flags, FlagMode.Char)));
+                    flags = Builder.Dedup(FlagValue.ParseFlags(utf8Flags, FlagMode.Char));
                 }
                 else
                 {
-                    flags = Builder.Dedup(FlagSet.TakeArray(FlagValue.ParseFlagsInOrder(parsed.Flags, Affix.FlagMode)));
+                    flags = Builder.Dedup(FlagValue.ParseFlags(parsed.Flags, Affix.FlagMode));
                 }
             }
             else
@@ -423,10 +423,19 @@ namespace WeCantSpell.Hunspell
                 var firstNonDelimiterPosition = StringEx.IndexOfNonSpaceOrTab(line, 0);
                 if (firstNonDelimiterPosition >= 0)
                 {
-                    var endOfWordAndFlagsPosition = StringEx.IndexOfSpaceOrTab(line, firstNonDelimiterPosition + 1);
-                    if (endOfWordAndFlagsPosition < 0)
+                    var endOfWordAndFlagsPosition = FindIndexOfFirstMorphByColonChar(line, firstNonDelimiterPosition);
+                    if (endOfWordAndFlagsPosition <= firstNonDelimiterPosition)
                     {
-                        endOfWordAndFlagsPosition = line.Length;
+                        endOfWordAndFlagsPosition = line.IndexOf('\t', firstNonDelimiterPosition);
+                        if (endOfWordAndFlagsPosition < 0)
+                        {
+                            endOfWordAndFlagsPosition = line.Length;
+                        }
+                    }
+
+                    while(endOfWordAndFlagsPosition > firstNonDelimiterPosition && StringEx.IsSpaceOrTab(line[endOfWordAndFlagsPosition - 1]))
+                    {
+                        --endOfWordAndFlagsPosition;
                     }
 
                     var flagsDelimiterPosition = IndexOfFlagsDelimiter(line, firstNonDelimiterPosition, endOfWordAndFlagsPosition);
@@ -460,6 +469,22 @@ namespace WeCantSpell.Hunspell
                 }
 
                 return default(ParsedWordLine);
+            }
+
+            private static int FindIndexOfFirstMorphByColonChar(string text, int index)
+            {
+                while ((index = text.IndexOf(':', index)) >= 0)
+                {
+                    var checkLocation = index - 3;
+                    if (checkLocation >= 0 && StringEx.IsSpaceOrTab(text[checkLocation]))
+                    {
+                        return checkLocation;
+                    }
+
+                    index = index + 1;
+                }
+
+                return -1;
             }
 
             private static string[] GetCapturesAsTest(CaptureCollection collection)

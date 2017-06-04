@@ -61,12 +61,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 partLength = splitIndex - startIndex;
                 if (partLength > 0)
                 {
-                    parts.Add(new StringSlice
-                    {
-                        Text = @this,
-                        Offset = startIndex,
-                        Length = partLength
-                    });
+                    parts.Add(new StringSlice(@this, startIndex, partLength));
                 }
 
                 startIndex = splitIndex + 1;
@@ -75,12 +70,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             partLength = @this.Length - startIndex;
             if (partLength > 0)
             {
-                parts.Add(new StringSlice
-                {
-                    Text = @this,
-                    Offset = startIndex,
-                    Length = partLength
-                });
+                parts.Add(new StringSlice(@this, startIndex, partLength));
             }
 
             return parts.ToArray();
@@ -96,6 +86,19 @@ namespace WeCantSpell.Hunspell.Infrastructure
             for (var i = startIndex; i < text.Length; i++)
             {
                 if (IsSpaceOrTab(text[i]))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        public static int IndexOfTab(string text, int startIndex)
+        {
+            for (var i = startIndex; i < text.Length; i++)
+            {
+                if (text[i] == '\t')
                 {
                     return i;
                 }
@@ -377,24 +380,14 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        internal static StringSlice Subslice(this string text, int offset, int length) =>
-            new StringSlice
-            {
-                Text = text,
-                Offset = offset,
-                Length = length
-            };
+        internal static StringSlice Subslice(this string text, int startIndex, int length) =>
+            new StringSlice(text, startIndex, length);
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        internal static StringSlice Subslice(this string text, int offset) =>
-            new StringSlice
-            {
-                Text = text,
-                Offset = offset,
-                Length = text.Length - offset
-            };
+        internal static StringSlice Subslice(this string text, int startIndex) =>
+            new StringSlice(text, startIndex, text.Length - startIndex);
 
         internal static bool Contains(this List<string> values, StringSlice test)
         {
