@@ -528,9 +528,7 @@ namespace WeCantSpell.Hunspell
 
                 var candidate = StringBuilderPool.Get(word, word.Length);
 
-                // TODO: find a better way to make sure this does not run over its time limit
-                long? timeLimit = Environment.TickCount;
-                int? timer = MinTimer;
+                var timer = OperationTimeLimiter.Create(TimeLimit, MinTimer);
 
                 // swap out each char one by one and try all the tryme
                 // chars in its place to see if that makes a good word
@@ -545,8 +543,8 @@ namespace WeCantSpell.Hunspell
                         }
 
                         candidate[aI] = Affix.TryString[j];
-                        TestSug(wlst, candidate.ToString(), cpdSuggest, ref timer, ref timeLimit);
-                        if (timer == 0)
+                        TestSug(wlst, candidate.ToString(), cpdSuggest, timer);
+                        if (timer.QueryCounter == 0)
                         {
                             return wlst.Count;
                         }
@@ -624,9 +622,7 @@ namespace WeCantSpell.Hunspell
 
                 var candidate = StringBuilderPool.Get(word, word.Length + 1);
 
-                // TODO: find a better way to make sure this does not run over its time limit
-                int? timer = MinTimer;
-                long? timeLimit = Environment.TickCount;
+                var timer = OperationTimeLimiter.Create(TimeLimit, MinTimer);
 
                 // try inserting a tryme character before every letter (and the null terminator)
                 foreach (var tryChar in Affix.TryString)
@@ -634,8 +630,8 @@ namespace WeCantSpell.Hunspell
                     for (var index = candidate.Length; index >= 0; index--)
                     {
                         candidate.Insert(index, tryChar);
-                        TestSug(wlst, candidate.ToString(), cpdSuggest, ref timer, ref timeLimit);
-                        if (timer == 0)
+                        TestSug(wlst, candidate.ToString(), cpdSuggest, timer);
+                        if (timer.QueryCounter == 0)
                         {
                             return wlst.Count;
                         }
@@ -813,13 +809,10 @@ namespace WeCantSpell.Hunspell
                 }
 
                 var candidate = string.Empty;
-                int? timer = MinTimer;
-                long? timeLimit = Environment.TickCount;
-
-                return MapRelated(word, ref candidate, 0, wlst, cpdSuggest, ref timer, ref timeLimit);
+                return MapRelated(word, ref candidate, 0, wlst, cpdSuggest, OperationTimeLimiter.Create(TimeLimit, MinTimer));
             }
 
-            private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest, ref int? timer, ref long? timeLimit)
+            private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest, OperationTimeLimiter timer)
             {
                 if (wn >= word.Length)
                 {
@@ -833,7 +826,7 @@ namespace WeCantSpell.Hunspell
                         }
                     }
 
-                    if (cwrd && CheckWord(candidate, cpdSuggest, ref timer, ref timeLimit) != 0)
+                    if (cwrd && CheckWord(candidate, cpdSuggest, timer) != 0)
                     {
                         if (wlst.Count < MaxSuggestions)
                         {
@@ -858,9 +851,9 @@ namespace WeCantSpell.Hunspell
                                 foreach (var otherMapEntryValue in mapEntry)
                                 {
                                     candidate = candidatePrefix + otherMapEntryValue;
-                                    MapRelated(word, ref candidate, wn + mapEntryValue.Length, wlst, cpdSuggest, ref timer, ref timeLimit);
+                                    MapRelated(word, ref candidate, wn + mapEntryValue.Length, wlst, cpdSuggest, timer);
 
-                                    if (timer.HasValue && timer.GetValueOrDefault() == 0)
+                                    if (timer != null && timer.QueryCounter == 0)
                                     {
                                         return wlst.Count;
                                     }
@@ -873,43 +866,33 @@ namespace WeCantSpell.Hunspell
                 if (!inMap)
                 {
                     candidate += word[wn];
-                    MapRelated(word, ref candidate, wn + 1, wlst, cpdSuggest, ref timer, ref timeLimit);
+                    MapRelated(word, ref candidate, wn + 1, wlst, cpdSuggest, timer);
                 }
 
                 return wlst.Count;
             }
 
-            private void TestSug(List<string> wlst, string candidate, bool cpdSuggest)
-            {
-                // TODO: create a time limiting type
-                int? timer = null;
-                long? timeLimit = null;
-                TestSug(wlst, candidate, cpdSuggest, ref timer, ref timeLimit);
-            }
+            private void TestSug(List<string> wlst, string candidate, bool cpdSuggest) =>
+                TestSug(wlst, candidate, cpdSuggest, null);
 
-            private void TestSug(List<string> wlst, StringSlice candidate, bool cpdSuggest)
-            {
-                // TODO: create a time limiting type
-                int? timer = null;
-                long? timeLimit = null;
-                TestSug(wlst, candidate, cpdSuggest, ref timer, ref timeLimit);
-            }
+            private void TestSug(List<string> wlst, StringSlice candidate, bool cpdSuggest) =>
+                TestSug(wlst, candidate, cpdSuggest, null);
 
-            private void TestSug(List<string> wlst, string candidate, bool cpdSuggest, ref int? timer, ref long? timeLimit)
+            private void TestSug(List<string> wlst, string candidate, bool cpdSuggest, OperationTimeLimiter timer)
             {
                 if (
                     wlst.Count < MaxSuggestions
                     &&
                     !wlst.Contains(candidate)
                     &&
-                    CheckWord(candidate, cpdSuggest, ref timer, ref timeLimit) != 0
+                    CheckWord(candidate, cpdSuggest, timer) != 0
                 )
                 {
                     wlst.Add(candidate);
                 }
             }
 
-            private void TestSug(List<string> wlst, StringSlice candidate, bool cpdSuggest, ref int? timer, ref long? timeLimit)
+            private void TestSug(List<string> wlst, StringSlice candidate, bool cpdSuggest, OperationTimeLimiter timer)
             {
                 if (
                     wlst.Count < MaxSuggestions
@@ -918,20 +901,15 @@ namespace WeCantSpell.Hunspell
                 )
                 {
                     var candidateWord = candidate.ToString();
-                    if (CheckWord(candidateWord, cpdSuggest, ref timer, ref timeLimit) != 0)
+                    if (CheckWord(candidateWord, cpdSuggest, timer) != 0)
                     {
                         wlst.Add(candidateWord);
                     }
                 }
             }
 
-            private int CheckWord(string word, bool cpdSuggest)
-            {
-                // TODO: create a time limiting type
-                int? timer = null;
-                long? timeLimit = null;
-                return CheckWord(word, cpdSuggest, ref timer, ref timeLimit);
-            }
+            private int CheckWord(string word, bool cpdSuggest) => 
+                CheckWord(word, cpdSuggest, null);
 
             /// <summary>
             /// See if a candidate suggestion is spelled correctly
@@ -942,22 +920,11 @@ namespace WeCantSpell.Hunspell
             /// return value 2 and 3 marks compounding with hyphen (-)
             /// `3' marks roots without suffix
             /// </remarks>
-            private int CheckWord(string word, bool cpdSuggest, ref int? timer, ref long? timeLimit)
+            private int CheckWord(string word, bool cpdSuggest, OperationTimeLimiter timer)
             {
-                // TODO: create a time limiting type
-                // check time limit
-                if (timer.HasValue)
+                if (timer != null && timer.QueryForExpiration())
                 {
-                    timer--;
-                    if (timer == 0 && timeLimit.HasValue)
-                    {
-                        if (Environment.TickCount - timeLimit.GetValueOrDefault() > TimeLimit)
-                        {
-                            return 0;
-                        }
-
-                        timer = MaxPlusTimer;
-                    }
+                    return 0;
                 }
 
                 WordEntry rv;
@@ -1130,7 +1097,7 @@ namespace WeCantSpell.Hunspell
 
                 // exhaustively search through all root words
                 // keeping track of the MAX_ROOTS most similar root words
-                var roots = new NGramSuggestSearchRoot[MaxRoots]; // TODO: this shoudl come from a pool
+                var roots = new NGramSuggestSearchRoot[MaxRoots]; // TODO: this should come from a pool
                 for (var i = 0; i < roots.Length; i++)
                 {
                     roots[i] = new NGramSuggestSearchRoot(i);
