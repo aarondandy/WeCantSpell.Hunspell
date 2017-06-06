@@ -790,7 +790,7 @@ namespace WeCantSpell.Hunspell
                                     void countHungarianSyllables()
                                     {
                                         // calculate syllable number of the word
-                                        numSyllable += GetSyllable(st.Subslice(i));
+                                        numSyllable += GetSyllable(st.Subslice(0, i));
 
                                         // - affix syllable num.
                                         // XXX only second suffix (inflections, not derivations)
@@ -1103,7 +1103,7 @@ namespace WeCantSpell.Hunspell
                                         void countMoreHungarianSyllables()
                                         {
                                             // calculate syllable number of the word
-                                            numSyllable += GetSyllable(word.Substring(i));
+                                            numSyllable += GetSyllable(word.Subslice(0, i));
 
                                             // - affix syllable num.
                                             // XXX only second suffix (inflections, not derivations)
@@ -1174,7 +1174,7 @@ namespace WeCantSpell.Hunspell
                                         st.Destroy();
 
                                         // forbid compound word, if it is a non compound word with typical fault
-                                        if (Affix.CheckCompoundRep && CompoundReplacementCheck(word.Substring(0, len)))
+                                        if (Affix.CheckCompoundRep && CompoundReplacementCheck(word.Subslice(0, len)))
                                         {
                                             return null;
                                         }
@@ -1855,23 +1855,8 @@ namespace WeCantSpell.Hunspell
             /// <summary>
             /// Calculate number of syllable for compound-checking.
             /// </summary>
-            private int GetSyllable(string word)
-            {
-                var num = 0;
-
-                if (Affix.CompoundMaxSyllable != 0 && Affix.CompoundVowels.HasItems)
-                {
-                    for (var i = 0; i < word.Length; i++)
-                    {
-                        if (Affix.CompoundVowels.Contains(word[i]))
-                        {
-                            num++;
-                        }
-                    }
-                }
-
-                return num;
-            }
+            private int GetSyllable(string word) =>
+                GetSyllable(StringSlice.Create(word));
 
             /// <summary>
             /// Calculate number of syllable for compound-checking.
@@ -1882,9 +1867,10 @@ namespace WeCantSpell.Hunspell
 
                 if (Affix.CompoundMaxSyllable != 0 && Affix.CompoundVowels.HasItems)
                 {
-                    for (var i = 0; i < word.Length; i++)
+                    var maxIndex = word.Offset + word.Length;
+                    for (var i = word.Offset; i < maxIndex; i++)
                     {
-                        if (Affix.CompoundVowels.Contains(word.Text[word.Offset + i]))
+                        if (Affix.CompoundVowels.Contains(word.Text[i]))
                         {
                             num++;
                         }
@@ -1899,32 +1885,8 @@ namespace WeCantSpell.Hunspell
             /// </summary>
             /// <seealso cref="AffixConfig.CheckCompoundRep"/>
             /// <seealso cref="AffixConfig.Replacements"/>
-            private bool CompoundReplacementCheck(string word)
-            {
-                if (word.Length < 2 || Affix.Replacements.IsEmpty)
-                {
-                    return false;
-                }
-
-                foreach (var replacementEntry in Affix.Replacements)
-                {
-                    // search every occurence of the pattern in the word
-                    var rIndex = word.IndexOf(replacementEntry.Pattern, StringComparison.Ordinal);
-                    while (rIndex >= 0)
-                    {
-                        var type = rIndex == 0 ? ReplacementValueType.Isol : ReplacementValueType.Med;
-                        var replacement = replacementEntry[type];
-                        if (replacement != null && CandidateCheck(word.Replace(rIndex, replacementEntry.Pattern.Length, replacement)))
-                        {
-                            return true;
-                        }
-
-                        rIndex = word.IndexOf(replacementEntry.Pattern, rIndex + 1, StringComparison.Ordinal); // search for the next letter
-                    }
-                }
-
-                return false;
-            }
+            private bool CompoundReplacementCheck(string word) =>
+                CompoundReplacementCheck(StringSlice.Create(word));
 
             /// <summary>
             /// Is word a non compound with a REP substitution?

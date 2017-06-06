@@ -7,9 +7,9 @@ using Xunit;
 
 namespace WeCantSpell.Hunspell.Tests
 {
-    public class DictionaryReaderTests
+    public class WordListReaderTests
     {
-        public class ReadFileAsync : DictionaryReaderTests
+        public class ReadFileAsync : WordListReaderTests
         {
             [Fact]
             public async Task can_read_1463589_utf_dic()
