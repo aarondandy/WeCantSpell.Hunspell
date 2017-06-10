@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 
 #if !NO_ASYNC
@@ -37,6 +38,11 @@ namespace WeCantSpell.Hunspell
 #if !NO_ASYNC
         public static async Task<List<string>> ReadLinesAsync(this IHunspellLineReader reader)
         {
+            if (reader == null)
+            {
+                throw new ArgumentNullException(nameof(reader));
+            }
+
             var lines = new List<string>();
 
             string line;
@@ -51,6 +57,11 @@ namespace WeCantSpell.Hunspell
 
         public static IEnumerable<string> ReadLines(this IHunspellLineReader reader)
         {
+            if (reader == null)
+            {
+                throw new ArgumentNullException(nameof(reader));
+            }
+
             string line;
             while ((line = reader.ReadLine()) != null)
             {

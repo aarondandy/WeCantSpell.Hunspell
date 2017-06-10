@@ -4,8 +4,8 @@
     {
         public PhoneticEntry(string rule, string replace)
         {
-            Rule = rule;
-            Replace = replace;
+            Rule = rule ?? string.Empty;
+            Replace = replace ?? string.Empty;
         }
 
         public string Rule { get; }

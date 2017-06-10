@@ -4,9 +4,9 @@
     {
         public PatternEntry(string pattern, string pattern2, string pattern3, FlagValue condition, FlagValue condition2)
         {
-            Pattern = pattern;
-            Pattern2 = pattern2;
-            Pattern3 = pattern3;
+            Pattern = pattern ?? string.Empty;
+            Pattern2 = pattern2 ?? string.Empty;
+            Pattern3 = pattern3 ?? string.Empty;
             Condition = condition;
             Condition2 = condition2;
         }

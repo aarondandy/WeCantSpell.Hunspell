@@ -1,7 +1,12 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using WeCantSpell.Hunspell.Infrastructure;
+
+#if !NO_INLINE
+using System.Runtime.CompilerServices;
+#endif
 
 namespace WeCantSpell.Hunspell
 {
@@ -41,29 +46,42 @@ namespace WeCantSpell.Hunspell
 
         public bool TryConvert(string text, out string converted)
         {
-            var convertedBuilder = StringBuilderPool.Get(text.Length);
-
-            var appliedConversion = false;
-            for (var i = 0; i < text.Length; i++)
+            if (text == null)
             {
-                var replacementEntry = FindLargestMatchingConversion(text.Subslice(i));
-                var replacementText = replacementEntry == null
-                    ? string.Empty
-                    : replacementEntry.ExtractReplacementText(text.Length - i, i == 0);
-
-                if (replacementText.Length == 0)
-                {
-                    convertedBuilder.Append(text[i]);
-                }
-                else
-                {
-                    convertedBuilder.Append(replacementText);
-                    i += replacementEntry.Pattern.Length - 1;
-                    appliedConversion = true;
-                }
+                throw new ArgumentNullException(nameof(text));
             }
 
-            converted = StringBuilderPool.GetStringAndReturn(convertedBuilder);
+            var appliedConversion = false;
+
+            if (text.Length == 0)
+            {
+                converted = string.Empty;
+            }
+            else
+            {
+                var convertedBuilder = StringBuilderPool.Get(text.Length);
+
+                for (var i = 0; i < text.Length; i++)
+                {
+                    var replacementEntry = FindLargestMatchingConversion(text.Subslice(i));
+                    var replacementText = replacementEntry == null
+                        ? string.Empty
+                        : replacementEntry.ExtractReplacementText(text.Length - i, i == 0);
+
+                    if (replacementText.Length == 0)
+                    {
+                        convertedBuilder.Append(text[i]);
+                    }
+                    else
+                    {
+                        convertedBuilder.Append(replacementText);
+                        i += replacementEntry.Pattern.Length - 1;
+                        appliedConversion = true;
+                    }
+                }
+
+                converted = StringBuilderPool.GetStringAndReturn(convertedBuilder);
+            }
 
             return appliedConversion;
         }
@@ -75,7 +93,9 @@ namespace WeCantSpell.Hunspell
         /// <returns>The best matching input conversion.</returns>
         /// <seealso cref="MultiReplacementEntry"/>
         public MultiReplacementEntry FindLargestMatchingConversion(string text) =>
-            FindLargestMatchingConversion(StringSlice.Create(text));
+            string.IsNullOrEmpty(text)
+                ? null
+                : FindLargestMatchingConversion(new StringSlice(text));
 
         /// <summary>
         /// Finds a conversion matching the longest version of the given <paramref name="text"/> from the left.
@@ -96,7 +116,9 @@ namespace WeCantSpell.Hunspell
             return null;
         }
 
-        public IEnumerator<KeyValuePair<string, MultiReplacementEntry>> GetEnumerator() => replacements.GetEnumerator();
+        internal Dictionary<string, MultiReplacementEntry>.Enumerator GetEnumerator() => replacements.GetEnumerator();
+
+        IEnumerator<KeyValuePair<string, MultiReplacementEntry>> IEnumerable<KeyValuePair<string, MultiReplacementEntry>>.GetEnumerator() => replacements.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => replacements.GetEnumerator();
     }

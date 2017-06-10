@@ -4,6 +4,10 @@ using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Linq;
 
+#if !NO_INLINE
+using System.Runtime.CompilerServices;
+#endif
+
 namespace WeCantSpell.Hunspell
 {
     public struct CharacterCondition :
@@ -48,7 +52,7 @@ namespace WeCantSpell.Hunspell
             new CharacterCondition(character, restricted);
 
         public static CharacterCondition Create(IEnumerable<char> characters, bool restricted) =>
-            TakeArray(characters.ToArray(), restricted);
+            TakeArray(characters == null ? ArrayEx<char>.Empty : characters.ToArray(), restricted);
 
         public static CharacterConditionGroup Parse(string text)
         {
@@ -75,11 +79,17 @@ namespace WeCantSpell.Hunspell
 
         private static CharacterCondition ParseSingle(string text)
         {
+#if DEBUG
+            if (text == null)
+            {
+                throw new ArgumentNullException(nameof(text));
+            }
+#endif
+
             if (text.Length == 0)
             {
-                throw new InvalidOperationException();
+                return AllowAny;
             }
-
             if (text.Length == 1)
             {
                 var singleChar = text[0];
@@ -101,17 +111,8 @@ namespace WeCantSpell.Hunspell
                 : TakeArray(text.ToCharArray(1, text.Length - 2), false);
         }
 
-        public bool IsMatch(char c)
-        {
-            var isInList = Characters != null && Characters.Contains(c);
-
-            if (Restricted)
-            {
-                isInList = !isInList;
-            }
-
-            return isInList;
-        }
+        public bool IsMatch(char c) =>
+            (Characters != null && Characters.Contains(c)) ^ Restricted;
 
         public bool AllowsAny => Restricted && (Characters == null || Characters.Count == 0);
 
@@ -131,7 +132,7 @@ namespace WeCantSpell.Hunspell
 
             var lettersText = (Characters == null || Characters.Count == 0)
                 ? string.Empty
-                : string.Concat(Characters);
+                : Characters.GetCharactersAsString();
 
             return (Restricted ? "[^" : "[") + lettersText + "]";
         }

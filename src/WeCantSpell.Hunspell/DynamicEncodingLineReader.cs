@@ -10,12 +10,17 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 #endif
 
+#if !NO_INLINE
+using System.Runtime.CompilerServices;
+#endif
+
 namespace WeCantSpell.Hunspell
 {
     public sealed class DynamicEncodingLineReader : IHunspellLineReader, IDisposable
     {
         static DynamicEncodingLineReader()
         {
+            // NOTE: the order of these encodings must be preserved
             PreambleEncodings =
                 new Encoding[]
                 {
@@ -31,7 +36,7 @@ namespace WeCantSpell.Hunspell
 #endif
                 };
 
-            MaxPreambleBytes = PreambleEncodings.Max(e => e.GetPreamble().Length);
+            MaxPreambleLengthInBytes = PreambleEncodings.Max(e => e.GetPreamble().Length);
         }
 
         private static readonly Regex SetEncodingRegex = new Regex(
@@ -43,7 +48,7 @@ namespace WeCantSpell.Hunspell
 
         private static readonly Encoding[] PreambleEncodings;
 
-        private static readonly int MaxPreambleBytes;
+        private static readonly int MaxPreambleLengthInBytes;
 
         public DynamicEncodingLineReader(Stream stream, Encoding initialEncoding)
         {
@@ -66,8 +71,13 @@ namespace WeCantSpell.Hunspell
 #if !NO_IO_FILE
         public static List<string> ReadLines(string filePath, Encoding defaultEncoding)
         {
+            if (filePath == null)
+            {
+                throw new ArgumentNullException(nameof(filePath));
+            }
+
             using (var stream = FileStreamEx.OpenReadFileStream(filePath))
-            using (var reader = new DynamicEncodingLineReader(stream, defaultEncoding))
+            using (var reader = new DynamicEncodingLineReader(stream, defaultEncoding ?? EncodingEx.DefaultReadEncoding))
             {
                 return reader.ReadLines().ToList();
             }
@@ -76,8 +86,13 @@ namespace WeCantSpell.Hunspell
 #if !NO_ASYNC
         public static async Task<List<string>> ReadLinesAsync(string filePath, Encoding defaultEncoding)
         {
+            if (filePath == null)
+            {
+                throw new ArgumentNullException(nameof(filePath));
+            }
+
             using (var stream = FileStreamEx.OpenAsyncReadFileStream(filePath))
-            using (var reader = new DynamicEncodingLineReader(stream, defaultEncoding))
+            using (var reader = new DynamicEncodingLineReader(stream, defaultEncoding ?? EncodingEx.DefaultReadEncoding))
             {
                 return await reader.ReadLinesAsync().ConfigureAwait(false);
             }
@@ -255,18 +270,15 @@ namespace WeCantSpell.Hunspell
             return charsProduced;
         }
 
-        private bool ReadPreamble()
-        {
-            var possiblePreambleBytes = ReadBytes(MaxPreambleBytes);
-            return HandlePreambleBytes(possiblePreambleBytes);
-        }
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private bool ReadPreamble() =>
+            HandlePreambleBytes(ReadBytes(MaxPreambleLengthInBytes));
 
 #if !NO_ASYNC
-        private async Task<bool> ReadPreambleAsync()
-        {
-            var possiblePreambleBytes = await ReadBytesAsync(MaxPreambleBytes).ConfigureAwait(false);
-            return HandlePreambleBytes(possiblePreambleBytes);
-        }
+        private async Task<bool> ReadPreambleAsync() =>
+            HandlePreambleBytes(await ReadBytesAsync(MaxPreambleLengthInBytes).ConfigureAwait(false));
 #endif
 
         private bool HandlePreambleBytes(byte[] possiblePreambleBytes)

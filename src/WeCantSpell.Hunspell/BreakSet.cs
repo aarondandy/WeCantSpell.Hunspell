@@ -26,13 +26,17 @@ namespace WeCantSpell.Hunspell
         public int FindRecursionLimit(string scw)
         {
             int nbr = 0;
-            foreach (var breakEntry in items)
+
+            if (!string.IsNullOrEmpty(scw))
             {
-                int pos = 0;
-                while ((pos = scw.IndexOf(breakEntry, pos, StringComparison.Ordinal)) >= 0)
+                foreach (var breakEntry in items)
                 {
-                    nbr++;
-                    pos += breakEntry.Length;
+                    int pos = 0;
+                    while ((pos = scw.IndexOfOrdinal(breakEntry, pos)) >= 0)
+                    {
+                        nbr++;
+                        pos += breakEntry.Length;
+                    }
                 }
             }
 

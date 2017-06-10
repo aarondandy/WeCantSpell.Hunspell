@@ -1,18 +1,25 @@
-﻿using WeCantSpell.Hunspell.Infrastructure;
+﻿using System;
+using WeCantSpell.Hunspell.Infrastructure;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
+using System.Globalization;
 
 #if !NO_ASYNC
 using System.Threading.Tasks;
+#endif
+
+#if !NO_INLINE
+using System.Runtime.CompilerServices;
 #endif
 
 namespace WeCantSpell.Hunspell
 {
     public sealed class WordListReader
     {
+        private bool hasInitialized;
+
         private WordListReader(WordList.Builder builder, AffixConfig affix)
         {
             Builder = builder ?? new WordList.Builder(affix);
@@ -30,11 +37,26 @@ namespace WeCantSpell.Hunspell
 
         private AffixConfig Affix { get; }
 
-        private bool hasInitialized;
+        private TextInfo TextInfo
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get => Affix.Culture.TextInfo;
+        }
 
 #if !NO_ASYNC
         public static async Task<WordList> ReadAsync(Stream dictionaryStream, Stream affixStream)
         {
+            if (dictionaryStream == null)
+            {
+                throw new ArgumentNullException(nameof(dictionaryStream));
+            }
+            if (affixStream == null)
+            {
+                throw new ArgumentNullException(nameof(affixStream));
+            }
+
             var affixBuilder = new AffixConfig.Builder();
             var affix = await AffixReader.ReadAsync(affixStream, affixBuilder).ConfigureAwait(false);
             var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper, affixBuilder.StringDeduper);
@@ -43,6 +65,15 @@ namespace WeCantSpell.Hunspell
 
         public static async Task<WordList> ReadAsync(IHunspellLineReader dictionaryReader, AffixConfig affix, WordList.Builder builder = null)
         {
+            if (dictionaryReader == null)
+            {
+                throw new ArgumentNullException(nameof(dictionaryReader));
+            }
+            if (affix == null)
+            {
+                throw new ArgumentNullException(nameof(affix));
+            }
+
             var readerInstance = new WordListReader(builder, affix);
 
             string line;
@@ -57,12 +88,26 @@ namespace WeCantSpell.Hunspell
 #if !NO_IO_FILE
         public static async Task<WordList> ReadFileAsync(string dictionaryFilePath)
         {
+            if (dictionaryFilePath == null)
+            {
+                throw new ArgumentNullException(nameof(dictionaryFilePath));
+            }
+
             var affixFilePath = FindAffixFilePath(dictionaryFilePath);
             return await ReadFileAsync(dictionaryFilePath, affixFilePath).ConfigureAwait(false);
         }
 
         public static async Task<WordList> ReadFileAsync(string dictionaryFilePath, string affixFilePath)
         {
+            if (dictionaryFilePath == null)
+            {
+                throw new ArgumentNullException(nameof(dictionaryFilePath));
+            }
+            if (affixFilePath == null)
+            {
+                throw new ArgumentNullException(nameof(affixFilePath));
+            }
+
             var affixBuilder = new AffixConfig.Builder();
             var affix = await AffixReader.ReadFileAsync(affixFilePath, affixBuilder).ConfigureAwait(false);
             var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper, affixBuilder.StringDeduper);
@@ -72,6 +117,15 @@ namespace WeCantSpell.Hunspell
 
         public static async Task<WordList> ReadAsync(Stream dictionaryStream, AffixConfig affix, WordList.Builder builder = null)
         {
+            if (dictionaryStream == null)
+            {
+                throw new ArgumentNullException(nameof(dictionaryStream));
+            }
+            if (affix == null)
+            {
+                throw new ArgumentNullException(nameof(affix));
+            }
+
             using (var reader = new StaticEncodingLineReader(dictionaryStream, affix.Encoding))
             {
                 return await ReadAsync(reader, affix, builder).ConfigureAwait(false);
@@ -81,6 +135,15 @@ namespace WeCantSpell.Hunspell
 #if !NO_IO_FILE
         public static async Task<WordList> ReadFileAsync(string dictionaryFilePath, AffixConfig affix, WordList.Builder builder = null)
         {
+            if (dictionaryFilePath == null)
+            {
+                throw new ArgumentNullException(nameof(dictionaryFilePath));
+            }
+            if (affix == null)
+            {
+                throw new ArgumentNullException(nameof(affix));
+            }
+
             using (var stream = FileStreamEx.OpenAsyncReadFileStream(dictionaryFilePath))
             {
                 return await ReadAsync(stream, affix, builder).ConfigureAwait(false);
@@ -92,6 +155,15 @@ namespace WeCantSpell.Hunspell
 
         public static WordList Read(Stream dictionaryStream, Stream affixStream)
         {
+            if (dictionaryStream == null)
+            {
+                throw new ArgumentNullException(nameof(dictionaryStream));
+            }
+            if (affixStream == null)
+            {
+                throw new ArgumentNullException(nameof(affixStream));
+            }
+
             var affixBuilder = new AffixConfig.Builder();
             var affix = AffixReader.Read(affixStream, affixBuilder);
             var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper, affixBuilder.StringDeduper);
@@ -100,6 +172,15 @@ namespace WeCantSpell.Hunspell
 
         public static WordList Read(IHunspellLineReader dictionaryReader, AffixConfig affix, WordList.Builder builder = null)
         {
+            if (dictionaryReader == null)
+            {
+                throw new ArgumentNullException(nameof(dictionaryReader));
+            }
+            if (affix == null)
+            {
+                throw new ArgumentNullException(nameof(affix));
+            }
+
             var readerInstance = new WordListReader(builder, affix);
 
             string line;
@@ -114,12 +195,26 @@ namespace WeCantSpell.Hunspell
 #if !NO_IO_FILE
         public static WordList ReadFile(string dictionaryFilePath)
         {
+            if (dictionaryFilePath == null)
+            {
+                throw new ArgumentNullException(nameof(dictionaryFilePath));
+            }
+
             var affixFilePath = FindAffixFilePath(dictionaryFilePath);
             return ReadFile(dictionaryFilePath, AffixReader.ReadFile(affixFilePath));
         }
 
         public static WordList ReadFile(string dictionaryFilePath, string affixFilePath)
         {
+            if (dictionaryFilePath == null)
+            {
+                throw new ArgumentNullException(nameof(dictionaryFilePath));
+            }
+            if (affixFilePath == null)
+            {
+                throw new ArgumentNullException(nameof(affixFilePath));
+            }
+
             var affixBuilder = new AffixConfig.Builder();
             var affix = AffixReader.ReadFile(affixFilePath, affixBuilder);
             var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper, affixBuilder.StringDeduper);
@@ -128,6 +223,11 @@ namespace WeCantSpell.Hunspell
 
         private static string FindAffixFilePath(string dictionaryFilePath)
         {
+            if (dictionaryFilePath == null)
+            {
+                throw new ArgumentNullException(nameof(dictionaryFilePath));
+            }
+
             var directoryName = Path.GetDirectoryName(dictionaryFilePath);
             if (!string.IsNullOrEmpty(directoryName))
             {
@@ -146,6 +246,15 @@ namespace WeCantSpell.Hunspell
 
         public static WordList Read(Stream dictionaryStream, AffixConfig affix, WordList.Builder builder = null)
         {
+            if (dictionaryStream == null)
+            {
+                throw new ArgumentNullException(nameof(affix));
+            }
+            if (affix == null)
+            {
+                throw new ArgumentNullException(nameof(affix));
+            }
+
             using (var reader = new StaticEncodingLineReader(dictionaryStream, affix.Encoding))
             {
                 return Read(reader, affix, builder);
@@ -155,6 +264,15 @@ namespace WeCantSpell.Hunspell
 #if !NO_IO_FILE
         public static WordList ReadFile(string dictionaryFilePath, AffixConfig affix, WordList.Builder builder = null)
         {
+            if (dictionaryFilePath == null)
+            {
+                throw new ArgumentNullException(nameof(dictionaryFilePath));
+            }
+            if (affix == null)
+            {
+                throw new ArgumentNullException(nameof(affix));
+            }
+
             using (var stream = FileStreamEx.OpenReadFileStream(dictionaryFilePath))
             {
                 return Read(stream, affix, builder);
@@ -186,11 +304,11 @@ namespace WeCantSpell.Hunspell
             }
 
             FlagSet flags;
-            if (!string.IsNullOrEmpty(parsed.Flags))
+            if (!parsed.Flags.IsEmpty)
             {
                 if (Affix.IsAliasF)
                 {
-                    if (IntEx.TryParseInvariant(parsed.Flags, out int flagAliasNumber) && Affix.TryGetAliasF(flagAliasNumber, out FlagSet aliasedFlags))
+                    if (IntEx.TryParseInvariant(parsed.Flags.ToString(), out int flagAliasNumber) && Affix.TryGetAliasF(flagAliasNumber, out FlagSet aliasedFlags))
                     {
                         flags = aliasedFlags;
                     }
@@ -202,9 +320,7 @@ namespace WeCantSpell.Hunspell
                 }
                 else if (Affix.FlagMode == FlagMode.Uni)
                 {
-                    var encodedBytes = Affix.Encoding.GetBytes(parsed.Flags);
-                    var utf8Flags = Encoding.UTF8.GetString(encodedBytes, 0, encodedBytes.Length);
-                    flags = Builder.Dedup(FlagValue.ParseFlags(utf8Flags, FlagMode.Char));
+                    flags = Builder.Dedup(FlagValue.ParseFlags(HunspellTextFunctions.ReDecodeConvertedStringAsUtf8(parsed.Flags, Affix.Encoding), FlagMode.Char));
                 }
                 else
                 {
@@ -258,7 +374,7 @@ namespace WeCantSpell.Hunspell
 
         private bool AddWord(string word, FlagSet flags, MorphSet morphs) =>
             AddWord(word, flags, morphs, false)
-            || AddWordCapitalized(word, flags, morphs, CapitalizationTypeEx.GetCapitalizationType(word, Affix));
+            || AddWordCapitalized(word, flags, morphs, CapitalizationTypeEx.GetCapitalizationType(word, TextInfo));
 
         private bool AddWord(string word, FlagSet flags, MorphSet morphs, bool onlyUpperCase)
         {
@@ -387,7 +503,7 @@ namespace WeCantSpell.Hunspell
             {
                 flags = Builder.Dedup(FlagSet.Union(flags, SpecialFlags.OnlyUpcaseFlag));
 
-                var textInfo = Affix.Culture.TextInfo;
+                var textInfo = TextInfo;
                 var initCapBuilder = StringBuilderPool.Get(word);
                 if (initCapBuilder.Length > 0)
                 {
@@ -408,7 +524,7 @@ namespace WeCantSpell.Hunspell
         private struct ParsedWordLine
         {
             public string Word;
-            public string Flags;
+            public StringSlice Flags;
             public string[] Morphs;
 
             private static readonly Regex MorphPartRegex = new Regex(
@@ -441,19 +557,19 @@ namespace WeCantSpell.Hunspell
                     var flagsDelimiterPosition = IndexOfFlagsDelimiter(line, firstNonDelimiterPosition, endOfWordAndFlagsPosition);
 
                     string word;
-                    string flagsPart;
+                    StringSlice flagsPart;
                     if (flagsDelimiterPosition < 0)
                     {
                         word = line.Substring(firstNonDelimiterPosition, endOfWordAndFlagsPosition - firstNonDelimiterPosition);
-                        flagsPart = null;
+                        flagsPart = StringSlice.Empty;
                     }
                     else
                     {
                         word = line.Substring(firstNonDelimiterPosition, flagsDelimiterPosition - firstNonDelimiterPosition);
-                        flagsPart = line.Substring(flagsDelimiterPosition + 1, endOfWordAndFlagsPosition - flagsDelimiterPosition - 1);
+                        flagsPart = line.Subslice(flagsDelimiterPosition + 1, endOfWordAndFlagsPosition - flagsDelimiterPosition - 1);
                     }
 
-                    if (!string.IsNullOrEmpty(word))
+                    if (word.Length != 0)
                     {
                         var morphGroup = endOfWordAndFlagsPosition >= 0 && endOfWordAndFlagsPosition != line.Length
                             ? MorphPartRegex.Match(line, endOfWordAndFlagsPosition).Groups["morphs"]

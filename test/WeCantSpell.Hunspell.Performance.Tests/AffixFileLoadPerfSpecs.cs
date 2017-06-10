@@ -37,7 +37,7 @@ namespace WeCantSpell.Hunspell.Performance.Tests
             {
                 await AffixReader.ReadFileAsync(filePath).ConfigureAwait(false);
                 AffixFilesLoaded.Increment();
-            })).Wait();
+            })).GetAwaiter().GetResult();
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 #if !NO_INLINE
 using System.Runtime.CompilerServices;
@@ -10,21 +9,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
     internal static class StringEx
     {
         private static readonly char[] SpaceOrTab = { ' ', '\t' };
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static bool StartsWith(this string @this, char character) => @this.Length != 0 && @this[0] == character;
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static bool EndsWith(this string @this, char character) => @this.Length != 0 && @this[@this.Length - 1] == character;
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static string[] SplitOnTabOrSpace(this string @this) => @this.Split(SpaceOrTab, StringSplitOptions.RemoveEmptyEntries);
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -49,31 +33,46 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #endif
         }
 
-        public static StringSlice[] SliceOnTabOrSpace(this string @this)
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static bool StartsWith(this string @this, char character)
         {
-            var parts = new List<StringSlice>();
-
-            int startIndex = 0;
-            int splitIndex;
-            int partLength;
-            while ((splitIndex = IndexOfSpaceOrTab(@this, startIndex)) >= 0)
+#if DEBUG
+            if (@this == null)
             {
-                partLength = splitIndex - startIndex;
-                if (partLength > 0)
-                {
-                    parts.Add(new StringSlice(@this, startIndex, partLength));
-                }
-
-                startIndex = splitIndex + 1;
+                throw new ArgumentNullException(nameof(@this));
             }
+#endif
+            return @this.Length != 0 && @this[0] == character;
+        }
 
-            partLength = @this.Length - startIndex;
-            if (partLength > 0)
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static bool EndsWith(this string @this, char character)
+        {
+#if DEBUG
+            if (@this == null)
             {
-                parts.Add(new StringSlice(@this, startIndex, partLength));
+                throw new ArgumentNullException(nameof(@this));
             }
+#endif
+            return @this.Length != 0 && @this[@this.Length - 1] == character;
+        }
 
-            return parts.ToArray();
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static string[] SplitOnSpaceOrTab(this string @this)
+        {
+#if DEBUG
+            if (@this == null)
+            {
+                throw new ArgumentNullException(nameof(@this));
+            }
+#endif
+            return @this.Split(SpaceOrTab, StringSplitOptions.RemoveEmptyEntries);
         }
 
 #if !NO_INLINE
@@ -83,6 +82,12 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public static int IndexOfSpaceOrTab(string text, int startIndex)
         {
+#if DEBUG
+            if (text == null)
+            {
+                throw new ArgumentNullException(nameof(text));
+            }
+#endif
             for (var i = startIndex; i < text.Length; i++)
             {
                 if (IsSpaceOrTab(text[i]))
@@ -94,21 +99,14 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return -1;
         }
 
-        public static int IndexOfTab(string text, int startIndex)
-        {
-            for (var i = startIndex; i < text.Length; i++)
-            {
-                if (text[i] == '\t')
-                {
-                    return i;
-                }
-            }
-
-            return -1;
-        }
-
         public static int IndexOfNonSpaceOrTab(string text, int startIndex)
         {
+#if DEBUG
+            if (text == null)
+            {
+                throw new ArgumentNullException(nameof(text));
+            }
+#endif
             for (var i = startIndex; i < text.Length; i++)
             {
                 if (!IsSpaceOrTab(text[i]))
@@ -132,18 +130,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return new string(chars);
         }
 
-        public static string RemoveChars(this string @this, CharacterSet chars)
-        {
-            if (string.IsNullOrEmpty(@this) || chars == null || chars.IsEmpty)
-            {
-                return @this;
-            }
-
-            var builder = StringBuilderPool.Get(@this);
-            builder.RemoveChars(chars);
-            return StringBuilderPool.GetStringAndReturn(builder);
-        }
-
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
@@ -158,45 +144,88 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public static bool EqualsOffset(string a, int aOffset, string b, int bOffset)
         {
-            if (ReferenceEquals(a, b) && aOffset == bOffset)
+#if DEBUG
+            if (a == null)
             {
-                return true;
+                throw new ArgumentNullException(nameof(a));
             }
-
-            var aRemaining = (a?.Length).GetValueOrDefault() - aOffset;
-            var bRemaining = (b?.Length).GetValueOrDefault() - bOffset;
-
-            if (aRemaining != bRemaining)
+            if (b == null)
             {
-                return false;
+                throw new ArgumentNullException(nameof(b));
             }
-
-            if (aRemaining < 0)
+            if (aOffset < 0)
             {
-                return false;
+                throw new ArgumentOutOfRangeException(nameof(aOffset));
             }
+            if (bOffset < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bOffset));
+            }
+#endif
 
-            return string.CompareOrdinal(a, aOffset, b, bOffset, aRemaining) == 0;
+            var aRemaining = a.Length - aOffset;
+            return aRemaining >= 0
+                && (aRemaining == b.Length - bOffset)
+                && string.CompareOrdinal(a, aOffset, b, bOffset, aRemaining) == 0;
         }
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static bool EqualsOffset(string a, int aOffset, string b, int bOffset, int length) =>
-            (
-                aOffset == bOffset
-                &&
-                ReferenceEquals(a, b)
-                &&
-                length >= 0
-            )
-            ||
-            string.CompareOrdinal(a, aOffset, b, bOffset, length) == 0;
+        public static bool EqualsLimited(string a, string b, int length)
+        {
+#if DEBUG
+            if (a == null)
+            {
+                throw new ArgumentNullException(nameof(a));
+            }
+            if (b == null)
+            {
+                throw new ArgumentNullException(nameof(b));
+            }
+#endif
+            return length <= 0 || string.CompareOrdinal(a, 0, b, 0, length) == 0;
+        }
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static char GetCharOrTerminator(this string @this, int index) => index < @this.Length ? @this[index] : '\0';
+        public static bool EqualsOffset(string a, int aOffset, string b, int bOffset, int length)
+        {
+#if DEBUG
+            if (a == null)
+            {
+                throw new ArgumentNullException(nameof(a));
+            }
+            if (b == null)
+            {
+                throw new ArgumentNullException(nameof(b));
+            }
+            if (aOffset < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(aOffset));
+            }
+            if (bOffset < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bOffset));
+            }
+#endif
+            return length <= 0 || string.CompareOrdinal(a, aOffset, b, bOffset, length) == 0;
+        }
+
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static char GetCharOrTerminator(this string @this, int index)
+        {
+#if DEBUG
+            if (index < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+#endif
+            return index < @this.Length ? @this[index] : '\0';
+        }
 
         public static bool ContainsSubstringOrdinal(this string @this, string value, int startIndex, int length)
         {
@@ -209,202 +238,89 @@ namespace WeCantSpell.Hunspell.Infrastructure
                     return true;
                 }
 
-                firstCharIndex = firstCharIndex = @this.IndexOf(firstChar, firstCharIndex + 1);
+                firstCharIndex = @this.IndexOf(firstChar, firstCharIndex + 1);
             }
 
             return false;
         }
 
-        public static string ConcatSubstring(string str0, int startIndex0, int count0, string str1)
+        public static string ConcatString(string str0, int startIndex0, int count0, string str1)
         {
-            var builder = StringBuilderPool.Get(str1.Length + count0);
+            if (count0 == 0)
+            {
+                return str1 ?? string.Empty;
+            }
 
+            var builder = StringBuilderPool.Get(str1.Length + count0);
             builder.Append(str0, startIndex0, count0);
             builder.Append(str1);
-
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
-        public static string ConcatSubstring(string str0, string str1, int startIndex1, int count1)
+        public static string ConcatString(string str0, string str1, int startIndex1, int count1)
         {
-            var builder = StringBuilderPool.Get(str0.Length + count1);
+            if (string.IsNullOrEmpty(str0))
+            {
+                return str1.Substring(startIndex1, count1);
+            }
 
+            var builder = StringBuilderPool.Get(str0.Length + count1);
             builder.Append(str0);
             builder.Append(str1, startIndex1, count1);
-
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
-        public static string ConcatSubstring(string str0, int startIndex0, int length0, string str1, char char2, string str3, int startIndex3)
+        public static string ConcatString(string str0, int startIndex0, int count0, string str1, char char2, string str3, int startIndex3)
         {
-            var length3 = str3.Length - startIndex3;
-            var builder = StringBuilderPool.Get(length0 + str1.Length + 1 + length3);
-
-            builder.Append(str0, startIndex0, length0);
+            var count3 = str3.Length - startIndex3;
+            var builder = StringBuilderPool.Get(count0 + str1.Length + 1 + count3);
+            builder.Append(str0, startIndex0, count0);
             builder.Append(str1);
             builder.Append(char2);
-            builder.Append(str3, startIndex3, length3);
-
+            builder.Append(str3, startIndex3, count3);
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
-        public static string ConcatSubstring(string str0, string str1, int startIndex1) =>
-            ConcatSubstring(str0, 0, str0.Length, str1, startIndex1);
+        public static string ConcatString(string str0, string str1, int startIndex1) =>
+            ConcatString(str0, 0, str0.Length, str1, startIndex1, str1.Length - startIndex1);
 
-        public static string ConcatSubstring(string str0, int startIndex0, int length0, string str1, int startIndex1)
+        public static string ConcatString(string str0, int startIndex0, int count0, string str1, int startIndex1) =>
+            ConcatString(str0, startIndex0, count0, str1, startIndex1, str1.Length - startIndex1);
+
+        public static string ConcatString(string str0, int startIndex0, int count0, string str1, int startIndex1, int count1)
         {
-            var length1 = str1.Length - startIndex1;
-            var builder = StringBuilderPool.Get(length0 + length1);
-
-            builder.Append(str0, startIndex0, length0);
-            builder.Append(str1, startIndex1, length1);
-
+            var builder = StringBuilderPool.Get(count0 + count1);
+            builder.Append(str0, startIndex0, count0);
+            builder.Append(str1, startIndex1, count1);
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
-        public static string ConcatSubstring(string str0, int startIndex0, int length0, string str1, string str2, int startIndex2)
+        public static string ConcatString(string str0, int startIndex0, int count0, string str1, string str2, int startIndex2)
         {
-            var length2 = str2.Length - startIndex2;
-            var builder = StringBuilderPool.Get(length0 + str1.Length + length2);
-
-            builder.Append(str0, startIndex0, length0);
+            var count2 = str2.Length - startIndex2;
+            var builder = StringBuilderPool.Get(count0 + str1.Length + count2);
+            builder.Append(str0, startIndex0, count0);
             builder.Append(str1);
-            builder.Append(str2, startIndex2, length2);
-
+            builder.Append(str2, startIndex2, count2);
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
-        public static string ConcatSubstring(string str0, int startIndex0, int length0, char char1)
-        {
-            var builder = StringBuilderPool.Get(length0 + 1);
+        public static string ConcatString(string str0, int startIndex0, int count0, char char1) =>
+            ConcatString(str0, startIndex0, count0, char1.ToString());
 
-            builder.Append(str0, startIndex0, length0);
-            builder.Append(char1);
-
-            return StringBuilderPool.GetStringAndReturn(builder);
-        }
-
-        public static bool IsReverseSubset(string s1, string s2)
-        {
-            if (s2.Length < s1.Length)
-            {
-                return false;
-            }
-
-            for (int index1 = 0, index2 = s2.Length - 1; index1 < s1.Length; index1++, index2--)
-            {
-                if (s1[index1] != '.' && s1[index1] != s2[index2])
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        public static bool IsSubset(string s1, string s2)
-        {
-            if (s1.Length > s2.Length)
-            {
-                return false;
-            }
-
-            for (var i = 0; i < s1.Length; i++)
-            {
-                if (s1[i] != '.' && s1[i] != s2[i])
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        public static bool IsNumericWord(string word)
-        {
-            int i;
-            byte state = 0; // 0 = begin, 1 = number, 2 = separator
-            for (i = 0; i < word.Length; i++)
-            {
-                var c = word[i];
-                if (char.IsNumber(c))
-                {
-                    state = 1;
-                }
-                else if (c == ',' || c == '.' || c == '-')
-                {
-                    if (state == 2 || i == 0)
-                    {
-                        break;
-                    }
-
-                    state = 2;
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            return i == word.Length && state == 1;
-        }
-
-        public static int CountMatchingFromLeft(string text, char character)
-        {
-            var count = 0;
-            while (count < text.Length && text[count] == character)
-            {
-                count++;
-            }
-
-            return count;
-        }
-
-        public static int CountMatchingFromRight(string text, char character)
-        {
-            var lastIndex = text.Length - 1;
-            var searchIndex = lastIndex;
-            while (searchIndex >= 0 && text[searchIndex] == character)
-            {
-                searchIndex--;
-            }
-
-            return lastIndex - searchIndex;
-        }
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static bool MyIsAlpha(char ch) => ch < 128 || char.IsLetter(ch);
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        internal static StringSlice Subslice(this string text, int startIndex, int length) =>
-            new StringSlice(text, startIndex, length);
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        internal static StringSlice Subslice(this string text, int startIndex) =>
-            new StringSlice(text, startIndex, text.Length - startIndex);
-
-        internal static bool Contains(this List<string> values, StringSlice test)
-        {
-            foreach (var value in values)
-            {
-                if (test.Equals(value))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
+        public static string ConcatString(string str0, int startIndex0, int count0, char char1, string str2, int startIndex2) =>
+            ConcatString(str0, startIndex0, count0, char1.ToString(), str2, startIndex2);
 
         public static int FirstIndexOfLineBreakChar(string text, int startPosition)
         {
-            for(var i = startPosition; i < text.Length; i++)
+#if DEBUG
+            if (text == null)
+            {
+                throw new ArgumentNullException(nameof(text));
+            }
+#endif
+
+            for (var i = startPosition; i < text.Length; i++)
             {
                 if (IsLineBreakChar(text[i]))
                 {
@@ -419,5 +335,36 @@ namespace WeCantSpell.Hunspell.Infrastructure
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool IsLineBreakChar(char c) => c == '\n' || c == '\r';
+
+        public static bool ContainsAny(this string text, char a, char b)
+        {
+#if DEBUG
+            if (text == null)
+            {
+                throw new ArgumentNullException(nameof(text));
+            }
+#endif
+
+            return text.Length != 0
+                && text.IndexOfAny(new[] { a, b }) >= 0;
+        }
+
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static int IndexOfOrdinal(this string text, string value) =>
+            text.IndexOf(value, StringComparison.Ordinal);
+
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static int IndexOfOrdinal(this string text, string value, int startIndex) =>
+            text.IndexOf(value, startIndex, StringComparison.Ordinal);
+
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static int IndexOfOrdinal(this string text, string value, int startIndex, int count) =>
+            text.IndexOf(value, startIndex, count, StringComparison.Ordinal);
     }
 }

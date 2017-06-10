@@ -4,7 +4,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 {
     internal static class ListEx
     {
-        internal static void RemoveFromIndexThenInsertAtFront<TValue>(this List<TValue> list, int removeIndex, TValue insertValue)
+        public static void RemoveFromIndexThenInsertAtFront<TValue>(this List<TValue> list, int removeIndex, TValue insertValue)
         {
             if (list.Count != 0)
             {

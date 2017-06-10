@@ -1,4 +1,5 @@
-﻿using WeCantSpell.Hunspell.Infrastructure;
+﻿using System.Globalization;
+using WeCantSpell.Hunspell.Infrastructure;
 
 #if !NO_INLINE
 using System.Runtime.CompilerServices;
@@ -36,12 +37,14 @@ namespace WeCantSpell.Hunspell
 
     public static class CapitalizationTypeEx
     {
-        public static CapitalizationType GetCapitalizationType(string word, AffixConfig affix) =>
-            GetCapitalizationType(StringSlice.Create(word), affix);
+        public static CapitalizationType GetCapitalizationType(string word, TextInfo textInfo) =>
+            string.IsNullOrEmpty(word)
+                ? CapitalizationType.None
+                : GetCapitalizationType(new StringSlice(word), textInfo);
 
-        internal static CapitalizationType GetCapitalizationType(StringSlice word, AffixConfig affix)
+        internal static CapitalizationType GetCapitalizationType(StringSlice word, TextInfo textInfo)
         {
-            if (word.IsNullOrEmpty)
+            if (word.IsEmpty)
             {
                 return CapitalizationType.None;
             }
@@ -49,12 +52,12 @@ namespace WeCantSpell.Hunspell
             var hasFoundMoreCaps = false;
             var firstIsUpper = false;
             var hasLower = false;
-            var c = word.Text[word.Offset];
+            var c = word[0];
             if (char.IsUpper(c))
             {
                 firstIsUpper = true;
             }
-            else if (!CharIsNeutral(c, affix))
+            else if (HunspellTextFunctions.CharIsNotNeutral(c, textInfo))
             {
                 hasLower = true;
             }
@@ -68,7 +71,7 @@ namespace WeCantSpell.Hunspell
                 {
                     hasFoundMoreCaps = true;
                 }
-                else if (!CharIsNeutral(c, affix))
+                else if (HunspellTextFunctions.CharIsNotNeutral(c, textInfo))
                 {
                     hasLower = true;
                 }
@@ -106,11 +109,5 @@ namespace WeCantSpell.Hunspell
                 return CapitalizationType.Huh;
             }
         }
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        private static bool CharIsNeutral(char c, AffixConfig affix) =>
-            !char.IsLower(c) || (c > 127 && affix.Culture.TextInfo.ToUpper(c) == c);
     }
 }

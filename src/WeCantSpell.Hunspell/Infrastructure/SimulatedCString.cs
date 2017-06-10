@@ -1,5 +1,9 @@
 ﻿using System.Text;
 
+#if !NO_INLINE
+using System.Runtime.CompilerServices;
+#endif
+
 namespace WeCantSpell.Hunspell.Infrastructure
 {
     internal sealed class SimulatedCString
@@ -21,7 +25,13 @@ namespace WeCantSpell.Hunspell.Infrastructure
             }
         }
 
-        public int BufferLength => Buffer.Length;
+        public int BufferLength
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get => Buffer.Length;
+        }
 
         public void WriteChars(string text, int destinationIndex)
         {
@@ -42,13 +52,23 @@ namespace WeCantSpell.Hunspell.Infrastructure
             Buffer.Append(text);
         }
 
-        public string Substring(int startIndex) => ToString().Substring(startIndex);
+        public string Substring(int startIndex) =>
+            ToString().Substring(startIndex);
 
-        public string Substring(int startIndex, int length) => ToString().Substring(startIndex, length);
+        public string Substring(int startIndex, int length) =>
+            ToString().Substring(startIndex, length);
 
-        internal StringSlice Subslice(int startIndex) => ToString().Subslice(startIndex);
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        internal StringSlice Subslice(int startIndex) =>
+            ToString().Subslice(startIndex);
 
-        internal StringSlice Subslice(int startIndex, int length) => ToString().Subslice(startIndex, length);
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        internal StringSlice Subslice(int startIndex, int length) =>
+            ToString().Subslice(startIndex, length);
 
         public void Destroy()
         {
@@ -63,8 +83,5 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public override string ToString() =>
             toStringCache ?? (toStringCache = Buffer.ToStringTerminated());
-
-        public static implicit operator string(SimulatedCString cString) =>
-            cString?.ToString();
     }
 }

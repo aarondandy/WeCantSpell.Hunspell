@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -24,35 +23,34 @@ namespace WeCantSpell.Hunspell.Performance.Tests
         {
             var testAssemblyPath = Path.GetFullPath(GetType().Assembly.Location);
             var filesDirectory = Path.Combine(Path.GetDirectoryName(testAssemblyPath), "files/");
-            Task.WhenAll(
-                new[]
+
+            Task.WhenAll(LoadChecker(), LoadWords()).GetAwaiter().GetResult();
+
+            async Task LoadChecker()
+            {
+                Checker = await WordList.CreateFromFilesAsync(Path.Combine(filesDirectory, "English (American).dic")).ConfigureAwait(false);
+            }
+
+            async Task LoadWords()
+            {
+                Words = new List<string>();
+                using (var stram = new FileStream(Path.Combine(filesDirectory, "List_of_common_misspellings.txt"), FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true))
+                using (var reader = new StreamReader(stram, Encoding.UTF8, true))
                 {
-                    new Func<Task>(async () =>
+                    string line;
+                    while ((line = await reader.ReadLineAsync().ConfigureAwait(false)) != null)
                     {
-                        Checker = await WordList.CreateFromFilesAsync(Path.Combine(filesDirectory, "English (American).dic")).ConfigureAwait(false);
-                    }),
-                    new Func<Task>(async () =>
-                    {
-                        Words = new List<string>();
-                        using(var reader = new StreamReader(Path.Combine(filesDirectory, "List_of_common_misspellings.txt"), Encoding.UTF8, true))
+                        line = line.Trim();
+
+                        if (line.Length == 0 || line.StartsWith("#") || line.StartsWith("["))
                         {
-                            string line;
-                            while((line = await reader.ReadLineAsync().ConfigureAwait(false)) != null)
-                            {
-                                line = line.Trim();
-
-                                if(line.Length == 0 || line.StartsWith("#") || line.StartsWith("["))
-                                {
-                                    continue;
-                                }
-
-                                Words.AddRange(line.Split(WordSplitChars, StringSplitOptions.RemoveEmptyEntries));
-                            }
+                            continue;
                         }
-                    })
+
+                        Words.AddRange(line.Split(WordSplitChars, StringSplitOptions.RemoveEmptyEntries));
+                    }
                 }
-                .Select(f => f())
-            ).Wait();
+            }
         }
     }
 }

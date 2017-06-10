@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using WeCantSpell.Hunspell.Infrastructure;
 
+#if !NO_INLINE
+using System.Runtime.CompilerServices;
+#endif
+
 namespace WeCantSpell.Hunspell
 {
     public sealed class FlagSet : ArrayWrapper<FlagValue>
@@ -94,6 +98,9 @@ namespace WeCantSpell.Hunspell
 
         public bool Contains(FlagValue value) => value.HasValue && items.Length > 0 && value >= items[0] && value <= items[items.Length -1] && Array.BinarySearch(items, value) >= 0;
 
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public bool ContainsAny(FlagSet values) => ContainsAny(this, values);
 
         public bool ContainsAny(FlagValue a, FlagValue b) =>

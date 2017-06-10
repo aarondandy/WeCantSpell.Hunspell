@@ -146,7 +146,7 @@ namespace WeCantSpell.Hunspell
             {
                 foreach (var entry in indexedEntries)
                 {
-                    if (StringEx.IsSubset(entry.Key, word))
+                    if (HunspellTextFunctions.IsSubset(entry.Key, word))
                     {
                         results.Add(entry);
                     }
@@ -155,17 +155,7 @@ namespace WeCantSpell.Hunspell
 
             if (affixesWithDots.HasItems)
             {
-                handleAffixesWithDots();
-                void handleAffixesWithDots()
-                {
-                    foreach (var entry in affixesWithDots)
-                    {
-                        if (StringEx.IsSubset(entry.Key, word))
-                        {
-                            results.Add(entry);
-                        }
-                    }
-                }
+                results.AddRange(GetMatchingWithDotAffixes(word, HunspellTextFunctions.IsSubset));
             }
 
             return results;
@@ -179,7 +169,7 @@ namespace WeCantSpell.Hunspell
             {
                 foreach (var entry in indexedEntries)
                 {
-                    if (StringEx.IsReverseSubset(entry.Key, word))
+                    if (HunspellTextFunctions.IsReverseSubset(entry.Key, word))
                     {
                         results.Add(entry);
                     }
@@ -188,21 +178,14 @@ namespace WeCantSpell.Hunspell
 
             if (affixesWithDots.HasItems)
             {
-                handleAffixesWithDots();
-                void handleAffixesWithDots()
-                {
-                    foreach (var entry in affixesWithDots)
-                    {
-                        if (StringEx.IsReverseSubset(entry.Key, word))
-                        {
-                            results.Add(entry);
-                        }
-                    }
-                }
+                results.AddRange(GetMatchingWithDotAffixes(word, HunspellTextFunctions.IsReverseSubset));
             }
 
             return results;
         }
+
+        private IEnumerable<AffixEntryWithDetail<TEntry>> GetMatchingWithDotAffixes(string word, Func<string,string,bool> predicate) =>
+            affixesWithDots.Where(entry => predicate(entry.Key, word));
 
         public IEnumerator<AffixEntryGroup<TEntry>> GetEnumerator() => affixesByFlag.Values.GetEnumerator();
 

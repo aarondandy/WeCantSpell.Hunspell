@@ -28,6 +28,15 @@ namespace WeCantSpell.Hunspell
 
         public static WordEntrySet CopyWithItemReplaced(WordEntrySet source, int index, WordEntry replacement)
         {
+            if (source == null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+            if (replacement == null)
+            {
+                throw new ArgumentNullException(nameof(replacement));
+            }
+
             var newEntries = new WordEntry[source.items.Length];
             Array.Copy(source.items, newEntries, newEntries.Length);
             newEntries[index] = replacement;
@@ -36,6 +45,15 @@ namespace WeCantSpell.Hunspell
 
         public static WordEntrySet CopyWithItemAdded(WordEntrySet source, WordEntry entry)
         {
+            if (source == null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+            if (entry == null)
+            {
+                throw new ArgumentNullException(nameof(entry));
+            }
+
             WordEntry[] newEntries;
             if (source.items.Length == 0)
             {
@@ -51,6 +69,9 @@ namespace WeCantSpell.Hunspell
             return TakeArray(newEntries);
         }
 
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public WordEntry FirstOrDefault() =>
             items.Length != 0 ? items[0] : null;
 

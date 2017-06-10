@@ -25,11 +25,14 @@ namespace WeCantSpell.Hunspell
 
         public bool AnyStartsWith(string text)
         {
-            for (var i = 0; i < items.Length; i++)
+            if (!string.IsNullOrEmpty(text))
             {
-                if (items[i].StartsWith(text))
+                for (var i = 0; i < items.Length; i++)
                 {
-                    return true;
+                    if (items[i].StartsWith(text))
+                    {
+                        return true;
+                    }
                 }
             }
 

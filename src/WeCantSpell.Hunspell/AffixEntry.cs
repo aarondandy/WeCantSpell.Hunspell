@@ -1,4 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+
+#if !NO_INLINE
+using System.Runtime.CompilerServices;
+#endif
 
 namespace WeCantSpell.Hunspell
 {
@@ -100,8 +105,69 @@ namespace WeCantSpell.Hunspell
     /// <seealso cref="SuffixEntry"/>
     public abstract class AffixEntry
     {
+        [Obsolete("Use a constructor")]
+        public static TEntry Create<TEntry>(
+            string strip,
+            string affixText,
+            CharacterConditionGroup conditions,
+            MorphSet morph,
+            FlagSet contClass)
+            where TEntry : AffixEntry, new()
+        {
+            return new TEntry
+            {
+                Strip = strip ?? string.Empty,
+                Append = affixText ?? string.Empty,
+                Conditions = conditions ?? CharacterConditionGroup.Empty,
+                MorphCode = morph ?? MorphSet.Empty,
+                ContClass = contClass ?? FlagSet.Empty
+            };
+        }
+
+        internal static TEntry CreateWithoutNullCheck<TEntry>(
+            string strip,
+            string affixText,
+            CharacterConditionGroup conditions,
+            MorphSet morph,
+            FlagSet contClass)
+            where TEntry : AffixEntry, new()
+        {
+            // TODO: remove this when a better constructor is provided
+#if DEBUG
+            if (strip == null)
+            {
+                throw new ArgumentNullException(nameof(strip));
+            }
+            if (affixText == null)
+            {
+                throw new ArgumentNullException(nameof(affixText));
+            }
+            if (conditions == null)
+            {
+                throw new ArgumentNullException(nameof(conditions));
+            }
+            if (morph == null)
+            {
+                throw new ArgumentNullException(nameof(morph));
+            }
+            if (contClass == null)
+            {
+                throw new ArgumentNullException(nameof(contClass));
+            }
+#endif
+            return new TEntry
+            {
+                Strip = strip,
+                Append = affixText,
+                Conditions = conditions,
+                MorphCode = morph,
+                ContClass = contClass
+            };
+        }
+
         protected AffixEntry()
         {
+            // TODO: refactor this to accept arguments to enfoce non-null values easily
         }
 
         /// <summary>
@@ -134,23 +200,6 @@ namespace WeCantSpell.Hunspell
         public FlagSet ContClass { get; private set; }
 
         public abstract string Key { get; }
-
-        public static TEntry Create<TEntry>(
-            string strip,
-            string affixText,
-            CharacterConditionGroup conditions,
-            MorphSet morph,
-            FlagSet contClass)
-            where TEntry : AffixEntry, new()
-            =>
-            new TEntry
-            {
-                Strip = strip,
-                Append = affixText,
-                Conditions = conditions,
-                MorphCode = morph ?? MorphSet.Empty,
-                ContClass = contClass ?? FlagSet.Empty
-            };
 
         public bool ContainsContClass(FlagValue flag) => flag.HasValue && ContClass.Contains(flag);
 
