@@ -20,9 +20,10 @@ namespace WeCantSpell.Hunspell.Infrastructure
         protected ListWrapper(List<T> items)
         {
             this.items = items ?? throw new ArgumentNullException(nameof(items));
-            HasItems = items.Count != 0;
-            IsEmpty = !HasItems;
+            IsEmpty = items.Count == 0;
         }
+
+        public bool IsEmpty { get; }
 
         public T this[int index]
         {
@@ -40,9 +41,13 @@ namespace WeCantSpell.Hunspell.Infrastructure
             get => items.Count;
         }
 
-        public bool HasItems { get; }
-
-        public bool IsEmpty { get; }
+        public bool HasItems
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get => !IsEmpty;
+        }
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -79,7 +84,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            public bool MoveNext() => ++index < values.Count;
+            public bool MoveNext() => (++index) < values.Count;
         }
     }
 }

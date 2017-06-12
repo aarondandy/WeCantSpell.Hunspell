@@ -48,7 +48,7 @@ namespace WeCantSpell.Hunspell
                 }
 
                 // allow numbers with dots, dashes and commas (but forbid double separators: "..", "--" etc.)
-                if (StringEx.IsNumericWord(word))
+                if (HunspellTextFunctions.IsNumericWord(word))
                 {
                     return new SpellCheckResult(true);
                 }
@@ -146,7 +146,7 @@ namespace WeCantSpell.Hunspell
                     // other patterns
                     foreach (var breakEntry in Affix.BreakPoints)
                     {
-                        var found = scw.IndexOf(breakEntry, StringComparison.Ordinal);
+                        var found = scw.IndexOfOrdinal(breakEntry);
                         if (found > 0 && found < scw.Length - breakEntry.Length)
                         {
                             if (!Check(scw.Substring(found + breakEntry.Length)))
@@ -196,23 +196,23 @@ namespace WeCantSpell.Hunspell
 
                 // Spec. prefix handling for Catalan, French, Italian:
                 // prefixes separated by apostrophe (SANT'ELIA -> Sant'+Elia).
-
+                var textInfo = TextInfo;
                 var apos = scw.IndexOf('\'');
                 if (apos >= 0)
                 {
-                    scw = MakeAllSmall(scw);
+                    scw = HunspellTextFunctions.MakeAllSmall(scw, textInfo);
 
                     // conversion may result in string with different len than before MakeAllSmall2 so re-scan
                     if (apos < scw.Length - 1)
                     {
-                        scw = StringEx.ConcatSubstring(scw, 0, apos + 1, MakeInitCap(scw.Subslice(apos + 1)));
+                        scw = StringEx.ConcatString(scw, 0, apos + 1, HunspellTextFunctions.MakeInitCap(scw.Subslice(apos + 1), textInfo));
                         rv = CheckWord(scw, ref resultType, out root);
                         if (rv != null)
                         {
                             return rv;
                         }
 
-                        scw = MakeInitCap(scw);
+                        scw = HunspellTextFunctions.MakeInitCap(scw, textInfo);
                         rv = CheckWord(scw, ref resultType, out root);
                         if (rv != null)
                         {
@@ -223,12 +223,12 @@ namespace WeCantSpell.Hunspell
 
                 if (Affix.CheckSharps && scw.Contains("SS"))
                 {
-                    scw = MakeAllSmall(scw);
+                    scw = HunspellTextFunctions.MakeAllSmall(scw, textInfo);
                     var u8buffer = scw;
                     rv = SpellSharps(ref u8buffer, 0, 0, 0, ref resultType, out root);
                     if (rv == null)
                     {
-                        scw = MakeInitCap(scw);
+                        scw = HunspellTextFunctions.MakeInitCap(scw, textInfo);
                         rv = SpellSharps(ref scw, 0, 0, 0, ref resultType, out root);
                     }
 
@@ -249,10 +249,10 @@ namespace WeCantSpell.Hunspell
 
             private WordEntry CheckDetailsInitCap(int abbv, CapitalizationType capType, ref string scw, ref SpellCheckResultType resultType, out string root)
             {
-                resultType |= SpellCheckResultType.OrigCap;
-                var u8buffer = MakeAllSmall(scw);
-                scw = MakeInitCap(u8buffer);
+                var u8buffer = HunspellTextFunctions.MakeAllSmall(scw, TextInfo);
+                scw = HunspellTextFunctions.MakeInitCap(u8buffer, TextInfo);
 
+                resultType |= SpellCheckResultType.OrigCap;
                 if (capType == CapitalizationType.Init)
                 {
                     resultType |= SpellCheckResultType.InitCap;
@@ -339,7 +339,7 @@ namespace WeCantSpell.Hunspell
             /// </summary>
             private WordEntry SpellSharps(ref string @base, int nPos, int n, int repNum, ref SpellCheckResultType info, out string root)
             {
-                var pos = @base.IndexOf("ss", nPos, StringComparison.Ordinal);
+                var pos = @base.IndexOfOrdinal("ss", nPos);
                 if (pos >= 0 && n < MaxSharps)
                 {
                     var baseBuilder = StringBuilderPool.Get(@base, @base.Length);

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace WeCantSpell.Hunspell
+﻿namespace WeCantSpell.Hunspell
 {
     public static class MorphologicalTags
     {
@@ -19,7 +17,6 @@ namespace WeCantSpell.Hunspell
         public static readonly string Hyph = "hy:";
         public static readonly string Part = "pa:";
         public static readonly string Flag = "fl:";
-        [Obsolete("I don't think this will be used.")]
         public static readonly string HashEntry = "_H:";
         public static readonly int TagLength = Stem.Length;
     }

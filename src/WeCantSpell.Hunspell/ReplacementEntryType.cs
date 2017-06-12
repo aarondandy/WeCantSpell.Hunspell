@@ -1,5 +1,8 @@
-﻿namespace WeCantSpell.Hunspell
+﻿using System;
+
+namespace WeCantSpell.Hunspell
 {
+    [Flags]
     public enum ReplacementValueType : byte
     {
         /// <summary>
@@ -17,6 +20,6 @@
         /// <summary>
         /// Indicates that text must match the pattern exactly.
         /// </summary>
-        Isol = 3
+        Isol = Ini | Fin
     }
 }

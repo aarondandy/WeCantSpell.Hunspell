@@ -132,11 +132,12 @@ namespace WeCantSpell.Hunspell
 
         private EntryListType Initialized { get; set; } = EntryListType.None;
 
-
 #if !NO_ASYNC
         public static async Task<AffixConfig> ReadAsync(IHunspellLineReader reader, AffixConfig.Builder builder = null)
         {
-            var readerInstance = new AffixReader(builder, reader);
+            var readerInstance = new AffixReader(
+                builder,
+                reader ?? throw new ArgumentNullException(nameof(reader)));
 
             await readerInstance.ReadAsync().ConfigureAwait(false);
 
@@ -161,7 +162,9 @@ namespace WeCantSpell.Hunspell
 
         public static AffixConfig Read(IHunspellLineReader reader, AffixConfig.Builder builder = null)
         {
-            var readerInstance = new AffixReader(builder, reader);
+            var readerInstance = new AffixReader(
+                builder,
+                reader ?? throw new ArgumentNullException(nameof(reader)));
 
             readerInstance.Read();
 
@@ -186,6 +189,11 @@ namespace WeCantSpell.Hunspell
 #if !NO_ASYNC
         public static async Task<AffixConfig> ReadAsync(Stream stream, AffixConfig.Builder builder = null)
         {
+            if (stream == null)
+            {
+                throw new ArgumentNullException(nameof(stream));
+            }
+
             using (var reader = new DynamicEncodingLineReader(stream, DefaultEncoding))
             {
                 return await ReadAsync(reader, builder).ConfigureAwait(false);
@@ -194,6 +202,11 @@ namespace WeCantSpell.Hunspell
 #if !NO_IO_FILE
         public static async Task<AffixConfig> ReadFileAsync(string filePath, AffixConfig.Builder builder = null)
         {
+            if (filePath == null)
+            {
+                throw new ArgumentNullException(nameof(filePath));
+            }
+
             using (var stream = FileStreamEx.OpenAsyncReadFileStream(filePath))
             {
                 return await ReadAsync(stream, builder).ConfigureAwait(false);
@@ -204,6 +217,11 @@ namespace WeCantSpell.Hunspell
 
         public static AffixConfig Read(Stream stream, AffixConfig.Builder builder = null)
         {
+            if (stream == null)
+            {
+                throw new ArgumentNullException(nameof(stream));
+            }
+
             using (var reader = new DynamicEncodingLineReader(stream, DefaultEncoding))
             {
                 return Read(reader, builder);
@@ -213,6 +231,11 @@ namespace WeCantSpell.Hunspell
 #if !NO_IO_FILE
         public static AffixConfig ReadFile(string filePath, AffixConfig.Builder builder = null)
         {
+            if (filePath == null)
+            {
+                throw new ArgumentNullException(nameof(filePath));
+            }
+
             using (var stream = FileStreamEx.OpenReadFileStream(filePath))
             {
                 return Read(stream, builder);
@@ -275,7 +298,17 @@ namespace WeCantSpell.Hunspell
 
         private bool TryHandleParameterizedCommand(string commandName, string parameters)
         {
-            if (commandName == null || !CommandMap.TryGetValue(commandName, out AffixReaderCommandKind command))
+#if DEBUG
+            if (commandName == null)
+            {
+                throw new ArgumentNullException(nameof(commandName));
+            }
+            if (parameters == null)
+            {
+                throw new ArgumentNullException(nameof(parameters));
+            }
+#endif
+            if (!CommandMap.TryGetValue(commandName, out AffixReaderCommandKind command))
             {
                 Builder.LogWarning($"Unknown command {commandName} with params: {parameters}");
                 return false;
@@ -302,7 +335,7 @@ namespace WeCantSpell.Hunspell
                     Builder.Encoding = encoding;
                     return true;
                 case AffixReaderCommandKind.Language:
-                    Builder.Language = Builder.Dedup(parameters.Trim());
+                    Builder.Language = Builder.Dedup(parameters.Trim()); // TODO: would this trim ever have an impact?
                     Builder.Culture = GetCultureFromLanguage(Builder.Language);
                     return true;
                 case AffixReaderCommandKind.CompoundSyllableNum:
@@ -452,9 +485,9 @@ namespace WeCantSpell.Hunspell
         {
             var parts = parameters.SliceOnTabOrSpace();
 
-            if (parts.Length > 0)
+            if (parts.Count > 0)
             {
-                if (IntEx.TryParseInvariant(parts[0], out int maxValue))
+                if (IntEx.TryParseInvariant(parts[0].ToString(), out int maxValue))
                 {
                     Builder.CompoundMaxSyllable = maxValue;
                 }
@@ -466,7 +499,7 @@ namespace WeCantSpell.Hunspell
             }
 
             Builder.CompoundVowels =
-                1 < parts.Length
+                1 < parts.Count
                 ? CharacterSet.Create(parts[1])
                 : DefaultCompoundVowels;
 
@@ -512,7 +545,7 @@ namespace WeCantSpell.Hunspell
 
         private bool TryParsePhone(string parameterText, List<PhoneticEntry> entries)
         {
-            var parts = parameterText.SplitOnTabOrSpace();
+            var parts = parameterText.SplitOnSpaceOrTab();
             if (parts.Length == 0)
             {
                 Builder.LogWarning("Failed to parse phone line: " + parameterText);
@@ -576,7 +609,7 @@ namespace WeCantSpell.Hunspell
                 entries = new Dictionary<string, MultiReplacementEntry>();
             }
 
-            var parts = parameterText.SplitOnTabOrSpace();
+            var parts = parameterText.SplitOnSpaceOrTab();
             if (parts.Length < 2)
             {
                 Builder.LogWarning($"Bad {entryListType}: {parameterText}");
@@ -607,7 +640,7 @@ namespace WeCantSpell.Hunspell
                 parameterText = parameterText.Reverse();
             }
 
-            var parts = parameterText.SplitOnTabOrSpace();
+            var parts = parameterText.SplitOnSpaceOrTab();
 
             Builder.DedupInPlace(parts);
 
@@ -737,13 +770,11 @@ namespace WeCantSpell.Hunspell
                 StringBuilder affixText;
                 if (affixSlashIndex >= 0)
                 {
-                    var slashPartOffset = affixSlashIndex + 1;
-                    var slashPartLength = affixInput.Length - slashPartOffset;
                     affixText = StringBuilderPool.Get(affixInput, 0, affixSlashIndex);
 
                     if (Builder.IsAliasF)
                     {
-                        if (IntEx.TryParseInvariant(affixInput.Subslice(slashPartOffset, slashPartLength), out int aliasNumber) && aliasNumber > 0 && aliasNumber <= Builder.AliasF.Count)
+                        if (IntEx.TryParseInvariant(affixInput.Substring(affixSlashIndex + 1), out int aliasNumber) && aliasNumber > 0 && aliasNumber <= Builder.AliasF.Count)
                         {
                             contClass = Builder.AliasF[aliasNumber - 1];
                         }
@@ -755,7 +786,7 @@ namespace WeCantSpell.Hunspell
                     }
                     else
                     {
-                        contClass = Builder.Dedup(FlagSet.TakeArray(ParseFlagsInOrder(affixInput.Subslice(slashPartOffset, slashPartLength))));
+                        contClass = Builder.Dedup(FlagSet.TakeArray(ParseFlagsInOrder(affixInput.Subslice(affixSlashIndex + 1))));
                     }
                 }
                 else
@@ -786,7 +817,7 @@ namespace WeCantSpell.Hunspell
                 }
 
                 var conditions = CharacterCondition.Parse(conditionText);
-                if (!string.IsNullOrEmpty(strip) && !conditions.AllowsAnySingleCharacter)
+                if (strip.Length != 0 && !conditions.AllowsAnySingleCharacter)
                 {
                     bool isRedundant;
                     if (typeof(TEntry) == typeof(PrefixEntry))
@@ -832,7 +863,7 @@ namespace WeCantSpell.Hunspell
                             morphAffixText = morphAffixText.Reverse();
                         }
 
-                        morph = Builder.Dedup(MorphSet.TakeArray(Builder.DedupInPlace(morphAffixText.SplitOnTabOrSpace())));
+                        morph = Builder.Dedup(MorphSet.TakeArray(Builder.DedupInPlace(morphAffixText.SplitOnSpaceOrTab())));
                     }
                 }
                 else
@@ -855,7 +886,7 @@ namespace WeCantSpell.Hunspell
                     Builder.HasContClass = true;
                 }
 
-                affixGroup.Entries.Add(AffixEntry.Create<TEntry>(
+                affixGroup.Entries.Add(AffixEntry.CreateWithoutNullCheck<TEntry>(
                     Builder.Dedup(strip),
                     Builder.Dedup(StringBuilderPool.GetStringAndReturn(affixText)),
                     Builder.Dedup(conditions),
@@ -938,49 +969,36 @@ namespace WeCantSpell.Hunspell
         private bool TryParseReplacements(string parameterText, List<SingleReplacement> entries)
         {
             var parameters = parameterText.SliceOnTabOrSpace();
-            if (parameters.Length == 0)
+            if (parameters.Count == 0)
             {
                 Builder.LogWarning("Failed to parse replacements from: " + parameterText);
                 return false;
             }
 
             var patternBuilder = StringBuilderPool.Get(parameters[0]);
-            var outString = parameters.Length > 1 ? parameters[1].ToString() : string.Empty;
-
-            ReplacementValueType type;
             var hasTrailingDollar = patternBuilder.EndsWith('$');
-            if (patternBuilder.StartsWith('^'))
-            {
-                if (hasTrailingDollar)
-                {
-                    type = ReplacementValueType.Isol;
-                    patternBuilder.Remove(patternBuilder.Length - 1, 1);
-                }
-                else
-                {
-                    type = ReplacementValueType.Ini;
-                }
+            var hasStartingCarrot = patternBuilder.StartsWith('^');
+            var type = ReplacementValueType.Med;
 
-                patternBuilder.Remove(0, 1);
-            }
-            else
+            if (hasTrailingDollar)
             {
-                if (hasTrailingDollar)
-                {
-                    type = ReplacementValueType.Fin;
-                    patternBuilder.Remove(patternBuilder.Length - 1, 1);
-                }
-                else
-                {
-                    type = ReplacementValueType.Med;
-                }
+                type |= ReplacementValueType.Fin;
+                patternBuilder.Remove(patternBuilder.Length - 1, 1);
+            }
+
+            if (hasStartingCarrot)
+            {
+                type |= ReplacementValueType.Ini;
+                patternBuilder.Remove(0, 1);
             }
 
             patternBuilder.Replace('_', ' ');
 
             entries.Add(new SingleReplacement(
                 Builder.Dedup(StringBuilderPool.GetStringAndReturn(patternBuilder)),
-                Builder.Dedup(outString.Replace('_', ' ')),
+                parameters.Count > 1 ?
+                    Builder.Dedup(parameters[1].ReplaceString('_', ' '))
+                    : string.Empty,
                 type));
 
             return true;
@@ -989,19 +1007,16 @@ namespace WeCantSpell.Hunspell
         private bool TryParseCheckCompoundPatternIntoCompoundPatterns(string parameterText, List<PatternEntry> entries)
         {
             var parameters = parameterText.SliceOnTabOrSpace();
-            if (parameters.Length == 0)
+            if (parameters.Count == 0)
             {
                 Builder.LogWarning("Failed to parse compound pattern from: " + parameterText);
                 return false;
             }
 
             var pattern = parameters[0];
-            StringSlice pattern2 = StringSlice.Null;
-            StringSlice pattern3 = StringSlice.Null;
             var condition = default(FlagValue);
-            var condition2 = default(FlagValue);
-
             var slashIndex = pattern.IndexOf('/');
+
             if (slashIndex >= 0)
             {
                 if (!TryParseFlag(pattern.Subslice(slashIndex + 1), out condition))
@@ -1013,7 +1028,11 @@ namespace WeCantSpell.Hunspell
                 pattern = pattern.Subslice(0, slashIndex);
             }
 
-            if (parameters.Length >= 2)
+            var pattern2 = StringSlice.Empty;
+            var pattern3 = string.Empty;
+            var condition2 = default(FlagValue);
+
+            if (parameters.Count >= 2)
             {
                 pattern2 = parameters[1];
                 slashIndex = pattern2.IndexOf('/');
@@ -1028,9 +1047,9 @@ namespace WeCantSpell.Hunspell
                     pattern2 = pattern2.Subslice(0, slashIndex);
                 }
 
-                if (parameters.Length >= 3)
+                if (parameters.Count >= 3)
                 {
-                    pattern3 = parameters[2];
+                    pattern3 = parameters[2].ToString();
                     Builder.EnableOptions(AffixConfigOptions.SimplifiedCompound);
                 }
             }
@@ -1038,7 +1057,7 @@ namespace WeCantSpell.Hunspell
             entries.Add(new PatternEntry(
                 Builder.Dedup(pattern.ToString()),
                 Builder.Dedup(pattern2.ToString()),
-                Builder.Dedup(pattern3.ToString()),
+                Builder.Dedup(pattern3),
                 condition,
                 condition2));
 
@@ -1071,60 +1090,49 @@ namespace WeCantSpell.Hunspell
             }
         }
 
-        private StringSlice ReDecodeConvertedStringAsUtf8(StringSlice decoded)
+        private string ReDecodeConvertedStringAsUtf8(string decoded) =>
+            HunspellTextFunctions.ReDecodeConvertedStringAsUtf8(decoded, Builder.Encoding ?? Reader.CurrentEncoding);
+
+        private string ReDecodeConvertedStringAsUtf8(StringSlice decoded) =>
+            HunspellTextFunctions.ReDecodeConvertedStringAsUtf8(decoded, Builder.Encoding ?? Reader.CurrentEncoding);
+
+        private FlagValue[] ParseFlagsInOrder(string text)
         {
-            var encoding = Builder.Encoding ?? Reader.CurrentEncoding;
-            if (encoding == Encoding.UTF8)
-            {
-                return decoded;
-            }
-
-            byte[] encodedBytes;
-            if (decoded.Text.Length == decoded.Length && decoded.Offset == 0)
-            {
-                encodedBytes = encoding.GetBytes(decoded.Text);
-                return StringSlice.Create(Encoding.UTF8.GetString(encodedBytes, 0, encodedBytes.Length));
-            }
-            else
-            {
-                encodedBytes = new byte[encoding.GetMaxByteCount(decoded.Length)];
-                var byteEncodedCount = encoding.GetBytes(decoded.Text, decoded.Offset, decoded.Length, encodedBytes, 0);
-                return StringSlice.Create(Encoding.UTF8.GetString(encodedBytes, 0, byteEncodedCount));
-            }
+            var flagMode = Builder.FlagMode;
+            return flagMode == FlagMode.Uni
+                ? FlagValue.ParseFlagsInOrder(ReDecodeConvertedStringAsUtf8(text), FlagMode.Char)
+                : FlagValue.ParseFlagsInOrder(text, flagMode);
         }
-
-        private FlagValue[] ParseFlagsInOrder(string text) =>
-            ParseFlagsInOrder(StringSlice.Create(text));
 
         private FlagValue[] ParseFlagsInOrder(StringSlice text)
         {
             var flagMode = Builder.FlagMode;
-            if (flagMode == FlagMode.Uni)
-            {
-                text = ReDecodeConvertedStringAsUtf8(text);
-                flagMode = FlagMode.Char;
-            }
-
-            return FlagValue.ParseFlagsInOrder(text, flagMode);
+            return flagMode == FlagMode.Uni
+                ? FlagValue.ParseFlagsInOrder(ReDecodeConvertedStringAsUtf8(text), FlagMode.Char)
+                : FlagValue.ParseFlagsInOrder(text, flagMode);
         }
 
-        private bool TryParseFlag(string text, out FlagValue value) =>
-            TryParseFlag(StringSlice.Create(text), out value);
+
+        private bool TryParseFlag(string text, out FlagValue value)
+        {
+            var flagMode = Builder.FlagMode;
+            return flagMode == FlagMode.Uni
+                ? FlagValue.TryParseFlag(ReDecodeConvertedStringAsUtf8(text), FlagMode.Char, out value)
+                : FlagValue.TryParseFlag(text, flagMode, out value);
+        }
 
         private bool TryParseFlag(StringSlice text, out FlagValue value)
         {
             var flagMode = Builder.FlagMode;
-            if (flagMode == FlagMode.Uni)
-            {
-                text = ReDecodeConvertedStringAsUtf8(text);
-                flagMode = FlagMode.Char;
-            }
-
-            return FlagValue.TryParseFlag(text, flagMode, out value);
+            return flagMode == FlagMode.Uni
+                ? FlagValue.TryParseFlag(ReDecodeConvertedStringAsUtf8(text), FlagMode.Char, out value)
+                : FlagValue.TryParseFlag(text, flagMode, out value);
         }
 
         private FlagValue TryParseFlag(string text) =>
-            TryParseFlag(StringSlice.Create(text));
+            TryParseFlag(text, out FlagValue value)
+                ? value
+                : default(FlagValue);
 
         private FlagValue TryParseFlag(StringSlice text) =>
             TryParseFlag(text, out FlagValue value)

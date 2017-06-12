@@ -1,4 +1,6 @@
-﻿#if !NO_INLINE
+﻿using System;
+
+#if !NO_INLINE
 using System.Runtime.CompilerServices;
 #endif
 
@@ -9,26 +11,80 @@ namespace WeCantSpell.Hunspell
     {
         public AffixEntryWithDetail(AffixEntryGroup<TEntry> group, TEntry entry)
         {
-            AffixEntry = entry;
+            AffixEntry = entry ?? throw new ArgumentNullException(nameof(entry));
+
+            if (group == null)
+            {
+                throw new ArgumentNullException(nameof(group));
+            }
+
             AFlag = group.AFlag;
             Options = group.Options;
         }
 
-        public TEntry AffixEntry { get; }
+        public TEntry AffixEntry
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get;
+        }
 
-        public FlagValue AFlag { get; }
+        public FlagValue AFlag
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get;
+        }
 
-        public AffixEntryOptions Options { get; }
+        public AffixEntryOptions Options
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get;
+        }
 
-        public string Key => AffixEntry.Key;
+        public string Key
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get => AffixEntry.Key;
+        }
 
-        public string Append => AffixEntry.Append;
+        public string Append
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get => AffixEntry.Append;
+        }
 
-        public string Strip => AffixEntry.Strip;
+        public string Strip
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get => AffixEntry.Strip;
+        }
 
-        public bool HasContClasses => AffixEntry.ContClass.HasItems;
+        public bool HasContClasses
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get => AffixEntry.ContClass.HasItems;
+        }
 
-        public CharacterConditionGroup Conditions => AffixEntry.Conditions;
+        public CharacterConditionGroup Conditions
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get => AffixEntry.Conditions;
+        }
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

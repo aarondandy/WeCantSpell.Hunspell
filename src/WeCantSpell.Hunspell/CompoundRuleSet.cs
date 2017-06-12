@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -21,6 +22,11 @@ namespace WeCantSpell.Hunspell
 
         public bool EntryContainsRuleFlags(WordEntry rv)
         {
+            if (rv == null)
+            {
+                throw new ArgumentNullException(nameof(rv));
+            }
+
             foreach (var rule in items)
             {
                 foreach (var flag in rule)
@@ -35,7 +41,16 @@ namespace WeCantSpell.Hunspell
             return false;
         }
 
+        [Obsolete("Do not use")]
         public bool CompoundCheck(Dictionary<int, WordEntry> words, int wnum, bool all)
+        {
+            return CompoundCheckInternal(
+                words ?? throw new ArgumentNullException(nameof(words)),
+                wnum,
+                all);
+        }
+
+        internal bool CompoundCheckInternal(Dictionary<int, WordEntry> words, int wnum, bool all)
         {
             var bt = 0;
             var btinfo = new List<MetacharData>

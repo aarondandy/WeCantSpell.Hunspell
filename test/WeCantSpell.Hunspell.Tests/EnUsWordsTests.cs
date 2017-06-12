@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using System.Collections.Concurrent;
 
 namespace WeCantSpell.Hunspell.Tests
 {
@@ -13,17 +14,22 @@ namespace WeCantSpell.Hunspell.Tests
         [Fact]
         public async Task most_wrong_words_are_not_found()
         {
-            var words = await LoadMistakesAsync().ConfigureAwait(false);
-            var spell = await LoadEnUsAsync().ConfigureAwait(false);
+            var wordsTask = LoadMistakesAsync();
+            var spellTask = LoadEnUsAsync();
 
-            var negativeCases = new List<CommonSpellingMistake>();
-            foreach(var word in words)
+            await Task.WhenAll(wordsTask, spellTask);
+
+            var words = wordsTask.Result;
+            var spell = spellTask.Result;
+
+            var negativeCases = new ConcurrentBag<CommonSpellingMistake>();
+            Parallel.ForEach(words, word =>
             {
-                if(spell.Check(word.Wrong))
+                if (spell.Check(word.Wrong))
                 {
                     negativeCases.Add(word);
                 }
-            }
+            });
 
             negativeCases.Count.Should().BeLessOrEqualTo(words.Count / 10);
         }
@@ -31,17 +37,22 @@ namespace WeCantSpell.Hunspell.Tests
         [Fact]
         public async Task most_correct_words_are_found()
         {
-            var words = await LoadMistakesAsync().ConfigureAwait(false);
-            var spell = await LoadEnUsAsync().ConfigureAwait(false);
+            var wordsTask = LoadMistakesAsync();
+            var spellTask = LoadEnUsAsync();
 
-            var negativeCases = new List<CommonSpellingMistake>();
-            foreach (var word in words)
+            await Task.WhenAll(wordsTask, spellTask);
+
+            var words = wordsTask.Result;
+            var spell = spellTask.Result;
+
+            var negativeCases = new ConcurrentBag<CommonSpellingMistake>();
+            Parallel.ForEach(words, word =>
             {
                 if (!spell.Check(word.Correct))
                 {
                     negativeCases.Add(word);
                 }
-            }
+            });
 
             negativeCases.Count.Should().BeLessOrEqualTo(words.Count / 10);
         }
@@ -49,12 +60,16 @@ namespace WeCantSpell.Hunspell.Tests
         [Fact]
         public async Task most_correct_words_are_suggested_for_wrong_words()
         {
-            var words = await LoadMistakesAsync().ConfigureAwait(false);
-            words = words.Where((_,i) => i % 11 == 0).Take(10).ToList();
-            var spell = await LoadEnUsAsync().ConfigureAwait(false);
+            var wordsTask = LoadMistakesAsync();
+            var spellTask = LoadEnUsAsync();
 
-            var negativeCases = new List<CommonSpellingMistake>();
-            foreach (var word in words)
+            await Task.WhenAll(wordsTask, spellTask);
+
+            var words = wordsTask.Result.Where((_,i) => i % 11 == 0).Take(10).ToList();
+            var spell = spellTask.Result;
+
+            var negativeCases = new ConcurrentBag<CommonSpellingMistake>();
+            Parallel.ForEach(words, word =>
             {
                 if (spell.Check(word.Correct) && !spell.Check(word.Wrong))
                 {
@@ -64,7 +79,7 @@ namespace WeCantSpell.Hunspell.Tests
                         negativeCases.Add(word);
                     }
                 }
-            }
+            });
 
             negativeCases.Count.Should().BeLessOrEqualTo(words.Count / 10);
         }
@@ -74,6 +89,7 @@ namespace WeCantSpell.Hunspell.Tests
 
         protected async Task<List<CommonSpellingMistake>> LoadMistakesAsync()
         {
+            // NOTE: not all of these words may be wrong with respect to the dictionary used
             var results = new List<CommonSpellingMistake>();
             using (var fileStream = new FileStream("files/List_of_common_misspellings.txt", FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true))
             using (var fileReader = new StreamReader(fileStream, Encoding.UTF8, true))

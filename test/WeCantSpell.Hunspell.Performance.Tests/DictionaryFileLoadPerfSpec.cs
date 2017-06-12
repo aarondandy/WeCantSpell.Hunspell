@@ -18,19 +18,19 @@ namespace WeCantSpell.Hunspell.Performance.Tests
             var dictionaryFilePaths = Directory.GetFiles(filesDirectory, "*.dic")
                 .OrderBy(p => p);
 
-            DictionaryLoadArguments = Task.WhenAll(
-                dictionaryFilePaths
-                    .Select(async dicFilePath =>
-                    {
-                        return new DictionaryLoadData
-                        {
-                            DictionaryFilePath = dicFilePath,
-                            Affix = await Task.Run(() => AffixReader.ReadFileAsync(Path.ChangeExtension(dicFilePath, "aff"))).ConfigureAwait(false)
-                        };
-                    }))
-                .Result;
+            DictionaryLoadArguments = Task.WhenAll(dictionaryFilePaths.Select(LoadDicitonary))
+                .GetAwaiter().GetResult();
 
             DictionaryFilesLoaded = context.GetCounter(nameof(DictionaryFilesLoaded));
+
+            async Task<DictionaryLoadData> LoadDicitonary(string dicFilePath)
+            {
+                return new DictionaryLoadData
+                {
+                    DictionaryFilePath = dicFilePath,
+                    Affix = await Task.Run(() => AffixReader.ReadFileAsync(Path.ChangeExtension(dicFilePath, "aff"))).ConfigureAwait(false)
+                };
+            }
         }
 
         [PerfBenchmark(
@@ -49,7 +49,7 @@ namespace WeCantSpell.Hunspell.Performance.Tests
             {
                 await WordListReader.ReadFileAsync(testItem.DictionaryFilePath, testItem.Affix).ConfigureAwait(false);
                 DictionaryFilesLoaded.Increment();
-            })).Wait();
+            })).GetAwaiter().GetResult();
         }
 
         protected struct DictionaryLoadData

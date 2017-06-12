@@ -417,7 +417,7 @@ namespace WeCantSpell.Hunspell
                     CompoundVowels = CompoundVowels ?? CharacterSet.Empty,
                     WordChars = WordChars ?? CharacterSet.Empty,
                     IgnoredChars = IgnoredChars ?? CharacterSet.Empty,
-                    Version = Dedup(Version),
+                    Version = Version == null ? null : Dedup(Version),
                     BreakPoints = BreakSet.Create(BreakPoints)
                 };
 
@@ -475,11 +475,33 @@ namespace WeCantSpell.Hunspell
             public FlagSet TakeArrayForFlagSet(FlagValue[] values) =>
                 Dedup(FlagSet.TakeArray(values));
 
-            public FlagSet Dedup(FlagSet values) =>
-                FlagSetDeduper.GetEqualOrAdd(values);
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            public FlagSet Dedup(FlagSet values)
+            {
+#if DEBUG
+                if (values == null)
+                {
+                    throw new ArgumentNullException(nameof(values));
+                }
+#endif
+                return FlagSetDeduper.GetEqualOrAdd(values);
+            }
 
-            public string Dedup(string value) =>
-                value == null ? null : StringDeduper.GetEqualOrAdd(value);
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            public string Dedup(string value)
+            {
+#if DEBUG
+                if (value == null)
+                {
+                    throw new ArgumentNullException(nameof(value));
+                }
+#endif
+                return StringDeduper.GetEqualOrAdd(value);
+            }
 
             public string[] DedupInPlace(string[] values)
             {

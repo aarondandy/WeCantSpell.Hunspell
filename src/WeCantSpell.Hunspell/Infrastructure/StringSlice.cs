@@ -1,5 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
+
+#if !NO_INLINE
+using System.Runtime.CompilerServices;
+#endif
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
@@ -7,8 +10,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
         IEquatable<string>,
         IEquatable<StringSlice>
     {
-        public static readonly StringSlice Null = new StringSlice(null, 0, 0);
-
         public static readonly StringSlice Empty = new StringSlice(string.Empty, 0, 0);
 
         public readonly string Text;
@@ -17,125 +18,116 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public readonly int Length;
 
-        public bool IsNullOrEmpty => Text == null || Length == 0;
-
-        public static StringSlice Create(string text)
+        public StringSlice(string text)
         {
-            if (text == null)
-            {
-                return Null;
-            }
-            else if (text.Length == 0)
-            {
-                return Empty;
-            }
-
-            return new StringSlice(text, 0, text.Length);
+#if DEBUG
+            Text = text ?? throw new ArgumentNullException(nameof(text));
+#else
+            Text = text;
+#endif
+            Length = text.Length;
+            Offset = 0;
         }
 
         public StringSlice(string text, int startIndex, int length)
         {
+#if DEBUG
+            Text = text ?? throw new ArgumentNullException(nameof(text));
+#else
             Text = text;
+#endif
             Offset = startIndex;
             Length = length;
         }
 
+        public bool IsEmpty
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get => Length == 0;
+        }
+
+        public bool IsFullString
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get => Offset == 0 && Text.Length == Length;
+        }
+
+        public char this[int index]
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get => Text[Offset + index];
+        }
+
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public override string ToString() =>
-            Text == null
-            ? null
-            : Length == 0
-            ? string.Empty
-            : Offset == 0 && Length == Text.Length
+            IsFullString
             ? Text
             : Text.Substring(Offset, Length);
 
-        public StringSlice[] SplitOnComma()
-        {
-            var parts = new List<StringSlice>();
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public int IndexOfOrdinal(string value) =>
+            Text.IndexOf(value, Offset, Length, StringComparison.Ordinal) - Offset;
 
-            int startIndex = Offset;
-            int commaIndex;
-            int partLength;
-            while ((commaIndex = IndexOfRawLimited(',', startIndex)) >= 0)
-            {
-                partLength = commaIndex - startIndex;
-                if (partLength > 0)
-                {
-                    parts.Add(new StringSlice(Text, startIndex, partLength));
-                }
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public int IndexOf(string value, StringComparison comparisonType) =>
+            Text.IndexOf(value, Offset, Length, comparisonType) - Offset;
 
-                startIndex = commaIndex + 1;
-            }
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public int IndexOfOrdinal(string value, int startIndex) =>
+            Text.IndexOf(value, Offset + startIndex, Length - startIndex, StringComparison.Ordinal) - Offset;
 
-            commaIndex = Offset + Length;
-            partLength = commaIndex - startIndex;
-            if (partLength > 0)
-            {
-                parts.Add(new StringSlice(Text, startIndex, partLength));
-            }
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public int IndexOf(string value, int startIndex, StringComparison comparisonType) =>
+            Text.IndexOf(value, Offset + startIndex, Length - startIndex, comparisonType) - Offset;
 
-            return parts.ToArray();
-        }
-
-        private int IndexOfRawLimited(char c, int rawStartIndex)
-        {
-            var index = Text.IndexOf(c, rawStartIndex);
-            return index >= Offset + Length ? -1 : index;
-        }
-
-        public int IndexOf(string value, StringComparison comparisonType)
-        {
-            var rawIndex = Text.IndexOf(value, Offset, comparisonType);
-            if (rawIndex < 0 || rawIndex > Offset + Length)
-            {
-                return -1;
-            }
-
-            return rawIndex - Offset;
-        }
-
-        public int IndexOf(string value, int startIndex, StringComparison comparisonType)
-        {
-            var rawIndex = Text.IndexOf(value, Offset + startIndex, comparisonType);
-            if (rawIndex < 0 || rawIndex > Offset + Length)
-            {
-                return -1;
-            }
-
-            return rawIndex - Offset;
-        }
-
-        public int IndexOf(char c)
-        {
-            var rawIndex = Text.IndexOf(c, Offset);
-            if (rawIndex < 0 || rawIndex >= Offset + Length)
-            {
-                return -1;
-            }
-
-            return rawIndex - Offset;
-        }
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public int IndexOf(char c) =>
+            Text.IndexOf(c, Offset, Length) - Offset;
 
         public string Substring(int startIndex) =>
-            Text.Substring(Offset + startIndex, Length - startIndex);
+            Substring(startIndex, Length - startIndex);
 
-        public string Substring(int startIndex, int length) =>
-            Text.Substring(Offset + startIndex, length);
-
-        public bool Equals(string other)
+        public string Substring(int startIndex, int length)
         {
-            if (other == null)
+#if DEBUG
+            if (startIndex < 0 || startIndex >= Length)
             {
-                return Text == null;
+                throw new ArgumentOutOfRangeException(nameof(startIndex));
             }
-
-            return Length == other.Length
-                && StringEx.EqualsOffset(Text, Offset, other, 0, Length);
+            if (length > Length - startIndex)
+            {
+                throw new ArgumentOutOfRangeException(nameof(length));
+            }
+#endif
+            return Text.Substring(Offset + startIndex, length);
         }
+
+        public bool Equals(string other) =>
+            other != null
+            && Length == other.Length
+            && StringEx.EqualsOffset(Text, Offset, other, 0, Length);
 
         public bool Equals(StringSlice other) =>
             Length == other.Length
-                && StringEx.EqualsOffset(Text, Offset, other.Text, other.Offset, Length);
+            && StringEx.EqualsOffset(Text, Offset, other.Text, other.Offset, Length);
 
         public override bool Equals(object obj)
         {
@@ -153,12 +145,57 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public override int GetHashCode() => 0;
 
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public char[] ToCharArray() => Text.ToCharArray(Offset, Length);
 
-        public StringSlice Subslice(int startIndex) =>
-            new StringSlice(Text, Offset + startIndex, Length - startIndex);
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public StringSlice Subslice(int startIndex)
+        {
+#if DEBUG
+            if (startIndex < 0 || startIndex >= Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(startIndex));
+            }
+#endif
+            return new StringSlice(Text, Offset + startIndex, Length - startIndex);
+        }
 
-        public StringSlice Subslice(int startIndex, int length) =>
-            new StringSlice(Text, Offset + startIndex, length);
+        public StringSlice Subslice(int startIndex, int length)
+        {
+#if DEBUG
+            if (startIndex < 0 || startIndex >= Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(startIndex));
+            }
+            if (length > Length - startIndex)
+            {
+                throw new ArgumentOutOfRangeException(nameof(length));
+            }
+#endif
+            return new StringSlice(Text, Offset + startIndex, length);
+        }
+
+        public string ReplaceString(char oldValue, char newValue)
+        {
+            if (IsEmpty)
+            {
+                return string.Empty;
+            }
+            if (Length == 1)
+            {
+                var c = this[0];
+                return c == oldValue
+                    ? newValue.ToString()
+                    : c.ToString();
+            }
+
+            var builder = StringBuilderPool.Get(this);
+            builder.Replace(oldValue, newValue);
+            return StringBuilderPool.GetStringAndReturn(builder);
+        }
     }
 }

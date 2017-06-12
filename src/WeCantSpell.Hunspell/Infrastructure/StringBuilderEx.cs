@@ -1,5 +1,9 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
 using System.Text;
+
+#if !NO_INLINE
+using System.Runtime.CompilerServices;
+#endif
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
@@ -54,6 +58,17 @@ namespace WeCantSpell.Hunspell.Infrastructure
             }
 
             return @this.ToString(startIndex, terminatedIndex - startIndex);
+        }
+
+        public static string ToStringTerminated(this StringBuilder @this, int startIndex, int length)
+        {
+            var terminatedIndex = @this.IndexOfNullChar(startIndex);
+            if (terminatedIndex < 0)
+            {
+                terminatedIndex = @this.Length;
+            }
+
+            return @this.ToString(startIndex, Math.Min(length, terminatedIndex - startIndex));
         }
 
         public static int IndexOfNullChar(this StringBuilder @this)

@@ -4,7 +4,7 @@
     {
         protected ReplacementEntry(string pattern)
         {
-            Pattern = pattern;
+            Pattern = pattern ?? string.Empty;
         }
 
         public string Pattern { get; }
@@ -26,8 +26,13 @@
         public string ExtractReplacementText(int remainingCharactersToReplace, bool atStart)
         {
             var type = remainingCharactersToReplace == Pattern.Length
-                ? (atStart ? ReplacementValueType.Isol : ReplacementValueType.Fin)
-                : (atStart ? ReplacementValueType.Ini : ReplacementValueType.Med);
+                ? ReplacementValueType.Fin
+                : ReplacementValueType.Med;
+
+            if (atStart)
+            {
+                type |= ReplacementValueType.Ini;
+            }
 
             while (type != ReplacementValueType.Med && string.IsNullOrEmpty(this[type]))
             {

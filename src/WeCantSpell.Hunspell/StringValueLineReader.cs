@@ -15,7 +15,7 @@ namespace WeCantSpell.Hunspell
 
         private string Content { get; }
 
-        public Encoding CurrentEncoding => Encoding.UTF8;
+        public Encoding CurrentEncoding => Encoding.Unicode;
 
         public string ReadLine()
         {
@@ -33,7 +33,10 @@ namespace WeCantSpell.Hunspell
 
             var result = Content.Substring(startPosition, position - startPosition);
 
-            for (; position < Content.Length && StringEx.IsLineBreakChar(Content[position]); position++) ;
+            while (position < Content.Length && StringEx.IsLineBreakChar(Content[position]))
+            {
+                position++;
+            }
 
             return result;
         }

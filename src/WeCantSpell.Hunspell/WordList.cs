@@ -49,6 +49,11 @@ namespace WeCantSpell.Hunspell
 
         public static WordList CreateFromWords(IEnumerable<string> words, AffixConfig affix)
         {
+            if (words == null)
+            {
+                words = Enumerable.Empty<string>();
+            }
+
             var wordListBuilder = new Builder(affix ?? new AffixConfig.Builder().MoveToImmutable());
 
             if (words is IList<string> wordsAsList)
@@ -86,7 +91,7 @@ namespace WeCantSpell.Hunspell
         private HashSet<WordEntry> NGramRestrictedEntries { get; set; }
 
         public IEnumerable<WordEntry> NGramAllowedEntries =>
-            NGramRestrictedEntries == null || NGramRestrictedEntries.Count == 0
+            (NGramRestrictedEntries == null || NGramRestrictedEntries.Count == 0)
             ? AllEntries
             : AllEntries.Where(entry => !NGramRestrictedEntries.Contains(entry));
 
@@ -106,7 +111,7 @@ namespace WeCantSpell.Hunspell
 
         public WordEntrySet FindEntriesByRootWord(string rootWord)
         {
-            if (!EntriesByRoot.TryGetValue(rootWord, out WordEntrySet result))
+            if (rootWord == null || !EntriesByRoot.TryGetValue(rootWord, out WordEntrySet result))
             {
                 result = WordEntrySet.Empty;
             }

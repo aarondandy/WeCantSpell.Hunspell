@@ -38,13 +38,18 @@ namespace WeCantSpell.Hunspell
         /// </summary>
         public bool Check(string word, int pos, WordEntry r1, WordEntry r2, bool affixed)
         {
-            var wordAfterPos = word.Substring(pos);
+            if (string.IsNullOrEmpty(word))
+            {
+                return false;
+            }
+
+            var wordAfterPos = word.Subslice(pos);
 
             foreach (var patternEntry in items)
             {
                 int len;
                 if (
-                    StringEx.IsSubset(patternEntry.Pattern2, wordAfterPos)
+                    HunspellTextFunctions.IsSubset(patternEntry.Pattern2, wordAfterPos)
                     &&
                     (
                         r1 == null
@@ -78,9 +83,7 @@ namespace WeCantSpell.Hunspell
                                 !patternEntry.Pattern.StartsWith('0')
                                 &&
                                 (
-                                    (
-                                        len = patternEntry.Pattern.Length
-                                    ) != 0
+                                    (len = patternEntry.Pattern.Length) != 0
                                 )
                                 &&
                                 StringEx.EqualsOffset(word, pos - len, patternEntry.Pattern, 0, len)

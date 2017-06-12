@@ -5,8 +5,16 @@ namespace WeCantSpell.Hunspell.Infrastructure
 {
     internal static class EncodingEx
     {
+        public static readonly Encoding DefaultReadEncoding = Encoding.UTF8;
+
         public static Encoding GetEncodingByName(string encodingName)
         {
+#if DEBUG
+            if (encodingName == null)
+            {
+                throw new ArgumentNullException(nameof(encodingName));
+            }
+#endif
             if (string.IsNullOrEmpty(encodingName))
             {
                 return null;

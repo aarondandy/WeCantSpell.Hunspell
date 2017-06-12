@@ -1,5 +1,9 @@
 ﻿using System;
 
+#if !NO_INLINE
+using System.Runtime.CompilerServices;
+#endif
+
 namespace WeCantSpell.Hunspell
 {
     public sealed class SingleReplacement : ReplacementEntry
@@ -11,9 +15,21 @@ namespace WeCantSpell.Hunspell
             Type = type;
         }
 
-        public string OutString { get; }
+        public string OutString
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get;
+        }
 
-        public ReplacementValueType Type { get; }
+        public ReplacementValueType Type
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get;
+        }
 
         public override string Med => this[ReplacementValueType.Med];
 
@@ -23,6 +39,6 @@ namespace WeCantSpell.Hunspell
 
         public override string Isol => this[ReplacementValueType.Isol];
 
-        public override string this[ReplacementValueType type] => type == Type ? OutString : null;
+        public override string this[ReplacementValueType type] => Type == type ? OutString : null;
     }
 }

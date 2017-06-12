@@ -43,13 +43,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             {
                 if (queryCounter == 0)
                 {
-                    var currentTicks = Environment.TickCount - operationStartTime;
-                    if (currentTicks > timeLimitInMs)
-                    {
-                        expirationTriggered = true;
-                    }
-
-                    queryCounter = queriesToTriggerCheck;
+                    HandleQueryCounterTrigger();
                 }
                 else
                 {
@@ -58,6 +52,17 @@ namespace WeCantSpell.Hunspell.Infrastructure
             }
 
             return expirationTriggered;
+        }
+
+        private void HandleQueryCounterTrigger()
+        {
+            var currentTicks = Environment.TickCount - operationStartTime;
+            if (currentTicks > timeLimitInMs)
+            {
+                expirationTriggered = true;
+            }
+
+            queryCounter = queriesToTriggerCheck;
         }
     }
 }
