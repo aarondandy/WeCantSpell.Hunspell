@@ -2,6 +2,8 @@
 
 A .NET port of Hunspell for .NET, .NET Standard, and .NET Core
 
+![bee](icon.png)
+
 **Download and install with NuGet: [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/)**
 
 [![Build status](https://ci.appveyor.com/api/projects/status/shfkt9mgpfhwykqv/branch/master?svg=true)](https://ci.appveyor.com/project/aarondandy/wecantspell-hunspell)
