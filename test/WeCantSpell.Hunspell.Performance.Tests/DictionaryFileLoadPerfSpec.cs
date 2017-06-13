@@ -1,7 +1,6 @@
 ﻿using NBench;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace WeCantSpell.Hunspell.Performance.Tests
 {
@@ -18,19 +17,16 @@ namespace WeCantSpell.Hunspell.Performance.Tests
             var dictionaryFilePaths = Directory.GetFiles(filesDirectory, "*.dic")
                 .OrderBy(p => p);
 
-            DictionaryLoadArguments = Task.WhenAll(dictionaryFilePaths.Select(LoadDicitonary))
-                .GetAwaiter().GetResult();
+            DictionaryLoadArguments = dictionaryFilePaths
+                .Select(dicFilePath =>
+                    new DictionaryLoadData
+                    {
+                        DictionaryFilePath = dicFilePath,
+                        Affix = AffixReader.ReadFile(Path.ChangeExtension(dicFilePath, "aff"))
+                    })
+                .ToArray();
 
             DictionaryFilesLoaded = context.GetCounter(nameof(DictionaryFilesLoaded));
-
-            async Task<DictionaryLoadData> LoadDicitonary(string dicFilePath)
-            {
-                return new DictionaryLoadData
-                {
-                    DictionaryFilePath = dicFilePath,
-                    Affix = await Task.Run(() => AffixReader.ReadFileAsync(Path.ChangeExtension(dicFilePath, "aff"))).ConfigureAwait(false)
-                };
-            }
         }
 
         [PerfBenchmark(
@@ -45,11 +41,11 @@ namespace WeCantSpell.Hunspell.Performance.Tests
         [CounterThroughputAssertion(nameof(DictionaryFilesLoaded), MustBe.GreaterThanOrEqualTo, 2)]
         public void Benchmark(BenchmarkContext context)
         {
-            Task.WhenAll(DictionaryLoadArguments.Select(async testItem =>
+            foreach(var testItem in DictionaryLoadArguments)
             {
-                await WordListReader.ReadFileAsync(testItem.DictionaryFilePath, testItem.Affix).ConfigureAwait(false);
+                WordListReader.ReadFile(testItem.DictionaryFilePath, testItem.Affix);
                 DictionaryFilesLoaded.Increment();
-            })).GetAwaiter().GetResult();
+            }
         }
 
         protected struct DictionaryLoadData

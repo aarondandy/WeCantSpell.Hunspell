@@ -27,7 +27,7 @@ namespace WeCantSpell.Hunspell.Performance.Comparison
         {
             foreach(var filePair in TestFiles)
             {
-                var checker = WordList.CreateFromFilesAsync(filePair.DictionaryFilePath, filePair.AffixFilePath).GetAwaiter().GetResult();
+                var checker = WordList.CreateFromFiles(filePair.DictionaryFilePath, filePair.AffixFilePath);
                 checker.Check(TestWord);
                 FilePairsLoaded.Increment();
             }

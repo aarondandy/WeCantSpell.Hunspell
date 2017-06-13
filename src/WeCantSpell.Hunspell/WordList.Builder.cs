@@ -9,35 +9,31 @@ namespace WeCantSpell.Hunspell
         public sealed class Builder
         {
             public Builder()
-                : this(null, null, null, null)
+                : this(null, null, null)
             {
             }
 
             public Builder(AffixConfig affix)
-                : this(affix, null, null, null)
+                : this(affix, null, null)
             {
             }
 
-            internal Builder(AffixConfig affix, Deduper<FlagSet> flagSetDeduper, Deduper<MorphSet> morphSet, StringDeduper stringDeduper)
+            internal Builder(AffixConfig affix, Deduper<FlagSet> flagSetDeduper, Deduper<MorphSet> morphSet)
             {
                 Affix = affix;
                 FlagSetDeduper = flagSetDeduper ?? new Deduper<FlagSet>(FlagSet.DefaultComparer);
                 FlagSetDeduper.Add(FlagSet.Empty);
-                StringDeduper = stringDeduper ?? new StringDeduper();
-                StringDeduper.Add(MorphologicalTags.Phon);
                 MorphSetDeduper = morphSet ?? new Deduper<MorphSet>(MorphSet.DefaultComparer);
                 MorphSetDeduper.Add(MorphSet.Empty);
             }
 
-            public Dictionary<string, WordEntrySet> EntriesByRoot;
+            public Dictionary<string, List<WordEntry>> EntriesByRoot;
 
             public readonly AffixConfig Affix;
 
             internal readonly Deduper<FlagSet> FlagSetDeduper;
 
             internal readonly Deduper<MorphSet> MorphSetDeduper;
-
-            internal readonly StringDeduper StringDeduper;
 
             public WordList ToImmutable() =>
                 ToImmutable(destructive: false);
@@ -65,16 +61,22 @@ namespace WeCantSpell.Hunspell
                     NGramRestrictedFlags = nGramRestrictedFlags,
                 };
 
-                if (destructive)
+                if (EntriesByRoot == null)
                 {
-                    result.EntriesByRoot = EntriesByRoot ?? new Dictionary<string, WordEntrySet>();
-                    EntriesByRoot = null;
+                    result.EntriesByRoot = new Dictionary<string, WordEntrySet>(0);
                 }
                 else
                 {
-                    result.EntriesByRoot = EntriesByRoot == null
-                        ? new Dictionary<string, WordEntrySet>()
-                        : new Dictionary<string, WordEntrySet>(EntriesByRoot);
+                    result.EntriesByRoot = new Dictionary<string, WordEntrySet>(EntriesByRoot.Count);
+                    foreach(var pair in EntriesByRoot)
+                    {
+                        result.EntriesByRoot.Add(pair.Key, WordEntrySet.TakeArray(pair.Value.ToArray()));
+                    }
+
+                    if (destructive)
+                    {
+                        EntriesByRoot.Clear();
+                    }
                 }
 
                 var nGramRestrictedEntries = new HashSet<WordEntry>();
@@ -97,20 +99,25 @@ namespace WeCantSpell.Hunspell
 
             public void InitializeEntriesByRoot(int expectedSize)
             {
-                EntriesByRoot = expectedSize < 0
-                    ? new Dictionary<string, WordEntrySet>()
+                EntriesByRoot = expectedSize <= 0
+                    ? new Dictionary<string, List<WordEntry>>()
                     // PERF: because we add more entries than we are told about, we add a bit more to the expected size
-                    : new Dictionary<string, WordEntrySet>((expectedSize / 100) + expectedSize);
+                    : new Dictionary<string, List<WordEntry>>((expectedSize / 100) + expectedSize);
             }
 
             public FlagSet Dedup(FlagSet value) =>
-                value == null ? null : FlagSetDeduper.GetEqualOrAdd(value);
-
-            public string Dedup(string value) =>
-                value == null ? null : StringDeduper.GetEqualOrAdd(value);
+                value == null
+                ? value
+                : value.Count == 0
+                ? FlagSet.Empty
+                : FlagSetDeduper.GetEqualOrAdd(value);
 
             public MorphSet Dedup(MorphSet value) =>
-                value == null ? null : MorphSetDeduper.GetEqualOrAdd(value);
+                value == null
+                ? value
+                : value.Count == 0
+                ? MorphSet.Empty
+                : MorphSetDeduper.GetEqualOrAdd(value);
         }
     }
 }

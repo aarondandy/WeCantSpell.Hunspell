@@ -47,22 +47,25 @@ namespace WeCantSpell.Hunspell
             RegexOptions.CultureInvariant);
 
         private static readonly Encoding[] PreambleEncodings;
-
         private static readonly int MaxPreambleLengthInBytes;
 
         public DynamicEncodingLineReader(Stream stream, Encoding initialEncoding)
         {
             this.stream = stream ?? throw new ArgumentNullException(nameof(stream));
-            encoding = initialEncoding ?? throw new ArgumentNullException(nameof(initialEncoding));
-            decoder = initialEncoding.GetDecoder();
+            ChangeEncoding(initialEncoding ?? throw new ArgumentNullException(nameof(initialEncoding)));
         }
 
         private readonly Stream stream;
         private Encoding encoding;
         private Decoder decoder;
+        private int maxSingleCharBytes;
+        private int maxSingleCharResultsCount;
 
         private readonly int bufferMaxSize = 4096;
+        private char[] charBuffer = null;
+        private int charBufferUsedSize = 0;
         private byte[] buffer = null;
+        private int byteBufferUsedSize = 0;
         private int bufferIndex = -1;
         private bool hasCheckedForPreamble = false;
 
@@ -109,16 +112,15 @@ namespace WeCantSpell.Hunspell
             }
 
             var builder = StringBuilderPool.Get();
-            char[] readChars = null;
-            while ((readChars = ReadNextChars()) != null)
+            while (ReadNextChars())
             {
-                if (ProcessCharsForLine(readChars, builder))
+                if (ProcessCharsForLine(builder))
                 {
                     break;
                 }
             }
 
-            if (readChars == null && builder.Length == 0)
+            if (charBuffer == null && builder.Length == 0)
             {
                 return null;
             }
@@ -135,16 +137,15 @@ namespace WeCantSpell.Hunspell
             }
 
             var builder = StringBuilderPool.Get();
-            char[] readChars = null;
-            while ((readChars = await ReadNextCharsAsync().ConfigureAwait(false)) != null)
+            while (await ReadNextCharsAsync().ConfigureAwait(false))
             {
-                if (ProcessCharsForLine(readChars, builder))
+                if (ProcessCharsForLine(builder))
                 {
                     break;
                 }
             }
 
-            if (readChars == null && builder.Length == 0)
+            if (charBuffer == null && builder.Length == 0)
             {
                 return null;
             }
@@ -153,14 +154,14 @@ namespace WeCantSpell.Hunspell
         }
 #endif
 
-        private bool ProcessCharsForLine(char[] readChars, StringBuilder builder)
+        private bool ProcessCharsForLine(StringBuilder builder)
         {
             var firstNonLineBreakCharacter = -1;
             var lastNonLineBreakCharacter = -1;
 
-            for (var i = 0; i < readChars.Length; i++)
+            for (var i = 0; i < charBufferUsedSize; i++)
             {
-                var charValue = readChars[i];
+                var charValue = charBuffer[i];
                 if (charValue != '\r' && charValue != '\n')
                 {
                     firstNonLineBreakCharacter = i;
@@ -168,9 +169,9 @@ namespace WeCantSpell.Hunspell
                 }
             }
 
-            for (var i = readChars.Length - 1; i >= 0; i--)
+            for (var i = charBufferUsedSize - 1; i >= 0; i--)
             {
-                var charValue = readChars[i];
+                var charValue = charBuffer[i];
                 if (charValue != '\r' && charValue != '\n')
                 {
                     lastNonLineBreakCharacter = i;
@@ -184,74 +185,94 @@ namespace WeCantSpell.Hunspell
             }
             else
             {
-                builder.Append(readChars, firstNonLineBreakCharacter, lastNonLineBreakCharacter - firstNonLineBreakCharacter + 1);
-                return lastNonLineBreakCharacter != readChars.Length - 1;
+                builder.Append(charBuffer, firstNonLineBreakCharacter, lastNonLineBreakCharacter - firstNonLineBreakCharacter + 1);
+                return lastNonLineBreakCharacter != charBufferUsedSize - 1;
             }
         }
 
-        private char[] ReadNextChars()
+        private bool ReadNextChars()
         {
-            var maxBytes = encoding.GetMaxByteCount(1);
-            var bytesReadIntoCharBuffer = 0;
-            var charOutBuffer = new char[encoding.GetMaxCharCount(maxBytes)];
-
-            while (bytesReadIntoCharBuffer < maxBytes)
+            if (charBuffer == null || charBuffer.Length < maxSingleCharResultsCount)
             {
-                var nextBytes = ReadBytes(1);
-                if (nextBytes == null || nextBytes.Length == 0)
+                charBuffer = new char[maxSingleCharResultsCount];
+            }
+
+            var bytesConsumed = 0;
+            while (bytesConsumed < maxSingleCharBytes)
+            {
+                var nextByte = ReadByte();
+                if (nextByte < 0)
                 {
-                    return null;
+                    break;
                 }
 
-                bytesReadIntoCharBuffer += nextBytes.Length;
+                bytesConsumed++;
 
-                var charsProduced = TryDecode(nextBytes, charOutBuffer);
+                var charsProduced = TryDecode((byte)nextByte, charBuffer);
                 if (charsProduced > 0)
                 {
-                    if (charOutBuffer.Length != charsProduced)
-                    {
-                        Array.Resize(ref charOutBuffer, charsProduced);
-                    }
-
-                    return charOutBuffer;
+                    charBufferUsedSize = charsProduced;
+                    return true;
                 }
             }
 
-            return null;
+            charBuffer = null;
+            charBufferUsedSize = 0;
+            return false;
         }
 
 #if !NO_ASYNC
-        private async Task<char[]> ReadNextCharsAsync()
+        private async Task<bool> ReadNextCharsAsync()
         {
-            var maxBytes = encoding.GetMaxByteCount(1);
-            var bytesConsumed = 0;
-            var charOutBuffer = new char[encoding.GetMaxCharCount(maxBytes)];
-
-            while (bytesConsumed < maxBytes)
+            if (charBuffer == null || charBuffer.Length < maxSingleCharResultsCount)
             {
-                var nextBytes = await ReadBytesAsync(1).ConfigureAwait(false);
-                if (nextBytes == null || nextBytes.Length == 0)
+                charBuffer = new char[maxSingleCharResultsCount];
+            }
+
+            var bytesConsumed = 0;
+            while (bytesConsumed < maxSingleCharBytes)
+            {
+                var nextByte = await ReadByteAsync().ConfigureAwait(false);
+                if (nextByte < 0)
                 {
-                    return null;
+                    break;
                 }
 
-                bytesConsumed += nextBytes.Length;
+                bytesConsumed++;
 
-                var charsProduced = TryDecode(nextBytes, charOutBuffer);
+                var charsProduced = TryDecode((byte)nextByte, charBuffer);
                 if (charsProduced > 0)
                 {
-                    if (charOutBuffer.Length != charsProduced)
-                    {
-                        Array.Resize(ref charOutBuffer, charsProduced);
-                    }
-
-                    return charOutBuffer;
+                    charBufferUsedSize = charsProduced;
+                    return true;
                 }
             }
 
-            return null;
+            charBuffer = null;
+            charBufferUsedSize = 0;
+            return false;
         }
 #endif
+
+        private byte[] singleDecoderByteArray = new byte[1];
+
+        private int TryDecode(byte byteValue, char[] chars)
+        {
+            singleDecoderByteArray[0] = byteValue;
+            decoder.Convert(
+                    singleDecoderByteArray,
+                    0,
+                    1,
+                    chars,
+                    0,
+                    chars.Length,
+                    false,
+                    out int bytesConverted,
+                    out int charsProduced,
+                    out bool completed);
+
+            return charsProduced;
+        }
 
         private int TryDecode(byte[] bytes, char[] chars)
         {
@@ -270,9 +291,6 @@ namespace WeCantSpell.Hunspell
             return charsProduced;
         }
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private bool ReadPreamble() =>
             HandlePreambleBytes(ReadBytes(MaxPreambleLengthInBytes));
 
@@ -303,7 +321,7 @@ namespace WeCantSpell.Hunspell
                 )
                 {
                     bytesToRestore = possiblePreambleBytes.Length - encodingPreamble.Length;
-                    encoding = candidateEncoding;
+                    ChangeEncoding(candidateEncoding);
                     break;
                 }
             }
@@ -312,6 +330,16 @@ namespace WeCantSpell.Hunspell
 
             hasCheckedForPreamble = true;
             return true;
+        }
+
+        private int ReadByte()
+        {
+            if (!PrepareBuffer())
+            {
+                return -1;
+            }
+
+            return HandleReadByteIncrement();
         }
 
         private byte[] ReadBytes(int count)
@@ -334,6 +362,17 @@ namespace WeCantSpell.Hunspell
         }
 
 #if !NO_ASYNC
+
+        private async Task<int> ReadByteAsync()
+        {
+            if (!await PrepareBufferAsync().ConfigureAwait(false))
+            {
+                return -1;
+            }
+
+            return HandleReadByteIncrement();
+        }
+
         private async Task<byte[]> ReadBytesAsync(int count)
         {
             var result = new byte[count];
@@ -354,13 +393,28 @@ namespace WeCantSpell.Hunspell
         }
 #endif
 
+        private int HandleReadByteIncrement()
+        {
+            var result = buffer[bufferIndex];
+            if (1 >= byteBufferUsedSize - bufferIndex)
+            {
+                bufferIndex = byteBufferUsedSize;
+            }
+            else
+            {
+                bufferIndex++;
+            }
+
+            return result;
+        }
+
         private void HandleReadBytesIncrement(byte[] result, ref int bytesNeeded, ref int resultOffset)
         {
-            var bytesLeftInBuffer = buffer.Length - bufferIndex;
+            var bytesLeftInBuffer = byteBufferUsedSize - bufferIndex;
             if (bytesNeeded >= bytesLeftInBuffer)
             {
                 Buffer.BlockCopy(buffer, bufferIndex, result, resultOffset, bytesLeftInBuffer);
-                bufferIndex = buffer.Length;
+                bufferIndex = byteBufferUsedSize;
                 resultOffset += bytesLeftInBuffer;
                 bytesNeeded -= bytesLeftInBuffer;
             }
@@ -375,43 +429,38 @@ namespace WeCantSpell.Hunspell
 
         private bool PrepareBuffer()
         {
-            if (buffer != null && bufferIndex < buffer.Length)
+            if (buffer == null)
+            {
+                buffer = new byte[bufferMaxSize];
+            }
+            else if (bufferIndex < byteBufferUsedSize)
             {
                 return true;
             }
 
-            buffer = new byte[bufferMaxSize];
-            var readBytesCount = stream.Read(buffer, 0, buffer.Length);
-
-            return HandlePrepareBufferRead(readBytesCount);
+            bufferIndex = 0;
+            byteBufferUsedSize = stream.Read(buffer, 0, buffer.Length);
+            return byteBufferUsedSize != 0;
         }
 
 #if !NO_ASYNC
         private async Task<bool> PrepareBufferAsync()
         {
-            if (buffer != null && bufferIndex < buffer.Length)
+            if (buffer == null)
+            {
+                buffer = new byte[bufferMaxSize];
+            }
+            else if (bufferIndex < byteBufferUsedSize)
             {
                 return true;
             }
 
-            buffer = new byte[bufferMaxSize];
-            var readBytesCount = await stream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
-
-            return HandlePrepareBufferRead(readBytesCount);
+            bufferIndex = 0;
+            byteBufferUsedSize = await stream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+            return byteBufferUsedSize != 0;
         }
 #endif
-
-        private bool HandlePrepareBufferRead(int readBytesCount)
-        {
-            if (readBytesCount != buffer.Length)
-            {
-                Array.Resize(ref buffer, readBytesCount);
-            }
-
-            bufferIndex = 0;
-            return readBytesCount != 0;
-        }
-
+        
         private void RevertReadBytes(int count)
         {
             if (count == 0)
@@ -425,7 +474,7 @@ namespace WeCantSpell.Hunspell
             }
 
             var revertedIndex = bufferIndex - count;
-            if (revertedIndex < 0 || revertedIndex >= buffer.Length)
+            if (revertedIndex < 0 || revertedIndex >= byteBufferUsedSize)
             {
                 throw new InvalidOperationException();
             }
@@ -447,13 +496,20 @@ namespace WeCantSpell.Hunspell
         private void ChangeEncoding(string encodingName)
         {
             var newEncoding = EncodingEx.GetEncodingByName(encodingName);
-            if (newEncoding == null || ReferenceEquals(newEncoding, encoding) || encoding.Equals(newEncoding))
+            ChangeEncoding(newEncoding);
+        }
+
+        private void ChangeEncoding(Encoding newEncoding)
+        {
+            if (encoding != null && (newEncoding == null || ReferenceEquals(newEncoding, encoding) || encoding.Equals(newEncoding)))
             {
                 return;
             }
 
             decoder = newEncoding.GetDecoder();
             encoding = newEncoding;
+            maxSingleCharBytes = encoding.GetMaxByteCount(1);
+            maxSingleCharResultsCount = encoding.GetMaxCharCount(maxSingleCharBytes);
         }
 
         public void Dispose() =>

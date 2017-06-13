@@ -22,7 +22,10 @@ namespace WeCantSpell.Hunspell.Performance.TestHarness
             var filesDirectory = Path.Combine(Path.GetDirectoryName(testAssemblyPath), "files/");
             var dictionaryFilePaths = Directory.GetFiles(filesDirectory, "*.dic").OrderBy(p => p);
 
-            Task.WhenAll(dictionaryFilePaths.Select(WordList.CreateFromFilesAsync)).Wait();
+            foreach (var dictionaryFilePath in dictionaryFilePaths)
+            {
+                WordList.CreateFromFiles(dictionaryFilePath);
+            }
         }
 
         static void Checks()

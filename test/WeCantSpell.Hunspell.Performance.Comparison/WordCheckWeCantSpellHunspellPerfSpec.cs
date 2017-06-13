@@ -16,7 +16,7 @@ namespace WeCantSpell.Hunspell.Performance.Comparison
 
             var testAssemblyPath = Path.GetFullPath(GetType().Assembly.Location);
             var filesDirectory = Path.Combine(Path.GetDirectoryName(testAssemblyPath), "files/");
-            Checker = WordList.CreateFromFilesAsync(Path.Combine(filesDirectory, "English (American).dic")).GetAwaiter().GetResult();
+            Checker = WordList.CreateFromFiles(Path.Combine(filesDirectory, "English (American).dic"));
 
             WordsChecked = context.GetCounter(nameof(WordsChecked));
         }
