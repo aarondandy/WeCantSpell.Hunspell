@@ -1665,6 +1665,16 @@ namespace WeCantSpell.Hunspell.Tests
                 actual.Suffixes.Last().Entries[1].MorphCode.Should().OnlyContain(x => x == "<DERIV>");
             }
 
+            [Fact]
+            public async Task can_read_flag_mode_from_russian_english_bilingual()
+            {
+                var filePath = @"samples/Russian-English Bilingual.aff";
+
+                var actual = await AffixReader.ReadFileAsync(filePath);
+
+                actual.FlagMode.Should().Be(FlagMode.Num);
+            }
+
             public static IEnumerable<object[]> can_read_file_without_exception_args =>
                 Directory.GetFiles("files/", "*.aff").Select(filePath => new object[] { filePath });
 
@@ -1954,6 +1964,24 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
 
                 actual.Should().NotBeNull();
+            }
+
+            [Theory]
+            [InlineData("LONG", FlagMode.Long)]
+            [InlineData("CHAR", FlagMode.Char)]
+            [InlineData("NUM", FlagMode.Num)]
+            [InlineData("NUMBER", FlagMode.Num)]
+            [InlineData("UTF", FlagMode.Uni)]
+            [InlineData("UNI", FlagMode.Uni)]
+            [InlineData("UNICODE", FlagMode.Uni)]
+            [InlineData("UTF-8", FlagMode.Uni)]
+            public async Task can_read_flag_mode(string given, FlagMode expected)
+            {
+                var textFileContents = "FLAG " + given;
+
+                var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+
+                actual.FlagMode.Should().Be(expected);
             }
 
             [Theory]
