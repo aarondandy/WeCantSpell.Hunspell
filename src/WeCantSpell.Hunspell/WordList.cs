@@ -68,12 +68,12 @@ namespace WeCantSpell.Hunspell
             foreach (var word in words)
             {
                 var wordEntry = new WordEntry(word, FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None);
+                if (!wordListBuilder.EntriesByRoot.TryGetValue(word, out List<WordEntry> wordEntries) || wordEntries == null)
+                {
+                    wordListBuilder.EntriesByRoot.Add(word, wordEntries = new List<WordEntry>());
+                }
 
-                WordEntrySet entryList = !wordListBuilder.EntriesByRoot.TryGetValue(word, out entryList)
-                    ? WordEntrySet.Create(wordEntry)
-                    : WordEntrySet.CopyWithItemAdded(entryList, wordEntry);
-
-                wordListBuilder.EntriesByRoot.Add(word, entryList);
+                wordEntries.Add(wordEntry);
             }
 
             return wordListBuilder.MoveToImmutable();

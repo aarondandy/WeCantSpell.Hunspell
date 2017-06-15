@@ -143,7 +143,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return false;
         }
 
-        public override int GetHashCode() => 0;
+        public override int GetHashCode() => Length;
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

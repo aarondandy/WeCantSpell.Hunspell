@@ -59,7 +59,7 @@ namespace WeCantSpell.Hunspell
 
             var affixBuilder = new AffixConfig.Builder();
             var affix = await AffixReader.ReadAsync(affixStream, affixBuilder).ConfigureAwait(false);
-            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper, affixBuilder.StringDeduper);
+            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper);
             return await ReadAsync(dictionaryStream, affix, wordListBuilder).ConfigureAwait(false);
         }
 
@@ -110,7 +110,7 @@ namespace WeCantSpell.Hunspell
 
             var affixBuilder = new AffixConfig.Builder();
             var affix = await AffixReader.ReadFileAsync(affixFilePath, affixBuilder).ConfigureAwait(false);
-            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper, affixBuilder.StringDeduper);
+            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper);
             return await ReadFileAsync(dictionaryFilePath, affix, wordListBuilder).ConfigureAwait(false);
         }
 #endif
@@ -166,7 +166,7 @@ namespace WeCantSpell.Hunspell
 
             var affixBuilder = new AffixConfig.Builder();
             var affix = AffixReader.Read(affixStream, affixBuilder);
-            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper, affixBuilder.StringDeduper);
+            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper);
             return Read(dictionaryStream, affix, wordListBuilder);
         }
 
@@ -217,7 +217,7 @@ namespace WeCantSpell.Hunspell
 
             var affixBuilder = new AffixConfig.Builder();
             var affix = AffixReader.ReadFile(affixFilePath, affixBuilder);
-            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper, affixBuilder.StringDeduper);
+            var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper);
             return ReadFile(dictionaryFilePath, affix, wordListBuilder);
         }
 
@@ -287,14 +287,16 @@ namespace WeCantSpell.Hunspell
                 return true;
             }
 
-            if (!hasInitialized && AttemptToProcessInitializationLine(line))
+            if (!hasInitialized)
             {
-                return true;
-            }
-
-            if (Builder.EntriesByRoot == null)
-            {
-                Builder.InitializeEntriesByRoot(-1);
+                if (AttemptToProcessInitializationLine(line))
+                {
+                    return true;
+                }
+                if(Builder.EntriesByRoot == null)
+                {
+                    Builder.InitializeEntriesByRoot(-1);
+                }
             }
 
             var parsed = ParsedWordLine.Parse(line);
@@ -332,23 +334,11 @@ namespace WeCantSpell.Hunspell
                 flags = FlagSet.Empty;
             }
 
-            MorphSet morphs;
-            if (parsed.Morphs != null && parsed.Morphs.Length != 0)
-            {
-                var morphValues = new string[parsed.Morphs.Length];
-                for (int i = 0; i < parsed.Morphs.Length; i++)
-                {
-                    morphValues[i] = parsed.Morphs[i];
-                }
+            var morphValues = (parsed.Morphs != null && parsed.Morphs.Length != 0)
+                ? parsed.Morphs
+                : ArrayEx<string>.Empty;
 
-                morphs = Builder.Dedup(MorphSet.TakeArray(morphValues));
-            }
-            else
-            {
-                morphs = MorphSet.Empty;
-            }
-
-            return AddWord(parsed.Word, flags, morphs);
+            return AddWord(parsed.Word, flags, morphValues);
         }
 
         private bool AttemptToProcessInitializationLine(string line)
@@ -372,11 +362,11 @@ namespace WeCantSpell.Hunspell
             return false;
         }
 
-        private bool AddWord(string word, FlagSet flags, MorphSet morphs) =>
+        private bool AddWord(string word, FlagSet flags, string[] morphs) =>
             AddWord(word, flags, morphs, false)
             || AddWordCapitalized(word, flags, morphs, CapitalizationTypeEx.GetCapitalizationType(word, TextInfo));
 
-        private bool AddWord(string word, FlagSet flags, MorphSet morphs, bool onlyUpperCase)
+        private bool AddWord(string word, FlagSet flags, string[] morphs, bool onlyUpperCase)
         {
             if (Affix.IgnoredChars.HasItems)
             {
@@ -387,20 +377,14 @@ namespace WeCantSpell.Hunspell
             {
                 word = word.Reverse();
 
-                if (morphs.HasItems && !Affix.IsAliasM)
+                if (morphs.Length != 0 && !Affix.IsAliasM)
                 {
-                    var newMorphs = new string[morphs.Count];
-                    for (int i = 0; i < morphs.Count; i++)
-                    {
-                        newMorphs[i] = morphs[morphs.Count - i - 1].Reverse();
-                    }
-
-                    morphs = MorphSet.TakeArray(newMorphs);
+                    morphs = MorphSet.CreateReversed(morphs);
                 }
             }
 
-            WordEntryOptions options;
-            if (morphs.HasItems)
+            var options = WordEntryOptions.None;
+            if (morphs.Length != 0)
             {
                 if (Affix.IsAliasM)
                 {
@@ -418,74 +402,64 @@ namespace WeCantSpell.Hunspell
                         }
                     }
 
-                    morphs = MorphSet.Create(morphBuilder);
-                }
-                else
-                {
-                    options = WordEntryOptions.None;
+                    morphs = morphBuilder.ToArray();
                 }
 
-                if (morphs.AnyStartsWith(MorphologicalTags.Phon))
+                if (MorphSet.AnyStartsWith(morphs, MorphologicalTags.Phon))
                 {
                     options |= WordEntryOptions.Phon;
                 }
             }
+
+            if (Builder.EntriesByRoot.TryGetValue(word, out List<WordEntry> wordEntries))
+            {
+                if (wordEntries.Count != 0)
+                {
+                    word = wordEntries[0].Word;
+                }
+            }
             else
             {
-                options = WordEntryOptions.None;
-            }
-
-            bool saveEntryList = false;
-            word = Builder.Dedup(word);
-            if (!Builder.EntriesByRoot.TryGetValue(word, out WordEntrySet entryList))
-            {
-                saveEntryList = true;
-                entryList = WordEntrySet.Empty;
+                wordEntries = new List<WordEntry>(2);
+                Builder.EntriesByRoot.Add(word, wordEntries);
             }
 
             var upperCaseHomonym = false;
-            for (var i = 0; i < entryList.Count; i++)
+            if (!onlyUpperCase)
             {
-                var existingEntry = entryList[i];
-
-                if (!onlyUpperCase)
+                for (var i = 0; i < wordEntries.Count; i++)
                 {
+                    var existingEntry = wordEntries[i];
                     if (existingEntry.ContainsFlag(SpecialFlags.OnlyUpcaseFlag))
                     {
-                        existingEntry = new WordEntry(
+                        wordEntries[i] = new WordEntry(
                             existingEntry.Word,
                             flags,
                             existingEntry.Morphs,
                             existingEntry.Options);
-                        entryList.DestructiveReplace(i, existingEntry);
                         return false;
                     }
                 }
-                else
-                {
-                    upperCaseHomonym = true;
-                }
+            }
+            else if (wordEntries.Count != 0)
+            {
+                upperCaseHomonym = true;
             }
 
             if (!upperCaseHomonym)
             {
-                saveEntryList = true;
-                entryList = WordEntrySet.CopyWithItemAdded(entryList, new WordEntry(
-                    word,
-                    flags,
-                    Builder.Dedup(morphs),
-                    options));
-            }
-
-            if (saveEntryList)
-            {
-                Builder.EntriesByRoot[word] = entryList;
+                wordEntries.Add(
+                    new WordEntry(
+                        word,
+                        flags,
+                        Builder.Dedup(MorphSet.TakeArray(morphs)),
+                        options));
             }
 
             return false;
         }
 
-        private bool AddWordCapitalized(string word, FlagSet flags, MorphSet morphs, CapitalizationType capType)
+        private bool AddWordCapitalized(string word, FlagSet flags, string[] morphs, CapitalizationType capType)
         {
             // add inner capitalized forms to handle the following allcap forms:
             // Mixed caps: OpenOffice.org -> OPENOFFICE.ORG
@@ -502,20 +476,8 @@ namespace WeCantSpell.Hunspell
             )
             {
                 flags = Builder.Dedup(FlagSet.Union(flags, SpecialFlags.OnlyUpcaseFlag));
-
-                var textInfo = TextInfo;
-                var initCapBuilder = StringBuilderPool.Get(word);
-                if (initCapBuilder.Length > 0)
-                {
-                    initCapBuilder[0] = textInfo.ToUpper(initCapBuilder[0]);
-
-                    for (var i = 1; i < initCapBuilder.Length; i++)
-                    {
-                        initCapBuilder[i] = textInfo.ToLower(initCapBuilder[i]);
-                    }
-                }
-
-                return AddWord(StringBuilderPool.GetStringAndReturn(initCapBuilder), flags, morphs, true);
+                word = HunspellTextFunctions.MakeTitleCase(word, TextInfo);
+                return AddWord(word, flags, morphs, true);
             }
 
             return false;

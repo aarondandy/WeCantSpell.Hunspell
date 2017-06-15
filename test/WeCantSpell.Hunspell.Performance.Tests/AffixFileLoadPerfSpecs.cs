@@ -1,7 +1,6 @@
 ﻿using NBench;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace WeCantSpell.Hunspell.Performance.Tests
 {
@@ -33,11 +32,11 @@ namespace WeCantSpell.Hunspell.Performance.Tests
         [CounterThroughputAssertion(nameof(AffixFilesLoaded), MustBe.GreaterThanOrEqualTo, 5)]
         public void Benchmark(BenchmarkContext context)
         {
-            Task.WhenAll(AffixFilePaths.Select(async filePath =>
+            foreach(var filePath in AffixFilePaths)
             {
-                await AffixReader.ReadFileAsync(filePath).ConfigureAwait(false);
+                AffixReader.ReadFile(filePath);
                 AffixFilesLoaded.Increment();
-            })).GetAwaiter().GetResult();
+            }
         }
     }
 }

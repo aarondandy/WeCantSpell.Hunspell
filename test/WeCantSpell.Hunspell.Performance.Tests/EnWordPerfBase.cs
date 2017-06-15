@@ -24,21 +24,24 @@ namespace WeCantSpell.Hunspell.Performance.Tests
             var testAssemblyPath = Path.GetFullPath(GetType().Assembly.Location);
             var filesDirectory = Path.Combine(Path.GetDirectoryName(testAssemblyPath), "files/");
 
-            Task.WhenAll(LoadChecker(), LoadWords()).GetAwaiter().GetResult();
+            Task.WhenAll(
+                Task.Run((Action)LoadChecker),
+                Task.Run((Action)LoadWords))
+                .GetAwaiter().GetResult();
 
-            async Task LoadChecker()
+            void LoadChecker()
             {
-                Checker = await WordList.CreateFromFilesAsync(Path.Combine(filesDirectory, "English (American).dic")).ConfigureAwait(false);
+                Checker = WordList.CreateFromFiles(Path.Combine(filesDirectory, "English (American).dic"));
             }
 
-            async Task LoadWords()
+            void LoadWords()
             {
                 Words = new List<string>();
                 using (var stram = new FileStream(Path.Combine(filesDirectory, "List_of_common_misspellings.txt"), FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true))
                 using (var reader = new StreamReader(stram, Encoding.UTF8, true))
                 {
                     string line;
-                    while ((line = await reader.ReadLineAsync().ConfigureAwait(false)) != null)
+                    while ((line = reader.ReadLine()) != null)
                     {
                         line = line.Trim();
 

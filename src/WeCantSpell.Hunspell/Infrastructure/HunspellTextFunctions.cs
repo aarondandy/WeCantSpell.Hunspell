@@ -289,6 +289,36 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return textInfo.ToUpper(s);
         }
 
+        public static string MakeTitleCase(string s, TextInfo textInfo)
+        {
+#if DEBUG
+            if (s == null)
+            {
+                throw new ArgumentNullException(nameof(s));
+            }
+            if (textInfo == null)
+            {
+                throw new ArgumentNullException(nameof(textInfo));
+            }
+#endif
+
+            if (s.Length == 0)
+            {
+                return s;
+            }
+
+            var expectedFirstLetter = textInfo.ToUpper(s[0]);
+
+            if (s.Length == 1)
+            {
+                return expectedFirstLetter.ToString();
+            }
+
+            var builder = StringBuilderPool.Get(textInfo.ToLower(s));
+            builder[0] = expectedFirstLetter;
+            return StringBuilderPool.GetStringAndReturn(builder);
+        }
+
         public static string ReDecodeConvertedStringAsUtf8(string decoded, Encoding encoding)
         {
             if (encoding == Encoding.UTF8)

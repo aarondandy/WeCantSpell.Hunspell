@@ -67,18 +67,21 @@ namespace WeCantSpell.Hunspell
             {
                 c = word.Text[i];
 
-                if (char.IsUpper(c))
+                if (!hasFoundMoreCaps && char.IsUpper(c))
                 {
                     hasFoundMoreCaps = true;
+                    if (hasLower)
+                    {
+                        break;
+                    }
                 }
-                else if (HunspellTextFunctions.CharIsNotNeutral(c, textInfo))
+                else if (!hasLower && HunspellTextFunctions.CharIsNotNeutral(c, textInfo))
                 {
                     hasLower = true;
-                }
-
-                if (hasLower && hasFoundMoreCaps)
-                {
-                    break;
+                    if (hasFoundMoreCaps)
+                    {
+                        break;
+                    }
                 }
             }
 

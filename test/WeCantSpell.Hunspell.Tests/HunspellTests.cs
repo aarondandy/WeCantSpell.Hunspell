@@ -44,12 +44,14 @@ namespace WeCantSpell.Hunspell.Tests
                 var expected = searchWord == dictionaryWord;
                 var dictionaryBuilder = new WordList.Builder();
                 dictionaryBuilder.InitializeEntriesByRoot(1);
-                dictionaryBuilder.EntriesByRoot[dictionaryWord] = WordEntrySet.Create(new[] {
+                dictionaryBuilder.EntriesByRoot[dictionaryWord] = new List<WordEntry>
+                {
                     new WordEntry(
                         dictionaryWord,
                         FlagSet.Empty,
                         MorphSet.Empty,
-                        WordEntryOptions.None) });
+                        WordEntryOptions.None)
+                };
 
                 var dictionary = dictionaryBuilder.ToImmutable();
 

@@ -1026,14 +1026,8 @@ namespace WeCantSpell.Hunspell.Tests
                 actual["bar"][0].Morphs.ShouldBeEquivalentTo(new[] { "<BAR" });
             }
 
-            public static IEnumerable<object[]> can_read_file_without_exception_args =>
-                Directory.GetFiles("files/", "*.dic")
-                .Concat(Directory.GetFiles("samples/", "*.dic"))
-                .Distinct()
-                .OrderBy(x => x)
-                .Select(filePath => new object[] { filePath });
-
-            [Theory, MemberData(nameof(can_read_file_without_exception_args))]
+            [Theory(Skip = "Not performant enough yet")]
+            [MemberData(nameof(can_read_file_without_exception_args))]
             public async Task can_read_file_without_exception(string filePath)
             {
                 var actual = await WordListReader.ReadFileAsync(filePath);
@@ -1041,5 +1035,23 @@ namespace WeCantSpell.Hunspell.Tests
                 actual.Should().NotBeNull();
             }
         }
+
+        public class ReadFile : WordListReaderTests
+        {
+            [Theory, MemberData(nameof(can_read_file_without_exception_args))]
+            public void can_read_file_without_exception(string filePath)
+            {
+                var actual = WordListReader.ReadFile(filePath);
+
+                actual.Should().NotBeNull();
+            }
+        }
+
+        public static IEnumerable<object[]> can_read_file_without_exception_args =>
+            Directory.GetFiles("files/", "*.dic")
+            .Concat(Directory.GetFiles("samples/", "*.dic"))
+            .Distinct()
+            .OrderBy(x => x)
+            .Select(filePath => new object[] { filePath });
     }
 }

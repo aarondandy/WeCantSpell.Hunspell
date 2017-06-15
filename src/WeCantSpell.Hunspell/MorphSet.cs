@@ -23,20 +23,34 @@ namespace WeCantSpell.Hunspell
 
         public string Join(string seperator) => string.Join(seperator, items);
 
-        public bool AnyStartsWith(string text)
+        public bool AnyStartsWith(string text) =>
+            AnyStartsWith(items, text);
+
+        internal static bool AnyStartsWith(string[] morphs, string text)
         {
-            if (!string.IsNullOrEmpty(text))
+            if (morphs != null && !string.IsNullOrEmpty(text))
             {
-                for (var i = 0; i < items.Length; i++)
+                foreach(var morph in morphs)
                 {
-                    if (items[i].StartsWith(text))
+                    if (morph != null && morph.StartsWith(text))
                     {
                         return true;
                     }
                 }
             }
-
             return false;
+        }
+
+        internal static string[] CreateReversed(string[] oldMorphs)
+        {
+            var newMorphs = new string[oldMorphs.Length];
+            var lastIndex = oldMorphs.Length - 1;
+            for (int i = 0; i < oldMorphs.Length; i++)
+            {
+                newMorphs[i] = oldMorphs[lastIndex - i].Reverse();
+            }
+
+            return newMorphs;
         }
     }
 }
