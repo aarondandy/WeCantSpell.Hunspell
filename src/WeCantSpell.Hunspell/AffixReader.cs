@@ -64,6 +64,7 @@ namespace WeCantSpell.Hunspell
             {"LONG", FlagMode.Long},
             {"CHAR", FlagMode.Char},
             {"NUM", FlagMode.Num},
+            {"NUMBER", FlagMode.Num},
             {"UTF", FlagMode.Uni},
             {"UNI", FlagMode.Uni},
             {"UTF-8", FlagMode.Uni}
@@ -1085,6 +1086,17 @@ namespace WeCantSpell.Hunspell
             }
             else
             {
+                var bestMatchFlagMode = FlagModeParameterMappings
+                    .Where(m => modeText.StartsWith(m.Key, StringComparison.OrdinalIgnoreCase))
+                    .Select(m => (FlagMode?)m.Value)
+                    .FirstOrDefault();
+
+                if (bestMatchFlagMode.HasValue)
+                {
+                    Builder.FlagMode = bestMatchFlagMode.GetValueOrDefault();
+                    return true;
+                }
+
                 Builder.LogWarning($"Unknown {nameof(FlagMode)}: {modeText}");
                 return false;
             }
