@@ -24,5 +24,18 @@ namespace WeCantSpell.Hunspell
             var value = this[index];
             return value == '*' || value == '?';
         }
+
+        internal bool ContainsRuleFlagForEntry(WordEntryDetail details)
+        {
+            foreach (var flag in items)
+            {
+                if (!flag.IsWildcard && details.ContainsFlag(flag))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }

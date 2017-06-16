@@ -18,11 +18,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             {
                 return true;
             }
-            if (x == null)
-            {
-                return y == null;
-            }
-            if (y == null || x.Length != y.Length)
+            if (x == null || y == null || x.Length != y.Length)
             {
                 return false;
             }

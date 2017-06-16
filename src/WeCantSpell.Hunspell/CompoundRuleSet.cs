@@ -20,18 +20,16 @@ namespace WeCantSpell.Hunspell
         public static CompoundRuleSet Create(IEnumerable<CompoundRule> rules) =>
             rules == null ? Empty : TakeList(rules.ToList());
 
-        public bool EntryContainsRuleFlags(WordEntry rv)
-        {
-            if (rv == null)
-            {
-                throw new ArgumentNullException(nameof(rv));
-            }
+        public bool EntryContainsRuleFlags(WordEntry rv) =>
+            EntryContainsRuleFlags(rv?.Detail);
 
-            foreach (var rule in items)
+        public bool EntryContainsRuleFlags(WordEntryDetail details)
+        {
+            if (details != null && details.HasFlags)
             {
-                foreach (var flag in rule)
+                foreach(var rule in items)
                 {
-                    if (!flag.Equals('*') && !flag.Equals('?') && rv.ContainsFlag(flag))
+                    if (rule.ContainsRuleFlagForEntry(details))
                     {
                         return true;
                     }
@@ -41,16 +39,36 @@ namespace WeCantSpell.Hunspell
             return false;
         }
 
-        [Obsolete("Do not use")]
+        [Obsolete]
         public bool CompoundCheck(Dictionary<int, WordEntry> words, int wnum, bool all)
         {
-            return CompoundCheckInternal(
-                words ?? throw new ArgumentNullException(nameof(words)),
-                wnum,
-                all);
+            if (words == null)
+            {
+                throw new ArgumentNullException(nameof(words));
+            }
+
+            var list = new List<WordEntryDetail>();
+            foreach (var item in words)
+            {
+                if (item.Key < list.Count)
+                {
+                    list[item.Key] = item.Value.Detail;
+                }
+                else
+                {
+                    for(var i = item.Key - list.Count; i > 0; i--)
+                    {
+                        list.Add(null);
+                    }
+
+                    list.Add(item.Value.Detail);
+                }
+            }
+
+            return CompoundCheckInternal(new IncrementalWordList(list, wnum), all);
         }
 
-        internal bool CompoundCheckInternal(Dictionary<int, WordEntry> words, int wnum, bool all)
+        internal bool CompoundCheckInternal(IncrementalWordList words, bool all)
         {
             var bt = 0;
             var btinfo = new List<MetacharData>
@@ -66,11 +84,11 @@ namespace WeCantSpell.Hunspell
                 var ok2 = true;
                 do
                 {
-                    while (pp < compoundRule.Count && wp <= wnum)
+                    while (pp < compoundRule.Count && wp <= words.WNum)
                     {
                         if (pp + 1 < compoundRule.Count && compoundRule.IsWildcard(pp + 1))
                         {
-                            var wend = compoundRule[pp + 1] == '?' ? wp : wnum;
+                            var wend = compoundRule[pp + 1] == '?' ? wp : words.WNum;
                             ok2 = true;
                             pp += 2;
                             btinfo[bt].btpp = pp;
@@ -78,7 +96,7 @@ namespace WeCantSpell.Hunspell
 
                             while (wp <= wend)
                             {
-                                if (!words[wp].HasFlags || !words[wp].ContainsFlag(compoundRule[pp - 2]))
+                                if (!words.ContainsFlagAt(wp, compoundRule[pp - 2]))
                                 {
                                     ok2 = false;
                                     break;
@@ -87,7 +105,7 @@ namespace WeCantSpell.Hunspell
                                 wp++;
                             }
 
-                            if (wp <= wnum)
+                            if (wp <= words.WNum)
                             {
                                 ok2 = false;
                             }
@@ -107,13 +125,7 @@ namespace WeCantSpell.Hunspell
                         else
                         {
                             ok2 = true;
-                            if (
-                                words[wp] == null
-                                ||
-                                !words[wp].HasFlags
-                                ||
-                                !words[wp].ContainsFlag(compoundRule[pp])
-                            )
+                            if (!words.ContainsFlagAt(wp, compoundRule[pp]))
                             {
                                 ok = false;
                                 break;
@@ -122,7 +134,7 @@ namespace WeCantSpell.Hunspell
                             pp++;
                             wp++;
 
-                            if (compoundRule.Count == pp && wp <= wnum)
+                            if (compoundRule.Count == pp && wp <= words.WNum)
                             {
                                 ok = false;
                             }

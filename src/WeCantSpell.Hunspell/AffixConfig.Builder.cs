@@ -492,6 +492,12 @@ namespace WeCantSpell.Hunspell
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
+            internal string Dedup(StringSlice value) =>
+                StringDeduper.GetEqualOrAdd(value.ToString());
+
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             public string Dedup(string value)
             {
 #if DEBUG
@@ -509,7 +515,7 @@ namespace WeCantSpell.Hunspell
                 {
                     for (var i = 0; i < values.Length; i++)
                     {
-                        ref var value = ref values[i];
+                        ref string value = ref values[i];
                         if (value != null)
                         {
                             value = StringDeduper.GetEqualOrAdd(value);
@@ -518,6 +524,22 @@ namespace WeCantSpell.Hunspell
                 }
 
                 return values;
+            }
+
+            internal string[] DedupIntoArray(List<StringSlice> values)
+            {
+                if (values == null || values.Count == 0)
+                {
+                    return ArrayEx<string>.Empty;
+                }
+
+                var result = new string[values.Count];
+                for(var i = 0; i < result.Length; i++)
+                {
+                    result[i] = StringDeduper.GetEqualOrAdd(values[i].ToString());
+                }
+
+                return result;
             }
 
             public MorphSet Dedup(MorphSet value) =>

@@ -931,14 +931,14 @@ namespace WeCantSpell.Hunspell
                     if (Affix.HasCompound)
                     {
                         WordEntry rv2;
-                        var rwords = new Dictionary<int, WordEntry>(); // buffer for COMPOUND pattern checking
+                        var rwords = new IncrementalWordList(); // buffer for COMPOUND pattern checking
                         var info = SpellCheckResultType.None;
-                        rv = CompoundCheck(word, 0, 0, 100, 0, null, ref rwords, false, 1, ref info);
+                        rv = CompoundCheck(word, 0, 0, 100, null, rwords, false, 1, ref info);
                         if (
                             rv != null
                             &&
                             (
-                                (rv2 = Lookup(word).FirstOrDefault()) == null
+                                (rv2 = LookupFirst(word)) == null
                                 ||
                                 !rv2.HasFlags
                                 ||
@@ -953,29 +953,31 @@ namespace WeCantSpell.Hunspell
                     return 0;
                 }
 
-                var rvs = Lookup(word); // get homonyms
-                var rvIndex = 0;
-                rv = rvs.FirstOrDefault();
-
-                if (rv != null)
+                var rvDetails = LookupDetails(word); // get homonyms
+                if (rvDetails.Length != 0)
                 {
-                    if (rv.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest))
+                    var rvDetail = rvDetails[0];
+
+                    if (rvDetail.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest))
                     {
                         return 0;
                     }
 
-                    while (rv != null)
+                    var rvIndex = 0;
+                    while (rvDetail != null)
                     {
-                        if (rv.ContainsAnyFlags(Affix.NeedAffix, SpecialFlags.OnlyUpcaseFlag, Affix.OnlyInCompound))
+                        if (rvDetail.ContainsAnyFlags(Affix.NeedAffix, SpecialFlags.OnlyUpcaseFlag, Affix.OnlyInCompound))
                         {
                             rvIndex++;
-                            rv = rvIndex < rvs.Count ? rvs[rvIndex] : null;
+                            rvDetail = rvIndex < rvDetails.Length ? rvDetails[rvIndex] : null;
                         }
                         else
                         {
                             break;
                         }
                     }
+
+                    rv = rvDetail == null ? null : new WordEntry(word, rvDetail);
                 }
                 else
                 {
@@ -1903,7 +1905,7 @@ namespace WeCantSpell.Hunspell
 
             private bool CheckForbidden(string word)
             {
-                var rv = Lookup(word).FirstOrDefault();
+                var rv = LookupFirstDetail(word);
                 if (rv != null && rv.ContainsAnyFlags(Affix.NeedAffix, Affix.OnlyInCompound))
                 {
                     rv = null;
@@ -1911,7 +1913,7 @@ namespace WeCantSpell.Hunspell
 
                 if (PrefixCheck(word, CompoundOptions.Begin, default(FlagValue)) == null)
                 {
-                    rv = SuffixCheck(word, AffixEntryOptions.None, null, default(FlagValue), default(FlagValue), CompoundOptions.Not); // prefix+suffix, suffix
+                    rv = SuffixCheck(word, AffixEntryOptions.None, null, default(FlagValue), default(FlagValue), CompoundOptions.Not)?.Detail; // prefix+suffix, suffix
                 }
 
                 // check forbidden words

@@ -44,10 +44,9 @@ namespace WeCantSpell.Hunspell.Tests
                 var expected = searchWord == dictionaryWord;
                 var dictionaryBuilder = new WordList.Builder();
                 dictionaryBuilder.InitializeEntriesByRoot(1);
-                dictionaryBuilder.EntriesByRoot[dictionaryWord] = new List<WordEntry>
+                dictionaryBuilder.EntryDetailsByRoot[dictionaryWord] = new List<WordEntryDetail>
                 {
-                    new WordEntry(
-                        dictionaryWord,
+                    new WordEntryDetail(
                         FlagSet.Empty,
                         MorphSet.Empty,
                         WordEntryOptions.None)

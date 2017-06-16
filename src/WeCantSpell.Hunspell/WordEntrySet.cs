@@ -23,6 +23,17 @@ namespace WeCantSpell.Hunspell
 
         public static WordEntrySet Create(WordEntry entry) => new WordEntrySet(new[] { entry });
 
+        public static WordEntrySet Create(string word, WordEntryDetail[] details)
+        {
+            var entries = new WordEntry[details.Length];
+            for (var i = 0; i < entries.Length; i++)
+            {
+                entries[i] = new WordEntry(word, details[i]);
+            }
+
+            return TakeArray(entries);
+        }
+
         public static WordEntrySet Create(IEnumerable<WordEntry> entries) =>
             entries == null ? Empty : TakeArray(entries.ToArray());
 

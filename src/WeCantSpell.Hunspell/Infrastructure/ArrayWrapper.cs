@@ -100,20 +100,18 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         private ArrayComparer<TValue> ArrayComparer { get; }
 
-        public bool Equals(TCollection x, TCollection y)
-        {
-            if (ReferenceEquals(x, y))
-            {
-                return true;
-            }
-            if (x == null || y == null)
-            {
-                return false;
-            }
+        public bool Equals(TCollection x, TCollection y) =>
+            ReferenceEquals(x, y)
+            ||
+            (
+                x != null
+                && y != null
+                && ArrayComparer.Equals(x.items, y.items)
+            );
 
-            return ArrayComparer.Equals(x.items, y.items);
-        }
-
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public int GetHashCode(TCollection obj) => ArrayComparer.GetHashCode(obj.items);
     }
 }

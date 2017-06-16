@@ -102,6 +102,12 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public int IndexOf(char c) =>
             Text.IndexOf(c, Offset, Length) - Offset;
 
+        public int IndexOf(char c, int startIndex) =>
+            Text.IndexOf(c, Offset + startIndex, Length - startIndex) - Offset;
+
+        public bool Contains(char c) =>
+            Text.IndexOf(c, Offset, Length) >= 0;
+
         public string Substring(int startIndex) =>
             Substring(startIndex, Length - startIndex);
 
@@ -118,6 +124,18 @@ namespace WeCantSpell.Hunspell.Infrastructure
             }
 #endif
             return Text.Substring(Offset + startIndex, length);
+        }
+
+        public bool Equals(string other, StringComparison comparisonType)
+        {
+            if (IsFullString)
+            {
+                return Text.Equals(other, comparisonType);
+            }
+
+            return other != null
+                && Length == other.Length
+                && StringEx.EqualsOffset(Text, Offset, other, 0, Length, comparisonType);
         }
 
         public bool Equals(string other) =>
@@ -179,6 +197,22 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return new StringSlice(Text, Offset + startIndex, length);
         }
 
+        public string ReplaceString(string oldValue, string newValue)
+        {
+            if (IsEmpty)
+            {
+                return string.Empty;
+            }
+            if (IsFullString)
+            {
+                return Text.Replace(oldValue, newValue);
+            }
+
+            var builder = StringBuilderPool.Get(this);
+            builder.Replace(oldValue, newValue);
+            return StringBuilderPool.GetStringAndReturn(builder);
+        }
+
         public string ReplaceString(char oldValue, char newValue)
         {
             if (IsEmpty)
@@ -192,9 +226,43 @@ namespace WeCantSpell.Hunspell.Infrastructure
                     ? newValue.ToString()
                     : c.ToString();
             }
+            if (IsFullString)
+            {
+                return Text.Replace(oldValue, newValue);
+            }
 
             var builder = StringBuilderPool.Get(this);
             builder.Replace(oldValue, newValue);
+            return StringBuilderPool.GetStringAndReturn(builder);
+        }
+
+        public int IndexOfSpaceOrTab(int startIndex)
+        {
+            var lastIndex = Offset + Length;
+            for (var i = Offset + startIndex; i < lastIndex; i++)
+            {
+                if (StringEx.IsTabOrSpace(Text[i]))
+                {
+                    return i - Offset;
+                }
+            }
+
+            return -1;
+        }
+
+        public string ReverseString()
+        {
+            if (IsEmpty)
+            {
+                return string.Empty;
+            }
+            if (Length == 1)
+            {
+                return Text[Offset].ToString();
+            }
+
+            var builder = StringBuilderPool.Get(this);
+            builder.Reverse();
             return StringBuilderPool.GetStringAndReturn(builder);
         }
     }

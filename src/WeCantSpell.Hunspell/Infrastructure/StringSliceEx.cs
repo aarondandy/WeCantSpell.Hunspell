@@ -21,20 +21,17 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static StringSlice Subslice(this string text, int startIndex, int length) =>
             new StringSlice(text, startIndex, length);
 
-        public static List<StringSlice> SliceOnTabOrSpace(this string @this)
+        public static List<StringSlice> SliceOnTabOrSpace(this string @this) =>
+            SliceOnTabOrSpace(new StringSlice(@this));
+
+        public static List<StringSlice> SliceOnTabOrSpace(this StringSlice @this)
         {
-#if DEBUG
-            if (@this == null)
-            {
-                throw new ArgumentNullException(nameof(@this));
-            }
-#endif
             var parts = new List<StringSlice>();
 
             int startIndex = 0;
             int splitIndex;
             int partLength;
-            while ((splitIndex = StringEx.IndexOfSpaceOrTab(@this, startIndex)) >= 0)
+            while ((splitIndex = @this.IndexOfSpaceOrTab(startIndex)) >= 0)
             {
                 partLength = splitIndex - startIndex;
                 if (partLength > 0)

@@ -1,4 +1,6 @@
-﻿namespace WeCantSpell.Hunspell
+﻿using WeCantSpell.Hunspell.Infrastructure;
+
+namespace WeCantSpell.Hunspell
 {
     public sealed class PatternEntry
     {
@@ -20,5 +22,8 @@
         public FlagValue Condition { get; }
 
         public FlagValue Condition2 { get; }
+
+        internal bool Pattern3DoesNotMatch(string word, int offset) =>
+            Pattern3.Length == 0 || !StringEx.EqualsOffset(word, offset, Pattern3, 0, Pattern3.Length);
     }
 }
