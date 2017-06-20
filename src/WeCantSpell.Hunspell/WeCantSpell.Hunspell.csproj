@@ -1,20 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Description>A .NET port of Hunspell</Description>
     <AssemblyTitle>WeCantSpell.Hunspell</AssemblyTitle>
     <TargetFrameworks>netstandard1.3;netstandard1.1;net461;net451;net35;portable-net45+win8+wpa81+wp8</TargetFrameworks>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyName>WeCantSpell.Hunspell</AssemblyName>
     <PackageId>WeCantSpell.Hunspell</PackageId>
-    <PackageId>WeCantSpell.Hunspell</PackageId>
+    <Description>A port of Hunspell v1 for .NET, .NET Standard, and .NET Core.</Description>
     <PackageTags>spell;check;spell-check;spelling;hunspell;we-cant-spell</PackageTags>
     <PackageProjectUrl>https://github.com/aarondandy/WeCantSpell.Hunspell/</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/aarondandy/WeCantSpell.Hunspell/blob/master/license.txt</PackageLicenseUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/aarondandy/WeCantSpell.Hunspell.git</RepositoryUrl>
     <PackageIconUrl>https://raw.githubusercontent.com/aarondandy/WeCantSpell.Hunspell/master/icon.png</PackageIconUrl>
+    <Authors>aarondandy</Authors>
+    <PackageLicenseUrl>https://github.com/aarondandy/WeCantSpell.Hunspell/blob/master/license.txt</PackageLicenseUrl>
+    <PackageReleaseNotes>Changelog can be found at https://github.com/aarondandy/WeCantSpell.Hunspell/blob/master/changelog.md</PackageReleaseNotes>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
@@ -24,7 +25,6 @@
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
     <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
-    <Authors>aarondandy</Authors>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net35' ">
