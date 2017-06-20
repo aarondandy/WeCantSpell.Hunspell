@@ -1,6 +1,6 @@
 # WeCantSpell: Hunspell
 
-A .NET port of Hunspell for .NET, .NET Standard, and .NET Core
+A port of Hunspell v1 for .NET, .NET Standard, and .NET Core.
 
 ![bee](icon.png)
 
@@ -59,8 +59,8 @@ If you need better performance you should check out [NHunspell](https://www.nuge
 
 | [Benchmark](./test/WeCantSpell.Hunspell.Performance.Comparison/) | [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/) | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
 |---------------------|-------------------|------------|
-| Dictionary Loads /s | 🐢 1.82           | 🐇 13.54   |
-| Words Checked /s    | 🐢 560,298        | 🐇 929,585 |
+| Dictionary Loads /s | 🐌 3.12           | 🐇 13.59   |
+| Words Checked /s    | 🐢 680,986        | 🐇 975,505 |
 
 _Note: Measurements taken on a Intel 6700K with a 850 PRO 256GB._
 
