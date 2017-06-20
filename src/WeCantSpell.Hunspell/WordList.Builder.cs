@@ -33,7 +33,7 @@ namespace WeCantSpell.Hunspell
             [Obsolete("Use EntryDetailsByRoot")]
             public Dictionary<string, List<WordEntry>> EntriesByRoot;
 
-            public Dictionary<string, List<WordEntryDetail>> EntryDetailsByRoot;
+            private Dictionary<string, List<WordEntryDetail>> EntryDetailsByRoot;
 
             public readonly AffixConfig Affix;
 
@@ -42,6 +42,24 @@ namespace WeCantSpell.Hunspell
             internal readonly Deduper<MorphSet> MorphSetDeduper;
 
             internal readonly Deduper<WordEntryDetail> WordEntryDetailDeduper;
+
+            public void Add(string word, WordEntryDetail detail)
+            {
+                var details = GetOrCreateDetailList(word);
+
+                details.Add(detail);
+            }
+
+            internal List<WordEntryDetail> GetOrCreateDetailList(string word)
+            {
+                if (!EntryDetailsByRoot.TryGetValue(word, out List<WordEntryDetail> details))
+                {
+                    details = new List<WordEntryDetail>(2);
+                    EntryDetailsByRoot.Add(word, details);
+                }
+
+                return details;
+            }
 
             public WordList ToImmutable() =>
                 ToImmutable(destructive: false);
@@ -116,6 +134,11 @@ namespace WeCantSpell.Hunspell
 
             public void InitializeEntriesByRoot(int expectedSize)
             {
+                if (EntryDetailsByRoot != null)
+                {
+                    return;
+                }
+
                 EntryDetailsByRoot = expectedSize <= 0
                     ? new Dictionary<string, List<WordEntryDetail>>()
                     // PERF: because we add more entries than we are told about, we add a bit more to the expected size

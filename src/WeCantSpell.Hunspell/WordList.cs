@@ -62,19 +62,14 @@ namespace WeCantSpell.Hunspell
             }
             else
             {
-                wordListBuilder.InitializeEntriesByRoot(0);
+                wordListBuilder.InitializeEntriesByRoot(-1);
             }
 
             var entryDetail = WordEntryDetail.Default;
 
             foreach (var word in words)
             {
-                if (!wordListBuilder.EntryDetailsByRoot.TryGetValue(word, out List<WordEntryDetail> entryDetails) || entryDetails == null)
-                {
-                    wordListBuilder.EntryDetailsByRoot.Add(word, entryDetails = new List<WordEntryDetail>());
-                }
-
-                entryDetails.Add(entryDetail);
+                wordListBuilder.Add(word, entryDetail);
             }
 
             return wordListBuilder.MoveToImmutable();

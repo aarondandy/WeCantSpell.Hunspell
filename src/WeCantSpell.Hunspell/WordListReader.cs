@@ -293,10 +293,8 @@ namespace WeCantSpell.Hunspell
                 {
                     return true;
                 }
-                if(Builder.EntryDetailsByRoot == null)
-                {
-                    Builder.InitializeEntriesByRoot(-1);
-                }
+
+                Builder.InitializeEntriesByRoot(-1);
             }
 
             var parsed = ParsedWordLine.Parse(line);
@@ -350,10 +348,7 @@ namespace WeCantSpell.Hunspell
             {
                 if (IntEx.TryParseInvariant(initLineMatch.Groups[1].Value, out int expectedSize))
                 {
-                    if (Builder.EntryDetailsByRoot == null)
-                    {
-                        Builder.InitializeEntriesByRoot(expectedSize);
-                    }
+                    Builder.InitializeEntriesByRoot(expectedSize);
 
                     return true;
                 }
@@ -411,11 +406,7 @@ namespace WeCantSpell.Hunspell
                 }
             }
 
-            if (!Builder.EntryDetailsByRoot.TryGetValue(word, out List<WordEntryDetail> details))
-            {
-                details = new List<WordEntryDetail>(2);
-                Builder.EntryDetailsByRoot.Add(word, details);
-            }
+            var details = Builder.GetOrCreateDetailList(word);
 
             var upperCaseHomonym = false;
             if (!onlyUpperCase)

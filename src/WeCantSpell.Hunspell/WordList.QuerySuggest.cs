@@ -2461,9 +2461,8 @@ namespace WeCantSpell.Hunspell
                 return StringBuilderPool.GetStringAndReturn(target);
             }
 
-            private static void StrMove(StringBuilder dest, int destOffset, StringBuilder src, int srcOffset)
+            private static void StrMove(StringBuilder dest, int destIndex, StringBuilder src, int srcOffset)
             {
-                var destIndex = destOffset;
                 for (var srcIndex = srcOffset; srcIndex < src.Length && destIndex < dest.Length; srcIndex++, destIndex++)
                 {
                     dest[destIndex] = src[srcIndex];
