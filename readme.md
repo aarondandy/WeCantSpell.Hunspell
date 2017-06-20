@@ -1,6 +1,6 @@
 # WeCantSpell: Hunspell
 
-A port of Hunspell v1 for .NET, .NET Standard, and .NET Core.
+A port of [Hunspell](https://github.com/hunspell/hunspell) v1 for .NET, .NET Standard, and .NET Core.
 
 ![bee](icon.png)
 
@@ -47,7 +47,7 @@ public class Program
 
 ## Upstream
 
-To know how up to date this port is, check the [hunspell-origin](./hunspell-origin) submodule.
+To know how up to date this port is, check the hunspell-origin submodule.
 
 ## Performance
 
