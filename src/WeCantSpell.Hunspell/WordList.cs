@@ -62,18 +62,14 @@ namespace WeCantSpell.Hunspell
             }
             else
             {
-                wordListBuilder.InitializeEntriesByRoot(0);
+                wordListBuilder.InitializeEntriesByRoot(-1);
             }
+
+            var entryDetail = WordEntryDetail.Default;
 
             foreach (var word in words)
             {
-                var wordEntry = new WordEntry(word, FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None);
-                if (!wordListBuilder.EntriesByRoot.TryGetValue(word, out List<WordEntry> wordEntries) || wordEntries == null)
-                {
-                    wordListBuilder.EntriesByRoot.Add(word, wordEntries = new List<WordEntry>());
-                }
-
-                wordEntries.Add(wordEntry);
+                wordListBuilder.Add(word, entryDetail);
             }
 
             return wordListBuilder.MoveToImmutable();
@@ -84,18 +80,34 @@ namespace WeCantSpell.Hunspell
 
         public AffixConfig Affix { get; private set; }
 
-        private Dictionary<string, WordEntrySet> EntriesByRoot { get; set; }
+        private Dictionary<string, WordEntryDetail[]> EntriesByRoot { get; set; }
 
         private FlagSet NGramRestrictedFlags { get; set; }
 
-        private HashSet<WordEntry> NGramRestrictedEntries { get; set; }
+        private Dictionary<string, WordEntryDetail[]> NGramRestrictedEntries { get; set; }
 
         public IEnumerable<WordEntry> NGramAllowedEntries =>
             (NGramRestrictedEntries == null || NGramRestrictedEntries.Count == 0)
             ? AllEntries
-            : AllEntries.Where(entry => !NGramRestrictedEntries.Contains(entry));
+            : GetAllNGramAllowedEntries();
 
-        public IEnumerable<WordEntry> AllEntries => EntriesByRoot.Values.SelectMany(set => set);
+        private IEnumerable<WordEntry> GetAllNGramAllowedEntries() =>
+            EntriesByRoot.SelectMany(rootPair =>
+            {
+                if (NGramRestrictedEntries.TryGetValue(rootPair.Key, out WordEntryDetail[] restrictedDetails))
+                {
+                    return rootPair.Value
+                        .Where(d => !restrictedDetails.Contains(d))
+                        .Select(d => new WordEntry(rootPair.Key, d));
+                }
+                else
+                {
+                    return rootPair.Value
+                        .Select(d => new WordEntry(rootPair.Key, d));
+                }
+            });
+
+        public IEnumerable<WordEntry> AllEntries => EntriesByRoot.SelectMany(pair => pair.Value.Select(d => new WordEntry(pair.Key, d)));
 
         public IEnumerable<string> RootWords => EntriesByRoot.Keys;
 
@@ -111,12 +123,38 @@ namespace WeCantSpell.Hunspell
 
         public WordEntrySet FindEntriesByRootWord(string rootWord)
         {
-            if (rootWord == null || !EntriesByRoot.TryGetValue(rootWord, out WordEntrySet result))
-            {
-                result = WordEntrySet.Empty;
-            }
+            var details = FindEntryDetailsByRootWord(rootWord);
+            return details.Length == 0
+                ? WordEntrySet.Empty
+                : WordEntrySet.Create(rootWord, details);
+        }
 
-            return result;
+        internal WordEntry FindFirstEntryByRootWord(string rootWord)
+        {
+            var details = FindEntryDetailsByRootWord(rootWord);
+            return details.Length == 0
+                ? null
+                : new WordEntry(rootWord, details[0]);
+        }
+
+        internal WordEntryDetail[] FindEntryDetailsByRootWord(string rootWord)
+        {
+            return (rootWord == null || !EntriesByRoot.TryGetValue(rootWord, out WordEntryDetail[] details))
+                ? ArrayEx<WordEntryDetail>.Empty
+                : details;
+        }
+
+        internal WordEntryDetail FindFirstEntryDetailByRootWord(string rootWord)
+        {
+            var details = FindEntryDetailsByRootWord(rootWord);
+            return details.Length == 0
+                ? null
+                : details[0];
+        }
+
+        internal bool ContainsEntriesForRootWord(string rootWord)
+        {
+            return rootWord != null && EntriesByRoot.ContainsKey(rootWord);
         }
     }
 }

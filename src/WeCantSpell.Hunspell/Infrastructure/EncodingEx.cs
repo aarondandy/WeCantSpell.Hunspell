@@ -7,31 +7,29 @@ namespace WeCantSpell.Hunspell.Infrastructure
     {
         public static readonly Encoding DefaultReadEncoding = Encoding.UTF8;
 
-        public static Encoding GetEncodingByName(string encodingName)
+        public static Encoding GetEncodingByName(string encodingName) =>
+            GetEncodingByName(new StringSlice(encodingName));
+
+        public static Encoding GetEncodingByName(StringSlice encodingName)
         {
-#if DEBUG
-            if (encodingName == null)
-            {
-                throw new ArgumentNullException(nameof(encodingName));
-            }
-#endif
-            if (string.IsNullOrEmpty(encodingName))
+            if (encodingName.IsEmpty)
             {
                 return null;
             }
 
-            if ("UTF-8".Equals(encodingName, StringComparison.OrdinalIgnoreCase) || "UTF8".Equals(encodingName, StringComparison.OrdinalIgnoreCase))
+            if (encodingName.Equals("UTF-8", StringComparison.OrdinalIgnoreCase) || encodingName.Equals("UTF8", StringComparison.OrdinalIgnoreCase))
             {
                 return Encoding.UTF8;
             }
 
+            var encodingNameString = encodingName.ToString();
             try
             {
-                return Encoding.GetEncoding(encodingName);
+                return Encoding.GetEncoding(encodingNameString);
             }
             catch (ArgumentException)
             {
-                return GetEncodingByAlternateNames(encodingName);
+                return GetEncodingByAlternateNames(encodingNameString);
             }
         }
 
@@ -40,7 +38,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             var spaceIndex = encodingName.IndexOf(' ');
             if (spaceIndex > 0)
             {
-                return GetEncodingByName(encodingName.Substring(0, spaceIndex));
+                return GetEncodingByName(encodingName.Subslice(0, spaceIndex));
             }
 
             if (encodingName.Length >= 4 && encodingName.StartsWith("ISO") && encodingName[3] != '-')

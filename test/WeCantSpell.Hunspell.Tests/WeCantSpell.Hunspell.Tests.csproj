@@ -69,7 +69,11 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\samples\*.*">
+    <None Include="..\..\samples\*.aff">
+      <Link>samples\%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\samples\*.dic">
       <Link>samples\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

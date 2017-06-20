@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.6
+VisualStudioVersion = 15.0.26430.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{7DB151C3-9662-414F-84EF-7C6BD40C8AC6}"
 EndProject
@@ -24,6 +24,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeCantSpell.Hunspell.Performance.TestHarness", "test\WeCantSpell.Hunspell.Performance.TestHarness\WeCantSpell.Hunspell.Performance.TestHarness.csproj", "{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeCantSpell.Hunspell.Performance.Comparison", "test\WeCantSpell.Hunspell.Performance.Comparison\WeCantSpell.Hunspell.Performance.Comparison.csproj", "{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeCantSpell.Hunspell.Performance.TestHarness.Core", "test\WeCantSpell.Hunspell.Performance.TestHarness.Core\WeCantSpell.Hunspell.Performance.TestHarness.Core.csproj", "{FFFDC9E9-D4AB-4D10-8D1B-0561FB98CAC1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +53,10 @@ Global
 		{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FFFDC9E9-D4AB-4D10-8D1B-0561FB98CAC1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FFFDC9E9-D4AB-4D10-8D1B-0561FB98CAC1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FFFDC9E9-D4AB-4D10-8D1B-0561FB98CAC1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FFFDC9E9-D4AB-4D10-8D1B-0561FB98CAC1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -61,6 +67,7 @@ Global
 		{0D9B92F4-F669-427A-95FB-14FC6A555973} = {97D2DB91-AE3A-44AE-9FA3-43557AA8F5FD}
 		{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE} = {97D2DB91-AE3A-44AE-9FA3-43557AA8F5FD}
 		{0EBAB771-D55F-430A-ADBD-EA81D97C94AD} = {97D2DB91-AE3A-44AE-9FA3-43557AA8F5FD}
+		{FFFDC9E9-D4AB-4D10-8D1B-0561FB98CAC1} = {97D2DB91-AE3A-44AE-9FA3-43557AA8F5FD}
 	EndGlobalSection
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true

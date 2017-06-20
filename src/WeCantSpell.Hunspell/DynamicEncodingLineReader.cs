@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 
 #if !NO_ASYNC
 using System.Threading.Tasks;
@@ -38,13 +37,6 @@ namespace WeCantSpell.Hunspell
 
             MaxPreambleLengthInBytes = PreambleEncodings.Max(e => e.GetPreamble().Length);
         }
-
-        private static readonly Regex SetEncodingRegex = new Regex(
-            @"^[\t ]*SET[\t ]+([^\t ]+)[\t ]*$",
-#if !NO_COMPILEDREGEX
-            RegexOptions.Compiled |
-#endif
-            RegexOptions.CultureInvariant);
 
         private static readonly Encoding[] PreambleEncodings;
         private static readonly int MaxPreambleLengthInBytes;
@@ -482,18 +474,47 @@ namespace WeCantSpell.Hunspell
             bufferIndex = revertedIndex;
         }
 
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private string ProcessLine(string rawLine)
         {
-            var setEncodingMatch = SetEncodingRegex.Match(rawLine);
-            if (setEncodingMatch.Success)
-            {
-                ChangeEncoding(setEncodingMatch.Groups[1].Value);
-            }
-
+            HandleLineForEncoding(rawLine);
             return rawLine;
         }
 
-        private void ChangeEncoding(string encodingName)
+        private void HandleLineForEncoding(string line)
+        {
+            // read through the initial whitespace
+            var startIndex = 0;
+            for (; startIndex < line.Length && StringEx.IsTabOrSpace(line[startIndex]); startIndex++) ;
+
+            if (startIndex == line.Length)
+            {
+                return; // empty or whitespace
+            }
+
+            if (line.Length - startIndex < 5
+                || line[startIndex] != 'S'
+                || line[++startIndex] != 'E'
+                || line[++startIndex] != 'T')
+            {
+                return; // not a set command
+            }
+
+            startIndex++;
+
+            // read the whitespace to find the encoding name
+            for (; startIndex < line.Length && StringEx.IsTabOrSpace(line[startIndex]); startIndex++) ;
+            
+            // read through the final trailing whitespace if any
+            var endIndex = line.Length - 1;
+            for (; endIndex > startIndex && StringEx.IsTabOrSpace(line[endIndex]); endIndex--) ;
+
+            ChangeEncoding(line.Subslice(startIndex, endIndex - startIndex + 1));
+        }
+
+        private void ChangeEncoding(StringSlice encodingName)
         {
             var newEncoding = EncodingEx.GetEncodingByName(encodingName);
             ChangeEncoding(newEncoding);

@@ -293,10 +293,8 @@ namespace WeCantSpell.Hunspell
                 {
                     return true;
                 }
-                if(Builder.EntriesByRoot == null)
-                {
-                    Builder.InitializeEntriesByRoot(-1);
-                }
+
+                Builder.InitializeEntriesByRoot(-1);
             }
 
             var parsed = ParsedWordLine.Parse(line);
@@ -350,10 +348,7 @@ namespace WeCantSpell.Hunspell
             {
                 if (IntEx.TryParseInvariant(initLineMatch.Groups[1].Value, out int expectedSize))
                 {
-                    if (Builder.EntriesByRoot == null)
-                    {
-                        Builder.InitializeEntriesByRoot(expectedSize);
-                    }
+                    Builder.InitializeEntriesByRoot(expectedSize);
 
                     return true;
                 }
@@ -411,49 +406,34 @@ namespace WeCantSpell.Hunspell
                 }
             }
 
-            if (Builder.EntriesByRoot.TryGetValue(word, out List<WordEntry> wordEntries))
-            {
-                if (wordEntries.Count != 0)
-                {
-                    word = wordEntries[0].Word;
-                }
-            }
-            else
-            {
-                wordEntries = new List<WordEntry>(2);
-                Builder.EntriesByRoot.Add(word, wordEntries);
-            }
+            var details = Builder.GetOrCreateDetailList(word);
 
             var upperCaseHomonym = false;
             if (!onlyUpperCase)
             {
-                for (var i = 0; i < wordEntries.Count; i++)
+                for (var i = 0; i < details.Count; i++)
                 {
-                    var existingEntry = wordEntries[i];
+                    var existingEntry = details[i];
                     if (existingEntry.ContainsFlag(SpecialFlags.OnlyUpcaseFlag))
                     {
-                        wordEntries[i] = new WordEntry(
-                            existingEntry.Word,
-                            flags,
-                            existingEntry.Morphs,
-                            existingEntry.Options);
+                        details[i] = Builder.Dedup(new WordEntryDetail(flags, existingEntry.Morphs, existingEntry.Options));
                         return false;
                     }
                 }
             }
-            else if (wordEntries.Count != 0)
+            else if (details.Count != 0)
             {
                 upperCaseHomonym = true;
             }
 
             if (!upperCaseHomonym)
             {
-                wordEntries.Add(
-                    new WordEntry(
-                        word,
-                        flags,
-                        Builder.Dedup(MorphSet.TakeArray(morphs)),
-                        options));
+                details.Add(
+                    Builder.Dedup(
+                        new WordEntryDetail(
+                            flags,
+                            Builder.Dedup(MorphSet.TakeArray(morphs)),
+                            options)));
             }
 
             return false;
@@ -498,7 +478,7 @@ namespace WeCantSpell.Hunspell
 
             public static ParsedWordLine Parse(string line)
             {
-                var firstNonDelimiterPosition = StringEx.IndexOfNonSpaceOrTab(line, 0);
+                var firstNonDelimiterPosition = StringEx.IndexOfNonTabOrSpace(line, 0);
                 if (firstNonDelimiterPosition >= 0)
                 {
                     var endOfWordAndFlagsPosition = FindIndexOfFirstMorphByColonChar(line, firstNonDelimiterPosition);
@@ -511,7 +491,7 @@ namespace WeCantSpell.Hunspell
                         }
                     }
 
-                    while(endOfWordAndFlagsPosition > firstNonDelimiterPosition && StringEx.IsSpaceOrTab(line[endOfWordAndFlagsPosition - 1]))
+                    while(endOfWordAndFlagsPosition > firstNonDelimiterPosition && StringEx.IsTabOrSpace(line[endOfWordAndFlagsPosition - 1]))
                     {
                         --endOfWordAndFlagsPosition;
                     }
@@ -554,7 +534,7 @@ namespace WeCantSpell.Hunspell
                 while ((index = text.IndexOf(':', index)) >= 0)
                 {
                     var checkLocation = index - 3;
-                    if (checkLocation >= 0 && StringEx.IsSpaceOrTab(text[checkLocation]))
+                    if (checkLocation >= 0 && StringEx.IsTabOrSpace(text[checkLocation]))
                     {
                         return checkLocation;
                     }

@@ -31,12 +31,6 @@ namespace WeCantSpell.Hunspell
 #endif
             RegexOptions.CultureInvariant;
 
-        private static readonly Regex LineStringParseRegex = new Regex(@"^[ \t]*(\w+)[ \t]+(.+)[ \t]*$", DefaultRegexOptions);
-
-        private static readonly Regex SingleCommandParseRegex = new Regex(@"^[ \t]*(\w+)[ \t]*$", DefaultRegexOptions);
-
-        private static readonly Regex CommentLineRegex = new Regex(@"^\s*(#|//)", DefaultRegexOptions | RegexOptions.ExplicitCapture);
-
         private static readonly Regex AffixLineRegex = new Regex(
             @"^[\t ]*([^\t ]+)[\t ]+(?:([^\t ]+)[\t ]+([^\t ]+)|([^\t ]+)[\t ]+([^\t ]+)[\t ]+([^\t ]+)(?:[\t ]+(.+))?)[\t ]*(?:[#].*)?$",
             DefaultRegexOptions);
@@ -246,28 +240,48 @@ namespace WeCantSpell.Hunspell
 
         private bool ParseLine(string line)
         {
-            if (StringEx.IsNullOrWhiteSpace(line) || CommentLineRegex.IsMatch(line))
+            // read through the initial ^[ \t]*
+            var commandStartIndex = 0;
+            for (; commandStartIndex < line.Length && StringEx.IsTabOrSpace(line[commandStartIndex]); commandStartIndex++) ;
+
+            if (commandStartIndex == line.Length || StringEx.IsCommentPrefix(line[commandStartIndex]))
             {
-                return true;
+                return true; // empty, whitespace, or comment
             }
 
-            var singleCommandParsed = SingleCommandParseRegex.Match(line);
-            if (singleCommandParsed.Success
-                && FileBitFlagCommandMappings.TryGetValue(singleCommandParsed.Groups[1].Value, out AffixConfigOptions option))
+            // read through the final [ \t]*$
+            var lineEndIndex = line.Length - 1;
+            for (; lineEndIndex > commandStartIndex && StringEx.IsTabOrSpace(line[lineEndIndex]); lineEndIndex--) ;
+
+            // find the end of the command
+            var commandEndIndex = commandStartIndex;
+            for (; commandEndIndex <= lineEndIndex && !StringEx.IsTabOrSpace(line[commandEndIndex]); commandEndIndex++) ;
+
+            // first command exists between [lineStartIndex,commandEndIndex)
+            var parameterStartIndex = commandEndIndex;
+            for (; parameterStartIndex <= lineEndIndex && StringEx.IsTabOrSpace(line[parameterStartIndex]); parameterStartIndex++) ;
+
+            var command = line.Substring(commandStartIndex, commandEndIndex - commandStartIndex);
+
+            if (parameterStartIndex <= lineEndIndex)
             {
-                Builder.EnableOptions(option);
-                return true;
+                if (TryHandleParameterizedCommand(
+                        command,
+                        line.Subslice(parameterStartIndex, lineEndIndex - parameterStartIndex + 1)))
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                if (FileBitFlagCommandMappings.TryGetValue(command, out AffixConfigOptions option))
+                {
+                    Builder.EnableOptions(option);
+                    return true;
+                }
             }
 
-            var multiPartCommandParsed = LineStringParseRegex.Match(line);
-            if (multiPartCommandParsed.Success
-                && TryHandleParameterizedCommand(multiPartCommandParsed.Groups[1].Value, multiPartCommandParsed.Groups[2].Value))
-            {
-                return true;
-            }
-
-            Builder.LogWarning("Failed to parse line: " + line);
-            return false;
+            return LogWarning("Failed to parse line: " + line);
         }
 
 #if !NO_INLINE
@@ -297,22 +311,21 @@ namespace WeCantSpell.Hunspell
             }
         }
 
-        private bool TryHandleParameterizedCommand(string commandName, string parameters)
+        private bool TryHandleParameterizedCommand(string commandName, StringSlice parameters)
         {
 #if DEBUG
             if (commandName == null)
             {
                 throw new ArgumentNullException(nameof(commandName));
             }
-            if (parameters == null)
+            if (parameters.IsEmpty)
             {
-                throw new ArgumentNullException(nameof(parameters));
+                throw new ArgumentException(nameof(parameters));
             }
 #endif
             if (!CommandMap.TryGetValue(commandName, out AffixReaderCommandKind command))
             {
-                Builder.LogWarning($"Unknown command {commandName} with params: {parameters}");
-                return false;
+                return LogWarning($"Unknown command {commandName} with params: {parameters}");
             }
 
             switch (command)
@@ -329,14 +342,13 @@ namespace WeCantSpell.Hunspell
                     var encoding = EncodingEx.GetEncodingByName(parameters);
                     if (encoding == null)
                     {
-                        Builder.LogWarning("Failed to get encoding: " + parameters);
-                        return false;
+                        return LogWarning("Failed to get encoding: " + parameters);
                     }
 
                     Builder.Encoding = encoding;
                     return true;
                 case AffixReaderCommandKind.Language:
-                    Builder.Language = Builder.Dedup(parameters.Trim()); // TODO: would this trim ever have an impact?
+                    Builder.Language = Builder.Dedup(parameters);
                     Builder.Culture = GetCultureFromLanguage(Builder.Language);
                     return true;
                 case AffixReaderCommandKind.CompoundSyllableNum:
@@ -367,8 +379,7 @@ namespace WeCantSpell.Hunspell
                     Builder.CompoundMin = IntEx.TryParseInvariant(parameters);
                     if (!Builder.CompoundMin.HasValue)
                     {
-                        Builder.LogWarning("Failed to parse CompoundMin: " + parameters);
-                        return false;
+                        return LogWarning("Failed to parse CompoundMin: " + parameters);
                     }
 
                     if (Builder.CompoundMin.GetValueOrDefault() < 1)
@@ -417,7 +428,7 @@ namespace WeCantSpell.Hunspell
                 case AffixReaderCommandKind.Break:
                     return TryParseStandardListItem(EntryListType.Break, parameters, ref Builder.BreakPoints, TryParseBreak);
                 case AffixReaderCommandKind.Version:
-                    Builder.Version = parameters;
+                    Builder.Version = parameters.ToString();
                     return true;
                 case AffixReaderCommandKind.MaxNgramSuggestions:
                     Builder.MaxNgramSuggestions = IntEx.TryParseInvariant(parameters);
@@ -452,12 +463,11 @@ namespace WeCantSpell.Hunspell
                 case AffixReaderCommandKind.AliasM:
                     return TryParseStandardListItem(EntryListType.AliasM, parameters, ref Builder.AliasM, TryParseAliasM);
                 default:
-                    Builder.LogWarning($"Unknown parsed command {command}");
-                    return false;
+                    return LogWarning($"Unknown parsed command {command}");
             }
         }
 
-        private bool TryParseStandardListItem<T>(EntryListType entryListType, string parameterText, ref List<T> entries, Func<string, List<T>, bool> parse)
+        private bool TryParseStandardListItem<T>(EntryListType entryListType, StringSlice parameterText, ref List<T> entries, Func<StringSlice, List<T>, bool> parse)
         {
             if (!IsInitialized(entryListType))
             {
@@ -482,7 +492,7 @@ namespace WeCantSpell.Hunspell
             return parse(parameterText, entries);
         }
 
-        private bool TryParseCompoundSyllable(string parameters)
+        private bool TryParseCompoundSyllable(StringSlice parameters)
         {
             var parts = parameters.SliceOnTabOrSpace();
 
@@ -494,8 +504,7 @@ namespace WeCantSpell.Hunspell
                 }
                 else
                 {
-                    Builder.LogWarning("Failed to parse CompoundMaxSyllable value from: " + parameters);
-                    return false;
+                    return LogWarning("Failed to parse CompoundMaxSyllable value from: " + parameters);
                 }
             }
 
@@ -544,26 +553,25 @@ namespace WeCantSpell.Hunspell
 #endif
         }
 
-        private bool TryParsePhone(string parameterText, List<PhoneticEntry> entries)
+        private bool TryParsePhone(StringSlice parameterText, List<PhoneticEntry> entries)
         {
-            var parts = parameterText.SplitOnSpaceOrTab();
-            if (parts.Length == 0)
+            var parts = parameterText.SliceOnTabOrSpace();
+            if (parts.Count == 0)
             {
-                Builder.LogWarning("Failed to parse phone line: " + parameterText);
-                return false;
+                return LogWarning("Failed to parse phone line: " + parameterText);
             }
 
             entries.Add(
                 new PhoneticEntry(
                     Builder.Dedup(parts[0]),
-                    parts.Length >= 2 ? Builder.Dedup(parts[1].Replace("_", string.Empty)) : string.Empty));
+                    parts.Count >= 2 ? Builder.Dedup(parts[1].ReplaceString("_", string.Empty)) : string.Empty));
 
             return true;
         }
 
-        private bool TryParseMapEntry(string parameterText, List<MapEntry> entries)
+        private bool TryParseMapEntry(StringSlice parameterText, List<MapEntry> entries)
         {
-            var values = new List<string>(parameterText.Length);
+            var values = new List<StringSlice>(parameterText.Length);
 
             for (int k = 0; k < parameterText.Length; ++k)
             {
@@ -580,15 +588,15 @@ namespace WeCantSpell.Hunspell
                     }
                 }
 
-                values.Add(Builder.Dedup(parameterText.Substring(chb, che - chb)));
+                values.Add(parameterText.Subslice(chb, che - chb));
             }
 
-            entries.Add(MapEntry.Create(values));
+            entries.Add(MapEntry.TakeArray(Builder.DedupIntoArray(values)));
 
             return true;
         }
 
-        private bool TryParseConv(string parameterText, EntryListType entryListType, ref Dictionary<string, MultiReplacementEntry> entries)
+        private bool TryParseConv(StringSlice parameterText, EntryListType entryListType, ref Dictionary<string, MultiReplacementEntry> entries)
         {
             if (!IsInitialized(entryListType))
             {
@@ -610,11 +618,10 @@ namespace WeCantSpell.Hunspell
                 entries = new Dictionary<string, MultiReplacementEntry>();
             }
 
-            var parts = parameterText.SplitOnSpaceOrTab();
-            if (parts.Length < 2)
+            var parts = parameterText.SliceOnTabOrSpace();
+            if (parts.Count < 2)
             {
-                Builder.LogWarning($"Bad {entryListType}: {parameterText}");
-                return false;
+                return LogWarning($"Bad {entryListType}: {parameterText}");
             }
 
             entries.AddReplacementEntry(Builder.Dedup(parts[0]), Builder.Dedup(parts[1]));
@@ -622,35 +629,36 @@ namespace WeCantSpell.Hunspell
             return true;
         }
 
-        private bool TryParseBreak(string parameterText, List<string> entries)
+        private bool TryParseBreak(StringSlice parameterText, List<string> entries)
         {
             entries.Add(Builder.Dedup(parameterText));
             return true;
         }
 
-        private bool TryParseAliasF(string parameterText, List<FlagSet> entries)
+        private bool TryParseAliasF(StringSlice parameterText, List<FlagSet> entries)
         {
             entries.Add(Builder.Dedup(FlagSet.TakeArray(ParseFlagsInOrder(parameterText))));
             return true;
         }
 
-        private bool TryParseAliasM(string parameterText, List<MorphSet> entries)
+        private bool TryParseAliasM(StringSlice parameterText, List<MorphSet> entries)
         {
+            List<StringSlice> parts;
             if (EnumEx.HasFlag(Builder.Options, AffixConfigOptions.ComplexPrefixes))
             {
-                parameterText = parameterText.Reverse();
+                parts = parameterText.ReverseString().SliceOnTabOrSpace();
+            }
+            else
+            {
+                parts = parameterText.SliceOnTabOrSpace();
             }
 
-            var parts = parameterText.SplitOnSpaceOrTab();
-
-            Builder.DedupInPlace(parts);
-
-            entries.Add(Builder.Dedup(MorphSet.TakeArray(parts)));
+            entries.Add(Builder.Dedup(MorphSet.TakeArray(Builder.DedupIntoArray(parts))));
 
             return true;
         }
 
-        private bool TryParseCompoundRuleIntoList(string parameterText, List<CompoundRule> entries)
+        private bool TryParseCompoundRuleIntoList(StringSlice parameterText, List<CompoundRule> entries)
         {
             var entryBuilder = new List<FlagValue>();
 
@@ -690,6 +698,11 @@ namespace WeCantSpell.Hunspell
             return true;
         }
 
+        private bool TryParseAffixIntoList<TEntry>(StringSlice parameterText, ref List<AffixEntryGroup.Builder<TEntry>> groups)
+            where TEntry : AffixEntry, new()
+            =>
+            TryParseAffixIntoList<TEntry>(parameterText.ToString(), ref groups);
+
         private bool TryParseAffixIntoList<TEntry>(string parameterText, ref List<AffixEntryGroup.Builder<TEntry>> groups)
             where TEntry : AffixEntry, new()
         {
@@ -701,16 +714,14 @@ namespace WeCantSpell.Hunspell
             var lineMatch = AffixLineRegex.Match(parameterText);
             if (!lineMatch.Success)
             {
-                Builder.LogWarning("Failed to parse affix line: " + parameterText);
-                return false;
+                return LogWarning("Failed to parse affix line: " + parameterText);
             }
 
             var lineMatchGroups = lineMatch.Groups;
 
             if (!TryParseFlag(lineMatchGroups[1].Value, out FlagValue characterFlag))
             {
-                Builder.LogWarning($"Failed to parse affix flag for {lineMatchGroups[1].Value} from: {parameterText}");
-                return false;
+                return LogWarning($"Failed to parse affix flag for {lineMatchGroups[1].Value} from: {parameterText}");
             }
 
             var affixGroup = groups.FindLast(g => g.AFlag == characterFlag);
@@ -720,8 +731,7 @@ namespace WeCantSpell.Hunspell
             {
                 if (affixGroup != null)
                 {
-                    Builder.LogWarning($"Duplicate affix group definition for {affixGroup.AFlag} from: {parameterText}");
-                    return false;
+                    return LogWarning($"Duplicate affix group definition for {affixGroup.AFlag} from: {parameterText}");
                 }
 
                 var options = AffixEntryOptions.None;
@@ -781,8 +791,7 @@ namespace WeCantSpell.Hunspell
                         }
                         else
                         {
-                            Builder.LogWarning($"Failed to parse contclasses from : {parameterText}");
-                            return false;
+                            return LogWarning($"Failed to parse contclasses from : {parameterText}");
                         }
                     }
                     else
@@ -853,8 +862,7 @@ namespace WeCantSpell.Hunspell
                         }
                         else
                         {
-                            Builder.LogWarning($"Failed to parse morph {morphAffixText} from: {parameterText}");
-                            return false;
+                            return LogWarning($"Failed to parse morph {morphAffixText} from: {parameterText}");
                         }
                     }
                     else
@@ -864,7 +872,7 @@ namespace WeCantSpell.Hunspell
                             morphAffixText = morphAffixText.Reverse();
                         }
 
-                        morph = Builder.Dedup(MorphSet.TakeArray(Builder.DedupInPlace(morphAffixText.SplitOnSpaceOrTab())));
+                        morph = Builder.Dedup(MorphSet.TakeArray(Builder.DedupInPlace(morphAffixText.SplitOnTabOrSpace())));
                     }
                 }
                 else
@@ -897,8 +905,7 @@ namespace WeCantSpell.Hunspell
                 return true;
             }
 
-            Builder.LogWarning("Affix line not fully parsed: " + parameterText);
-            return false;
+            return LogWarning("Affix line not fully parsed: " + parameterText);
         }
 
         private static string ReverseCondition(string conditionText)
@@ -967,13 +974,12 @@ namespace WeCantSpell.Hunspell
             return StringBuilderPool.GetStringAndReturn(chars);
         }
 
-        private bool TryParseReplacements(string parameterText, List<SingleReplacement> entries)
+        private bool TryParseReplacements(StringSlice parameterText, List<SingleReplacement> entries)
         {
             var parameters = parameterText.SliceOnTabOrSpace();
             if (parameters.Count == 0)
             {
-                Builder.LogWarning("Failed to parse replacements from: " + parameterText);
-                return false;
+                return LogWarning("Failed to parse replacements from: " + parameterText);
             }
 
             var patternBuilder = StringBuilderPool.Get(parameters[0]);
@@ -1005,13 +1011,12 @@ namespace WeCantSpell.Hunspell
             return true;
         }
 
-        private bool TryParseCheckCompoundPatternIntoCompoundPatterns(string parameterText, List<PatternEntry> entries)
+        private bool TryParseCheckCompoundPatternIntoCompoundPatterns(StringSlice parameterText, List<PatternEntry> entries)
         {
             var parameters = parameterText.SliceOnTabOrSpace();
             if (parameters.Count == 0)
             {
-                Builder.LogWarning("Failed to parse compound pattern from: " + parameterText);
-                return false;
+                return LogWarning("Failed to parse compound pattern from: " + parameterText);
             }
 
             var pattern = parameters[0];
@@ -1022,8 +1027,7 @@ namespace WeCantSpell.Hunspell
             {
                 if (!TryParseFlag(pattern.Subslice(slashIndex + 1), out condition))
                 {
-                    Builder.LogWarning($"Failed to parse compound pattern 1 {pattern} from: {parameterText}");
-                    return false;
+                    return LogWarning($"Failed to parse compound pattern 1 {pattern} from: {parameterText}");
                 }
 
                 pattern = pattern.Subslice(0, slashIndex);
@@ -1041,8 +1045,7 @@ namespace WeCantSpell.Hunspell
                 {
                     if (!TryParseFlag(pattern2.Subslice(slashIndex + 1), out condition2))
                     {
-                        Builder.LogWarning($"Failed to parse compound pattern 2 {pattern2} from: {parameterText}");
-                        return false;
+                        return LogWarning($"Failed to parse compound pattern 2 {pattern2} from: {parameterText}");
                     }
 
                     pattern2 = pattern2.Subslice(0, slashIndex);
@@ -1065,20 +1068,20 @@ namespace WeCantSpell.Hunspell
             return true;
         }
 
-        private bool TrySetFlagMode(string modeText)
+        private bool TrySetFlagMode(StringSlice modeTextSlice)
         {
-            if (string.IsNullOrEmpty(modeText))
+            if (modeTextSlice.IsEmpty)
             {
-                Builder.LogWarning($"Attempt to set empty flag mode.");
-                return false;
+                return LogWarning("Attempt to set empty flag mode.");
             }
+
+            var modeText = modeTextSlice.ToString();
 
             if (FlagModeParameterMappings.TryGetValue(modeText, out FlagMode mode))
             {
                 if (mode == Builder.FlagMode)
                 {
-                    Builder.LogWarning($"Redundant {nameof(Builder.FlagMode)}: {modeText}");
-                    return false;
+                    return LogWarning($"Redundant {nameof(Builder.FlagMode)}: {modeText}");
                 }
 
                 Builder.FlagMode = mode;
@@ -1097,9 +1100,14 @@ namespace WeCantSpell.Hunspell
                     return true;
                 }
 
-                Builder.LogWarning($"Unknown {nameof(FlagMode)}: {modeText}");
-                return false;
+                return LogWarning($"Unknown {nameof(FlagMode)}: {modeText}");
             }
+        }
+
+        private bool LogWarning(string text)
+        {
+            Builder.LogWarning(text);
+            return false;
         }
 
         private string ReDecodeConvertedStringAsUtf8(string decoded) =>
@@ -1107,14 +1115,6 @@ namespace WeCantSpell.Hunspell
 
         private string ReDecodeConvertedStringAsUtf8(StringSlice decoded) =>
             HunspellTextFunctions.ReDecodeConvertedStringAsUtf8(decoded, Builder.Encoding ?? Reader.CurrentEncoding);
-
-        private FlagValue[] ParseFlagsInOrder(string text)
-        {
-            var flagMode = Builder.FlagMode;
-            return flagMode == FlagMode.Uni
-                ? FlagValue.ParseFlagsInOrder(ReDecodeConvertedStringAsUtf8(text), FlagMode.Char)
-                : FlagValue.ParseFlagsInOrder(text, flagMode);
-        }
 
         private FlagValue[] ParseFlagsInOrder(StringSlice text)
         {

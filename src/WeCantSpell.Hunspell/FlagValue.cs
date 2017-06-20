@@ -326,6 +326,14 @@ namespace WeCantSpell.Hunspell
             get => value == ZeroValue;
         }
 
+        internal bool IsWildcard
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get => value == '*' || value == '?';
+        }
+
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif

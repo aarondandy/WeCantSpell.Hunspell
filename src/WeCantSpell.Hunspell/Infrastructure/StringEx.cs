@@ -13,29 +13,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static bool IsNullOrWhiteSpace(string value)
-        {
-#if NO_STRINGISNULLORWHITESPACE
-            if (value != null)
-            {
-                for (var i = 0; i < value.Length; i++)
-                {
-                    if (!char.IsWhiteSpace(value[i]))
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-#else
-            return string.IsNullOrWhiteSpace(value);
-#endif
-        }
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static bool StartsWith(this string @this, char character)
         {
 #if DEBUG
@@ -64,7 +41,12 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static string[] SplitOnSpaceOrTab(this string @this)
+        public static bool IsCommentPrefix(char c) => c == '#' || c == '/';
+
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static string[] SplitOnTabOrSpace(this string @this)
         {
 #if DEBUG
             if (@this == null)
@@ -78,9 +60,9 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static bool IsSpaceOrTab(char c) => c == ' ' || c == '\t';
+        public static bool IsTabOrSpace(char c) => c == ' ' || c == '\t';
 
-        public static int IndexOfSpaceOrTab(string text, int startIndex)
+        public static int IndexOfTabOrSpace(string text, int startIndex)
         {
 #if DEBUG
             if (text == null)
@@ -90,7 +72,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #endif
             for (var i = startIndex; i < text.Length; i++)
             {
-                if (IsSpaceOrTab(text[i]))
+                if (IsTabOrSpace(text[i]))
                 {
                     return i;
                 }
@@ -99,7 +81,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return -1;
         }
 
-        public static int IndexOfNonSpaceOrTab(string text, int startIndex)
+        public static int IndexOfNonTabOrSpace(string text, int startIndex)
         {
 #if DEBUG
             if (text == null)
@@ -109,7 +91,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #endif
             for (var i = startIndex; i < text.Length; i++)
             {
-                if (!IsSpaceOrTab(text[i]))
+                if (!IsTabOrSpace(text[i]))
                 {
                     return i;
                 }
@@ -211,6 +193,32 @@ namespace WeCantSpell.Hunspell.Infrastructure
             }
 #endif
             return length <= 0 || string.CompareOrdinal(a, aOffset, b, bOffset, length) == 0;
+        }
+
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static bool EqualsOffset(string a, int aOffset, string b, int bOffset, int length, StringComparison comparisonType)
+        {
+#if DEBUG
+            if (a == null)
+            {
+                throw new ArgumentNullException(nameof(a));
+            }
+            if (b == null)
+            {
+                throw new ArgumentNullException(nameof(b));
+            }
+            if (aOffset < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(aOffset));
+            }
+            if (bOffset < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bOffset));
+            }
+#endif
+            return length <= 0 || string.Compare(a, aOffset, b, bOffset, length, comparisonType) == 0;
         }
 
 #if !NO_INLINE
