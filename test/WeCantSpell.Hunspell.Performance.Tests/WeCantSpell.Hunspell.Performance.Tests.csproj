@@ -35,14 +35,14 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="NBench, Version=1.0.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\NBench.Runner.1.0.1\lib\net45\NBench.dll</HintPath>
+    <Reference Include="NBench, Version=1.0.4.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\NBench.Runner.1.0.4\lib\net452\NBench.dll</HintPath>
     </Reference>
-    <Reference Include="NBench.PerformanceCounters, Version=1.0.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\NBench.PerformanceCounters.1.0.1\lib\net452\NBench.PerformanceCounters.dll</HintPath>
+    <Reference Include="NBench.PerformanceCounters, Version=1.0.4.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\NBench.PerformanceCounters.1.0.4\lib\net452\NBench.PerformanceCounters.dll</HintPath>
     </Reference>
-    <Reference Include="NBench.Runner, Version=1.0.1.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\..\packages\NBench.Runner.1.0.1\lib\net45\NBench.Runner.exe</HintPath>
+    <Reference Include="NBench.Runner, Version=1.0.4.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\..\packages\NBench.Runner.1.0.4\lib\net452\NBench.Runner.exe</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
