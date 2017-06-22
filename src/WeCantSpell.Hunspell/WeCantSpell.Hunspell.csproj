@@ -28,7 +28,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net35' ">
-    <DefineConstants>$(DefineConstants);NO_METHODIMPL;NO_INLINE;NO_READONLYCOLLECTIONS;NO_ASYNC;NO_COMPAREINFO_HASHCODE;NO_CULTURENOTFOUNDEXCEPTION;NO_STRINGBUILDER_CLEAR;NO_STRINGISNULLORWHITESPACE;NO_ARRAY_EMPTY</DefineConstants>
+    <DefineConstants>$(DefineConstants);NO_METHODIMPL;NO_INLINE;NO_READONLYCOLLECTIONS;NO_ASYNC;NO_COMPAREINFO_HASHCODE;NO_CULTURENOTFOUNDEXCEPTION;NO_STRINGBUILDER_CLEAR;NO_STRINGISNULLORWHITESPACE;NO_ARRAY_EMPTY;NO_VOLATILE</DefineConstants>
     <FrameworkPathOverride Condition="'$(FrameworkPathOverride35)' != ''">$(FrameworkPathOverride35)</FrameworkPathOverride>
   </PropertyGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net35' ">
@@ -61,6 +61,7 @@
     <Reference Include="System.Text.Encoding" />
     <Reference Include="System.Text.Encoding.Extensions" />
     <Reference Include="System.Text.RegularExpressions" />
+    <Reference Include="System.Threading" />
     <Reference Include="System.Threading.Tasks" />
   </ItemGroup>
 

@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+### Changes
+- Improved string performance
+
 ## 1.1.0 - 2017-06-19
 ### Added
 - New `WordEntryDetail` type to simplify storage.

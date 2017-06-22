@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
@@ -8,14 +9,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
     {
         private const int MaxCachedBuilderCapacity = WordList.MaxWordLen;
 
-        [ThreadStatic]
-        private static StringBuilder PrimaryCache;
-
-        [ThreadStatic]
-        private static StringBuilder SecondaryCache;
-
-        [ThreadStatic]
-        private static StringBuilder TertiaryCache;
+        private static StringBuilder Cache;
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -51,20 +45,20 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #endif
         public static void Return(StringBuilder builder)
         {
-            if (builder != null && builder.Capacity <= MaxCachedBuilderCapacity)
+#if DEBUG
+            if (builder == null)
             {
-                if (PrimaryCache == null)
-                {
-                    PrimaryCache = builder;
-                }
-                else if (SecondaryCache == null)
-                {
-                    SecondaryCache = builder;
-                }
-                else
-                {
-                    TertiaryCache = builder;
-                }
+                throw new ArgumentNullException(nameof(builder));
+            }
+#endif
+
+            if (builder.Capacity <= MaxCachedBuilderCapacity)
+            {
+#if NO_VOLATILE
+                Cache = builder;
+#else
+                Volatile.Write(ref Cache, builder);
+#endif
             }
         }
 
@@ -78,59 +72,26 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return value;
         }
 
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private static StringBuilder GetClearedBuilder()
         {
-            var result = ReferenceHelpers.Steal(ref PrimaryCache);
-            if (result == null)
-            {
-                result = ReferenceHelpers.Steal(ref SecondaryCache);
-                if (result == null)
-                {
-                    result = ReferenceHelpers.Steal(ref TertiaryCache);
-                    if (result == null)
-                    {
-                        return new StringBuilder();
-                    }
-                }
-            }
-
-            return result.Clear();
+            var taken = Interlocked.Exchange(ref Cache, null);
+            return taken != null
+                ? taken.Clear()
+                : new StringBuilder();
         }
 
-        private static StringBuilder GetClearedBuilderWithCapacity(int capacity)
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static StringBuilder GetClearedBuilderWithCapacity(int minimumCapacity)
         {
-            if (capacity > MaxCachedBuilderCapacity)
-            {
-                return new StringBuilder(capacity);
-            }
-
-            var result = StealForCapacity(ref PrimaryCache, capacity);
-            if (result == null)
-            {
-                result = StealForCapacity(ref SecondaryCache, capacity);
-                if (result == null)
-                {
-                    result = StealForCapacity(ref TertiaryCache, capacity);
-                    if (result == null)
-                    {
-                        return new StringBuilder(capacity);
-                    }
-                }
-            }
-
-            return result.Clear();
-        }
-
-        private static StringBuilder StealForCapacity(ref StringBuilder source, int minimumCapacity)
-        {
-            var taken = source;
-            if (taken == null || source.Capacity < minimumCapacity)
-            {
-                return null;
-            }
-
-            source = null;
-            return taken;
+            var taken = Interlocked.Exchange(ref Cache, null);
+            return (taken != null && taken.Capacity >= minimumCapacity)
+                ? taken.Clear()
+                :  new StringBuilder(minimumCapacity);
         }
     }
 }
