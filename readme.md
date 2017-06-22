@@ -82,10 +82,10 @@ Construct from streams:
 ```csharp
 static void Main(string[] args)
 {
-    using(var dictionaryString = File.OpenRead(@"English (British).dic"))
+    using(var dictionaryStream = File.OpenRead(@"English (British).dic"))
     using(var affixStream = File.OpenRead(@"English (British).aff"))
     {
-        var dictionary = WordList.CreateFromStreams(dictionaryString, affixStream);
+        var dictionary = WordList.CreateFromStreams(dictionaryStream, affixStream);
         bool notOk = dictionary.Check("teh");
     }
 }
