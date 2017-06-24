@@ -2,7 +2,7 @@
 using System.IO;
 using System.Linq;
 
-namespace WeCantSpell.Hunspell.Performance.Tests
+namespace WeCantSpell.Hunspell.Benchmarking.LongRunning
 {
     public class AffixFileLoadPerfSpecs
     {
@@ -32,7 +32,7 @@ namespace WeCantSpell.Hunspell.Performance.Tests
         [CounterThroughputAssertion(nameof(AffixFilesLoaded), MustBe.GreaterThanOrEqualTo, 5)]
         public void Benchmark(BenchmarkContext context)
         {
-            foreach(var filePath in AffixFilePaths)
+            foreach (var filePath in AffixFilePaths)
             {
                 AffixReader.ReadFile(filePath);
                 AffixFilesLoaded.Increment();

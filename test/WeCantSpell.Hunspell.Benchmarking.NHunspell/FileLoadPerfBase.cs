@@ -2,7 +2,7 @@
 using System.Linq;
 using NBench;
 
-namespace WeCantSpell.Hunspell.Performance.Comparison
+namespace WeCantSpell.Hunspell.Benchmarking.NHunspell
 {
     public abstract class FileLoadPerfBase
     {

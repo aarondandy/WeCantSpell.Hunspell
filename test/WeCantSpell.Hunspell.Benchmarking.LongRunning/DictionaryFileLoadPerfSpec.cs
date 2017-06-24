@@ -2,7 +2,7 @@
 using System.IO;
 using System.Linq;
 
-namespace WeCantSpell.Hunspell.Performance.Tests
+namespace WeCantSpell.Hunspell.Benchmarking.LongRunning
 {
     public class DictionaryFileLoadPerfSpec
     {
@@ -41,7 +41,7 @@ namespace WeCantSpell.Hunspell.Performance.Tests
         [CounterThroughputAssertion(nameof(DictionaryFilesLoaded), MustBe.GreaterThanOrEqualTo, 2)]
         public void Benchmark(BenchmarkContext context)
         {
-            foreach(var testItem in DictionaryLoadArguments)
+            foreach (var testItem in DictionaryLoadArguments)
             {
                 WordListReader.ReadFile(testItem.DictionaryFilePath, testItem.Affix);
                 DictionaryFilesLoaded.Increment();

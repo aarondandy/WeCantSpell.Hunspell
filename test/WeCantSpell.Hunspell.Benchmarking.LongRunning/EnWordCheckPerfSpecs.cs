@@ -1,6 +1,6 @@
 ﻿using NBench;
 
-namespace WeCantSpell.Hunspell.Performance.Tests
+namespace WeCantSpell.Hunspell.Benchmarking.LongRunning
 {
     public class EnWordCheckPerfSpecs : EnWordPerfBase
     {

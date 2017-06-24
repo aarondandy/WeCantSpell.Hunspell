@@ -1,14 +1,13 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using NBench;
 
-namespace WeCantSpell.Hunspell.Performance.Comparison
+namespace WeCantSpell.Hunspell.Benchmarking.NHunspell
 {
-    public class WordCheckNHunspellPerfSpec : EnWordPerfBase, IDisposable
+    public class WordCheckWeCantSpellHunspellPerfSpec : EnWordPerfBase
     {
         private Counter WordsChecked;
 
-        private NHunspell.Hunspell Checker;
+        private WordList Checker;
 
         [PerfSetup]
         public override void Setup(BenchmarkContext context)
@@ -17,21 +16,13 @@ namespace WeCantSpell.Hunspell.Performance.Comparison
 
             var testAssemblyPath = Path.GetFullPath(GetType().Assembly.Location);
             var filesDirectory = Path.Combine(Path.GetDirectoryName(testAssemblyPath), "files/");
-            var dictionaryFilePath = Path.Combine(filesDirectory, "English (American).dic");
-            var affixFilePath = Path.ChangeExtension(dictionaryFilePath, "aff");
-            Checker = new NHunspell.Hunspell(affixFilePath, dictionaryFilePath);
+            Checker = WordList.CreateFromFiles(Path.Combine(filesDirectory, "English (American).dic"));
 
             WordsChecked = context.GetCounter(nameof(WordsChecked));
         }
 
-        [PerfCleanup]
-        public void Dispose()
-        {
-            Checker?.Dispose();
-        }
-
         [PerfBenchmark(
-            Description = "How fast can NHunspell check English (US) words?",
+            Description = "How fast can this project check English (US) words?",
             NumberOfIterations = 3,
             RunMode = RunMode.Throughput,
             TestMode = TestMode.Measurement)]
@@ -43,7 +34,7 @@ namespace WeCantSpell.Hunspell.Performance.Comparison
         {
             foreach (var word in Words)
             {
-                var result = Checker.Spell(word);
+                var result = Checker.Check(word);
                 WordsChecked.Increment();
             }
         }

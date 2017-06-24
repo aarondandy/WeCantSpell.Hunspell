@@ -1,6 +1,6 @@
 ﻿using NBench;
 
-namespace WeCantSpell.Hunspell.Performance.Comparison
+namespace WeCantSpell.Hunspell.Benchmarking.NHunspell
 {
     public class FileLoadWeCantSpellHunspellPerfSpec : FileLoadPerfBase
     {

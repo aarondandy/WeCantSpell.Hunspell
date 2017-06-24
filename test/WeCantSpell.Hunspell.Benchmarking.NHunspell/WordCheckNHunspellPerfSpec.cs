@@ -1,13 +1,19 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using NBench;
 
-namespace WeCantSpell.Hunspell.Performance.Comparison
+namespace WeCantSpell.Hunspell.Benchmarking.NHunspell
 {
-    public class WordCheckWeCantSpellHunspellPerfSpec : EnWordPerfBase
+    public class WordCheckNHunspellPerfSpec : EnWordPerfBase, IDisposable
     {
+        static WordCheckNHunspellPerfSpec()
+        {
+            Utilities.ApplyCultureHacks();
+        }
+
         private Counter WordsChecked;
 
-        private WordList Checker;
+        private global::NHunspell.Hunspell Checker;
 
         [PerfSetup]
         public override void Setup(BenchmarkContext context)
@@ -16,13 +22,21 @@ namespace WeCantSpell.Hunspell.Performance.Comparison
 
             var testAssemblyPath = Path.GetFullPath(GetType().Assembly.Location);
             var filesDirectory = Path.Combine(Path.GetDirectoryName(testAssemblyPath), "files/");
-            Checker = WordList.CreateFromFiles(Path.Combine(filesDirectory, "English (American).dic"));
+            var dictionaryFilePath = Path.Combine(filesDirectory, "English (American).dic");
+            var affixFilePath = Path.ChangeExtension(dictionaryFilePath, "aff");
+            Checker = new global::NHunspell.Hunspell(affixFilePath, dictionaryFilePath);
 
             WordsChecked = context.GetCounter(nameof(WordsChecked));
         }
 
+        [PerfCleanup]
+        public void Dispose()
+        {
+            Checker?.Dispose();
+        }
+
         [PerfBenchmark(
-            Description = "How fast can this project check English (US) words?",
+            Description = "How fast can NHunspell check English (US) words?",
             NumberOfIterations = 3,
             RunMode = RunMode.Throughput,
             TestMode = TestMode.Measurement)]
@@ -34,7 +48,7 @@ namespace WeCantSpell.Hunspell.Performance.Comparison
         {
             foreach (var word in Words)
             {
-                var result = Checker.Check(word);
+                var result = Checker.Spell(word);
                 WordsChecked.Increment();
             }
         }
