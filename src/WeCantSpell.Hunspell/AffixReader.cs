@@ -636,7 +636,7 @@ namespace WeCantSpell.Hunspell
             List<StringSlice> parts;
             if (EnumEx.HasFlag(Builder.Options, AffixConfigOptions.ComplexPrefixes))
             {
-                parts = parameterText.ReverseString().SliceOnTabOrSpace();
+                parts = new StringSlice(parameterText.ReverseString()).SliceOnTabOrSpace();
             }
             else
             {

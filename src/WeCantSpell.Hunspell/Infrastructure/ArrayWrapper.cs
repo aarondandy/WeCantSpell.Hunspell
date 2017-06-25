@@ -23,7 +23,13 @@ namespace WeCantSpell.Hunspell.Infrastructure
             IsEmpty = items.Length == 0;
         }
 
-        public bool IsEmpty { get; }
+        public bool IsEmpty
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get;
+        }
 
         public T this[int index]
         {

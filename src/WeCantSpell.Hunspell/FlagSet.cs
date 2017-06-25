@@ -9,7 +9,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell
 {
-    public sealed class FlagSet : ArrayWrapper<FlagValue>
+    public sealed class FlagSet : ArrayWrapper<FlagValue>, IEquatable<FlagSet>
     {
         public static readonly FlagSet Empty = new FlagSet(ArrayEx<FlagValue>.Empty);
 
@@ -122,5 +122,19 @@ namespace WeCantSpell.Hunspell
 
         public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c, FlagValue d) =>
             Contains(a) || Contains(b) || Contains(c) || Contains(d);
+
+        public bool Equals(FlagSet other) =>
+            ReferenceEquals(this, other)
+            ||
+            (
+                !ReferenceEquals(other, null)
+                && ArrayComparer<FlagValue>.Default.Equals(other.items, items)
+            );
+
+        public override bool Equals(object obj) =>
+            obj is FlagSet set && Equals(set);
+
+        public override int GetHashCode() =>
+            ArrayComparer<FlagValue>.Default.GetHashCode(items);
     }
 }

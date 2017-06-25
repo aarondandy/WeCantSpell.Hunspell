@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
 using WeCantSpell.Hunspell.Infrastructure;
 
 #if !NO_INLINE
@@ -35,8 +36,10 @@ namespace WeCantSpell.Hunspell
         HuhInit = 4
     }
 
+    // TODO: bring this internal
     public static class CapitalizationTypeEx
     {
+        [Obsolete]
         public static CapitalizationType GetCapitalizationType(string word, TextInfo textInfo) =>
             string.IsNullOrEmpty(word)
                 ? CapitalizationType.None

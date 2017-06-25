@@ -347,7 +347,7 @@ namespace WeCantSpell.Hunspell
 
         private bool AddWord(string word, FlagSet flags, string[] morphs) =>
             AddWord(word, flags, morphs, false)
-            || AddWordCapitalized(word, flags, morphs, CapitalizationTypeEx.GetCapitalizationType(word, TextInfo));
+            || AddWordCapitalized(word, flags, morphs, CapitalizationTypeEx.GetCapitalizationType(new StringSlice(word), TextInfo));
 
         private bool AddWord(string word, FlagSet flags, string[] morphs, bool onlyUpperCase)
         {

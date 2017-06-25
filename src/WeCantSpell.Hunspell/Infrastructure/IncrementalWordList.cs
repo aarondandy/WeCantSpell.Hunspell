@@ -1,11 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
-
 namespace WeCantSpell.Hunspell.Infrastructure
 {
     internal class IncrementalWordList
@@ -29,21 +24,9 @@ namespace WeCantSpell.Hunspell.Infrastructure
             WNum = wNum;
         }
 
-        public List<WordEntryDetail> Words
-        {
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            get;
-        }
+        public List<WordEntryDetail> Words { get; }
 
-        public int WNum
-        {
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            get;
-        }
+        public int WNum { get; }
 
         public void SetCurrent(WordEntryDetail value)
         {
@@ -80,21 +63,12 @@ namespace WeCantSpell.Hunspell.Infrastructure
             }
         }
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public bool CheckIfCurrentIsNotNull() =>
             CheckIfNotNull(WNum);
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public bool CheckIfNextIsNotNull() =>
             CheckIfNotNull(WNum + 1);
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private bool CheckIfNotNull(int index) =>
             (index < Words.Count) && Words[index] != null;
 
@@ -119,9 +93,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return false;
         }
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public IncrementalWordList CreateIncremented() =>
             new IncrementalWordList(Words, WNum + 1);
     }

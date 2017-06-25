@@ -1,6 +1,10 @@
 ﻿using System.Collections.Generic;
 using WeCantSpell.Hunspell.Infrastructure;
 
+#if !NO_INLINE
+using System.Runtime.CompilerServices;
+#endif
+
 namespace WeCantSpell.Hunspell
 {
     /// <summary>
@@ -36,7 +40,13 @@ namespace WeCantSpell.Hunspell
         /// Indicates if a group has the <see cref="AffixEntryOptions.CrossProduct"/> option enabled.
         /// </summary>
         /// <seealso cref="AffixEntryOptions"/>
-        public bool AllowCross => EnumEx.HasFlag(Options, AffixEntryOptions.CrossProduct);
+        public bool AllowCross
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get => EnumEx.HasFlag(Options, AffixEntryOptions.CrossProduct);
+        }
     }
 
     public static class AffixEntryGroup

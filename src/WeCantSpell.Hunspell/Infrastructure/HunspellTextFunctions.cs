@@ -124,12 +124,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static bool CharIsNeutral(char c, TextInfo textInfo) =>
-            (c > 127 && textInfo.ToUpper(c) == c) || !char.IsLower(c);
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static bool CharIsNotNeutral(char c, TextInfo textInfo) =>
             (c < 127 || textInfo.ToUpper(c) != c) && char.IsLower(c);
 

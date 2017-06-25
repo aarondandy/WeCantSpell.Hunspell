@@ -832,7 +832,7 @@ namespace WeCantSpell.Hunspell
                                 if (Affix.IsHungarian)
                                 {
                                     // calculate syllable number of the word
-                                    numSyllable += GetSyllable(st.Subslice(0, i));
+                                    numSyllable += GetSyllable(st.ToString().Subslice(0, i));
 
                                     // - affix syllable num.
                                     // XXX only second suffix (inflections, not derivations)
@@ -874,7 +874,7 @@ namespace WeCantSpell.Hunspell
                                         }
                                     }
 
-                                    rv = HomonymWordSearch(st.Substring(i), scpdPatternEntry, words, scpd);
+                                    rv = HomonymWordSearch(st.ToString().Substring(i), scpdPatternEntry, words, scpd);
 
                                     if (rv != null)
                                     {
@@ -1142,7 +1142,7 @@ namespace WeCantSpell.Hunspell
                                     // perhaps second word is a compound word (recursive call)
                                     if (wordNum < maxwordnum)
                                     {
-                                        rv = CompoundCheck(st.Substring(i), wordNum + 1, numSyllable, maxwordnum, words?.CreateIncremented(), rwords.CreateIncremented(), false, isSug, ref info);
+                                        rv = CompoundCheck(st.ToString().Substring(i), wordNum + 1, numSyllable, maxwordnum, words?.CreateIncremented(), rwords.CreateIncremented(), false, isSug, ref info);
 
                                         if (
                                             rv != null
@@ -1854,7 +1854,7 @@ namespace WeCantSpell.Hunspell
                 foreach (var replacementEntry in Affix.Replacements)
                 {
                     // search every occurence of the pattern in the word
-                    var rIndex = wordSlice.IndexOfOrdinal(replacementEntry.Pattern);
+                    var rIndex = wordSlice.IndexOf(replacementEntry.Pattern, StringComparison.Ordinal);
                     if (rIndex > 0)
                     {
                         var word = wordSlice.ToString();
@@ -2130,7 +2130,7 @@ namespace WeCantSpell.Hunspell
                 }
 
                 dest = src.Substring(qIndex, nl);
-                capType = CapitalizationTypeEx.GetCapitalizationType(dest, TextInfo);
+                capType = CapitalizationTypeEx.GetCapitalizationType(new StringSlice(dest), TextInfo);
                 return dest.Length;
             }
 

@@ -1,4 +1,6 @@
-﻿using System.Runtime.CompilerServices;
+﻿#if !NO_INLINE
+using System.Runtime.CompilerServices;
+#endif
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
@@ -22,7 +24,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        internal static bool HasFlag(this AffixReader.EntryListType value, AffixReader.EntryListType flag) => (value & flag) == flag;
+        public static bool HasFlag(this AffixReader.EntryListType value, AffixReader.EntryListType flag) => (value & flag) == flag;
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -37,8 +37,11 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static StringBuilder Get(string value, int valueStartIndex, int valueLength, int capacity) =>
             GetClearedBuilderWithCapacity(capacity).Append(value, valueStartIndex, valueLength);
 
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         internal static StringBuilder Get(StringSlice value) =>
-            Get(value.Text, value.Offset, value.Length, value.Length);
+            Get(value.Text, value.Offset, value.Length);
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

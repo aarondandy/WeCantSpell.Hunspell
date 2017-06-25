@@ -62,7 +62,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #endif
         public static bool IsTabOrSpace(char c) => c == ' ' || c == '\t';
 
-        public static int IndexOfNonTabOrSpace(string text, int startIndex)
+        public static int IndexOfNonTabOrSpace(string text, int offset)
         {
 #if DEBUG
             if (text == null)
@@ -70,11 +70,11 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 throw new ArgumentNullException(nameof(text));
             }
 #endif
-            for (var i = startIndex; i < text.Length; i++)
+            for (; offset < text.Length; offset++)
             {
-                if (!IsTabOrSpace(text[i]))
+                if (!IsTabOrSpace(text[offset]))
                 {
-                    return i;
+                    return offset;
                 }
             }
 
@@ -300,7 +300,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static string ConcatString(string str0, int startIndex0, int count0, char char1, string str2, int startIndex2) =>
             ConcatString(str0, startIndex0, count0, char1.ToString(), str2, startIndex2);
 
-        public static int FirstIndexOfLineBreakChar(string text, int startPosition)
+        public static int FirstIndexOfLineBreakChar(string text, int offset)
         {
 #if DEBUG
             if (text == null)
@@ -309,11 +309,11 @@ namespace WeCantSpell.Hunspell.Infrastructure
             }
 #endif
 
-            for (var i = startPosition; i < text.Length; i++)
+            for (; offset < text.Length; offset++)
             {
-                if (IsLineBreakChar(text[i]))
+                if (IsLineBreakChar(text[offset]))
                 {
-                    return i;
+                    return offset;
                 }
             }
 
@@ -349,11 +349,5 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #endif
         public static int IndexOfOrdinal(this string text, string value, int startIndex) =>
             text.IndexOf(value, startIndex, StringComparison.Ordinal);
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static int IndexOfOrdinal(this string text, string value, int startIndex, int count) =>
-            text.IndexOf(value, startIndex, count, StringComparison.Ordinal);
     }
 }

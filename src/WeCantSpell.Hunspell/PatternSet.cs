@@ -40,6 +40,7 @@ namespace WeCantSpell.Hunspell
         /// </summary>
         public bool Check(string word, int pos, WordEntry r1, WordEntry r2, bool affixed)
         {
+            // TODO: this should be internal
             if (string.IsNullOrEmpty(word))
             {
                 return false;

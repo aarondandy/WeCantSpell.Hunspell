@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell
 {
-    public sealed class MorphSet : ArrayWrapper<string>
+    public sealed class MorphSet : ArrayWrapper<string>, IEquatable<MorphSet>
     {
         public static readonly MorphSet Empty = TakeArray(ArrayEx<string>.Empty);
 
@@ -52,5 +53,19 @@ namespace WeCantSpell.Hunspell
 
             return newMorphs;
         }
+
+        public bool Equals(MorphSet other) =>
+            ReferenceEquals(this, other)
+            ||
+            (
+                !ReferenceEquals(other, null)
+                && ArrayComparer<string>.Default.Equals(other.items, items)
+            );
+
+        public override bool Equals(object obj) =>
+            obj is FlagSet set && Equals(set);
+
+        public override int GetHashCode() =>
+            ArrayComparer<string>.Default.GetHashCode(items);
     }
 }

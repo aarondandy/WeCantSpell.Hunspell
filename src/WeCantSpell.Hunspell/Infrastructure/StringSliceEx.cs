@@ -21,9 +21,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static StringSlice Subslice(this string text, int startIndex, int length) =>
             new StringSlice(text, startIndex, length);
 
-        public static List<StringSlice> SliceOnTabOrSpace(this string @this) =>
-            SliceOnTabOrSpace(new StringSlice(@this));
-
         public static List<StringSlice> SliceOnTabOrSpace(this StringSlice @this)
         {
             var parts = new List<StringSlice>();

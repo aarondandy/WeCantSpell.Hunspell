@@ -3,12 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using WeCantSpell.Hunspell.Infrastructure;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell
 {
+    // TODO: look into removing this type
     public sealed class WordEntrySet : ArrayWrapper<WordEntry>
     {
         public static readonly WordEntrySet Empty = TakeArray(ArrayEx<WordEntry>.Empty);
@@ -83,9 +80,6 @@ namespace WeCantSpell.Hunspell
             return TakeArray(newEntries);
         }
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         [Obsolete]
         public WordEntry FirstOrDefault() =>
             items.Length != 0 ? items[0] : null;

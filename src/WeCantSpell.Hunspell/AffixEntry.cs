@@ -201,10 +201,19 @@ namespace WeCantSpell.Hunspell
 
         public abstract string Key { get; }
 
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public bool ContainsContClass(FlagValue flag) => ContClass.Contains(flag);
 
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public bool ContainsAnyContClass(FlagValue a, FlagValue b) => ContClass.ContainsAny(a,b);
 
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public bool ContainsAnyContClass(FlagValue a, FlagValue b, FlagValue c) => ContClass.ContainsAny(a, b, c);
     }
 }

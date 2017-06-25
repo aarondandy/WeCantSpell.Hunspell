@@ -52,24 +52,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
             Buffer.Append(text);
         }
 
-        public string Substring(int startIndex) =>
-            ToString().Substring(startIndex);
-
-        public string Substring(int startIndex, int length) =>
-            ToString().Substring(startIndex, length);
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        internal StringSlice Subslice(int startIndex) =>
-            ToString().Subslice(startIndex);
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        internal StringSlice Subslice(int startIndex, int length) =>
-            ToString().Subslice(startIndex, length);
-
         public void Destroy()
         {
             if (Buffer != null)
