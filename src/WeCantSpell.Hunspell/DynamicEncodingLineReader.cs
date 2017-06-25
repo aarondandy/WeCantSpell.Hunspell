@@ -30,11 +30,22 @@ namespace WeCantSpell.Hunspell
                     ,new UTF32Encoding(true, true)
                 };
 
-            MaxPreambleLengthInBytes = PreambleEncodings.Max(e => e.GetPreamble().Length);
+#if DEBUG
+            var max = 0;
+            foreach (var e in PreambleEncodings)
+            {
+                max = Math.Max(max, e.GetPreamble().Length);
+            }
+
+            if (max != MaxPreambleLengthInBytes)
+            {
+                throw new InvalidOperationException();
+            }
+#endif
         }
 
         private static readonly Encoding[] PreambleEncodings;
-        private static readonly int MaxPreambleLengthInBytes;
+        private const int MaxPreambleLengthInBytes = 4;
 
         public DynamicEncodingLineReader(Stream stream, Encoding initialEncoding)
         {
@@ -247,23 +258,6 @@ namespace WeCantSpell.Hunspell
                     singleDecoderByteArray,
                     0,
                     1,
-                    chars,
-                    0,
-                    chars.Length,
-                    false,
-                    out int bytesConverted,
-                    out int charsProduced,
-                    out bool completed);
-
-            return charsProduced;
-        }
-
-        private int TryDecode(byte[] bytes, char[] chars)
-        {
-            decoder.Convert(
-                    bytes,
-                    0,
-                    bytes.Length,
                     chars,
                     0,
                     chars.Length,

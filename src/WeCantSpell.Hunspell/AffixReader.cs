@@ -321,7 +321,7 @@ namespace WeCantSpell.Hunspell
             switch (command)
             {
                 case AffixReaderCommandKind.Flag:
-                    return TrySetFlagMode(parameters);
+                    return TrySetFlagMode(parameters.ToString());
                 case AffixReaderCommandKind.KeyString:
                     Builder.KeyString = Builder.Dedup(parameters);
                     return true;
@@ -669,9 +669,10 @@ namespace WeCantSpell.Hunspell
                         }
                     }
 
-                    if (parameterText[indexBegin] == '*' || parameterText[indexBegin] == '?')
+                    var beginFlagValue = new FlagValue(parameterText[indexBegin]);
+                    if (beginFlagValue.IsWildcard)
                     {
-                        entryBuilder.Add(new FlagValue(parameterText[indexBegin]));
+                        entryBuilder.Add(beginFlagValue);
                     }
                     else
                     {
@@ -1058,20 +1059,18 @@ namespace WeCantSpell.Hunspell
             return true;
         }
 
-        private bool TrySetFlagMode(StringSlice modeTextSlice)
+        private bool TrySetFlagMode(string modeText)
         {
-            if (modeTextSlice.IsEmpty)
+            if (string.IsNullOrEmpty(modeText))
             {
                 return LogWarning("Attempt to set empty flag mode.");
             }
-
-            var modeText = modeTextSlice.ToString();
 
             if (FlagModeParameterMappings.TryGetValue(modeText, out FlagMode mode))
             {
                 if (mode == Builder.FlagMode)
                 {
-                    return LogWarning($"Redundant {nameof(Builder.FlagMode)}: {modeText}");
+                    return LogWarning("Redundant FlagMode: " + modeText);
                 }
 
                 Builder.FlagMode = mode;
@@ -1079,10 +1078,7 @@ namespace WeCantSpell.Hunspell
             }
             else
             {
-                var bestMatchFlagMode = FlagModeParameterMappings
-                    .Where(m => modeText.StartsWith(m.Key, StringComparison.OrdinalIgnoreCase))
-                    .Select(m => (FlagMode?)m.Value)
-                    .FirstOrDefault();
+                var bestMatchFlagMode = FindBestFlagMode(modeText);
 
                 if (bestMatchFlagMode.HasValue)
                 {
@@ -1090,8 +1086,21 @@ namespace WeCantSpell.Hunspell
                     return true;
                 }
 
-                return LogWarning($"Unknown {nameof(FlagMode)}: {modeText}");
+                return LogWarning("Unknown FlagMode: " + modeText);
             }
+        }
+
+        private FlagMode? FindBestFlagMode(string modeText)
+        {
+            foreach(var pair in FlagModeParameterMappings)
+            {
+                if (modeText.StartsWith(pair.Key, StringComparison.OrdinalIgnoreCase))
+                {
+                    return pair.Value;
+                }
+            }
+
+            return default(FlagMode?);
         }
 
         private bool LogWarning(string text)
@@ -1130,11 +1139,6 @@ namespace WeCantSpell.Hunspell
                 ? FlagValue.TryParseFlag(ReDecodeConvertedStringAsUtf8(text), FlagMode.Char, out value)
                 : FlagValue.TryParseFlag(text, flagMode, out value);
         }
-
-        private FlagValue TryParseFlag(string text) =>
-            TryParseFlag(text, out FlagValue value)
-                ? value
-                : default(FlagValue);
 
         private FlagValue TryParseFlag(StringSlice text) =>
             TryParseFlag(text, out FlagValue value)

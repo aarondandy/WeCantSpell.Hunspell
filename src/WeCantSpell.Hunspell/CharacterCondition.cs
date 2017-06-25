@@ -140,7 +140,7 @@ namespace WeCantSpell.Hunspell
             Restricted == other.Restricted && CharacterSet.DefaultComparer.Equals(Characters, other.Characters);
 
         public override bool Equals(object obj) =>
-            obj is CharacterCondition && Equals((CharacterCondition)obj);
+            obj is CharacterCondition cc && Equals(cc);
 
         public override int GetHashCode() =>
             unchecked((Restricted.GetHashCode() * 149) ^ CharacterSet.DefaultComparer.GetHashCode(Characters));

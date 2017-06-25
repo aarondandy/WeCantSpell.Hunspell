@@ -66,7 +66,7 @@ namespace WeCantSpell.Hunspell
                     var replacementEntry = FindLargestMatchingConversion(text.Subslice(i));
                     var replacementText = replacementEntry == null
                         ? string.Empty
-                        : replacementEntry.ExtractReplacementText(text.Length - i, i == 0);
+                        : replacementEntry.ExtractReplacementTextInternal(text.Length - i, i == 0);
 
                     if (replacementText.Length == 0)
                     {
@@ -92,6 +92,7 @@ namespace WeCantSpell.Hunspell
         /// <param name="text">The text to find a matching input conversion for.</param>
         /// <returns>The best matching input conversion.</returns>
         /// <seealso cref="MultiReplacementEntry"/>
+        [Obsolete]
         public MultiReplacementEntry FindLargestMatchingConversion(string text) =>
             string.IsNullOrEmpty(text)
                 ? null

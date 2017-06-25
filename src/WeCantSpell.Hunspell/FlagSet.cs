@@ -67,36 +67,47 @@ namespace WeCantSpell.Hunspell
 
         public static bool ContainsAny(FlagSet a, FlagSet b)
         {
-            if (a == null || a.IsEmpty || b == null || b.IsEmpty)
+            if (a != null && !a.IsEmpty && b != null && !b.IsEmpty)
             {
-                return false;
-            }
-            if (a.Count == 1)
-            {
-                return b.Contains(a[0]);
-            }
-            if (b.Count == 1)
-            {
-                return a.Contains(b[0]);
-            }
-
-            if (a.Count > b.Count)
-            {
-                ReferenceHelpers.Swap(ref a, ref b);
-            }
-
-            foreach (var item in a)
-            {
-                if (b.Contains(item))
+                if (a.Count == 1)
                 {
-                    return true;
+                    return b.Contains(a[0]);
+                }
+                if (b.Count == 1)
+                {
+                    return a.Contains(b[0]);
+                }
+
+                if (a.Count > b.Count)
+                {
+                    ReferenceHelpers.Swap(ref a, ref b);
+                }
+
+                foreach (var item in a)
+                {
+                    if (b.Contains(item))
+                    {
+                        return true;
+                    }
                 }
             }
 
             return false;
         }
 
-        public bool Contains(FlagValue value) => value.HasValue && items.Length > 0 && value >= items[0] && value <= items[items.Length -1] && Array.BinarySearch(items, value) >= 0;
+        public bool Contains(FlagValue value)
+        {
+            if (!value.HasValue || IsEmpty)
+            {
+                return false;
+            }
+            if (items.Length == 1)
+            {
+                return value.Equals(items[0]);
+            }
+
+            return value >= items[0] && value <= items[items.Length - 1] && Array.BinarySearch(items, value) >= 0;
+        }
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -104,24 +115,12 @@ namespace WeCantSpell.Hunspell
         public bool ContainsAny(FlagSet values) => ContainsAny(this, values);
 
         public bool ContainsAny(FlagValue a, FlagValue b) =>
-                (a.HasValue && Contains(a))
-                ||
-                (b.HasValue && Contains(b));
+            Contains(a)|| Contains(b);
 
         public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c) =>
-                (a.HasValue && Contains(a))
-                ||
-                (b.HasValue && Contains(b))
-                ||
-                (c.HasValue && Contains(c));
+            Contains(a) || Contains(b) || Contains(c);
 
         public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c, FlagValue d) =>
-                (a.HasValue && Contains(a))
-                ||
-                (b.HasValue && Contains(b))
-                ||
-                (c.HasValue && Contains(c))
-                ||
-                (d.HasValue && Contains(d));
+            Contains(a) || Contains(b) || Contains(c) || Contains(d);
     }
 }

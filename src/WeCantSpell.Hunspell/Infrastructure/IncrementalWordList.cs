@@ -107,7 +107,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             }
 #endif
 
-            if(wordIndex < Words.Count)
+            if (wordIndex < Words.Count)
             {
                 var detail = Words[wordIndex];
                 if (detail != null)

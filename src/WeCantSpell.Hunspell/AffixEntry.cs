@@ -201,7 +201,7 @@ namespace WeCantSpell.Hunspell
 
         public abstract string Key { get; }
 
-        public bool ContainsContClass(FlagValue flag) => flag.HasValue && ContClass.Contains(flag);
+        public bool ContainsContClass(FlagValue flag) => ContClass.Contains(flag);
 
         public bool ContainsAnyContClass(FlagValue a, FlagValue b) => ContClass.ContainsAny(a,b);
 

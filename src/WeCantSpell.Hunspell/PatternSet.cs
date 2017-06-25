@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -19,6 +20,7 @@ namespace WeCantSpell.Hunspell
         public static PatternSet Create(IEnumerable<PatternEntry> patterns) =>
             patterns == null ? Empty : TakeList(patterns.ToList());
 
+        [Obsolete]
         public bool TryGetPattern(int number, out PatternEntry result)
         {
             if (number > 0 && number <= items.Count)

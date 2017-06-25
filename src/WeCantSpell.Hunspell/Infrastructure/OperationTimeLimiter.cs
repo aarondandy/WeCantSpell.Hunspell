@@ -21,10 +21,12 @@ namespace WeCantSpell.Hunspell.Infrastructure
             int queriesToTriggerCheck,
             int timeLimitInMs)
         {
+#if DEBUG
             if (queriesToTriggerCheck < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(queriesToTriggerCheck));
             }
+#endif
 
             this.operationStartTime = operationStartTime;
             this.queriesToTriggerCheck = queriesToTriggerCheck;

@@ -203,10 +203,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
             {
                 return string.Empty;
             }
-            if (IsFullString)
-            {
-                return Text.Replace(oldValue, newValue);
-            }
 
             var builder = StringBuilderPool.Get(this);
             builder.Replace(oldValue, newValue);
@@ -221,14 +217,10 @@ namespace WeCantSpell.Hunspell.Infrastructure
             }
             if (Length == 1)
             {
-                var c = this[0];
+                var c = this.First();
                 return c == oldValue
                     ? newValue.ToString()
                     : c.ToString();
-            }
-            if (IsFullString)
-            {
-                return Text.Replace(oldValue, newValue);
             }
 
             var builder = StringBuilderPool.Get(this);
@@ -256,14 +248,21 @@ namespace WeCantSpell.Hunspell.Infrastructure
             {
                 return string.Empty;
             }
-            if (Length == 1)
-            {
-                return Text[Offset].ToString();
-            }
 
             var builder = StringBuilderPool.Get(this);
             builder.Reverse();
             return StringBuilderPool.GetStringAndReturn(builder);
+        }
+
+        public char First()
+        {
+#if DEBUG
+            if (Length == 0)
+            {
+                throw new InvalidOperationException();
+            }
+#endif
+            return Text[Offset];
         }
     }
 }

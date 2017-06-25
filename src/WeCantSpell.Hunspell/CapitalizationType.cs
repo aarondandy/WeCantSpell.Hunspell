@@ -52,7 +52,7 @@ namespace WeCantSpell.Hunspell
             var hasFoundMoreCaps = false;
             var firstIsUpper = false;
             var hasLower = false;
-            var c = word[0];
+            var c = word.First();
             if (char.IsUpper(c))
             {
                 firstIsUpper = true;

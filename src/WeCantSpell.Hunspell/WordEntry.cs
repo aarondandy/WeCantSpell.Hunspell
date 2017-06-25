@@ -92,7 +92,7 @@ namespace WeCantSpell.Hunspell
                 return true;
             }
 
-            return other.Word == Word
+            return string.Equals(other.Word, Word, StringComparison.Ordinal)
                 && other.Detail.Equals(Detail);
         }
 

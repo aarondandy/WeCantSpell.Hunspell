@@ -62,25 +62,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #endif
         public static bool IsTabOrSpace(char c) => c == ' ' || c == '\t';
 
-        public static int IndexOfTabOrSpace(string text, int startIndex)
-        {
-#if DEBUG
-            if (text == null)
-            {
-                throw new ArgumentNullException(nameof(text));
-            }
-#endif
-            for (var i = startIndex; i < text.Length; i++)
-            {
-                if (IsTabOrSpace(text[i]))
-                {
-                    return i;
-                }
-            }
-
-            return -1;
-        }
-
         public static int IndexOfNonTabOrSpace(string text, int startIndex)
         {
 #if DEBUG
@@ -289,8 +270,8 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
-        public static string ConcatString(string str0, string str1, int startIndex1) =>
-            ConcatString(str0, 0, str0.Length, str1, startIndex1, str1.Length - startIndex1);
+        public static string ConcatString(string str0, StringSlice str1) =>
+            ConcatString(str0, str1.Text, str1.Offset, str1.Length);
 
         public static string ConcatString(string str0, int startIndex0, int count0, string str1, int startIndex1) =>
             ConcatString(str0, startIndex0, count0, str1, startIndex1, str1.Length - startIndex1);

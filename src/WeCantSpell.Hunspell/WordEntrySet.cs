@@ -21,6 +21,7 @@ namespace WeCantSpell.Hunspell
         internal static WordEntrySet TakeArray(WordEntry[] entries) =>
             entries == null ? Empty : new WordEntrySet(entries);
 
+        [Obsolete]
         public static WordEntrySet Create(WordEntry entry) => new WordEntrySet(new[] { entry });
 
         public static WordEntrySet Create(string word, WordEntryDetail[] details)
@@ -37,6 +38,7 @@ namespace WeCantSpell.Hunspell
         public static WordEntrySet Create(IEnumerable<WordEntry> entries) =>
             entries == null ? Empty : TakeArray(entries.ToArray());
 
+        [Obsolete]
         public static WordEntrySet CopyWithItemReplaced(WordEntrySet source, int index, WordEntry replacement)
         {
             if (source == null)
@@ -54,6 +56,7 @@ namespace WeCantSpell.Hunspell
             return TakeArray(newEntries);
         }
 
+        [Obsolete]
         public static WordEntrySet CopyWithItemAdded(WordEntrySet source, WordEntry entry)
         {
             if (source == null)
@@ -83,6 +86,7 @@ namespace WeCantSpell.Hunspell
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
+        [Obsolete]
         public WordEntry FirstOrDefault() =>
             items.Length != 0 ? items[0] : null;
     }

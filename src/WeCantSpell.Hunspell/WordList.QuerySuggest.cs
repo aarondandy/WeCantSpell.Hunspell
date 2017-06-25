@@ -297,7 +297,7 @@ namespace WeCantSpell.Hunspell
                 {
                     for (var j = 0; j < slst.Count; j++)
                     {
-                        slst[j] = StringEx.ConcatString(slst[j], word, word.Length - abbv);
+                        slst[j] = StringEx.ConcatString(slst[j], word.Subslice(word.Length - abbv));
                     }
                 }
 

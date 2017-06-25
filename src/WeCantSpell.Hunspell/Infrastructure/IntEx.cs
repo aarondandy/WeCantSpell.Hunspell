@@ -25,12 +25,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static int? TryParseInvariant(string text) =>
-            TryParseInvariant(text, out int value) ? (int?)value : null;
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static int? TryParseInvariant(StringSlice text) =>
             TryParseInvariant(text, out int value) ? (int?)value : null;
     }

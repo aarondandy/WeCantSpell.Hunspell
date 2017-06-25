@@ -173,7 +173,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return s;
             }
 
-
             var actualFirstLetter = s[0];
             var expectedFirstLetter = textInfo.ToUpper(actualFirstLetter);
             if (expectedFirstLetter == actualFirstLetter)
@@ -204,7 +203,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return string.Empty;
             }
 
-            var actualFirstLetter = s[0];
+            var actualFirstLetter = s.First();
             var expectedFirstLetter = textInfo.ToUpper(actualFirstLetter);
             if (expectedFirstLetter == actualFirstLetter)
             {
@@ -307,21 +306,14 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return s;
             }
 
-            var expectedFirstLetter = textInfo.ToUpper(s[0]);
-
-            if (s.Length == 1)
-            {
-                return expectedFirstLetter.ToString();
-            }
-
             var builder = StringBuilderPool.Get(textInfo.ToLower(s));
-            builder[0] = expectedFirstLetter;
+            builder[0] = textInfo.ToUpper(s[0]);
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
         public static string ReDecodeConvertedStringAsUtf8(string decoded, Encoding encoding)
         {
-            if (encoding == Encoding.UTF8)
+            if (Encoding.UTF8.Equals(encoding))
             {
                 return decoded;
             }
@@ -332,7 +324,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public static string ReDecodeConvertedStringAsUtf8(StringSlice decoded, Encoding encoding)
         {
-            if (encoding == Encoding.UTF8)
+            if (Encoding.UTF8.Equals(encoding))
             {
                 return decoded.ToString();
             }

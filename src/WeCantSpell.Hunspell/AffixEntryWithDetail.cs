@@ -11,13 +11,12 @@ namespace WeCantSpell.Hunspell
     {
         public AffixEntryWithDetail(AffixEntryGroup<TEntry> group, TEntry entry)
         {
-            AffixEntry = entry ?? throw new ArgumentNullException(nameof(entry));
-
             if (group == null)
             {
                 throw new ArgumentNullException(nameof(group));
             }
 
+            AffixEntry = entry ?? throw new ArgumentNullException(nameof(entry));
             AFlag = group.AFlag;
             Options = group.Options;
         }
