@@ -1,16 +1,20 @@
 ﻿using NBench;
 
-namespace WeCantSpell.Hunspell.Performance.Comparison
+namespace WeCantSpell.Hunspell.Benchmarking.NHunspell
 {
     public class FileLoadNHunspellPerfSpec : FileLoadPerfBase
     {
+        static FileLoadNHunspellPerfSpec()
+        {
+            Utilities.ApplyCultureHacks();
+        }
+
         protected Counter FilePairsLoaded;
 
         [PerfSetup]
         public override void Setup(BenchmarkContext context)
         {
             base.Setup(context);
-
             FilePairsLoaded = context.GetCounter(nameof(FilePairsLoaded));
         }
 
@@ -27,7 +31,7 @@ namespace WeCantSpell.Hunspell.Performance.Comparison
         {
             foreach (var filePair in TestFiles)
             {
-                var checker = new NHunspell.Hunspell(filePair.DictionaryFilePath, filePair.AffixFilePath);
+                var checker = new global::NHunspell.Hunspell(filePair.DictionaryFilePath, filePair.AffixFilePath);
                 checker.Spell(TestWord);
                 FilePairsLoaded.Increment();
             }

@@ -5,12 +5,10 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WeCantSpell.Hunspell.Performance.Tests
+namespace WeCantSpell.Hunspell.Benchmarking.LongRunning
 {
     public abstract class EnWordPerfBase
     {
-        protected static readonly char[] WordSplitChars = { ' ', '\t', ',' };
-
         protected WordList Checker;
         protected List<string> Words;
 
@@ -50,7 +48,7 @@ namespace WeCantSpell.Hunspell.Performance.Tests
                             continue;
                         }
 
-                        Words.AddRange(line.Split(WordSplitChars, StringSplitOptions.RemoveEmptyEntries));
+                        Words.AddRange(line.Split(new char[] { ' ', '\t', ',' }, StringSplitOptions.RemoveEmptyEntries));
                     }
                 }
             }

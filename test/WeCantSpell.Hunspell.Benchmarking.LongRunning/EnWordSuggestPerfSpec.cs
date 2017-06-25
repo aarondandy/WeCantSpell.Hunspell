@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using NBench;
 
-namespace WeCantSpell.Hunspell.Performance.Tests
+namespace WeCantSpell.Hunspell.Benchmarking.LongRunning
 {
     public class EnWordSuggestPerfSpec : EnWordPerfBase
     {

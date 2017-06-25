@@ -2,7 +2,7 @@
 using System.IO;
 using System.Linq;
 
-namespace WeCantSpell.Hunspell.Performance.Comparison
+namespace WeCantSpell.Hunspell.Benchmarking.LongRunning
 {
     class Program
     {
