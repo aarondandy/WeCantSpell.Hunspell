@@ -22,25 +22,21 @@ namespace WeCantSpell.Hunspell
         public static WordList CreateFromStreams(Stream dictionaryStream, Stream affixStream) =>
             WordListReader.Read(dictionaryStream, affixStream);
 
-#if !NO_IO_FILE
         public static WordList CreateFromFiles(string dictionaryFilePath) =>
             WordListReader.ReadFile(dictionaryFilePath);
 
         public static WordList CreateFromFiles(string dictionaryFilePath, string affixFilePath) =>
             WordListReader.ReadFile(dictionaryFilePath, affixFilePath);
-#endif
 
 #if !NO_ASYNC
         public static async Task<WordList> CreateFromStreamsAsync(Stream dictionaryStream, Stream affixStream) =>
             await WordListReader.ReadAsync(dictionaryStream, affixStream).ConfigureAwait(false);
 
-#if !NO_IO_FILE
         public static async Task<WordList> CreateFromFilesAsync(string dictionaryFilePath) =>
             await WordListReader.ReadFileAsync(dictionaryFilePath).ConfigureAwait(false);
 
         public static async Task<WordList> CreateFromFilesAsync(string dictionaryFilePath, string affixFilePath) =>
             await WordListReader.ReadFileAsync(dictionaryFilePath, affixFilePath).ConfigureAwait(false);
-#endif
 
 #endif
 

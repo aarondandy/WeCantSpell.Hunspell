@@ -4,7 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 ### Changes
-- Improved string performance
+- [Breaking] Replaced .NET Framework 4.6.1 and 4.5.1 with a single 4.5 build (net45).
+- [Breaking] Removed build for PCL Profile 259 (portable-net45+win8+wpa81+wp8).
+- [Breaking] Removed build for .NET Standard 1.1 (netstandard1.1).
+- Reduced nuget package size by nearly half.
+- Improved string operation performance.
 
 ## 1.1.0 - 2017-06-19
 ### Added

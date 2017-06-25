@@ -25,14 +25,9 @@ namespace WeCantSpell.Hunspell
                 {
                     new UnicodeEncoding(true, true)
                     ,new UnicodeEncoding(false, true)
-#if !NO_UTF32
                     ,new UTF32Encoding(false, true)
-#endif
                     ,Encoding.UTF8
-
-#if !NO_UTF32
                     ,new UTF32Encoding(true, true)
-#endif
                 };
 
             MaxPreambleLengthInBytes = PreambleEncodings.Max(e => e.GetPreamble().Length);
@@ -63,7 +58,6 @@ namespace WeCantSpell.Hunspell
 
         public Encoding CurrentEncoding => encoding;
 
-#if !NO_IO_FILE
         public static List<string> ReadLines(string filePath, Encoding defaultEncoding)
         {
             if (filePath == null)
@@ -92,8 +86,6 @@ namespace WeCantSpell.Hunspell
                 return await reader.ReadLinesAsync().ConfigureAwait(false);
             }
         }
-#endif
-
 #endif
 
         public string ReadLine()

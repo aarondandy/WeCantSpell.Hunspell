@@ -1,6 +1,4 @@
-﻿#if !NO_IO_FILE
-
-using System.IO;
+﻿using System.IO;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
@@ -17,5 +15,3 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #endif
     }
 }
-
-#endif

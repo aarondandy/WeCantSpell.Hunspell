@@ -15,10 +15,7 @@ namespace WeCantSpell.Hunspell
     {
         private static Regex ConditionParsingRegex = new Regex(
             @"^(\[[^\]]*\]|\.|[^\[\]\.])*$",
-#if !NO_COMPILEDREGEX
-            RegexOptions.Compiled |
-#endif
-            RegexOptions.CultureInvariant);
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         public static readonly CharacterCondition AllowAny = new CharacterCondition(CharacterSet.Empty, true);
 

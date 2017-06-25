@@ -25,15 +25,9 @@ namespace WeCantSpell.Hunspell
             Reader = reader;
         }
 
-        private const RegexOptions DefaultRegexOptions =
-#if !NO_COMPILEDREGEX
-            RegexOptions.Compiled |
-#endif
-            RegexOptions.CultureInvariant;
-
         private static readonly Regex AffixLineRegex = new Regex(
             @"^[\t ]*([^\t ]+)[\t ]+(?:([^\t ]+)[\t ]+([^\t ]+)|([^\t ]+)[\t ]+([^\t ]+)[\t ]+([^\t ]+)(?:[\t ]+(.+))?)[\t ]*(?:[#].*)?$",
-            DefaultRegexOptions);
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         private static readonly Dictionary<string, AffixConfigOptions> FileBitFlagCommandMappings = new Dictionary<string, AffixConfigOptions>(StringComparer.OrdinalIgnoreCase)
         {
@@ -194,7 +188,6 @@ namespace WeCantSpell.Hunspell
                 return await ReadAsync(reader, builder).ConfigureAwait(false);
             }
         }
-#if !NO_IO_FILE
         public static async Task<AffixConfig> ReadFileAsync(string filePath, AffixConfig.Builder builder = null)
         {
             if (filePath == null)
@@ -207,7 +200,6 @@ namespace WeCantSpell.Hunspell
                 return await ReadAsync(stream, builder).ConfigureAwait(false);
             }
         }
-#endif
 #endif
 
         public static AffixConfig Read(Stream stream, AffixConfig.Builder builder = null)
@@ -223,7 +215,6 @@ namespace WeCantSpell.Hunspell
             }
         }
 
-#if !NO_IO_FILE
         public static AffixConfig ReadFile(string filePath, AffixConfig.Builder builder = null)
         {
             if (filePath == null)
@@ -236,7 +227,6 @@ namespace WeCantSpell.Hunspell
                 return Read(stream, builder);
             }
         }
-#endif
 
         private bool ParseLine(string line)
         {

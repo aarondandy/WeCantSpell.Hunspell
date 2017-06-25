@@ -28,10 +28,7 @@ namespace WeCantSpell.Hunspell
 
         private static readonly Regex InitialLineRegex = new Regex(
             @"^\s*(\d+)\s*(?:[#].*)?$",
-#if !NO_COMPILEDREGEX
-            RegexOptions.Compiled |
-#endif
-            RegexOptions.CultureInvariant);
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         private WordList.Builder Builder { get; }
 
@@ -85,7 +82,6 @@ namespace WeCantSpell.Hunspell
             return readerInstance.Builder.MoveToImmutable();
         }
 
-#if !NO_IO_FILE
         public static async Task<WordList> ReadFileAsync(string dictionaryFilePath)
         {
             if (dictionaryFilePath == null)
@@ -113,7 +109,6 @@ namespace WeCantSpell.Hunspell
             var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper);
             return await ReadFileAsync(dictionaryFilePath, affix, wordListBuilder).ConfigureAwait(false);
         }
-#endif
 
         public static async Task<WordList> ReadAsync(Stream dictionaryStream, AffixConfig affix, WordList.Builder builder = null)
         {
@@ -132,7 +127,6 @@ namespace WeCantSpell.Hunspell
             }
         }
 
-#if !NO_IO_FILE
         public static async Task<WordList> ReadFileAsync(string dictionaryFilePath, AffixConfig affix, WordList.Builder builder = null)
         {
             if (dictionaryFilePath == null)
@@ -149,8 +143,6 @@ namespace WeCantSpell.Hunspell
                 return await ReadAsync(stream, affix, builder).ConfigureAwait(false);
             }
         }
-#endif
-
 #endif
 
         public static WordList Read(Stream dictionaryStream, Stream affixStream)
@@ -192,7 +184,6 @@ namespace WeCantSpell.Hunspell
             return readerInstance.Builder.MoveToImmutable();
         }
 
-#if !NO_IO_FILE
         public static WordList ReadFile(string dictionaryFilePath)
         {
             if (dictionaryFilePath == null)
@@ -242,7 +233,6 @@ namespace WeCantSpell.Hunspell
 
             return Path.ChangeExtension(dictionaryFilePath, "aff");
         }
-#endif
 
         public static WordList Read(Stream dictionaryStream, AffixConfig affix, WordList.Builder builder = null)
         {
@@ -261,7 +251,6 @@ namespace WeCantSpell.Hunspell
             }
         }
 
-#if !NO_IO_FILE
         public static WordList ReadFile(string dictionaryFilePath, AffixConfig affix, WordList.Builder builder = null)
         {
             if (dictionaryFilePath == null)
@@ -278,7 +267,6 @@ namespace WeCantSpell.Hunspell
                 return Read(stream, affix, builder);
             }
         }
-#endif
 
         private bool ParseLine(string line)
         {
@@ -471,10 +459,7 @@ namespace WeCantSpell.Hunspell
 
             private static readonly Regex MorphPartRegex = new Regex(
                 @"\G([\t ]+(?<morphs>[^\t ]+))*[\t ]*$",
-#if !NO_COMPILEDREGEX
-                RegexOptions.Compiled |
-#endif
-                RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture);
+                RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture);
 
             public static ParsedWordLine Parse(string line)
             {

@@ -28,7 +28,6 @@ namespace WeCantSpell.Hunspell
 
         public Encoding CurrentEncoding => reader.CurrentEncoding;
 
-#if !NO_IO_FILE
         public static List<string> ReadLines(string filePath, Encoding encoding)
         {
             if (filePath == null)
@@ -57,8 +56,6 @@ namespace WeCantSpell.Hunspell
                 return await reader.ReadLinesAsync().ConfigureAwait(false);
             }
         }
-#endif
-
 #endif
 
 #if !NO_INLINE
