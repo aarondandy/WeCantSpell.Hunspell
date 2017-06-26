@@ -26,7 +26,7 @@ namespace WeCantSpell.Hunspell.Benchmarking.LongRunning
         [CounterThroughputAssertion(nameof(SuggestionQueries), MustBe.GreaterThanOrEqualTo, 30)]
         public void Benchmark(BenchmarkContext context)
         {
-            foreach (var word in Words.Take(100)) // TODO: remove the limit to allow the entire list
+            foreach (var word in Words.Take(100)) // TODO: remove the limit to allow the entire list when performance allows
             {
                 var result = Checker.Suggest(word);
                 SuggestionQueries.Increment();

@@ -96,7 +96,7 @@ namespace WeCantSpell.Hunspell
                     var dotPos = scw.IndexOf('.');
                     if (dotPos >= 0)
                     {
-                        var capTypeLocal = CapitalizationTypeEx.GetCapitalizationType(scw.Subslice(dotPos + 1), textInfo);
+                        var capTypeLocal = HunspellTextFunctions.GetCapitalizationType(scw.Subslice(dotPos + 1), textInfo);
                         if (capTypeLocal == CapitalizationType.Init)
                         {
                             InsertSuggestion(slst, scw.Insert(dotPos + 1, " "));
@@ -692,7 +692,7 @@ namespace WeCantSpell.Hunspell
                     // check neighbor characters in keyboard string
                     if (keyStringIsEmpty)
                     {
-                        continue; // TODO: break out into different loops or methods to reduce branches
+                        continue;
                     }
 
                     var loc = keyString.IndexOf(tmpc);

@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-
-#if !NO_INLINE
+﻿#if !NO_INLINE
 using System.Runtime.CompilerServices;
 #endif
+
+using System;
 
 namespace WeCantSpell.Hunspell
 {
@@ -105,69 +104,44 @@ namespace WeCantSpell.Hunspell
     /// <seealso cref="SuffixEntry"/>
     public abstract class AffixEntry
     {
-        [Obsolete("Use a constructor")]
-        public static TEntry Create<TEntry>(
-            string strip,
-            string affixText,
-            CharacterConditionGroup conditions,
-            MorphSet morph,
-            FlagSet contClass)
-            where TEntry : AffixEntry, new()
-        {
-            return new TEntry
-            {
-                Strip = strip ?? string.Empty,
-                Append = affixText ?? string.Empty,
-                Conditions = conditions ?? CharacterConditionGroup.Empty,
-                MorphCode = morph ?? MorphSet.Empty,
-                ContClass = contClass ?? FlagSet.Empty
-            };
-        }
-
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         internal static TEntry CreateWithoutNullCheck<TEntry>(
             string strip,
             string affixText,
             CharacterConditionGroup conditions,
             MorphSet morph,
             FlagSet contClass)
-            where TEntry : AffixEntry, new()
+            where TEntry : AffixEntry
         {
-            // TODO: remove this when a better constructor is provided
-#if DEBUG
-            if (strip == null)
+            if (typeof(TEntry) == typeof(PrefixEntry))
             {
-                throw new ArgumentNullException(nameof(strip));
+                return (TEntry)((AffixEntry)new PrefixEntry(strip, affixText, conditions, morph, contClass));
             }
-            if (affixText == null)
+            if (typeof(TEntry) == typeof(SuffixEntry))
             {
-                throw new ArgumentNullException(nameof(affixText));
+                return (TEntry)((AffixEntry)new SuffixEntry(strip, affixText, conditions, morph, contClass));
             }
-            if (conditions == null)
-            {
-                throw new ArgumentNullException(nameof(conditions));
-            }
-            if (morph == null)
-            {
-                throw new ArgumentNullException(nameof(morph));
-            }
-            if (contClass == null)
-            {
-                throw new ArgumentNullException(nameof(contClass));
-            }
-#endif
-            return new TEntry
-            {
-                Strip = strip,
-                Append = affixText,
-                Conditions = conditions,
-                MorphCode = morph,
-                ContClass = contClass
-            };
+
+            throw new NotSupportedException();
         }
 
-        protected AffixEntry()
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        protected AffixEntry(
+            string strip,
+            string affixText,
+            CharacterConditionGroup conditions,
+            MorphSet morph,
+            FlagSet contClass)
         {
-            // TODO: refactor this to accept arguments to enfoce non-null values easily
+            Strip = strip ?? string.Empty;
+            Append = affixText ?? string.Empty;
+            Conditions = conditions ?? CharacterConditionGroup.Empty;
+            MorphCode = morph ?? MorphSet.Empty;
+            ContClass = contClass ?? FlagSet.Empty;
         }
 
         /// <summary>

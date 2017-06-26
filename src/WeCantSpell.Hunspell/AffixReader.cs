@@ -690,12 +690,12 @@ namespace WeCantSpell.Hunspell
         }
 
         private bool TryParseAffixIntoList<TEntry>(StringSlice parameterText, ref List<AffixEntryGroup.Builder<TEntry>> groups)
-            where TEntry : AffixEntry, new()
+            where TEntry : AffixEntry
             =>
-            TryParseAffixIntoList<TEntry>(parameterText.ToString(), ref groups);
+            TryParseAffixIntoList(parameterText.ToString(), ref groups);
 
         private bool TryParseAffixIntoList<TEntry>(string parameterText, ref List<AffixEntryGroup.Builder<TEntry>> groups)
-            where TEntry : AffixEntry, new()
+            where TEntry : AffixEntry
         {
             if (groups == null)
             {

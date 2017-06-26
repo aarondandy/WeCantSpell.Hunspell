@@ -940,6 +940,12 @@ namespace WeCantSpell.Hunspell
                                                     numSyllable + GetSyllable(rv.Word) <= Affix.CompoundMaxSyllable
                                                 )
                                             )
+                                            &&
+                                            (
+                                                !Affix.CheckCompoundDup
+                                                ||
+                                                rv != rvFirst
+                                            )
                                             && // test CHECKCOMPOUNDPATTERN
                                             (
                                                 Affix.CompoundPatterns.IsEmpty
@@ -947,12 +953,6 @@ namespace WeCantSpell.Hunspell
                                                 scpd != 0
                                                 ||
                                                 !Affix.CompoundPatterns.Check(word, i, rvFirst, rv, false)
-                                            )
-                                            &&
-                                            (
-                                                !Affix.CheckCompoundDup
-                                                ||
-                                                rv != rvFirst
                                             )
                                             && // test CHECKCOMPOUNDPATTERN conditions
                                             (
@@ -2130,7 +2130,7 @@ namespace WeCantSpell.Hunspell
                 }
 
                 dest = src.Substring(qIndex, nl);
-                capType = CapitalizationTypeEx.GetCapitalizationType(new StringSlice(dest), TextInfo);
+                capType = HunspellTextFunctions.GetCapitalizationType(new StringSlice(dest), TextInfo);
                 return dest.Length;
             }
 

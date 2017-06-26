@@ -331,5 +331,76 @@ namespace WeCantSpell.Hunspell.Infrastructure
             var byteEncodedCount = encoding.GetBytes(decoded.Text, decoded.Offset, decoded.Length, encodedBytes, 0);
             return Encoding.UTF8.GetString(encodedBytes, 0, byteEncodedCount);
         }
+
+        public static CapitalizationType GetCapitalizationType(StringSlice word, TextInfo textInfo)
+        {
+            if (word.IsEmpty)
+            {
+                return CapitalizationType.None;
+            }
+
+            var hasFoundMoreCaps = false;
+            var firstIsUpper = false;
+            var hasLower = false;
+            var c = word.First();
+            if (char.IsUpper(c))
+            {
+                firstIsUpper = true;
+            }
+            else if (HunspellTextFunctions.CharIsNotNeutral(c, textInfo))
+            {
+                hasLower = true;
+            }
+
+            var wordIndexLimit = word.Length + word.Offset;
+            for (int i = word.Offset + 1; i < wordIndexLimit; i++)
+            {
+                c = word.Text[i];
+
+                if (!hasFoundMoreCaps && char.IsUpper(c))
+                {
+                    hasFoundMoreCaps = true;
+                    if (hasLower)
+                    {
+                        break;
+                    }
+                }
+                else if (!hasLower && HunspellTextFunctions.CharIsNotNeutral(c, textInfo))
+                {
+                    hasLower = true;
+                    if (hasFoundMoreCaps)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if (firstIsUpper)
+            {
+                if (!hasFoundMoreCaps)
+                {
+                    return CapitalizationType.Init;
+                }
+                if (!hasLower)
+                {
+                    return CapitalizationType.All;
+                }
+
+                return CapitalizationType.HuhInit;
+            }
+            else
+            {
+                if (!hasFoundMoreCaps)
+                {
+                    return CapitalizationType.None;
+                }
+                if (!hasLower)
+                {
+                    return CapitalizationType.All;
+                }
+
+                return CapitalizationType.Huh;
+            }
+        }
     }
 }
