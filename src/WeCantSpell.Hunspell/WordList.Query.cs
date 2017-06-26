@@ -182,7 +182,7 @@ namespace WeCantSpell.Hunspell
             {
                 root = null;
 
-                if (word == null || word.Length == 0)
+                if (string.IsNullOrEmpty(word))
                 {
                     return null;
                 }
@@ -316,6 +316,13 @@ namespace WeCantSpell.Hunspell
                 IncrementalWordList rwords,
                 bool cantCheckScpdFlags)
             {
+#if DEBUG
+                if (searchEntryWord == null)
+                {
+                    throw new ArgumentNullException(nameof(searchEntryWord));
+                }
+#endif
+
                 if (cantCheckScpdFlags)
                 {
                     foreach (var searchEntryDetail in LookupDetails(searchEntryWord))
@@ -358,6 +365,13 @@ namespace WeCantSpell.Hunspell
                 int wordNum,
                 bool cantCheckScpdFlags)
             {
+#if DEBUG
+                if (searchEntryWord == null)
+                {
+                    throw new ArgumentNullException(nameof(searchEntryWord));
+                }
+#endif
+
                 if (words == null)
                 {
                     var compoundPart = wordNum == 0 ? Affix.CompoundBegin : Affix.CompoundMiddle;
@@ -428,6 +442,13 @@ namespace WeCantSpell.Hunspell
                 bool onlycpdrule,
                 bool conditionBypassAllCompounds)
             {
+#if DEBUG
+                if (searchEntryWord == null)
+                {
+                    throw new ArgumentNullException(nameof(searchEntryWord));
+                }
+#endif
+
                 WordEntryDetail detail;
 
                 if (huMovRule)
@@ -457,6 +478,13 @@ namespace WeCantSpell.Hunspell
 
             private WordEntry HomonymWordSearch(string homonymWord, PatternEntry scpdPatternEntry, IncrementalWordList words, int scpd)
             {
+#if DEBUG
+                if (homonymWord == null)
+                {
+                    throw new ArgumentNullException(nameof(homonymWord));
+                }
+#endif
+
                 WordEntryDetail rvDetail = null;
                 foreach (var homonymCandidate in LookupDetails(homonymWord))
                 {
@@ -494,6 +522,12 @@ namespace WeCantSpell.Hunspell
 
             protected WordEntry CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
             {
+#if DEBUG
+                if (word == null)
+                {
+                    throw new ArgumentNullException(nameof(word));
+                }
+#endif
                 int oldnumsyllable, oldnumsyllable2, oldwordnum, oldwordnum2;
                 WordEntry rv;
                 WordEntry rvFirst;
@@ -1713,12 +1747,19 @@ namespace WeCantSpell.Hunspell
                 return null;
             }
 
-            protected WordEntrySet Lookup(string word) => WordList.FindEntriesByRootWord(word);
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            internal WordEntry LookupFirst(string word) => WordList.FindFirstEntryByRootWord(word);
 
-            protected WordEntry LookupFirst(string word) => WordList.FindFirstEntryByRootWord(word);
-
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             internal WordEntryDetail[] LookupDetails(string word) => WordList.FindEntryDetailsByRootWord(word);
 
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
             internal WordEntryDetail LookupFirstDetail(string word) => WordList.FindFirstEntryDetailByRootWord(word);
 
             /// <summary>

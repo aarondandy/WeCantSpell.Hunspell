@@ -20,10 +20,6 @@ namespace WeCantSpell.Hunspell
         public static CompoundRuleSet Create(IEnumerable<CompoundRule> rules) =>
             rules == null ? Empty : TakeList(rules.ToList());
 
-        [Obsolete]
-        public bool EntryContainsRuleFlags(WordEntry rv) =>
-            EntryContainsRuleFlags(rv?.Detail);
-
         public bool EntryContainsRuleFlags(WordEntryDetail details)
         {
             if (details != null && details.HasFlags)
@@ -38,35 +34,6 @@ namespace WeCantSpell.Hunspell
             }
 
             return false;
-        }
-
-        [Obsolete]
-        public bool CompoundCheck(Dictionary<int, WordEntry> words, int wnum, bool all)
-        {
-            if (words == null)
-            {
-                throw new ArgumentNullException(nameof(words));
-            }
-
-            var list = new List<WordEntryDetail>();
-            foreach (var item in words)
-            {
-                if (item.Key < list.Count)
-                {
-                    list[item.Key] = item.Value.Detail;
-                }
-                else
-                {
-                    for(var i = item.Key - list.Count; i > 0; i--)
-                    {
-                        list.Add(null);
-                    }
-
-                    list.Add(item.Value.Detail);
-                }
-            }
-
-            return CompoundCheckInternal(new IncrementalWordList(list, wnum), all);
         }
 
         internal bool CompoundCheckInternal(IncrementalWordList words, bool all)

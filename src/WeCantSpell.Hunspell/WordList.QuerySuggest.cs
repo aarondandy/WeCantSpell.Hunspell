@@ -1905,6 +1905,12 @@ namespace WeCantSpell.Hunspell
 
             private bool CheckForbidden(string word)
             {
+#if DEBUG
+                if (word == null)
+                {
+                    throw new ArgumentNullException(nameof(word));
+                }
+#endif
                 var rv = LookupFirstDetail(word);
                 if (rv != null && rv.ContainsAnyFlags(Affix.NeedAffix, Affix.OnlyInCompound))
                 {

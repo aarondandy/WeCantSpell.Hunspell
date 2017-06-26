@@ -20,7 +20,7 @@ namespace WeCantSpell.Hunspell.Benchmarking.MicroSuites
             WordData = CategorizedWordData.Create(
                 CategorizedWordData.GetAssortedEnUsWords(),
                 isCorrect: WordList.Check,
-                isRoot: w => WordList.FindEntriesByRootWord(w) != null);
+                isRoot: WordList.ContainsEntriesForRootWord);
         }
 
 

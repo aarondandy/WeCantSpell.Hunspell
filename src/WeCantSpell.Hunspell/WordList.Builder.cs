@@ -30,9 +30,6 @@ namespace WeCantSpell.Hunspell
                 WordEntryDetailDeduper.Add(WordEntryDetail.Default);
             }
 
-            [Obsolete("Use EntryDetailsByRoot")]
-            public Dictionary<string, List<WordEntry>> EntriesByRoot;
-
             private Dictionary<string, List<WordEntryDetail>> EntryDetailsByRoot;
 
             public readonly AffixConfig Affix;

@@ -71,10 +71,29 @@ namespace WeCantSpell.Hunspell
             return wordListBuilder.MoveToImmutable();
         }
 
-        private WordList(AffixConfig affix) =>
+        private WordList(AffixConfig affix)
+        {
             Affix = affix;
+        }
 
         public AffixConfig Affix { get; private set; }
+
+        public IEnumerable<string> RootWords => EntriesByRoot.Keys;
+
+        public bool HasEntries => EntriesByRoot.Count != 0;
+
+        public bool ContainsEntriesForRootWord(string rootWord) =>
+            rootWord != null && EntriesByRoot.ContainsKey(rootWord);
+
+        public WordEntryDetail[] this[string rootWord] =>
+            (rootWord != null)
+                ? (WordEntryDetail[])FindEntryDetailsByRootWord(rootWord).Clone()
+                : ArrayEx<WordEntryDetail>.Empty;
+
+        private IEnumerable<WordEntry> NGramAllowedEntries =>
+            (NGramRestrictedEntries == null || NGramRestrictedEntries.Count == 0)
+            ? EntriesByRoot.SelectMany(pair => pair.Value.Select(d => new WordEntry(pair.Key, d)))
+            : GetAllNGramAllowedEntries();
 
         private Dictionary<string, WordEntryDetail[]> EntriesByRoot { get; set; }
 
@@ -82,10 +101,52 @@ namespace WeCantSpell.Hunspell
 
         private Dictionary<string, WordEntryDetail[]> NGramRestrictedEntries { get; set; }
 
-        public IEnumerable<WordEntry> NGramAllowedEntries =>
-            (NGramRestrictedEntries == null || NGramRestrictedEntries.Count == 0)
-            ? AllEntries
-            : GetAllNGramAllowedEntries();
+        public bool Check(string word) => new QueryCheck(word, this).Check();
+
+        public SpellCheckResult CheckDetails(string word) => new QueryCheck(word, this).CheckDetails();
+
+        public IEnumerable<string> Suggest(string word) => new QuerySuggest(word, this).Suggest();
+
+        internal WordEntry FindFirstEntryByRootWord(string rootWord)
+        {
+#if DEBUG
+            if (rootWord == null)
+            {
+                throw new ArgumentNullException(nameof(rootWord));
+            }
+#endif
+            var details = FindEntryDetailsByRootWord(rootWord);
+            return details.Length == 0
+                ? null
+                : new WordEntry(rootWord, details[0]);
+        }
+
+        internal WordEntryDetail[] FindEntryDetailsByRootWord(string rootWord)
+        {
+#if DEBUG
+            if (rootWord == null)
+            {
+                throw new ArgumentNullException(nameof(rootWord));
+            }
+#endif
+            return (rootWord == null || !EntriesByRoot.TryGetValue(rootWord, out WordEntryDetail[] details))
+                ? ArrayEx<WordEntryDetail>.Empty
+                : details;
+        }
+
+        internal WordEntryDetail FindFirstEntryDetailByRootWord(string rootWord)
+        {
+#if DEBUG
+            if (rootWord == null)
+            {
+                throw new ArgumentNullException(nameof(rootWord));
+            }
+#endif
+
+            return EntriesByRoot.TryGetValue(rootWord, out WordEntryDetail[] details) && details.Length != 0
+                ? details[0]
+                : null;
+        }
 
         private IEnumerable<WordEntry> GetAllNGramAllowedEntries() =>
             EntriesByRoot.SelectMany(rootPair =>
@@ -102,55 +163,5 @@ namespace WeCantSpell.Hunspell
                         .Select(d => new WordEntry(rootPair.Key, d));
                 }
             });
-
-        public IEnumerable<WordEntry> AllEntries => EntriesByRoot.SelectMany(pair => pair.Value.Select(d => new WordEntry(pair.Key, d)));
-
-        public IEnumerable<string> RootWords => EntriesByRoot.Keys;
-
-        public bool HasEntries => EntriesByRoot.Count != 0;
-
-        public WordEntrySet this[string rootWord] => FindEntriesByRootWord(rootWord);
-
-        public bool Check(string word) => new QueryCheck(word, this).Check();
-
-        public SpellCheckResult CheckDetails(string word) => new QueryCheck(word, this).CheckDetails();
-
-        public IEnumerable<string> Suggest(string word) => new QuerySuggest(word, this).Suggest();
-
-        public WordEntrySet FindEntriesByRootWord(string rootWord)
-        {
-            var details = FindEntryDetailsByRootWord(rootWord);
-            return details.Length == 0
-                ? WordEntrySet.Empty
-                : WordEntrySet.Create(rootWord, details);
-        }
-
-        internal WordEntry FindFirstEntryByRootWord(string rootWord)
-        {
-            var details = FindEntryDetailsByRootWord(rootWord);
-            return details.Length == 0
-                ? null
-                : new WordEntry(rootWord, details[0]);
-        }
-
-        internal WordEntryDetail[] FindEntryDetailsByRootWord(string rootWord)
-        {
-            return (rootWord == null || !EntriesByRoot.TryGetValue(rootWord, out WordEntryDetail[] details))
-                ? ArrayEx<WordEntryDetail>.Empty
-                : details;
-        }
-
-        internal WordEntryDetail FindFirstEntryDetailByRootWord(string rootWord)
-        {
-            var details = FindEntryDetailsByRootWord(rootWord);
-            return details.Length == 0
-                ? null
-                : details[0];
-        }
-
-        internal bool ContainsEntriesForRootWord(string rootWord)
-        {
-            return rootWord != null && EntriesByRoot.ContainsKey(rootWord);
-        }
     }
 }
