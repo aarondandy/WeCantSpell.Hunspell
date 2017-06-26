@@ -25,10 +25,6 @@ namespace WeCantSpell.Hunspell
 
         public abstract string this[ReplacementValueType type] { get; }
 
-        [Obsolete("Will no longer be public")]
-        public string ExtractReplacementText(int remainingCharactersToReplace, bool atStart) =>
-            ExtractReplacementTextInternal(remainingCharactersToReplace, atStart);
-
         public string ExtractReplacementTextInternal(int remainingCharactersToReplace, bool atStart)
         {
             var type = remainingCharactersToReplace == Pattern.Length

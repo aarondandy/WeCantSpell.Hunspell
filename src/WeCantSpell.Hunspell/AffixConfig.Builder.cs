@@ -471,10 +471,6 @@ namespace WeCantSpell.Hunspell
             public void EnableOptions(AffixConfigOptions options) =>
                 Options |= options;
 
-            [Obsolete("Use Dedup(FlagSet.TakeArray(values)) instead")]
-            public FlagSet TakeArrayForFlagSet(FlagValue[] values) =>
-                Dedup(FlagSet.TakeArray(values));
-
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
