@@ -90,16 +90,16 @@ namespace WeCantSpell.Hunspell
                 ? (WordEntryDetail[])FindEntryDetailsByRootWord(rootWord).Clone()
                 : ArrayEx<WordEntryDetail>.Empty;
 
-        private IEnumerable<WordEntry> NGramAllowedEntries =>
-            (NGramRestrictedEntries == null || NGramRestrictedEntries.Count == 0)
-            ? EntriesByRoot.SelectMany(pair => pair.Value.Select(d => new WordEntry(pair.Key, d)))
-            : GetAllNGramAllowedEntries();
-
         private Dictionary<string, WordEntryDetail[]> EntriesByRoot { get; set; }
 
         private FlagSet NGramRestrictedFlags { get; set; }
 
-        private Dictionary<string, WordEntryDetail[]> NGramRestrictedEntries { get; set; }
+        private IEnumerable<KeyValuePair<string, WordEntryDetail[]>> NGramAllowedDetails =>
+            (NGramRestrictedDetails == null || NGramRestrictedDetails.Count == 0)
+            ? EntriesByRoot
+            : GetAllNGramAllowedEntries();
+
+        private Dictionary<string, WordEntryDetail[]> NGramRestrictedDetails { get; set; }
 
         public bool Check(string word) => new QueryCheck(word, this).Check();
 
@@ -148,19 +148,20 @@ namespace WeCantSpell.Hunspell
                 : null;
         }
 
-        private IEnumerable<WordEntry> GetAllNGramAllowedEntries() =>
-            EntriesByRoot.SelectMany(rootPair =>
+        private IEnumerable<KeyValuePair<string, WordEntryDetail[]>> GetAllNGramAllowedEntries() =>
+            EntriesByRoot.Select(rootPair =>
             {
-                if (NGramRestrictedEntries.TryGetValue(rootPair.Key, out WordEntryDetail[] restrictedDetails))
+                if (NGramRestrictedDetails.TryGetValue(rootPair.Key, out WordEntryDetail[] restrictedDetails))
                 {
-                    return rootPair.Value
-                        .Where(d => !restrictedDetails.Contains(d))
-                        .Select(d => new WordEntry(rootPair.Key, d));
+                    return new KeyValuePair<string, WordEntryDetail[]>(
+                        rootPair.Key,
+                        rootPair.Value
+                            .Where(d => !restrictedDetails.Contains(d))
+                            .ToArray());
                 }
                 else
                 {
-                    return rootPair.Value
-                        .Select(d => new WordEntry(rootPair.Key, d));
+                    return rootPair;
                 }
             });
     }

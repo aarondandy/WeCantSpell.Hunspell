@@ -102,7 +102,7 @@ namespace WeCantSpell.Hunspell
                     }
                 }
 
-                result.NGramRestrictedEntries = new Dictionary<string, WordEntryDetail[]>();
+                result.NGramRestrictedDetails = new Dictionary<string, WordEntryDetail[]>();
 
                 foreach (var rootSet in result.EntriesByRoot)
                 {
@@ -122,7 +122,7 @@ namespace WeCantSpell.Hunspell
 
                     if (details != null)
                     {
-                        result.NGramRestrictedEntries.Add(rootSet.Key, details.ToArray());
+                        result.NGramRestrictedDetails.Add(rootSet.Key, details.ToArray());
                     }
                 }
 

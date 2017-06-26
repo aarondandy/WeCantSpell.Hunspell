@@ -1117,56 +1117,59 @@ namespace WeCantSpell.Hunspell
                     ? Phonet(HunspellTextFunctions.MakeAllCap(word, textInfo))
                     : string.Empty;
 
-                foreach (var hp in WordList.NGramAllowedEntries)
+                foreach (var hpSet in WordList.NGramAllowedDetails)
                 {
-                    sc = NGram(3, word, hp.Word, NGramOptions.LongerWorse | NGramOptions.Lowering)
-                        + LeftCommonSubstring(word, hp.Word);
-
-                    // check special pronounciation
-                    var f = string.Empty;
-                    if (EnumEx.HasFlag(hp.Options, WordEntryOptions.Phon) && CopyField(ref f, hp.Morphs, MorphologicalTags.Phon))
+                    foreach (var hpDetail in hpSet.Value)
                     {
-                        var sc2 = NGram(3, word, f, NGramOptions.LongerWorse | NGramOptions.Lowering)
-                            + LeftCommonSubstring(word, f);
+                        sc = NGram(3, word, hpSet.Key, NGramOptions.LongerWorse | NGramOptions.Lowering)
+                            + LeftCommonSubstring(word, hpSet.Key);
 
-                        if (sc2 > sc)
+                        // check special pronounciation
+                        var f = string.Empty;
+                        if (EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.Phon) && CopyField(ref f, hpDetail.Morphs, MorphologicalTags.Phon))
                         {
-                            sc = sc2;
-                        }
-                    }
+                            var sc2 = NGram(3, word, f, NGramOptions.LongerWorse | NGramOptions.Lowering)
+                                + LeftCommonSubstring(word, f);
 
-                    var scphon = -20000;
-                    if (hasPhoneEntries && sc > 2 && Math.Abs(word.Length - hp.Word.Length) <= 3)
-                    {
-                        scphon = NGram(3, target, Phonet(HunspellTextFunctions.MakeAllCap(hp.Word, textInfo)), NGramOptions.LongerWorse) * 2;
-                    }
-
-                    if (sc > roots[lp].Score)
-                    {
-                        roots[lp].Score = sc;
-                        roots[lp].Root = hp;
-                        lval = sc;
-                        for (var j = 0; j < roots.Length; j++)
-                        {
-                            if (roots[j].Score < lval)
+                            if (sc2 > sc)
                             {
-                                lp = j;
-                                lval = roots[j].Score;
+                                sc = sc2;
                             }
                         }
-                    }
 
-                    if (scphon > roots[lpphon].ScorePhone)
-                    {
-                        roots[lpphon].ScorePhone = scphon;
-                        roots[lpphon].RootPhon = hp.Word;
-                        lval = scphon;
-                        for (var j = 0; j < roots.Length; j++)
+                        var scphon = -20000;
+                        if (hasPhoneEntries && sc > 2 && Math.Abs(word.Length - hpSet.Key.Length) <= 3)
                         {
-                            if (roots[j].ScorePhone < lval)
+                            scphon = NGram(3, target, Phonet(HunspellTextFunctions.MakeAllCap(hpSet.Key, textInfo)), NGramOptions.LongerWorse) * 2;
+                        }
+
+                        if (sc > roots[lp].Score)
+                        {
+                            roots[lp].Score = sc;
+                            roots[lp].Root = new WordEntry(hpSet.Key, hpDetail);
+                            lval = sc;
+                            for (var j = 0; j < roots.Length; j++)
                             {
-                                lpphon = j;
-                                lval = roots[j].ScorePhone;
+                                if (roots[j].Score < lval)
+                                {
+                                    lp = j;
+                                    lval = roots[j].Score;
+                                }
+                            }
+                        }
+
+                        if (scphon > roots[lpphon].ScorePhone)
+                        {
+                            roots[lpphon].ScorePhone = scphon;
+                            roots[lpphon].RootPhon = hpSet.Key;
+                            lval = scphon;
+                            for (var j = 0; j < roots.Length; j++)
+                            {
+                                if (roots[j].ScorePhone < lval)
+                                {
+                                    lpphon = j;
+                                    lval = roots[j].ScorePhone;
+                                }
                             }
                         }
                     }
