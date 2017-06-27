@@ -25,7 +25,7 @@ namespace WeCantSpell.Hunspell
             }
 
             var startPosition = position;
-            position = StringEx.FirstIndexOfLineBreakChar(content, position);
+            position = content.FirstIndexOfLineBreakChar(position);
             if (position < 0)
             {
                 position = content.Length;
@@ -33,7 +33,7 @@ namespace WeCantSpell.Hunspell
 
             var result = content.Substring(startPosition, position - startPosition);
 
-            while (position < content.Length && StringEx.IsLineBreakChar(content[position]))
+            while (position < content.Length && content[position].IsLineBreakChar())
             {
                 position++;
             }

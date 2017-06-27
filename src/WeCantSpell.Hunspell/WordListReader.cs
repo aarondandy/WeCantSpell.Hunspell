@@ -463,7 +463,7 @@ namespace WeCantSpell.Hunspell
 
             public static ParsedWordLine Parse(string line)
             {
-                var firstNonDelimiterPosition = StringEx.IndexOfNonTabOrSpace(line, 0);
+                var firstNonDelimiterPosition = line.IndexOfNonTabOrSpace(0);
                 if (firstNonDelimiterPosition >= 0)
                 {
                     var endOfWordAndFlagsPosition = FindIndexOfFirstMorphByColonChar(line, firstNonDelimiterPosition);
@@ -476,7 +476,7 @@ namespace WeCantSpell.Hunspell
                         }
                     }
 
-                    while(endOfWordAndFlagsPosition > firstNonDelimiterPosition && StringEx.IsTabOrSpace(line[endOfWordAndFlagsPosition - 1]))
+                    while(endOfWordAndFlagsPosition > firstNonDelimiterPosition && line[endOfWordAndFlagsPosition - 1].IsTabOrSpace())
                     {
                         --endOfWordAndFlagsPosition;
                     }
@@ -519,7 +519,7 @@ namespace WeCantSpell.Hunspell
                 while ((index = text.IndexOf(':', index)) >= 0)
                 {
                     var checkLocation = index - 3;
-                    if (checkLocation >= 0 && StringEx.IsTabOrSpace(text[checkLocation]))
+                    if (checkLocation >= 0 && text[checkLocation].IsTabOrSpace())
                     {
                         return checkLocation;
                     }

@@ -19,11 +19,7 @@ namespace WeCantSpell.Hunspell
 {
     public sealed class AffixReader
     {
-        public AffixReader(AffixConfig.Builder builder, IHunspellLineReader reader)
-        {
-            Builder = builder ?? new AffixConfig.Builder();
-            Reader = reader;
-        }
+        public static readonly Encoding DefaultEncoding = EncodingEx.GetEncodingByName(new StringSlice("ISO8859-1")) ?? Encoding.UTF8;
 
         private static readonly Regex AffixLineRegex = new Regex(
             @"^[\t ]*([^\t ]+)[\t ]+(?:([^\t ]+)[\t ]+([^\t ]+)|([^\t ]+)[\t ]+([^\t ]+)[\t ]+([^\t ]+)(?:[\t ]+(.+))?)[\t ]*(?:[#].*)?$",
@@ -113,7 +109,11 @@ namespace WeCantSpell.Hunspell
 
         private static readonly CharacterSet DefaultCompoundVowels = CharacterSet.TakeArray(new[] { 'A', 'E', 'I', 'O', 'U', 'a', 'e', 'i', 'o', 'u' });
 
-        public static readonly Encoding DefaultEncoding = EncodingEx.GetEncodingByName("ISO8859-1") ?? Encoding.UTF8;
+        public AffixReader(AffixConfig.Builder builder, IHunspellLineReader reader)
+        {
+            Builder = builder ?? new AffixConfig.Builder();
+            Reader = reader;
+        }
 
         private AffixConfig.Builder Builder { get; }
 
@@ -232,24 +232,24 @@ namespace WeCantSpell.Hunspell
         {
             // read through the initial ^[ \t]*
             var commandStartIndex = 0;
-            for (; commandStartIndex < line.Length && StringEx.IsTabOrSpace(line[commandStartIndex]); commandStartIndex++) ;
+            for (; commandStartIndex < line.Length && line[commandStartIndex].IsTabOrSpace(); commandStartIndex++) ;
 
-            if (commandStartIndex == line.Length || StringEx.IsCommentPrefix(line[commandStartIndex]))
+            if (commandStartIndex == line.Length || IsCommentPrefix(line[commandStartIndex]))
             {
                 return true; // empty, whitespace, or comment
             }
 
             // read through the final [ \t]*$
             var lineEndIndex = line.Length - 1;
-            for (; lineEndIndex > commandStartIndex && StringEx.IsTabOrSpace(line[lineEndIndex]); lineEndIndex--) ;
+            for (; lineEndIndex > commandStartIndex && line[lineEndIndex].IsTabOrSpace(); lineEndIndex--) ;
 
             // find the end of the command
             var commandEndIndex = commandStartIndex;
-            for (; commandEndIndex <= lineEndIndex && !StringEx.IsTabOrSpace(line[commandEndIndex]); commandEndIndex++) ;
+            for (; commandEndIndex <= lineEndIndex && !line[commandEndIndex].IsTabOrSpace(); commandEndIndex++) ;
 
             // first command exists between [lineStartIndex,commandEndIndex)
             var parameterStartIndex = commandEndIndex;
-            for (; parameterStartIndex <= lineEndIndex && StringEx.IsTabOrSpace(line[parameterStartIndex]); parameterStartIndex++) ;
+            for (; parameterStartIndex <= lineEndIndex && line[parameterStartIndex].IsTabOrSpace(); parameterStartIndex++) ;
 
             var command = line.Substring(commandStartIndex, commandEndIndex - commandStartIndex);
 
@@ -273,6 +273,11 @@ namespace WeCantSpell.Hunspell
 
             return LogWarning("Failed to parse line: " + line);
         }
+
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static bool IsCommentPrefix(char c) => c == '#' || c == '/';
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

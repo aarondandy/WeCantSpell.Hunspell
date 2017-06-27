@@ -4,7 +4,7 @@ using System.Globalization;
 namespace WeCantSpell.Hunspell.Infrastructure
 {
     /// <summary>
-    /// Provides the ability to compare text from files using their configured culture.
+    /// Provides the ability to compare text using a configured culture.
     /// </summary>
     internal sealed class CulturedStringComparer : StringComparer
     {

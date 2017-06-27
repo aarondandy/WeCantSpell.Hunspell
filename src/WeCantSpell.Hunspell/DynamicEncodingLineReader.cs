@@ -77,7 +77,7 @@ namespace WeCantSpell.Hunspell
             }
 
             using (var stream = FileStreamEx.OpenReadFileStream(filePath))
-            using (var reader = new DynamicEncodingLineReader(stream, defaultEncoding ?? EncodingEx.DefaultReadEncoding))
+            using (var reader = new DynamicEncodingLineReader(stream, defaultEncoding ?? Encoding.UTF8))
             {
                 return reader.ReadLines().ToList();
             }
@@ -92,7 +92,7 @@ namespace WeCantSpell.Hunspell
             }
 
             using (var stream = FileStreamEx.OpenAsyncReadFileStream(filePath))
-            using (var reader = new DynamicEncodingLineReader(stream, defaultEncoding ?? EncodingEx.DefaultReadEncoding))
+            using (var reader = new DynamicEncodingLineReader(stream, defaultEncoding ?? Encoding.UTF8))
             {
                 return await reader.ReadLinesAsync().ConfigureAwait(false);
             }
@@ -473,7 +473,7 @@ namespace WeCantSpell.Hunspell
         {
             // read through the initial whitespace
             var startIndex = 0;
-            for (; startIndex < line.Length && StringEx.IsTabOrSpace(line[startIndex]); startIndex++) ;
+            for (; startIndex < line.Length && line[startIndex].IsTabOrSpace(); startIndex++) ;
 
             if (startIndex == line.Length)
             {
@@ -491,11 +491,11 @@ namespace WeCantSpell.Hunspell
             startIndex++;
 
             // read the whitespace to find the encoding name
-            for (; startIndex < line.Length && StringEx.IsTabOrSpace(line[startIndex]); startIndex++) ;
+            for (; startIndex < line.Length && line[startIndex].IsTabOrSpace(); startIndex++) ;
             
             // read through the final trailing whitespace if any
             var endIndex = line.Length - 1;
-            for (; endIndex > startIndex && StringEx.IsTabOrSpace(line[endIndex]); endIndex--) ;
+            for (; endIndex > startIndex && line[endIndex].IsTabOrSpace(); endIndex--) ;
 
             ChangeEncoding(line.Subslice(startIndex, endIndex - startIndex + 1));
         }

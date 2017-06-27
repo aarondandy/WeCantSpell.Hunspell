@@ -20,7 +20,7 @@ namespace WeCantSpell.Hunspell
         public StaticEncodingLineReader(Stream stream, Encoding encoding)
         {
             this.stream = stream ?? throw new ArgumentNullException(nameof(stream));
-            reader = new StreamReader(stream, encoding ?? EncodingEx.DefaultReadEncoding, true);
+            reader = new StreamReader(stream, encoding ?? Encoding.UTF8, true);
         }
 
         private readonly Stream stream;

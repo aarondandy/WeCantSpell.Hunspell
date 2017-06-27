@@ -107,7 +107,8 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public bool Equals(string other, StringComparison comparisonType) =>
             other != null
-            && (
+            &&
+            (
                 IsFullString
                     ? Text.Equals(other, comparisonType)
                     : (
@@ -190,7 +191,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             }
             if (Length == 1)
             {
-                var c = this.First();
+                var c = First();
                 return c == oldValue
                     ? newValue.ToString()
                     : c.ToString();
@@ -206,7 +207,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             var lastIndex = Offset + Length;
             for (searchOffset = Offset + searchOffset; searchOffset < lastIndex; searchOffset++)
             {
-                if (StringEx.IsTabOrSpace(Text[searchOffset]))
+                if (Text[searchOffset].IsTabOrSpace())
                 {
                     return searchOffset - Offset;
                 }

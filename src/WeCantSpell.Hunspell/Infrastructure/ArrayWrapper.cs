@@ -15,13 +15,13 @@ namespace WeCantSpell.Hunspell.Infrastructure
         IReadOnlyList<T>
 #endif
     {
-        internal readonly T[] items;
-
         protected ArrayWrapper(T[] items)
         {
             this.items = items ?? throw new ArgumentNullException(nameof(items));
             IsEmpty = items.Length == 0;
         }
+
+        internal readonly T[] items;
 
         public bool IsEmpty
         {
@@ -106,6 +106,9 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         private ArrayComparer<TValue> ArrayComparer { get; }
 
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public bool Equals(TCollection x, TCollection y) =>
             ArrayComparer.Equals(x.items, y.items);
 

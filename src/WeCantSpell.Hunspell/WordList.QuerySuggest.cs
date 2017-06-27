@@ -139,10 +139,11 @@ namespace WeCantSpell.Hunspell
                             var slen = toRemove.Length - spaceIndex - 1;
 
                             // different case after space (need capitalisation)
-                            if (slen < scw.Length && !StringEx.EqualsOffset(scw, scw.Length - slen, toRemove, 1 + spaceIndex))
+                            if (slen < scw.Length && !scw.Subslice(scw.Length - slen).Equals(toRemove.Subslice(1 + spaceIndex)))
                             {
                                 // set as first suggestion
-                                slst.RemoveFromIndexThenInsertAtFront(
+                                RemoveFromIndexThenInsertAtFront(
+                                    slst,
                                     j,
                                     StringEx.ConcatString(toRemove, 0, spaceIndex + 1, HunspellTextFunctions.MakeInitCap(toRemove.Subslice(spaceIndex + 1), textInfo)));
                             }
@@ -355,6 +356,21 @@ namespace WeCantSpell.Hunspell
                 }
 
                 return slst;
+            }
+
+            private static void RemoveFromIndexThenInsertAtFront(List<string> list, int removeIndex, string insertValue)
+            {
+                if (list.Count != 0)
+                {
+                    while (removeIndex > 0)
+                    {
+                        var sourceIndex = removeIndex - 1;
+                        list[removeIndex] = list[sourceIndex];
+                        removeIndex = sourceIndex;
+                    }
+
+                    list[0] = insertValue;
+                }
             }
 
             private List<string> Suggest(string word) => new QuerySuggest(word, WordList).Suggest();
@@ -1634,7 +1650,7 @@ namespace WeCantSpell.Hunspell
                                     (
                                         bad.Length > sptr.Key.Length
                                         &&
-                                        StringEx.EqualsOffset(sptr.Append, 0, bad, bad.Length - sptr.Key.Length)
+                                        bad.Subslice(bad.Length - sptr.Key.Length).Equals(sptr.Append)
                                     )
                                 )
                                 && // check needaffix flag
@@ -1986,7 +2002,7 @@ namespace WeCantSpell.Hunspell
                         (
                             entry.Strip.Length == 0
                             ||
-                            StringEx.EqualsOffset(word, word.Length - entry.Strip.Length, entry.Strip, 0)
+                            word.Subslice(word.Length - entry.Strip.Length).Equals(entry.Strip)
                         )
                     )
                     // we have a match so add suffix
