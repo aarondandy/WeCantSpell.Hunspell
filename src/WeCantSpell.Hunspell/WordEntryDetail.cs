@@ -47,17 +47,17 @@ namespace WeCantSpell.Hunspell
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public bool ContainsAnyFlags(FlagValue a, FlagValue b) => HasFlags && Flags.ContainsAny(a, b);
+        public bool ContainsAnyFlags(FlagValue a, FlagValue b) => Flags.ContainsAny(a, b);
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public bool ContainsAnyFlags(FlagValue a, FlagValue b, FlagValue c) => HasFlags && Flags.ContainsAny(a, b, c);
+        public bool ContainsAnyFlags(FlagValue a, FlagValue b, FlagValue c) => Flags.ContainsAny(a, b, c);
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public bool ContainsAnyFlags(FlagValue a, FlagValue b, FlagValue c, FlagValue d) => HasFlags && Flags.ContainsAny(a, b, c, d);
+        public bool ContainsAnyFlags(FlagValue a, FlagValue b, FlagValue c, FlagValue d) => Flags.ContainsAny(a, b, c, d);
 
         public bool Equals(WordEntryDetail other)
         {

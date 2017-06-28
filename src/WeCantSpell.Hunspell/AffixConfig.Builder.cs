@@ -240,13 +240,13 @@ namespace WeCantSpell.Hunspell
             /// Suffixes attached to root words to make other words.
             /// </summary>
             /// <seealso cref="AffixConfig.Suffixes"/>
-            public List<AffixEntryGroup.Builder<SuffixEntry>> Suffixes;
+            public List<AffixEntryGroup<SuffixEntry>.Builder> Suffixes;
 
             /// <summary>
             /// Preffixes attached to root words to make other words.
             /// </summary>
             /// <seealso cref="AffixConfig.Prefixes"/>
-            public List<AffixEntryGroup.Builder<PrefixEntry>> Prefixes;
+            public List<AffixEntryGroup<PrefixEntry>.Builder> Prefixes;
 
             /// <summary>
             /// Ordinal numbers for affix flag compression.
@@ -452,9 +452,9 @@ namespace WeCantSpell.Hunspell
                     config.aliasM = AliasM == null ? new List<MorphSet>(0) : AliasM.ToList();
                 }
 
-                config.Prefixes = AffixCollection<PrefixEntry>.Create(Prefixes);
+                config.Prefixes = PrefixCollection.Create(Prefixes);
 
-                config.Suffixes = AffixCollection<SuffixEntry>.Create(Suffixes);
+                config.Suffixes = SuffixCollection.Create(Suffixes);
 
                 config.ContClasses = FlagSet.Union(config.Prefixes.ContClasses, config.Suffixes.ContClasses);
 

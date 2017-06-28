@@ -19,29 +19,9 @@ namespace WeCantSpell.Hunspell
             FlagSet contClass)
             : base(strip, affixText, conditions, morph, contClass)
         {
+            Key = affixText.Reverse();
         }
 
-        public sealed override string Append
-        {
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            get => base.Append;
-            protected set
-            {
-                base.Append = value;
-                RAppend = value.Reverse();
-            }
-        }
-
-        public string RAppend { get; private set; }
-
-        public sealed override string Key
-        {
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            get => RAppend;
-        }
+        public sealed override string Key { get; }
     }
 }

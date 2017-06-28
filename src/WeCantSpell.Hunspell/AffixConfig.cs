@@ -526,12 +526,12 @@ namespace WeCantSpell.Hunspell
         /// <summary>
         /// Preffixes attached to root words to make other words.
         /// </summary>
-        public AffixCollection<PrefixEntry> Prefixes { get; private set; }
+        public PrefixCollection Prefixes { get; private set; }
 
         /// <summary>
         /// Suffixes attached to root words to make other words.
         /// </summary>
-        public AffixCollection<SuffixEntry> Suffixes { get; private set; }
+        public SuffixCollection Suffixes { get; private set; }
 
         /// <summary>
         /// Ordinal numbers for affix flag compression.

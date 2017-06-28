@@ -115,13 +115,13 @@ namespace WeCantSpell.Hunspell
         public bool ContainsAny(FlagSet values) => ContainsAny(this, values);
 
         public bool ContainsAny(FlagValue a, FlagValue b) =>
-            Contains(a)|| Contains(b);
+            HasItems && (Contains(a)|| Contains(b));
 
         public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c) =>
-            Contains(a) || Contains(b) || Contains(c);
+            HasItems && (Contains(a) || Contains(b) || Contains(c));
 
         public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c, FlagValue d) =>
-            Contains(a) || Contains(b) || Contains(c) || Contains(d);
+            HasItems && (Contains(a) || Contains(b) || Contains(c) || Contains(d));
 
         public bool Equals(FlagSet other) =>
             ReferenceEquals(this, other)

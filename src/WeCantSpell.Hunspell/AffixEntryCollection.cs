@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell
@@ -16,6 +17,9 @@ namespace WeCantSpell.Hunspell
             entries == null ? Empty : new AffixEntryCollection<TEntry>(entries);
 
         public static AffixEntryCollection<TEntry> Create(List<TEntry> entries) =>
+            entries == null ? Empty : TakeArray(entries.ToArray());
+
+        public static AffixEntryCollection<TEntry> Create(IEnumerable<TEntry> entries) =>
             entries == null ? Empty : TakeArray(entries.ToArray());
     }
 }

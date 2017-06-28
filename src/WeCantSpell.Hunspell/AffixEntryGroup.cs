@@ -14,12 +14,38 @@ namespace WeCantSpell.Hunspell
     public sealed class AffixEntryGroup<TEntry>
         where TEntry : AffixEntry
     {
+        public sealed class Builder
+        {
+            /// <summary>
+            /// All of the entries that make up this group.
+            /// </summary>
+            public List<TEntry> Entries { get; set; }
+
+            /// <summary>
+            /// ID used to represent the affix group.
+            /// </summary>
+            public FlagValue AFlag { get; set; }
+
+            /// <summary>
+            /// Options for this affix group.
+            /// </summary>
+            public AffixEntryOptions Options { get; set; }
+
+            public AffixEntryGroup<TEntry> ToGroup() =>
+                new AffixEntryGroup<TEntry>(AFlag, Options, AffixEntryCollection<TEntry>.Create(Entries));
+        }
+
         public AffixEntryGroup(FlagValue aFlag, AffixEntryOptions options, AffixEntryCollection<TEntry> entries)
         {
+            Entries = entries;
             AFlag = aFlag;
             Options = options;
-            Entries = entries;
         }
+
+        /// <summary>
+        /// All of the entries that make up this group.
+        /// </summary>
+        public AffixEntryCollection<TEntry> Entries { get; }
 
         /// <summary>
         /// ID used to represent the affix group.
@@ -32,11 +58,6 @@ namespace WeCantSpell.Hunspell
         public AffixEntryOptions Options { get; }
 
         /// <summary>
-        /// All of the entries that make up this group.
-        /// </summary>
-        public AffixEntryCollection<TEntry> Entries { get; }
-
-        /// <summary>
         /// Indicates if a group has the <see cref="AffixEntryOptions.CrossProduct"/> option enabled.
         /// </summary>
         /// <seealso cref="AffixEntryOptions"/>
@@ -47,30 +68,19 @@ namespace WeCantSpell.Hunspell
 #endif
             get => EnumEx.HasFlag(Options, AffixEntryOptions.CrossProduct);
         }
-    }
 
-    public static class AffixEntryGroup
-    {
-        public sealed class Builder<TEntry>
-            where TEntry : AffixEntry
+        public IEnumerable<Affix<TEntry>> GetAffixes() => GetAffixesInternal();
+
+        internal Affix<TEntry>[] GetAffixesInternal()
         {
-            /// <summary>
-            /// ID used to represent the affix group.
-            /// </summary>
-            public FlagValue AFlag { get; set; }
+            var source = Entries.items;
+            var result = new Affix<TEntry>[source.Length];
+            for (var i = 0; i < source.Length; i++)
+            {
+                result[i] = Affix<TEntry>.Create(source[i], this);
+            }
 
-            /// <summary>
-            /// Options for this affix group.
-            /// </summary>
-            public AffixEntryOptions Options { get; set; }
-
-            /// <summary>
-            /// All of the entries that make up this group.
-            /// </summary>
-            public List<TEntry> Entries { get; set; }
-
-            public AffixEntryGroup<TEntry> ToGroup() =>
-                new AffixEntryGroup<TEntry>(AFlag, Options, AffixEntryCollection<TEntry>.Create(Entries));
+            return result;
         }
     }
 }

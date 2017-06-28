@@ -694,17 +694,17 @@ namespace WeCantSpell.Hunspell
             return true;
         }
 
-        private bool TryParseAffixIntoList<TEntry>(StringSlice parameterText, ref List<AffixEntryGroup.Builder<TEntry>> groups)
+        private bool TryParseAffixIntoList<TEntry>(StringSlice parameterText, ref List<AffixEntryGroup<TEntry>.Builder> groups)
             where TEntry : AffixEntry
             =>
             TryParseAffixIntoList(parameterText.ToString(), ref groups);
 
-        private bool TryParseAffixIntoList<TEntry>(string parameterText, ref List<AffixEntryGroup.Builder<TEntry>> groups)
+        private bool TryParseAffixIntoList<TEntry>(string parameterText, ref List<AffixEntryGroup<TEntry>.Builder> groups)
             where TEntry : AffixEntry
         {
             if (groups == null)
             {
-                groups = new List<AffixEntryGroup.Builder<TEntry>>();
+                groups = new List<AffixEntryGroup<TEntry>.Builder>();
             }
 
             var lineMatch = AffixLineRegex.Match(parameterText);
@@ -746,7 +746,7 @@ namespace WeCantSpell.Hunspell
 
                 IntEx.TryParseInvariant(lineMatchGroups[3].Value, out int expectedEntryCount);
 
-                affixGroup = new AffixEntryGroup.Builder<TEntry>
+                affixGroup = new AffixEntryGroup<TEntry>.Builder
                 {
                     AFlag = characterFlag,
                     Options = options,
@@ -878,7 +878,7 @@ namespace WeCantSpell.Hunspell
 
                 if (affixGroup == null)
                 {
-                    affixGroup = new AffixEntryGroup.Builder<TEntry>
+                    affixGroup = new AffixEntryGroup<TEntry>.Builder
                     {
                         AFlag = characterFlag,
                         Options = AffixEntryOptions.None,
@@ -891,7 +891,7 @@ namespace WeCantSpell.Hunspell
                     Builder.HasContClass = true;
                 }
 
-                affixGroup.Entries.Add(AffixEntry.CreateWithoutNullCheck<TEntry>(
+                affixGroup.Entries.Add(CreateEntry<TEntry>(
                     Builder.Dedup(strip),
                     Builder.Dedup(StringBuilderPool.GetStringAndReturn(affixText)),
                     Builder.Dedup(conditions),
@@ -902,6 +902,28 @@ namespace WeCantSpell.Hunspell
             }
 
             return LogWarning("Affix line not fully parsed: " + parameterText);
+        }
+
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static TEntry CreateEntry<TEntry>(string strip,
+            string affixText,
+            CharacterConditionGroup conditions,
+            MorphSet morph,
+            FlagSet contClass)
+            where TEntry : AffixEntry
+        {
+            if (typeof(TEntry) == typeof(PrefixEntry))
+            {
+                return (TEntry)((AffixEntry)new PrefixEntry(strip, affixText, conditions, morph, contClass));
+            }
+            if (typeof(TEntry) == typeof(SuffixEntry))
+            {
+                return (TEntry)((AffixEntry)new SuffixEntry(strip, affixText, conditions, morph, contClass));
+            }
+
+            throw new NotSupportedException();
         }
 
         private static string ReverseCondition(string conditionText)

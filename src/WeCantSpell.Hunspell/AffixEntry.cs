@@ -107,29 +107,6 @@ namespace WeCantSpell.Hunspell
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        internal static TEntry CreateWithoutNullCheck<TEntry>(
-            string strip,
-            string affixText,
-            CharacterConditionGroup conditions,
-            MorphSet morph,
-            FlagSet contClass)
-            where TEntry : AffixEntry
-        {
-            if (typeof(TEntry) == typeof(PrefixEntry))
-            {
-                return (TEntry)((AffixEntry)new PrefixEntry(strip, affixText, conditions, morph, contClass));
-            }
-            if (typeof(TEntry) == typeof(SuffixEntry))
-            {
-                return (TEntry)((AffixEntry)new SuffixEntry(strip, affixText, conditions, morph, contClass));
-            }
-
-            throw new NotSupportedException();
-        }
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         protected AffixEntry(
             string strip,
             string affixText,
@@ -147,12 +124,12 @@ namespace WeCantSpell.Hunspell
         /// <summary>
         /// Optional morphological fields separated by spaces or tabulators.
         /// </summary>
-        public MorphSet MorphCode { get; private set; }
+        public MorphSet MorphCode { get; }
 
         /// <summary>
         /// Text matching conditions that are to be met.
         /// </summary>
-        public CharacterConditionGroup Conditions { get; private set; }
+        public CharacterConditionGroup Conditions { get; }
 
         /// <summary>
         /// The affix string to add.
@@ -160,7 +137,7 @@ namespace WeCantSpell.Hunspell
         /// <remarks>
         /// Affix (optionally with flags of continuation classes, separated by a slash).
         /// </remarks>
-        public virtual string Append { get; protected set; }
+        public string Append { get; }
 
         /// <summary>
         /// String to strip before adding affix.
@@ -169,9 +146,9 @@ namespace WeCantSpell.Hunspell
         /// Stripping characters from beginning (at prefix rules) or
         /// end(at suffix rules) of the word.
         /// </remarks>
-        public string Strip { get; private set; }
+        public string Strip { get; }
 
-        public FlagSet ContClass { get; private set; }
+        public FlagSet ContClass { get; }
 
         public abstract string Key { get; }
 
