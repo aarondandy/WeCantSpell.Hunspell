@@ -20,7 +20,7 @@ namespace WeCantSpell.Hunspell
         public static CompoundRuleSet Create(IEnumerable<CompoundRule> rules) =>
             rules == null ? Empty : TakeList(rules.ToList());
 
-        public bool EntryContainsRuleFlags(WordEntryDetail details)
+        internal bool EntryContainsRuleFlags(WordEntryDetail details)
         {
             if (details != null && details.HasFlags)
             {

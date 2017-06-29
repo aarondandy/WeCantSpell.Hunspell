@@ -15,11 +15,6 @@ namespace WeCantSpell.Hunspell
 
         public static readonly ArrayWrapperComparer<FlagValue, FlagSet> DefaultComparer = new ArrayWrapperComparer<FlagValue, FlagSet>();
 
-        private FlagSet(FlagValue[] values)
-            : base(values)
-        {
-        }
-
         internal static FlagSet TakeArray(FlagValue[] values)
         {
             if (values == null || values.Length == 0)
@@ -30,9 +25,6 @@ namespace WeCantSpell.Hunspell
             Array.Sort(values);
             return new FlagSet(values);
         }
-
-        public static FlagSet Create(List<FlagValue> given) =>
-            given == null ? Empty : TakeArray(given.Distinct().ToArray());
 
         public static FlagSet Create(IEnumerable<FlagValue> given) =>
             given == null ? Empty : TakeArray(given.Distinct().ToArray());
@@ -95,6 +87,11 @@ namespace WeCantSpell.Hunspell
             return false;
         }
 
+        private FlagSet(FlagValue[] values)
+            : base(values)
+        {
+        }
+
         public bool Contains(FlagValue value)
         {
             if (!value.HasValue || IsEmpty)
@@ -115,7 +112,7 @@ namespace WeCantSpell.Hunspell
         public bool ContainsAny(FlagSet values) => ContainsAny(this, values);
 
         public bool ContainsAny(FlagValue a, FlagValue b) =>
-            HasItems && (Contains(a)|| Contains(b));
+            HasItems && (Contains(a) || Contains(b));
 
         public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c) =>
             HasItems && (Contains(a) || Contains(b) || Contains(c));
@@ -124,15 +121,15 @@ namespace WeCantSpell.Hunspell
             HasItems && (Contains(a) || Contains(b) || Contains(c) || Contains(d));
 
         public bool Equals(FlagSet other) =>
-            ReferenceEquals(this, other)
-            ||
+            !ReferenceEquals(other, null)
+            &&
             (
-                !ReferenceEquals(other, null)
-                && ArrayComparer<FlagValue>.Default.Equals(other.items, items)
+                ReferenceEquals(this, other)
+                || ArrayComparer<FlagValue>.Default.Equals(other.items, items)
             );
 
         public override bool Equals(object obj) =>
-            obj is FlagSet set && Equals(set);
+             Equals(obj as FlagSet);
 
         public override int GetHashCode() =>
             ArrayComparer<FlagValue>.Default.GetHashCode(items);

@@ -23,7 +23,7 @@ namespace WeCantSpell.Hunspell
         /// <summary>
         /// Calculate break points for recursion limit.
         /// </summary>
-        public int FindRecursionLimit(string scw)
+        internal int FindRecursionLimit(string scw)
         {
             int nbr = 0;
 

@@ -14,26 +14,7 @@ namespace WeCantSpell.Hunspell
         public MultiReplacementEntry(string pattern, ReplacementValueType type, string value)
             : base(pattern)
         {
-            if (type == ReplacementValueType.Med)
-            {
-                med = value;
-            }
-            else if (type == ReplacementValueType.Ini)
-            {
-                ini = value;
-            }
-            else if (type == ReplacementValueType.Fin)
-            {
-                fin = value;
-            }
-            else if (type == ReplacementValueType.Isol)
-            {
-                isol = value;
-            }
-            else
-            {
-                throw new ArgumentOutOfRangeException(nameof(type));
-            }
+            Set(type, value);
         }
 
         private string med;
@@ -53,63 +34,52 @@ namespace WeCantSpell.Hunspell
         {
             get
             {
-                if (type == ReplacementValueType.Med)
+                switch (type)
                 {
-                    return med;
+                    case ReplacementValueType.Med: return med;
+                    case ReplacementValueType.Ini: return ini;
+                    case ReplacementValueType.Fin: return fin;
+                    case ReplacementValueType.Isol: return isol;
+                    default: throw new ArgumentOutOfRangeException(nameof(type));
                 }
-                if (type == ReplacementValueType.Ini)
-                {
-                    return ini;
-                }
-                if (type == ReplacementValueType.Fin)
-                {
-                    return fin;
-                }
-                if (type == ReplacementValueType.Isol)
-                {
-                    return isol;
-                }
-
-                throw new ArgumentOutOfRangeException(nameof(type));
             }
         }
 
         public MultiReplacementEntry With(ReplacementValueType type, string value)
         {
-            var result = new MultiReplacementEntry(Pattern);
+            var result = Clone();
+            result.Set(type, value);
+            return result;
+        }
 
+        internal void Set(ReplacementValueType type, string value)
+        {
             switch (type)
             {
                 case ReplacementValueType.Med:
-                    result.med = value;
-                    result.ini = ini;
-                    result.fin = fin;
-                    result.isol = isol;
+                    med = value;
                     break;
                 case ReplacementValueType.Ini:
-                    result.med = med;
-                    result.ini = value;
-                    result.fin = fin;
-                    result.isol = isol;
+                    ini = value;
                     break;
                 case ReplacementValueType.Fin:
-                    result.med = med;
-                    result.ini = ini;
-                    result.fin = value;
-                    result.isol = isol;
+                    fin = value;
                     break;
                 case ReplacementValueType.Isol:
-                    result.med = med;
-                    result.ini = ini;
-                    result.fin = fin;
-                    result.isol = value;
+                    isol = value;
                     break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(type));
+                default: throw new ArgumentOutOfRangeException(nameof(type));
             }
-
-            return result;
         }
+
+        internal MultiReplacementEntry Clone() =>
+            new MultiReplacementEntry(Pattern)
+            {
+                med = med,
+                ini = ini,
+                fin = fin,
+                isol = isol
+            };
     }
 
     internal static class MultiReplacementEntryExtensions
@@ -157,9 +127,9 @@ namespace WeCantSpell.Hunspell
             pattern2 = pattern2.Replace('_', ' ');
 
             // find existing entry
-            if (list.TryGetValue(pattern1, out MultiReplacementEntry entry))
+            if (list .TryGetValue(pattern1, out MultiReplacementEntry entry))
             {
-                entry = entry.With(type, pattern2);
+                entry.Set(type, pattern2);
             }
             else
             {

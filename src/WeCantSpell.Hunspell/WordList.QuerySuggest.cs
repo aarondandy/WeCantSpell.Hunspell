@@ -956,7 +956,7 @@ namespace WeCantSpell.Hunspell
                             (
                                 (rv2 = LookupFirst(word)) == null
                                 ||
-                                !rv2.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest)
+                                !rv2.Detail.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest)
                             )
                         )
                         {
@@ -1014,7 +1014,7 @@ namespace WeCantSpell.Hunspell
                 }
 
                 // check forbidden words
-                if (rv != null && rv.ContainsAnyFlags(Affix.ForbiddenWord, SpecialFlags.OnlyUpcaseFlag, Affix.NoSuggest, Affix.OnlyInCompound))
+                if (rv != null && rv.Detail.ContainsAnyFlags(Affix.ForbiddenWord, SpecialFlags.OnlyUpcaseFlag, Affix.NoSuggest, Affix.OnlyInCompound))
                 {
                     return 0;
                 }
@@ -1229,7 +1229,7 @@ namespace WeCantSpell.Hunspell
                     if (rp != null)
                     {
                         var field = string.Empty;
-                        if (!EnumEx.HasFlag(rp.Options, WordEntryOptions.Phon) || !CopyField(ref field, rp.Morphs, MorphologicalTags.Phon))
+                        if (!EnumEx.HasFlag(rp.Detail.Options, WordEntryOptions.Phon) || !CopyField(ref field, rp.Detail.Morphs, MorphologicalTags.Phon))
                         {
                             field = null;
                         }
@@ -1596,7 +1596,7 @@ namespace WeCantSpell.Hunspell
             {
                 var nh = 0;
                 // first add root word to list
-                if (nh < wlst.Length && !entry.ContainsAnyFlags(Affix.NeedAffix, Affix.OnlyInCompound))
+                if (nh < wlst.Length && !entry.Detail.ContainsAnyFlags(Affix.NeedAffix, Affix.OnlyInCompound))
                 {
                     wlst[nh].Word = entry.Word;
                     if (wlst[nh].Word == null)
@@ -1631,7 +1631,7 @@ namespace WeCantSpell.Hunspell
                 // handle suffixes
                 if (Affix.Suffixes.HasAffixes)
                 {
-                    foreach (var sptrGroup in Affix.Suffixes.GetByFlags(entry.Flags))
+                    foreach (var sptrGroup in Affix.Suffixes.GetByFlags(entry.Detail.Flags))
                     {
                         foreach (var sptr in sptrGroup.Entries)
                         {
@@ -1697,7 +1697,7 @@ namespace WeCantSpell.Hunspell
                             continue;
                         }
 
-                        foreach (var pfxGroup in Affix.Prefixes.GetByFlags(entry.Flags))
+                        foreach (var pfxGroup in Affix.Prefixes.GetByFlags(entry.Detail.Flags))
                         {
                             foreach (var cptr in pfxGroup.Entries)
                             {
@@ -1734,7 +1734,7 @@ namespace WeCantSpell.Hunspell
                 // now handle pure prefixes
                 if (Affix.Prefixes.HasAffixes)
                 {
-                    foreach (var ptrGroup in Affix.Prefixes.GetByFlags(entry.Flags))
+                    foreach (var ptrGroup in Affix.Prefixes.GetByFlags(entry.Detail.Flags))
                     {
                         foreach (var ptr in ptrGroup.Entries)
                         {

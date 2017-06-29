@@ -69,8 +69,6 @@ namespace WeCantSpell.Hunspell
             get => EnumEx.HasFlag(Options, AffixEntryOptions.CrossProduct);
         }
 
-        public IEnumerable<Affix<TEntry>> GetAffixes() => GetAffixesInternal();
-
         internal Affix<TEntry>[] GetAffixesInternal()
         {
             var source = Entries.items;

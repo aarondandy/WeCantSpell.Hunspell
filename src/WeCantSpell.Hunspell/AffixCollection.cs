@@ -4,10 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using WeCantSpell.Hunspell.Infrastructure;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell
 {
     public abstract class AffixCollection<TEntry> :
@@ -136,9 +132,6 @@ namespace WeCantSpell.Hunspell
 
         public IEnumerable<FlagValue> FlagValues => AffixesByFlag.Keys;
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public AffixEntryGroup<TEntry> GetByFlag(FlagValue flag)
         {
             AffixesByFlag.TryGetValue(flag, out AffixEntryGroup<TEntry> result);

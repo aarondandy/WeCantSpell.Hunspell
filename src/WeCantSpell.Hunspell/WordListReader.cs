@@ -18,7 +18,9 @@ namespace WeCantSpell.Hunspell
 {
     public sealed class WordListReader
     {
-        private bool hasInitialized;
+        private static readonly Regex InitialLineRegex = new Regex(
+            @"^\s*(\d+)\s*(?:[#].*)?$",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         private WordListReader(WordList.Builder builder, AffixConfig affix)
         {
@@ -26,9 +28,7 @@ namespace WeCantSpell.Hunspell
             Affix = affix;
         }
 
-        private static readonly Regex InitialLineRegex = new Regex(
-            @"^\s*(\d+)\s*(?:[#].*)?$",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private bool hasInitialized;
 
         private WordList.Builder Builder { get; }
 

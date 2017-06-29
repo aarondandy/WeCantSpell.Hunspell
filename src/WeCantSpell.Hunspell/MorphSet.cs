@@ -11,27 +11,15 @@ namespace WeCantSpell.Hunspell
 
         public static readonly ArrayWrapperComparer<string, MorphSet> DefaultComparer = new ArrayWrapperComparer<string, MorphSet>();
 
-        private MorphSet(string[] morphs)
-            : base(morphs)
-        {
-        }
-
-        internal static MorphSet TakeArray(string[] morphs) => morphs == null ? Empty : new MorphSet(morphs);
-
-        public static MorphSet Create(List<string> morphs) => morphs == null ? Empty : TakeArray(morphs.ToArray());
-
         public static MorphSet Create(IEnumerable<string> morphs) => morphs == null ? Empty : TakeArray(morphs.ToArray());
 
-        public string Join(string seperator) => string.Join(seperator, items);
-
-        public bool AnyStartsWith(string text) =>
-            AnyStartsWith(items, text);
+        internal static MorphSet TakeArray(string[] morphs) => morphs == null ? Empty : new MorphSet(morphs);
 
         internal static bool AnyStartsWith(string[] morphs, string text)
         {
             if (morphs != null && !string.IsNullOrEmpty(text))
             {
-                foreach(var morph in morphs)
+                foreach (var morph in morphs)
                 {
                     if (morph != null && morph.StartsWith(text))
                     {
@@ -39,6 +27,7 @@ namespace WeCantSpell.Hunspell
                     }
                 }
             }
+
             return false;
         }
 
@@ -54,16 +43,23 @@ namespace WeCantSpell.Hunspell
             return newMorphs;
         }
 
+        private MorphSet(string[] morphs)
+            : base(morphs)
+        {
+        }
+
+        internal string Join(string seperator) => string.Join(seperator, items);
+
         public bool Equals(MorphSet other) =>
-            ReferenceEquals(this, other)
-            ||
+            !ReferenceEquals(other, null)
+            &&
             (
-                !ReferenceEquals(other, null)
-                && ArrayComparer<string>.Default.Equals(other.items, items)
+                ReferenceEquals(this, other)
+                || ArrayComparer<string>.Default.Equals(other.items, items)
             );
 
         public override bool Equals(object obj) =>
-            obj is FlagSet set && Equals(set);
+            Equals(obj as MorphSet);
 
         public override int GetHashCode() =>
             ArrayComparer<string>.Default.GetHashCode(items);

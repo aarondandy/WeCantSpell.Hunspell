@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace WeCantSpell.Hunspell
+﻿namespace WeCantSpell.Hunspell
 {
     public abstract class ReplacementEntry
     {
@@ -25,7 +23,7 @@ namespace WeCantSpell.Hunspell
 
         public abstract string this[ReplacementValueType type] { get; }
 
-        public string ExtractReplacementTextInternal(int remainingCharactersToReplace, bool atStart)
+        internal string ExtractReplacementTextInternal(int remainingCharactersToReplace, bool atStart)
         {
             var type = remainingCharactersToReplace == Pattern.Length
                 ? ReplacementValueType.Fin

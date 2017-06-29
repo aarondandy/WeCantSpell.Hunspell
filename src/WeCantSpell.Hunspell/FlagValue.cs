@@ -62,7 +62,7 @@ namespace WeCantSpell.Hunspell
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static FlagValue Create(char high, char low) => new FlagValue(unchecked((char)((high << 8) | low)));
+        internal static FlagValue Create(char high, char low) => new FlagValue(unchecked((char)((high << 8) | low)));
 
         public static bool TryParseFlag(string text, FlagMode mode, out FlagValue value)
         {

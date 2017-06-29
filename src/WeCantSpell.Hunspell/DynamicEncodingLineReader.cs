@@ -84,7 +84,7 @@ namespace WeCantSpell.Hunspell
         }
 
 #if !NO_ASYNC
-        public static async Task<List<string>> ReadLinesAsync(string filePath, Encoding defaultEncoding)
+        public static async Task<IEnumerable<string>> ReadLinesAsync(string filePath, Encoding defaultEncoding)
         {
             if (filePath == null)
             {

@@ -15,9 +15,9 @@ namespace WeCantSpell.Hunspell
 
         public static CharacterSet Create(string values) => values == null ? Empty : TakeArray(values.ToCharArray());
 
-        internal static CharacterSet Create(StringSlice values) => TakeArray(values.ToCharArray());
-
         public static CharacterSet Create(char value) => TakeArray(new[] { value });
+
+        internal static CharacterSet Create(StringSlice values) => TakeArray(values.ToCharArray());
 
         internal static CharacterSet TakeArray(char[] values)
         {

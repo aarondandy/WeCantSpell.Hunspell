@@ -15,8 +15,6 @@ namespace WeCantSpell.Hunspell
 
         internal static MapEntry TakeArray(string[] values) => values == null ? Empty : new MapEntry(values);
 
-        public static MapEntry Create(List<string> values) => values == null ? Empty : TakeArray(values.ToArray());
-
         public static MapEntry Create(IEnumerable<string> values) => values == null ? Empty : TakeArray(values.ToArray());
     }
 }

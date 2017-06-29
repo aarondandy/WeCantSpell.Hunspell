@@ -19,10 +19,16 @@ namespace WeCantSpell.Hunspell
     {
         public static readonly MultiReplacementTable Empty = TakeDictionary(new Dictionary<string, MultiReplacementEntry>(0));
 
-        private Dictionary<string, MultiReplacementEntry> replacements;
+        public static MultiReplacementTable Create(IEnumerable<KeyValuePair<string, MultiReplacementEntry>> replacements) =>
+            replacements == null ? Empty : TakeDictionary(replacements.ToDictionary(s => s.Key, s => s.Value));
+
+        internal static MultiReplacementTable TakeDictionary(Dictionary<string, MultiReplacementEntry> replacements) =>
+            replacements == null ? Empty : new MultiReplacementTable(replacements);
 
         private MultiReplacementTable(Dictionary<string, MultiReplacementEntry> replacements) =>
             this.replacements = replacements;
+
+        private Dictionary<string, MultiReplacementEntry> replacements;
 
         public MultiReplacementEntry this[string key] => replacements[key];
 
@@ -34,17 +40,11 @@ namespace WeCantSpell.Hunspell
 
         public IEnumerable<MultiReplacementEntry> Values => replacements.Values;
 
-        internal static MultiReplacementTable TakeDictionary(Dictionary<string, MultiReplacementEntry> replacements) =>
-            replacements == null ? Empty : new MultiReplacementTable(replacements);
-
-        public static MultiReplacementTable Create(IEnumerable<KeyValuePair<string, MultiReplacementEntry>> replacements) =>
-            replacements == null ? Empty : TakeDictionary(replacements.ToDictionary(s => s.Key, s => s.Value));
-
         public bool ContainsKey(string key) => replacements.ContainsKey(key);
 
         public bool TryGetValue(string key, out MultiReplacementEntry value) => replacements.TryGetValue(key, out value);
 
-        public bool TryConvert(string text, out string converted)
+        internal bool TryConvert(string text, out string converted)
         {
             if (text == null)
             {

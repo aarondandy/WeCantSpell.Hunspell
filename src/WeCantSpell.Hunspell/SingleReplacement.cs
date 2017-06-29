@@ -15,21 +15,9 @@ namespace WeCantSpell.Hunspell
             Type = type;
         }
 
-        public string OutString
-        {
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            get;
-        }
+        public string OutString { get; }
 
-        public ReplacementValueType Type
-        {
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            get;
-        }
+        public ReplacementValueType Type { get; }
 
         public override string Med => this[ReplacementValueType.Med];
 
@@ -39,6 +27,12 @@ namespace WeCantSpell.Hunspell
 
         public override string Isol => this[ReplacementValueType.Isol];
 
-        public override string this[ReplacementValueType type] => Type == type ? OutString : null;
+        public override string this[ReplacementValueType type]
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get => Type == type ? OutString : null;
+        }
     }
 }

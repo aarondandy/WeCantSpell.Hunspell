@@ -13,16 +13,16 @@ namespace WeCantSpell.Hunspell
     {
         public static readonly PatternSet Empty = TakeList(new List<PatternEntry>(0));
 
-        private PatternSet(List<PatternEntry> patterns)
-            : base(patterns)
-        {
-        }
+        public static PatternSet Create(IEnumerable<PatternEntry> patterns) =>
+            patterns == null ? Empty : TakeList(patterns.ToList());
 
         internal static PatternSet TakeList(List<PatternEntry> patterns) =>
             patterns == null ? Empty : new PatternSet(patterns);
 
-        public static PatternSet Create(IEnumerable<PatternEntry> patterns) =>
-            patterns == null ? Empty : TakeList(patterns.ToList());
+        private PatternSet(List<PatternEntry> patterns)
+            : base(patterns)
+        {
+        }
 
         /// <summary>
         /// Forbid compoundings when there are special patterns at word bound.

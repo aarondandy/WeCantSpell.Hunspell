@@ -255,10 +255,10 @@ namespace WeCantSpell.Hunspell
                 if (
                     he != null
                     &&
-                    he.HasFlags
+                    he.Detail.HasFlags
                     &&
                     (
-                        he.ContainsFlag(Affix.OnlyInCompound)
+                        he.Detail.ContainsFlag(Affix.OnlyInCompound)
                         ||
                         HasSpecialInitCap(info, he.Detail)
                     )
@@ -780,7 +780,7 @@ namespace WeCantSpell.Hunspell
                                 }
 
                                 // increment word number, if the second root has a compoundroot flag
-                                if (rv.ContainsFlag(Affix.CompoundRoot))
+                                if (rv.Detail.ContainsFlag(Affix.CompoundRoot))
                                 {
                                     wordNum++;
                                 }
@@ -791,12 +791,12 @@ namespace WeCantSpell.Hunspell
                                         ||
                                         (words != null && words.CheckIfCurrentIsNotNull())
                                         ||
-                                        rv.ContainsFlag(Affix.CompoundFlag)
+                                        rv.Detail.ContainsFlag(Affix.CompoundFlag)
                                         ||
                                         (
                                             oldwordnum == 0
-                                                ? rv.ContainsFlag(Affix.CompoundBegin)
-                                                : (oldwordnum > 0 && rv.ContainsFlag(Affix.CompoundMiddle))
+                                                ? rv.Detail.ContainsFlag(Affix.CompoundBegin)
+                                                : (oldwordnum > 0 && rv.Detail.ContainsFlag(Affix.CompoundMiddle))
                                         )
                                         ||
                                         (
@@ -804,7 +804,7 @@ namespace WeCantSpell.Hunspell
                                             && // LANG_hu section: spec. Hungarian rule
                                             Affix.IsHungarian
                                             && // XXX hardwired Hungarian dictionary codes
-                                            rv.ContainsAnyFlags(SpecialFlags.LetterF, SpecialFlags.LetterG, SpecialFlags.LetterH)
+                                            rv.Detail.ContainsAnyFlags(SpecialFlags.LetterF, SpecialFlags.LetterG, SpecialFlags.LetterH)
                                         ) // END of LANG_hu section
                                     )
                                     && // test CHECKCOMPOUNDPATTERN conditions
@@ -813,7 +813,7 @@ namespace WeCantSpell.Hunspell
                                         ||
                                         scpdPatternEntry.Condition.IsZero
                                         ||
-                                        rv.ContainsFlag(scpdPatternEntry.Condition)
+                                        rv.Detail.ContainsFlag(scpdPatternEntry.Condition)
                                     )
                                     &&
                                     (
@@ -962,7 +962,7 @@ namespace WeCantSpell.Hunspell
                                         if (
                                             rv != null
                                             &&
-                                            rv.ContainsAnyFlags(Affix.CompoundFlag, Affix.CompoundEnd)
+                                            rv.Detail.ContainsAnyFlags(Affix.CompoundFlag, Affix.CompoundEnd)
                                             &&
                                             (
                                                 !Affix.CompoundWordMax.HasValue

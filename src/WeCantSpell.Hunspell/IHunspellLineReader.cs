@@ -36,7 +36,7 @@ namespace WeCantSpell.Hunspell
     public static class HunspellLineReaderExtensions
     {
 #if !NO_ASYNC
-        public static async Task<List<string>> ReadLinesAsync(this IHunspellLineReader reader)
+        public static async Task<IEnumerable<string>> ReadLinesAsync(this IHunspellLineReader reader)
         {
             if (reader == null)
             {

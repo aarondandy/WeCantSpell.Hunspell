@@ -8,13 +8,13 @@ namespace WeCantSpell.Hunspell
     {
         public static readonly MapTable Empty = TakeList(new List<MapEntry>(0));
 
+        public static MapTable Create(IEnumerable<MapEntry> entries) => entries == null ? Empty : TakeList(entries.ToList());
+
+        internal static MapTable TakeList(List<MapEntry> entries) => entries == null ? Empty : new MapTable(entries);
+
         private MapTable(List<MapEntry> entries)
             : base(entries)
         {
         }
-
-        internal static MapTable TakeList(List<MapEntry> entries) => entries == null ? Empty : new MapTable(entries);
-
-        public static MapTable Create(IEnumerable<MapEntry> entries) => entries == null ? Empty : TakeList(entries.ToList());
     }
 }
