@@ -761,7 +761,7 @@ namespace WeCantSpell.Hunspell
                                 }
 
                                 // increment word number, if the second root has a compoundroot flag
-                                if (rv.Detail.ContainsFlag(Affix.CompoundRoot))
+                                if (rv.ContainsFlag(Affix.CompoundRoot))
                                 {
                                     wordNum++;
                                 }
@@ -772,12 +772,12 @@ namespace WeCantSpell.Hunspell
                                         ||
                                         (words != null && words.CheckIfCurrentIsNotNull())
                                         ||
-                                        rv.Detail.ContainsFlag(Affix.CompoundFlag)
+                                        rv.ContainsFlag(Affix.CompoundFlag)
                                         ||
                                         (
                                             oldwordnum == 0
-                                                ? rv.Detail.ContainsFlag(Affix.CompoundBegin)
-                                                : (oldwordnum > 0 && rv.Detail.ContainsFlag(Affix.CompoundMiddle))
+                                                ? rv.ContainsFlag(Affix.CompoundBegin)
+                                                : (oldwordnum > 0 && rv.ContainsFlag(Affix.CompoundMiddle))
                                         )
                                         ||
                                         (
@@ -794,7 +794,7 @@ namespace WeCantSpell.Hunspell
                                         ||
                                         scpdPatternEntry.Condition.IsZero
                                         ||
-                                        rv.Detail.ContainsFlag(scpdPatternEntry.Condition)
+                                        rv.ContainsFlag(scpdPatternEntry.Condition)
                                     )
                                     &&
                                     (
@@ -995,27 +995,30 @@ namespace WeCantSpell.Hunspell
                                     // perhaps second word has prefix or/and suffix
                                     ClearSuffixAndFlag();
 
-                                    rv = (!onlycpdrule && Affix.CompoundFlag.HasValue)
-                                         ? AffixCheck(word.Substring(i), Affix.CompoundFlag, CompoundOptions.End)
-                                         : null;
-
-                                    if (rv == null && Affix.CompoundEnd.HasValue && !onlycpdrule)
                                     {
-                                        ClearSuffix();
-                                        ClearPrefix();
-                                        rv = AffixCheck(word.Substring(i), Affix.CompoundEnd, CompoundOptions.End);
-                                    }
+                                        var wordSubI = word.Substring(i);
+                                        rv = (!onlycpdrule && Affix.CompoundFlag.HasValue)
+                                             ? AffixCheck(wordSubI, Affix.CompoundFlag, CompoundOptions.End)
+                                             : null;
 
-                                    if (rv == null && Affix.CompoundRules.HasItems && words != null)
-                                    {
-                                        rv = AffixCheck(word.Substring(i), new FlagValue(), CompoundOptions.End);
-                                        if (rv != null && DefCompoundCheck(words.CreateIncremented(), rv.Detail, true))
+                                        if (rv == null && Affix.CompoundEnd.HasValue && !onlycpdrule)
                                         {
-                                            st.Destroy();
-                                            return rvFirst;
+                                            ClearSuffix();
+                                            ClearPrefix();
+                                            rv = AffixCheck(wordSubI, Affix.CompoundEnd, CompoundOptions.End);
                                         }
 
-                                        rv = null;
+                                        if (rv == null && Affix.CompoundRules.HasItems && words != null)
+                                        {
+                                            rv = AffixCheck(wordSubI, new FlagValue(), CompoundOptions.End);
+                                            if (rv != null && DefCompoundCheck(words.CreateIncremented(), rv.Detail, true))
+                                            {
+                                                st.Destroy();
+                                                return rvFirst;
+                                            }
+
+                                            rv = null;
+                                        }
                                     }
 
                                     if(
@@ -1097,16 +1100,17 @@ namespace WeCantSpell.Hunspell
                                             {
                                                 numSyllable += 2;
                                             }
-                                            else if (SuffixFlag == SpecialFlags.LetterJ)
+                                            else if (
+                                                SuffixFlag == SpecialFlags.LetterJ
+                                                ||
+                                                (
+                                                    SuffixFlag == SpecialFlags.LetterI
+                                                    && rv != null
+                                                    && rv.ContainsFlag(SpecialFlags.LetterJ)
+                                                )
+                                            )
                                             {
                                                 numSyllable += 1;
-                                            }
-                                            else if (SuffixFlag == SpecialFlags.LetterI)
-                                            {
-                                                if (rv != null && rv.ContainsFlag(SpecialFlags.LetterJ))
-                                                {
-                                                    numSyllable += 1;
-                                                }
                                             }
                                         }
                                     }
