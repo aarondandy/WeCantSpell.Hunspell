@@ -29,6 +29,7 @@ namespace WeCantSpell.Hunspell
             WordListReader.ReadFile(dictionaryFilePath, affixFilePath);
 
 #if !NO_ASYNC
+
         public static async Task<WordList> CreateFromStreamsAsync(Stream dictionaryStream, Stream affixStream) =>
             await WordListReader.ReadAsync(dictionaryStream, affixStream).ConfigureAwait(false);
 

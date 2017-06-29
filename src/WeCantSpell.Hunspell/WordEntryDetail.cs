@@ -80,5 +80,11 @@ namespace WeCantSpell.Hunspell
 
         public override int GetHashCode() =>
             unchecked(Flags.GetHashCode() ^ Morphs.GetHashCode() ^ Options.GetHashCode());
+
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        internal WordEntry ToEntry(string word) =>
+            new WordEntry(word, this);
     }
 }
