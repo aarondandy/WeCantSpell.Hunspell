@@ -1452,7 +1452,8 @@ namespace WeCantSpell.Hunspell
                 // to meet the number of characters conditions, then test it
 
                 var peEntry = pe.Entry;
-                var tmpl = word.Length - peEntry.Append.Length; // length of tmpword
+                var appendLength = peEntry.Append.Length;
+                var tmpl = word.Length - appendLength; // length of tmpword
 
                 if (
                     (tmpl > 0 || (tmpl == 0 && Affix.FullStrip))
@@ -1463,7 +1464,7 @@ namespace WeCantSpell.Hunspell
                     // generate new root word by removing prefix and adding
                     // back any characters that would have been stripped
 
-                    var tmpword = StringEx.ConcatString(peEntry.Strip, word, peEntry.Append.Length, word.Length - peEntry.Append.Length);
+                    var tmpword = StringEx.ConcatString(peEntry.Strip, word, appendLength, word.Length - appendLength);
 
                     // now make sure all of the conditions on characters
                     // are met.  Please see the appendix at the end of
@@ -1473,7 +1474,7 @@ namespace WeCantSpell.Hunspell
                     // if all conditions are met then check if resulting
                     // root word in the dictionary
 
-                    if (TestCondition(pe.Entry, tmpword))
+                    if (TestCondition(peEntry, tmpword))
                     {
                         // prefix matched but no root word was found
                         // if CrossProduct is allowed, try again but now
@@ -1520,7 +1521,8 @@ namespace WeCantSpell.Hunspell
                     return null;
                 }
 
-                var checkWordCclassFlag = inCompound != CompoundOptions.Not ? default(FlagValue) : Affix.OnlyInCompound;
+                var inCompoundIsSet = inCompound != CompoundOptions.Not;
+                var checkWordCclassFlag = inCompoundIsSet ? default(FlagValue) : Affix.OnlyInCompound;
 
                 var pfxHasCircumfix = false;
                 var pfxDoesNotNeedAffix = false;
@@ -1546,7 +1548,7 @@ namespace WeCantSpell.Hunspell
                             &&
                             // fogemorpheme
                             (
-                                inCompound != CompoundOptions.Not
+                                inCompoundIsSet
                                 ||
                                 !se.ContainsContClass(Affix.OnlyInCompound)
                             )
@@ -1584,6 +1586,8 @@ namespace WeCantSpell.Hunspell
                     return null;
                 }
 
+                var inCompoundIsNotEnd = inCompound != CompoundOptions.End;
+
                 foreach (var sptr in Affix.Suffixes.GetMatchingAffixes(word))
                 {
                     var sptrEntry = sptr.Entry;
@@ -1598,13 +1602,13 @@ namespace WeCantSpell.Hunspell
                         &&
                         // fogemorpheme
                         (
-                            inCompound != CompoundOptions.Not
+                            inCompoundIsSet
                             ||
                             !sptrEntry.ContainsContClass(Affix.OnlyInCompound)
                         )
                         &&
                         (
-                            inCompound != CompoundOptions.End
+                            inCompoundIsNotEnd
                             ||
                             pfx != null
                             ||
@@ -1692,22 +1696,19 @@ namespace WeCantSpell.Hunspell
                     return null; // FULLSTRIP
                 }
 
-                foreach (var sptr in Affix.Suffixes.GetMatchingAffixes(word))
+                foreach (var sptr in Affix.Suffixes.GetMatchingAffixes(word, Affix.ContClasses))
                 {
-                    if (Affix.ContClasses.Contains(sptr.AFlag))
+                    rv = CheckTwoSfx(sptr, word, sfxopts, pfx, needflag);
+                    if (rv != null)
                     {
-                        rv = CheckTwoSfx(sptr, word, sfxopts, pfx, needflag);
-                        if (rv != null)
+                        SetSuffixFlag(Suffix.AFlag);
+                        var entry = sptr.Entry;
+                        if (!entry.ContClass.HasItems)
                         {
-                            SetSuffixFlag(Suffix.AFlag);
-                            var entry = sptr.Entry;
-                            if (!entry.ContClass.HasItems)
-                            {
-                                SetSuffixAppend(entry.Key);
-                            }
-
-                            return rv;
+                            SetSuffixAppend(entry.Key);
                         }
+
+                        return rv;
                     }
                 }
 
@@ -1821,12 +1822,13 @@ namespace WeCantSpell.Hunspell
             {
                 var num = 0;
 
-                if (Affix.CompoundMaxSyllable != 0 && Affix.CompoundVowels.HasItems)
+                var vowels = Affix.CompoundVowels;
+                if (Affix.CompoundMaxSyllable != 0 && vowels.HasItems)
                 {
                     var maxIndex = word.Offset + word.Length;
                     for (var i = word.Offset; i < maxIndex; i++)
                     {
-                        if (Affix.CompoundVowels.Contains(word.Text[i]))
+                        if (vowels.Contains(word.Text[i]))
                         {
                             num++;
                         }
@@ -1890,14 +1892,16 @@ namespace WeCantSpell.Hunspell
                 // and if there are enough chars in root word and added back strip chars
                 // to meet the number of characters conditions, then test it
 
-                var tmpl = word.Length - affix.Entry.Append.Length; // length of tmpword
+                var entry = affix.Entry;
+                var appendLength = entry.Append.Length;
+                var tmpl = word.Length - appendLength; // length of tmpword
 
                 if (tmpl > 0 || (tmpl == 0 && Affix.FullStrip))
                 {
                     // generate new root word by removing prefix and adding
                     // back any characters that would have been stripped
 
-                    var tmpword = StringEx.ConcatString(affix.Entry.Strip, word, affix.Entry.Append.Length, word.Length - affix.Entry.Append.Length);
+                    var tmpword = StringEx.ConcatString(entry.Strip, word, appendLength, word.Length - appendLength);
 
                     // now make sure all of the conditions on characters
                     // are met.  Please see the appendix at the end of
@@ -1907,21 +1911,21 @@ namespace WeCantSpell.Hunspell
                     // if all conditions are met then check if resulting
                     // root word in the dictionary
 
-                    if (TestCondition(affix.Entry, tmpword))
+                    if (TestCondition(entry, tmpword))
                     {
                         foreach (var detail in LookupDetails(tmpword))
                         {
                             if (
                                 detail.ContainsFlag(affix.AFlag)
                                 &&
-                                !affix.Entry.ContainsContClass(Affix.NeedAffix) // forbid single prefixes with needaffix flag
+                                !entry.ContainsContClass(Affix.NeedAffix) // forbid single prefixes with needaffix flag
                                 &&
                                 (
                                     needFlag.IsZero
                                     ||
                                     detail.ContainsFlag(needFlag)
                                     ||
-                                    affix.Entry.ContainsContClass(needFlag)
+                                    entry.ContainsContClass(needFlag)
                                 )
                             )
                             {
@@ -1953,11 +1957,13 @@ namespace WeCantSpell.Hunspell
                 // if this suffix is being cross checked with a prefix
                 // but it does not support cross products skip it
 
+                var entry = affix.Entry;
+
                 var optFlagsHasCrossProduct = EnumEx.HasFlag(optFlags, AffixEntryOptions.CrossProduct);
                 if (
                     (optFlagsHasCrossProduct && !EnumEx.HasFlag(affix.Options, AffixEntryOptions.CrossProduct))
                     ||
-                    (cclass.HasValue && !affix.Entry.ContainsContClass(cclass)) // ! handle cont. class
+                    (cclass.HasValue && !entry.ContainsContClass(cclass)) // ! handle cont. class
                     ||
                     (optFlagsHasCrossProduct && pfx == null) // enabled by prefix is impossible
                 )
@@ -1970,21 +1976,21 @@ namespace WeCantSpell.Hunspell
                 // and if there are enough chars in root word and added back strip chars
                 // to meet the number of characters conditions, then test it
 
-                var tmpl = word.Length - affix.Entry.Append.Length;
+                var tmpl = word.Length - entry.Append.Length;
                 // the second condition is not enough for UTF-8 strings
                 // it checked in test_condition()
 
                 if (
                     (tmpl > 0 || (Affix.FullStrip && tmpl == 0))
                     &&
-                    (tmpl + affix.Entry.Strip.Length >= affix.Entry.Conditions.Count)
+                    (tmpl + entry.Strip.Length >= entry.Conditions.Count)
                 )
                 {
                     // generate new root word by removing suffix and adding
                     // back any characters that would have been stripped or
                     // or null terminating the shorter string
 
-                    var tmpstring = StringEx.ConcatString(word, 0, tmpl, affix.Entry.Strip);
+                    var tmpstring = StringEx.ConcatString(word, 0, tmpl, entry.Strip);
 
                     // now make sure all of the conditions on characters
                     // are met.  Please see the appendix at the end of
@@ -1993,18 +1999,19 @@ namespace WeCantSpell.Hunspell
 
                     // if all conditions are met then check if resulting
                     // root word in the dictionary
-                    if (affix.Entry.Conditions.IsEndingMatch(tmpstring))
+                    if (entry.Conditions.IsEndingMatch(tmpstring))
                     {
+                        var aFlag = affix.AFlag;
                         foreach (var heDetail in LookupDetails(tmpstring))
                         {
                             if (
                                 (
-                                    heDetail.ContainsFlag(affix.AFlag)
+                                    heDetail.ContainsFlag(aFlag)
                                     ||
                                     (
                                         pfx != null
                                         &&
-                                        pfx.Entry.ContainsContClass(affix.AFlag)
+                                        pfx.Entry.ContainsContClass(aFlag)
                                     )
                                 )
                                 &&
@@ -2017,7 +2024,7 @@ namespace WeCantSpell.Hunspell
                                         (
                                             heDetail.ContainsFlag(pfx.AFlag)
                                             ||
-                                            affix.Entry.ContainsContClass(pfx.AFlag) // enabled by prefix
+                                            entry.ContainsContClass(pfx.AFlag) // enabled by prefix
                                         )
                                     )
                                 )
@@ -2029,7 +2036,7 @@ namespace WeCantSpell.Hunspell
                                     ||
                                     heDetail.ContainsFlag(needFlag)
                                     ||
-                                    affix.Entry.ContainsContClass(needFlag)
+                                    entry.ContainsContClass(needFlag)
                                 )
                             )
                             {
@@ -2060,7 +2067,8 @@ namespace WeCantSpell.Hunspell
                 // and if there are enough chars in root word and added back strip chars
                 // to meet the number of characters conditions, then test it
 
-                var tmpl = word.Length - se.Entry.Append.Length; // length of tmpword
+                var entry = se.Entry;
+                var tmpl = word.Length - entry.Append.Length; // length of tmpword
 
                 // the second condition is not enough for UTF-8 strings
                 // it checked in test_condition()
@@ -2068,14 +2076,14 @@ namespace WeCantSpell.Hunspell
                 if (
                     (tmpl > 0 || (tmpl == 0 && Affix.FullStrip))
                     &&
-                    (tmpl + se.Entry.Strip.Length >= se.Entry.Conditions.Count)
+                    (tmpl + entry.Strip.Length >= entry.Conditions.Count)
                 )
                 {
                     // generate new root word by removing suffix and adding
                     // back any characters that would have been stripped or
                     // or null terminating the shorter string
 
-                    var tmpword = StringEx.ConcatString(word, 0, Math.Min(tmpl, word.Length), se.Entry.Strip);
+                    var tmpword = StringEx.ConcatString(word, 0, Math.Min(tmpl, word.Length), entry.Strip);
 
                     // now make sure all of the conditions on characters
                     // are met.  Please see the appendix at the end of
@@ -2083,9 +2091,9 @@ namespace WeCantSpell.Hunspell
                     // tested
 
                     // if all conditions are met then recall suffix_check
-                    if (TestCondition(se.Entry, tmpword))
+                    if (TestCondition(entry, tmpword))
                     {
-                        var he = ppfx != null && se.Entry.ContainsContClass(ppfx.AFlag)
+                        var he = ppfx != null && entry.ContainsContClass(ppfx.AFlag)
                             // handle conditional suffix
                             ? SuffixCheck(tmpword, AffixEntryOptions.None, default(Affix<PrefixEntry>), se.AFlag, needflag, CompoundOptions.Not)
                             : SuffixCheck(tmpword, optflags, ppfx, se.AFlag, needflag, CompoundOptions.Not);

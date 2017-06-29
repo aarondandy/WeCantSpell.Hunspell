@@ -226,7 +226,7 @@ namespace WeCantSpell.Hunspell
             FlagSet contClasses)
             : base(affixesByFlag, affixesByIndexedByKey, affixesWithDots, affixesWithEmptyKeys, contClasses) { }
 
-        internal List<Affix<SuffixEntry>> GetMatchingAffixes(string word)
+        internal List<Affix<SuffixEntry>> GetMatchingAffixes(string word, FlagSet groupFlagFilter = null)
         {
             if (string.IsNullOrEmpty(word))
             {
@@ -239,11 +239,14 @@ namespace WeCantSpell.Hunspell
             {
                 foreach (var group in indexedGroups)
                 {
-                    foreach (var entry in group.Entries)
+                    if (groupFlagFilter == null || groupFlagFilter.Contains(group.AFlag))
                     {
-                        if (HunspellTextFunctions.IsReverseSubset(entry.Key, word))
+                        foreach (var entry in group.Entries)
                         {
-                            results.Add(Affix<SuffixEntry>.Create(entry, group));
+                            if (HunspellTextFunctions.IsReverseSubset(entry.Key, word))
+                            {
+                                results.Add(Affix<SuffixEntry>.Create(entry, group));
+                            }
                         }
                     }
                 }
