@@ -22,7 +22,7 @@ namespace WeCantSpell.Hunspell
             where TResult : AffixCollection<TEntry>
         {
             var affixesByFlag = new Dictionary<FlagValue, AffixEntryGroup<TEntry>>(builders.Count);
-            var affixesByIndexedByKeyBuilders = new Dictionary<char, List<AffixEntryGroup<TEntry>.Builder>>();
+            var affixesByIndexedByKeyBuilders = new Dictionary<char, Dictionary<FlagValue, AffixEntryGroup<TEntry>.Builder>>();
             var affixesWithEmptyKeys = new List<AffixEntryGroup<TEntry>>();
             var affixesWithDots = new List<AffixEntryGroup<TEntry>>();
             var contClasses = new HashSet<FlagValue>();
@@ -54,14 +54,13 @@ namespace WeCantSpell.Hunspell
                         else
                         {
                             var indexedKey = key[0];
-                            if (!affixesByIndexedByKeyBuilders.TryGetValue(indexedKey, out List<AffixEntryGroup<TEntry>.Builder> keyedAffixes))
+                            if (!affixesByIndexedByKeyBuilders.TryGetValue(indexedKey, out var keyedAffixes))
                             {
-                                keyedAffixes = new List<AffixEntryGroup<TEntry>.Builder>();
+                                keyedAffixes = new Dictionary<FlagValue, AffixEntryGroup<TEntry>.Builder>();
                                 affixesByIndexedByKeyBuilders.Add(indexedKey, keyedAffixes);
                             }
 
-                            var groupBuilder = keyedAffixes.FirstOrDefault(a => a.AFlag == group.AFlag);
-                            if (groupBuilder == null)
+                            if (!keyedAffixes.TryGetValue(group.AFlag, out var groupBuilder))
                             {
                                 groupBuilder = new AffixEntryGroup<TEntry>.Builder
                                 {
@@ -69,7 +68,7 @@ namespace WeCantSpell.Hunspell
                                     Options = group.Options,
                                     Entries = new List<TEntry>()
                                 };
-                                keyedAffixes.Add(groupBuilder);
+                                keyedAffixes.Add(group.AFlag, groupBuilder);
                             }
 
                             groupBuilder.Entries.Add(entry);
@@ -90,7 +89,13 @@ namespace WeCantSpell.Hunspell
             var affixesByIndexedByKey = new Dictionary<char, AffixEntryGroupCollection<TEntry>>(affixesByIndexedByKeyBuilders.Count);
             foreach (var keyedBuilder in affixesByIndexedByKeyBuilders)
             {
-                affixesByIndexedByKey.Add(keyedBuilder.Key, AffixEntryGroupCollection<TEntry>.Create(keyedBuilder.Value.Select(k => k.ToGroup())));
+                var indexedAffixGroup = new List<AffixEntryGroup<TEntry>>(keyedBuilder.Value.Count);
+                foreach(var builderPair in keyedBuilder.Value)
+                {
+                    indexedAffixGroup.Add(builderPair.Value.ToGroup());
+                }
+
+                affixesByIndexedByKey.Add(keyedBuilder.Key, AffixEntryGroupCollection<TEntry>.TakeList(indexedAffixGroup));
             }
 
             return constructor
