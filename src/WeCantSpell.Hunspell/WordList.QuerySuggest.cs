@@ -1492,13 +1492,13 @@ namespace WeCantSpell.Hunspell
                 var len = 0;
                 while (i != 0 && j != 0)
                 {
-                    if (result[i * (n + 1) + j] == LongestCommonSubsequenceType.UpLeft)
+                    if (result[(i * (n + 1)) + j] == LongestCommonSubsequenceType.UpLeft)
                     {
                         len++;
                         i--;
                         j--;
                     }
-                    else if (result[i * (n + 1) + j] == LongestCommonSubsequenceType.Up)
+                    else if (result[(i * (n + 1)) + j] == LongestCommonSubsequenceType.Up)
                     {
                         i--;
                     }
@@ -1519,10 +1519,8 @@ namespace WeCantSpell.Hunspell
                 m = s.Length;
                 n = s2.Length;
                 var nNext = n + 1;
-                var c = new LongestCommonSubsequenceType[(m + 1) * nNext];
-                b = new LongestCommonSubsequenceType[(m + 1) * nNext];
-
-                // NOTE: arrays are already zero (Up)
+                var c = new LongestCommonSubsequenceType[(m + 1) * nNext]; // NOTE: arrays are already zero (Up);
+                b = new LongestCommonSubsequenceType[(m + 1) * nNext]; // NOTE: arrays are already zero (Up);
 
                 for (var i = 1; i <= m; i++)
                 {
