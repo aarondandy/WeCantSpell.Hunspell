@@ -675,9 +675,8 @@ namespace WeCantSpell.Hunspell
             /// </summary>
             private int BadCharKey(List<string> wlst, string word, bool cpdSuggest)
             {
-                var candidate = StringBuilderPool.Get(word, word.Length);
+                var candidate = StringBuilderPool.Get(word);
                 var keyString = Affix.KeyString;
-                var keyStringIsEmpty = string.IsNullOrEmpty(keyString);
 
                 // swap out each char one by one and try uppercase and neighbor
                 // keyboard chars in its place to see if that makes a good word
@@ -693,29 +692,24 @@ namespace WeCantSpell.Hunspell
                     }
 
                     // check neighbor characters in keyboard string
-                    if (keyStringIsEmpty)
-                    {
-                        continue;
-                    }
-
                     var loc = keyString.IndexOf(tmpc);
                     while (loc >= 0)
                     {
-                        var priorLoc = loc - 1;
-                        if (priorLoc >= 0 && keyString[priorLoc] != '|')
+                        var targetLoc = loc - 1;
+                        if (targetLoc >= 0 && keyString[targetLoc] != '|')
                         {
-                            candidate[i] = keyString[priorLoc];
+                            candidate[i] = keyString[targetLoc];
                             TestSug(wlst, candidate.ToString(), cpdSuggest);
                         }
 
-                        var nextLoc = loc + 1;
-                        if (nextLoc < keyString.Length && keyString[nextLoc] != '|')
+                        targetLoc = loc + 1;
+                        if (targetLoc < keyString.Length && keyString[targetLoc] != '|')
                         {
-                            candidate[i] = keyString[nextLoc];
+                            candidate[i] = keyString[targetLoc];
                             TestSug(wlst, candidate.ToString(), cpdSuggest);
                         }
 
-                        loc = keyString.IndexOf(tmpc, nextLoc);
+                        loc = keyString.IndexOf(tmpc, targetLoc);
                     }
 
                     candidate[i] = tmpc;
