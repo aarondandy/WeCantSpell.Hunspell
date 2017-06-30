@@ -17,7 +17,7 @@ namespace WeCantSpell.Hunspell
             /// <summary>
             /// Timelimit: max ~1/4 sec (process time on Linux) for a time consuming function.
             /// </summary>
-            private const int TimeLimit = 1000 >> 2;
+            private const int TimeLimitMs = 1000 >> 2;
 
             private const int MinTimer = 100;
 
@@ -43,7 +43,7 @@ namespace WeCantSpell.Hunspell
                 // process XML input of the simplified API (see manual)
                 if (StringEx.EqualsLimited(word, DefaultXmlToken, DefaultXmlToken.Length - 3))
                 {
-                    throw new NotImplementedException();
+                    return slst; // TODO: complete support for XML input
                 }
 
                 if (word.Length >= MaxWordUtf8Len)
@@ -65,6 +65,7 @@ namespace WeCantSpell.Hunspell
                 }
 
                 var textInfo = TextInfo;
+
                 if (capType == CapitalizationType.None && Affix.ForceUpperCase.HasValue)
                 {
                     var info = SpellCheckResultType.OrigCap;
@@ -94,13 +95,13 @@ namespace WeCantSpell.Hunspell
 
                     // something.The -> something. The
                     var dotPos = scw.IndexOf('.');
-                    if (dotPos >= 0)
+                    if (
+                        dotPos >= 0
+                        &&
+                        HunspellTextFunctions.GetCapitalizationType(scw.Subslice(dotPos + 1), textInfo) == CapitalizationType.Init
+                    )
                     {
-                        var capTypeLocal = HunspellTextFunctions.GetCapitalizationType(scw.Subslice(dotPos + 1), textInfo);
-                        if (capTypeLocal == CapitalizationType.Init)
-                        {
-                            InsertSuggestion(slst, scw.Insert(dotPos + 1, " "));
-                        }
+                        InsertSuggestion(slst, scw.Insert(dotPos + 1, " "));
                     }
 
                     if (capType == CapitalizationType.HuhInit)
@@ -139,13 +140,15 @@ namespace WeCantSpell.Hunspell
                             var slen = toRemove.Length - spaceIndex - 1;
 
                             // different case after space (need capitalisation)
-                            if (slen < scw.Length && !scw.Subslice(scw.Length - slen).Equals(toRemove.Subslice(1 + spaceIndex)))
+                            if (slen < scw.Length && !scw.Subslice(scw.Length - slen).Equals(toRemove.Subslice(spaceIndex + 1)))
                             {
                                 // set as first suggestion
                                 RemoveFromIndexThenInsertAtFront(
                                     slst,
                                     j,
-                                    StringEx.ConcatString(toRemove, 0, spaceIndex + 1, HunspellTextFunctions.MakeInitCap(toRemove.Subslice(spaceIndex + 1), textInfo)));
+                                    StringEx.ConcatString(
+                                        toRemove, 0, spaceIndex + 1,
+                                        HunspellTextFunctions.MakeInitCap(toRemove.Subslice(spaceIndex + 1), textInfo)));
                             }
                         }
                     }
@@ -303,41 +306,39 @@ namespace WeCantSpell.Hunspell
                 }
 
                 // remove bad capitalized and forbidden forms
-                if (Affix.KeepCase.HasValue || Affix.ForbiddenWord.HasValue)
+                if (
+                    (Affix.KeepCase.HasValue || Affix.ForbiddenWord.HasValue)
+                    &&
+                    (capType == CapitalizationType.Init || capType == CapitalizationType.All)
+                )
                 {
-                    if (capType == CapitalizationType.Init || capType == CapitalizationType.All)
+                    var l = 0;
+                    for (var j = 0; j < slst.Count; j++)
                     {
-                        var l = 0;
-                        for (var j = 0; j < slst.Count; j++)
+                        var sitem = slst[j];
+                        if (!sitem.Contains(' ') && !Check(sitem))
                         {
-                            var sitem = slst[j];
-                            if (!sitem.Contains(' ') && !Check(sitem))
+                            var s = HunspellTextFunctions.MakeAllSmall(sitem, textInfo);
+                            if (Check(s))
                             {
-                                var s = HunspellTextFunctions.MakeAllSmall(sitem, textInfo);
-                                if (Check(s))
-                                {
-                                    slst[l] = s;
-                                    l++;
-                                }
-                                else
-                                {
-                                    s = HunspellTextFunctions.MakeInitCap(s, textInfo);
-                                    if (Check(s))
-                                    {
-                                        slst[l] = s;
-                                        ++l;
-                                    }
-                                }
+                                slst[l++] = s;
                             }
                             else
                             {
-                                slst[l] = sitem;
-                                l++;
+                                s = HunspellTextFunctions.MakeInitCap(s, textInfo);
+                                if (Check(s))
+                                {
+                                    slst[l++] = s;
+                                }
                             }
                         }
-
-                        slst.RemoveRange(l, slst.Count - l);
+                        else
+                        {
+                            slst[l++] = sitem;
+                        }
                     }
+
+                    slst.RemoveRange(l, slst.Count - l);
                 }
 
                 // remove duplications
@@ -475,22 +476,8 @@ namespace WeCantSpell.Hunspell
                     {
                         TwoWords(slst, word, cpdSuggest);
                     }
-
-                    if (noCompoundTwoWords)
-                    {
-                        break;
-                    }
-
-                    if (cpdSuggest)
-                    {
-                        break;
-                    }
-                    else
-                    {
-                        cpdSuggest = true;
-                    }
                 }
-                while (!noCompoundTwoWords);
+                while (!noCompoundTwoWords && IntEx.InversePostfixIncrement(ref cpdSuggest));
 
                 if (!noCompoundTwoWords && slst.Count != 0)
                 {
@@ -544,28 +531,28 @@ namespace WeCantSpell.Hunspell
 
                 var candidate = StringBuilderPool.Get(word, word.Length);
 
-                var timer = OperationTimeLimiter.Create(TimeLimit, MinTimer);
+                var timer = OperationTimeLimiter.Create(TimeLimitMs, MinTimer);
 
                 // swap out each char one by one and try all the tryme
                 // chars in its place to see if that makes a good word
                 for (var j = 0; j < tryString.Length; j++)
                 {
-                    for (var aI = candidate.Length - 1; aI >= 0; aI--)
+                    for (var i = candidate.Length - 1; i >= 0; i--)
                     {
-                        var tmpc = candidate[aI];
+                        var tmpc = candidate[i];
                         if (tryString[j] == tmpc)
                         {
                             continue;
                         }
 
-                        candidate[aI] = tryString[j];
+                        candidate[i] = tryString[j];
                         TestSug(wlst, candidate.ToString(), cpdSuggest, timer);
+                        candidate[i] = tmpc;
+
                         if (timer.QueryCounter == 0)
                         {
                             return wlst.Count;
                         }
-
-                        candidate[aI] = tmpc;
                     }
                 }
 
@@ -595,6 +582,7 @@ namespace WeCantSpell.Hunspell
                     for (var q = p + 1; q < candidate.Length && q - p < 10; q++)
                     {
                         candidate.Swap(q, q - 1);
+
                         if (q - p < 2)
                         {
                             continue; // omit swap char
@@ -612,6 +600,7 @@ namespace WeCantSpell.Hunspell
                     for (var q = p - 1; q >= 0 && p - q < 10; q--)
                     {
                         candidate.Swap(q, q + 1);
+
                         if (p - q < 2)
                         {
                             continue;  // omit swap char
@@ -638,7 +627,7 @@ namespace WeCantSpell.Hunspell
 
                 var candidate = StringBuilderPool.Get(word, word.Length + 1);
 
-                var timer = OperationTimeLimiter.Create(TimeLimit, MinTimer);
+                var timer = OperationTimeLimiter.Create(TimeLimitMs, MinTimer);
 
                 // try inserting a tryme character before every letter (and the null terminator)
                 foreach (var tryChar in Affix.TryString)
@@ -827,7 +816,7 @@ namespace WeCantSpell.Hunspell
                 }
 
                 var candidate = string.Empty;
-                return MapRelated(word, ref candidate, 0, wlst, cpdSuggest, OperationTimeLimiter.Create(TimeLimit, MinTimer));
+                return MapRelated(word, ref candidate, 0, wlst, cpdSuggest, OperationTimeLimiter.Create(TimeLimitMs, MinTimer));
             }
 
             private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest, OperationTimeLimiter timer)

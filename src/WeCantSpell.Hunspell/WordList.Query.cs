@@ -1283,27 +1283,11 @@ namespace WeCantSpell.Hunspell
                             }
                         }
                     }
-                    while (Affix.CompoundRules.HasItems && oldwordnum == 0 && InversePostfixIncrement(ref onlycpdrule));
+                    while (Affix.CompoundRules.HasItems && oldwordnum == 0 && IntEx.InversePostfixIncrement(ref onlycpdrule));
                 }
 
                 st.Destroy();
                 return null;
-            }
-
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            private static bool InversePostfixIncrement(ref bool b)
-            {
-                if (b)
-                {
-                    return false;
-                }
-                else
-                {
-                    b = true;
-                    return true;
-                }
             }
 
             /// <summary>
