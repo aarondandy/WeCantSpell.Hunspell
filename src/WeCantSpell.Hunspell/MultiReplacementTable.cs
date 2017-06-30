@@ -46,16 +46,18 @@ namespace WeCantSpell.Hunspell
 
         internal bool TryConvert(string text, out string converted)
         {
+#if DEBUG
             if (text == null)
             {
                 throw new ArgumentNullException(nameof(text));
             }
+#endif
 
             var appliedConversion = false;
 
             if (text.Length == 0)
             {
-                converted = string.Empty;
+                converted = text;
             }
             else
             {
@@ -64,20 +66,19 @@ namespace WeCantSpell.Hunspell
                 for (var i = 0; i < text.Length; i++)
                 {
                     var replacementEntry = FindLargestMatchingConversion(text.Subslice(i));
-                    var replacementText = replacementEntry == null
-                        ? string.Empty
-                        : replacementEntry.ExtractReplacementTextInternal(text.Length - i, i == 0);
+                    if (replacementEntry != null)
+                    {
+                        var replacementText = replacementEntry.ExtractReplacementTextInternal(text.Length - i, i == 0);
+                        if (!string.IsNullOrEmpty(replacementText))
+                        {
+                            convertedBuilder.Append(replacementText);
+                            i += replacementEntry.Pattern.Length - 1;
+                            appliedConversion = true;
+                            continue;
+                        }
+                    }
 
-                    if (replacementText.Length == 0)
-                    {
-                        convertedBuilder.Append(text[i]);
-                    }
-                    else
-                    {
-                        convertedBuilder.Append(replacementText);
-                        i += replacementEntry.Pattern.Length - 1;
-                        appliedConversion = true;
-                    }
+                    convertedBuilder.Append(text[i]);
                 }
 
                 converted = StringBuilderPool.GetStringAndReturn(convertedBuilder);

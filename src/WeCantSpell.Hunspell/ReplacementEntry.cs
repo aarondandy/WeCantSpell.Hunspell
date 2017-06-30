@@ -39,7 +39,7 @@
                 type = (type == ReplacementValueType.Fin && !atStart) ? ReplacementValueType.Med : type - 1;
             }
 
-            return this[type] ?? string.Empty;
+            return this[type];
         }
     }
 }

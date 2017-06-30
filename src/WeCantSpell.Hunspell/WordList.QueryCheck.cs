@@ -19,22 +19,15 @@ namespace WeCantSpell.Hunspell
             {
                 var word = WordToCheck;
 
-                if (string.IsNullOrEmpty(word) || !WordList.HasEntries)
+                if (string.IsNullOrEmpty(word) || word.Length >= MaxWordUtf8Len || !WordList.HasEntries)
                 {
                     return new SpellCheckResult(false);
                 }
-
-                // Hunspell supports XML input of the simplified API (see manual)
                 if (word == DefaultXmlToken)
                 {
+                    // Hunspell supports XML input of the simplified API (see manual)
                     return new SpellCheckResult(true);
                 }
-
-                if (word.Length >= MaxWordUtf8Len)
-                {
-                    return new SpellCheckResult(false);
-                }
-
 
                 // input conversion
                 if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out string convertedWord))
@@ -55,7 +48,6 @@ namespace WeCantSpell.Hunspell
 
                 var resultType = SpellCheckResultType.None;
                 string root = null;
-
                 WordEntry rv;
 
                 if (capType == CapitalizationType.Huh || capType == CapitalizationType.HuhInit || capType == CapitalizationType.None)
@@ -112,12 +104,12 @@ namespace WeCantSpell.Hunspell
                     // check boundary patterns (^begin and end$)
                     foreach (var breakEntry in Affix.BreakPoints)
                     {
-                        var pLastIndex = breakEntry.Length - 1;
                         if (breakEntry.Length == 1 || breakEntry.Length > scw.Length)
                         {
                             continue;
                         }
 
+                        var pLastIndex = breakEntry.Length - 1;
                         if (
                             breakEntry.StartsWith('^')
                             &&
@@ -129,7 +121,7 @@ namespace WeCantSpell.Hunspell
                             return new SpellCheckResult(root, resultType, true);
                         }
 
-                        var wlLessBreakIndex = scw.Length + 1 - breakEntry.Length;
+                        var wlLessBreakIndex = scw.Length - breakEntry.Length + 1;
                         if (
                             breakEntry.EndsWith('$')
                             &&
