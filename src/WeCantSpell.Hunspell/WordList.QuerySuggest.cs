@@ -817,47 +817,37 @@ namespace WeCantSpell.Hunspell
             {
                 if (wn >= word.Length)
                 {
-                    var cwrd = true;
-                    for (var m = 0; m < wlst.Count; m++)
+                    if (
+                        !wlst.Contains(candidate)
+                        &&
+                        CheckWord(candidate, cpdSuggest, timer) != 0
+                        &&
+                        wlst.Count < MaxSuggestions
+                    )
                     {
-                        if (wlst[m] == candidate)
-                        {
-                            cwrd = false;
-                            break;
-                        }
-                    }
-
-                    if (cwrd && CheckWord(candidate, cpdSuggest, timer) != 0)
-                    {
-                        if (wlst.Count < MaxSuggestions)
-                        {
-                            wlst.Add(candidate);
-                        }
+                        wlst.Add(candidate);
                     }
 
                     return wlst.Count;
                 }
 
                 var inMap = false;
-                if (Affix.RelatedCharacterMap.HasItems)
+                foreach (var mapEntry in Affix.RelatedCharacterMap)
                 {
-                    foreach (var mapEntry in Affix.RelatedCharacterMap)
+                    foreach (var mapEntryValue in mapEntry)
                     {
-                        foreach (var mapEntryValue in mapEntry)
+                        if (StringEx.EqualsOffset(mapEntryValue, 0, word, wn, mapEntryValue.Length))
                         {
-                            if (StringEx.EqualsOffset(mapEntryValue, 0, word, wn, mapEntryValue.Length))
+                            inMap = true;
+                            var candidatePrefix = candidate;
+                            foreach (var otherMapEntryValue in mapEntry)
                             {
-                                inMap = true;
-                                var candidatePrefix = candidate;
-                                foreach (var otherMapEntryValue in mapEntry)
-                                {
-                                    candidate = candidatePrefix + otherMapEntryValue;
-                                    MapRelated(word, ref candidate, wn + mapEntryValue.Length, wlst, cpdSuggest, timer);
+                                candidate = candidatePrefix + otherMapEntryValue;
+                                MapRelated(word, ref candidate, wn + mapEntryValue.Length, wlst, cpdSuggest, timer);
 
-                                    if (timer != null && timer.QueryCounter == 0)
-                                    {
-                                        return wlst.Count;
-                                    }
+                                if (timer != null && timer.QueryCounter == 0)
+                                {
+                                    return wlst.Count;
                                 }
                             }
                         }
