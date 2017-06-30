@@ -39,10 +39,9 @@ namespace WeCantSpell.Hunspell
                 {
                     return new SpellCheckResult(false);
                 }
-
-                // allow numbers with dots, dashes and commas (but forbid double separators: "..", "--" etc.)
                 if (HunspellTextFunctions.IsNumericWord(word))
                 {
+                    // allow numbers with dots, dashes and commas (but forbid double separators: "..", "--" etc.)
                     return new SpellCheckResult(true);
                 }
 

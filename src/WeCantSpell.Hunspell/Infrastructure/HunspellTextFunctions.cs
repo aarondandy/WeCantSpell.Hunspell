@@ -66,9 +66,8 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public static bool IsNumericWord(string word)
         {
-            int i;
             byte state = 0; // 0 = begin, 1 = number, 2 = separator
-            for (i = 0; i < word.Length; i++)
+            for (var i = 0; i < word.Length; i++)
             {
                 var c = word[i];
                 if (char.IsNumber(c))
@@ -77,29 +76,26 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 }
                 else if (c == ',' || c == '.' || c == '-')
                 {
-                    if (state == 2 || i == 0)
+                    if (state != 1)
                     {
-                        break;
+                        return false;
                     }
 
                     state = 2;
                 }
                 else
                 {
-                    break;
+                    return false;
                 }
             }
 
-            return i == word.Length && state == 1;
+            return state == 1;
         }
 
         public static int CountMatchingFromLeft(string text, char character)
         {
             var count = 0;
-            while (count < text.Length && text[count] == character)
-            {
-                count++;
-            }
+            for (; count < text.Length && text[count] == character; count++) ;
 
             return count;
         }
@@ -108,10 +104,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         {
             var lastIndex = text.Length - 1;
             var searchIndex = lastIndex;
-            while (searchIndex >= 0 && text[searchIndex] == character)
-            {
-                searchIndex--;
-            }
+            for (; searchIndex >= 0 && text[searchIndex] == character; searchIndex--) ;
 
             return lastIndex - searchIndex;
         }
@@ -347,7 +340,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             {
                 firstIsUpper = true;
             }
-            else if (HunspellTextFunctions.CharIsNotNeutral(c, textInfo))
+            else if (CharIsNotNeutral(c, textInfo))
             {
                 hasLower = true;
             }
@@ -365,7 +358,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
                         break;
                     }
                 }
-                else if (!hasLower && HunspellTextFunctions.CharIsNotNeutral(c, textInfo))
+                else if (!hasLower && CharIsNotNeutral(c, textInfo))
                 {
                     hasLower = true;
                     if (hasFoundMoreCaps)
