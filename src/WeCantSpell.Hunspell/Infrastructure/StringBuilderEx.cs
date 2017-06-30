@@ -208,24 +208,27 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static bool EndsWith(this StringBuilder builder, char c) =>
             builder.Length != 0 && builder[builder.Length - 1] == c;
 
-        internal static string ToStringSkippingIndex(this StringBuilder builder, int indexToSkip)
+        internal static string ToStringSkippingIndex(this StringBuilder builder, int index)
         {
-            var lastIndex = builder.Length - 1;
-            if (lastIndex < 0)
+#if DEBUG
+            if (index < 0 || index >= builder.Length)
             {
-                return string.Empty;
+                throw new ArgumentOutOfRangeException(nameof(index));
             }
-            if (indexToSkip == 0)
+#endif
+            var lastIndex = builder.Length - 1;
+
+            if (index == 0)
             {
                 return builder.ToString(1, lastIndex);
             }
-            if (indexToSkip == lastIndex)
+            if (index == lastIndex)
             {
                 return builder.ToString(0, lastIndex);
             }
 
             var text = builder.ToString();
-            return StringEx.ConcatString(text, 0, indexToSkip, text, indexToSkip + 1, lastIndex - indexToSkip);
+            return StringEx.ConcatString(text, 0, index, text, index + 1, lastIndex - index);
         }
 
         internal static string ToStringWithInsert(this StringBuilder builder, int index, char value)
