@@ -914,26 +914,20 @@ namespace WeCantSpell.Hunspell
                 }
 
                 WordEntry rv;
-
                 if (cpdSuggest)
                 {
                     if (Affix.HasCompound)
                     {
-                        WordEntry rv2;
                         var rwords = new IncrementalWordList(); // buffer for COMPOUND pattern checking
                         var info = SpellCheckResultType.None;
                         rv = CompoundCheck(word, 0, 0, 100, null, rwords, false, 1, ref info);
-                        if (
-                            rv != null
-                            &&
-                            (
-                                (rv2 = LookupFirst(word)) == null
-                                ||
-                                !rv2.Detail.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest)
-                            )
-                        )
+                        if (rv != null)
                         {
-                            return 3; // XXX obsolote categorisation + only ICONV needs affix flag check?
+                            var rvDetail = LookupFirstDetail(word);
+                            if (rvDetail == null || !rvDetail.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest))
+                            {
+                                return 3; // XXX obsolote categorisation + only ICONV needs affix flag check?
+                            }
                         }
                     }
 
@@ -979,11 +973,8 @@ namespace WeCantSpell.Hunspell
 
                 if (Affix.ContClasses.HasItems && rv == null)
                 {
-                    rv = SuffixCheckTwoSfx(word, AffixEntryOptions.None, default(Affix<PrefixEntry>), default(FlagValue));
-                    if (rv == null)
-                    {
-                        rv = PrefixCheckTwoSfx(word, CompoundOptions.Begin, default(FlagValue));
-                    }
+                    rv = SuffixCheckTwoSfx(word, AffixEntryOptions.None, default(Affix<PrefixEntry>), default(FlagValue))
+                        ?? PrefixCheckTwoSfx(word, CompoundOptions.Begin, default(FlagValue));
                 }
 
                 // check forbidden words
