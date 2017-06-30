@@ -227,5 +227,28 @@ namespace WeCantSpell.Hunspell.Infrastructure
             var text = builder.ToString();
             return StringEx.ConcatString(text, 0, indexToSkip, text, indexToSkip + 1, lastIndex - indexToSkip);
         }
+
+        internal static string ToStringWithInsert(this StringBuilder builder, int index, char value)
+        {
+#if DEBUG
+            if (index < 0 || index > builder.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+#endif
+            if (index == 0)
+            {
+                return value.ToString() + builder.ToString();
+            }
+
+            if (index == builder.Length)
+            {
+                return builder.ToString() + value.ToString();
+            }
+
+            return builder.ToString(0, index)
+                + value.ToString()
+                + builder.ToString(index, builder.Length - index);
+        }
     }
 }

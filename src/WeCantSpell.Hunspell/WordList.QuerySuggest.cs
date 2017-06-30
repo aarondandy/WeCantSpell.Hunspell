@@ -634,14 +634,12 @@ namespace WeCantSpell.Hunspell
                 {
                     for (var index = candidate.Length; index >= 0; index--)
                     {
-                        candidate.Insert(index, tryChar);
-                        TestSug(wlst, candidate.ToString(), cpdSuggest, timer);
+                        TestSug(wlst, candidate.ToStringWithInsert(index, tryChar), cpdSuggest, timer);
+
                         if (timer.QueryCounter == 0)
                         {
                             return wlst.Count;
                         }
-
-                        candidate.Remove(index, 1);
                     }
                 }
 
