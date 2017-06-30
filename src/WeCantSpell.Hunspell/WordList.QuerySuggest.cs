@@ -729,14 +729,16 @@ namespace WeCantSpell.Hunspell
                 // try swapping not adjacent chars one by one
                 for (var p = 0; p < candidate.Length; p++)
                 {
+                    var oldp = candidate[p];
                     for (var q = p + 1; q < candidate.Length; q++)
                     {
-                        var c = candidate[p];
-                        candidate[p] = candidate[q];
-                        candidate[q] = c;
+                        var oldq = candidate[q];
+
+                        candidate[p] = oldq;
+                        candidate[q] = oldp;
                         TestSug(wlst, candidate.ToString(), cpdSuggest);
-                        candidate[q] = candidate[p];
-                        candidate[p] = c;
+                        candidate[q] = oldq;
+                        candidate[p] = oldp;
                     }
                 }
 
