@@ -1010,9 +1010,19 @@ namespace WeCantSpell.Hunspell
 
                 foreach (var replacement in Affix.Replacements)
                 {
-                    var r = 0;
+                    if (string.IsNullOrEmpty(replacement.Pattern))
+                    {
+                        continue;
+                    }
+
                     // search every occurence of the pattern in the word
-                    while ((r = word.IndexOfOrdinal(replacement.Pattern, r)) >= 0)
+                    for (
+                        var r = word.IndexOfOrdinal(replacement.Pattern)
+                        ;
+                        r >= 0
+                        ; 
+                        r = word.IndexOfOrdinal(replacement.Pattern, r + 1) // search for the next letter
+                    )
                     {
                         var type = (r == 0) ? ReplacementValueType.Ini : ReplacementValueType.Med;
                         if (r + replacement.Pattern.Length == word.Length)
@@ -1025,20 +1035,14 @@ namespace WeCantSpell.Hunspell
                             type = (type == ReplacementValueType.Fin && r != 0) ? ReplacementValueType.Med : type - 1;
                         }
 
-                        if (string.IsNullOrEmpty(replacement[type]))
+                        if (!string.IsNullOrEmpty(replacement[type]))
                         {
-                            r++;
-                            continue;
-                        }
+                            var candidate = StringEx.ConcatString(word, 0, r, replacement[type], word, r + replacement.Pattern.Length);
 
-                        var candidate = StringEx.ConcatString(word, 0, r, replacement[type], word, r + replacement.Pattern.Length);
+                            TestSug(wlst, candidate, cpdSuggest);
 
-                        TestSug(wlst, candidate, cpdSuggest);
-
-                        // check REP suggestions with space
-                        var sp = candidate.IndexOf(' ');
-                        if (sp >= 0)
-                        {
+                            // check REP suggestions with space
+                            var sp = candidate.IndexOf(' ');
                             var prev = 0;
                             while (sp >= 0)
                             {
@@ -1056,8 +1060,6 @@ namespace WeCantSpell.Hunspell
                                 sp = candidate.IndexOf(' ', prev);
                             }
                         }
-
-                        r++; // search for the next letter
                     }
                 }
 
