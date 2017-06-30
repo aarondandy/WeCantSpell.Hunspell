@@ -2127,7 +2127,7 @@ namespace WeCantSpell.Hunspell
             /// set the capitalization type (<paramref name="capType"/>) and
             /// return the length of the "cleaned" (and UTF-8 encoded) word
             /// </remarks>
-            protected int CleanWord2(out string dest, string src, out CapitalizationType capType, out int abbv)
+            protected bool CleanWord2(out string dest, string src, out CapitalizationType capType, out int abbv)
             {
                 // first skip over any leading blanks
                 var qIndex = HunspellTextFunctions.CountMatchingFromLeft(src, ' ');
@@ -2136,18 +2136,17 @@ namespace WeCantSpell.Hunspell
                 abbv = HunspellTextFunctions.CountMatchingFromRight(src, '.');
 
                 var nl = src.Length - qIndex - abbv;
-
-                // if no characters are left it can't be capitalized
                 if (nl <= 0)
                 {
+                    // if no characters are left it can't be capitalized
                     dest = string.Empty;
                     capType = CapitalizationType.None;
-                    return 0;
+                    return false;
                 }
 
                 dest = src.Substring(qIndex, nl);
                 capType = HunspellTextFunctions.GetCapitalizationType(new StringSlice(dest), TextInfo);
-                return dest.Length;
+                return true;
             }
 
             protected enum CompoundOptions : byte
