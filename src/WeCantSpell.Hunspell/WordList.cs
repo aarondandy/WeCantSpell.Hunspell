@@ -22,25 +22,22 @@ namespace WeCantSpell.Hunspell
         public static WordList CreateFromStreams(Stream dictionaryStream, Stream affixStream) =>
             WordListReader.Read(dictionaryStream, affixStream);
 
-#if !NO_IO_FILE
         public static WordList CreateFromFiles(string dictionaryFilePath) =>
             WordListReader.ReadFile(dictionaryFilePath);
 
         public static WordList CreateFromFiles(string dictionaryFilePath, string affixFilePath) =>
             WordListReader.ReadFile(dictionaryFilePath, affixFilePath);
-#endif
 
 #if !NO_ASYNC
+
         public static async Task<WordList> CreateFromStreamsAsync(Stream dictionaryStream, Stream affixStream) =>
             await WordListReader.ReadAsync(dictionaryStream, affixStream).ConfigureAwait(false);
 
-#if !NO_IO_FILE
         public static async Task<WordList> CreateFromFilesAsync(string dictionaryFilePath) =>
             await WordListReader.ReadFileAsync(dictionaryFilePath).ConfigureAwait(false);
 
         public static async Task<WordList> CreateFromFilesAsync(string dictionaryFilePath, string affixFilePath) =>
             await WordListReader.ReadFileAsync(dictionaryFilePath, affixFilePath).ConfigureAwait(false);
-#endif
 
 #endif
 
@@ -75,45 +72,35 @@ namespace WeCantSpell.Hunspell
             return wordListBuilder.MoveToImmutable();
         }
 
-        private WordList(AffixConfig affix) =>
+        private WordList(AffixConfig affix)
+        {
             Affix = affix;
+        }
 
         public AffixConfig Affix { get; private set; }
-
-        private Dictionary<string, WordEntryDetail[]> EntriesByRoot { get; set; }
-
-        private FlagSet NGramRestrictedFlags { get; set; }
-
-        private Dictionary<string, WordEntryDetail[]> NGramRestrictedEntries { get; set; }
-
-        public IEnumerable<WordEntry> NGramAllowedEntries =>
-            (NGramRestrictedEntries == null || NGramRestrictedEntries.Count == 0)
-            ? AllEntries
-            : GetAllNGramAllowedEntries();
-
-        private IEnumerable<WordEntry> GetAllNGramAllowedEntries() =>
-            EntriesByRoot.SelectMany(rootPair =>
-            {
-                if (NGramRestrictedEntries.TryGetValue(rootPair.Key, out WordEntryDetail[] restrictedDetails))
-                {
-                    return rootPair.Value
-                        .Where(d => !restrictedDetails.Contains(d))
-                        .Select(d => new WordEntry(rootPair.Key, d));
-                }
-                else
-                {
-                    return rootPair.Value
-                        .Select(d => new WordEntry(rootPair.Key, d));
-                }
-            });
-
-        public IEnumerable<WordEntry> AllEntries => EntriesByRoot.SelectMany(pair => pair.Value.Select(d => new WordEntry(pair.Key, d)));
 
         public IEnumerable<string> RootWords => EntriesByRoot.Keys;
 
         public bool HasEntries => EntriesByRoot.Count != 0;
 
-        public WordEntrySet this[string rootWord] => FindEntriesByRootWord(rootWord);
+        public bool ContainsEntriesForRootWord(string rootWord) =>
+            rootWord != null && EntriesByRoot.ContainsKey(rootWord);
+
+        public WordEntryDetail[] this[string rootWord] =>
+            (rootWord != null)
+                ? (WordEntryDetail[])FindEntryDetailsByRootWord(rootWord).Clone()
+                : ArrayEx<WordEntryDetail>.Empty;
+
+        private Dictionary<string, WordEntryDetail[]> EntriesByRoot { get; set; }
+
+        private FlagSet NGramRestrictedFlags { get; set; }
+
+        private IEnumerable<KeyValuePair<string, WordEntryDetail[]>> NGramAllowedDetails =>
+            (NGramRestrictedDetails == null || NGramRestrictedDetails.Count == 0)
+            ? EntriesByRoot
+            : GetAllNGramAllowedEntries();
+
+        private Dictionary<string, WordEntryDetail[]> NGramRestrictedDetails { get; set; }
 
         public bool Check(string word) => new QueryCheck(word, this).Check();
 
@@ -121,16 +108,14 @@ namespace WeCantSpell.Hunspell
 
         public IEnumerable<string> Suggest(string word) => new QuerySuggest(word, this).Suggest();
 
-        public WordEntrySet FindEntriesByRootWord(string rootWord)
-        {
-            var details = FindEntryDetailsByRootWord(rootWord);
-            return details.Length == 0
-                ? WordEntrySet.Empty
-                : WordEntrySet.Create(rootWord, details);
-        }
-
         internal WordEntry FindFirstEntryByRootWord(string rootWord)
         {
+#if DEBUG
+            if (rootWord == null)
+            {
+                throw new ArgumentNullException(nameof(rootWord));
+            }
+#endif
             var details = FindEntryDetailsByRootWord(rootWord);
             return details.Length == 0
                 ? null
@@ -139,6 +124,12 @@ namespace WeCantSpell.Hunspell
 
         internal WordEntryDetail[] FindEntryDetailsByRootWord(string rootWord)
         {
+#if DEBUG
+            if (rootWord == null)
+            {
+                throw new ArgumentNullException(nameof(rootWord));
+            }
+#endif
             return (rootWord == null || !EntriesByRoot.TryGetValue(rootWord, out WordEntryDetail[] details))
                 ? ArrayEx<WordEntryDetail>.Empty
                 : details;
@@ -146,15 +137,33 @@ namespace WeCantSpell.Hunspell
 
         internal WordEntryDetail FindFirstEntryDetailByRootWord(string rootWord)
         {
-            var details = FindEntryDetailsByRootWord(rootWord);
-            return details.Length == 0
-                ? null
-                : details[0];
+#if DEBUG
+            if (rootWord == null)
+            {
+                throw new ArgumentNullException(nameof(rootWord));
+            }
+#endif
+
+            return EntriesByRoot.TryGetValue(rootWord, out WordEntryDetail[] details) && details.Length != 0
+                ? details[0]
+                : null;
         }
 
-        internal bool ContainsEntriesForRootWord(string rootWord)
-        {
-            return rootWord != null && EntriesByRoot.ContainsKey(rootWord);
-        }
+        private IEnumerable<KeyValuePair<string, WordEntryDetail[]>> GetAllNGramAllowedEntries() =>
+            EntriesByRoot.Select(rootPair =>
+            {
+                if (NGramRestrictedDetails.TryGetValue(rootPair.Key, out WordEntryDetail[] restrictedDetails))
+                {
+                    return new KeyValuePair<string, WordEntryDetail[]>(
+                        rootPair.Key,
+                        rootPair.Value
+                            .Where(d => !restrictedDetails.Contains(d))
+                            .ToArray());
+                }
+                else
+                {
+                    return rootPair;
+                }
+            });
     }
 }

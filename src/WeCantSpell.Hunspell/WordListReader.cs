@@ -18,7 +18,9 @@ namespace WeCantSpell.Hunspell
 {
     public sealed class WordListReader
     {
-        private bool hasInitialized;
+        private static readonly Regex InitialLineRegex = new Regex(
+            @"^\s*(\d+)\s*(?:[#].*)?$",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         private WordListReader(WordList.Builder builder, AffixConfig affix)
         {
@@ -26,12 +28,7 @@ namespace WeCantSpell.Hunspell
             Affix = affix;
         }
 
-        private static readonly Regex InitialLineRegex = new Regex(
-            @"^\s*(\d+)\s*(?:[#].*)?$",
-#if !NO_COMPILEDREGEX
-            RegexOptions.Compiled |
-#endif
-            RegexOptions.CultureInvariant);
+        private bool hasInitialized;
 
         private WordList.Builder Builder { get; }
 
@@ -85,7 +82,6 @@ namespace WeCantSpell.Hunspell
             return readerInstance.Builder.MoveToImmutable();
         }
 
-#if !NO_IO_FILE
         public static async Task<WordList> ReadFileAsync(string dictionaryFilePath)
         {
             if (dictionaryFilePath == null)
@@ -113,7 +109,6 @@ namespace WeCantSpell.Hunspell
             var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper);
             return await ReadFileAsync(dictionaryFilePath, affix, wordListBuilder).ConfigureAwait(false);
         }
-#endif
 
         public static async Task<WordList> ReadAsync(Stream dictionaryStream, AffixConfig affix, WordList.Builder builder = null)
         {
@@ -132,7 +127,6 @@ namespace WeCantSpell.Hunspell
             }
         }
 
-#if !NO_IO_FILE
         public static async Task<WordList> ReadFileAsync(string dictionaryFilePath, AffixConfig affix, WordList.Builder builder = null)
         {
             if (dictionaryFilePath == null)
@@ -149,8 +143,6 @@ namespace WeCantSpell.Hunspell
                 return await ReadAsync(stream, affix, builder).ConfigureAwait(false);
             }
         }
-#endif
-
 #endif
 
         public static WordList Read(Stream dictionaryStream, Stream affixStream)
@@ -192,7 +184,6 @@ namespace WeCantSpell.Hunspell
             return readerInstance.Builder.MoveToImmutable();
         }
 
-#if !NO_IO_FILE
         public static WordList ReadFile(string dictionaryFilePath)
         {
             if (dictionaryFilePath == null)
@@ -242,7 +233,6 @@ namespace WeCantSpell.Hunspell
 
             return Path.ChangeExtension(dictionaryFilePath, "aff");
         }
-#endif
 
         public static WordList Read(Stream dictionaryStream, AffixConfig affix, WordList.Builder builder = null)
         {
@@ -261,7 +251,6 @@ namespace WeCantSpell.Hunspell
             }
         }
 
-#if !NO_IO_FILE
         public static WordList ReadFile(string dictionaryFilePath, AffixConfig affix, WordList.Builder builder = null)
         {
             if (dictionaryFilePath == null)
@@ -278,7 +267,6 @@ namespace WeCantSpell.Hunspell
                 return Read(stream, affix, builder);
             }
         }
-#endif
 
         private bool ParseLine(string line)
         {
@@ -359,7 +347,7 @@ namespace WeCantSpell.Hunspell
 
         private bool AddWord(string word, FlagSet flags, string[] morphs) =>
             AddWord(word, flags, morphs, false)
-            || AddWordCapitalized(word, flags, morphs, CapitalizationTypeEx.GetCapitalizationType(word, TextInfo));
+            || AddWordCapitalized(word, flags, morphs, HunspellTextFunctions.GetCapitalizationType(new StringSlice(word), TextInfo));
 
         private bool AddWord(string word, FlagSet flags, string[] morphs, bool onlyUpperCase)
         {
@@ -471,14 +459,11 @@ namespace WeCantSpell.Hunspell
 
             private static readonly Regex MorphPartRegex = new Regex(
                 @"\G([\t ]+(?<morphs>[^\t ]+))*[\t ]*$",
-#if !NO_COMPILEDREGEX
-                RegexOptions.Compiled |
-#endif
-                RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture);
+                RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture);
 
             public static ParsedWordLine Parse(string line)
             {
-                var firstNonDelimiterPosition = StringEx.IndexOfNonTabOrSpace(line, 0);
+                var firstNonDelimiterPosition = line.IndexOfNonTabOrSpace(0);
                 if (firstNonDelimiterPosition >= 0)
                 {
                     var endOfWordAndFlagsPosition = FindIndexOfFirstMorphByColonChar(line, firstNonDelimiterPosition);
@@ -491,7 +476,7 @@ namespace WeCantSpell.Hunspell
                         }
                     }
 
-                    while(endOfWordAndFlagsPosition > firstNonDelimiterPosition && StringEx.IsTabOrSpace(line[endOfWordAndFlagsPosition - 1]))
+                    while(endOfWordAndFlagsPosition > firstNonDelimiterPosition && line[endOfWordAndFlagsPosition - 1].IsTabOrSpace())
                     {
                         --endOfWordAndFlagsPosition;
                     }
@@ -534,7 +519,7 @@ namespace WeCantSpell.Hunspell
                 while ((index = text.IndexOf(':', index)) >= 0)
                 {
                     var checkLocation = index - 3;
-                    if (checkLocation >= 0 && StringEx.IsTabOrSpace(text[checkLocation]))
+                    if (checkLocation >= 0 && text[checkLocation].IsTabOrSpace())
                     {
                         return checkLocation;
                     }

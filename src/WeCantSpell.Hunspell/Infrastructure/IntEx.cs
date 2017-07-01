@@ -6,32 +6,33 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal static class IntEx
+    static class IntEx
     {
         private static readonly NumberFormatInfo InvariantNumberFormat = CultureInfo.InvariantCulture.NumberFormat;
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static bool TryParseInvariant(string text, out int value) =>
             int.TryParse(text, NumberStyles.Integer, InvariantNumberFormat, out value);
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static bool TryParseInvariant(StringSlice text, out int value) =>
             int.TryParse(text.ToString(), NumberStyles.Integer, InvariantNumberFormat, out value);
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static int? TryParseInvariant(string text) =>
+        public static int? TryParseInvariant(StringSlice text) =>
             TryParseInvariant(text, out int value) ? (int?)value : null;
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static int? TryParseInvariant(StringSlice text) =>
-            TryParseInvariant(text, out int value) ? (int?)value : null;
+        public static bool InversePostfixIncrement(ref bool b)
+        {
+            if (b)
+            {
+                return false;
+            }
+            else
+            {
+                b = true;
+                return true;
+            }
+        }
     }
 }

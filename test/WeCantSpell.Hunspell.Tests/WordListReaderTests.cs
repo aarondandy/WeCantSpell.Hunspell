@@ -19,12 +19,12 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.Affix.Should().NotBeNull();
-                actual.AllEntries.Should().HaveCount(1);
-                var entry = actual.AllEntries.Single();
-                entry.Flags.Should().BeNullOrEmpty();
-                entry.Morphs.Should().BeNullOrEmpty();
-                entry.Options.Should().Be(WordEntryOptions.None);
-                entry.Word.Should().Be("Kühlschrank");
+                actual.RootWords.Should().HaveCount(1);
+                actual.RootWords.First().Should().Be("Kühlschrank");
+                var detail = actual[actual.RootWords.Single()].Single();
+                detail.Flags.Should().BeNullOrEmpty();
+                detail.Morphs.Should().BeNullOrEmpty();
+                detail.Options.Should().Be(WordEntryOptions.None);
             }
 
             [Fact]
@@ -188,7 +188,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(1);
-                actual["ب"][0].Word.Should().Be("ب");
+                actual["ب"].Should().HaveCount(1);
             }
 
             [Fact]

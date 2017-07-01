@@ -15,15 +15,29 @@ namespace WeCantSpell.Hunspell.Infrastructure
         IReadOnlyList<T>
 #endif
     {
-        internal readonly T[] items;
-
         protected ArrayWrapper(T[] items)
         {
             this.items = items ?? throw new ArgumentNullException(nameof(items));
             IsEmpty = items.Length == 0;
         }
 
-        public bool IsEmpty { get; }
+        internal readonly T[] items;
+
+        public bool IsEmpty
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get;
+        }
+
+        public bool HasItems
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get => !IsEmpty;
+        }
 
         public T this[int index]
         {
@@ -39,14 +53,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             get => items.Length;
-        }
-
-        public bool HasItems
-        {
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            get => !IsEmpty;
         }
 
 #if !NO_INLINE
@@ -86,32 +92,27 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #endif
             public bool MoveNext() => (++index) < values.Length;
         }
-    }
 
-    public class ArrayWrapperComparer<TValue, TCollection> :
-        IEqualityComparer<TCollection>
-        where TCollection : ArrayWrapper<TValue>
-    {
-        public ArrayWrapperComparer() =>
-            ArrayComparer = ArrayComparer<TValue>.Default;
+        public class ArrayWrapperComparer<TValue, TCollection> :
+            IEqualityComparer<TCollection>
+            where TCollection : ArrayWrapper<TValue>
+        {
+            public ArrayWrapperComparer() =>
+                arrayComparer = ArrayComparer<TValue>.Default;
 
-        public ArrayWrapperComparer(IEqualityComparer<TValue> valueComparer) =>
-            ArrayComparer = new ArrayComparer<TValue>(valueComparer);
-
-        private ArrayComparer<TValue> ArrayComparer { get; }
-
-        public bool Equals(TCollection x, TCollection y) =>
-            ReferenceEquals(x, y)
-            ||
-            (
-                x != null
-                && y != null
-                && ArrayComparer.Equals(x.items, y.items)
-            );
+            private ArrayComparer<TValue> arrayComparer;
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public int GetHashCode(TCollection obj) => ArrayComparer.GetHashCode(obj.items);
+            public bool Equals(TCollection x, TCollection y) =>
+                arrayComparer.Equals(x.items, y.items);
+
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            public int GetHashCode(TCollection obj) =>
+                arrayComparer.GetHashCode(obj.items);
+        }
     }
 }

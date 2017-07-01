@@ -1,8 +1,10 @@
-﻿using System.Runtime.CompilerServices;
+﻿#if !NO_INLINE
+using System.Runtime.CompilerServices;
+#endif
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal static class EnumEx
+    static class EnumEx
     {
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -22,16 +24,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        internal static bool HasFlag(this AffixReader.EntryListType value, AffixReader.EntryListType flag) => (value & flag) == flag;
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static bool HasFlag(this SpellCheckResultType value, SpellCheckResultType flag) => (value & flag) == flag;
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static bool HasFlag(this NGramOptions value, NGramOptions flag) => (value & flag) == flag;
     }
 }

@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal static class StringEx
+    static class StringEx
     {
         private static readonly char[] SpaceOrTab = { ' ', '\t' };
 
@@ -41,11 +41,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static bool IsCommentPrefix(char c) => c == '#' || c == '/';
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static string[] SplitOnTabOrSpace(this string @this)
         {
 #if DEBUG
@@ -60,9 +55,9 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static bool IsTabOrSpace(char c) => c == ' ' || c == '\t';
+        public static bool IsTabOrSpace(this char c) => c == ' ' || c == '\t';
 
-        public static int IndexOfTabOrSpace(string text, int startIndex)
+        public static int IndexOfNonTabOrSpace(this string text, int offset)
         {
 #if DEBUG
             if (text == null)
@@ -70,30 +65,11 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 throw new ArgumentNullException(nameof(text));
             }
 #endif
-            for (var i = startIndex; i < text.Length; i++)
+            for (; offset < text.Length; offset++)
             {
-                if (IsTabOrSpace(text[i]))
+                if (!text[offset].IsTabOrSpace())
                 {
-                    return i;
-                }
-            }
-
-            return -1;
-        }
-
-        public static int IndexOfNonTabOrSpace(string text, int startIndex)
-        {
-#if DEBUG
-            if (text == null)
-            {
-                throw new ArgumentNullException(nameof(text));
-            }
-#endif
-            for (var i = startIndex; i < text.Length; i++)
-            {
-                if (!IsTabOrSpace(text[i]))
-                {
-                    return i;
+                    return offset;
                 }
             }
 
@@ -112,9 +88,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return new string(chars);
         }
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static bool Contains(this string @this, char c) => @this.IndexOf(c) >= 0;
 
         public static string Replace(this string @this, int index, int removeCount, string replacement)
@@ -122,33 +95,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
             var builder = StringBuilderPool.Get(@this, Math.Max(@this.Length, @this.Length + replacement.Length - removeCount));
             builder.Replace(index, removeCount, replacement);
             return StringBuilderPool.GetStringAndReturn(builder);
-        }
-
-        public static bool EqualsOffset(string a, int aOffset, string b, int bOffset)
-        {
-#if DEBUG
-            if (a == null)
-            {
-                throw new ArgumentNullException(nameof(a));
-            }
-            if (b == null)
-            {
-                throw new ArgumentNullException(nameof(b));
-            }
-            if (aOffset < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(aOffset));
-            }
-            if (bOffset < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(bOffset));
-            }
-#endif
-
-            var aRemaining = a.Length - aOffset;
-            return aRemaining >= 0
-                && (aRemaining == b.Length - bOffset)
-                && string.CompareOrdinal(a, aOffset, b, bOffset, aRemaining) == 0;
         }
 
 #if !NO_INLINE
@@ -289,8 +235,8 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
-        public static string ConcatString(string str0, string str1, int startIndex1) =>
-            ConcatString(str0, 0, str0.Length, str1, startIndex1, str1.Length - startIndex1);
+        public static string ConcatString(string str0, StringSlice str1) =>
+            ConcatString(str0, str1.Text, str1.Offset, str1.Length);
 
         public static string ConcatString(string str0, int startIndex0, int count0, string str1, int startIndex1) =>
             ConcatString(str0, startIndex0, count0, str1, startIndex1, str1.Length - startIndex1);
@@ -319,7 +265,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static string ConcatString(string str0, int startIndex0, int count0, char char1, string str2, int startIndex2) =>
             ConcatString(str0, startIndex0, count0, char1.ToString(), str2, startIndex2);
 
-        public static int FirstIndexOfLineBreakChar(string text, int startPosition)
+        public static int FirstIndexOfLineBreakChar(this string text, int offset)
         {
 #if DEBUG
             if (text == null)
@@ -328,11 +274,11 @@ namespace WeCantSpell.Hunspell.Infrastructure
             }
 #endif
 
-            for (var i = startPosition; i < text.Length; i++)
+            for (; offset < text.Length; offset++)
             {
-                if (IsLineBreakChar(text[i]))
+                if (text[offset].IsLineBreakChar())
                 {
-                    return i;
+                    return offset;
                 }
             }
 
@@ -342,7 +288,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static bool IsLineBreakChar(char c) => c == '\n' || c == '\r';
+        public static bool IsLineBreakChar(this char c) => c == '\n' || c == '\r';
 
         public static bool ContainsAny(this string text, char a, char b)
         {
@@ -368,11 +314,5 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #endif
         public static int IndexOfOrdinal(this string text, string value, int startIndex) =>
             text.IndexOf(value, startIndex, StringComparison.Ordinal);
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static int IndexOfOrdinal(this string text, string value, int startIndex, int count) =>
-            text.IndexOf(value, startIndex, count, StringComparison.Ordinal);
     }
 }

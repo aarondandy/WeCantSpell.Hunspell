@@ -9,31 +9,31 @@ namespace WeCantSpell.Hunspell
 {
     public sealed class StringValueLineReader : IHunspellLineReader
     {
-        public StringValueLineReader(string text) => Content = text;
+        public StringValueLineReader(string text) => content = text;
+
+        private readonly string content;
 
         private int position = 0;
-
-        private string Content { get; }
 
         public Encoding CurrentEncoding => Encoding.Unicode;
 
         public string ReadLine()
         {
-            if (Content == null || position >= Content.Length)
+            if (content == null || position >= content.Length)
             {
                 return null;
             }
 
             var startPosition = position;
-            position = StringEx.FirstIndexOfLineBreakChar(Content, position);
+            position = content.FirstIndexOfLineBreakChar(position);
             if (position < 0)
             {
-                position = Content.Length;
+                position = content.Length;
             }
 
-            var result = Content.Substring(startPosition, position - startPosition);
+            var result = content.Substring(startPosition, position - startPosition);
 
-            while (position < Content.Length && StringEx.IsLineBreakChar(Content[position]))
+            while (position < content.Length && content[position].IsLineBreakChar())
             {
                 position++;
             }

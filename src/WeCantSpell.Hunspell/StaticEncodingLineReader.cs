@@ -20,7 +20,7 @@ namespace WeCantSpell.Hunspell
         public StaticEncodingLineReader(Stream stream, Encoding encoding)
         {
             this.stream = stream ?? throw new ArgumentNullException(nameof(stream));
-            reader = new StreamReader(stream, encoding ?? EncodingEx.DefaultReadEncoding, true);
+            reader = new StreamReader(stream, encoding ?? Encoding.UTF8, true);
         }
 
         private readonly Stream stream;
@@ -28,7 +28,6 @@ namespace WeCantSpell.Hunspell
 
         public Encoding CurrentEncoding => reader.CurrentEncoding;
 
-#if !NO_IO_FILE
         public static List<string> ReadLines(string filePath, Encoding encoding)
         {
             if (filePath == null)
@@ -44,7 +43,7 @@ namespace WeCantSpell.Hunspell
         }
 
 #if !NO_ASYNC
-        public static async Task<List<string>> ReadLinesAsync(string filePath, Encoding encoding)
+        public static async Task<IEnumerable<string>> ReadLinesAsync(string filePath, Encoding encoding)
         {
             if (filePath == null)
             {
@@ -57,8 +56,6 @@ namespace WeCantSpell.Hunspell
                 return await reader.ReadLinesAsync().ConfigureAwait(false);
             }
         }
-#endif
-
 #endif
 
 #if !NO_INLINE

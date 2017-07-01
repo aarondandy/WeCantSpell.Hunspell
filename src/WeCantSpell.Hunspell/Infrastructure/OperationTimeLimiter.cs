@@ -2,7 +2,7 @@
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal class OperationTimeLimiter
+    class OperationTimeLimiter
     {
         public static OperationTimeLimiter Create(int timeLimitInMs, int queriesToTriggerCheck) =>
             new OperationTimeLimiter(
@@ -10,59 +10,61 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 queriesToTriggerCheck,
                 timeLimitInMs);
 
-        private readonly long operationStartTime;
-        private readonly int queriesToTriggerCheck;
-        private readonly int timeLimitInMs;
-        private int queryCounter;
-        private bool expirationTriggered;
-
         private OperationTimeLimiter(
             long operationStartTime,
             int queriesToTriggerCheck,
             int timeLimitInMs)
         {
+#if DEBUG
             if (queriesToTriggerCheck < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(queriesToTriggerCheck));
             }
+#endif
 
-            this.operationStartTime = operationStartTime;
-            this.queriesToTriggerCheck = queriesToTriggerCheck;
-            this.timeLimitInMs = timeLimitInMs;
-            queryCounter = queriesToTriggerCheck;
-            expirationTriggered = false;
+            OperationStartTime = operationStartTime;
+            QueriesToTriggerCheck = queriesToTriggerCheck;
+            TimeLimitInMs = timeLimitInMs;
+            QueryCounter = queriesToTriggerCheck;
+            HasExpired = false;
         }
 
-        public int QueryCounter => queryCounter;
+        private long OperationStartTime { get; }
 
-        public bool HasExpired => expirationTriggered;
+        private int QueriesToTriggerCheck { get; }
+
+        private int TimeLimitInMs { get; }
+
+        public int QueryCounter { get; private set; }
+
+        public bool HasExpired { get; private set; }
 
         public bool QueryForExpiration()
         {
-            if (!expirationTriggered)
+            if (!HasExpired)
             {
-                if (queryCounter == 0)
+                if (QueryCounter == 0)
                 {
                     HandleQueryCounterTrigger();
                 }
                 else
                 {
-                    queryCounter--;
+                    QueryCounter--;
                 }
             }
 
-            return expirationTriggered;
+            return HasExpired;
         }
 
         private void HandleQueryCounterTrigger()
         {
-            var currentTicks = Environment.TickCount - operationStartTime;
-            if (currentTicks > timeLimitInMs)
+            var currentTicks = Environment.TickCount - OperationStartTime;
+            if (currentTicks > TimeLimitInMs)
             {
-                expirationTriggered = true;
+                HasExpired = true;
             }
 
-            queryCounter = queriesToTriggerCheck;
+            QueryCounter = QueriesToTriggerCheck;
         }
     }
 }

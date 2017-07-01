@@ -3,7 +3,7 @@ using System.Text;
 
 namespace WeCantSpell.Hunspell.Tests.Infrastructure
 {
-    internal static class EncodingHelpers
+    static class EncodingHelpers
     {
         static EncodingHelpers()
         {

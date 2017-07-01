@@ -25,21 +25,27 @@ namespace WeCantSpell.Hunspell
                 {
                     new UnicodeEncoding(true, true)
                     ,new UnicodeEncoding(false, true)
-#if !NO_UTF32
                     ,new UTF32Encoding(false, true)
-#endif
                     ,Encoding.UTF8
-
-#if !NO_UTF32
                     ,new UTF32Encoding(true, true)
-#endif
                 };
 
-            MaxPreambleLengthInBytes = PreambleEncodings.Max(e => e.GetPreamble().Length);
+#if DEBUG
+            var max = 0;
+            foreach (var e in PreambleEncodings)
+            {
+                max = Math.Max(max, e.GetPreamble().Length);
+            }
+
+            if (max != MaxPreambleLengthInBytes)
+            {
+                throw new InvalidOperationException();
+            }
+#endif
         }
 
         private static readonly Encoding[] PreambleEncodings;
-        private static readonly int MaxPreambleLengthInBytes;
+        private const int MaxPreambleLengthInBytes = 4;
 
         public DynamicEncodingLineReader(Stream stream, Encoding initialEncoding)
         {
@@ -63,7 +69,6 @@ namespace WeCantSpell.Hunspell
 
         public Encoding CurrentEncoding => encoding;
 
-#if !NO_IO_FILE
         public static List<string> ReadLines(string filePath, Encoding defaultEncoding)
         {
             if (filePath == null)
@@ -72,14 +77,14 @@ namespace WeCantSpell.Hunspell
             }
 
             using (var stream = FileStreamEx.OpenReadFileStream(filePath))
-            using (var reader = new DynamicEncodingLineReader(stream, defaultEncoding ?? EncodingEx.DefaultReadEncoding))
+            using (var reader = new DynamicEncodingLineReader(stream, defaultEncoding ?? Encoding.UTF8))
             {
                 return reader.ReadLines().ToList();
             }
         }
 
 #if !NO_ASYNC
-        public static async Task<List<string>> ReadLinesAsync(string filePath, Encoding defaultEncoding)
+        public static async Task<IEnumerable<string>> ReadLinesAsync(string filePath, Encoding defaultEncoding)
         {
             if (filePath == null)
             {
@@ -87,13 +92,11 @@ namespace WeCantSpell.Hunspell
             }
 
             using (var stream = FileStreamEx.OpenAsyncReadFileStream(filePath))
-            using (var reader = new DynamicEncodingLineReader(stream, defaultEncoding ?? EncodingEx.DefaultReadEncoding))
+            using (var reader = new DynamicEncodingLineReader(stream, defaultEncoding ?? Encoding.UTF8))
             {
                 return await reader.ReadLinesAsync().ConfigureAwait(false);
             }
         }
-#endif
-
 #endif
 
         public string ReadLine()
@@ -255,23 +258,6 @@ namespace WeCantSpell.Hunspell
                     singleDecoderByteArray,
                     0,
                     1,
-                    chars,
-                    0,
-                    chars.Length,
-                    false,
-                    out int bytesConverted,
-                    out int charsProduced,
-                    out bool completed);
-
-            return charsProduced;
-        }
-
-        private int TryDecode(byte[] bytes, char[] chars)
-        {
-            decoder.Convert(
-                    bytes,
-                    0,
-                    bytes.Length,
                     chars,
                     0,
                     chars.Length,
@@ -487,7 +473,7 @@ namespace WeCantSpell.Hunspell
         {
             // read through the initial whitespace
             var startIndex = 0;
-            for (; startIndex < line.Length && StringEx.IsTabOrSpace(line[startIndex]); startIndex++) ;
+            for (; startIndex < line.Length && line[startIndex].IsTabOrSpace(); startIndex++) ;
 
             if (startIndex == line.Length)
             {
@@ -505,11 +491,11 @@ namespace WeCantSpell.Hunspell
             startIndex++;
 
             // read the whitespace to find the encoding name
-            for (; startIndex < line.Length && StringEx.IsTabOrSpace(line[startIndex]); startIndex++) ;
+            for (; startIndex < line.Length && line[startIndex].IsTabOrSpace(); startIndex++) ;
             
             // read through the final trailing whitespace if any
             var endIndex = line.Length - 1;
-            for (; endIndex > startIndex && StringEx.IsTabOrSpace(line[endIndex]); endIndex--) ;
+            for (; endIndex > startIndex && line[endIndex].IsTabOrSpace(); endIndex--) ;
 
             ChangeEncoding(line.Subslice(startIndex, endIndex - startIndex + 1));
         }

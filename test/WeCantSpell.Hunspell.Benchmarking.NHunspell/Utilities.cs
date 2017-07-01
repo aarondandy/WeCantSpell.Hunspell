@@ -2,7 +2,7 @@
 
 namespace WeCantSpell.Hunspell.Benchmarking.NHunspell
 {
-    internal static class Utilities
+    static class Utilities
     {
         public static void ApplyCultureHacks()
         {

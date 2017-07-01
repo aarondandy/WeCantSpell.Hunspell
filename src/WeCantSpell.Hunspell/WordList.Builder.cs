@@ -30,9 +30,6 @@ namespace WeCantSpell.Hunspell
                 WordEntryDetailDeduper.Add(WordEntryDetail.Default);
             }
 
-            [Obsolete("Use EntryDetailsByRoot")]
-            public Dictionary<string, List<WordEntry>> EntriesByRoot;
-
             private Dictionary<string, List<WordEntryDetail>> EntryDetailsByRoot;
 
             public readonly AffixConfig Affix;
@@ -105,7 +102,7 @@ namespace WeCantSpell.Hunspell
                     }
                 }
 
-                result.NGramRestrictedEntries = new Dictionary<string, WordEntryDetail[]>();
+                result.NGramRestrictedDetails = new Dictionary<string, WordEntryDetail[]>();
 
                 foreach (var rootSet in result.EntriesByRoot)
                 {
@@ -125,7 +122,7 @@ namespace WeCantSpell.Hunspell
 
                     if (details != null)
                     {
-                        result.NGramRestrictedEntries.Add(rootSet.Key, details.ToArray());
+                        result.NGramRestrictedDetails.Add(rootSet.Key, details.ToArray());
                     }
                 }
 

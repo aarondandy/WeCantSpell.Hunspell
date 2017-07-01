@@ -1,6 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using WeCantSpell.Hunspell.Infrastructure;
+
+#if !NO_INLINE
+using System.Runtime.CompilerServices;
+#endif
 
 namespace WeCantSpell.Hunspell
 {
@@ -8,60 +13,51 @@ namespace WeCantSpell.Hunspell
     {
         public static readonly PatternSet Empty = TakeList(new List<PatternEntry>(0));
 
+        public static PatternSet Create(IEnumerable<PatternEntry> patterns) =>
+            patterns == null ? Empty : TakeList(patterns.ToList());
+
+        internal static PatternSet TakeList(List<PatternEntry> patterns) =>
+            patterns == null ? Empty : new PatternSet(patterns);
+
         private PatternSet(List<PatternEntry> patterns)
             : base(patterns)
         {
         }
 
-        internal static PatternSet TakeList(List<PatternEntry> patterns) =>
-            patterns == null ? Empty : new PatternSet(patterns);
-
-        public static PatternSet Create(IEnumerable<PatternEntry> patterns) =>
-            patterns == null ? Empty : TakeList(patterns.ToList());
-
-        public bool TryGetPattern(int number, out PatternEntry result)
-        {
-            if (number > 0 && number <= items.Count)
-            {
-                result = items[number - 1];
-                return true;
-            }
-            else
-            {
-                result = null;
-                return false;
-            }
-        }
-
         /// <summary>
         /// Forbid compoundings when there are special patterns at word bound.
         /// </summary>
-        public bool Check(string word, int pos, WordEntry r1, WordEntry r2, bool affixed)
+        internal bool Check(string word, int pos, WordEntry r1, WordEntry r2, bool affixed)
         {
-            if (string.IsNullOrEmpty(word))
+#if DEBUG
+            if (word == null)
             {
-                return false;
+                throw new ArgumentNullException(nameof(word));
             }
+            if (r1 == null)
+            {
+                throw new ArgumentNullException(nameof(r1));
+            }
+            if (r2 == null)
+            {
+                throw new ArgumentNullException(nameof(r2));
+            }
+#endif
 
             var wordAfterPos = word.Subslice(pos);
 
             foreach (var patternEntry in items)
             {
-                int len;
                 if (
                     HunspellTextFunctions.IsSubset(patternEntry.Pattern2, wordAfterPos)
                     &&
                     (
-                        r1 == null
-                        ||
                         patternEntry.Condition.IsZero
                         ||
                         r1.ContainsFlag(patternEntry.Condition)
                     )
                     &&
                     (
-                        r2 == null
-                        ||
                         patternEntry.Condition2.IsZero
                         ||
                         r2.ContainsFlag(patternEntry.Condition2)
@@ -72,23 +68,7 @@ namespace WeCantSpell.Hunspell
                     (
                         string.IsNullOrEmpty(patternEntry.Pattern)
                         ||
-                        (
-                            (
-                                patternEntry.Pattern.StartsWith('0')
-                                && r1.Word.Length <= pos
-                                && StringEx.EqualsOffset(word, pos - r1.Word.Length, r1.Word, 0, r1.Word.Length)
-                            )
-                            ||
-                            (
-                                !patternEntry.Pattern.StartsWith('0')
-                                &&
-                                (
-                                    (len = patternEntry.Pattern.Length) != 0
-                                )
-                                &&
-                                StringEx.EqualsOffset(word, pos - len, patternEntry.Pattern, 0, len)
-                            )
-                        )
+                        PatternWordCheck(word, pos, patternEntry.Pattern.StartsWith('0') ? r1.Word : patternEntry.Pattern)
                     )
                 )
                 {
@@ -98,5 +78,12 @@ namespace WeCantSpell.Hunspell
 
             return false;
         }
+
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static bool PatternWordCheck(string word, int pos, string other) =>
+            other.Length <= pos
+            && StringEx.EqualsOffset(word, pos - other.Length, other, 0, other.Length);
     }
 }

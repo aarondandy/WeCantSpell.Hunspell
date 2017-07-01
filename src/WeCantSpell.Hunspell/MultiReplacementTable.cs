@@ -19,10 +19,16 @@ namespace WeCantSpell.Hunspell
     {
         public static readonly MultiReplacementTable Empty = TakeDictionary(new Dictionary<string, MultiReplacementEntry>(0));
 
-        private Dictionary<string, MultiReplacementEntry> replacements;
+        public static MultiReplacementTable Create(IEnumerable<KeyValuePair<string, MultiReplacementEntry>> replacements) =>
+            replacements == null ? Empty : TakeDictionary(replacements.ToDictionary(s => s.Key, s => s.Value));
+
+        internal static MultiReplacementTable TakeDictionary(Dictionary<string, MultiReplacementEntry> replacements) =>
+            replacements == null ? Empty : new MultiReplacementTable(replacements);
 
         private MultiReplacementTable(Dictionary<string, MultiReplacementEntry> replacements) =>
             this.replacements = replacements;
+
+        private Dictionary<string, MultiReplacementEntry> replacements;
 
         public MultiReplacementEntry this[string key] => replacements[key];
 
@@ -34,28 +40,24 @@ namespace WeCantSpell.Hunspell
 
         public IEnumerable<MultiReplacementEntry> Values => replacements.Values;
 
-        internal static MultiReplacementTable TakeDictionary(Dictionary<string, MultiReplacementEntry> replacements) =>
-            replacements == null ? Empty : new MultiReplacementTable(replacements);
-
-        public static MultiReplacementTable Create(IEnumerable<KeyValuePair<string, MultiReplacementEntry>> replacements) =>
-            replacements == null ? Empty : TakeDictionary(replacements.ToDictionary(s => s.Key, s => s.Value));
-
         public bool ContainsKey(string key) => replacements.ContainsKey(key);
 
         public bool TryGetValue(string key, out MultiReplacementEntry value) => replacements.TryGetValue(key, out value);
 
-        public bool TryConvert(string text, out string converted)
+        internal bool TryConvert(string text, out string converted)
         {
+#if DEBUG
             if (text == null)
             {
                 throw new ArgumentNullException(nameof(text));
             }
+#endif
 
             var appliedConversion = false;
 
             if (text.Length == 0)
             {
-                converted = string.Empty;
+                converted = text;
             }
             else
             {
@@ -64,20 +66,19 @@ namespace WeCantSpell.Hunspell
                 for (var i = 0; i < text.Length; i++)
                 {
                     var replacementEntry = FindLargestMatchingConversion(text.Subslice(i));
-                    var replacementText = replacementEntry == null
-                        ? string.Empty
-                        : replacementEntry.ExtractReplacementText(text.Length - i, i == 0);
+                    if (replacementEntry != null)
+                    {
+                        var replacementText = replacementEntry.ExtractReplacementText(text.Length - i, i == 0);
+                        if (!string.IsNullOrEmpty(replacementText))
+                        {
+                            convertedBuilder.Append(replacementText);
+                            i += replacementEntry.Pattern.Length - 1;
+                            appliedConversion = true;
+                            continue;
+                        }
+                    }
 
-                    if (replacementText.Length == 0)
-                    {
-                        convertedBuilder.Append(text[i]);
-                    }
-                    else
-                    {
-                        convertedBuilder.Append(replacementText);
-                        i += replacementEntry.Pattern.Length - 1;
-                        appliedConversion = true;
-                    }
+                    convertedBuilder.Append(text[i]);
                 }
 
                 converted = StringBuilderPool.GetStringAndReturn(convertedBuilder);
@@ -85,17 +86,6 @@ namespace WeCantSpell.Hunspell
 
             return appliedConversion;
         }
-
-        /// <summary>
-        /// Finds a conversion matching the longest version of the given <paramref name="text"/> from the left.
-        /// </summary>
-        /// <param name="text">The text to find a matching input conversion for.</param>
-        /// <returns>The best matching input conversion.</returns>
-        /// <seealso cref="MultiReplacementEntry"/>
-        public MultiReplacementEntry FindLargestMatchingConversion(string text) =>
-            string.IsNullOrEmpty(text)
-                ? null
-                : FindLargestMatchingConversion(new StringSlice(text));
 
         /// <summary>
         /// Finds a conversion matching the longest version of the given <paramref name="text"/> from the left.

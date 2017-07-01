@@ -1,10 +1,8 @@
-﻿#if !NO_IO_FILE
-
-using System.IO;
+﻿using System.IO;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal static class FileStreamEx
+    static class FileStreamEx
     {
         private const int DefaultBufferSize = 4096;
 
@@ -17,5 +15,3 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #endif
     }
 }
-
-#endif

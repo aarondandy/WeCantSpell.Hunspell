@@ -15,15 +15,29 @@ namespace WeCantSpell.Hunspell.Infrastructure
         IReadOnlyList<T>
 #endif
     {
-        protected readonly List<T> items;
-
         protected ListWrapper(List<T> items)
         {
             this.items = items ?? throw new ArgumentNullException(nameof(items));
             IsEmpty = items.Count == 0;
         }
 
-        public bool IsEmpty { get; }
+        protected readonly List<T> items;
+
+        public bool IsEmpty
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get;
+        }
+
+        public bool HasItems
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get => !IsEmpty;
+        }
 
         public T this[int index]
         {
@@ -39,14 +53,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             get => items.Count;
-        }
-
-        public bool HasItems
-        {
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            get => !IsEmpty;
         }
 
 #if !NO_INLINE

@@ -62,7 +62,7 @@ namespace WeCantSpell.Hunspell
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static FlagValue Create(char high, char low) => new FlagValue(unchecked((char)((high << 8) | low)));
+        internal static FlagValue Create(char high, char low) => new FlagValue(unchecked((char)((high << 8) | low)));
 
         public static bool TryParseFlag(string text, FlagMode mode, out FlagValue value)
         {
@@ -91,9 +91,6 @@ namespace WeCantSpell.Hunspell
             }
         }
 
-        public static bool TryParseFlag(string text, int startIndex, int length, FlagMode mode, out FlagValue value) =>
-            TryParseFlag((text ?? throw new ArgumentNullException(nameof(text))).Subslice(startIndex, length), mode, out value);
-
         internal static bool TryParseFlag(StringSlice text, FlagMode mode, out FlagValue value)
         {
             if (text.IsEmpty)
@@ -105,10 +102,10 @@ namespace WeCantSpell.Hunspell
             switch (mode)
             {
                 case FlagMode.Char:
-                    value = new FlagValue(text[0]);
+                    value = new FlagValue(text.First());
                     return true;
                 case FlagMode.Long:
-                    var a = text[0];
+                    var a = text.First();
                     value = text.Length >= 2
                         ? Create(a, text[1])
                         : new FlagValue(a);
@@ -121,7 +118,7 @@ namespace WeCantSpell.Hunspell
             }
         }
 
-        public static bool TryParseNumberFlag(string text, out FlagValue value)
+        private static bool TryParseNumberFlag(string text, out FlagValue value)
         {
             if (!string.IsNullOrEmpty(text) && IntEx.TryParseInvariant(text, out int integerValue) && integerValue >= char.MinValue && integerValue <= char.MaxValue)
             {
@@ -133,10 +130,7 @@ namespace WeCantSpell.Hunspell
             return false;
         }
 
-        public static bool TryParseNumberFlag(string text, int startIndex, int length, out FlagValue value) =>
-            TryParseNumberFlag((text ?? throw new ArgumentNullException(nameof(text))).Subslice(startIndex, length), out value);
-
-        internal static bool TryParseNumberFlag(StringSlice text, out FlagValue value)
+        private static bool TryParseNumberFlag(StringSlice text, out FlagValue value)
         {
             if (!text.IsEmpty && IntEx.TryParseInvariant(text.ToString(), out int integerValue) && integerValue >= char.MinValue && integerValue <= char.MaxValue)
             {
@@ -148,10 +142,7 @@ namespace WeCantSpell.Hunspell
             return false;
         }
 
-        public static FlagValue[] ParseFlagsInOrder(string text, int startIndex, int length, FlagMode mode) =>
-            ParseFlagsInOrder((text ?? throw new ArgumentNullException(nameof(text))).Subslice(startIndex, length), mode);
-
-        public static FlagValue[] ParseFlagsInOrder(string text, FlagMode mode)
+        internal static FlagValue[] ParseFlagsInOrder(string text, FlagMode mode)
         {
             switch (mode)
             {
@@ -184,22 +175,12 @@ namespace WeCantSpell.Hunspell
         internal static FlagSet ParseFlags(StringSlice text, FlagMode mode) =>
             FlagSet.TakeArray(ParseFlagsInOrder(text, mode));
 
-        public static FlagSet ParseFlags(string text, int startIndex, int length, FlagMode mode) =>
-            (string.IsNullOrEmpty(text) || length == 0)
-                ? FlagSet.Empty
-                : FlagSet.TakeArray(ParseFlagsInOrder(text, startIndex, length, mode));
-
-        public static FlagValue[] ParseLongFlagsInOrder(string text) =>
+        private static FlagValue[] ParseLongFlagsInOrder(string text) =>
             string.IsNullOrEmpty(text)
                 ? ArrayEx<FlagValue>.Empty
                 : ParseLongFlagsInOrder(new StringSlice(text));
 
-        public static FlagValue[] ParseLongFlagsInOrder(string text, int startIndex, int length) =>
-            (string.IsNullOrEmpty(text) || length == 0)
-                ? ArrayEx<FlagValue>.Empty
-                : ParseLongFlagsInOrder(text.Subslice(startIndex, length));
-
-        internal static FlagValue[] ParseLongFlagsInOrder(StringSlice text)
+        private static FlagValue[] ParseLongFlagsInOrder(StringSlice text)
         {
             if (text.IsEmpty)
             {
@@ -222,25 +203,12 @@ namespace WeCantSpell.Hunspell
             return flags;
         }
 
-        public static FlagSet ParseLongFlags(string text) =>
-            string.IsNullOrEmpty(text)
-                ? FlagSet.Empty
-                : ParseLongFlags(new StringSlice(text));
-
-        public static FlagSet ParseLongFlags(string text, int startIndex, int length) =>
-            (string.IsNullOrEmpty(text) || length == 0)
-                ? FlagSet.Empty
-                : ParseLongFlags(text.Subslice(startIndex, length));
-
-        internal static FlagSet ParseLongFlags(StringSlice text) =>
-            FlagSet.TakeArray(ParseLongFlagsInOrder(text));
-
-        public static List<FlagValue> ParseNumberFlagsInOrder(string text) =>
+        private static List<FlagValue> ParseNumberFlagsInOrder(string text) =>
             string.IsNullOrEmpty(text)
                 ? new List<FlagValue>()
                 : ParseNumberFlagsInOrder(new StringSlice(text));
 
-        internal static List<FlagValue> ParseNumberFlagsInOrder(StringSlice text)
+        private static List<FlagValue> ParseNumberFlagsInOrder(StringSlice text)
         {
             if (text.IsEmpty)
             {
@@ -261,19 +229,6 @@ namespace WeCantSpell.Hunspell
             return flags;
         }
 
-        public static FlagSet ParseNumberFlags(string text) =>
-            string.IsNullOrEmpty(text)
-                ? FlagSet.Empty
-                : ParseNumberFlags(new StringSlice(text));
-
-        public static FlagSet ParseNumberFlags(string text, int startIndex, int length) =>
-            (string.IsNullOrEmpty(text) || length == 0)
-                ? FlagSet.Empty
-                : FlagSet.Create(ParseNumberFlagsInOrder(text.Subslice(startIndex, length)));
-
-        internal static FlagSet ParseNumberFlags(StringSlice text) =>
-            FlagSet.Create(ParseNumberFlagsInOrder(text));
-
         private static FlagValue[] ConvertCharsToFlagsInOrder(string text)
         {
             var values = new FlagValue[text.Length];
@@ -288,15 +243,13 @@ namespace WeCantSpell.Hunspell
         private static FlagValue[] ConvertCharsToFlagsInOrder(StringSlice text)
         {
             var values = new FlagValue[text.Length];
-            for (var i = 0; i < values.Length; i++)
+            for (int valueIndex = 0, textIndex = text.Offset; valueIndex < values.Length; valueIndex++, textIndex++)
             {
-                values[i] = new FlagValue(text[i]);
+                values[valueIndex] = new FlagValue(text.Text[textIndex]);
             }
 
             return values;
         }
-
-        private readonly char value;
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -309,6 +262,8 @@ namespace WeCantSpell.Hunspell
 #endif
         public FlagValue(int value) =>
             this.value = checked((char)value);
+
+        private readonly char value;
 
         public bool HasValue
         {
@@ -326,7 +281,7 @@ namespace WeCantSpell.Hunspell
             get => value == ZeroValue;
         }
 
-        internal bool IsWildcard
+        public bool IsWildcard
         {
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

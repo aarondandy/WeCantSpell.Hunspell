@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal static class StringSliceEx
+    static class StringSliceEx
     {
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -20,9 +20,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #endif
         public static StringSlice Subslice(this string text, int startIndex, int length) =>
             new StringSlice(text, startIndex, length);
-
-        public static List<StringSlice> SliceOnTabOrSpace(this string @this) =>
-            SliceOnTabOrSpace(new StringSlice(@this));
 
         public static List<StringSlice> SliceOnTabOrSpace(this StringSlice @this)
         {

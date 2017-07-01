@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace WeCantSpell.Hunspell.Benchmarking.MicroSuites.Infrastructure
 {
-    internal static class DataFilePaths
+    static class DataFilePaths
     {
         static DataFilePaths()
         {

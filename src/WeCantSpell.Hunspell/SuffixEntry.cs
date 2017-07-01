@@ -8,24 +8,20 @@ namespace WeCantSpell.Hunspell
 {
     public sealed class SuffixEntry : AffixEntry
     {
-        public sealed override string Append
-        {
-            get => base.Append;
-            protected set
-            {
-                base.Append = value;
-                RAppend = value.Reverse();
-            }
-        }
-
-        public string RAppend { get; private set; }
-
-        public sealed override string Key
-        {
 #if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            get => RAppend;
+        public SuffixEntry(
+            string strip,
+            string affixText,
+            CharacterConditionGroup conditions,
+            MorphSet morph,
+            FlagSet contClass)
+            : base(strip, affixText, conditions, morph, contClass)
+        {
+            Key = affixText.Reverse();
         }
+
+        public sealed override string Key { get; }
     }
 }

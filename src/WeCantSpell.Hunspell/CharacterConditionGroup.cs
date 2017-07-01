@@ -11,16 +11,16 @@ namespace WeCantSpell.Hunspell
 
         public static readonly ArrayWrapperComparer<CharacterCondition, CharacterConditionGroup> DefaultComparer = new ArrayWrapperComparer<CharacterCondition, CharacterConditionGroup>();
 
+        public static CharacterConditionGroup Create(CharacterCondition condition) => TakeArray(new[] { condition });
+
+        internal static CharacterConditionGroup TakeArray(CharacterCondition[] conditions) => conditions == null ? Empty : new CharacterConditionGroup(conditions);
+
         private CharacterConditionGroup(CharacterCondition[] conditions)
             : base(conditions)
         {
         }
 
         public bool AllowsAnySingleCharacter => items.Length == 1 && items[0].AllowsAny;
-
-        internal static CharacterConditionGroup TakeArray(CharacterCondition[] conditions) => conditions == null ? Empty : new CharacterConditionGroup(conditions);
-
-        public static CharacterConditionGroup Create(CharacterCondition condition) => TakeArray(new[] { condition });
 
         public string GetEncoded() => string.Concat(items.Select(c => c.GetEncoded()));
 

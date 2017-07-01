@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal static class StringBuilderEx
+    static class StringBuilderEx
     {
 #if NO_STRINGBUILDER_CLEAR
         public static StringBuilder Clear(this StringBuilder @this)
@@ -33,12 +33,9 @@ namespace WeCantSpell.Hunspell.Infrastructure
             }
 #endif
 
-            if (indexA != indexB)
-            {
-                var temp = @this[indexA];
-                @this[indexA] = @this[indexB];
-                @this[indexB] = temp;
-            }
+            var temp = @this[indexA];
+            @this[indexA] = @this[indexB];
+            @this[indexB] = temp;
         }
 
         public static string ToStringTerminated(this StringBuilder @this)
@@ -60,17 +57,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return @this.ToString(startIndex, terminatedIndex - startIndex);
         }
 
-        public static string ToStringTerminated(this StringBuilder @this, int startIndex, int length)
-        {
-            var terminatedIndex = @this.IndexOfNullChar(startIndex);
-            if (terminatedIndex < 0)
-            {
-                terminatedIndex = @this.Length;
-            }
-
-            return @this.ToString(startIndex, Math.Min(length, terminatedIndex - startIndex));
-        }
-
         public static int IndexOfNullChar(this StringBuilder @this)
         {
             for (var i = 0; i < @this.Length; i++)
@@ -86,11 +72,11 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public static int IndexOfNullChar(this StringBuilder @this, int offset)
         {
-            for (var i = offset; i < @this.Length; i++)
+            for (; offset < @this.Length; offset++)
             {
-                if (@this[i] == '\0')
+                if (@this[offset] == '\0')
                 {
-                    return i;
+                    return offset;
                 }
             }
 
@@ -101,7 +87,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static char GetCharOrTerminator(this StringBuilder @this, int index) =>
-            index<@this.Length? @this[index] : '\0';
+            index < @this.Length ? @this[index] : '\0';
 
         public static void RemoveChars(this StringBuilder @this, CharacterSet chars)
         {
@@ -222,26 +208,50 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static bool EndsWith(this StringBuilder builder, char c) =>
             builder.Length != 0 && builder[builder.Length - 1] == c;
 
-        internal static string ToStringSkippingIndex(this StringBuilder builder, int indexToSkip)
+        public static string ToStringSkippingIndex(this StringBuilder builder, int index)
         {
-            if (builder.Length == 0)
+#if DEBUG
+            if (index < 0 || index >= builder.Length)
             {
-                return string.Empty;
+                throw new ArgumentOutOfRangeException(nameof(index));
             }
-
+#endif
             var lastIndex = builder.Length - 1;
 
-            if (indexToSkip == 0)
+            if (index == 0)
             {
                 return builder.ToString(1, lastIndex);
             }
-
-            if (indexToSkip == lastIndex)
+            if (index == lastIndex)
             {
                 return builder.ToString(0, lastIndex);
             }
 
-            return builder.ToString(0, indexToSkip) + builder.ToString(indexToSkip + 1, lastIndex - indexToSkip);
+            var text = builder.ToString();
+            return StringEx.ConcatString(text, 0, index, text, index + 1, lastIndex - index);
+        }
+
+        public static string ToStringWithInsert(this StringBuilder builder, int index, char value)
+        {
+#if DEBUG
+            if (index < 0 || index > builder.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+#endif
+            if (index == 0)
+            {
+                return value.ToString() + builder.ToString();
+            }
+
+            if (index == builder.Length)
+            {
+                return builder.ToString() + value.ToString();
+            }
+
+            return builder.ToString(0, index)
+                + value.ToString()
+                + builder.ToString(index, builder.Length - index);
         }
     }
 }

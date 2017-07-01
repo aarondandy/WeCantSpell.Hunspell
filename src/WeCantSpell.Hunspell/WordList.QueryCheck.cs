@@ -19,22 +19,15 @@ namespace WeCantSpell.Hunspell
             {
                 var word = WordToCheck;
 
-                if (string.IsNullOrEmpty(word) || !WordList.HasEntries)
+                if (string.IsNullOrEmpty(word) || word.Length >= MaxWordUtf8Len || !WordList.HasEntries)
                 {
                     return new SpellCheckResult(false);
                 }
-
-                // Hunspell supports XML input of the simplified API (see manual)
                 if (word == DefaultXmlToken)
                 {
+                    // Hunspell supports XML input of the simplified API (see manual)
                     return new SpellCheckResult(true);
                 }
-
-                if (word.Length >= MaxWordUtf8Len)
-                {
-                    return new SpellCheckResult(false);
-                }
-
 
                 // input conversion
                 if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out string convertedWord))
@@ -42,21 +35,20 @@ namespace WeCantSpell.Hunspell
                     convertedWord = word;
                 }
 
-                if (CleanWord2(out string scw, convertedWord, out CapitalizationType capType, out int abbv) == 0)
+                if (!CleanWord2(out string scw, convertedWord, out CapitalizationType capType, out int abbv))
                 {
                     return new SpellCheckResult(false);
                 }
 
-                // allow numbers with dots, dashes and commas (but forbid double separators: "..", "--" etc.)
                 if (HunspellTextFunctions.IsNumericWord(word))
                 {
+                    // allow numbers with dots, dashes and commas (but forbid double separators: "..", "--" etc.)
                     return new SpellCheckResult(true);
                 }
 
                 var resultType = SpellCheckResultType.None;
                 string root = null;
-
-                WordEntry rv;
+                WordEntry rv = null;
 
                 if (capType == CapitalizationType.Huh || capType == CapitalizationType.HuhInit || capType == CapitalizationType.None)
                 {
@@ -74,10 +66,6 @@ namespace WeCantSpell.Hunspell
                 else if (capType == CapitalizationType.All)
                 {
                     rv = CheckDetailsAllCap(abbv, ref scw, ref resultType, out root);
-                }
-                else
-                {
-                    rv = null;
                 }
 
                 if (capType == CapitalizationType.Init || (capType == CapitalizationType.All && rv == null))
@@ -112,31 +100,28 @@ namespace WeCantSpell.Hunspell
                     // check boundary patterns (^begin and end$)
                     foreach (var breakEntry in Affix.BreakPoints)
                     {
-                        var pLastIndex = breakEntry.Length - 1;
                         if (breakEntry.Length == 1 || breakEntry.Length > scw.Length)
                         {
                             continue;
                         }
 
+                        var pLastIndex = breakEntry.Length - 1;
                         if (
                             breakEntry.StartsWith('^')
-                            &&
-                            StringEx.EqualsOffset(scw, 0, breakEntry, 1, pLastIndex)
-                            &&
-                            Check(scw.Substring(pLastIndex))
+                            && StringEx.EqualsOffset(scw, 0, breakEntry, 1, pLastIndex)
+                            && Check(scw.Substring(pLastIndex))
                         )
                         {
                             return new SpellCheckResult(root, resultType, true);
                         }
 
-                        var wlLessBreakIndex = scw.Length + 1 - breakEntry.Length;
-                        if (
-                            breakEntry.EndsWith('$')
-                            &&
-                            StringEx.EqualsOffset(scw, wlLessBreakIndex, breakEntry, 0, pLastIndex)
-                        )
+                        if (breakEntry.EndsWith('$'))
                         {
-                            if (Check(scw.Substring(0, wlLessBreakIndex)))
+                            var wlLessBreakIndex = scw.Length - breakEntry.Length + 1;
+                            if (
+                                StringEx.EqualsOffset(scw, wlLessBreakIndex, breakEntry, 0, pLastIndex)
+                                && Check(scw.Substring(0, wlLessBreakIndex))
+                            )
                             {
                                 return new SpellCheckResult(root, resultType, true);
                             }
@@ -186,8 +171,7 @@ namespace WeCantSpell.Hunspell
 
                 if (abbv != 0)
                 {
-                    var u8buffer = scw + ".";
-                    rv = CheckWord(u8buffer, ref resultType, out root);
+                    rv = CheckWord(scw + ".", ref resultType, out root);
                     if (rv != null)
                     {
                         return rv;
@@ -225,21 +209,21 @@ namespace WeCantSpell.Hunspell
                 {
                     scw = HunspellTextFunctions.MakeAllSmall(scw, textInfo);
                     var u8buffer = scw;
-                    rv = SpellSharps(ref u8buffer, 0, 0, 0, ref resultType, out root);
+                    rv = SpellSharps(ref u8buffer, ref resultType, out root);
                     if (rv == null)
                     {
                         scw = HunspellTextFunctions.MakeInitCap(scw, textInfo);
-                        rv = SpellSharps(ref scw, 0, 0, 0, ref resultType, out root);
+                        rv = SpellSharps(ref scw, ref resultType, out root);
                     }
 
                     if (abbv != 0 && rv == null)
                     {
                         u8buffer += ".";
-                        rv = SpellSharps(ref u8buffer, 0, 0, 0, ref resultType, out root);
+                        rv = SpellSharps(ref u8buffer, ref resultType, out root);
                         if (rv == null)
                         {
                             u8buffer = scw + ".";
-                            rv = SpellSharps(ref u8buffer, 0, 0, 0, ref resultType, out root);
+                            rv = SpellSharps(ref u8buffer, ref resultType, out root);
                         }
                     }
                 }
@@ -317,13 +301,13 @@ namespace WeCantSpell.Hunspell
 
                 if (
                     rv != null
-                    && IsKeepCase(rv)
+                    &&
+                    IsKeepCase(rv)
                     &&
                     (
                         capType == CapitalizationType.All
                         ||
-                        // if CHECKSHARPS: KEEPCASE words with \xDF  are allowed
-                        // in INITCAP form, too.
+                        // if CHECKSHARPS: KEEPCASE words with \xDF  are allowed in INITCAP form, too.
                         !(Affix.CheckSharps && u8buffer.Contains('ß'))
                     )
                 )
@@ -333,6 +317,12 @@ namespace WeCantSpell.Hunspell
 
                 return rv;
             }
+
+            /// <summary>
+            /// Recursive search for right ss - sharp s permutations
+            /// </summary>
+            private WordEntry SpellSharps(ref string @base, ref SpellCheckResultType info, out string root) =>
+                SpellSharps(ref @base, 0, 0, 0, ref info, out root);
 
             /// <summary>
             /// Recursive search for right ss - sharp s permutations

@@ -5,10 +5,9 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 #endif
 
-
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal class IncrementalWordList
+    class IncrementalWordList
     {
         public IncrementalWordList()
             : this(new List<WordEntryDetail>(), 0) { }
@@ -29,21 +28,9 @@ namespace WeCantSpell.Hunspell.Infrastructure
             WNum = wNum;
         }
 
-        public List<WordEntryDetail> Words
-        {
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            get;
-        }
+        public List<WordEntryDetail> Words { get; }
 
-        public int WNum
-        {
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            get;
-        }
+        public int WNum { get; }
 
         public void SetCurrent(WordEntryDetail value)
         {
@@ -92,9 +79,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public bool CheckIfNextIsNotNull() =>
             CheckIfNotNull(WNum + 1);
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private bool CheckIfNotNull(int index) =>
             (index < Words.Count) && Words[index] != null;
 
@@ -107,7 +91,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             }
 #endif
 
-            if(wordIndex < Words.Count)
+            if (wordIndex < Words.Count)
             {
                 var detail = Words[wordIndex];
                 if (detail != null)

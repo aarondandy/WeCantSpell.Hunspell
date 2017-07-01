@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal struct StringSlice :
+    struct StringSlice :
         IEquatable<string>,
         IEquatable<StringSlice>
     {
@@ -75,26 +75,8 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public int IndexOfOrdinal(string value) =>
-            Text.IndexOf(value, Offset, Length, StringComparison.Ordinal) - Offset;
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public int IndexOf(string value, StringComparison comparisonType) =>
             Text.IndexOf(value, Offset, Length, comparisonType) - Offset;
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public int IndexOfOrdinal(string value, int startIndex) =>
-            Text.IndexOf(value, Offset + startIndex, Length - startIndex, StringComparison.Ordinal) - Offset;
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public int IndexOf(string value, int startIndex, StringComparison comparisonType) =>
-            Text.IndexOf(value, Offset + startIndex, Length - startIndex, comparisonType) - Offset;
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -107,9 +89,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public bool Contains(char c) =>
             Text.IndexOf(c, Offset, Length) >= 0;
-
-        public string Substring(int startIndex) =>
-            Substring(startIndex, Length - startIndex);
 
         public string Substring(int startIndex, int length)
         {
@@ -126,22 +105,19 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return Text.Substring(Offset + startIndex, length);
         }
 
-        public bool Equals(string other, StringComparison comparisonType)
-        {
-            if (IsFullString)
-            {
-                return Text.Equals(other, comparisonType);
-            }
-
-            return other != null
-                && Length == other.Length
-                && StringEx.EqualsOffset(Text, Offset, other, 0, Length, comparisonType);
-        }
-
-        public bool Equals(string other) =>
+        public bool Equals(string other, StringComparison comparisonType) =>
             other != null
-            && Length == other.Length
-            && StringEx.EqualsOffset(Text, Offset, other, 0, Length);
+            &&
+            (
+                IsFullString
+                    ? Text.Equals(other, comparisonType)
+                    : (
+                        Length == other.Length
+                        && StringEx.EqualsOffset(Text, Offset, other, 0, Length, comparisonType)
+                    )
+            );
+
+        public bool Equals(string other) => Equals(other, StringComparison.Ordinal);
 
         public bool Equals(StringSlice other) =>
             Length == other.Length
@@ -182,6 +158,9 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return new StringSlice(Text, Offset + startIndex, Length - startIndex);
         }
 
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public StringSlice Subslice(int startIndex, int length)
         {
 #if DEBUG
@@ -199,15 +178,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public string ReplaceString(string oldValue, string newValue)
         {
-            if (IsEmpty)
-            {
-                return string.Empty;
-            }
-            if (IsFullString)
-            {
-                return Text.Replace(oldValue, newValue);
-            }
-
             var builder = StringBuilderPool.Get(this);
             builder.Replace(oldValue, newValue);
             return StringBuilderPool.GetStringAndReturn(builder);
@@ -221,14 +191,10 @@ namespace WeCantSpell.Hunspell.Infrastructure
             }
             if (Length == 1)
             {
-                var c = this[0];
+                var c = First();
                 return c == oldValue
                     ? newValue.ToString()
                     : c.ToString();
-            }
-            if (IsFullString)
-            {
-                return Text.Replace(oldValue, newValue);
             }
 
             var builder = StringBuilderPool.Get(this);
@@ -236,14 +202,14 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
-        public int IndexOfSpaceOrTab(int startIndex)
+        public int IndexOfSpaceOrTab(int searchOffset)
         {
             var lastIndex = Offset + Length;
-            for (var i = Offset + startIndex; i < lastIndex; i++)
+            for (searchOffset = Offset + searchOffset; searchOffset < lastIndex; searchOffset++)
             {
-                if (StringEx.IsTabOrSpace(Text[i]))
+                if (Text[searchOffset].IsTabOrSpace())
                 {
-                    return i - Offset;
+                    return searchOffset - Offset;
                 }
             }
 
@@ -252,18 +218,23 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public string ReverseString()
         {
-            if (IsEmpty)
-            {
-                return string.Empty;
-            }
-            if (Length == 1)
-            {
-                return Text[Offset].ToString();
-            }
-
             var builder = StringBuilderPool.Get(this);
             builder.Reverse();
             return StringBuilderPool.GetStringAndReturn(builder);
+        }
+
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public char First()
+        {
+#if DEBUG
+            if (Length == 0)
+            {
+                throw new InvalidOperationException();
+            }
+#endif
+            return Text[Offset];
         }
     }
 }

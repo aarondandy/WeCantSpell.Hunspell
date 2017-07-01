@@ -3,13 +3,8 @@ using System.Text;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal static class EncodingEx
+    static class EncodingEx
     {
-        public static readonly Encoding DefaultReadEncoding = Encoding.UTF8;
-
-        public static Encoding GetEncodingByName(string encodingName) =>
-            GetEncodingByName(new StringSlice(encodingName));
-
         public static Encoding GetEncodingByName(StringSlice encodingName)
         {
             if (encodingName.IsEmpty)
@@ -43,7 +38,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
             if (encodingName.Length >= 4 && encodingName.StartsWith("ISO") && encodingName[3] != '-')
             {
-                return GetEncodingByName(encodingName.Insert(3, "-"));
+                return GetEncodingByName(new StringSlice(encodingName.Insert(3, "-")));
             }
 
             return null;

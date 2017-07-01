@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal sealed class SimulatedCString
+    sealed class SimulatedCString
     {
         public SimulatedCString(string text) =>
             Buffer = StringBuilderPool.Get(text);
@@ -51,24 +51,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
             Buffer.Clear();
             Buffer.Append(text);
         }
-
-        public string Substring(int startIndex) =>
-            ToString().Substring(startIndex);
-
-        public string Substring(int startIndex, int length) =>
-            ToString().Substring(startIndex, length);
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        internal StringSlice Subslice(int startIndex) =>
-            ToString().Subslice(startIndex);
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        internal StringSlice Subslice(int startIndex, int length) =>
-            ToString().Subslice(startIndex, length);
 
         public void Destroy()
         {

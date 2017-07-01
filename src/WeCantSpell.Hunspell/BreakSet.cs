@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -9,21 +8,21 @@ namespace WeCantSpell.Hunspell
     {
         public static readonly BreakSet Empty = TakeArray(ArrayEx<string>.Empty);
 
-        private BreakSet(string[] breaks)
-            : base(breaks)
-        {
-        }
-
         internal static BreakSet TakeArray(string[] breaks) => breaks == null ? Empty : new BreakSet(breaks);
 
         public static BreakSet Create(List<string> breaks) => breaks == null ? Empty : TakeArray(breaks.ToArray());
 
         public static BreakSet Create(IEnumerable<string> breaks) => breaks == null ? Empty : TakeArray(breaks.ToArray());
 
+        private BreakSet(string[] breaks)
+            : base(breaks)
+        {
+        }
+
         /// <summary>
         /// Calculate break points for recursion limit.
         /// </summary>
-        public int FindRecursionLimit(string scw)
+        internal int FindRecursionLimit(string scw)
         {
             int nbr = 0;
 

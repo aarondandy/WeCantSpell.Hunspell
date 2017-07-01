@@ -19,21 +19,11 @@ namespace WeCantSpell.Hunspell
 {
     public sealed class AffixReader
     {
-        public AffixReader(AffixConfig.Builder builder, IHunspellLineReader reader)
-        {
-            Builder = builder ?? new AffixConfig.Builder();
-            Reader = reader;
-        }
-
-        private const RegexOptions DefaultRegexOptions =
-#if !NO_COMPILEDREGEX
-            RegexOptions.Compiled |
-#endif
-            RegexOptions.CultureInvariant;
+        public static readonly Encoding DefaultEncoding = EncodingEx.GetEncodingByName(new StringSlice("ISO8859-1")) ?? Encoding.UTF8;
 
         private static readonly Regex AffixLineRegex = new Regex(
             @"^[\t ]*([^\t ]+)[\t ]+(?:([^\t ]+)[\t ]+([^\t ]+)|([^\t ]+)[\t ]+([^\t ]+)[\t ]+([^\t ]+)(?:[\t ]+(.+))?)[\t ]*(?:[#].*)?$",
-            DefaultRegexOptions);
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         private static readonly Dictionary<string, AffixConfigOptions> FileBitFlagCommandMappings = new Dictionary<string, AffixConfigOptions>(StringComparer.OrdinalIgnoreCase)
         {
@@ -119,7 +109,11 @@ namespace WeCantSpell.Hunspell
 
         private static readonly CharacterSet DefaultCompoundVowels = CharacterSet.TakeArray(new[] { 'A', 'E', 'I', 'O', 'U', 'a', 'e', 'i', 'o', 'u' });
 
-        public static readonly Encoding DefaultEncoding = EncodingEx.GetEncodingByName("ISO8859-1") ?? Encoding.UTF8;
+        public AffixReader(AffixConfig.Builder builder, IHunspellLineReader reader)
+        {
+            Builder = builder ?? new AffixConfig.Builder();
+            Reader = reader;
+        }
 
         private AffixConfig.Builder Builder { get; }
 
@@ -194,7 +188,6 @@ namespace WeCantSpell.Hunspell
                 return await ReadAsync(reader, builder).ConfigureAwait(false);
             }
         }
-#if !NO_IO_FILE
         public static async Task<AffixConfig> ReadFileAsync(string filePath, AffixConfig.Builder builder = null)
         {
             if (filePath == null)
@@ -207,7 +200,6 @@ namespace WeCantSpell.Hunspell
                 return await ReadAsync(stream, builder).ConfigureAwait(false);
             }
         }
-#endif
 #endif
 
         public static AffixConfig Read(Stream stream, AffixConfig.Builder builder = null)
@@ -223,7 +215,6 @@ namespace WeCantSpell.Hunspell
             }
         }
 
-#if !NO_IO_FILE
         public static AffixConfig ReadFile(string filePath, AffixConfig.Builder builder = null)
         {
             if (filePath == null)
@@ -236,30 +227,29 @@ namespace WeCantSpell.Hunspell
                 return Read(stream, builder);
             }
         }
-#endif
 
         private bool ParseLine(string line)
         {
             // read through the initial ^[ \t]*
             var commandStartIndex = 0;
-            for (; commandStartIndex < line.Length && StringEx.IsTabOrSpace(line[commandStartIndex]); commandStartIndex++) ;
+            for (; commandStartIndex < line.Length && line[commandStartIndex].IsTabOrSpace(); commandStartIndex++) ;
 
-            if (commandStartIndex == line.Length || StringEx.IsCommentPrefix(line[commandStartIndex]))
+            if (commandStartIndex == line.Length || IsCommentPrefix(line[commandStartIndex]))
             {
                 return true; // empty, whitespace, or comment
             }
 
             // read through the final [ \t]*$
             var lineEndIndex = line.Length - 1;
-            for (; lineEndIndex > commandStartIndex && StringEx.IsTabOrSpace(line[lineEndIndex]); lineEndIndex--) ;
+            for (; lineEndIndex > commandStartIndex && line[lineEndIndex].IsTabOrSpace(); lineEndIndex--) ;
 
             // find the end of the command
             var commandEndIndex = commandStartIndex;
-            for (; commandEndIndex <= lineEndIndex && !StringEx.IsTabOrSpace(line[commandEndIndex]); commandEndIndex++) ;
+            for (; commandEndIndex <= lineEndIndex && !line[commandEndIndex].IsTabOrSpace(); commandEndIndex++) ;
 
             // first command exists between [lineStartIndex,commandEndIndex)
             var parameterStartIndex = commandEndIndex;
-            for (; parameterStartIndex <= lineEndIndex && StringEx.IsTabOrSpace(line[parameterStartIndex]); parameterStartIndex++) ;
+            for (; parameterStartIndex <= lineEndIndex && line[parameterStartIndex].IsTabOrSpace(); parameterStartIndex++) ;
 
             var command = line.Substring(commandStartIndex, commandEndIndex - commandStartIndex);
 
@@ -287,7 +277,12 @@ namespace WeCantSpell.Hunspell
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        private bool IsInitialized(EntryListType flags) => EnumEx.HasFlag(Initialized, flags);
+        private static bool IsCommentPrefix(char c) => c == '#' || c == '/';
+
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private bool IsInitialized(EntryListType flags) => HasFlag(Initialized, flags);
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -331,7 +326,7 @@ namespace WeCantSpell.Hunspell
             switch (command)
             {
                 case AffixReaderCommandKind.Flag:
-                    return TrySetFlagMode(parameters);
+                    return TrySetFlagMode(parameters.ToString());
                 case AffixReaderCommandKind.KeyString:
                     Builder.KeyString = Builder.Dedup(parameters);
                     return true;
@@ -646,7 +641,7 @@ namespace WeCantSpell.Hunspell
             List<StringSlice> parts;
             if (EnumEx.HasFlag(Builder.Options, AffixConfigOptions.ComplexPrefixes))
             {
-                parts = parameterText.ReverseString().SliceOnTabOrSpace();
+                parts = new StringSlice(parameterText.ReverseString()).SliceOnTabOrSpace();
             }
             else
             {
@@ -679,9 +674,10 @@ namespace WeCantSpell.Hunspell
                         }
                     }
 
-                    if (parameterText[indexBegin] == '*' || parameterText[indexBegin] == '?')
+                    var beginFlagValue = new FlagValue(parameterText[indexBegin]);
+                    if (beginFlagValue.IsWildcard)
                     {
-                        entryBuilder.Add(new FlagValue(parameterText[indexBegin]));
+                        entryBuilder.Add(beginFlagValue);
                     }
                     else
                     {
@@ -698,17 +694,17 @@ namespace WeCantSpell.Hunspell
             return true;
         }
 
-        private bool TryParseAffixIntoList<TEntry>(StringSlice parameterText, ref List<AffixEntryGroup.Builder<TEntry>> groups)
-            where TEntry : AffixEntry, new()
+        private bool TryParseAffixIntoList<TEntry>(StringSlice parameterText, ref List<AffixEntryGroup<TEntry>.Builder> groups)
+            where TEntry : AffixEntry
             =>
-            TryParseAffixIntoList<TEntry>(parameterText.ToString(), ref groups);
+            TryParseAffixIntoList(parameterText.ToString(), ref groups);
 
-        private bool TryParseAffixIntoList<TEntry>(string parameterText, ref List<AffixEntryGroup.Builder<TEntry>> groups)
-            where TEntry : AffixEntry, new()
+        private bool TryParseAffixIntoList<TEntry>(string parameterText, ref List<AffixEntryGroup<TEntry>.Builder> groups)
+            where TEntry : AffixEntry
         {
             if (groups == null)
             {
-                groups = new List<AffixEntryGroup.Builder<TEntry>>();
+                groups = new List<AffixEntryGroup<TEntry>.Builder>();
             }
 
             var lineMatch = AffixLineRegex.Match(parameterText);
@@ -750,7 +746,7 @@ namespace WeCantSpell.Hunspell
 
                 IntEx.TryParseInvariant(lineMatchGroups[3].Value, out int expectedEntryCount);
 
-                affixGroup = new AffixEntryGroup.Builder<TEntry>
+                affixGroup = new AffixEntryGroup<TEntry>.Builder
                 {
                     AFlag = characterFlag,
                     Options = options,
@@ -882,7 +878,7 @@ namespace WeCantSpell.Hunspell
 
                 if (affixGroup == null)
                 {
-                    affixGroup = new AffixEntryGroup.Builder<TEntry>
+                    affixGroup = new AffixEntryGroup<TEntry>.Builder
                     {
                         AFlag = characterFlag,
                         Options = AffixEntryOptions.None,
@@ -895,7 +891,7 @@ namespace WeCantSpell.Hunspell
                     Builder.HasContClass = true;
                 }
 
-                affixGroup.Entries.Add(AffixEntry.CreateWithoutNullCheck<TEntry>(
+                affixGroup.Entries.Add(CreateEntry<TEntry>(
                     Builder.Dedup(strip),
                     Builder.Dedup(StringBuilderPool.GetStringAndReturn(affixText)),
                     Builder.Dedup(conditions),
@@ -906,6 +902,28 @@ namespace WeCantSpell.Hunspell
             }
 
             return LogWarning("Affix line not fully parsed: " + parameterText);
+        }
+
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static TEntry CreateEntry<TEntry>(string strip,
+            string affixText,
+            CharacterConditionGroup conditions,
+            MorphSet morph,
+            FlagSet contClass)
+            where TEntry : AffixEntry
+        {
+            if (typeof(TEntry) == typeof(PrefixEntry))
+            {
+                return (TEntry)((AffixEntry)new PrefixEntry(strip, affixText, conditions, morph, contClass));
+            }
+            if (typeof(TEntry) == typeof(SuffixEntry))
+            {
+                return (TEntry)((AffixEntry)new SuffixEntry(strip, affixText, conditions, morph, contClass));
+            }
+
+            throw new NotSupportedException();
         }
 
         private static string ReverseCondition(string conditionText)
@@ -1068,20 +1086,18 @@ namespace WeCantSpell.Hunspell
             return true;
         }
 
-        private bool TrySetFlagMode(StringSlice modeTextSlice)
+        private bool TrySetFlagMode(string modeText)
         {
-            if (modeTextSlice.IsEmpty)
+            if (string.IsNullOrEmpty(modeText))
             {
                 return LogWarning("Attempt to set empty flag mode.");
             }
-
-            var modeText = modeTextSlice.ToString();
 
             if (FlagModeParameterMappings.TryGetValue(modeText, out FlagMode mode))
             {
                 if (mode == Builder.FlagMode)
                 {
-                    return LogWarning($"Redundant {nameof(Builder.FlagMode)}: {modeText}");
+                    return LogWarning("Redundant FlagMode: " + modeText);
                 }
 
                 Builder.FlagMode = mode;
@@ -1089,10 +1105,7 @@ namespace WeCantSpell.Hunspell
             }
             else
             {
-                var bestMatchFlagMode = FlagModeParameterMappings
-                    .Where(m => modeText.StartsWith(m.Key, StringComparison.OrdinalIgnoreCase))
-                    .Select(m => (FlagMode?)m.Value)
-                    .FirstOrDefault();
+                var bestMatchFlagMode = FindBestFlagMode(modeText);
 
                 if (bestMatchFlagMode.HasValue)
                 {
@@ -1100,8 +1113,21 @@ namespace WeCantSpell.Hunspell
                     return true;
                 }
 
-                return LogWarning($"Unknown {nameof(FlagMode)}: {modeText}");
+                return LogWarning("Unknown FlagMode: " + modeText);
             }
+        }
+
+        private FlagMode? FindBestFlagMode(string modeText)
+        {
+            foreach(var pair in FlagModeParameterMappings)
+            {
+                if (modeText.StartsWith(pair.Key, StringComparison.OrdinalIgnoreCase))
+                {
+                    return pair.Value;
+                }
+            }
+
+            return default(FlagMode?);
         }
 
         private bool LogWarning(string text)
@@ -1141,18 +1167,18 @@ namespace WeCantSpell.Hunspell
                 : FlagValue.TryParseFlag(text, flagMode, out value);
         }
 
-        private FlagValue TryParseFlag(string text) =>
-            TryParseFlag(text, out FlagValue value)
-                ? value
-                : default(FlagValue);
-
         private FlagValue TryParseFlag(StringSlice text) =>
             TryParseFlag(text, out FlagValue value)
                 ? value
                 : default(FlagValue);
 
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static bool HasFlag(EntryListType value, EntryListType flag) => (value & flag) == flag;
+
         [Flags]
-        internal enum EntryListType : short
+        private enum EntryListType : short
         {
             None = 0,
             Replacements = 1 << 0,

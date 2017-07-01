@@ -17,8 +17,7 @@ namespace WeCantSpell.Hunspell.Tests
                 foreach (var word in words)
                 {
                     var entry = wordList[word];
-                    entry.Should().NotBeEmpty();
-                    entry.Should().OnlyContain(x => x.Word == word);
+                    entry.Should().NotBeNullOrEmpty();
                 }
             }
 

@@ -23,7 +23,7 @@
 
         public abstract string this[ReplacementValueType type] { get; }
 
-        public string ExtractReplacementText(int remainingCharactersToReplace, bool atStart)
+        internal string ExtractReplacementText(int remainingCharactersToReplace, bool atStart)
         {
             var type = remainingCharactersToReplace == Pattern.Length
                 ? ReplacementValueType.Fin
@@ -39,7 +39,7 @@
                 type = (type == ReplacementValueType.Fin && !atStart) ? ReplacementValueType.Med : type - 1;
             }
 
-            return this[type] ?? string.Empty;
+            return this[type];
         }
     }
 }

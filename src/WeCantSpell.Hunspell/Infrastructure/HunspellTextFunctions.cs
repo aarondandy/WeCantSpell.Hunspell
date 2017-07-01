@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal static class HunspellTextFunctions
+    static class HunspellTextFunctions
     {
         public static bool IsReverseSubset(string s1, string s2)
         {
@@ -46,7 +46,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return true;
         }
 
-        internal static bool IsSubset(string s1, StringSlice s2)
+        public static bool IsSubset(string s1, StringSlice s2)
         {
             if (s1.Length > s2.Length)
             {
@@ -66,9 +66,8 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public static bool IsNumericWord(string word)
         {
-            int i;
             byte state = 0; // 0 = begin, 1 = number, 2 = separator
-            for (i = 0; i < word.Length; i++)
+            for (var i = 0; i < word.Length; i++)
             {
                 var c = word[i];
                 if (char.IsNumber(c))
@@ -77,29 +76,26 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 }
                 else if (c == ',' || c == '.' || c == '-')
                 {
-                    if (state == 2 || i == 0)
+                    if (state != 1)
                     {
-                        break;
+                        return false;
                     }
 
                     state = 2;
                 }
                 else
                 {
-                    break;
+                    return false;
                 }
             }
 
-            return i == word.Length && state == 1;
+            return state == 1;
         }
 
         public static int CountMatchingFromLeft(string text, char character)
         {
             var count = 0;
-            while (count < text.Length && text[count] == character)
-            {
-                count++;
-            }
+            for (; count < text.Length && text[count] == character; count++) ;
 
             return count;
         }
@@ -108,10 +104,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         {
             var lastIndex = text.Length - 1;
             var searchIndex = lastIndex;
-            while (searchIndex >= 0 && text[searchIndex] == character)
-            {
-                searchIndex--;
-            }
+            for (; searchIndex >= 0 && text[searchIndex] == character; searchIndex--) ;
 
             return lastIndex - searchIndex;
         }
@@ -120,12 +113,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool MyIsAlpha(char ch) => ch < 128 || char.IsLetter(ch);
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static bool CharIsNeutral(char c, TextInfo textInfo) =>
-            (c > 127 && textInfo.ToUpper(c) == c) || !char.IsLower(c);
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -173,7 +160,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return s;
             }
 
-
             var actualFirstLetter = s[0];
             var expectedFirstLetter = textInfo.ToUpper(actualFirstLetter);
             if (expectedFirstLetter == actualFirstLetter)
@@ -204,7 +190,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return string.Empty;
             }
 
-            var actualFirstLetter = s[0];
+            var actualFirstLetter = s.First();
             var expectedFirstLetter = textInfo.ToUpper(actualFirstLetter);
             if (expectedFirstLetter == actualFirstLetter)
             {
@@ -307,21 +293,14 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return s;
             }
 
-            var expectedFirstLetter = textInfo.ToUpper(s[0]);
-
-            if (s.Length == 1)
-            {
-                return expectedFirstLetter.ToString();
-            }
-
             var builder = StringBuilderPool.Get(textInfo.ToLower(s));
-            builder[0] = expectedFirstLetter;
+            builder[0] = textInfo.ToUpper(s[0]);
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
         public static string ReDecodeConvertedStringAsUtf8(string decoded, Encoding encoding)
         {
-            if (encoding == Encoding.UTF8)
+            if (Encoding.UTF8.Equals(encoding))
             {
                 return decoded;
             }
@@ -332,7 +311,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public static string ReDecodeConvertedStringAsUtf8(StringSlice decoded, Encoding encoding)
         {
-            if (encoding == Encoding.UTF8)
+            if (Encoding.UTF8.Equals(encoding))
             {
                 return decoded.ToString();
             }
@@ -344,6 +323,77 @@ namespace WeCantSpell.Hunspell.Infrastructure
             var encodedBytes = new byte[encoding.GetMaxByteCount(decoded.Length)];
             var byteEncodedCount = encoding.GetBytes(decoded.Text, decoded.Offset, decoded.Length, encodedBytes, 0);
             return Encoding.UTF8.GetString(encodedBytes, 0, byteEncodedCount);
+        }
+
+        public static CapitalizationType GetCapitalizationType(StringSlice word, TextInfo textInfo)
+        {
+            if (word.IsEmpty)
+            {
+                return CapitalizationType.None;
+            }
+
+            var hasFoundMoreCaps = false;
+            var firstIsUpper = false;
+            var hasLower = false;
+            var c = word.First();
+            if (char.IsUpper(c))
+            {
+                firstIsUpper = true;
+            }
+            else if (CharIsNotNeutral(c, textInfo))
+            {
+                hasLower = true;
+            }
+
+            var wordIndexLimit = word.Length + word.Offset;
+            for (int i = word.Offset + 1; i < wordIndexLimit; i++)
+            {
+                c = word.Text[i];
+
+                if (!hasFoundMoreCaps && char.IsUpper(c))
+                {
+                    hasFoundMoreCaps = true;
+                    if (hasLower)
+                    {
+                        break;
+                    }
+                }
+                else if (!hasLower && CharIsNotNeutral(c, textInfo))
+                {
+                    hasLower = true;
+                    if (hasFoundMoreCaps)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if (firstIsUpper)
+            {
+                if (!hasFoundMoreCaps)
+                {
+                    return CapitalizationType.Init;
+                }
+                if (!hasLower)
+                {
+                    return CapitalizationType.All;
+                }
+
+                return CapitalizationType.HuhInit;
+            }
+            else
+            {
+                if (!hasFoundMoreCaps)
+                {
+                    return CapitalizationType.None;
+                }
+                if (!hasLower)
+                {
+                    return CapitalizationType.All;
+                }
+
+                return CapitalizationType.Huh;
+            }
         }
     }
 }

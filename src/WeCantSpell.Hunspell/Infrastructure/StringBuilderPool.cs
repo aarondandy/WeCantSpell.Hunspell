@@ -1,11 +1,14 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 
+#if !NO_INLINE
+using System.Runtime.CompilerServices;
+#endif
+
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal static class StringBuilderPool
+    static class StringBuilderPool
     {
         private const int MaxCachedBuilderCapacity = WordList.MaxWordLen;
 
@@ -37,8 +40,11 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static StringBuilder Get(string value, int valueStartIndex, int valueLength, int capacity) =>
             GetClearedBuilderWithCapacity(capacity).Append(value, valueStartIndex, valueLength);
 
-        internal static StringBuilder Get(StringSlice value) =>
-            Get(value.Text, value.Offset, value.Length, value.Length);
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static StringBuilder Get(StringSlice value) =>
+            Get(value.Text, value.Offset, value.Length);
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

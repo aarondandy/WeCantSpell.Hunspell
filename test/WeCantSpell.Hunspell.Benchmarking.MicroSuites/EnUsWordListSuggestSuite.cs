@@ -23,11 +23,11 @@ namespace WeCantSpell.Hunspell.Benchmarking.MicroSuites
             WordData = CategorizedWordData.Create(
                 CategorizedWordData.GetAssortedEnUsWords(),
                 isCorrect: WordList.Check,
-                isRoot: w => WordList.FindEntriesByRootWord(w) != null);
+                isRoot: WordList.ContainsEntriesForRootWord);
         }
 
 
-        [Benchmark(Description = "Check an assortment of words")]
+        [Benchmark(Description = "Suggest an assortment of words")]
         public void CheckAllWords()
         {
             foreach (var word in WordData.AllWords.Take(MaxWords))
@@ -36,7 +36,7 @@ namespace WeCantSpell.Hunspell.Benchmarking.MicroSuites
             }
         }
 
-        [Benchmark(Description = "Check root words", Baseline = true)]
+        [Benchmark(Description = "Suggest root words", Baseline = true)]
         public void CheckRootWords()
         {
             foreach (var word in WordData.RootWords.Take(MaxWords))
@@ -45,7 +45,7 @@ namespace WeCantSpell.Hunspell.Benchmarking.MicroSuites
             }
         }
 
-        [Benchmark(Description = "Check correct words")]
+        [Benchmark(Description = "Suggest correct words")]
         public void CheckCorrectWords()
         {
             foreach (var word in WordData.CorrectWords.Take(MaxWords))
@@ -54,7 +54,7 @@ namespace WeCantSpell.Hunspell.Benchmarking.MicroSuites
             }
         }
 
-        [Benchmark(Description = "Check wrong words")]
+        [Benchmark(Description = "Suggest wrong words")]
         public void CheckWrongWords()
         {
             foreach (var word in WordData.WrongWords.Take(MaxWords))

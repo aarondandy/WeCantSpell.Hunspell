@@ -8,15 +8,15 @@ namespace WeCantSpell.Hunspell
     {
         public static readonly SingleReplacementSet Empty = TakeList(new List<SingleReplacement>(0));
 
-        private SingleReplacementSet(List<SingleReplacement> replacements)
-            : base(replacements)
-        {
-        }
+        public static SingleReplacementSet Create(IEnumerable<SingleReplacement> replacements) =>
+            replacements == null ? Empty : TakeList(replacements.ToList());
 
         internal static SingleReplacementSet TakeList(List<SingleReplacement> replacements) =>
             replacements == null ? Empty : new SingleReplacementSet(replacements);
 
-        public static SingleReplacementSet Create(IEnumerable<SingleReplacement> replacements) =>
-            replacements == null ? Empty : TakeList(replacements.ToList());
+        private SingleReplacementSet(List<SingleReplacement> replacements)
+            : base(replacements)
+        {
+        }
     }
 }

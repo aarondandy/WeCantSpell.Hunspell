@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal sealed class StringDeduper
+    sealed class StringDeduper
     {
         public StringDeduper()
             : this(StringComparer.Ordinal)

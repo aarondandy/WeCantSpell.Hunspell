@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-
-#if !NO_INLINE
+﻿#if !NO_INLINE
 using System.Runtime.CompilerServices;
 #endif
+
+using System;
 
 namespace WeCantSpell.Hunspell
 {
@@ -105,80 +104,32 @@ namespace WeCantSpell.Hunspell
     /// <seealso cref="SuffixEntry"/>
     public abstract class AffixEntry
     {
-        [Obsolete("Use a constructor")]
-        public static TEntry Create<TEntry>(
-            string strip,
-            string affixText,
-            CharacterConditionGroup conditions,
-            MorphSet morph,
-            FlagSet contClass)
-            where TEntry : AffixEntry, new()
-        {
-            return new TEntry
-            {
-                Strip = strip ?? string.Empty,
-                Append = affixText ?? string.Empty,
-                Conditions = conditions ?? CharacterConditionGroup.Empty,
-                MorphCode = morph ?? MorphSet.Empty,
-                ContClass = contClass ?? FlagSet.Empty
-            };
-        }
-
-        internal static TEntry CreateWithoutNullCheck<TEntry>(
-            string strip,
-            string affixText,
-            CharacterConditionGroup conditions,
-            MorphSet morph,
-            FlagSet contClass)
-            where TEntry : AffixEntry, new()
-        {
-            // TODO: remove this when a better constructor is provided
-#if DEBUG
-            if (strip == null)
-            {
-                throw new ArgumentNullException(nameof(strip));
-            }
-            if (affixText == null)
-            {
-                throw new ArgumentNullException(nameof(affixText));
-            }
-            if (conditions == null)
-            {
-                throw new ArgumentNullException(nameof(conditions));
-            }
-            if (morph == null)
-            {
-                throw new ArgumentNullException(nameof(morph));
-            }
-            if (contClass == null)
-            {
-                throw new ArgumentNullException(nameof(contClass));
-            }
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            return new TEntry
-            {
-                Strip = strip,
-                Append = affixText,
-                Conditions = conditions,
-                MorphCode = morph,
-                ContClass = contClass
-            };
-        }
-
-        protected AffixEntry()
+        protected AffixEntry(
+            string strip,
+            string affixText,
+            CharacterConditionGroup conditions,
+            MorphSet morph,
+            FlagSet contClass)
         {
-            // TODO: refactor this to accept arguments to enfoce non-null values easily
+            Strip = strip ?? string.Empty;
+            Append = affixText ?? string.Empty;
+            Conditions = conditions ?? CharacterConditionGroup.Empty;
+            MorphCode = morph ?? MorphSet.Empty;
+            ContClass = contClass ?? FlagSet.Empty;
         }
 
         /// <summary>
         /// Optional morphological fields separated by spaces or tabulators.
         /// </summary>
-        public MorphSet MorphCode { get; private set; }
+        public MorphSet MorphCode { get; }
 
         /// <summary>
         /// Text matching conditions that are to be met.
         /// </summary>
-        public CharacterConditionGroup Conditions { get; private set; }
+        public CharacterConditionGroup Conditions { get; }
 
         /// <summary>
         /// The affix string to add.
@@ -186,7 +137,7 @@ namespace WeCantSpell.Hunspell
         /// <remarks>
         /// Affix (optionally with flags of continuation classes, separated by a slash).
         /// </remarks>
-        public virtual string Append { get; protected set; }
+        public string Append { get; }
 
         /// <summary>
         /// String to strip before adding affix.
@@ -195,16 +146,25 @@ namespace WeCantSpell.Hunspell
         /// Stripping characters from beginning (at prefix rules) or
         /// end(at suffix rules) of the word.
         /// </remarks>
-        public string Strip { get; private set; }
+        public string Strip { get; }
 
-        public FlagSet ContClass { get; private set; }
+        public FlagSet ContClass { get; }
 
         public abstract string Key { get; }
 
-        public bool ContainsContClass(FlagValue flag) => flag.HasValue && ContClass.Contains(flag);
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public bool ContainsContClass(FlagValue flag) => ContClass.Contains(flag);
 
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public bool ContainsAnyContClass(FlagValue a, FlagValue b) => ContClass.ContainsAny(a,b);
 
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public bool ContainsAnyContClass(FlagValue a, FlagValue b, FlagValue c) => ContClass.ContainsAny(a, b, c);
     }
 }

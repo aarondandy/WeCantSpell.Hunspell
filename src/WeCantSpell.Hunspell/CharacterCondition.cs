@@ -15,35 +15,9 @@ namespace WeCantSpell.Hunspell
     {
         private static Regex ConditionParsingRegex = new Regex(
             @"^(\[[^\]]*\]|\.|[^\[\]\.])*$",
-#if !NO_COMPILEDREGEX
-            RegexOptions.Compiled |
-#endif
-            RegexOptions.CultureInvariant);
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         public static readonly CharacterCondition AllowAny = new CharacterCondition(CharacterSet.Empty, true);
-
-        public CharacterCondition(CharacterSet characters, bool restricted)
-        {
-            Characters = characters;
-            Restricted = restricted;
-        }
-
-        private CharacterCondition(char character, bool restricted)
-            : this(CharacterSet.Create(character), restricted)
-        {
-        }
-
-        private CharacterCondition(char[] characters, bool restricted)
-            : this(CharacterSet.TakeArray(characters), restricted)
-        {
-        }
-
-        public CharacterSet Characters { get; }
-
-        /// <summary>
-        /// Indicates that the <see cref="Characters"/> are restricted when <c>true</c>.
-        /// </summary>
-        public bool Restricted { get; }
 
         internal static CharacterCondition TakeArray(char[] characters, bool restricted) =>
             new CharacterCondition(characters, restricted);
@@ -111,6 +85,29 @@ namespace WeCantSpell.Hunspell
                 : TakeArray(text.ToCharArray(1, text.Length - 2), false);
         }
 
+        public CharacterCondition(CharacterSet characters, bool restricted)
+        {
+            Characters = characters;
+            Restricted = restricted;
+        }
+
+        private CharacterCondition(char character, bool restricted)
+            : this(CharacterSet.Create(character), restricted)
+        {
+        }
+
+        private CharacterCondition(char[] characters, bool restricted)
+            : this(CharacterSet.TakeArray(characters), restricted)
+        {
+        }
+
+        public CharacterSet Characters { get; }
+
+        /// <summary>
+        /// Indicates that the <see cref="Characters"/> are restricted when <c>true</c>.
+        /// </summary>
+        public bool Restricted { get; }
+
         public bool IsMatch(char c) =>
             (Characters != null && Characters.Contains(c)) ^ Restricted;
 
@@ -143,7 +140,7 @@ namespace WeCantSpell.Hunspell
             Restricted == other.Restricted && CharacterSet.DefaultComparer.Equals(Characters, other.Characters);
 
         public override bool Equals(object obj) =>
-            obj is CharacterCondition && Equals((CharacterCondition)obj);
+            obj is CharacterCondition cc && Equals(cc);
 
         public override int GetHashCode() =>
             unchecked((Restricted.GetHashCode() * 149) ^ CharacterSet.DefaultComparer.GetHashCode(Characters));
