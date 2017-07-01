@@ -251,8 +251,6 @@ namespace WeCantSpell.Hunspell
             return values;
         }
 
-        private readonly char value;
-
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
@@ -264,6 +262,8 @@ namespace WeCantSpell.Hunspell
 #endif
         public FlagValue(int value) =>
             this.value = checked((char)value);
+
+        private readonly char value;
 
         public bool HasValue
         {
@@ -281,7 +281,7 @@ namespace WeCantSpell.Hunspell
             get => value == ZeroValue;
         }
 
-        internal bool IsWildcard
+        public bool IsWildcard
         {
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

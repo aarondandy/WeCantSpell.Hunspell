@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal static class IntEx
+    static class IntEx
     {
         private static readonly NumberFormatInfo InvariantNumberFormat = CultureInfo.InvariantCulture.NumberFormat;
 
@@ -22,7 +22,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        internal static bool InversePostfixIncrement(ref bool b)
+        public static bool InversePostfixIncrement(ref bool b)
         {
             if (b)
             {

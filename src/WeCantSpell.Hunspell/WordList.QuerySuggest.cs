@@ -2039,21 +2039,21 @@ namespace WeCantSpell.Hunspell
                     return 0;
                 }
 
-                if (EnumEx.HasFlag(opt, NGramOptions.Lowering))
+                if (HasFlag(opt, NGramOptions.Lowering))
                 {
                     s2 = HunspellTextFunctions.MakeAllSmall(s2, TextInfo);
                 }
 
-                var nscore = EnumEx.HasFlag(opt, NGramOptions.Weighted)
+                var nscore = HasFlag(opt, NGramOptions.Weighted)
                     ? NGramWeightedSearch(n, s1, s2)
                     : NGramNonWeightedSearch(n, s1, s2);
 
                 int ns;
-                if (EnumEx.HasFlag(opt, NGramOptions.AnyMismatch))
+                if (HasFlag(opt, NGramOptions.AnyMismatch))
                 {
                     ns = Math.Abs(s2.Length - s1.Length) - 2;
                 }
-                else if (EnumEx.HasFlag(opt, NGramOptions.LongerWorse))
+                else if (HasFlag(opt, NGramOptions.LongerWorse))
                 {
                     ns = (s2.Length - s1.Length) - 2;
                 }
@@ -2504,16 +2504,21 @@ namespace WeCantSpell.Hunspell
                     Orig = null;
                 }
             }
-        }
-    }
 
-    [Flags]
-    internal enum NGramOptions : byte
-    {
-        None = 0,
-        LongerWorse = 1 << 0,
-        AnyMismatch = 1 << 1,
-        Lowering = 1 << 2,
-        Weighted = 1 << 3
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            private static bool HasFlag(NGramOptions value, NGramOptions flag) => (value & flag) == flag;
+
+            [Flags]
+            private enum NGramOptions : byte
+            {
+                None = 0,
+                LongerWorse = 1 << 0,
+                AnyMismatch = 1 << 1,
+                Lowering = 1 << 2,
+                Weighted = 1 << 3
+            }
+        }
     }
 }

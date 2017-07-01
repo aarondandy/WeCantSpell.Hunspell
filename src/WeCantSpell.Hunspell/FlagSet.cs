@@ -15,47 +15,10 @@ namespace WeCantSpell.Hunspell
 
         public static readonly ArrayWrapperComparer<FlagValue, FlagSet> DefaultComparer = new ArrayWrapperComparer<FlagValue, FlagSet>();
 
-        internal static FlagSet TakeArray(FlagValue[] values)
-        {
-            if (values == null || values.Length == 0)
-            {
-                return Empty;
-            }
-
-            Array.Sort(values);
-            return new FlagSet(values);
-        }
-
         public static FlagSet Create(IEnumerable<FlagValue> given) =>
             given == null ? Empty : TakeArray(given.Distinct().ToArray());
 
         public static FlagSet Union(FlagSet a, FlagSet b) => Create(Enumerable.Concat(a, b));
-
-        internal static FlagSet Union(FlagSet set, FlagValue value)
-        {
-            var valueIndex = Array.BinarySearch(set.items, value);
-            if (valueIndex >= 0)
-            {
-                return set;
-            }
-
-            valueIndex = ~valueIndex; // locate the best insertion point
-
-            var newItems = new FlagValue[set.items.Length + 1];
-            if (valueIndex >= set.items.Length)
-            {
-                Array.Copy(set.items, newItems, set.items.Length);
-                newItems[set.items.Length] = value;
-            }
-            else
-            {
-                Array.Copy(set.items, newItems, valueIndex);
-                Array.Copy(set.items, valueIndex, newItems, valueIndex + 1, set.items.Length - valueIndex);
-                newItems[valueIndex] = value;
-            }
-
-            return new FlagSet(newItems);
-        }
 
         public static bool ContainsAny(FlagSet a, FlagSet b)
         {
@@ -85,6 +48,43 @@ namespace WeCantSpell.Hunspell
             }
 
             return false;
+        }
+
+        internal static FlagSet TakeArray(FlagValue[] values)
+        {
+            if (values == null || values.Length == 0)
+            {
+                return Empty;
+            }
+
+            Array.Sort(values);
+            return new FlagSet(values);
+        }
+
+        internal static FlagSet Union(FlagSet set, FlagValue value)
+        {
+            var valueIndex = Array.BinarySearch(set.items, value);
+            if (valueIndex >= 0)
+            {
+                return set;
+            }
+
+            valueIndex = ~valueIndex; // locate the best insertion point
+
+            var newItems = new FlagValue[set.items.Length + 1];
+            if (valueIndex >= set.items.Length)
+            {
+                Array.Copy(set.items, newItems, set.items.Length);
+                newItems[set.items.Length] = value;
+            }
+            else
+            {
+                Array.Copy(set.items, newItems, valueIndex);
+                Array.Copy(set.items, valueIndex, newItems, valueIndex + 1, set.items.Length - valueIndex);
+                newItems[valueIndex] = value;
+            }
+
+            return new FlagSet(newItems);
         }
 
         private FlagSet(FlagValue[] values)

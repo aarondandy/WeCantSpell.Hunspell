@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal sealed class ArrayComparer<T> : IEqualityComparer<T[]>
+    sealed class ArrayComparer<T> : IEqualityComparer<T[]>
     {
         public static readonly ArrayComparer<T> Default = new ArrayComparer<T>(EqualityComparer<T>.Default);
 

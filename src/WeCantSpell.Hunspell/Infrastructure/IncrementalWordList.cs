@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal class IncrementalWordList
+    class IncrementalWordList
     {
         public IncrementalWordList()
             : this(new List<WordEntryDetail>(), 0) { }

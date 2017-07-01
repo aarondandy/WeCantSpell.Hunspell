@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal static class StringSliceEx
+    static class StringSliceEx
     {
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal static class StringBuilderEx
+    static class StringBuilderEx
     {
 #if NO_STRINGBUILDER_CLEAR
         public static StringBuilder Clear(this StringBuilder @this)
@@ -208,7 +208,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static bool EndsWith(this StringBuilder builder, char c) =>
             builder.Length != 0 && builder[builder.Length - 1] == c;
 
-        internal static string ToStringSkippingIndex(this StringBuilder builder, int index)
+        public static string ToStringSkippingIndex(this StringBuilder builder, int index)
         {
 #if DEBUG
             if (index < 0 || index >= builder.Length)
@@ -231,7 +231,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return StringEx.ConcatString(text, 0, index, text, index + 1, lastIndex - index);
         }
 
-        internal static string ToStringWithInsert(this StringBuilder builder, int index, char value)
+        public static string ToStringWithInsert(this StringBuilder builder, int index, char value)
         {
 #if DEBUG
             if (index < 0 || index > builder.Length)

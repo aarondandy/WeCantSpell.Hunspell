@@ -1401,7 +1401,7 @@ namespace WeCantSpell.Hunspell
                 // first handle the special case of 0 length prefixes
                 foreach (var peGroup in Affix.Prefixes.AffixesWithEmptyKeys)
                 {
-                    foreach (var pe in peGroup.GetAffixesInternal())
+                    foreach (var pe in peGroup.CreateAffixes())
                     {
                         rv = CheckTwoSfx(pe, word, inCompound, needFlag);
                         if (rv != null)
@@ -1664,7 +1664,7 @@ namespace WeCantSpell.Hunspell
                 // first handle the special case of 0 length suffixes
                 foreach (var seGroup in Affix.Suffixes.GetAffixesWithEmptyKeysAndFlag(Affix.ContClasses))
                 {
-                    foreach (var se in seGroup.GetAffixesInternal())
+                    foreach (var se in seGroup.CreateAffixes())
                     {
                         rv = CheckTwoSfx(se, word, sfxopts, pfx, needflag);
                         if (rv != null)
@@ -1702,17 +1702,17 @@ namespace WeCantSpell.Hunspell
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            internal WordEntry LookupFirst(string word) => WordList.FindFirstEntryByRootWord(word);
+            protected WordEntry LookupFirst(string word) => WordList.FindFirstEntryByRootWord(word);
 
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            internal WordEntryDetail[] LookupDetails(string word) => WordList.FindEntryDetailsByRootWord(word);
+            protected WordEntryDetail[] LookupDetails(string word) => WordList.FindEntryDetailsByRootWord(word);
 
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            internal WordEntryDetail LookupFirstDetail(string word) => WordList.FindFirstEntryDetailByRootWord(word);
+            protected WordEntryDetail LookupFirstDetail(string word) => WordList.FindFirstEntryDetailByRootWord(word);
 
             /// <summary>
             /// Compound check patterns.
@@ -1742,7 +1742,7 @@ namespace WeCantSpell.Hunspell
                 if (Affix.CompoundRules.EntryContainsRuleFlags(rv))
                 {
                     words.SetCurrent(rv);
-                    if (Affix.CompoundRules.CompoundCheckInternal(words, all))
+                    if (Affix.CompoundRules.CompoundCheck(words, all))
                     {
                         return true;
                     }

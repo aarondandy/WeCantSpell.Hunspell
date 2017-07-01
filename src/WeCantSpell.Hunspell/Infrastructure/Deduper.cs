@@ -2,7 +2,7 @@
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal sealed class Deduper<T>
+    sealed class Deduper<T>
     {
         public Deduper(IEqualityComparer<T> comparer)
         {

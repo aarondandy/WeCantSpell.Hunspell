@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal sealed class SimulatedCString
+    sealed class SimulatedCString
     {
         public SimulatedCString(string text) =>
             Buffer = StringBuilderPool.Get(text);

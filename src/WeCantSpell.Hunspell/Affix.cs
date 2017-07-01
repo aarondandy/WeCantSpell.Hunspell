@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell
 {
-    internal sealed class Affix<TEntry>
+    sealed class Affix<TEntry>
         where TEntry : AffixEntry
     {
 #if !NO_INLINE

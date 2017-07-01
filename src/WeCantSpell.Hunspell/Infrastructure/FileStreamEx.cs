@@ -2,7 +2,7 @@
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal static class FileStreamEx
+    static class FileStreamEx
     {
         private const int DefaultBufferSize = 4096;
 

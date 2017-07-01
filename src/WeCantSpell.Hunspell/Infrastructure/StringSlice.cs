@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal struct StringSlice :
+    struct StringSlice :
         IEquatable<string>,
         IEquatable<StringSlice>
     {

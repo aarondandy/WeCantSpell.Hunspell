@@ -8,16 +8,16 @@ namespace WeCantSpell.Hunspell
     {
         public static readonly CompoundRule Empty = TakeArray(ArrayEx<FlagValue>.Empty);
 
+        public static CompoundRule Create(List<FlagValue> values) => values == null ? Empty : TakeArray(values.ToArray());
+
+        public static CompoundRule Create(IEnumerable<FlagValue> values) => values == null ? Empty : TakeArray(values.ToArray());
+
+        internal static CompoundRule TakeArray(FlagValue[] values) => values == null ? Empty : new CompoundRule(values);
+
         private CompoundRule(FlagValue[] values)
             : base(values)
         {
         }
-
-        internal static CompoundRule TakeArray(FlagValue[] values) => values == null ? Empty : new CompoundRule(values);
-
-        public static CompoundRule Create(List<FlagValue> values) => values == null ? Empty : TakeArray(values.ToArray());
-
-        public static CompoundRule Create(IEnumerable<FlagValue> values) => values == null ? Empty : TakeArray(values.ToArray());
 
         public bool IsWildcard(int index)
         {

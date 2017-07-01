@@ -31,6 +31,14 @@ namespace WeCantSpell.Hunspell.Infrastructure
             get;
         }
 
+        public bool HasItems
+        {
+#if !NO_INLINE
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+            get => !IsEmpty;
+        }
+
         public T this[int index]
         {
 #if !NO_INLINE
@@ -45,14 +53,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             get => items.Length;
-        }
-
-        public bool HasItems
-        {
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            get => !IsEmpty;
         }
 
 #if !NO_INLINE
@@ -92,30 +92,27 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #endif
             public bool MoveNext() => (++index) < values.Length;
         }
-    }
 
-    public class ArrayWrapperComparer<TValue, TCollection> :
-        IEqualityComparer<TCollection>
-        where TCollection : ArrayWrapper<TValue>
-    {
-        public ArrayWrapperComparer() =>
-            ArrayComparer = ArrayComparer<TValue>.Default;
+        public class ArrayWrapperComparer<TValue, TCollection> :
+            IEqualityComparer<TCollection>
+            where TCollection : ArrayWrapper<TValue>
+        {
+            public ArrayWrapperComparer() =>
+                arrayComparer = ArrayComparer<TValue>.Default;
 
-        public ArrayWrapperComparer(IEqualityComparer<TValue> valueComparer) =>
-            ArrayComparer = new ArrayComparer<TValue>(valueComparer);
-
-        private ArrayComparer<TValue> ArrayComparer { get; }
+            private ArrayComparer<TValue> arrayComparer;
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public bool Equals(TCollection x, TCollection y) =>
-            ArrayComparer.Equals(x.items, y.items);
+            public bool Equals(TCollection x, TCollection y) =>
+                arrayComparer.Equals(x.items, y.items);
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public int GetHashCode(TCollection obj) =>
-            ArrayComparer.GetHashCode(obj.items);
+            public int GetHashCode(TCollection obj) =>
+                arrayComparer.GetHashCode(obj.items);
+        }
     }
 }

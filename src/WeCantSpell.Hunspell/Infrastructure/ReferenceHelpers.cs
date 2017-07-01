@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal static class ReferenceHelpers
+    static class ReferenceHelpers
     {
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

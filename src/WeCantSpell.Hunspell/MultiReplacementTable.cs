@@ -68,7 +68,7 @@ namespace WeCantSpell.Hunspell
                     var replacementEntry = FindLargestMatchingConversion(text.Subslice(i));
                     if (replacementEntry != null)
                     {
-                        var replacementText = replacementEntry.ExtractReplacementTextInternal(text.Length - i, i == 0);
+                        var replacementText = replacementEntry.ExtractReplacementText(text.Length - i, i == 0);
                         if (!string.IsNullOrEmpty(replacementText))
                         {
                             convertedBuilder.Append(replacementText);

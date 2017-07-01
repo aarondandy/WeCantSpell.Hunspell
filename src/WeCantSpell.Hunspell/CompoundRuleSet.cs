@@ -9,16 +9,16 @@ namespace WeCantSpell.Hunspell
     {
         public static readonly CompoundRuleSet Empty = TakeList(new List<CompoundRule>(0));
 
-        private CompoundRuleSet(List<CompoundRule> rules)
-            : base(rules)
-        {
-        }
+        public static CompoundRuleSet Create(IEnumerable<CompoundRule> rules) =>
+            rules == null ? Empty : TakeList(rules.ToList());
 
         internal static CompoundRuleSet TakeList(List<CompoundRule> rules) =>
             rules == null ? Empty : new CompoundRuleSet(rules);
 
-        public static CompoundRuleSet Create(IEnumerable<CompoundRule> rules) =>
-            rules == null ? Empty : TakeList(rules.ToList());
+        private CompoundRuleSet(List<CompoundRule> rules)
+            : base(rules)
+        {
+        }
 
         internal bool EntryContainsRuleFlags(WordEntryDetail details)
         {
@@ -36,7 +36,7 @@ namespace WeCantSpell.Hunspell
             return false;
         }
 
-        internal bool CompoundCheckInternal(IncrementalWordList words, bool all)
+        internal bool CompoundCheck(IncrementalWordList words, bool all)
         {
             var bt = 0;
             var btinfo = new List<MetacharData>

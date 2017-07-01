@@ -3,9 +3,9 @@ using System.Text;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal static class EncodingEx
+    static class EncodingEx
     {
-        internal static Encoding GetEncodingByName(StringSlice encodingName)
+        public static Encoding GetEncodingByName(StringSlice encodingName)
         {
             if (encodingName.IsEmpty)
             {

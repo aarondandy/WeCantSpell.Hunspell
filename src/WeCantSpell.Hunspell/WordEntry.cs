@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell
 {
-    internal sealed class WordEntry : IEquatable<WordEntry>
+    sealed class WordEntry : IEquatable<WordEntry>
     {
         public static bool operator ==(WordEntry a, WordEntry b) =>
             ReferenceEquals(a, null) ? ReferenceEquals(b, null) : a.Equals(b);

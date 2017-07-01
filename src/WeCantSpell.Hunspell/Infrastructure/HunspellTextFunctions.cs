@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal static class HunspellTextFunctions
+    static class HunspellTextFunctions
     {
         public static bool IsReverseSubset(string s1, string s2)
         {
@@ -46,7 +46,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return true;
         }
 
-        internal static bool IsSubset(string s1, StringSlice s2)
+        public static bool IsSubset(string s1, StringSlice s2)
         {
             if (s1.Length > s2.Length)
             {

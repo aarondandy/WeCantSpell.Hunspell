@@ -282,7 +282,7 @@ namespace WeCantSpell.Hunspell
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        private bool IsInitialized(EntryListType flags) => EnumEx.HasFlag(Initialized, flags);
+        private bool IsInitialized(EntryListType flags) => HasFlag(Initialized, flags);
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1172,8 +1172,13 @@ namespace WeCantSpell.Hunspell
                 ? value
                 : default(FlagValue);
 
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static bool HasFlag(EntryListType value, EntryListType flag) => (value & flag) == flag;
+
         [Flags]
-        internal enum EntryListType : short
+        private enum EntryListType : short
         {
             None = 0,
             Replacements = 1 << 0,

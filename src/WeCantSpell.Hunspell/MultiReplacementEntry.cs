@@ -82,7 +82,7 @@ namespace WeCantSpell.Hunspell
             };
     }
 
-    internal static class MultiReplacementEntryExtensions
+    static class MultiReplacementEntryExtensions
     {
         public static bool AddReplacementEntry(this Dictionary<string, MultiReplacementEntry> list, string pattern1, string pattern2)
         {

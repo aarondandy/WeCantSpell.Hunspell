@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal static class StringEx
+    static class StringEx
     {
         private static readonly char[] SpaceOrTab = { ' ', '\t' };
 

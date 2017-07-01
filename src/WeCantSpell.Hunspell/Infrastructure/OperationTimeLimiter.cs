@@ -2,7 +2,7 @@
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    internal class OperationTimeLimiter
+    class OperationTimeLimiter
     {
         public static OperationTimeLimiter Create(int timeLimitInMs, int queriesToTriggerCheck) =>
             new OperationTimeLimiter(
