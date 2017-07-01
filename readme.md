@@ -14,6 +14,7 @@ A port of [Hunspell](https://github.com/hunspell/hunspell) v1 for .NET, .NET Sta
 * Reads Hunspell DIC and AFF file formats
 * Supports checking and suggesting words
 * Ported to fully managed C#
+* Can be queried concurrently
 * Confusing LGPL, GPL, MPL tri-license
 * Compatible with .NET Core and .NET Standard
 * Compatible with multiple .NET framework versions
@@ -59,8 +60,8 @@ If you need better performance you should check out [NHunspell](https://www.nuge
 
 | [Benchmark](./test/WeCantSpell.Hunspell.Performance.Comparison/) | [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/) | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
 |---------------------|-------------------|------------|
-| Dictionary Loads /s | 🐌 3.15           | 🐇 13.59   |
-| Words Checked /s    | 🐢 704,480        | 🐇 975,505 |
+| Dictionary Loads /s | 🐌 3.08           | 🐇 13.62   |
+| Words Checked /s    | 🐢 724,855        | 🐇 986,026 |
 
 _Note: Measurements taken on a Intel 6700K with a 850 PRO 256GB._
 

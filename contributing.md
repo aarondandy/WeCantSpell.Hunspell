@@ -4,7 +4,7 @@
 
 ## Getting Started 🎣
 
-1. ✍ Before doing any work, make sure to open or find an [issue](https://github.com/aarondandy/WeCantSpell.Hunspell/issues) to get some discussion started.
+1. ✍ Before doing any work, make sure to open or claim an [issue](https://github.com/aarondandy/WeCantSpell.Hunspell/issues) and get some discussion started.
 2. 📦 Fork and clone the repository [with submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules) (example: `git clone --recursive https://github.com/aarondandy/WeCantSpell.Hunspell.git`).
 3. 🛠 Open the main WeCantSpell.Hunspell.sln solution file in your IDE.
 4. 👌 Build the solution and run the XxUnit.net tests using your runner of choice (NCrunch3 is configured).
