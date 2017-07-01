@@ -1,6 +1,6 @@
 ﻿namespace WeCantSpell.Hunspell
 {
-    public enum CapitalizationType : byte
+    enum CapitalizationType : byte
     {
         /// <summary>
         /// No letters capitalized.

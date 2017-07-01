@@ -2506,7 +2506,7 @@ namespace WeCantSpell.Hunspell
             }
 
 #if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             private static bool HasFlag(NGramOptions value, NGramOptions flag) => (value & flag) == flag;
 
@@ -2518,6 +2518,13 @@ namespace WeCantSpell.Hunspell
                 AnyMismatch = 1 << 1,
                 Lowering = 1 << 2,
                 Weighted = 1 << 3
+            }
+
+            public enum LongestCommonSubsequenceType : byte
+            {
+                Up = 0,
+                Left = 1,
+                UpLeft = 2
             }
         }
     }
