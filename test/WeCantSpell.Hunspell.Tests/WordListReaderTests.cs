@@ -240,12 +240,8 @@ namespace WeCantSpell.Hunspell.Tests
             [Fact]
             public async Task can_read_base_utf_dic()
             {
-                var filePath = @"files/base_utf.dic";
-
-                var actual = await WordListReader.ReadFileAsync(filePath);
-
-                actual.RootWords.Should().HaveCount(28);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                var expectedWords = new[]
+                {
                     "created",
                     "create",
                     "imply",
@@ -274,7 +270,15 @@ namespace WeCantSpell.Hunspell.Tests
                     "speech",
                     "suggest",
                     "uncreate",
-                    "Hunspell" });
+                    "Hunspell",
+                    "İzmir"
+                };
+                var filePath = @"files/base_utf.dic";
+
+                var actual = await WordListReader.ReadFileAsync(filePath);
+
+                actual.RootWords.Should().HaveCount(expectedWords.Length);
+                actual.RootWords.ShouldBeEquivalentTo(expectedWords);
 
                 actual["create"][0].Flags.Should().ContainInOrder(new int[] { 'X', 'K', 'V', 'N', 'G', 'A', 'D', 'S' }.OrderBy(x => x));
                 actual["Hunspell"][0].Flags.Should().BeEmpty();
