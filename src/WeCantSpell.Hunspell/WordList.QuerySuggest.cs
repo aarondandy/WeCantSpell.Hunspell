@@ -259,7 +259,15 @@ namespace WeCantSpell.Hunspell
                                     ? StringEx.ConcatString(scw, 0, prevPos, j)
                                     : StringEx.ConcatString(scw, 0, prevPos, j, '-', scw, dashPos + 1);
 
-                                InsertSuggestion(slst, wspace);
+                                SpellCheckResultType info = SpellCheckResultType.None;
+                                if (Affix.ForbiddenWord.HasValue)
+                                {
+                                    CheckWord(wspace, ref info, out var _);
+                                }
+                                if (!info.HasFlag(SpellCheckResultType.Forbidden))
+                                {
+                                    InsertSuggestion(slst, wspace);
+                                }
                             }
 
                             noDashSug = false;
