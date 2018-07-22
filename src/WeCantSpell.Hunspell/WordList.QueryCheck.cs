@@ -89,7 +89,7 @@ namespace WeCantSpell.Hunspell
                 }
 
                 // recursive breaking at break points
-                if (Affix.BreakPoints.HasItems)
+                if (Affix.BreakPoints.HasItems && !resultType.HasFlag(SpellCheckResultType.Forbidden))
                 {
                     // calculate break points for recursion limit
                     if (Affix.BreakPoints.FindRecursionLimit(scw) >= 10)

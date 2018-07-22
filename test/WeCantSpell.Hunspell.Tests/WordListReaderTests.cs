@@ -291,14 +291,19 @@ namespace WeCantSpell.Hunspell.Tests
             public async Task can_read_break_dic()
             {
                 var filePath = @"files/break.dic";
+                var expected = new[]
+                {
+                    "foo",
+                    "bar",
+                    "baz",
+                    "fox-bax",
+                    "foo-baz"
+                };
 
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
-                actual.RootWords.Should().HaveCount(3);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
-                    "foo",
-                    "bar",
-                    "fox-bax" });
+                actual.RootWords.Should().HaveCount(expected.Length);
+                actual.RootWords.ShouldBeEquivalentTo(expected);
             }
 
             [Fact]
