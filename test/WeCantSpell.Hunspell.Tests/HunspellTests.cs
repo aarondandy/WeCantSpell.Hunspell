@@ -206,7 +206,8 @@ namespace WeCantSpell.Hunspell.Tests
 
                 var actual = dictionary.Suggest(givenWord);
 
-                actual.Should().NotBeNullOrEmpty();
+                actual.Should().NotBeNull();
+                actual.Should().HaveCount(expectedSuggestions.Length);
                 actual.ShouldBeEquivalentTo(expectedSuggestions);
             }
 
@@ -248,7 +249,7 @@ namespace WeCantSpell.Hunspell.Tests
                     var dictionaryFilePath = Path.ChangeExtension(wrongFilePath, "dic");
                     var affix = AffixReader.ReadFile(Path.ChangeExtension(dictionaryFilePath, "aff"));
                     var wrongLines = ExtractLinesFromWordFile(wrongFilePath, affix.Encoding).ToList();
-                    var suggestionLines = ExtractLinesFromWordFile(suggestionFilePath, affix.Encoding).ToList();
+                    var suggestionLines = ExtractLinesFromWordFile(suggestionFilePath, affix.Encoding, allowBlankLines: true).ToList();
 
                     yield return new SuggestionTestSet
                     {
@@ -293,12 +294,18 @@ namespace WeCantSpell.Hunspell.Tests
                 .Select(line => new object[] { dictionaryPath, line });
         }
 
-        protected static IEnumerable<string> ExtractLinesFromWordFile(string filePath, Encoding encoding)
+        protected static IEnumerable<string> ExtractLinesFromWordFile(string filePath, Encoding encoding, bool allowBlankLines = false)
         {
-            return StaticEncodingLineReader.ReadLines(filePath, encoding)
-                .Where(line => !string.IsNullOrEmpty(line))
-                .Select(line => line.Trim(SpaceOrTab))
-                .Where(line => line.Length != 0);
+            var results = StaticEncodingLineReader.ReadLines(filePath, encoding)
+                .Where(line => line != null)
+                .Select(line => line.Trim(SpaceOrTab));
+
+            if (!allowBlankLines)
+            {
+                results = results.Where(line => line.Length != 0);
+            }
+
+            return results;
         }
 
         protected static IEnumerable<string> ExtractMultipleWordsFromWordFile(string filePath, Encoding encoding)

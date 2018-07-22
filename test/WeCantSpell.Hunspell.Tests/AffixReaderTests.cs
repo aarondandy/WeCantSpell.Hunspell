@@ -1585,7 +1585,7 @@ namespace WeCantSpell.Hunspell.Tests
                 entry.Type.Should().Be(ReplacementValueType.Med);
                 entry.Med.Should().Be("a lot");
                 actual.KeyString.Should().Be("qwertzuiop|asdfghjkl|yxcvbnm|aq");
-                actual.WordChars.Should().BeEquivalentTo(new[] { '.' });
+                actual.WordChars.Should().BeEquivalentTo(new[] { '.', '-' });
                 actual.ForbiddenWord.Should().Be('?');
             }
 
