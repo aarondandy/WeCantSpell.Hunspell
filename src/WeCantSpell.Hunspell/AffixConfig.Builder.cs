@@ -387,6 +387,13 @@ namespace WeCantSpell.Hunspell
                     Language = Dedup(Language ?? string.Empty),
                     Culture = culture,
                     IsHungarian = string.Equals(culture?.TwoLetterISOLanguageName, "HU", StringComparison.OrdinalIgnoreCase),
+                    CultureUsesDottedI =
+                        string.Equals(culture?.TwoLetterISOLanguageName, "AZ", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(culture?.TwoLetterISOLanguageName, "TR", StringComparison.OrdinalIgnoreCase)
+#if !NO_ISO3_LANG
+                        || string.Equals(culture?.ThreeLetterISOLanguageName, "CRH", StringComparison.OrdinalIgnoreCase)
+#endif
+                        || string.Equals(culture?.TwoLetterISOLanguageName, "CRH", StringComparison.OrdinalIgnoreCase), // wikipedia says: this is an ISO2 code
                     StringComparer = new CulturedStringComparer(culture),
                     CompoundFlag = CompoundFlag,
                     CompoundBegin = CompoundBegin,
