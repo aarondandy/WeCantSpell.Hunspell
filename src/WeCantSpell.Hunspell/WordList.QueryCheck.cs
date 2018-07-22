@@ -264,7 +264,7 @@ namespace WeCantSpell.Hunspell
                     rv = null;
                 }
 
-                if (rv != null)
+                if (rv != null || (!Affix.CultureUsesDottedI && scw.StartsWith('İ')))
                 {
                     return rv;
                 }
