@@ -854,7 +854,11 @@ namespace WeCantSpell.Hunspell
                                     // XXX only second suffix (inflections, not derivations)
                                     if (SuffixAppend != null)
                                     {
-                                        numSyllable -= GetSyllable(SuffixAppend.Reverse()) + (SuffixExtra ? 1 : 0);
+                                        numSyllable -= GetSyllable(SuffixAppend.Reverse());
+                                    }
+                                    if (SuffixExtra)
+                                    {
+                                        numSyllable -= 1;
                                     }
 
                                     // + 1 word, if syllable number of the prefix > 1 (hungarian convention)
@@ -1081,7 +1085,11 @@ namespace WeCantSpell.Hunspell
                                         // XXX only second suffix (inflections, not derivations)
                                         if (SuffixAppend != null)
                                         {
-                                            numSyllable -= GetSyllable(SuffixAppend.Reverse()) + (SuffixExtra ? 1 : 0);
+                                            numSyllable -= GetSyllable(SuffixAppend.Reverse());
+                                        }
+                                        if (SuffixExtra)
+                                        {
+                                            numSyllable -= 1;
                                         }
 
                                         // + 1 word, if syllable number of the prefix > 1 (hungarian
