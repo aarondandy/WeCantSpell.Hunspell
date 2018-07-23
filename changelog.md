@@ -2,8 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.0.1 - 2018-07-22
+### Fixed
+- Applied upstream fixes for dotted `I` and Turkish
+- Applied upstream fixes for forbidden words
+- Applied upstream changes for Hungarian
+
 ## 2.0.0 - 2017-06-30
-### Changes
+### Changed
 - Replaced .NET Framework 4.6.1 and 4.5.1 with a single 4.5 build (net45).
 - Reduced nuget package size.
 - Improved performance.
