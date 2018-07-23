@@ -247,9 +247,17 @@ namespace WeCantSpell.Hunspell.Tests
                     }
 
                     var dictionaryFilePath = Path.ChangeExtension(wrongFilePath, "dic");
-                    var affix = AffixReader.ReadFile(Path.ChangeExtension(dictionaryFilePath, "aff"));
-                    var wrongLines = ExtractLinesFromWordFile(wrongFilePath, affix.Encoding).ToList();
-                    var suggestionLines = ExtractLinesFromWordFile(suggestionFilePath, affix.Encoding, allowBlankLines: true).ToList();
+                    var encoding = Encoding.UTF8;
+                    var wrongLines = ExtractLinesFromWordFile(wrongFilePath, encoding).ToList();
+                    var suggestionLines = ExtractLinesFromWordFile(suggestionFilePath, encoding, allowBlankLines: true).ToList();
+
+                    if (wrongLines.Any(x => x.Contains('�')) || suggestionLines.Any(x => x.Contains('�')))
+                    {
+                        var affix = AffixReader.ReadFile(Path.ChangeExtension(dictionaryFilePath, "aff"));
+                        encoding = affix.Encoding;
+                        wrongLines = ExtractLinesFromWordFile(wrongFilePath, encoding).ToList();
+                        suggestionLines = ExtractLinesFromWordFile(suggestionFilePath, encoding, allowBlankLines: true).ToList();
+                    }
 
                     yield return new SuggestionTestSet
                     {
@@ -286,10 +294,19 @@ namespace WeCantSpell.Hunspell.Tests
         protected static IEnumerable<object[]> ToDictionaryWordTestData(string wordFilePath)
         {
             var dictionaryPath = Path.ChangeExtension(wordFilePath, "dic");
-            var affix = AffixReader.ReadFile(Path.ChangeExtension(wordFilePath, "aff"));
 
-            return ExtractMultipleWordsFromWordFile(wordFilePath, affix.Encoding)
+            var lines = ExtractMultipleWordsFromWordFile(wordFilePath, Encoding.UTF8)
                 .Distinct()
+                .ToList();
+            if (lines.Any(x => x.Contains('�')))
+            {
+                var affix = AffixReader.ReadFile(Path.ChangeExtension(wordFilePath, "aff"));
+                lines = ExtractMultipleWordsFromWordFile(wordFilePath, affix.Encoding)
+                    .Distinct()
+                    .ToList();
+            }
+
+            return lines
                 .OrderBy(w => w, StringComparer.Ordinal)
                 .Select(line => new object[] { dictionaryPath, line });
         }
@@ -308,10 +325,8 @@ namespace WeCantSpell.Hunspell.Tests
             return results;
         }
 
-        protected static IEnumerable<string> ExtractMultipleWordsFromWordFile(string filePath, Encoding encoding)
-        {
-            return ExtractLinesFromWordFile(filePath, encoding)
+        protected static IEnumerable<string> ExtractMultipleWordsFromWordFile(string filePath, Encoding affixEncoding) =>
+            ExtractLinesFromWordFile(filePath, affixEncoding)
                 .SelectMany(line => line.Split(SpaceOrTab, StringSplitOptions.RemoveEmptyEntries));
-        }
     }
 }
