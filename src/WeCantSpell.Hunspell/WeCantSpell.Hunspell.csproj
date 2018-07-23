@@ -7,14 +7,14 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyName>WeCantSpell.Hunspell</AssemblyName>
     <PackageId>WeCantSpell.Hunspell</PackageId>
-    <Description>A port of Hunspell v1 for .NET, .NET Standard, and .NET Core.</Description>
+    <Description>A port of Hunspell v1 for .NET and .NET Standard</Description>
     <PackageTags>spell;check;spell-check;spelling;hunspell;we-cant-spell</PackageTags>
     <PackageProjectUrl>https://github.com/aarondandy/WeCantSpell.Hunspell/</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/aarondandy/WeCantSpell.Hunspell.git</RepositoryUrl>
     <PackageIconUrl>https://raw.githubusercontent.com/aarondandy/WeCantSpell.Hunspell/master/icon.png</PackageIconUrl>
     <Authors>aarondandy</Authors>
-    <PackageLicenseUrl>https://github.com/aarondandy/WeCantSpell.Hunspell/blob/master/license.txt</PackageLicenseUrl>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/aarondandy/WeCantSpell.Hunspell/master/license.txt</PackageLicenseUrl>
     <PackageReleaseNotes>Changelog can be found at https://github.com/aarondandy/WeCantSpell.Hunspell/blob/master/changelog.md</PackageReleaseNotes>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>

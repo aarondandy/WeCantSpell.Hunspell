@@ -15,19 +15,18 @@ A port of [Hunspell](https://github.com/hunspell/hunspell) v1 for .NET, .NET Sta
 * Supports checking and suggesting words
 * Ported to fully managed C#
 * Can be queried concurrently
-* Confusing LGPL, GPL, MPL tri-license
+* LGPL3+ license
 * Compatible with .NET Core and .NET Standard
 * Compatible with multiple .NET framework versions
 * Uses .NET to handle cultures and encodings
 
 ## License
 
-"It's complicated"
-
 Read the license: [LICENSE](./license.txt)
 
 This library was ported from the original Hunspell source
-and as a result is licensed under an MPL, LGPL, and GPL tri-license. Read the [LICENSE](./license.txt) file to be sure you can use this library.
+and as a result is licensed under an LGPL3+ (formerly MPL, LGPL, and GPL tri-license).
+Read the [LICENSE](./license.txt) file to be sure you can use this library.
 
 ## Quick Start Example
 
