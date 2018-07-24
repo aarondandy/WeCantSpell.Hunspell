@@ -25,6 +25,8 @@ namespace WeCantSpell.Hunspell
             @"^[\t ]*([^\t ]+)[\t ]+(?:([^\t ]+)[\t ]+([^\t ]+)|([^\t ]+)[\t ]+([^\t ]+)[\t ]+([^\t ]+)(?:[\t ]+(.+))?)[\t ]*(?:[#].*)?$",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
+        private static readonly Regex ConvTableSizeCommandRegex = new Regex(@"^\s*(\d+)\s*(?:[#].*)?$", RegexOptions.CultureInvariant);
+
         private static readonly Dictionary<string, AffixConfigOptions> FileBitFlagCommandMappings = new Dictionary<string, AffixConfigOptions>(StringComparer.OrdinalIgnoreCase)
         {
             {"COMPLEXPREFIXES", AffixConfigOptions.ComplexPrefixes},
@@ -597,7 +599,8 @@ namespace WeCantSpell.Hunspell
             {
                 SetInitialized(entryListType);
 
-                if (IntEx.TryParseInvariant(parameterText, out int expectedSize) && expectedSize >= 0)
+                var match = ConvTableSizeCommandRegex.Match(parameterText.ToString());
+                if (match.Success && IntEx.TryParseInvariant(match.Groups[1].Value, out int expectedSize) && expectedSize >= 0)
                 {
                     if (entries == null)
                     {

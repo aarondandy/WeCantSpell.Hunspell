@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 3.0.1 - 2018-07-23
+### Fixed
+- Allowed more usage of comments in ICONV and OCONV
+
 ## 3.0.0 - 2018-07-22
 ### Changed
 - Consolidated licenses to LGPL3 or later
