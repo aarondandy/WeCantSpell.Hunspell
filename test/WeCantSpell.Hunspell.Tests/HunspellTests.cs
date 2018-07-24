@@ -251,14 +251,6 @@ namespace WeCantSpell.Hunspell.Tests
                     var wrongLines = ExtractLinesFromWordFile(wrongFilePath, encoding).ToList();
                     var suggestionLines = ExtractLinesFromWordFile(suggestionFilePath, encoding, allowBlankLines: true).ToList();
 
-                    if (wrongLines.Any(x => x.Contains('�')) || suggestionLines.Any(x => x.Contains('�')))
-                    {
-                        var affix = AffixReader.ReadFile(Path.ChangeExtension(dictionaryFilePath, "aff"));
-                        encoding = affix.Encoding;
-                        wrongLines = ExtractLinesFromWordFile(wrongFilePath, encoding).ToList();
-                        suggestionLines = ExtractLinesFromWordFile(suggestionFilePath, encoding, allowBlankLines: true).ToList();
-                    }
-
                     yield return new SuggestionTestSet
                     {
                         DictionaryFilePath = dictionaryFilePath,
@@ -295,18 +287,8 @@ namespace WeCantSpell.Hunspell.Tests
         {
             var dictionaryPath = Path.ChangeExtension(wordFilePath, "dic");
 
-            var lines = ExtractMultipleWordsFromWordFile(wordFilePath, Encoding.UTF8)
+            return ExtractMultipleWordsFromWordFile(wordFilePath, Encoding.UTF8)
                 .Distinct()
-                .ToList();
-            if (lines.Any(x => x.Contains('�')))
-            {
-                var affix = AffixReader.ReadFile(Path.ChangeExtension(wordFilePath, "aff"));
-                lines = ExtractMultipleWordsFromWordFile(wordFilePath, affix.Encoding)
-                    .Distinct()
-                    .ToList();
-            }
-
-            return lines
                 .OrderBy(w => w, StringComparer.Ordinal)
                 .Select(line => new object[] { dictionaryPath, line });
         }
