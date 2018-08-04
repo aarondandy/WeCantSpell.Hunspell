@@ -132,8 +132,17 @@ namespace WeCantSpell.Hunspell
                     foreach (var breakEntry in Affix.BreakPoints)
                     {
                         var found = scw.IndexOfOrdinal(breakEntry);
-                        if (found > 0 && found < scw.Length - breakEntry.Length)
+                        var remainingLength = scw.Length - breakEntry.Length;
+                        if (found > 0 && found < remainingLength)
                         {
+                            var found2 = scw.IndexOfOrdinal(breakEntry, found + 1);
+                            // try to break at the second occurance
+                            // to recognize dictionary words with wordbreak
+                            if (found2 > 0 && (found2 < remainingLength))
+                            {
+                                found = found2;
+                            }
+
                             if (!Check(scw.Substring(found + breakEntry.Length)))
                             {
                                 continue;

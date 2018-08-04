@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## 2.0.2 - 2018-07-23
 ### Fixed
 - Allowed more usage of comments in ICONV and OCONV
+- Performs BREAK check on 2nd word break
 
 ## 2.0.1 - 2018-07-22
 ### Fixed

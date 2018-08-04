@@ -297,7 +297,8 @@ namespace WeCantSpell.Hunspell.Tests
                     "bar",
                     "baz",
                     "fox-bax",
-                    "foo-baz"
+                    "foo-baz",
+                    "e-mail"
                 };
 
                 var actual = await WordListReader.ReadFileAsync(filePath);
