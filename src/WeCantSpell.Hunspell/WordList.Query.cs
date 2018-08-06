@@ -1857,21 +1857,27 @@ namespace WeCantSpell.Hunspell
 
                 foreach (var replacementEntry in WordList.AllReplacements)
                 {
-                    // search every occurence of the pattern in the word
-                    var rIndex = wordSlice.IndexOf(replacementEntry.Pattern, StringComparison.Ordinal);
-                    if (rIndex > 0)
+                    // use only available mid patterns
+                    if (!string.IsNullOrEmpty(replacementEntry.Med))
                     {
-                        var word = wordSlice.ToString();
-                        while (rIndex >= 0)
+                        var rIndex = wordSlice.IndexOf(replacementEntry.Pattern, StringComparison.Ordinal);
+                        if (rIndex >= 0)
                         {
-                            var type = rIndex == 0 ? ReplacementValueType.Isol : ReplacementValueType.Med;
-                            var replacement = replacementEntry[type];
-                            if (replacement != null && CandidateCheck(word.Replace(rIndex, replacementEntry.Pattern.Length, replacement)))
-                            {
-                                return true;
-                            }
+                            var word = wordSlice.ToString();
+                            var lenp = replacementEntry.Pattern.Length;
+                            var replacement = replacementEntry.Med;
 
-                            rIndex = word.IndexOfOrdinal(replacementEntry.Pattern, rIndex + 1); // search for the next letter
+                            // search every occurence of the pattern in the word
+                            do
+                            {
+                                if (CandidateCheck(word.Replace(rIndex, lenp, replacement)))
+                                {
+                                    return true;
+                                }
+
+                                rIndex = word.IndexOfOrdinal(replacementEntry.Pattern, rIndex + 1);
+                            }
+                            while (rIndex >= 0);
                         }
                     }
                 }

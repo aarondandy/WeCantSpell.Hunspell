@@ -224,11 +224,9 @@ namespace WeCantSpell.Hunspell.Tests
             [Fact]
             public void untested_suggestion_files_should_not_be_found()
             {
-                var untestedSets = GetSuggestionTestFileSets()
-                    .Where(s => s.WrongLines.Count != s.SuggestionLines.Count)
-                    .ToList();
+                var untestedSets = GetSuggestionTestFileSets();
 
-                untestedSets.Should().BeEmpty();
+                untestedSets.Should().NotContain(s => s.WrongLines.Count != s.SuggestionLines.Count);
             }
 
             private static readonly HashSet<string> ExcludedSuggestionFiles = new HashSet<string>
@@ -260,6 +258,12 @@ namespace WeCantSpell.Hunspell.Tests
                     var encoding = Encoding.UTF8;
                     var wrongLines = ExtractLinesFromWordFile(wrongFilePath, encoding).ToList();
                     var suggestionLines = ExtractLinesFromWordFile(suggestionFilePath, encoding, allowBlankLines: true).ToList();
+
+                    if (wrongLines.Count - suggestionLines.Count == 1)
+                    {
+                        // NOTE: sometimes the test files don't have matching numbers of data lines
+                        suggestionLines.Add(string.Empty);
+                    }
 
                     yield return new SuggestionTestSet
                     {

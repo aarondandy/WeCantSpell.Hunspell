@@ -2,10 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## 2.0.2 - 2018-07-23
+## 2.1.0 - 2018-08-05
 ### Fixed
 - Allowed more usage of comments in ICONV and OCONV
 - Performs BREAK check on 2nd word break
+
+### Changed
+- Adds phonetic entries to the replacement list
+- Restricts compound replacement to using "middle" entries
 
 ## 2.0.1 - 2018-07-22
 ### Fixed
