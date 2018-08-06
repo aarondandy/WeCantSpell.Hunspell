@@ -79,6 +79,8 @@ namespace WeCantSpell.Hunspell
 
         public AffixConfig Affix { get; private set; }
 
+        public SingleReplacementSet AllReplacements { get; private set; }
+
         public IEnumerable<string> RootWords => EntriesByRoot.Keys;
 
         public bool HasEntries => EntriesByRoot.Count != 0;

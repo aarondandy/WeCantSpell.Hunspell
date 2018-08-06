@@ -15,22 +15,6 @@ namespace WeCantSpell.Hunspell
 
         internal static MorphSet TakeArray(string[] morphs) => morphs == null ? Empty : new MorphSet(morphs);
 
-        internal static bool AnyStartsWith(string[] morphs, string text)
-        {
-            if (morphs != null && !string.IsNullOrEmpty(text))
-            {
-                foreach (var morph in morphs)
-                {
-                    if (morph != null && morph.StartsWith(text))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
         internal static string[] CreateReversed(string[] oldMorphs)
         {
             var newMorphs = new string[oldMorphs.Length];

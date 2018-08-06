@@ -1835,6 +1835,7 @@ namespace WeCantSpell.Hunspell
             /// </summary>
             /// <seealso cref="AffixConfig.CheckCompoundRep"/>
             /// <seealso cref="AffixConfig.Replacements"/>
+            /// <seealso cref="WordList.AllReplacements"/>
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
@@ -1846,14 +1847,15 @@ namespace WeCantSpell.Hunspell
             /// </summary>
             /// <seealso cref="AffixConfig.CheckCompoundRep"/>
             /// <seealso cref="AffixConfig.Replacements"/>
+            /// <seealso cref="WordList.AllReplacements"/>
             private bool CompoundReplacementCheck(StringSlice wordSlice)
             {
-                if (wordSlice.Length < 2 || Affix.Replacements.IsEmpty)
+                if (wordSlice.Length < 2 || WordList.AllReplacements.IsEmpty)
                 {
                     return false;
                 }
 
-                foreach (var replacementEntry in Affix.Replacements)
+                foreach (var replacementEntry in WordList.AllReplacements)
                 {
                     // search every occurence of the pattern in the word
                     var rIndex = wordSlice.IndexOf(replacementEntry.Pattern, StringComparison.Ordinal);

@@ -1579,7 +1579,7 @@ namespace WeCantSpell.Hunspell.Tests
 
                 actual.MaxNgramSuggestions.Should().Be(0);
                 actual.Replacements.Should().NotBeNull();
-                var entry = actual.Replacements.Should().HaveCount(1).And.Subject.Single();
+                var entry = actual.Replacements.Should().HaveCount(2).And.Subject.First();
                 entry.Pattern.Should().Be("alot");
                 entry.OutString.Should().Be("a lot");
                 entry.Type.Should().Be(ReplacementValueType.Med);
@@ -1587,6 +1587,9 @@ namespace WeCantSpell.Hunspell.Tests
                 actual.KeyString.Should().Be("qwertzuiop|asdfghjkl|yxcvbnm|aq");
                 actual.WordChars.Should().BeEquivalentTo(new[] { '.', '-' });
                 actual.ForbiddenWord.Should().Be('?');
+                var entry2 = actual.Replacements[1];
+                entry2.Pattern.Should().Be("inspite");
+                entry2.OutString.Should().Be("in spite");
             }
 
             [Fact]

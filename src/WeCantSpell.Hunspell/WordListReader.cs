@@ -388,9 +388,23 @@ namespace WeCantSpell.Hunspell
                     morphs = morphBuilder.ToArray();
                 }
 
-                if (MorphSet.AnyStartsWith(morphs, MorphologicalTags.Phon))
+                using (var morphPhonEnumerator = morphs.Where(m => m != null && m.StartsWith(MorphologicalTags.Phon)).GetEnumerator())
                 {
-                    options |= WordEntryOptions.Phon;
+                    if (morphPhonEnumerator.MoveNext())
+                    {
+                        options |= WordEntryOptions.Phon;
+                        if (Builder.PhoneticReplacements == null)
+                        {
+                            Builder.PhoneticReplacements = new List<SingleReplacement>();
+                        }
+
+                        do
+                        {
+                            var phoneticText = morphPhonEnumerator.Current.Substring(MorphologicalTags.Phon.Length);
+                            Builder.PhoneticReplacements.Add(new SingleReplacement(phoneticText, word, ReplacementValueType.Med));
+                        }
+                        while (morphPhonEnumerator.MoveNext());
+                    }
                 }
             }
 

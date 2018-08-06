@@ -34,6 +34,11 @@ namespace WeCantSpell.Hunspell
 
             public readonly AffixConfig Affix;
 
+            /// <summary>
+            /// Spelling replacement suggestions based on phonetics.
+            /// </summary>
+            public List<SingleReplacement> PhoneticReplacements;
+
             internal readonly Deduper<FlagSet> FlagSetDeduper;
 
             internal readonly Deduper<MorphSet> MorphSetDeduper;
@@ -99,6 +104,22 @@ namespace WeCantSpell.Hunspell
                     if (destructive)
                     {
                         EntryDetailsByRoot = null;
+                    }
+                }
+
+                result.AllReplacements = affix.Replacements;
+                if (PhoneticReplacements != null && PhoneticReplacements.Count != 0)
+                {
+                    // store ph: field of a morphological description in reptable
+                    if (result.AllReplacements.IsEmpty)
+                    {
+                        result.AllReplacements = destructive
+                            ? SingleReplacementSet.TakeList(ReferenceHelpers.Steal(ref PhoneticReplacements))
+                            : SingleReplacementSet.Create(PhoneticReplacements);
+                    }
+                    else
+                    {
+                        result.AllReplacements = SingleReplacementSet.Create(result.AllReplacements.Concat(PhoneticReplacements));
                     }
                 }
 

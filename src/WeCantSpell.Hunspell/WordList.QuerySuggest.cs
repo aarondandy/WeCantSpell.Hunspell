@@ -1011,12 +1011,12 @@ namespace WeCantSpell.Hunspell
             /// </summary>
             private int ReplChars(List<string> wlst, string word, bool cpdSuggest)
             {
-                if (word.Length < 2 || Affix.Replacements.IsEmpty)
+                if (word.Length < 2 || WordList.AllReplacements.IsEmpty)
                 {
                     return wlst.Count;
                 }
 
-                foreach (var replacement in Affix.Replacements)
+                foreach (var replacement in WordList.AllReplacements)
                 {
                     if (string.IsNullOrEmpty(replacement.Pattern))
                     {

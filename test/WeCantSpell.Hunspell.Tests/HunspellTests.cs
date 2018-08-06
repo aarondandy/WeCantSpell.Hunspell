@@ -207,8 +207,18 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = dictionary.Suggest(givenWord);
 
                 actual.Should().NotBeNull();
-                actual.Should().HaveCount(expectedSuggestions.Length);
-                actual.ShouldBeEquivalentTo(expectedSuggestions);
+                if (actual.Any(a => a.Contains(',')))
+                {
+                    // ',' can either be a delimiter in the test data or part of the data
+                    var actualText = string.Join(", ", actual);
+                    var expectedText = string.Join(", ", expectedSuggestions);
+                    actualText.Should().Be(expectedText);
+                }
+                else
+                {
+                    actual.Should().HaveCount(expectedSuggestions.Length);
+                    actual.ShouldBeEquivalentTo(expectedSuggestions);
+                }
             }
 
             [Fact]
