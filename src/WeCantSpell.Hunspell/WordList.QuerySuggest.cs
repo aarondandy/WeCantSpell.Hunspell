@@ -1115,8 +1115,8 @@ namespace WeCantSpell.Hunspell
                 {
                     var wordKeyLengthDifference = Math.Abs(word.Length - hpSet.Key.Length);
 
-                    // don't suggest, if the word length different by 5 characters
-                    // or more (to avoid strange suggestions)
+                    // skip it, if the word length different by 5 or
+                    // more characters (to avoid strange suggestions)
                     if (wordKeyLengthDifference > 4)
                     {
                         continue;
@@ -1124,10 +1124,13 @@ namespace WeCantSpell.Hunspell
 
                     foreach (var hpDetail in hpSet.Value)
                     {
-                        // don't suggest uppercase words for lower case misspellings
-                        // in ngram suggestions, except in German, where
-                        // not only proper nouns are capitalized
-                        if (isNonGermanLowercase && EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.InitCap))
+                        // don't suggest capitalized dictionary words for
+                        // lower case misspellings in ngram suggestions, except
+                        // - PHONE usage, or
+                        // - in the case of German, where not only proper
+                        //   nouns are capitalized, or
+                        // - the capitalized word has special pronunciation
+                        if (isNonGermanLowercase && EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.InitCap) && !hasPhoneEntries && !EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.Phon))
                         {
                             continue;
                         }
@@ -1135,7 +1138,7 @@ namespace WeCantSpell.Hunspell
                         sc = NGram(3, word, hpSet.Key, NGramOptions.LongerWorse | NGramOptions.Lowering)
                             + LeftCommonSubstring(word, hpSet.Key);
 
-                        // check special pronounciation
+                        // check special pronunciation
                         var f = string.Empty;
                         if (EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.Phon) && CopyField(ref f, hpDetail.Morphs, MorphologicalTags.Phon))
                         {
