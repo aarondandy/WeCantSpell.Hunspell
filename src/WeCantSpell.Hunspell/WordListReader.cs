@@ -345,11 +345,14 @@ namespace WeCantSpell.Hunspell
             return false;
         }
 
-        private bool AddWord(string word, FlagSet flags, string[] morphs) =>
-            AddWord(word, flags, morphs, false)
-            || AddWordCapitalized(word, flags, morphs, HunspellTextFunctions.GetCapitalizationType(new StringSlice(word), TextInfo));
+        private bool AddWord(string word, FlagSet flags, string[] morphs)
+        {
+            var capType = HunspellTextFunctions.GetCapitalizationType(new StringSlice(word), TextInfo);
+            return AddWord(word, flags, morphs, false, capType)
+                || AddWordCapitalized(word, flags, morphs, capType);
+        }
 
-        private bool AddWord(string word, FlagSet flags, string[] morphs, bool onlyUpperCase)
+        private bool AddWord(string word, FlagSet flags, string[] morphs, bool onlyUpperCase, CapitalizationType capType)
         {
             if (Affix.IgnoredChars.HasItems)
             {
@@ -366,12 +369,12 @@ namespace WeCantSpell.Hunspell
                 }
             }
 
-            var options = WordEntryOptions.None;
+            var options = capType == CapitalizationType.Init ? WordEntryOptions.InitCap : WordEntryOptions.None;
             if (morphs.Length != 0)
             {
                 if (Affix.IsAliasM)
                 {
-                    options = WordEntryOptions.AliasM;
+                    options |= WordEntryOptions.AliasM;
                     var morphBuilder = new List<string>();
                     foreach (var originalValue in morphs)
                     {
@@ -459,7 +462,7 @@ namespace WeCantSpell.Hunspell
             {
                 flags = Builder.Dedup(FlagSet.Union(flags, SpecialFlags.OnlyUpcaseFlag));
                 word = HunspellTextFunctions.MakeTitleCase(word, TextInfo);
-                return AddWord(word, flags, morphs, true);
+                return AddWord(word, flags, morphs, true, CapitalizationType.Init);
             }
 
             return false;

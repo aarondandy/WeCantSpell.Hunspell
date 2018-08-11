@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Adds phonetic entries to the replacement list
 - Restricts compound replacement to using "middle" entries
+- Reduce number of strange ngram suggestions
 
 ## 2.0.1 - 2018-07-22
 ### Fixed

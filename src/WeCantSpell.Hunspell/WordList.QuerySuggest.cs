@@ -80,6 +80,11 @@ namespace WeCantSpell.Hunspell
                 if (capType == CapitalizationType.None)
                 {
                     Suggest(slst, scw, ref onlyCompoundSuggest);
+                    if (abbv != 0)
+                    {
+                        var wspace = scw + ".";
+                        Suggest(slst, wspace, ref onlyCompoundSuggest);
+                    }
                 }
                 else if (capType == CapitalizationType.Init)
                 {
@@ -197,7 +202,7 @@ namespace WeCantSpell.Hunspell
                 {
                     if (capType == CapitalizationType.None)
                     {
-                        NGramSuggest(slst, scw);
+                        NGramSuggest(slst, scw, capType);
                     }
                     else if (capType == CapitalizationType.Huh || capType == CapitalizationType.HuhInit)
                     {
@@ -206,17 +211,17 @@ namespace WeCantSpell.Hunspell
                             capWords = true;
                         }
 
-                        NGramSuggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo));
+                        NGramSuggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), CapitalizationType.Huh);
                     }
                     else if (capType == CapitalizationType.Init)
                     {
                         capWords = true;
-                        NGramSuggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo));
+                        NGramSuggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), capType);
                     }
                     else if (capType == CapitalizationType.All)
                     {
                         var oldns = slst.Count;
-                        NGramSuggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo));
+                        NGramSuggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), capType);
                         for (var j = oldns; j < slst.Count; j++)
                         {
                             slst[j] = HunspellTextFunctions.MakeAllCap(slst[j], textInfo);
@@ -264,7 +269,7 @@ namespace WeCantSpell.Hunspell
                                 {
                                     CheckWord(wspace, ref info, out var _);
                                 }
-                                if (!info.HasFlag(SpellCheckResultType.Forbidden))
+                                if (!EnumEx.HasFlag(info, SpellCheckResultType.Forbidden))
                                 {
                                     InsertSuggestion(slst, wspace);
                                 }
@@ -1077,7 +1082,7 @@ namespace WeCantSpell.Hunspell
             /// <summary>
             /// Generate a set of suggestions for very poorly spelled words.
             /// </summary>
-            private void NGramSuggest(List<string> wlst, string word)
+            private void NGramSuggest(List<string> wlst, string word, CapitalizationType capType)
             {
                 int lval;
                 int sc;
@@ -1104,11 +1109,29 @@ namespace WeCantSpell.Hunspell
                 var target = hasPhoneEntries
                     ? Phonet(HunspellTextFunctions.MakeAllCap(word, textInfo))
                     : string.Empty;
+                var isNonGermanLowercase = !Affix.IsGerman && capType == CapitalizationType.None;
 
                 foreach (var hpSet in WordList.NGramAllowedDetails)
                 {
+                    var wordKeyLengthDifference = Math.Abs(word.Length - hpSet.Key.Length);
+
+                    // don't suggest, if the word length different by 5 characters
+                    // or more (to avoid strange suggestions)
+                    if (wordKeyLengthDifference > 4)
+                    {
+                        continue;
+                    }
+
                     foreach (var hpDetail in hpSet.Value)
                     {
+                        // don't suggest uppercase words for lower case misspellings
+                        // in ngram suggestions, except in German, where
+                        // not only proper nouns are capitalized
+                        if (isNonGermanLowercase && EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.InitCap))
+                        {
+                            continue;
+                        }
+
                         sc = NGram(3, word, hpSet.Key, NGramOptions.LongerWorse | NGramOptions.Lowering)
                             + LeftCommonSubstring(word, hpSet.Key);
 
@@ -1126,7 +1149,7 @@ namespace WeCantSpell.Hunspell
                         }
 
                         var scphon = -20000;
-                        if (hasPhoneEntries && sc > 2 && Math.Abs(word.Length - hpSet.Key.Length) <= 3)
+                        if (hasPhoneEntries && sc > 2 && wordKeyLengthDifference <= 3)
                         {
                             scphon = NGram(3, target, Phonet(HunspellTextFunctions.MakeAllCap(hpSet.Key, textInfo)), NGramOptions.LongerWorse) * 2;
                         }

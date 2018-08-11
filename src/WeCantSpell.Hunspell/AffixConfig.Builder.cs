@@ -387,6 +387,7 @@ namespace WeCantSpell.Hunspell
                     Language = Dedup(Language ?? string.Empty),
                     Culture = culture,
                     IsHungarian = string.Equals(culture?.TwoLetterISOLanguageName, "HU", StringComparison.OrdinalIgnoreCase),
+                    IsGerman = string.Equals(culture?.TwoLetterISOLanguageName, "DE", StringComparison.OrdinalIgnoreCase),
                     CultureUsesDottedI =
                         string.Equals(culture?.TwoLetterISOLanguageName, "AZ", StringComparison.OrdinalIgnoreCase)
                         || string.Equals(culture?.TwoLetterISOLanguageName, "TR", StringComparison.OrdinalIgnoreCase)

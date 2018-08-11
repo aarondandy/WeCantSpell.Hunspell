@@ -24,7 +24,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var detail = actual[actual.RootWords.Single()].Single();
                 detail.Flags.Should().BeNullOrEmpty();
                 detail.Morphs.Should().BeNullOrEmpty();
-                detail.Options.Should().Be(WordEntryOptions.None);
+                detail.Options.Should().Be(WordEntryOptions.InitCap);
             }
 
             [Fact]

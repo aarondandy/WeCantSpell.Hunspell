@@ -826,6 +826,8 @@ namespace WeCantSpell.Hunspell
 
         public bool IsHungarian { get; private set; }
 
+        public bool IsGerman { get; private set; }
+
         public bool CultureUsesDottedI { get; private set; }
 
         public WarningList Warnings { get; private set; }
