@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - Allowed more usage of comments in ICONV and OCONV
 - Performs BREAK check on 2nd word break
+- Now uses SubStandard affix flag
 
 ### Changed
 - Adds phonetic entries to the replacement list

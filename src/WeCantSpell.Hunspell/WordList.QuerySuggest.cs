@@ -952,7 +952,7 @@ namespace WeCantSpell.Hunspell
                 {
                     var rvDetail = rvDetails[0];
 
-                    if (rvDetail.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest))
+                    if (rvDetail.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest, Affix.SubStandard))
                     {
                         return 0;
                     }
