@@ -1812,14 +1812,6 @@ namespace WeCantSpell.Hunspell
             /// <summary>
             /// Calculate number of syllable for compound-checking.
             /// </summary>
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            private int GetSyllable(string word) => GetSyllable(new StringSlice(word));
-
-            /// <summary>
-            /// Calculate number of syllable for compound-checking.
-            /// </summary>
             private int GetSyllable(StringSlice word)
             {
                 var num = 0;
@@ -2168,7 +2160,7 @@ namespace WeCantSpell.Hunspell
                 }
 
                 dest = src.Substring(qIndex, nl);
-                capType = HunspellTextFunctions.GetCapitalizationType(new StringSlice(dest), TextInfo);
+                capType = HunspellTextFunctions.GetCapitalizationType(dest, TextInfo);
                 return true;
             }
 

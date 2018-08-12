@@ -38,7 +38,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
             if (encodingName.Length >= 4 && encodingName.StartsWith("ISO") && encodingName[3] != '-')
             {
-                return GetEncodingByName(new StringSlice(encodingName.Insert(3, "-")));
+                return GetEncodingByName(encodingName.Insert(3, "-"));
             }
 
             return null;

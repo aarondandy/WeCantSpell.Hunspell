@@ -19,7 +19,7 @@ namespace WeCantSpell.Hunspell
 {
     public sealed class AffixReader
     {
-        public static readonly Encoding DefaultEncoding = EncodingEx.GetEncodingByName(new StringSlice("ISO8859-1")) ?? Encoding.UTF8;
+        public static readonly Encoding DefaultEncoding = EncodingEx.GetEncodingByName("ISO8859-1") ?? Encoding.UTF8;
 
         private static readonly Regex AffixLineRegex = new Regex(
             @"^[\t ]*([^\t ]+)[\t ]+(?:([^\t ]+)[\t ]+([^\t ]+)|([^\t ]+)[\t ]+([^\t ]+)[\t ]+([^\t ]+)(?:[\t ]+(.+))?)[\t ]*(?:[#].*)?$",

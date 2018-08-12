@@ -175,11 +175,6 @@ namespace WeCantSpell.Hunspell
         internal static FlagSet ParseFlags(StringSlice text, FlagMode mode) =>
             FlagSet.TakeArray(ParseFlagsInOrder(text, mode));
 
-        private static FlagValue[] ParseLongFlagsInOrder(string text) =>
-            string.IsNullOrEmpty(text)
-                ? ArrayEx<FlagValue>.Empty
-                : ParseLongFlagsInOrder(new StringSlice(text));
-
         private static FlagValue[] ParseLongFlagsInOrder(StringSlice text)
         {
             if (text.IsEmpty)
@@ -202,11 +197,6 @@ namespace WeCantSpell.Hunspell
 
             return flags;
         }
-
-        private static List<FlagValue> ParseNumberFlagsInOrder(string text) =>
-            string.IsNullOrEmpty(text)
-                ? new List<FlagValue>()
-                : ParseNumberFlagsInOrder(new StringSlice(text));
 
         private static List<FlagValue> ParseNumberFlagsInOrder(StringSlice text)
         {

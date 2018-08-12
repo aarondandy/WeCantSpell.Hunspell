@@ -10,9 +10,9 @@ namespace WeCantSpell.Hunspell.Infrastructure
         IEquatable<string>,
         IEquatable<StringSlice>
     {
-        public static implicit operator StringSlice(string text) => new StringSlice(text);
-
         public static readonly StringSlice Empty = new StringSlice(string.Empty, 0, 0);
+
+        public static implicit operator StringSlice(string text) => string.IsNullOrEmpty(text) ? Empty : new StringSlice(text);
 
         public readonly string Text;
 
