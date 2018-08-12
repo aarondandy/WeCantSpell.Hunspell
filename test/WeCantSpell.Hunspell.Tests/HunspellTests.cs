@@ -207,19 +207,14 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = dictionary.Suggest(givenWord);
 
                 actual.Should().NotBeNull();
-                if (actual.Any(a => a.Contains(',')))
-                {
-                    // ',' can either be a delimiter in the test data or part of the data
-                    var actualText = string.Join(", ", actual);
-                    var expectedText = string.Join(", ", expectedSuggestions);
-                    actualText.Should().Be(expectedText);
-                }
-                else
-                {
-                    actual.Should().HaveCount(expectedSuggestions.Length);
-                    actual.ShouldBeEquivalentTo(expectedSuggestions);
-                }
+
+                // ',' can either be a delimiter in the test data or part of the data
+                var actualText = string.Join(", ", actual);
+                var expectedText = string.Join(", ", expectedSuggestions);
+                actualText.Should().Be(expectedText);
             }
+
+
 
             [Fact]
             public void untested_suggestion_files_should_not_be_found()

@@ -1846,7 +1846,16 @@ namespace WeCantSpell.Hunspell
                             {
                                 if (cwrd)
                                 {
-                                    wlst.Add(currentCandidateString);
+                                    // give maximal priority for word pairs listed in the dictionary
+                                    // for example, possible "a lot" in the English dictionary
+                                    if(CheckWord(currentCandidateString, cpdSuggest) != 0)
+                                    {
+                                        wlst.Insert(0, currentCandidateString);
+                                    }
+                                    else
+                                    {
+                                        wlst.Add(currentCandidateString);
+                                    }
                                 }
                             }
                             else
