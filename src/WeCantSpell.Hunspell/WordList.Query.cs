@@ -1,8 +1,7 @@
-﻿using WeCantSpell.Hunspell.Infrastructure;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 using System.Globalization;
+using System.Linq;
+using WeCantSpell.Hunspell.Infrastructure;
 
 #if !NO_INLINE
 using System.Runtime.CompilerServices;
@@ -987,7 +986,8 @@ namespace WeCantSpell.Hunspell
                                             st.Destroy();
 
                                             // forbid compound word, if it is a non compound word with typical fault
-                                            return (Affix.CheckCompoundRep && CompoundReplacementCheck(word.Subslice(0, len)))
+                                            var wordLenPrefix = word.Subslice(0, Math.Min(word.Length, len));
+                                            return ((Affix.CheckCompoundRep && CompoundReplacementCheck(wordLenPrefix)) || CompoundWordPairCheck(wordLenPrefix))
                                                 ? null
                                                 : rvFirst;
                                         }
@@ -1158,7 +1158,8 @@ namespace WeCantSpell.Hunspell
                                             st.Destroy();
 
                                             // forbid compound word, if it is a non compound word with typical fault
-                                            return (Affix.CheckCompoundRep && CompoundReplacementCheck(word.Subslice(0, len)))
+                                            var wordLenPrefix = word.Subslice(0, Math.Min(word.Length, len));
+                                            return ((Affix.CheckCompoundRep && CompoundReplacementCheck(wordLenPrefix)) || CompoundWordPairCheck(wordLenPrefix))
                                                 ? null
                                                 : rvFirst;
                                         }
@@ -1190,10 +1191,18 @@ namespace WeCantSpell.Hunspell
 
                                     if (rv != null)
                                     {
+                                        var wordLenPrefix = word.Subslice(0, Math.Min(word.Length, len));
                                         // forbid compound word, if it is a non compound word with typical fault
+
+                                        // or a dictionary word pair
+                                        if (CompoundWordPairCheck(wordLenPrefix))
+                                        {
+                                            return null;
+                                        }
+
                                         if (Affix.CheckCompoundRep || Affix.ForbiddenWord.HasValue)
                                         {
-                                            if (Affix.CheckCompoundRep && CompoundReplacementCheck(word))
+                                            if (Affix.CheckCompoundRep && CompoundReplacementCheck(wordLenPrefix))
                                             {
                                                 st.Destroy();
                                                 return null;
@@ -1208,7 +1217,8 @@ namespace WeCantSpell.Hunspell
                                                     st[i + rv.Word.Length] = '\0';
                                                 }
 
-                                                if (Affix.CheckCompoundRep && CompoundReplacementCheck(st.ToString()))
+                                                var stString = st.ToString();
+                                                if ((Affix.CheckCompoundRep && CompoundReplacementCheck(stString)) || CompoundWordPairCheck(stString))
                                                 {
                                                     if (i + rv.Word.Length < st.BufferLength)
                                                     {
@@ -1836,18 +1846,6 @@ namespace WeCantSpell.Hunspell
             /// <seealso cref="AffixConfig.CheckCompoundRep"/>
             /// <seealso cref="AffixConfig.Replacements"/>
             /// <seealso cref="WordList.AllReplacements"/>
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            private bool CompoundReplacementCheck(string word) =>
-                CompoundReplacementCheck(new StringSlice(word));
-
-            /// <summary>
-            /// Is word a non compound with a REP substitution?
-            /// </summary>
-            /// <seealso cref="AffixConfig.CheckCompoundRep"/>
-            /// <seealso cref="AffixConfig.Replacements"/>
-            /// <seealso cref="WordList.AllReplacements"/>
             private bool CompoundReplacementCheck(StringSlice wordSlice)
             {
                 if (wordSlice.Length < 2 || WordList.AllReplacements.IsEmpty)
@@ -1879,6 +1877,31 @@ namespace WeCantSpell.Hunspell
                             }
                             while (rIndex >= 0);
                         }
+                    }
+                }
+
+                return false;
+            }
+
+            private bool CompoundWordPairCheck(StringSlice wordSlice)
+            {
+                if (wordSlice.Length < 2)
+                {
+                    return false;
+                }
+
+                var candidate = StringBuilderPool.Get(wordSlice.Length + 1);
+                candidate.Append(wordSlice);
+                candidate.Append(' ');
+
+                for (var i = 1; i < wordSlice.Length; i++)
+                {
+                    candidate[i - 1] = wordSlice[i - 1];
+                    candidate[i] = ' ';
+                    candidate.WriteChars(wordSlice.Subslice(i), i + 1);
+                    if (CandidateCheck(candidate.ToString()))
+                    {
+                        return true;
                     }
                 }
 

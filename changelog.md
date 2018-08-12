@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 - Restricts compound replacement to using "middle" entries
 - Reduce number of strange ngram suggestions
 - Prefer suggestions for word pairs listed in dictionary
+- Reduce compound word overgeneration
 
 ## 2.0.1 - 2018-07-22
 ### Fixed

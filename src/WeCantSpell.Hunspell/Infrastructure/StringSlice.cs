@@ -10,6 +10,8 @@ namespace WeCantSpell.Hunspell.Infrastructure
         IEquatable<string>,
         IEquatable<StringSlice>
     {
+        public static implicit operator StringSlice(string text) => new StringSlice(text);
+
         public static readonly StringSlice Empty = new StringSlice(string.Empty, 0, 0);
 
         public readonly string Text;
@@ -36,7 +38,15 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #else
             Text = text;
 #endif
+
             Offset = startIndex;
+
+#if DEBUG
+            if (text.Length < startIndex + length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(length));
+            }
+#endif
             Length = length;
         }
 
