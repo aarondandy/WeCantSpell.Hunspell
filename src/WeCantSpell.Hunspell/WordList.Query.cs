@@ -26,6 +26,8 @@ namespace WeCantSpell.Hunspell
 
             protected const int MaxWordUtf8Len = MaxWordLen * 3;
 
+            protected const int MaxCompoundSuggestions = 3;
+
             protected const int MaxSuggestions = 15;
 
             protected const int MaxRoots = 100;

@@ -828,6 +828,14 @@ namespace WeCantSpell.Hunspell
 
         public bool IsGerman { get; private set; }
 
+        /// <summary>
+        /// Language with possible dash usage.
+        /// </summary>
+        /// <remarks>
+        /// Latin letters or dash in TRY characters can trigger this condition.
+        /// </remarks>
+        public bool IsLanguageWithDashUsage { get; private set; }
+
         public bool CultureUsesDottedI { get; private set; }
 
         public WarningList Warnings { get; private set; }

@@ -66,6 +66,7 @@ namespace WeCantSpell.Hunspell
 
                 var textInfo = TextInfo;
 
+                // check capitalized form for FORCEUCASE
                 if (capType == CapitalizationType.None && Affix.ForceUpperCase.HasValue)
                 {
                     var info = SpellCheckResultType.OrigCap;
@@ -77,26 +78,28 @@ namespace WeCantSpell.Hunspell
                 }
 
                 var capWords = false;
+                var good = false;
+
                 if (capType == CapitalizationType.None)
                 {
-                    Suggest(slst, scw, ref onlyCompoundSuggest);
+                    good |= Suggest(slst, scw, ref onlyCompoundSuggest);
                     if (abbv != 0)
                     {
                         var wspace = scw + ".";
-                        Suggest(slst, wspace, ref onlyCompoundSuggest);
+                        good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
                     }
                 }
                 else if (capType == CapitalizationType.Init)
                 {
                     capWords = true;
-                    Suggest(slst, scw, ref onlyCompoundSuggest);
-                    Suggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), ref onlyCompoundSuggest);
+                    good |= Suggest(slst, scw, ref onlyCompoundSuggest);
+                    good |= Suggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), ref onlyCompoundSuggest);
                 }
                 else if (capType == CapitalizationType.Huh || capType == CapitalizationType.HuhInit)
                 {
                     capWords = capType == CapitalizationType.HuhInit;
 
-                    Suggest(slst, scw, ref onlyCompoundSuggest);
+                    good |= Suggest(slst, scw, ref onlyCompoundSuggest);
 
                     // something.The -> something. The
                     var dotPos = scw.IndexOf('.');
@@ -112,7 +115,7 @@ namespace WeCantSpell.Hunspell
                     if (capType == CapitalizationType.HuhInit)
                     {
                         // TheOpenOffice.org -> The OpenOffice.org
-                        Suggest(slst, HunspellTextFunctions.MakeInitSmall(scw, textInfo), ref onlyCompoundSuggest);
+                        good |= Suggest(slst, HunspellTextFunctions.MakeInitSmall(scw, textInfo), ref onlyCompoundSuggest);
                     }
 
                     var wspace = HunspellTextFunctions.MakeAllSmall(scw, textInfo);
@@ -122,7 +125,7 @@ namespace WeCantSpell.Hunspell
                     }
 
                     var prevns = slst.Count;
-                    Suggest(slst, wspace, ref onlyCompoundSuggest);
+                    good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
                     if (capType == CapitalizationType.HuhInit)
                     {
@@ -132,7 +135,7 @@ namespace WeCantSpell.Hunspell
                             InsertSuggestion(slst, wspace);
                         }
 
-                        Suggest(slst, wspace, ref onlyCompoundSuggest);
+                        good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
                     }
 
                     // aNew -> "a New" (instead of "a new")
@@ -161,14 +164,14 @@ namespace WeCantSpell.Hunspell
                 else if (capType == CapitalizationType.All)
                 {
                     var wspace = HunspellTextFunctions.MakeAllSmall(scw, textInfo);
-                    Suggest(slst, wspace, ref onlyCompoundSuggest);
+                    good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
                     if (Affix.KeepCase.HasValue && Check(wspace))
                     {
                         InsertSuggestion(slst, wspace);
                     }
 
                     wspace = HunspellTextFunctions.MakeInitCap(wspace, textInfo);
-                    Suggest(slst, wspace, ref onlyCompoundSuggest);
+                    good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
                     for (var j = 0; j < slst.Count; j++)
                     {
                         slst[j] = HunspellTextFunctions.MakeAllCap(slst[j], textInfo).Replace("ß", "SS");
@@ -197,8 +200,8 @@ namespace WeCantSpell.Hunspell
                     }
                 }
 
-                // try ngram approach since found nothing or only compound words
-                if (Affix.MaxNgramSuggestions != 0 && (slst.Count == 0 || onlyCompoundSuggest))
+                // try ngram approach since found nothing good suggestion
+                if (!good && Affix.MaxNgramSuggestions != 0 && (slst.Count == 0 || onlyCompoundSuggest))
                 {
                     if (capType == CapitalizationType.None)
                     {
@@ -230,6 +233,11 @@ namespace WeCantSpell.Hunspell
                 }
 
                 // try dash suggestion (Afo-American -> Afro-American)
+                // Note: LibreOffice was modified to treat dashes as word
+                // characters to check "scot-free" etc. word forms, but
+                // we need to handle suggestions for "Afo-American", etc.,
+                // while "Afro-American" is missing from the dictionary.
+                // TODO avoid possible overgeneration
                 var dashPos = scw.IndexOf('-');
                 if (dashPos >= 0)
                 {
@@ -246,7 +254,7 @@ namespace WeCantSpell.Hunspell
                     var prevPos = 0;
                     var last = false;
 
-                    while (noDashSug && !last)
+                    while (!good && noDashSug && !last)
                     {
                         if (dashPos == scw.Length)
                         {
@@ -389,12 +397,20 @@ namespace WeCantSpell.Hunspell
 
             private List<string> Suggest(string word) => new QuerySuggest(word, WordList).Suggest();
 
-            private void Suggest(List<string> slst, string word, ref bool onlyCompoundSug)
+            /// <summary>
+            /// Generate suggestions for a misspelled word
+            /// </summary>
+            /// <param name="slst">Resulting suggestion list.</param>
+            /// <param name="word">The word to base suggestions on.</param>
+            /// <param name="onlyCompoundSug">Indicates there may be bad suggestions.</param>
+            /// <returns>True when there may be a good suggestion.</returns>
+            private bool Suggest(List<string> slst, string word, ref bool onlyCompoundSug)
             {
                 var noCompoundTwoWords = false;
                 var nSugOrig = slst.Count;
                 var oldSug = 0;
                 var cpdSuggest = false;
+                var goodSuggestion = false;
 
                 // word reversing wrapper for complex prefixes
                 if (Affix.ComplexPrefixes)
@@ -410,18 +426,28 @@ namespace WeCantSpell.Hunspell
                         oldSug = slst.Count;
                     }
 
-                    var sugLimit = oldSug + MaxSuggestions;
+                    var sugLimit = oldSug + MaxCompoundSuggestions;
 
                     // suggestions for an uppercase word (html -> HTML)
                     if (slst.Count < MaxSuggestions)
                     {
+                        var i = slst.Count;
                         CapChars(slst, word, cpdSuggest);
+                        if (slst.Count > i)
+                        {
+                            goodSuggestion = true;
+                        }
                     }
 
                     // perhaps we made a typical fault of spelling
                     if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                     {
+                        var i = slst.Count;
                         ReplChars(slst, word, cpdSuggest);
+                        if (slst.Count > i)
+                        {
+                            goodSuggestion = true;
+                        }
                     }
 
                     // perhaps we made chose the wrong char from a related set
@@ -485,17 +511,23 @@ namespace WeCantSpell.Hunspell
                     }
 
                     // perhaps we forgot to hit space and two words ran together
-                    if (!Affix.NoSplitSuggestions && slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
+                    // (dictionary word pairs have top priority here, so
+                    // we always suggest them, in despite of nosplitsugs, and
+                    // drop compound word and other suggestions)
+                    //if (!Affix.NoSplitSuggestions && slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
+                    if (!cpdSuggest || (!Affix.NoSplitSuggestions && slst.Count < sugLimit))
                     {
-                        TwoWords(slst, word, cpdSuggest);
+                        goodSuggestion = TwoWords(slst, word, cpdSuggest, goodSuggestion);
                     }
                 }
-                while (!noCompoundTwoWords && IntEx.InversePostfixIncrement(ref cpdSuggest));
+                while (!noCompoundTwoWords && IntEx.InversePostfixIncrement(ref cpdSuggest) && !goodSuggestion);
 
                 if (!noCompoundTwoWords && slst.Count != 0)
                 {
                     onlyCompoundSug = true;
                 }
+
+                return goodSuggestion;
             }
 
             private SpellCheckResult CheckDetails(string word) => new QueryCheck(word, WordList).CheckDetails();
@@ -1768,13 +1800,14 @@ namespace WeCantSpell.Hunspell
             }
 
             /// <summary>
-            /// Error is should have been two words.
+            /// Error if should have been two words.
             /// </summary>
-            private int TwoWords(List<string> wlst, string word, bool cpdSuggest)
+            /// <returns>Trye if there is a dictionary word pair or there was already a good suggestion before calling.</returns>
+            private bool TwoWords(List<string> wlst, string word, bool cpdSuggest, bool good)
             {
                 if (word.Length < 3)
                 {
-                    return wlst.Count;
+                    return false;
                 }
 
                 var isHungarianAndNotForbidden = Affix.IsHungarian && !CheckForbidden(word);
@@ -1788,94 +1821,88 @@ namespace WeCantSpell.Hunspell
 
                 for (var p = 1; p + 1 < candidate.Length; p++)
                 {
-                    candidate[p - 1] = candidate[p];
-                    candidate[p] = '\0';
-                    var c1 = CheckWord(candidate.ToStringTerminated(), cpdSuggest);
-                    if (c1 != 0)
-                    {
-                        var c2 = CheckWord(candidate.ToStringTerminated(p + 1), cpdSuggest);
-                        if (c2 != 0)
-                        {
-                            candidate[p] = ' ';
+                    string currentCandidateString;
 
-                            // spec. Hungarian code (need a better compound word support)
-                            if (
-                                isHungarianAndNotForbidden
-                                && // if 3 repeating letter, use - instead of space
-                                (
+                    candidate[p - 1] = candidate[p];
+
+                    // Suggest only word pairs, if they are listed in the dictionary.
+                    // For example, adding "a lot" to the English dic file will
+                    // result only "alot" -> "a lot" suggestion instead of
+                    // "alto, slot, alt, lot, allot, aloft, aloe, clot, plot, blot, a lot".
+                    // Note: using "ph:alot" keeps the other suggestions:
+                    // a lot ph:alot
+                    // alot -> a lot, alto, slot...
+                    candidate[p] = ' ';
+                    currentCandidateString = candidate.ToStringTerminated();
+                    if (!cpdSuggest && CheckWord(currentCandidateString, cpdSuggest) != 0)
+                    {
+                        // remove not word pair suggestions
+                        if (!good)
+                        {
+                            good = true;
+                            wlst.Clear();
+                        }
+                        wlst.Insert(0, currentCandidateString);
+                    }
+
+                    // word pairs with dash?
+                    if (Affix.IsLanguageWithDashUsage)
+                    {
+                        candidate[p] = '-';
+                        currentCandidateString = candidate.ToStringTerminated();
+                        if (!cpdSuggest && CheckWord(currentCandidateString, cpdSuggest) != 0)
+                        {
+                            // remove not word pair suggestions
+                            if (!good)
+                            {
+                                good = true;
+                                wlst.Clear();
+                            }
+                            wlst.Insert(0, currentCandidateString);
+                        }
+                    }
+
+                    if (wlst.Count < MaxSuggestions && !Affix.NoSplitSuggestions && !good)
+                    {
+                        candidate[p] = '\0';
+
+                        var c1 = CheckWord(candidate.ToStringTerminated(), cpdSuggest);
+                        if (c1 != 0)
+                        {
+                            var c2 = CheckWord(candidate.ToStringTerminated(p + 1), cpdSuggest);
+                            if (c2 != 0)
+                            {
+                                // spec. Hungarian code (need a better compound word support)
+                                candidate[p] =
                                     (
-                                        candidate[p - 1] == candidate[p]
-                                        &&
+                                        isHungarianAndNotForbidden
+                                        && // if 3 repeating letter, use - instead of space
                                         (
                                             (
-                                                p > 1
+                                                candidate[p - 1] == candidate[p]
                                                 &&
-                                                candidate[p - 1] == candidate[p - 2]
+                                                (
+                                                    (
+                                                        p > 1
+                                                        &&
+                                                        candidate[p - 1] == candidate[p - 2]
+                                                    )
+                                                    ||
+                                                    (
+                                                        candidate[p - 1] == candidate[p + 2]
+                                                    )
+                                                )
                                             )
-                                            ||
+                                            || // or multiple compounding, with more, than 6 syllables
                                             (
-                                                candidate[p - 1] == candidate[p + 2]
+                                                c1 == 3
+                                                &&
+                                                c2 >= 2
                                             )
                                         )
-                                    )
-                                    || // or multiple compounding, with more, than 6 syllables
-                                    (
-                                        c1 == 3
-                                        &&
-                                        c2 >= 2
-                                    )
-                                )
-                            )
-                            {
-                                candidate[p] = '-';
-                            }
+                                    ) ? '-' : ' ';
 
-                            var cwrd = true;
-
-                            var currentCandidateString = candidate.ToStringTerminated();
-                            for (var k = 0; k < wlst.Count; k++)
-                            {
-                                if (string.Equals(wlst[k], currentCandidateString, StringComparison.Ordinal))
-                                {
-                                    cwrd = false;
-                                    break;
-                                }
-                            }
-
-                            if (wlst.Count < MaxSuggestions)
-                            {
-                                if (cwrd)
-                                {
-                                    // give maximal priority for word pairs listed in the dictionary
-                                    // for example, possible "a lot" in the English dictionary
-                                    if(CheckWord(currentCandidateString, cpdSuggest) != 0)
-                                    {
-                                        wlst.Insert(0, currentCandidateString);
-                                    }
-                                    else
-                                    {
-                                        wlst.Add(currentCandidateString);
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                return wlst.Count;
-                            }
-
-                            // add two word suggestion with dash, if TRY string contains
-                            // "a" or "-"
-                            // NOTE: cwrd doesn't modified for REP twoword sugg.
-
-                            if (
-                                p > 1
-                                &&
-                                candidate.Length - (p + 1) > 1
-                                &&
-                                Affix.TryString.ContainsAny('a', '-')
-                            )
-                            {
-                                candidate[p] = '-';
+                                var cwrd = true;
                                 currentCandidateString = candidate.ToStringTerminated();
                                 for (var k = 0; k < wlst.Count; k++)
                                 {
@@ -1886,16 +1913,39 @@ namespace WeCantSpell.Hunspell
                                     }
                                 }
 
-                                if (wlst.Count < MaxSuggestions)
+                                if (cwrd && wlst.Count < MaxSuggestions)
                                 {
-                                    if (cwrd)
+                                    wlst.Add(currentCandidateString);
+                                }
+
+                                // add two word suggestion with dash, depending on the language
+                                // Note that cwrd doesn't modified for REP twoword sugg.
+                                if (
+                                    !Affix.NoSplitSuggestions
+                                    &&
+                                    Affix.IsLanguageWithDashUsage
+                                    &&
+                                    p > 1
+                                    &&
+                                    candidate.Length - (p + 1) > 1
+                                )
+                                {
+                                    candidate[p] = '-';
+                                    currentCandidateString = candidate.ToStringTerminated();
+
+                                    for (var k = 0; k < wlst.Count; k++)
+                                    {
+                                        if (string.Equals(wlst[k], currentCandidateString, StringComparison.Ordinal))
+                                        {
+                                            cwrd = false;
+                                            break;
+                                        }
+                                    }
+
+                                    if (cwrd && wlst.Count < MaxSuggestions)
                                     {
                                         wlst.Add(currentCandidateString);
                                     }
-                                }
-                                else
-                                {
-                                    return wlst.Count;
                                 }
                             }
                         }
@@ -1904,7 +1954,7 @@ namespace WeCantSpell.Hunspell
 
                 StringBuilderPool.Return(candidate);
 
-                return wlst.Count;
+                return good;
             }
 
             private bool CheckForbidden(string word)
