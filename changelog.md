@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Adds phonetic entries to the replacement list
 - Restricts compound replacement to using "middle" entries
+- General suggesion improvements
 - Reduce number of strange ngram suggestions
 - Prefer suggestions for word pairs listed in dictionary
 - Reduce compound word overgeneration

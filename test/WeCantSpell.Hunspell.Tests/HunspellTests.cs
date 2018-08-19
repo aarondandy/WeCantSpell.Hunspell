@@ -254,10 +254,10 @@ namespace WeCantSpell.Hunspell.Tests
                     var wrongLines = ExtractLinesFromWordFile(wrongFilePath, encoding).ToList();
                     var suggestionLines = ExtractLinesFromWordFile(suggestionFilePath, encoding, allowBlankLines: true).ToList();
 
-                    if (wrongLines.Count - suggestionLines.Count == 1)
+                    if (suggestionFilePath.EndsWith("ph2.sug"))
                     {
-                        // NOTE: sometimes the test files don't have matching numbers of data lines
-                        suggestionLines.Add(string.Empty);
+                        // NOTE: ph2.wrong does not have a corresponding blank suggestion in the file for rootforbiddenroot
+                        suggestionLines.Insert(8, string.Empty);
                     }
 
                     yield return new SuggestionTestSet

@@ -369,6 +369,7 @@ namespace WeCantSpell.Hunspell
                 }
             }
 
+            // store the description string or its pointer
             var options = capType == CapitalizationType.Init ? WordEntryOptions.InitCap : WordEntryOptions.None;
             if (morphs.Length != 0)
             {
@@ -396,6 +397,8 @@ namespace WeCantSpell.Hunspell
                     if (morphPhonEnumerator.MoveNext())
                     {
                         options |= WordEntryOptions.Phon;
+                        // store ph: fields (pronounciation, misspellings, old orthography etc.)
+                        // of a morphological description in reptable to use in REP replacements.
                         if (Builder.PhoneticReplacements == null)
                         {
                             Builder.PhoneticReplacements = new List<SingleReplacement>();
@@ -403,8 +406,27 @@ namespace WeCantSpell.Hunspell
 
                         do
                         {
-                            var phoneticText = morphPhonEnumerator.Current.Substring(MorphologicalTags.Phon.Length);
-                            Builder.PhoneticReplacements.Add(new SingleReplacement(phoneticText, word, ReplacementValueType.Med));
+                            var ph = morphPhonEnumerator.Current.Substring(MorphologicalTags.Phon.Length);
+                            // when the ph: field ends with the character *,
+                            // strip last character of the pattern and the replacement
+                            // to match in REP suggestions also at character changes,
+                            // for example, "pretty ph:prity*" results "prit->prett"
+                            // REP replacement instead of "prity->pretty", to get
+                            // prity->pretty and pritiest->prettiest suggestions.
+                            if (ph.EndsWith('*'))
+                            {
+                                if (ph.Length > 2 && word.Length > 1)
+                                {
+                                    Builder.PhoneticReplacements.Add(new SingleReplacement(ph.Substring(0, ph.Length-2), word.Substring(0, word.Length-1), ReplacementValueType.Med));
+                                }
+
+                                // NOTE: it may be a but that there is no else case for these `if`s
+                            }
+                            else if (ph.Length != 0)
+                            {
+                                Builder.PhoneticReplacements.Add(new SingleReplacement(ph, word, ReplacementValueType.Med));
+                            }
+
                         }
                         while (morphPhonEnumerator.MoveNext());
                     }
