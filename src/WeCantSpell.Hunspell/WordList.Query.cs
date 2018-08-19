@@ -314,15 +314,16 @@ namespace WeCantSpell.Hunspell
             }
 
             private WordEntryDetail CompoundCheckWordSearchCompoundOnlyDetail(
-                string searchEntryWord,
+                WordEntryDetail[] searchEntryDetails,
                 ref IncrementalWordList words,
                 IncrementalWordList rwords)
             {
-                foreach (var searchEntryDetail in LookupDetails(searchEntryWord))
+                foreach (var searchEntryDetail in searchEntryDetails)
                 {
                     if (
                         !searchEntryDetail.ContainsFlag(Affix.NeedAffix)
                         &&
+                        // NOTE: do not reorder due to side effects
                         DefCompoundCheck(ref words, searchEntryDetail, rwords, false)
                     )
                     {
@@ -334,12 +335,12 @@ namespace WeCantSpell.Hunspell
             }
 
             private WordEntryDetail CompoundCheckWordSearchCompoundOnlyDetailScpd(
-                string searchEntryWord,
+                WordEntryDetail[] searchEntryDetails,
                 FlagValue scpdPatternEntryCondition,
                 ref IncrementalWordList words,
                 IncrementalWordList rwords)
             {
-                foreach (var searchEntryDetail in LookupDetails(searchEntryWord))
+                foreach (var searchEntryDetail in searchEntryDetails)
                 {
                     if (
                         !searchEntryDetail.ContainsFlag(Affix.NeedAffix)
@@ -358,10 +359,10 @@ namespace WeCantSpell.Hunspell
             }
 
             private WordEntryDetail CompoundCheckWordSearchMultiDetail(
-                string searchEntryWord,
+                WordEntryDetail[] searchEntryDetails,
                 FlagValue compoundPart)
             {
-                foreach (var searchEntryDetail in LookupDetails(searchEntryWord))
+                foreach (var searchEntryDetail in searchEntryDetails)
                 {
                     if (
                         !searchEntryDetail.ContainsFlag(Affix.NeedAffix)
@@ -376,11 +377,11 @@ namespace WeCantSpell.Hunspell
             }
 
             private WordEntryDetail CompoundCheckWordSearchMultiDetailScpdFlags(
-                string searchEntryWord,
+                WordEntryDetail[] searchEntryDetails,
                 FlagValue scpdPatternEntryCondition,
                 FlagValue compoundPart)
             {
-                foreach (var searchEntryDetail in LookupDetails(searchEntryWord))
+                foreach (var searchEntryDetail in searchEntryDetails)
                 {
                     if (
                         !searchEntryDetail.ContainsFlag(Affix.NeedAffix)
@@ -396,12 +397,12 @@ namespace WeCantSpell.Hunspell
             }
 
             private WordEntryDetail CompoundCheckWordSearchMultiDetailWithWords(
-                string searchEntryWord,
+                WordEntryDetail[] searchEntryDetails,
                 PatternEntry scpdPatternEntry,
                 bool wordNumIsZero,
                 bool cantCheckScpdFlags)
             {
-                foreach (var searchEntryDetail in LookupDetails(searchEntryWord))
+                foreach (var searchEntryDetail in searchEntryDetails)
                 {
                     if (
                         wordNumIsZero
@@ -425,7 +426,7 @@ namespace WeCantSpell.Hunspell
             }
 
             private WordEntryDetail CompoundCheckWordSearch(
-                string searchEntryWord,
+                WordEntryDetail[] searchEntryDetails,
                 PatternEntry scpdPatternEntry,
                 ref IncrementalWordList words,
                 IncrementalWordList rwords,
@@ -439,8 +440,8 @@ namespace WeCantSpell.Hunspell
                     if (!Affix.CompoundRules.IsEmpty && (wordNumIsZero || words != null))
                     {
                         return cantCheckScpdFlags
-                            ? CompoundCheckWordSearchCompoundOnlyDetail(searchEntryWord, ref words, rwords)
-                            : CompoundCheckWordSearchCompoundOnlyDetailScpd(searchEntryWord, scpdPatternEntry.Condition, ref words, rwords);
+                            ? CompoundCheckWordSearchCompoundOnlyDetail(searchEntryDetails, ref words, rwords)
+                            : CompoundCheckWordSearchCompoundOnlyDetailScpd(searchEntryDetails, scpdPatternEntry.Condition, ref words, rwords);
                     }
                 }
                 else if (!conditionBypassAllCompounds)
@@ -449,12 +450,12 @@ namespace WeCantSpell.Hunspell
                     {
                         var compoundPart = wordNumIsZero ? Affix.CompoundBegin : Affix.CompoundMiddle;
                         return cantCheckScpdFlags
-                            ? CompoundCheckWordSearchMultiDetail(searchEntryWord, compoundPart)
-                            : CompoundCheckWordSearchMultiDetailScpdFlags(searchEntryWord, scpdPatternEntry.Condition, compoundPart);
+                            ? CompoundCheckWordSearchMultiDetail(searchEntryDetails, compoundPart)
+                            : CompoundCheckWordSearchMultiDetailScpdFlags(searchEntryDetails, scpdPatternEntry.Condition, compoundPart);
                     }
                     else
                     {
-                        return CompoundCheckWordSearchMultiDetailWithWords(searchEntryWord, scpdPatternEntry, wordNumIsZero, cantCheckScpdFlags);
+                        return CompoundCheckWordSearchMultiDetailWithWords(searchEntryDetails, scpdPatternEntry, wordNumIsZero, cantCheckScpdFlags);
                     }
                 }
 
@@ -596,20 +597,38 @@ namespace WeCantSpell.Hunspell
                             // FIRST WORD
 
                             affixed = true;
+
                             {
                                 var searchEntryWord = st.ToString();
-                                rv = (
-                                    huMovRule
-                                        ? LookupFirstDetail(searchEntryWord)
-                                        : CompoundCheckWordSearch(
-                                            searchEntryWord,
+
+                                var searchEntryDetails = LookupDetails(searchEntryWord);
+                                if (searchEntryDetails.Length > 0)
+                                {
+                                    rv = searchEntryDetails[0]?.ToEntry(searchEntryWord);
+
+                                    // forbid dictionary stems with COMPOUNDFORBIDFLAG in
+                                    // compound words, overriding the effect of COMPOUNDPERMITFLAG
+                                    if (rv != null && rv.ContainsFlag(Affix.CompoundForbidFlag))
+                                    {
+                                        continue;
+                                    }
+
+                                    if (rv != null && !huMovRule)
+                                    {
+                                        rv = CompoundCheckWordSearch(
+                                            searchEntryDetails,
                                             scpdPatternEntry,
                                             ref words,
                                             rwords,
                                             wordNum == 0,
                                             onlycpdrule,
-                                            conditionBypassAllCompounds)
-                                    )?.ToEntry(searchEntryWord);
+                                            conditionBypassAllCompounds)?.ToEntry(searchEntryWord);
+                                    }
+                                }
+                                else
+                                {
+                                    rv = null;
+                                }
                             }
 
                             if (rv == null)
