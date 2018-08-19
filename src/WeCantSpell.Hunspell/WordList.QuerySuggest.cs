@@ -1019,7 +1019,7 @@ namespace WeCantSpell.Hunspell
                 if (Affix.ContClasses.HasItems && rv == null)
                 {
                     rv = SuffixCheckTwoSfx(word, AffixEntryOptions.None, default(Affix<PrefixEntry>), default(FlagValue))
-                        ?? PrefixCheckTwoSfx(word, CompoundOptions.Begin, default(FlagValue));
+                        ?? PrefixCheckTwoSfx(word, CompoundOptions.Not, default(FlagValue));
                 }
 
                 // check forbidden words
