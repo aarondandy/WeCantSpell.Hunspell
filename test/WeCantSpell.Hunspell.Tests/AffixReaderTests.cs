@@ -131,7 +131,7 @@ namespace WeCantSpell.Hunspell.Tests
                 actual.Suffixes.Single().AFlag.Should().Be('A');
                 actual.Suffixes.Single().Options.Should().Be(AffixEntryOptions.CrossProduct);
                 actual.Suffixes.Single().Entries.Should().HaveCount(5);
-                actual.Suffixes.Single().Entries.Select(e => e.Append).ShouldBeEquivalentTo(new[]
+                actual.Suffixes.Single().Entries.Select(e => e.Append).Should().BeEquivalentTo(new[]
                 {
                     "e",
                     "er",
@@ -280,7 +280,7 @@ namespace WeCantSpell.Hunspell.Tests
                 actual.AliasM.Should().HaveCount(3);
                 actual.AliasM.First().Should().OnlyContain(x => x == "is:affix_x");
                 actual.AliasM.Skip(1).First().Should().OnlyContain(x => x == "ds:affix_y");
-                actual.AliasM.Last().ShouldAllBeEquivalentTo(new[] { "po:noun", "xx:other_data" });
+                actual.AliasM.Last().Should().BeEquivalentTo(new[] { "po:noun", "xx:other_data" });
 
                 actual.Suffixes.Should().HaveCount(2);
 
@@ -314,7 +314,7 @@ namespace WeCantSpell.Hunspell.Tests
                 actual.ComplexPrefixes.Should().BeTrue();
                 actual.WordChars.Should().BeEquivalentTo(new[] { '_' });
                 actual.AliasM.Should().HaveCount(4);
-                actual.AliasM.ShouldBeEquivalentTo(new[]
+                actual.AliasM.Should().BeEquivalentTo(new[]
                 {
                     new[] { Reversed(@"affix_1/") },
                     new[] { Reversed(@"affix_2/") },
@@ -364,7 +364,7 @@ namespace WeCantSpell.Hunspell.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.WordChars.ShouldBeEquivalentTo(new[] { '\'', '.' });
+                actual.WordChars.Should().BeEquivalentTo(new[] { '\'', '.' });
 
                 actual.Suffixes.Should().HaveCount(1);
                 actual.Suffixes.Single().AFlag.Should().Be('S');
@@ -385,7 +385,7 @@ namespace WeCantSpell.Hunspell.Tests
 
                 actual.Encoding.WebName.Should().Be("utf-8");
 
-                actual.WordChars.ShouldBeEquivalentTo(new[] { '\'', '.' });
+                actual.WordChars.Should().BeEquivalentTo(new[] { '\'', '.' });
 
                 actual.Suffixes.Should().HaveCount(1);
                 actual.Suffixes.Single().AFlag.Should().Be('S');
@@ -423,7 +423,7 @@ namespace WeCantSpell.Hunspell.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.WordChars.ShouldBeEquivalentTo(new[] { '\'' });
+                actual.WordChars.Should().BeEquivalentTo(new[] { '\'' });
 
                 actual.Suffixes.Should().HaveCount(2);
                 var suffixGroup1 = actual.Suffixes.First();
@@ -453,7 +453,7 @@ namespace WeCantSpell.Hunspell.Tests
 
                 actual.Encoding.WebName.Should().Be("utf-8");
                 actual.TryString.Should().Be("أ");
-                actual.IgnoredChars.ShouldBeEquivalentTo(new[] { 'ّ', 'َ', 'ُ', 'ٌ', 'ْ', 'ِ', 'ٍ' });
+                actual.IgnoredChars.Should().BeEquivalentTo(new[] { 'ّ', 'َ', 'ُ', 'ٌ', 'ْ', 'ِ', 'ٍ' });
 
                 actual.Prefixes.Should().HaveCount(1);
                 var group1 = actual.Prefixes.Single();
@@ -475,7 +475,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
                 actual.Encoding.WebName.Should().Be("iso-8859-1");
-                actual.WordChars.ShouldBeEquivalentTo(new[] { '.', '\'' });
+                actual.WordChars.Should().BeEquivalentTo(new[] { '.', '\'' });
                 actual.TryString.Should().Be("esianrtolcdugmphbyfvkwz'");
 
                 actual.Prefixes.Should().HaveCount(7);
@@ -509,7 +509,7 @@ namespace WeCantSpell.Hunspell.Tests
 
                 actual.TryString.Should().Be("esianrtolcdugmphbyfvkwzESIANRTOLCDUGMPHBYFVKWZ'");
                 actual.MaxNgramSuggestions.Should().Be(1);
-                actual.WordChars.ShouldBeEquivalentTo(new[] { '.', '\'', '’' });
+                actual.WordChars.Should().BeEquivalentTo(new[] { '.', '\'', '’' });
                 actual.Prefixes.Should().HaveCount(7);
                 actual.Suffixes.Should().HaveCount(16);
                 actual.Replacements.Should().HaveCount(88);
@@ -522,13 +522,13 @@ namespace WeCantSpell.Hunspell.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.BreakPoints.ShouldBeEquivalentTo(new[]
+                actual.BreakPoints.Should().BeEquivalentTo(new[]
                 {
                     "-",
                     "–"
                 });
 
-                actual.WordChars.ShouldBeEquivalentTo(new[] { '-', '–' });
+                actual.WordChars.Should().BeEquivalentTo(new[] { '-', '–' });
             }
 
             [Fact]
@@ -539,7 +539,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
                 actual.MaxNgramSuggestions.Should().Be(0);
-                actual.WordChars.ShouldBeEquivalentTo(new[] { '-' });
+                actual.WordChars.Should().BeEquivalentTo(new[] { '-' });
                 actual.TryString.Should().Be("ot");
             }
 
@@ -551,7 +551,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
                 actual.MaxNgramSuggestions.Should().Be(0);
-                actual.WordChars.ShouldBeEquivalentTo(new[] { '-' });
+                actual.WordChars.Should().BeEquivalentTo(new[] { '-' });
                 actual.TryString.Should().Be("ot");
                 actual.BreakPoints.Should().HaveCount(0);
             }
@@ -700,7 +700,7 @@ namespace WeCantSpell.Hunspell.Tests
 
                 actual.Encoding.WebName.Should().Be("utf-8");
                 actual.CheckSharps.Should().BeTrue();
-                actual.WordChars.ShouldBeEquivalentTo(new[] { 'ß', '.' });
+                actual.WordChars.Should().BeEquivalentTo(new[] { 'ß', '.' });
                 actual.KeepCase.Should().Be('k');
             }
 
@@ -761,7 +761,7 @@ namespace WeCantSpell.Hunspell.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.WordChars.ShouldBeEquivalentTo(new[] { ':' });
+                actual.WordChars.Should().BeEquivalentTo(new[] { ':' });
             }
 
             [Fact]
@@ -821,7 +821,7 @@ namespace WeCantSpell.Hunspell.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.WordChars.ShouldBeEquivalentTo("0123456789".ToCharArray());
+                actual.WordChars.Should().BeEquivalentTo("0123456789".ToCharArray());
                 actual.CompoundMin.Should().Be(1);
                 actual.OnlyInCompound.Should().Be('c');
                 actual.CompoundRules.Should().HaveCount(2);
@@ -863,7 +863,7 @@ namespace WeCantSpell.Hunspell.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.WordChars.ShouldBeEquivalentTo("0123456789".ToCharArray());
+                actual.WordChars.Should().BeEquivalentTo("0123456789".ToCharArray());
                 actual.CompoundMin.Should().Be(1);
                 actual.OnlyInCompound.Should().Be('c' << 8 | 'c');
                 actual.CompoundRules.Should().HaveCount(2);
@@ -878,7 +878,7 @@ namespace WeCantSpell.Hunspell.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.WordChars.ShouldBeEquivalentTo("0123456789".ToCharArray());
+                actual.WordChars.Should().BeEquivalentTo("0123456789".ToCharArray());
                 actual.CompoundMin.Should().Be(1);
                 actual.OnlyInCompound.Should().Be(1000);
                 actual.CompoundRules.Should().HaveCount(2);
@@ -893,7 +893,7 @@ namespace WeCantSpell.Hunspell.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.WordChars.ShouldBeEquivalentTo("0123456789".ToCharArray());
+                actual.WordChars.Should().BeEquivalentTo("0123456789".ToCharArray());
                 actual.Suffixes.Should().HaveCount(4);
                 actual.Prefixes.Should().HaveCount(3);
             }
@@ -905,7 +905,7 @@ namespace WeCantSpell.Hunspell.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.WordChars.ShouldBeEquivalentTo("0123456789".ToCharArray());
+                actual.WordChars.Should().BeEquivalentTo("0123456789".ToCharArray());
                 actual.Suffixes.Should().HaveCount(1);
                 actual.Prefixes.Should().HaveCount(1);
             }
@@ -1074,7 +1074,7 @@ namespace WeCantSpell.Hunspell.Tests
                 actual.CompoundPermitFlag.Should().Be('P');
                 actual.OnlyInCompound.Should().Be('X');
                 actual.CompoundMin.Should().Be(1);
-                actual.WordChars.ShouldBeEquivalentTo(new[] { '-' });
+                actual.WordChars.Should().BeEquivalentTo(new[] { '-' });
 
                 actual.Suffixes.Should().HaveCount(3);
 
@@ -1139,7 +1139,7 @@ namespace WeCantSpell.Hunspell.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.IgnoredChars.ShouldBeEquivalentTo("aeiou".ToCharArray());
+                actual.IgnoredChars.Should().BeEquivalentTo("aeiou".ToCharArray());
                 actual.Prefixes.Should().HaveCount(1);
                 actual.Prefixes.Single().AFlag.Should().Be('A');
                 actual.Prefixes.Single().Options.Should().Be(AffixEntryOptions.CrossProduct);
@@ -1156,8 +1156,8 @@ namespace WeCantSpell.Hunspell.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.IgnoredChars.ShouldBeEquivalentTo("ًٌٍَُِّْ".ToCharArray());
-                actual.WordChars.ShouldBeEquivalentTo("ًٌٍَُِّْ".ToCharArray());
+                actual.IgnoredChars.Should().BeEquivalentTo("ًٌٍَُِّْ".ToCharArray());
+                actual.WordChars.Should().BeEquivalentTo("ًٌٍَُِّْ".ToCharArray());
             }
 
             [Fact]
@@ -1169,9 +1169,9 @@ namespace WeCantSpell.Hunspell.Tests
 
                 actual.MaxNgramSuggestions.Should().Be(0);
                 actual.RelatedCharacterMap.Should().HaveCount(3);
-                actual.RelatedCharacterMap.First().ShouldBeEquivalentTo(new[] { "u", "ú", "ü" });
-                actual.RelatedCharacterMap.Skip(1).First().ShouldBeEquivalentTo(new[] { "ö", "ó", "o" });
-                actual.RelatedCharacterMap.Last().ShouldBeEquivalentTo(new[] { "ß", "ss" });
+                actual.RelatedCharacterMap.First().Should().BeEquivalentTo(new[] { "u", "ú", "ü" });
+                actual.RelatedCharacterMap.Skip(1).First().Should().BeEquivalentTo(new[] { "ö", "ó", "o" });
+                actual.RelatedCharacterMap.Last().Should().BeEquivalentTo(new[] { "ß", "ss" });
             }
 
             [Fact]
@@ -1183,15 +1183,15 @@ namespace WeCantSpell.Hunspell.Tests
 
                 actual.Prefixes.Should().HaveCount(1);
                 actual.Prefixes.Single().AFlag.Should().Be('P');
-                actual.Prefixes.Single().Entries[0].MorphCode.ShouldBeEquivalentTo(new[] { "dp:pfx_un", "sp:un" });
+                actual.Prefixes.Single().Entries[0].MorphCode.Should().BeEquivalentTo(new[] { "dp:pfx_un", "sp:un" });
 
                 actual.Suffixes.Should().HaveCount(3);
                 actual.Suffixes.First().AFlag.Should().Be('S');
-                actual.Suffixes.First().Entries[0].MorphCode.ShouldBeEquivalentTo(new[] { "is:plur" });
+                actual.Suffixes.First().Entries[0].MorphCode.Should().BeEquivalentTo(new[] { "is:plur" });
                 actual.Suffixes.Skip(1).First().AFlag.Should().Be('Q');
-                actual.Suffixes.Skip(1).First().Entries[0].MorphCode.ShouldBeEquivalentTo(new[] { "is:sg_3" });
+                actual.Suffixes.Skip(1).First().Entries[0].MorphCode.Should().BeEquivalentTo(new[] { "is:sg_3" });
                 actual.Suffixes.Last().AFlag.Should().Be('R');
-                actual.Suffixes.Last().Entries[0].MorphCode.ShouldBeEquivalentTo(new[] { "ds:der_able" });
+                actual.Suffixes.Last().Entries[0].MorphCode.Should().BeEquivalentTo(new[] { "ds:der_able" });
             }
 
             [Fact]
@@ -1348,7 +1348,7 @@ namespace WeCantSpell.Hunspell.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.WordChars.ShouldBeEquivalentTo(new[] { '-' });
+                actual.WordChars.Should().BeEquivalentTo(new[] { '-' });
                 actual.NoSplitSuggestions.Should().BeTrue();
             }
 
@@ -1470,7 +1470,7 @@ namespace WeCantSpell.Hunspell.Tests
 
                 actual.Encoding.WebName.Should().Be("iso-8859-1");
                 actual.Warnings.Should().BeEmpty();
-                actual.Phone.Select(p => p.Rule).ShouldAllBeEquivalentTo(expectedPhoneRules);
+                actual.Phone.Select(p => p.Rule).Should().BeEquivalentTo(expectedPhoneRules);
                 actual.Phone.First().Rule.Should().Be("AH(AEIOUY)-^");
                 actual.Phone.First().Replace.Should().Be("*H");
                 actual.Phone.Last().Rule.Should().Be("Z");
@@ -1567,7 +1567,7 @@ namespace WeCantSpell.Hunspell.Tests
 
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
-                actual.WordChars.ShouldBeEquivalentTo(@"/:".ToCharArray());
+                actual.WordChars.Should().BeEquivalentTo(@"/:".ToCharArray());
             }
 
             [Fact]
@@ -1820,7 +1820,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
 
                 actual.CompoundMaxSyllable.Should().Be(expectedNumber);
-                actual.CompoundVowels.ShouldBeEquivalentTo(expectedLetters);
+                actual.CompoundVowels.Should().BeEquivalentTo(expectedLetters);
             }
 
             [Theory]

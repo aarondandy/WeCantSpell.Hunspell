@@ -163,7 +163,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = dictionary.Suggest(word);
 
                 actual.Should().NotBeNullOrEmpty();
-                actual.ShouldBeEquivalentTo(expectedSuggestions);
+                actual.Should().BeEquivalentTo(expectedSuggestions);
             }
 
             [Theory]

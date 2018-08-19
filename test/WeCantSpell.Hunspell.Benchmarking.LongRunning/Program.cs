@@ -16,7 +16,7 @@ namespace WeCantSpell.Hunspell.Benchmarking.LongRunning
             var argumentsForNBench = new string[]
             {
                 $"\"{mainAssemblyLocation}\"",
-                $"output-directory=\"{perfDirectory}\""
+                $"--output \"{perfDirectory}\""
             };
 
             var totalArguments = argumentsForNBench.Concat(args);

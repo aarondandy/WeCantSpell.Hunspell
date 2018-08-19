@@ -35,7 +35,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = CharacterCondition.Parse(text);
 
                 actual.Should().HaveCount(1);
-                actual[0].Characters.ShouldBeEquivalentTo(new[] { 'q' });
+                actual[0].Characters.Should().BeEquivalentTo(new[] { 'q' });
                 actual[0].Restricted.Should().BeFalse();
             }
 
@@ -71,7 +71,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = CharacterCondition.Parse(text);
 
                 actual.Should().HaveCount(1);
-                actual[0].Characters.ShouldBeEquivalentTo(new[] { 'b' });
+                actual[0].Characters.Should().BeEquivalentTo(new[] { 'b' });
                 actual[0].Restricted.Should().BeFalse();
             }
 
@@ -83,7 +83,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = CharacterCondition.Parse(text);
 
                 actual.Should().HaveCount(1);
-                actual[0].Characters.ShouldBeEquivalentTo("qwerty".ToCharArray());
+                actual[0].Characters.Should().BeEquivalentTo("qwerty".ToCharArray());
                 actual[0].Restricted.Should().BeFalse();
             }
 
@@ -107,7 +107,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = CharacterCondition.Parse(text);
 
                 actual.Should().HaveCount(1);
-                actual[0].Characters.ShouldBeEquivalentTo(new[] { 't' });
+                actual[0].Characters.Should().BeEquivalentTo(new[] { 't' });
                 actual[0].Restricted.Should().BeTrue();
             }
 
@@ -119,7 +119,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = CharacterCondition.Parse(text);
 
                 actual.Should().HaveCount(1);
-                actual[0].Characters.ShouldBeEquivalentTo("qwerty".ToCharArray());
+                actual[0].Characters.Should().BeEquivalentTo("qwerty".ToCharArray());
                 actual[0].Restricted.Should().BeTrue();
             }
 
@@ -131,7 +131,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = CharacterCondition.Parse(text);
 
                 actual.Should().HaveCount(1);
-                actual[0].Characters.ShouldBeEquivalentTo(new[] { '^' });
+                actual[0].Characters.Should().BeEquivalentTo(new[] { '^' });
                 actual[0].Restricted.Should().BeTrue();
             }
 
@@ -143,9 +143,9 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = CharacterCondition.Parse(text);
 
                 actual.Should().HaveCount(2);
-                actual[0].Characters.ShouldBeEquivalentTo("qwerty".ToCharArray());
+                actual[0].Characters.Should().BeEquivalentTo("qwerty".ToCharArray());
                 actual[0].Restricted.Should().BeFalse();
-                actual[1].Characters.ShouldBeEquivalentTo("asdf".ToCharArray());
+                actual[1].Characters.Should().BeEquivalentTo("asdf".ToCharArray());
                 actual[1].Restricted.Should().BeFalse();
             }
 
@@ -157,9 +157,9 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = CharacterCondition.Parse(text);
 
                 actual.Should().HaveCount(2);
-                actual[0].Characters.ShouldBeEquivalentTo("qwerty".ToCharArray());
+                actual[0].Characters.Should().BeEquivalentTo("qwerty".ToCharArray());
                 actual[0].Restricted.Should().BeTrue();
-                actual[1].Characters.ShouldBeEquivalentTo("asdf".ToCharArray());
+                actual[1].Characters.Should().BeEquivalentTo("asdf".ToCharArray());
                 actual[1].Restricted.Should().BeTrue();
             }
 
@@ -171,9 +171,9 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = CharacterCondition.Parse(text);
 
                 actual.Should().HaveCount(2);
-                actual[0].Characters.ShouldBeEquivalentTo("qwerty".ToCharArray());
+                actual[0].Characters.Should().BeEquivalentTo("qwerty".ToCharArray());
                 actual[0].Restricted.Should().BeFalse();
-                actual[1].Characters.ShouldBeEquivalentTo("asdf".ToCharArray());
+                actual[1].Characters.Should().BeEquivalentTo("asdf".ToCharArray());
                 actual[1].Restricted.Should().BeTrue();
             }
 
@@ -185,9 +185,9 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = CharacterCondition.Parse(text);
 
                 actual.Should().HaveCount(2);
-                actual[0].Characters.ShouldBeEquivalentTo("aeiou".ToCharArray());
+                actual[0].Characters.Should().BeEquivalentTo("aeiou".ToCharArray());
                 actual[0].Restricted.Should().BeTrue();
-                actual[1].Characters.ShouldBeEquivalentTo(new[] { 'y' });
+                actual[1].Characters.Should().BeEquivalentTo(new[] { 'y' });
                 actual[1].Restricted.Should().BeFalse();
             }
         }

@@ -37,7 +37,7 @@ namespace WeCantSpell.Hunspell.Tests
                         .ToList();
                 }
 
-                actual.ShouldAllBeEquivalentTo(expected);
+                actual.Should().BeEquivalentTo(expected);
             }
         }
 
@@ -68,7 +68,7 @@ namespace WeCantSpell.Hunspell.Tests
                         .ToList();
                 }
 
-                actual.ShouldAllBeEquivalentTo(expected);
+                actual.Should().BeEquivalentTo(expected);
             }
         }
     }

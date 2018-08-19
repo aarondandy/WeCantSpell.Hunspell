@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Attributes.Jobs;
 using WeCantSpell.Hunspell.Benchmarking.MicroSuites.Infrastructure;
 
 namespace WeCantSpell.Hunspell.Benchmarking.MicroSuites

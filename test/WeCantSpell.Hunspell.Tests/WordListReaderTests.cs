@@ -34,7 +34,7 @@ namespace WeCantSpell.Hunspell.Tests
 
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
-                actual.RootWords.ShouldBeEquivalentTo(new[] { "weg", "wege" });
+                actual.RootWords.Should().BeEquivalentTo(new[] { "weg", "wege" });
                 actual["weg"][0].Flags.Should().ContainInOrder(new[] { 'Q', 'o', 'z' });
                 actual["weg"][1].Flags.Should().ContainInOrder(new[] { 'P' });
                 actual["wege"][0].Flags.Should().BeEmpty();
@@ -199,7 +199,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(28);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "created",
                     "create",
                     "imply",
@@ -278,7 +278,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(expectedWords.Length);
-                actual.RootWords.ShouldBeEquivalentTo(expectedWords);
+                actual.RootWords.Should().BeEquivalentTo(expectedWords);
 
                 actual["create"][0].Flags.Should().ContainInOrder(new int[] { 'X', 'K', 'V', 'N', 'G', 'A', 'D', 'S' }.OrderBy(x => x));
                 actual["Hunspell"][0].Flags.Should().BeEmpty();
@@ -304,7 +304,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(expected.Length);
-                actual.RootWords.ShouldBeEquivalentTo(expected);
+                actual.RootWords.Should().BeEquivalentTo(expected);
             }
 
             [Fact]
@@ -315,7 +315,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(5);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "foo",
                     "Bar",
                     "BAZ",
@@ -335,7 +335,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(2);
-                actual.RootWords.ShouldBeEquivalentTo(new[] { "áoó", "Óoá" });
+                actual.RootWords.Should().BeEquivalentTo(new[] { "áoó", "Óoá" });
             }
 
             [Fact]
@@ -346,7 +346,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(7);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "sUrya",
                     "Surya",
                     "udayaM",
@@ -368,7 +368,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(4);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "foo",
                     "opera",
                     "eel",
@@ -383,7 +383,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(6);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "müßig",
                     "Ausstoß",
                     "Abstoß.",
@@ -414,7 +414,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(3);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "c:a",
                     "S:t",
                     "foo" });
@@ -452,7 +452,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(23);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "0",
                     "1",
                     "2",
@@ -486,7 +486,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(13);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "0",
                     "1",
                     "2",
@@ -502,13 +502,13 @@ namespace WeCantSpell.Hunspell.Tests
                     "‰" });
 
                 actual["0"][0].Flags.Should().ContainInOrder(new[] { 'N' });
-                actual["0"][0].Morphs.ShouldBeEquivalentTo(new[] { "po:num" });
+                actual["0"][0].Morphs.Should().BeEquivalentTo(new[] { "po:num" });
                 actual["."][0].Flags.Should().ContainInOrder(new[] { '.' });
-                actual["."][0].Morphs.ShouldBeEquivalentTo(new[] { "po:sign_dot" });
+                actual["."][0].Morphs.Should().BeEquivalentTo(new[] { "po:sign_dot" });
                 actual["%"][0].Flags.Should().ContainInOrder(new[] { '%' });
-                actual["%"][0].Morphs.ShouldBeEquivalentTo(new[] { "po:sign_percent" });
+                actual["%"][0].Morphs.Should().BeEquivalentTo(new[] { "po:sign_percent" });
                 actual["‰"][0].Flags.Should().ContainInOrder(new[] { '%' });
-                actual["‰"][0].Morphs.ShouldBeEquivalentTo(new[] { "po:sign_per_mille" });
+                actual["‰"][0].Morphs.Should().BeEquivalentTo(new[] { "po:sign_per_mille" });
             }
 
             [Fact]
@@ -519,7 +519,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(23);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "0",
                     "1",
                     "2",
@@ -556,7 +556,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(23);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "0",
                     "1",
                     "2",
@@ -606,9 +606,9 @@ namespace WeCantSpell.Hunspell.Tests
                 actual.RootWords.Should().HaveCount(1);
                 actual["drink"].Should().HaveCount(2);
                 actual["drink"][0].Flags.Should().ContainInOrder(new[] { 'Q', 'R' });
-                actual["drink"][0].Morphs.ShouldBeEquivalentTo(new[] { "po:verb" });
+                actual["drink"][0].Morphs.Should().BeEquivalentTo(new[] { "po:verb" });
                 actual["drink"][1].Flags.Should().ContainInOrder(new[] { 'S' });
-                actual["drink"][1].Morphs.ShouldBeEquivalentTo(new[] { "po:noun" });
+                actual["drink"][1].Morphs.Should().BeEquivalentTo(new[] { "po:noun" });
             }
 
             [Fact]
@@ -619,7 +619,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(11);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "0",
                     "1",
                     "2",
@@ -687,7 +687,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(2);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "gata",
                     "kontoret" });
                 actual["gata"][0].Flags.Should().ContainInOrder(new[] { 'A' });
@@ -703,21 +703,21 @@ namespace WeCantSpell.Hunspell.Tests
 
 
                 actual.RootWords.Should().HaveCount(4);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "foo",
                     "bar",
                     "bars",
                     "foos" });
                 actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'S' });
-                actual["foo"][0].Morphs.ShouldBeEquivalentTo(new[] { "[1]" });
+                actual["foo"][0].Morphs.Should().BeEquivalentTo(new[] { "[1]" });
                 actual["foo"][1].Flags.Should().ContainInOrder(new[] { 'X', 'Y' });
-                actual["foo"][1].Morphs.ShouldBeEquivalentTo(new[] { "[2]" });
+                actual["foo"][1].Morphs.Should().BeEquivalentTo(new[] { "[2]" });
                 actual["foo"][2].Flags.Should().ContainInOrder(new[] { 'Y' });
-                actual["foo"][2].Morphs.ShouldBeEquivalentTo(new[] { "[3]" });
+                actual["foo"][2].Morphs.Should().BeEquivalentTo(new[] { "[3]" });
                 actual["foo"][3].Flags.Should().ContainInOrder(new[] { 'S' });
-                actual["foo"][3].Morphs.ShouldBeEquivalentTo(new[] { "[4]" });
+                actual["foo"][3].Morphs.Should().BeEquivalentTo(new[] { "[4]" });
                 actual["bar"][0].Flags.Should().ContainInOrder(new[] { 'S', 'Y' });
-                actual["bar"][0].Morphs.ShouldBeEquivalentTo(new[] { "[5]" });
+                actual["bar"][0].Morphs.Should().BeEquivalentTo(new[] { "[5]" });
                 actual["bars"][0].Flags.Should().ContainInOrder(new[] { 'X' });
                 actual["foos"][0].Flags.Should().ContainInOrder(new[] { 'X' });
             }
@@ -730,7 +730,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(4);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "foo",
                     "bar",
                     "Baz",
@@ -745,7 +745,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(4);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "Chișinău",
                     "Țepes",
                     "ț",
@@ -760,7 +760,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(2);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "xmpl",
                     "xprssn" });
             }
@@ -790,7 +790,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(9);
-                actual.RootWords.ShouldBeEquivalentTo(expectedWords);
+                actual.RootWords.Should().BeEquivalentTo(expectedWords);
             }
 
             [Fact]
@@ -801,7 +801,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(2);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "ijs",
                     "Ijs" });
                 actual["ijs"].Should().HaveCount(1);
@@ -818,7 +818,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(4);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "foo",
                     "Bar",
                     "baz.",
@@ -834,7 +834,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(2);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "들어오세요",
                     "안녕하세요" });
             }
@@ -847,7 +847,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(3);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "Frühstück",
                     "tükörfúró",
                     "groß" });
@@ -861,7 +861,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(8);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "drink",
                     "drank",
                     "drunk",
@@ -873,7 +873,7 @@ namespace WeCantSpell.Hunspell.Tests
 
                 actual["drink"].Should().HaveCount(2);
                 actual["drink"][0].Flags.Should().ContainInOrder(new[] { 'S' });
-                actual["drink"][0].Morphs.ShouldBeEquivalentTo(new[] { "po:noun" });
+                actual["drink"][0].Morphs.Should().BeEquivalentTo(new[] { "po:noun" });
                 actual["drink"][1].Flags.Should().ContainInOrder(new[] { 'Q', 'R' });
                 actual["drink"][1].Morphs.Should().BeEquivalentTo(new[] { "po:verb", "al:drank", "al:drunk", "ts:present" });
                 actual["eaten"][0].Flags.Should().BeEmpty();
@@ -888,7 +888,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(4);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "अलम्",
                     "क्यार",
                     "न्न",
@@ -914,7 +914,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(10);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "Brasilia",
                     "brassily",
                     "Brazilian",
@@ -926,7 +926,7 @@ namespace WeCantSpell.Hunspell.Tests
                     "Churchillian",
                     "xxxxxxxxxx" });
                 actual["xxxxxxxxxx"][0].Flags.Should().BeEmpty();
-                actual["xxxxxxxxxx"][0].Morphs.ShouldBeEquivalentTo(new[] { "ph:Brasilia" });
+                actual["xxxxxxxxxx"][0].Morphs.Should().BeEquivalentTo(new[] { "ph:Brasilia" });
             }
 
             [Fact]
@@ -937,7 +937,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(4);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "/",
                     "1/2",
                     "http://",
@@ -956,7 +956,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(11);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "NASA",
                     "Gandhi",
                     "grateful",
@@ -969,7 +969,7 @@ namespace WeCantSpell.Hunspell.Tests
                     "McDonald",
                     "Mcdonald" });
                 actual["McDonald"][0].Flags.Should().BeEmpty();
-                actual["Mcdonald"][0].Flags.ShouldBeEquivalentTo(new[] { SpecialFlags.OnlyUpcaseFlag });
+                actual["Mcdonald"][0].Flags.Should().BeEquivalentTo(new[] { SpecialFlags.OnlyUpcaseFlag });
             }
 
             [Fact]
@@ -1002,7 +1002,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(4);
-                actual.RootWords.ShouldBeEquivalentTo(new[] {
+                actual.RootWords.Should().BeEquivalentTo(new[] {
                     "𐏑",
                     "𐏒",
                     "𐏒𐏑",
@@ -1017,7 +1017,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(2);
-                actual.RootWords.ShouldBeEquivalentTo(new[] { "foo", "bar" });
+                actual.RootWords.Should().BeEquivalentTo(new[] { "foo", "bar" });
                 actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'A', 'W' });
             }
 
@@ -1029,11 +1029,11 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await WordListReader.ReadFileAsync(filePath);
 
                 actual.RootWords.Should().HaveCount(2);
-                actual.RootWords.ShouldBeEquivalentTo(new[] { "foo", "bar" });
+                actual.RootWords.Should().BeEquivalentTo(new[] { "foo", "bar" });
                 actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'X', 'A' }.OrderBy(x => x));
-                actual["foo"][0].Morphs.ShouldBeEquivalentTo(new[] { "<FOO" });
+                actual["foo"][0].Morphs.Should().BeEquivalentTo(new[] { "<FOO" });
                 actual["bar"][0].Flags.Should().ContainInOrder(new[] { 'X', 'A', 'B', 'C' }.OrderBy(x => x));
-                actual["bar"][0].Morphs.ShouldBeEquivalentTo(new[] { "<BAR" });
+                actual["bar"][0].Morphs.Should().BeEquivalentTo(new[] { "<BAR" });
             }
 
             [Theory(Skip = "Not performant enough yet")]
