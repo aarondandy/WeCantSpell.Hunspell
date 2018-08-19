@@ -313,28 +313,7 @@ namespace WeCantSpell.Hunspell
                 return he;
             }
 
-            private WordEntryDetail CompoundCheckWordSearchCompoundOnlyDetail(
-                WordEntryDetail[] searchEntryDetails,
-                ref IncrementalWordList words,
-                IncrementalWordList rwords)
-            {
-                foreach (var searchEntryDetail in searchEntryDetails)
-                {
-                    if (
-                        !searchEntryDetail.ContainsFlag(Affix.NeedAffix)
-                        &&
-                        // NOTE: do not reorder due to side effects
-                        DefCompoundCheck(ref words, searchEntryDetail, rwords, false)
-                    )
-                    {
-                        return searchEntryDetail;
-                    }
-                }
-
-                return null;
-            }
-
-            private WordEntryDetail CompoundCheckWordSearchCompoundOnlyDetailScpd(
+            private WordEntryDetail CompoundCheckWordSearch_OnlyCpdRule(
                 WordEntryDetail[] searchEntryDetails,
                 FlagValue scpdPatternEntryCondition,
                 ref IncrementalWordList words,
@@ -342,41 +321,41 @@ namespace WeCantSpell.Hunspell
             {
                 foreach (var searchEntryDetail in searchEntryDetails)
                 {
-                    if (
-                        !searchEntryDetail.ContainsFlag(Affix.NeedAffix)
-                        &&
-                        // NOTE: do not reorder due to side effects
-                        DefCompoundCheck(ref words, searchEntryDetail, rwords, false)
-                        &&
-                        searchEntryDetail.ContainsFlag(scpdPatternEntryCondition)
-                    )
+                    if (!searchEntryDetail.ContainsFlag(Affix.NeedAffix))
                     {
-                        return searchEntryDetail;
+                        // NOTE: do not reorder DefCompoundCheck calls or other conditions due to side effects
+
+                        bool defCpdCheck;
+                        if (words == null)
+                        {
+                            if (rwords != null && DefCompoundCheck(rwords, searchEntryDetail, false))
+                            {
+                                words = rwords;
+                                defCpdCheck = true;
+                            }
+                            else
+                            {
+                                defCpdCheck = false;
+                            }
+                        }
+                        else
+                        {
+                            defCpdCheck = DefCompoundCheck(words, searchEntryDetail, false);
+                        }
+
+                        // NOTE: do not reorder DefCompoundCheck calls or other conditions due to side effects
+
+                        if (defCpdCheck && (scpdPatternEntryCondition.IsZero || searchEntryDetail.ContainsFlag(scpdPatternEntryCondition)))
+                        {
+                            return searchEntryDetail;
+                        }
                     }
                 }
 
                 return null;
             }
 
-            private WordEntryDetail CompoundCheckWordSearchMultiDetail(
-                WordEntryDetail[] searchEntryDetails,
-                FlagValue compoundPart)
-            {
-                foreach (var searchEntryDetail in searchEntryDetails)
-                {
-                    if (
-                        !searchEntryDetail.ContainsFlag(Affix.NeedAffix)
-                        &&
-                        searchEntryDetail.ContainsAnyFlags(Affix.CompoundFlag, compoundPart)
-                    )
-                    {
-                        return searchEntryDetail;
-                    }
-                }
-                return null;
-            }
-
-            private WordEntryDetail CompoundCheckWordSearchMultiDetailScpdFlags(
+            private WordEntryDetail CompoundCheckWordSearch_NormalNoWordList(
                 WordEntryDetail[] searchEntryDetails,
                 FlagValue scpdPatternEntryCondition,
                 FlagValue compoundPart)
@@ -396,66 +375,21 @@ namespace WeCantSpell.Hunspell
                 return null;
             }
 
-            private WordEntryDetail CompoundCheckWordSearchMultiDetailWithWords(
+            private WordEntryDetail CompoundCheckWordSearch_NormalWithExistingWordList(
                 WordEntryDetail[] searchEntryDetails,
-                PatternEntry scpdPatternEntry,
-                bool wordNumIsZero,
-                bool cantCheckScpdFlags)
+                FlagValue scpdPatternEntryCondition)
             {
                 foreach (var searchEntryDetail in searchEntryDetails)
                 {
                     if (
-                        wordNumIsZero
-                        &&
                         !searchEntryDetail.ContainsFlag(Affix.NeedAffix)
                         &&
                         searchEntryDetail.ContainsFlag(Affix.CompoundBegin)
                         &&
-                        (
-                            cantCheckScpdFlags
-                            ||
-                            searchEntryDetail.ContainsFlag(scpdPatternEntry.Condition)
-                        )
+                        (scpdPatternEntryCondition.IsZero || searchEntryDetail.ContainsFlag(scpdPatternEntryCondition))
                     )
                     {
                         return searchEntryDetail;
-                    }
-                }
-
-                return null;
-            }
-
-            private WordEntryDetail CompoundCheckWordSearch(
-                WordEntryDetail[] searchEntryDetails,
-                PatternEntry scpdPatternEntry,
-                ref IncrementalWordList words,
-                IncrementalWordList rwords,
-                bool wordNumIsZero,
-                bool onlycpdrule,
-                bool conditionBypassAllCompounds)
-            {
-                var cantCheckScpdFlags = scpdPatternEntry == null || !scpdPatternEntry.Condition.HasValue;
-                if (onlycpdrule)
-                {
-                    if (!Affix.CompoundRules.IsEmpty && (wordNumIsZero || words != null))
-                    {
-                        return cantCheckScpdFlags
-                            ? CompoundCheckWordSearchCompoundOnlyDetail(searchEntryDetails, ref words, rwords)
-                            : CompoundCheckWordSearchCompoundOnlyDetailScpd(searchEntryDetails, scpdPatternEntry.Condition, ref words, rwords);
-                    }
-                }
-                else if (!conditionBypassAllCompounds)
-                {
-                    if (words == null)
-                    {
-                        var compoundPart = wordNumIsZero ? Affix.CompoundBegin : Affix.CompoundMiddle;
-                        return cantCheckScpdFlags
-                            ? CompoundCheckWordSearchMultiDetail(searchEntryDetails, compoundPart)
-                            : CompoundCheckWordSearchMultiDetailScpdFlags(searchEntryDetails, scpdPatternEntry.Condition, compoundPart);
-                    }
-                    else
-                    {
-                        return CompoundCheckWordSearchMultiDetailWithWords(searchEntryDetails, scpdPatternEntry, wordNumIsZero, cantCheckScpdFlags);
                     }
                 }
 
@@ -545,6 +479,8 @@ namespace WeCantSpell.Hunspell
                         do // simplified checkcompoundpattern loop
                         {
                             PatternEntry scpdPatternEntry;
+                            FlagValue scpdPatternEntryCondition;
+                            FlagValue scpdPatternEntryCondition2;
                             if (scpd > 0)
                             {
                                 for (; scpd <= Affix.CompoundPatterns.Count && Affix.CompoundPatterns[scpd - 1].Pattern3DoesNotMatch(word, i); scpd++)
@@ -575,10 +511,15 @@ namespace WeCantSpell.Hunspell
                                 oldcmax = cmax;
                                 cmin = Affix.CompoundMin;
                                 cmax = len - cmin + 1;
+
+                                scpdPatternEntryCondition = scpdPatternEntry.Condition;
+                                scpdPatternEntryCondition2 = scpdPatternEntry.Condition2;
                             }
                             else
                             {
                                 scpdPatternEntry = null;
+                                scpdPatternEntryCondition = default(FlagValue);
+                                scpdPatternEntryCondition2 = default(FlagValue);
                             }
 
                             if (i < st.BufferLength)
@@ -604,26 +545,59 @@ namespace WeCantSpell.Hunspell
                                 var searchEntryDetails = LookupDetails(searchEntryWord);
                                 if (searchEntryDetails.Length > 0)
                                 {
-                                    rv = searchEntryDetails[0]?.ToEntry(searchEntryWord);
+                                    var rvDetail = searchEntryDetails[0];
 
                                     // forbid dictionary stems with COMPOUNDFORBIDFLAG in
                                     // compound words, overriding the effect of COMPOUNDPERMITFLAG
-                                    if (rv != null && rv.ContainsFlag(Affix.CompoundForbidFlag))
+                                    if (rvDetail != null && rvDetail.ContainsFlag(Affix.CompoundForbidFlag))
                                     {
                                         continue;
                                     }
 
-                                    if (rv != null && !huMovRule)
+                                    if (rvDetail != null && !huMovRule)
                                     {
-                                        rv = CompoundCheckWordSearch(
-                                            searchEntryDetails,
-                                            scpdPatternEntry,
-                                            ref words,
-                                            rwords,
-                                            wordNum == 0,
-                                            onlycpdrule,
-                                            conditionBypassAllCompounds)?.ToEntry(searchEntryWord);
+                                        if (onlycpdrule)
+                                        {
+                                            if (!Affix.CompoundRules.IsEmpty && (wordNum == 0 || words != null))
+                                            {
+                                                rvDetail = CompoundCheckWordSearch_OnlyCpdRule(
+                                                    searchEntryDetails,
+                                                    scpdPatternEntryCondition,
+                                                    ref words,
+                                                    rwords);
+                                            }
+                                            else
+                                            {
+                                                rvDetail = null;
+                                            }
+                                        }
+                                        else if (conditionBypassAllCompounds)
+                                        {
+                                            rvDetail = null;
+                                        }
+                                        else
+                                        {
+                                            if (words == null)
+                                            {
+                                                rvDetail = CompoundCheckWordSearch_NormalNoWordList(
+                                                    searchEntryDetails,
+                                                    scpdPatternEntryCondition,
+                                                    wordNum == 0 ? Affix.CompoundBegin : Affix.CompoundMiddle);
+                                            }
+                                            else if (wordNum == 0)
+                                            {
+                                                rvDetail = CompoundCheckWordSearch_NormalWithExistingWordList(
+                                                    searchEntryDetails,
+                                                    scpdPatternEntryCondition);
+                                            }
+                                            else
+                                            {
+                                                rvDetail = null;
+                                            }
+                                        }
                                     }
+
+                                    rv = rvDetail?.ToEntry(searchEntryWord);
                                 }
                                 else
                                 {
@@ -812,9 +786,9 @@ namespace WeCantSpell.Hunspell
                                     (
                                         scpd == 0
                                         ||
-                                        scpdPatternEntry.Condition.IsZero
+                                        scpdPatternEntryCondition.IsZero
                                         ||
-                                        rv.ContainsFlag(scpdPatternEntry.Condition)
+                                        rv.ContainsFlag(scpdPatternEntryCondition)
                                     )
                                     &&
                                     (
@@ -914,7 +888,7 @@ namespace WeCantSpell.Hunspell
                                         }
                                     }
 
-                                    rv = HomonymWordSearch(st.ToString().Substring(i), words, scpdPatternEntry?.Condition2 ?? default(FlagValue), scpd == 0);
+                                    rv = HomonymWordSearch(st.ToString().Substring(i), words, scpdPatternEntryCondition2, scpd == 0);
 
                                     if (rv != null)
                                     {
@@ -998,9 +972,9 @@ namespace WeCantSpell.Hunspell
                                             (
                                                 scpd == 0
                                                 ||
-                                                scpdPatternEntry.Condition2.IsZero
+                                                scpdPatternEntryCondition2.IsZero
                                                 ||
-                                                rv.ContainsFlag(scpdPatternEntry.Condition2)
+                                                rv.ContainsFlag(scpdPatternEntryCondition2)
                                             )
                                         )
                                         {
@@ -1064,9 +1038,9 @@ namespace WeCantSpell.Hunspell
                                                 scpd != 0
                                                 // test CHECKCOMPOUNDPATTERN conditions (allowed forms)
                                                 ? (
-                                                    scpdPatternEntry.Condition2.HasValue
+                                                    scpdPatternEntryCondition2.HasValue
                                                     &&
-                                                    !rv.ContainsFlag(scpdPatternEntry.Condition2)
+                                                    !rv.ContainsFlag(scpdPatternEntryCondition2)
                                                 )
                                                 // test CHECKCOMPOUNDPATTERN conditions (forbidden compounds)
                                                 : (
@@ -1752,25 +1726,6 @@ namespace WeCantSpell.Hunspell
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
             protected WordEntryDetail LookupFirstDetail(string word) => WordList.FindFirstEntryDetailByRootWord(word);
-
-            /// <summary>
-            /// Compound check patterns.
-            /// </summary>
-            private bool DefCompoundCheck(ref IncrementalWordList words, WordEntryDetail rv, IncrementalWordList def, bool all)
-            {
-                if (words == null)
-                {
-                    if (def != null && DefCompoundCheck(def, rv, all))
-                    {
-                        words = def;
-                        return true;
-                    }
-
-                    return false;
-                }
-
-                return DefCompoundCheck(words, rv, all);
-            }
 
             /// <summary>
             /// Compound check patterns.
