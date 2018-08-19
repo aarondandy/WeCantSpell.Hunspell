@@ -407,6 +407,11 @@ namespace WeCantSpell.Hunspell
                         do
                         {
                             var ph = morphPhonEnumerator.Current.Substring(MorphologicalTags.Phon.Length);
+                            if (ph.Length == 0)
+                            {
+                                continue;
+                            }
+
                             // when the ph: field ends with the character *,
                             // strip last character of the pattern and the replacement
                             // to match in REP suggestions also at character changes,
@@ -419,14 +424,38 @@ namespace WeCantSpell.Hunspell
                                 {
                                     Builder.PhoneticReplacements.Add(new SingleReplacement(ph.Substring(0, ph.Length-2), word.Substring(0, word.Length-1), ReplacementValueType.Med));
                                 }
-
-                                // NOTE: it may be a but that there is no else case for these `if`s
                             }
-                            else if (ph.Length != 0)
+
+                            // capitalize lowercase pattern for capitalized words to support
+                            // good suggestions also for capitalized misspellings, eg.
+                            // Wednesday ph:wendsay
+                            // results wendsay -> Wednesday and Wendsay -> Wednesday, too.
+                            if (capType == CapitalizationType.Init)
                             {
-                                Builder.PhoneticReplacements.Add(new SingleReplacement(ph, word, ReplacementValueType.Med));
+                                var phCapitalized = HunspellTextFunctions.MakeInitCap(ph, Affix.Culture.TextInfo);
+                                if (phCapitalized.Length != 0)
+                                {
+                                    // add also lowercase word in the case of German or
+                                    // Hungarian to support lowercase suggestions lowercased by
+                                    // compound word generation or derivational suffixes
+                                    // (for example by adjectival suffix "-i" of geographical
+                                    // names in Hungarian:
+                                    // Massachusetts ph:messzecsuzec
+                                    // messzecsuzeci -> massachusettsi (adjective)
+                                    // For lowercasing by conditional PFX rules, see
+                                    // tests/germancompounding test example or the
+                                    // Hungarian dictionary.)
+                                    if (Affix.IsGerman || Affix.IsHungarian)
+                                    {
+                                        var wordpartLower = HunspellTextFunctions.MakeAllSmall(word, Affix.Culture.TextInfo);
+                                        Builder.PhoneticReplacements.Add(new SingleReplacement(ph, wordpartLower, ReplacementValueType.Med));
+                                    }
+
+                                    Builder.PhoneticReplacements.Add(new SingleReplacement(phCapitalized, word, ReplacementValueType.Med));
+                                }
                             }
 
+                            Builder.PhoneticReplacements.Add(new SingleReplacement(ph, word, ReplacementValueType.Med));
                         }
                         while (morphPhonEnumerator.MoveNext());
                     }
