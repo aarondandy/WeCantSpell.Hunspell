@@ -164,6 +164,35 @@ namespace WeCantSpell.Hunspell
                             }
                         }
                     }
+
+                    // other patterns (break at first break point)
+                    foreach (var breakEntry in Affix.BreakPoints)
+                    {
+                        var found = scw.IndexOfOrdinal(breakEntry);
+                        var remainingLength = scw.Length - breakEntry.Length;
+                        if (found > 0 && found < remainingLength)
+                        {
+                            if (!Check(scw.Substring(found + breakEntry.Length)))
+                            {
+                                continue;
+                            }
+
+                            // examine 2 sides of the break point
+                            if (Check(scw.Substring(0, found)))
+                            {
+                                return new SpellCheckResult(root, resultType, true);
+                            }
+
+                            // LANG_hu: spec. dash rule
+                            if (Affix.IsHungarian && "-".Equals(breakEntry, StringComparison.Ordinal))
+                            {
+                                if (Check(scw.Substring(0, found + 1)))
+                                {
+                                    return new SpellCheckResult(root, resultType, true);
+                                }
+                            }
+                        }
+                    }
                 }
 
                 return new SpellCheckResult(root, resultType, false);
