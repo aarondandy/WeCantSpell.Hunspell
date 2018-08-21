@@ -412,6 +412,21 @@ namespace WeCantSpell.Hunspell
                                 continue;
                             }
 
+                            string wordpart;
+                            // dictionary based REP replacement, separated by "->"
+                            // for example "pretty ph:prity ph:priti->pretti" to handle
+                            // both prity -> pretty and pritier -> prettiest suggestions.
+                            int strippatt = ph.IndexOfOrdinal("->");
+                            if (strippatt > 0 && strippatt < (ph.Length - 2))
+                            {
+                                wordpart = ph.Substring(strippatt + 2);
+                                ph = ph.Substring(0, strippatt);
+                            }
+                            else
+                            {
+                                wordpart = word;
+                            }
+
                             // when the ph: field ends with the character *,
                             // strip last character of the pattern and the replacement
                             // to match in REP suggestions also at character changes,
@@ -420,9 +435,10 @@ namespace WeCantSpell.Hunspell
                             // prity->pretty and pritiest->prettiest suggestions.
                             if (ph.EndsWith('*'))
                             {
-                                if (ph.Length > 2 && word.Length > 1)
+                                if (ph.Length > 2 && wordpart.Length > 1)
                                 {
-                                    Builder.PhoneticReplacements.Add(new SingleReplacement(ph.Substring(0, ph.Length-2), word.Substring(0, word.Length-1), ReplacementValueType.Med));
+                                    ph = ph.Substring(0, ph.Length - 2);
+                                    wordpart = wordpart.Substring(0, word.Length - 1);
                                 }
                             }
 
@@ -447,15 +463,15 @@ namespace WeCantSpell.Hunspell
                                     // Hungarian dictionary.)
                                     if (Affix.IsGerman || Affix.IsHungarian)
                                     {
-                                        var wordpartLower = HunspellTextFunctions.MakeAllSmall(word, Affix.Culture.TextInfo);
+                                        var wordpartLower = HunspellTextFunctions.MakeAllSmall(wordpart, Affix.Culture.TextInfo);
                                         Builder.PhoneticReplacements.Add(new SingleReplacement(ph, wordpartLower, ReplacementValueType.Med));
                                     }
 
-                                    Builder.PhoneticReplacements.Add(new SingleReplacement(phCapitalized, word, ReplacementValueType.Med));
+                                    Builder.PhoneticReplacements.Add(new SingleReplacement(phCapitalized, wordpart, ReplacementValueType.Med));
                                 }
                             }
 
-                            Builder.PhoneticReplacements.Add(new SingleReplacement(ph, word, ReplacementValueType.Med));
+                            Builder.PhoneticReplacements.Add(new SingleReplacement(ph, wordpart, ReplacementValueType.Med));
                         }
                         while (morphPhonEnumerator.MoveNext());
                     }
