@@ -1853,7 +1853,7 @@ namespace WeCantSpell.Hunspell
 
             private bool CompoundWordPairCheck(StringSlice wordSlice)
             {
-                if (wordSlice.Length < 2)
+                if (wordSlice.Length <= 2)
                 {
                     return false;
                 }
