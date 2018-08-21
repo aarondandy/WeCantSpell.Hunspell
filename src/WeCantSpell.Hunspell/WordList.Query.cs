@@ -549,7 +549,7 @@ namespace WeCantSpell.Hunspell
 
                                     // forbid dictionary stems with COMPOUNDFORBIDFLAG in
                                     // compound words, overriding the effect of COMPOUNDPERMITFLAG
-                                    if (rvDetail != null && rvDetail.ContainsFlag(Affix.CompoundForbidFlag))
+                                    if (rvDetail != null && rvDetail.ContainsFlag(Affix.CompoundForbidFlag) && !huMovRule)
                                     {
                                         continue;
                                     }
