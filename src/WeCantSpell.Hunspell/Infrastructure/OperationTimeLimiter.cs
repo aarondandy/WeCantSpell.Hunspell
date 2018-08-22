@@ -10,6 +10,9 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 queriesToTriggerCheck,
                 timeLimitInMs);
 
+        public static OperationTimeLimiter Create(int timeLimitInMs) =>
+            Create(timeLimitInMs, 0);
+
         private OperationTimeLimiter(
             long operationStartTime,
             int queriesToTriggerCheck,

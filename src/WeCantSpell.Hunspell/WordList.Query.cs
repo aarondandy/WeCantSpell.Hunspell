@@ -42,6 +42,11 @@ namespace WeCantSpell.Hunspell
 
             protected const int MaxPhoneTUtf8Len = MaxPhoneTLen * 4;
 
+            /// <summary>
+            /// Max ~1/4 sec (process time on Linux) for a time consuming function.
+            /// </summary>
+            protected const int TimeLimitCompoundCheckMs = 1000 / 4;
+
             public string WordToCheck { get; private set; }
 
             public WordList WordList { get; }
@@ -76,6 +81,11 @@ namespace WeCantSpell.Hunspell
             /// Previous suffix for counting syllables of the suffix.
             /// </summary>
             private string SuffixAppend { get; set; }
+
+            /// <summary>
+            /// Used to abort long running compound check calls.
+            /// </summary>
+            private OperationTimeLimiter CompoundCheckTimeLimiter { get; set; }
 
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -456,6 +466,22 @@ namespace WeCantSpell.Hunspell
 
                 var oldwords = words;
                 var len = word.Length;
+
+                if (wordNum <= 0)
+                {
+                    if (CompoundCheckTimeLimiter == null)
+                    {
+                        CompoundCheckTimeLimiter = OperationTimeLimiter.Create(TimeLimitCompoundCheckMs);
+                    }
+                }
+                else if (wordNum >= 5)
+                {
+                    if ((CompoundCheckTimeLimiter?.QueryForExpiration()).GetValueOrDefault())
+                    {
+                        CompoundCheckTimeLimiter = null;
+                    }
+                }
+
                 var cmin = Affix.CompoundMin;
                 var cmax = word.Length - cmin + 1;
 
@@ -478,6 +504,11 @@ namespace WeCantSpell.Hunspell
 
                         do // simplified checkcompoundpattern loop
                         {
+                            if (CompoundCheckTimeLimiter == null)
+                            {
+                                return null;
+                            }
+
                             PatternEntry scpdPatternEntry;
                             FlagValue scpdPatternEntryCondition;
                             FlagValue scpdPatternEntryCondition2;
