@@ -537,6 +537,11 @@ namespace WeCantSpell.Hunspell
             /// <summary>
             /// perhaps we doubled two characters (pattern aba -> ababa, for example vacation -> vacacation)
             /// </summary>
+            /// <remarks>
+            /// (for example vacation -> vacacation)
+            /// The recognized pattern with regex back-references:
+            /// "(.)(.)\1\2\1" or "..(.)(.)\1\2"
+            /// </remarks>
             private int DoubleTwoChars(List<string> wlst, string word, bool cpdSuggest)
             {
                 if (word.Length < 5)
@@ -550,7 +555,7 @@ namespace WeCantSpell.Hunspell
                     if (word[i] == word[i - 2])
                     {
                         state++;
-                        if (state == 3)
+                        if (state == 3 || (state == 2 && i >= 4))
                         {
                             TestSug(wlst, StringEx.ConcatString(word, 0, i - 1, word, i + 1), cpdSuggest);
                             state = 0;
