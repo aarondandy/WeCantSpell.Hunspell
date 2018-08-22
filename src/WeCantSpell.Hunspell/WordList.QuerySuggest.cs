@@ -23,6 +23,8 @@ namespace WeCantSpell.Hunspell
 
             private const int MaxPlusTimer = 100;
 
+            private const int MaxCharDistance = 4;
+
             public QuerySuggest(string word, WordList wordList)
                 : base(word, wordList)
             {
@@ -624,7 +626,8 @@ namespace WeCantSpell.Hunspell
                     candidate.Clear();
                     candidate.Append(word);
 
-                    for (var q = p + 1; q < candidate.Length && q - p < 10; q++)
+                    var qMax = Math.Min(MaxCharDistance + p + 1, candidate.Length);
+                    for (var q = p + 1; q < qMax; q++)
                     {
                         candidate.Swap(q, q - 1);
 
@@ -642,7 +645,8 @@ namespace WeCantSpell.Hunspell
                     candidate.Clear();
                     candidate.Append(word);
 
-                    for (var q = p - 1; q >= 0 && p - q < 10; q--)
+                    var qMin = Math.Max(p - MaxCharDistance, 0);
+                    for (var q = p - 1; q >= qMin; q--)
                     {
                         candidate.Swap(q, q + 1);
 
@@ -775,15 +779,20 @@ namespace WeCantSpell.Hunspell
                 for (var p = 0; p < candidate.Length; p++)
                 {
                     var oldp = candidate[p];
-                    for (var q = p + 1; q < candidate.Length; q++)
+                    var qMax = Math.Min(candidate.Length, p + MaxCharDistance + 1);
+                    var pLow = p - 1;
+                    var pHigh = p + 1;
+                    for (var q = Math.Max(0, p - MaxCharDistance); q < qMax; q++)
                     {
-                        var oldq = candidate[q];
-
-                        candidate[p] = oldq;
-                        candidate[q] = oldp;
-                        TestSug(wlst, candidate.ToString(), cpdSuggest);
-                        candidate[q] = oldq;
-                        candidate[p] = oldp;
+                        if (q < pLow || q > pHigh)
+                        {
+                            var oldq = candidate[q];
+                            candidate[p] = oldq;
+                            candidate[q] = oldp;
+                            TestSug(wlst, candidate.ToString(), cpdSuggest);
+                            candidate[q] = oldq;
+                            candidate[p] = oldp;
+                        }
                     }
                 }
 
