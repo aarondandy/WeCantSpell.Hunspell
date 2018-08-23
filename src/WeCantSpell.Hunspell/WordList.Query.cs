@@ -44,6 +44,8 @@ namespace WeCantSpell.Hunspell
 
             protected const int TimeLimitCompoundCheckMs = 1000 / 20;
 
+            protected const int TimeLimitGlobalMs = 1000 / 4;
+
             public string WordToCheck { get; private set; }
 
             public WordList WordList { get; }
@@ -83,6 +85,8 @@ namespace WeCantSpell.Hunspell
             /// Used to abort long running compound check calls.
             /// </summary>
             private OperationTimeLimiter CompoundCheckTimeLimiter;
+
+            protected OperationTimeLimiter GlobalTimeLimiter;
 
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

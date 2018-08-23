@@ -37,7 +37,9 @@ namespace WeCantSpell.Hunspell
             {
             }
 
-            public List<string> Suggest()
+            public List<string> Suggest() => Suggest(WordToCheck);
+
+            private List<string> Suggest(string word)
             {
                 var slst = new List<string>();
 
@@ -46,7 +48,6 @@ namespace WeCantSpell.Hunspell
                     return slst;
                 }
 
-                var word = WordToCheck;
                 var onlyCompoundSuggest = false;
 
                 // process XML input of the simplified API (see manual)
@@ -73,6 +74,15 @@ namespace WeCantSpell.Hunspell
                     return slst;
                 }
 
+                if (GlobalTimeLimiter == null)
+                {
+                    GlobalTimeLimiter = OperationTimeLimiter.Create(TimeLimitGlobalMs);
+                }
+                else
+                {
+                    GlobalTimeLimiter.Reset();
+                }
+
                 var textInfo = TextInfo;
 
                 // check capitalized form for FORCEUCASE
@@ -92,23 +102,50 @@ namespace WeCantSpell.Hunspell
                 if (capType == CapitalizationType.None)
                 {
                     good |= Suggest(slst, scw, ref onlyCompoundSuggest);
+
+                    if (GlobalTimeLimiter.QueryForExpiration())
+                    {
+                        return slst;
+                    }
+
                     if (abbv != 0)
                     {
                         var wspace = scw + ".";
                         good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
+
+                        if (GlobalTimeLimiter.QueryForExpiration())
+                        {
+                            return slst;
+                        }
                     }
                 }
                 else if (capType == CapitalizationType.Init)
                 {
                     capWords = true;
                     good |= Suggest(slst, scw, ref onlyCompoundSuggest);
+
+                    if (GlobalTimeLimiter.QueryForExpiration())
+                    {
+                        return slst;
+                    }
+
                     good |= Suggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), ref onlyCompoundSuggest);
+
+                    if (GlobalTimeLimiter.QueryForExpiration())
+                    {
+                        return slst;
+                    }
                 }
                 else if (capType == CapitalizationType.Huh || capType == CapitalizationType.HuhInit)
                 {
                     capWords = capType == CapitalizationType.HuhInit;
 
                     good |= Suggest(slst, scw, ref onlyCompoundSuggest);
+
+                    if (GlobalTimeLimiter.QueryForExpiration())
+                    {
+                        return slst;
+                    }
 
                     // something.The -> something. The
                     var dotPos = scw.IndexOf('.');
@@ -125,6 +162,11 @@ namespace WeCantSpell.Hunspell
                     {
                         // TheOpenOffice.org -> The OpenOffice.org
                         good |= Suggest(slst, HunspellTextFunctions.MakeInitSmall(scw, textInfo), ref onlyCompoundSuggest);
+
+                        if (GlobalTimeLimiter.QueryForExpiration())
+                        {
+                            return slst;
+                        }
                     }
 
                     var wspace = HunspellTextFunctions.MakeAllSmall(scw, textInfo);
@@ -136,6 +178,11 @@ namespace WeCantSpell.Hunspell
                     var prevns = slst.Count;
                     good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
+                    if (GlobalTimeLimiter.QueryForExpiration())
+                    {
+                        return slst;
+                    }
+
                     if (capType == CapitalizationType.HuhInit)
                     {
                         wspace = HunspellTextFunctions.MakeInitCap(wspace, textInfo);
@@ -145,6 +192,11 @@ namespace WeCantSpell.Hunspell
                         }
 
                         good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
+
+                        if (GlobalTimeLimiter.QueryForExpiration())
+                        {
+                            return slst;
+                        }
                     }
 
                     // aNew -> "a New" (instead of "a new")
@@ -174,6 +226,12 @@ namespace WeCantSpell.Hunspell
                 {
                     var wspace = HunspellTextFunctions.MakeAllSmall(scw, textInfo);
                     good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
+
+                    if (GlobalTimeLimiter.QueryForExpiration())
+                    {
+                        return slst;
+                    }
+
                     if (Affix.KeepCase.HasValue && Check(wspace))
                     {
                         InsertSuggestion(slst, wspace);
@@ -181,6 +239,12 @@ namespace WeCantSpell.Hunspell
 
                     wspace = HunspellTextFunctions.MakeInitCap(wspace, textInfo);
                     good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
+
+                    if (GlobalTimeLimiter.QueryForExpiration())
+                    {
+                        return slst;
+                    }
+
                     for (var j = 0; j < slst.Count; j++)
                     {
                         slst[j] = HunspellTextFunctions.MakeAllCap(slst[j], textInfo).Replace("ß", "SS");
@@ -234,10 +298,16 @@ namespace WeCantSpell.Hunspell
                     {
                         var oldns = slst.Count;
                         NGramSuggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), capType);
+
                         for (var j = oldns; j < slst.Count; j++)
                         {
                             slst[j] = HunspellTextFunctions.MakeAllCap(slst[j], textInfo);
                         }
+                    }
+
+                    if (GlobalTimeLimiter.QueryForExpiration())
+                    {
+                        return slst;
                     }
                 }
 
@@ -403,8 +473,6 @@ namespace WeCantSpell.Hunspell
                     list[0] = insertValue;
                 }
             }
-
-            private List<string> Suggest(string word) => new QuerySuggest(word, WordList).Suggest();
 
             /// <summary>
             /// Generate suggestions for a misspelled word
