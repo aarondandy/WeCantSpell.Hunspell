@@ -37,7 +37,9 @@ namespace WeCantSpell.Hunspell
         {
         }
 
-        public bool Contains(char value) => Array.BinarySearch(items, value) >= 0;
+        public bool Contains(char value) =>
+            // TODO: possible to optimize with a binary mask
+            Array.BinarySearch(items, value) >= 0;
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
