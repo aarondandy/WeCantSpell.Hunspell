@@ -214,8 +214,6 @@ namespace WeCantSpell.Hunspell.Tests
                 actualText.Should().Be(expectedText);
             }
 
-
-
             [Fact]
             public void untested_suggestion_files_should_not_be_found()
             {

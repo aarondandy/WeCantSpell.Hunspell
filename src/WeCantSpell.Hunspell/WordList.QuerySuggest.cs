@@ -25,6 +25,13 @@ namespace WeCantSpell.Hunspell
 
             private const int MaxCharDistance = 4;
 
+            private const int TimeLimitCompoundSuggestMs = 1000 / 10;
+
+            /// <summary>
+            /// Used to abort long running compound check calls.
+            /// </summary>
+            private OperationTimeLimiter CompoundSuggestTimeLimiter;
+
             public QuerySuggest(string word, WordList wordList)
                 : base(word, wordList)
             {
@@ -420,8 +427,15 @@ namespace WeCantSpell.Hunspell
                     word = word.Reverse();
                 }
 
+                if (CompoundSuggestTimeLimiter == null)
+                {
+                    CompoundSuggestTimeLimiter = OperationTimeLimiter.Create(TimeLimitCompoundSuggestMs);
+                }
+
                 do
                 {
+                    CompoundSuggestTimeLimiter.Reset();
+
                     // limit compound suggestion
                     if (cpdSuggest)
                     {
@@ -452,10 +466,20 @@ namespace WeCantSpell.Hunspell
                         }
                     }
 
+                    if (CompoundSuggestTimeLimiter.QueryForExpiration())
+                    {
+                        return goodSuggestion;
+                    }
+
                     // perhaps we made chose the wrong char from a related set
                     if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                     {
                         MapChars(slst, word, cpdSuggest);
+                    }
+
+                    if (CompoundSuggestTimeLimiter.QueryForExpiration())
+                    {
+                        return goodSuggestion;
                     }
 
                     // only suggest compound words when no other suggestion
@@ -470,10 +494,20 @@ namespace WeCantSpell.Hunspell
                         SwapChar(slst, word, cpdSuggest);
                     }
 
+                    if (CompoundSuggestTimeLimiter.QueryForExpiration())
+                    {
+                        return goodSuggestion;
+                    }
+
                     // did we swap the order of non adjacent chars by mistake
                     if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                     {
                         LongSwapChar(slst, word, cpdSuggest);
+                    }
+
+                    if (CompoundSuggestTimeLimiter.QueryForExpiration())
+                    {
+                        return goodSuggestion;
                     }
 
                     // did we just hit the wrong key in place of a good char (case and keyboard)
@@ -482,10 +516,20 @@ namespace WeCantSpell.Hunspell
                         BadCharKey(slst, word, cpdSuggest);
                     }
 
+                    if (CompoundSuggestTimeLimiter.QueryForExpiration())
+                    {
+                        return goodSuggestion;
+                    }
+
                     // did we add a char that should not be there
                     if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                     {
                         ExtraChar(slst, word, cpdSuggest);
+                    }
+
+                    if (CompoundSuggestTimeLimiter.QueryForExpiration())
+                    {
+                        return goodSuggestion;
                     }
 
                     // did we forgot a char
@@ -494,10 +538,20 @@ namespace WeCantSpell.Hunspell
                         ForgotChar(slst, word, cpdSuggest);
                     }
 
+                    if (CompoundSuggestTimeLimiter.QueryForExpiration())
+                    {
+                        return goodSuggestion;
+                    }
+
                     // did we move a char
                     if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                     {
                         MoveChar(slst, word, cpdSuggest);
+                    }
+
+                    if (CompoundSuggestTimeLimiter.QueryForExpiration())
+                    {
+                        return goodSuggestion;
                     }
 
                     // did we just hit the wrong key in place of a good char
@@ -506,10 +560,20 @@ namespace WeCantSpell.Hunspell
                         BadChar(slst, word, cpdSuggest);
                     }
 
+                    if (CompoundSuggestTimeLimiter.QueryForExpiration())
+                    {
+                        return goodSuggestion;
+                    }
+
                     // did we double two characters
                     if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                     {
                         DoubleTwoChars(slst, word, cpdSuggest);
+                    }
+
+                    if (CompoundSuggestTimeLimiter.QueryForExpiration())
+                    {
+                        return goodSuggestion;
                     }
 
                     // perhaps we forgot to hit space and two words ran together
@@ -520,6 +584,11 @@ namespace WeCantSpell.Hunspell
                     if (!cpdSuggest || (!Affix.NoSplitSuggestions && slst.Count < sugLimit))
                     {
                         goodSuggestion = TwoWords(slst, word, cpdSuggest, goodSuggestion);
+                    }
+
+                    if (CompoundSuggestTimeLimiter.QueryForExpiration())
+                    {
+                        return goodSuggestion;
                     }
                 }
                 while (!noCompoundTwoWords && IntEx.InversePostfixIncrement(ref cpdSuggest) && !goodSuggestion);

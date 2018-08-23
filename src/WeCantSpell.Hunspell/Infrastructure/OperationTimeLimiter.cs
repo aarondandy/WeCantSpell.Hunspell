@@ -32,11 +32,11 @@ namespace WeCantSpell.Hunspell.Infrastructure
             HasExpired = false;
         }
 
-        private long OperationStartTime { get; }
+        private long OperationStartTime;
 
-        private int QueriesToTriggerCheck { get; }
+        private int QueriesToTriggerCheck;
 
-        private int TimeLimitInMs { get; }
+        private int TimeLimitInMs;
 
         public int QueryCounter { get; private set; }
 
@@ -57,6 +57,13 @@ namespace WeCantSpell.Hunspell.Infrastructure
             }
 
             return HasExpired;
+        }
+
+        public void Reset()
+        {
+            OperationStartTime = Environment.TickCount;
+            QueryCounter = QueriesToTriggerCheck;
+            HasExpired = false;
         }
 
         private void HandleQueryCounterTrigger()

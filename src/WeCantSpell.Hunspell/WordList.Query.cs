@@ -42,10 +42,7 @@ namespace WeCantSpell.Hunspell
 
             protected const int MaxPhoneTUtf8Len = MaxPhoneTLen * 4;
 
-            /// <summary>
-            /// Max ~1/4 sec (process time on Linux) for a time consuming function.
-            /// </summary>
-            protected const int TimeLimitCompoundCheckMs = 1000 / 4;
+            protected const int TimeLimitCompoundCheckMs = 1000 / 20;
 
             public string WordToCheck { get; private set; }
 
@@ -85,7 +82,7 @@ namespace WeCantSpell.Hunspell
             /// <summary>
             /// Used to abort long running compound check calls.
             /// </summary>
-            private OperationTimeLimiter CompoundCheckTimeLimiter { get; set; }
+            private OperationTimeLimiter CompoundCheckTimeLimiter;
 
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
