@@ -475,12 +475,9 @@ namespace WeCantSpell.Hunspell
                         CompoundCheckTimeLimiter = OperationTimeLimiter.Create(TimeLimitCompoundCheckMs);
                     }
                 }
-                else if (wordNum >= 5)
+                else if ((CompoundCheckTimeLimiter?.QueryForExpiration()).GetValueOrDefault())
                 {
-                    if ((CompoundCheckTimeLimiter?.QueryForExpiration()).GetValueOrDefault())
-                    {
-                        CompoundCheckTimeLimiter = null;
-                    }
+                    CompoundCheckTimeLimiter = null;
                 }
 
                 var cmin = Affix.CompoundMin;
