@@ -9,9 +9,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static FileStream OpenReadFileStream(string filePath) =>
             new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, DefaultBufferSize, FileOptions.SequentialScan);
 
-#if !NO_ASYNC
         public static FileStream OpenAsyncReadFileStream(string filePath) =>
             new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, DefaultBufferSize, FileOptions.Asynchronous | FileOptions.SequentialScan);
-#endif
     }
 }

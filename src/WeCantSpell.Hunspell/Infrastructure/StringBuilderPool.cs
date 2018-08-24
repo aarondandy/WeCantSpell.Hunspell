@@ -60,11 +60,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
             if (builder.Capacity <= MaxCachedBuilderCapacity)
             {
-#if NO_VOLATILE
-                Cache = builder;
-#else
                 Volatile.Write(ref Cache, builder);
-#endif
             }
         }
 

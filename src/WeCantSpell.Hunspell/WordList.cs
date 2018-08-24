@@ -1,16 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using WeCantSpell.Hunspell.Infrastructure;
 using System.Linq;
+using System.Threading.Tasks;
+using WeCantSpell.Hunspell.Infrastructure;
 
 #if !NO_INLINE
 using System.Runtime.CompilerServices;
-#endif
-
-#if !NO_ASYNC
-using System.Threading;
-using System.Threading.Tasks;
 #endif
 
 namespace WeCantSpell.Hunspell
@@ -28,8 +24,6 @@ namespace WeCantSpell.Hunspell
         public static WordList CreateFromFiles(string dictionaryFilePath, string affixFilePath) =>
             WordListReader.ReadFile(dictionaryFilePath, affixFilePath);
 
-#if !NO_ASYNC
-
         public static async Task<WordList> CreateFromStreamsAsync(Stream dictionaryStream, Stream affixStream) =>
             await WordListReader.ReadAsync(dictionaryStream, affixStream).ConfigureAwait(false);
 
@@ -38,8 +32,6 @@ namespace WeCantSpell.Hunspell
 
         public static async Task<WordList> CreateFromFilesAsync(string dictionaryFilePath, string affixFilePath) =>
             await WordListReader.ReadFileAsync(dictionaryFilePath, affixFilePath).ConfigureAwait(false);
-
-#endif
 
         public static WordList CreateFromWords(IEnumerable<string> words) =>
             CreateFromWords(words, affix: null);

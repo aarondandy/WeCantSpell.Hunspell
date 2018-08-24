@@ -2,12 +2,12 @@
 
   <PropertyGroup>
     <AssemblyTitle>WeCantSpell.Hunspell</AssemblyTitle>
-    <TargetFrameworks>netstandard1.3;net45;net35</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard1.3;net45</TargetFrameworks>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyName>WeCantSpell.Hunspell</AssemblyName>
     <PackageId>WeCantSpell.Hunspell</PackageId>
-    <Description>A port of Hunspell v1 for .NET and .NET Standard</Description>
+    <Description>A port of Hunspell v1 for .NET, .NET Standard, and .NET Core.</Description>
     <PackageTags>spell;check;spell-check;spelling;hunspell;we-cant-spell</PackageTags>
     <PackageProjectUrl>https://github.com/aarondandy/WeCantSpell.Hunspell/</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
@@ -19,18 +19,6 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net35' ">
-    <DefineConstants>$(DefineConstants);NO_METHODIMPL;NO_INLINE;NO_READONLYCOLLECTIONS;NO_ASYNC;NO_COMPAREINFO_HASHCODE;NO_CULTURENOTFOUNDEXCEPTION;NO_STRINGBUILDER_CLEAR;NO_STRINGISNULLORWHITESPACE;NO_ARRAY_EMPTY;NO_VOLATILE</DefineConstants>
-    <FrameworkPathOverride Condition="'$(FrameworkPathOverride35)' != ''">$(FrameworkPathOverride35)</FrameworkPathOverride>
-  </PropertyGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net35' ">
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
-    <Reference Include="System.Xml.Linq" />
-  </ItemGroup>
-
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <DefineConstants>$(DefineConstants);NO_COMPAREINFO_HASHCODE;NO_ARRAY_EMPTY</DefineConstants>
   </PropertyGroup>
@@ -38,6 +26,10 @@
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' ">
       <DefineConstants>$(DefineConstants);NO_ISO3_LANG</DefineConstants>
   </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+        <DefineConstants>$(DefineConstants)</DefineConstants>
+    </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>

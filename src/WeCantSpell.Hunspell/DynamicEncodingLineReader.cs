@@ -1,13 +1,10 @@
-﻿using WeCantSpell.Hunspell.Infrastructure;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-
-#if !NO_ASYNC
 using System.Threading.Tasks;
-#endif
+using WeCantSpell.Hunspell.Infrastructure;
 
 #if !NO_INLINE
 using System.Runtime.CompilerServices;
@@ -83,7 +80,6 @@ namespace WeCantSpell.Hunspell
             }
         }
 
-#if !NO_ASYNC
         public static async Task<IEnumerable<string>> ReadLinesAsync(string filePath, Encoding defaultEncoding)
         {
             if (filePath == null)
@@ -97,7 +93,6 @@ namespace WeCantSpell.Hunspell
                 return await reader.ReadLinesAsync().ConfigureAwait(false);
             }
         }
-#endif
 
         public string ReadLine()
         {
@@ -123,7 +118,6 @@ namespace WeCantSpell.Hunspell
             return ProcessLine(StringBuilderPool.GetStringAndReturn(builder));
         }
 
-#if !NO_ASYNC
         public async Task<string> ReadLineAsync()
         {
             if (!hasCheckedForPreamble)
@@ -147,7 +141,6 @@ namespace WeCantSpell.Hunspell
 
             return ProcessLine(StringBuilderPool.GetStringAndReturn(builder));
         }
-#endif
 
         private bool ProcessCharsForLine(StringBuilder builder)
         {
@@ -216,7 +209,6 @@ namespace WeCantSpell.Hunspell
             return false;
         }
 
-#if !NO_ASYNC
         private async Task<bool> ReadNextCharsAsync()
         {
             if (charBuffer == null || charBuffer.Length < maxSingleCharResultsCount)
@@ -247,7 +239,6 @@ namespace WeCantSpell.Hunspell
             charBufferUsedSize = 0;
             return false;
         }
-#endif
 
         private byte[] singleDecoderByteArray = new byte[1];
 
@@ -272,10 +263,8 @@ namespace WeCantSpell.Hunspell
         private bool ReadPreamble() =>
             HandlePreambleBytes(ReadBytes(MaxPreambleLengthInBytes));
 
-#if !NO_ASYNC
         private async Task<bool> ReadPreambleAsync() =>
             HandlePreambleBytes(await ReadBytesAsync(MaxPreambleLengthInBytes).ConfigureAwait(false));
-#endif
 
         private bool HandlePreambleBytes(byte[] possiblePreambleBytes)
         {
@@ -339,7 +328,6 @@ namespace WeCantSpell.Hunspell
             return result;
         }
 
-#if !NO_ASYNC
 
         private async Task<int> ReadByteAsync()
         {
@@ -369,7 +357,6 @@ namespace WeCantSpell.Hunspell
 
             return result;
         }
-#endif
 
         private int HandleReadByteIncrement()
         {
@@ -421,7 +408,6 @@ namespace WeCantSpell.Hunspell
             return byteBufferUsedSize != 0;
         }
 
-#if !NO_ASYNC
         private async Task<bool> PrepareBufferAsync()
         {
             if (buffer == null)
@@ -437,8 +423,7 @@ namespace WeCantSpell.Hunspell
             byteBufferUsedSize = await stream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
             return byteBufferUsedSize != 0;
         }
-#endif
-        
+
         private void RevertReadBytes(int count)
         {
             if (count == 0)

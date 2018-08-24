@@ -8,12 +8,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    public class ListWrapper<T> :
-#if NO_READONLYCOLLECTIONS
-        IEnumerable<T>
-#else
-        IReadOnlyList<T>
-#endif
+    public class ListWrapper<T> : IReadOnlyList<T>
     {
         protected ListWrapper(List<T> items)
         {

@@ -3,11 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using WeCantSpell.Hunspell.Infrastructure;
-
-#if !NO_ASYNC
 using System.Threading.Tasks;
-#endif
+using WeCantSpell.Hunspell.Infrastructure;
 
 #if !NO_INLINE
 using System.Runtime.CompilerServices;
@@ -42,7 +39,6 @@ namespace WeCantSpell.Hunspell
             }
         }
 
-#if !NO_ASYNC
         public static async Task<IEnumerable<string>> ReadLinesAsync(string filePath, Encoding encoding)
         {
             if (filePath == null)
@@ -56,19 +52,16 @@ namespace WeCantSpell.Hunspell
                 return await reader.ReadLinesAsync().ConfigureAwait(false);
             }
         }
-#endif
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public string ReadLine() => reader.ReadLine();
 
-#if !NO_ASYNC
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public Task<string> ReadLineAsync() => reader.ReadLineAsync();
-#endif
 
         public void Dispose()
         {

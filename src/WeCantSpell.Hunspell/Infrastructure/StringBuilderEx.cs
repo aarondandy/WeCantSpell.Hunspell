@@ -9,13 +9,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
 {
     static class StringBuilderEx
     {
-#if NO_STRINGBUILDER_CLEAR
-        public static StringBuilder Clear(this StringBuilder @this)
-        {
-            @this.Length = 0;
-            return @this;
-        }
-#endif
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -25,11 +18,11 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #if DEBUG
             if (indexA < 0 || indexA > @this.Length)
             {
-                throw new System.ArgumentOutOfRangeException(nameof(indexA));
+                throw new ArgumentOutOfRangeException(nameof(indexA));
             }
             if (indexB < 0 || indexB > @this.Length)
             {
-                throw new System.ArgumentOutOfRangeException(nameof(indexB));
+                throw new ArgumentOutOfRangeException(nameof(indexB));
             }
 #endif
 

@@ -1,14 +1,11 @@
 ﻿using System;
-using WeCantSpell.Hunspell.Infrastructure;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Globalization;
-
-#if !NO_ASYNC
 using System.Threading.Tasks;
-#endif
+using WeCantSpell.Hunspell.Infrastructure;
 
 #if !NO_INLINE
 using System.Runtime.CompilerServices;
@@ -42,7 +39,6 @@ namespace WeCantSpell.Hunspell
             get => Affix.Culture.TextInfo;
         }
 
-#if !NO_ASYNC
         public static async Task<WordList> ReadAsync(Stream dictionaryStream, Stream affixStream)
         {
             if (dictionaryStream == null)
@@ -143,7 +139,6 @@ namespace WeCantSpell.Hunspell
                 return await ReadAsync(stream, affix, builder).ConfigureAwait(false);
             }
         }
-#endif
 
         public static WordList Read(Stream dictionaryStream, Stream affixStream)
         {

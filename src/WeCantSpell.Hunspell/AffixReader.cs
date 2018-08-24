@@ -1,18 +1,15 @@
-﻿using WeCantSpell.Hunspell.Infrastructure;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using WeCantSpell.Hunspell.Infrastructure;
 
 #if !NO_INLINE
 using System.Runtime.CompilerServices;
-#endif
-
-#if !NO_ASYNC
-using System.Threading.Tasks;
 #endif
 
 namespace WeCantSpell.Hunspell
@@ -123,7 +120,6 @@ namespace WeCantSpell.Hunspell
 
         private EntryListType Initialized { get; set; } = EntryListType.None;
 
-#if !NO_ASYNC
         public static async Task<AffixConfig> ReadAsync(IHunspellLineReader reader, AffixConfig.Builder builder = null)
         {
             var readerInstance = new AffixReader(
@@ -149,7 +145,6 @@ namespace WeCantSpell.Hunspell
             await ReadToEndAsync().ConfigureAwait(false);
             AddDefaultBreakTableIfEmpty();
         }
-#endif
 
         public static AffixConfig Read(IHunspellLineReader reader, AffixConfig.Builder builder = null)
         {
@@ -177,7 +172,6 @@ namespace WeCantSpell.Hunspell
             AddDefaultBreakTableIfEmpty();
         }
 
-#if !NO_ASYNC
         public static async Task<AffixConfig> ReadAsync(Stream stream, AffixConfig.Builder builder = null)
         {
             if (stream == null)
@@ -202,7 +196,6 @@ namespace WeCantSpell.Hunspell
                 return await ReadAsync(stream, builder).ConfigureAwait(false);
             }
         }
-#endif
 
         public static AffixConfig Read(Stream stream, AffixConfig.Builder builder = null)
         {
@@ -526,11 +519,7 @@ namespace WeCantSpell.Hunspell
             {
                 return new CultureInfo(language);
             }
-#if NO_CULTURENOTFOUNDEXCEPTION
-            catch (ArgumentException)
-#else
             catch (CultureNotFoundException)
-#endif
             {
                 var dashIndex = language.IndexOf('-');
                 if (dashIndex > 0)
@@ -542,12 +531,10 @@ namespace WeCantSpell.Hunspell
                     return CultureInfo.InvariantCulture;
                 }
             }
-#if !NO_CULTURENOTFOUNDEXCEPTION
             catch (ArgumentException)
             {
                 return CultureInfo.InvariantCulture;
             }
-#endif
         }
 
         private bool TryParsePhone(StringSlice parameterText, List<PhoneticEntry> entries)

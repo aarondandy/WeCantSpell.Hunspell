@@ -1,9 +1,6 @@
 ﻿using System.Text;
-using WeCantSpell.Hunspell.Infrastructure;
-
-#if !NO_ASYNC
 using System.Threading.Tasks;
-#endif
+using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell
 {
@@ -41,9 +38,6 @@ namespace WeCantSpell.Hunspell
             return result;
         }
 
-#if !NO_ASYNC
         public Task<string> ReadLineAsync() => Task.FromResult(ReadLine());
-#endif
-
     }
 }
