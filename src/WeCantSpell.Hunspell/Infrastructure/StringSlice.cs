@@ -10,7 +10,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         IEquatable<string>,
         IEquatable<StringSlice>
     {
-        public static readonly StringSlice Empty = new StringSlice(string.Empty, 0, 0);
+        public static readonly StringSlice Empty = new StringSlice(string.Empty);
 
         public static implicit operator StringSlice(string text) => string.IsNullOrEmpty(text) ? Empty : new StringSlice(text);
 
@@ -188,7 +188,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public string ReplaceString(string oldValue, string newValue)
         {
-            var builder = StringBuilderPool.Get(this);
+            var builder = StringBuilderPool.Get(AsSpan());
             builder.Replace(oldValue, newValue);
             return StringBuilderPool.GetStringAndReturn(builder);
         }
@@ -207,7 +207,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
                     : c.ToString();
             }
 
-            var builder = StringBuilderPool.Get(this);
+            var builder = StringBuilderPool.Get(AsSpan());
             builder.Replace(oldValue, newValue);
             return StringBuilderPool.GetStringAndReturn(builder);
         }
@@ -228,7 +228,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public string ReverseString()
         {
-            var builder = StringBuilderPool.Get(this);
+            var builder = StringBuilderPool.Get(AsSpan());
             builder.Reverse();
             return StringBuilderPool.GetStringAndReturn(builder);
         }
@@ -245,6 +245,41 @@ namespace WeCantSpell.Hunspell.Infrastructure
             }
 #endif
             return Text[Offset];
+        }
+
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public ReadOnlySpan<char> AsSpan() => Text.AsSpan(Offset, Length);
+
+        public ReadOnlySpan<char> AsSpan(int startIndex)
+        {
+#if DEBUG
+            if (startIndex < 0 || startIndex >= Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(startIndex));
+            }
+#endif
+            return Text.AsSpan(Offset + startIndex, Length - startIndex);
+        }
+
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public ReadOnlySpan<char> AsSpan(int startIndex, int length)
+        {
+#if DEBUG
+            if (startIndex < 0 || startIndex >= Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(startIndex));
+            }
+            if (length > Length - startIndex)
+            {
+                throw new ArgumentOutOfRangeException(nameof(length));
+            }
+#endif
+
+            return Text.AsSpan(Offset + startIndex, length);
         }
     }
 }

@@ -67,9 +67,8 @@ namespace WeCantSpell.Hunspell
                     tempString = word;
                 }
 
-                CleanWord2(out string scw, tempString, out CapitalizationType capType, out int abbv);
-
-                if (scw.Length == 0)
+                var scw = CleanWord2(tempString, out CapitalizationType capType, out int abbv);
+                if (string.IsNullOrEmpty(scw))
                 {
                     return slst;
                 }
@@ -152,7 +151,7 @@ namespace WeCantSpell.Hunspell
                     if (
                         dotPos >= 0
                         &&
-                        HunspellTextFunctions.GetCapitalizationType(scw.Subslice(dotPos + 1), textInfo) == CapitalizationType.Init
+                        HunspellTextFunctions.GetCapitalizationType(scw.AsSpan(dotPos + 1), textInfo) == CapitalizationType.Init
                     )
                     {
                         InsertSuggestion(slst, scw.Insert(dotPos + 1, " "));
@@ -217,7 +216,7 @@ namespace WeCantSpell.Hunspell
                                     j,
                                     StringEx.ConcatString(
                                         toRemove, 0, spaceIndex + 1,
-                                        HunspellTextFunctions.MakeInitCap(toRemove.Subslice(spaceIndex + 1), textInfo)));
+                                        HunspellTextFunctions.MakeInitCap(toRemove.AsSpan(spaceIndex + 1), textInfo)));
                             }
                         }
                     }
@@ -1158,19 +1157,19 @@ namespace WeCantSpell.Hunspell
                 }
                 else
                 {
-                    rv = PrefixCheck(word, CompoundOptions.Not, default(FlagValue)); // only prefix, and prefix + suffix XXX
+                    rv = PrefixCheck(word, CompoundOptions.Not, default); // only prefix, and prefix + suffix XXX
                 }
 
                 var noSuffix = rv != null;
                 if (!noSuffix)
                 {
-                    rv = SuffixCheck(word, AffixEntryOptions.None, default(Affix<PrefixEntry>), default(FlagValue), default(FlagValue), CompoundOptions.Not); // only suffix
+                    rv = SuffixCheck(word, AffixEntryOptions.None, default, default, default, CompoundOptions.Not); // only suffix
                 }
 
                 if (Affix.ContClasses.HasItems && rv == null)
                 {
-                    rv = SuffixCheckTwoSfx(word, AffixEntryOptions.None, default(Affix<PrefixEntry>), default(FlagValue))
-                        ?? PrefixCheckTwoSfx(word, CompoundOptions.Not, default(FlagValue));
+                    rv = SuffixCheckTwoSfx(word, AffixEntryOptions.None, default, default)
+                        ?? PrefixCheckTwoSfx(word, CompoundOptions.Not, default);
                 }
 
                 // check forbidden words
@@ -2122,9 +2121,9 @@ namespace WeCantSpell.Hunspell
                     rv = null;
                 }
 
-                if (PrefixCheck(word, CompoundOptions.Begin, default(FlagValue)) == null)
+                if (PrefixCheck(word, CompoundOptions.Begin, default) == null)
                 {
-                    rv = SuffixCheck(word, AffixEntryOptions.None, default(Affix<PrefixEntry>), default(FlagValue), default(FlagValue), CompoundOptions.Not)?.Detail; // prefix+suffix, suffix
+                    rv = SuffixCheck(word, AffixEntryOptions.None, default, default, default, CompoundOptions.Not)?.Detail; // prefix+suffix, suffix
                 }
 
                 // check forbidden words

@@ -17,6 +17,7 @@
     <PackageLicenseUrl>https://raw.githubusercontent.com/aarondandy/WeCantSpell.Hunspell/master/license.txt</PackageLicenseUrl>
     <PackageReleaseNotes>Changelog can be found at https://github.com/aarondandy/WeCantSpell.Hunspell/blob/master/changelog.md</PackageReleaseNotes>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net45' ">
@@ -44,6 +45,10 @@
 
   <ItemGroup>
     <Compile Include="..\..\SharedAssemblyInfo.cs" Link="Properties\SharedAssemblyInfo.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Memory" Version="4.5.1" />
   </ItemGroup>
 
 </Project>

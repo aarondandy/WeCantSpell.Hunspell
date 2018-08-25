@@ -303,11 +303,11 @@ namespace WeCantSpell.Hunspell
                 }
                 else if (Affix.FlagMode == FlagMode.Uni)
                 {
-                    flags = Builder.Dedup(FlagValue.ParseFlags(HunspellTextFunctions.ReDecodeConvertedStringAsUtf8(parsed.Flags, Affix.Encoding), FlagMode.Char));
+                    flags = Builder.Dedup(FlagValue.ParseFlags(HunspellTextFunctions.ReDecodeConvertedStringAsUtf8(parsed.Flags.AsSpan(), Affix.Encoding), FlagMode.Char));
                 }
                 else
                 {
-                    flags = Builder.Dedup(FlagValue.ParseFlags(parsed.Flags, Affix.FlagMode));
+                    flags = Builder.Dedup(FlagValue.ParseFlags(parsed.Flags.AsSpan(), Affix.FlagMode));
                 }
             }
             else
@@ -342,7 +342,7 @@ namespace WeCantSpell.Hunspell
 
         private bool AddWord(string word, FlagSet flags, string[] morphs)
         {
-            var capType = HunspellTextFunctions.GetCapitalizationType(word, TextInfo);
+            var capType = HunspellTextFunctions.GetCapitalizationType(word.AsSpan(), TextInfo);
             return AddWord(word, flags, morphs, false, capType)
                 || AddWordCapitalized(word, flags, morphs, capType);
         }
@@ -590,7 +590,7 @@ namespace WeCantSpell.Hunspell
                     }
                 }
 
-                return default(ParsedWordLine);
+                return default;
             }
 
             private static int FindIndexOfFirstMorphByColonChar(string text, int index)

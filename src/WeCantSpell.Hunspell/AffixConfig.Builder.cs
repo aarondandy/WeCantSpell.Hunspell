@@ -497,7 +497,7 @@ namespace WeCantSpell.Hunspell
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            internal string Dedup(StringSlice value) =>
+            internal string Dedup(ReadOnlySpan<char> value) =>
                 StringDeduper.GetEqualOrAdd(value.ToString());
 
 #if !NO_INLINE

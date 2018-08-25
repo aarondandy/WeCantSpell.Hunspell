@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
 
 #if !NO_INLINE
 using System.Runtime.CompilerServices;
@@ -13,10 +14,10 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static bool TryParseInvariant(string text, out int value) =>
             int.TryParse(text, NumberStyles.Integer, InvariantNumberFormat, out value);
 
-        public static bool TryParseInvariant(StringSlice text, out int value) =>
+        public static bool TryParseInvariant(ReadOnlySpan<char> text, out int value) =>
             int.TryParse(text.ToString(), NumberStyles.Integer, InvariantNumberFormat, out value);
 
-        public static int? TryParseInvariant(StringSlice text) =>
+        public static int? TryParseInvariant(ReadOnlySpan<char> text) =>
             TryParseInvariant(text, out int value) ? (int?)value : null;
 
 #if !NO_INLINE

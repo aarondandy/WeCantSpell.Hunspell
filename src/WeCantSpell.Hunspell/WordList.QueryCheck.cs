@@ -35,7 +35,8 @@ namespace WeCantSpell.Hunspell
                     convertedWord = word;
                 }
 
-                if (!CleanWord2(out string scw, convertedWord, out CapitalizationType capType, out int abbv))
+                var scw = CleanWord2(convertedWord, out CapitalizationType capType, out int abbv);
+                if (string.IsNullOrEmpty(scw))
                 {
                     return new SpellCheckResult(false);
                 }
@@ -227,7 +228,7 @@ namespace WeCantSpell.Hunspell
                     // conversion may result in string with different len than before MakeAllSmall2 so re-scan
                     if (apos < scw.Length - 1)
                     {
-                        scw = StringEx.ConcatString(scw, 0, apos + 1, HunspellTextFunctions.MakeInitCap(scw.Subslice(apos + 1), textInfo));
+                        scw = StringEx.ConcatString(scw, 0, apos + 1, HunspellTextFunctions.MakeInitCap(scw.AsSpan(apos + 1), textInfo));
                         rv = CheckWord(scw, ref resultType, out root);
                         if (rv != null)
                         {

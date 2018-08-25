@@ -44,7 +44,7 @@ namespace WeCantSpell.Hunspell
             }
 #endif
 
-            var wordAfterPos = word.Subslice(pos);
+            var wordAfterPos = word.AsSpan(pos);
 
             foreach (var patternEntry in items)
             {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Text;
+using System.Runtime.InteropServices;
 
 #if !NO_INLINE
 using System.Runtime.CompilerServices;
@@ -46,7 +47,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return true;
         }
 
-        public static bool IsSubset(string s1, StringSlice s2)
+        public static bool IsSubset(string s1, ReadOnlySpan<char> s2)
         {
             if (s1.Length > s2.Length)
             {
@@ -177,7 +178,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
-        public static string MakeInitCap(StringSlice s, TextInfo textInfo)
+        public static string MakeInitCap(ReadOnlySpan<char> s, TextInfo textInfo)
         {
 #if DEBUG
             if (textInfo == null)
@@ -185,12 +186,12 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 throw new ArgumentNullException(nameof(textInfo));
             }
 #endif
-            if (s.Length == 0)
+            if (s.IsEmpty)
             {
                 return string.Empty;
             }
 
-            var actualFirstLetter = s.First();
+            var actualFirstLetter = s[0];
             var expectedFirstLetter = textInfo.ToUpper(actualFirstLetter);
             if (expectedFirstLetter == actualFirstLetter)
             {
@@ -255,7 +256,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return expectedFirstLetter.ToString();
             }
 
-            var builder = StringBuilderPool.Get(s, s.Length);
+            var builder = StringBuilderPool.Get(s);
             builder[0] = expectedFirstLetter;
             return StringBuilderPool.GetStringAndReturn(builder);
         }
@@ -298,34 +299,18 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
-        public static string ReDecodeConvertedStringAsUtf8(string decoded, Encoding encoding)
+        public static ReadOnlySpan<char> ReDecodeConvertedStringAsUtf8(ReadOnlySpan<char> decoded, Encoding encoding)
         {
             if (Encoding.UTF8.Equals(encoding))
             {
                 return decoded;
             }
 
-            var encodedBytes = encoding.GetBytes(decoded);
-            return Encoding.UTF8.GetString(encodedBytes, 0, encodedBytes.Length);
+            var encodedBytes = encoding.GetBytes(decoded.ToArray());
+            return Encoding.UTF8.GetString(encodedBytes, 0, encodedBytes.Length).AsSpan();
         }
 
-        public static string ReDecodeConvertedStringAsUtf8(StringSlice decoded, Encoding encoding)
-        {
-            if (Encoding.UTF8.Equals(encoding))
-            {
-                return decoded.ToString();
-            }
-            if (decoded.IsFullString)
-            {
-                return ReDecodeConvertedStringAsUtf8(decoded.Text, encoding);
-            }
-
-            var encodedBytes = new byte[encoding.GetMaxByteCount(decoded.Length)];
-            var byteEncodedCount = encoding.GetBytes(decoded.Text, decoded.Offset, decoded.Length, encodedBytes, 0);
-            return Encoding.UTF8.GetString(encodedBytes, 0, byteEncodedCount);
-        }
-
-        public static CapitalizationType GetCapitalizationType(StringSlice word, TextInfo textInfo)
+        public static CapitalizationType GetCapitalizationType(ReadOnlySpan<char> word, TextInfo textInfo)
         {
             if (word.IsEmpty)
             {
@@ -335,7 +320,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             var hasFoundMoreCaps = false;
             var firstIsUpper = false;
             var hasLower = false;
-            var c = word.First();
+            ref readonly var c = ref word[0];
             if (char.IsUpper(c))
             {
                 firstIsUpper = true;
@@ -345,10 +330,9 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 hasLower = true;
             }
 
-            var wordIndexLimit = word.Length + word.Offset;
-            for (int i = word.Offset + 1; i < wordIndexLimit; i++)
+            for (int i = 1; i < word.Length; i++)
             {
-                c = word.Text[i];
+                c = ref word[i];
 
                 if (!hasFoundMoreCaps && char.IsUpper(c))
                 {

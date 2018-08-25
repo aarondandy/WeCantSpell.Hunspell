@@ -482,10 +482,10 @@ namespace WeCantSpell.Hunspell
             var endIndex = line.Length - 1;
             for (; endIndex > startIndex && line[endIndex].IsTabOrSpace(); endIndex--) ;
 
-            ChangeEncoding(line.Subslice(startIndex, endIndex - startIndex + 1));
+            ChangeEncoding(line.AsSpan(startIndex, endIndex - startIndex + 1));
         }
 
-        private void ChangeEncoding(StringSlice encodingName)
+        private void ChangeEncoding(ReadOnlySpan<char> encodingName)
         {
             var newEncoding = EncodingEx.GetEncodingByName(encodingName);
             ChangeEncoding(newEncoding);

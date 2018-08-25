@@ -17,7 +17,7 @@ namespace WeCantSpell.Hunspell
 
         public static CharacterSet Create(char value) => TakeArray(new[] { value });
 
-        internal static CharacterSet Create(StringSlice values) => TakeArray(values.ToCharArray());
+        internal static CharacterSet Create(ReadOnlySpan<char> values) => TakeArray(values.ToArray());
 
         internal static CharacterSet TakeArray(char[] values)
         {
