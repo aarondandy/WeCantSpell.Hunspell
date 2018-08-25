@@ -1,6 +1,7 @@
 ﻿using NBench;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace WeCantSpell.Hunspell.Benchmarking.LongRunning
 {
@@ -39,11 +40,35 @@ namespace WeCantSpell.Hunspell.Benchmarking.LongRunning
         [TimingMeasurement]
         [CounterMeasurement(nameof(DictionaryFilesLoaded))]
         [CounterThroughputAssertion(nameof(DictionaryFilesLoaded), MustBe.GreaterThanOrEqualTo, 2)]
-        public void Benchmark(BenchmarkContext context)
+        public void BenchmarkSync(BenchmarkContext context)
         {
             foreach (var testItem in DictionaryLoadArguments)
             {
                 WordListReader.ReadFile(testItem.DictionaryFilePath, testItem.Affix);
+                DictionaryFilesLoaded.Increment();
+            }
+        }
+
+        [PerfBenchmark(
+            Description = "Ensure that dictionary files can be loaded asynchronously and quickly.",
+            NumberOfIterations = 1,
+            RunMode = RunMode.Throughput,
+            TestMode = TestMode.Measurement)]
+        [MemoryMeasurement(MemoryMetric.TotalBytesAllocated)]
+        [GcMeasurement(GcMetric.TotalCollections, GcGeneration.AllGc)]
+        [TimingMeasurement]
+        [CounterMeasurement(nameof(DictionaryFilesLoaded))]
+        [CounterThroughputAssertion(nameof(DictionaryFilesLoaded), MustBe.GreaterThanOrEqualTo, 2)]
+        public void BenchmarkAsync(BenchmarkContext context)
+        {
+            BenchmarkAsync_Impl(context).GetAwaiter().GetResult();
+        }
+
+        private async Task BenchmarkAsync_Impl(BenchmarkContext context)
+        {
+            foreach (var testItem in DictionaryLoadArguments)
+            {
+                await WordListReader.ReadFileAsync(testItem.DictionaryFilePath, testItem.Affix).ConfigureAwait(false);
                 DictionaryFilesLoaded.Increment();
             }
         }

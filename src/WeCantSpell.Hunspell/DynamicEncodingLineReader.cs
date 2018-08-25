@@ -51,7 +51,6 @@ namespace WeCantSpell.Hunspell
         }
 
         private readonly Stream stream;
-        private Encoding encoding;
         private Decoder decoder;
         private int maxSingleCharBytes;
         private int maxSingleCharResultsCount;
@@ -64,7 +63,7 @@ namespace WeCantSpell.Hunspell
         private int bufferIndex = -1;
         private bool hasCheckedForPreamble = false;
 
-        public Encoding CurrentEncoding => encoding;
+        public Encoding CurrentEncoding { get; private set; }
 
         public static List<string> ReadLines(string filePath, Encoding defaultEncoding)
         {
@@ -136,6 +135,7 @@ namespace WeCantSpell.Hunspell
 
             if (charBuffer == null && builder.Length == 0)
             {
+                StringBuilderPool.Return(builder);
                 return null;
             }
 
@@ -240,7 +240,7 @@ namespace WeCantSpell.Hunspell
             return false;
         }
 
-        private byte[] singleDecoderByteArray = new byte[1];
+        private readonly byte[] singleDecoderByteArray = new byte[1];
 
         private int TryDecode(byte byteValue, char[] chars)
         {
@@ -493,15 +493,15 @@ namespace WeCantSpell.Hunspell
 
         private void ChangeEncoding(Encoding newEncoding)
         {
-            if (encoding != null && (newEncoding == null || ReferenceEquals(newEncoding, encoding) || encoding.Equals(newEncoding)))
+            if (CurrentEncoding != null && (newEncoding == null || ReferenceEquals(newEncoding, CurrentEncoding) || CurrentEncoding.Equals(newEncoding)))
             {
                 return;
             }
 
             decoder = newEncoding.GetDecoder();
-            encoding = newEncoding;
-            maxSingleCharBytes = encoding.GetMaxByteCount(1);
-            maxSingleCharResultsCount = encoding.GetMaxCharCount(maxSingleCharBytes);
+            CurrentEncoding = newEncoding;
+            maxSingleCharBytes = CurrentEncoding.GetMaxByteCount(1);
+            maxSingleCharResultsCount = CurrentEncoding.GetMaxCharCount(maxSingleCharBytes);
         }
 
         public void Dispose() =>
