@@ -94,12 +94,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public int IndexOf(char c) =>
             Text.IndexOf(c, Offset, Length) - Offset;
 
-        public int IndexOf(char c, int startIndex) =>
-            Text.IndexOf(c, Offset + startIndex, Length - startIndex) - Offset;
-
-        public bool Contains(char c) =>
-            Text.IndexOf(c, Offset, Length) >= 0;
-
         public string Substring(int startIndex, int length)
         {
 #if DEBUG
@@ -149,10 +143,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public override int GetHashCode() => Length;
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public char[] ToCharArray() => Text.ToCharArray(Offset, Length);
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

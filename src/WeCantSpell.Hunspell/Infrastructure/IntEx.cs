@@ -15,7 +15,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             int.TryParse(text, NumberStyles.Integer, InvariantNumberFormat, out value);
 
         public static bool TryParseInvariant(ReadOnlySpan<char> text, out int value) =>
-            int.TryParse(text.ToString(), NumberStyles.Integer, InvariantNumberFormat, out value);
+            TryParseInvariant(text.ToString(), out value);
 
         public static int? TryParseInvariant(ReadOnlySpan<char> text) =>
             TryParseInvariant(text, out int value) ? (int?)value : null;

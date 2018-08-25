@@ -291,7 +291,7 @@ namespace WeCantSpell.Hunspell
             {
                 if (Affix.IsAliasF)
                 {
-                    if (IntEx.TryParseInvariant(parsed.Flags.ToString(), out int flagAliasNumber) && Affix.TryGetAliasF(flagAliasNumber, out FlagSet aliasedFlags))
+                    if (IntEx.TryParseInvariant(parsed.Flags, out int flagAliasNumber) && Affix.TryGetAliasF(flagAliasNumber, out FlagSet aliasedFlags))
                     {
                         flags = aliasedFlags;
                     }
@@ -303,11 +303,11 @@ namespace WeCantSpell.Hunspell
                 }
                 else if (Affix.FlagMode == FlagMode.Uni)
                 {
-                    flags = Builder.Dedup(FlagValue.ParseFlags(HunspellTextFunctions.ReDecodeConvertedStringAsUtf8(parsed.Flags.AsSpan(), Affix.Encoding), FlagMode.Char));
+                    flags = Builder.Dedup(FlagValue.ParseFlags(HunspellTextFunctions.ReDecodeConvertedStringAsUtf8(parsed.Flags, Affix.Encoding), FlagMode.Char));
                 }
                 else
                 {
-                    flags = Builder.Dedup(FlagValue.ParseFlags(parsed.Flags.AsSpan(), Affix.FlagMode));
+                    flags = Builder.Dedup(FlagValue.ParseFlags(parsed.Flags, Affix.FlagMode));
                 }
             }
             else
@@ -401,25 +401,25 @@ namespace WeCantSpell.Hunspell
 
                         do
                         {
-                            var ph = morphPhonEnumerator.Current.Substring(MorphologicalTags.Phon.Length);
+                            var ph = morphPhonEnumerator.Current.AsSpan(MorphologicalTags.Phon.Length);
                             if (ph.Length == 0)
                             {
                                 continue;
                             }
 
-                            string wordpart;
+                            ReadOnlySpan<char> wordpart;
                             // dictionary based REP replacement, separated by "->"
                             // for example "pretty ph:prity ph:priti->pretti" to handle
                             // both prity -> pretty and pritier -> prettiest suggestions.
-                            int strippatt = ph.IndexOfOrdinal("->");
+                            int strippatt = ph.ToString().IndexOfOrdinal("->");
                             if (strippatt > 0 && strippatt < (ph.Length - 2))
                             {
-                                wordpart = ph.Substring(strippatt + 2);
-                                ph = ph.Substring(0, strippatt);
+                                wordpart = ph.Slice(strippatt + 2);
+                                ph = ph.Slice(0, strippatt);
                             }
                             else
                             {
-                                wordpart = word;
+                                wordpart = word.AsSpan();
                             }
 
                             // when the ph: field ends with the character *,
@@ -432,8 +432,8 @@ namespace WeCantSpell.Hunspell
                             {
                                 if (ph.Length > 2 && wordpart.Length > 1)
                                 {
-                                    ph = ph.Substring(0, ph.Length - 2);
-                                    wordpart = wordpart.Substring(0, word.Length - 1);
+                                    ph = ph.Slice(0, ph.Length - 2);
+                                    wordpart = wordpart.Slice(0, word.Length - 1);
                                 }
                             }
 
@@ -458,15 +458,15 @@ namespace WeCantSpell.Hunspell
                                     // Hungarian dictionary.)
                                     if (Affix.IsGerman || Affix.IsHungarian)
                                     {
-                                        var wordpartLower = HunspellTextFunctions.MakeAllSmall(wordpart, Affix.Culture.TextInfo);
-                                        Builder.PhoneticReplacements.Add(new SingleReplacement(ph, wordpartLower, ReplacementValueType.Med));
+                                        var wordpartLower = HunspellTextFunctions.MakeAllSmall(wordpart.ToString(), Affix.Culture.TextInfo);
+                                        Builder.PhoneticReplacements.Add(new SingleReplacement(ph.ToString(), wordpartLower, ReplacementValueType.Med));
                                     }
 
-                                    Builder.PhoneticReplacements.Add(new SingleReplacement(phCapitalized, wordpart, ReplacementValueType.Med));
+                                    Builder.PhoneticReplacements.Add(new SingleReplacement(phCapitalized, wordpart.ToString(), ReplacementValueType.Med));
                                 }
                             }
 
-                            Builder.PhoneticReplacements.Add(new SingleReplacement(ph, wordpart, ReplacementValueType.Med));
+                            Builder.PhoneticReplacements.Add(new SingleReplacement(ph.ToString(), wordpart.ToString(), ReplacementValueType.Med));
                         }
                         while (morphPhonEnumerator.MoveNext());
                     }
@@ -530,11 +530,18 @@ namespace WeCantSpell.Hunspell
             return false;
         }
 
-        private struct ParsedWordLine
+        private readonly ref struct ParsedWordLine
         {
-            public string Word;
-            public StringSlice Flags;
-            public string[] Morphs;
+            public readonly string Word;
+            public readonly ReadOnlySpan<char> Flags;
+            public readonly string[] Morphs;
+
+            private ParsedWordLine(string word, ReadOnlySpan<char> flags, string[] morphs)
+            {
+                Word = word;
+                Flags = flags;
+                Morphs = morphs;
+            }
 
             private static readonly Regex MorphPartRegex = new Regex(
                 @"\G([\t ]+(?<morphs>[^\t ]+))*[\t ]*$",
@@ -562,17 +569,17 @@ namespace WeCantSpell.Hunspell
 
                     var flagsDelimiterPosition = IndexOfFlagsDelimiter(line, firstNonDelimiterPosition, endOfWordAndFlagsPosition);
 
-                    string word;
-                    StringSlice flagsPart;
+                    ReadOnlySpan<char> word;
+                    ReadOnlySpan<char> flagsPart;
                     if (flagsDelimiterPosition < 0)
                     {
-                        word = line.Substring(firstNonDelimiterPosition, endOfWordAndFlagsPosition - firstNonDelimiterPosition);
-                        flagsPart = StringSlice.Empty;
+                        word = line.AsSpan(firstNonDelimiterPosition, endOfWordAndFlagsPosition - firstNonDelimiterPosition);
+                        flagsPart = ReadOnlySpan<char>.Empty;
                     }
                     else
                     {
-                        word = line.Substring(firstNonDelimiterPosition, flagsDelimiterPosition - firstNonDelimiterPosition);
-                        flagsPart = line.Subslice(flagsDelimiterPosition + 1, endOfWordAndFlagsPosition - flagsDelimiterPosition - 1);
+                        word = line.AsSpan(firstNonDelimiterPosition, flagsDelimiterPosition - firstNonDelimiterPosition);
+                        flagsPart = line.AsSpan(flagsDelimiterPosition + 1, endOfWordAndFlagsPosition - flagsDelimiterPosition - 1);
                     }
 
                     if (word.Length != 0)
@@ -581,12 +588,10 @@ namespace WeCantSpell.Hunspell
                             ? MorphPartRegex.Match(line, endOfWordAndFlagsPosition).Groups["morphs"]
                             : null;
 
-                        return new ParsedWordLine
-                        {
-                            Word = word.Replace(@"\/", @"/"),
-                            Flags = flagsPart,
-                            Morphs = morphGroup != null && morphGroup.Success ? GetCapturesAsTest(morphGroup.Captures) : null
-                        };
+                        return new ParsedWordLine(
+                            word: word.ToString().Replace(@"\/", @"/"),
+                            flags: flagsPart,
+                            morphs: morphGroup != null && morphGroup.Success ? GetCapturesAsTest(morphGroup.Captures) : null);
                     }
                 }
 

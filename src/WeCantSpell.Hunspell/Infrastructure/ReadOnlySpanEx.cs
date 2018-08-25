@@ -17,5 +17,8 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public static bool Contains(this ReadOnlySpan<char> @this, char value) =>
             @this.IndexOf(value) >= 0;
+
+        public static bool EndsWith(this ReadOnlySpan<char> @this, char value) =>
+            !@this.IsEmpty && @this[@this.Length - 1] == value;
     }
 }
