@@ -187,23 +187,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static string ConcatString(string str0, int startIndex0, int count0, char char1, string str2, int startIndex2) =>
             ConcatString(str0, startIndex0, count0, char1.ToString(), str2, startIndex2);
 
-        public static int FirstIndexOfLineBreakChar(this string text, int offset)
-        {
-#if DEBUG
-            if (text == null) throw new ArgumentNullException(nameof(text));
-#endif
-
-            for (; offset < text.Length; offset++)
-            {
-                if (text[offset].IsLineBreakChar())
-                {
-                    return offset;
-                }
-            }
-
-            return -1;
-        }
-
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif

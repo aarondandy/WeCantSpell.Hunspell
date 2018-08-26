@@ -6,7 +6,10 @@ namespace WeCantSpell.Hunspell
 {
     public sealed class StringValueLineReader : IHunspellLineReader
     {
-        public StringValueLineReader(string text) => content = text;
+        public StringValueLineReader(string text)
+        {
+            content = text;
+        }
 
         private readonly string content;
 
@@ -22,12 +25,9 @@ namespace WeCantSpell.Hunspell
             }
 
             var startPosition = position;
-            position = content.FirstIndexOfLineBreakChar(position);
-            if (position < 0)
-            {
-                position = content.Length;
-            }
 
+            for (; position < content.Length && !content[position].IsLineBreakChar(); ++position) ;
+            
             var result = content.Substring(startPosition, position - startPosition);
 
             for (; position < content.Length && content[position].IsLineBreakChar(); position++) ;
