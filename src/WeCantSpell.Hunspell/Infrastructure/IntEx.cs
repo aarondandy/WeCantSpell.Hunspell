@@ -15,7 +15,9 @@ namespace WeCantSpell.Hunspell.Infrastructure
             int.TryParse(text, NumberStyles.Integer, InvariantNumberFormat, out value);
 
         public static bool TryParseInvariant(ReadOnlySpan<char> text, out int value) =>
-            TryParseInvariant(text.ToString(), out value);
+            text.Length == 1
+                ? TryParseInvariant(text[0], out value)
+                : TryParseInvariant(text.ToString(), out value);
 
         public static int? TryParseInvariant(ReadOnlySpan<char> text) =>
             TryParseInvariant(text, out int value) ? (int?)value : null;
@@ -34,6 +36,18 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 b = true;
                 return true;
             }
+        }
+
+        private static bool TryParseInvariant(char character, out int value)
+        {
+            if (character >= '0' && character <= '9')
+            {
+                value = character - '0';
+                return true;
+            }
+
+            value = default;
+            return false;
         }
     }
 }
