@@ -16,10 +16,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static bool StartsWith(this string @this, char character)
         {
 #if DEBUG
-            if (@this == null)
-            {
-                throw new ArgumentNullException(nameof(@this));
-            }
+            if (@this == null) throw new ArgumentNullException(nameof(@this));
 #endif
             return @this.Length != 0 && @this[0] == character;
         }
@@ -30,10 +27,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static bool EndsWith(this string @this, char character)
         {
 #if DEBUG
-            if (@this == null)
-            {
-                throw new ArgumentNullException(nameof(@this));
-            }
+            if (@this == null) throw new ArgumentNullException(nameof(@this));
 #endif
             return @this.Length != 0 && @this[@this.Length - 1] == character;
         }
@@ -44,10 +38,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static string[] SplitOnTabOrSpace(this string @this)
         {
 #if DEBUG
-            if (@this == null)
-            {
-                throw new ArgumentNullException(nameof(@this));
-            }
+            if (@this == null) throw new ArgumentNullException(nameof(@this));
 #endif
             return @this.Split(SpaceOrTab, StringSplitOptions.RemoveEmptyEntries);
         }
@@ -60,10 +51,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static int IndexOfNonTabOrSpace(this string text, int offset)
         {
 #if DEBUG
-            if (text == null)
-            {
-                throw new ArgumentNullException(nameof(text));
-            }
+            if (text == null) throw new ArgumentNullException(nameof(text));
 #endif
             for (; offset < text.Length; offset++)
             {
@@ -103,14 +91,8 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static bool EqualsLimited(string a, string b, int length)
         {
 #if DEBUG
-            if (a == null)
-            {
-                throw new ArgumentNullException(nameof(a));
-            }
-            if (b == null)
-            {
-                throw new ArgumentNullException(nameof(b));
-            }
+            if (a == null) throw new ArgumentNullException(nameof(a));
+            if (b == null) throw new ArgumentNullException(nameof(b));
 #endif
             return length <= 0 || string.CompareOrdinal(a, 0, b, 0, length) == 0;
         }
@@ -121,22 +103,10 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static bool EqualsOffset(string a, int aOffset, string b, int bOffset, int length)
         {
 #if DEBUG
-            if (a == null)
-            {
-                throw new ArgumentNullException(nameof(a));
-            }
-            if (b == null)
-            {
-                throw new ArgumentNullException(nameof(b));
-            }
-            if (aOffset < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(aOffset));
-            }
-            if (bOffset < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(bOffset));
-            }
+            if (a == null) throw new ArgumentNullException(nameof(a));
+            if (b == null) throw new ArgumentNullException(nameof(b));
+            if (aOffset < 0) throw new ArgumentOutOfRangeException(nameof(aOffset));
+            if (bOffset < 0) throw new ArgumentOutOfRangeException(nameof(bOffset));
 #endif
             return length <= 0 || string.CompareOrdinal(a, aOffset, b, bOffset, length) == 0;
         }
@@ -147,22 +117,10 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static bool EqualsOffset(string a, int aOffset, string b, int bOffset, int length, StringComparison comparisonType)
         {
 #if DEBUG
-            if (a == null)
-            {
-                throw new ArgumentNullException(nameof(a));
-            }
-            if (b == null)
-            {
-                throw new ArgumentNullException(nameof(b));
-            }
-            if (aOffset < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(aOffset));
-            }
-            if (bOffset < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(bOffset));
-            }
+            if (a == null) throw new ArgumentNullException(nameof(a));
+            if (b == null) throw new ArgumentNullException(nameof(b));
+            if (aOffset < 0) throw new ArgumentOutOfRangeException(nameof(aOffset));
+            if (bOffset < 0) throw new ArgumentOutOfRangeException(nameof(bOffset));
 #endif
             return length <= 0 || string.Compare(a, aOffset, b, bOffset, length, comparisonType) == 0;
         }
@@ -173,10 +131,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static char GetCharOrTerminator(this string @this, int index)
         {
 #if DEBUG
-            if (index < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(index));
-            }
+            if (index < 0) throw new ArgumentOutOfRangeException(nameof(index));
 #endif
             return index < @this.Length ? @this[index] : '\0';
         }
@@ -235,9 +190,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
-        public static string ConcatString(string str0, StringSlice str1) =>
-            ConcatString(str0, str1.Text, str1.Offset, str1.Length);
-
         public static string ConcatString(string str0, int startIndex0, int count0, string str1, int startIndex1) =>
             ConcatString(str0, startIndex0, count0, str1, startIndex1, str1.Length - startIndex1);
 
@@ -268,10 +220,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static int FirstIndexOfLineBreakChar(this string text, int offset)
         {
 #if DEBUG
-            if (text == null)
-            {
-                throw new ArgumentNullException(nameof(text));
-            }
+            if (text == null) throw new ArgumentNullException(nameof(text));
 #endif
 
             for (; offset < text.Length; offset++)
@@ -293,10 +242,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static bool ContainsAny(this string text, char a, char b)
         {
 #if DEBUG
-            if (text == null)
-            {
-                throw new ArgumentNullException(nameof(text));
-            }
+            if (text == null) throw new ArgumentNullException(nameof(text));
 #endif
 
             return text.Length != 0
@@ -314,5 +260,27 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #endif
         public static int IndexOfOrdinal(this string text, string value, int startIndex) =>
             text.IndexOf(value, startIndex, StringComparison.Ordinal);
+
+        public static string Concat(this string text0, ReadOnlySpan<char> text1)
+        {
+#if DEBUG
+            if (text0 == null) throw new ArgumentNullException(nameof(text0));
+#endif
+
+            if (text0.Length == 0)
+            {
+                return text1.ToString();
+            }
+
+            if (text1.IsEmpty)
+            {
+                return text0;
+            }
+
+            var builder = StringBuilderPool.Get(text0.Length + text1.Length);
+            builder.Append(text0);
+            builder.Append(text1);
+            return StringBuilderPool.GetStringAndReturn(builder);
+        }
     }
 }

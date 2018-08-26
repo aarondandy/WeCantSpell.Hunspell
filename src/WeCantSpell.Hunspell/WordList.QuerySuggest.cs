@@ -208,7 +208,7 @@ namespace WeCantSpell.Hunspell
                             var slen = toRemove.Length - spaceIndex - 1;
 
                             // different case after space (need capitalisation)
-                            if (slen < scw.Length && !scw.Subslice(scw.Length - slen).Equals(toRemove.Subslice(spaceIndex + 1)))
+                            if (slen < scw.Length && !scw.AsSpan(scw.Length - slen).Equals(toRemove.AsSpan(spaceIndex + 1), StringComparison.Ordinal))
                             {
                                 // set as first suggestion
                                 RemoveFromIndexThenInsertAtFront(
@@ -400,7 +400,7 @@ namespace WeCantSpell.Hunspell
                 {
                     for (var j = 0; j < slst.Count; j++)
                     {
-                        slst[j] = StringEx.ConcatString(slst[j], word.Subslice(word.Length - abbv));
+                        slst[j] = slst[j].Concat(word.AsSpan(word.Length - abbv));
                     }
                 }
 
@@ -1072,7 +1072,7 @@ namespace WeCantSpell.Hunspell
                 }
             }
 
-            private void TestSug(List<string> wlst, StringSlice candidate, bool cpdSuggest, OperationTimeLimiter timer = null)
+            private void TestSug(List<string> wlst, ReadOnlySpan<char> candidate, bool cpdSuggest, OperationTimeLimiter timer = null)
             {
                 if (wlst.Count < MaxSuggestions)
                 {
@@ -1084,6 +1084,9 @@ namespace WeCantSpell.Hunspell
                     }
                 }
             }
+
+            private int CheckWord(ReadOnlySpan<char> word, bool cpdSuggest, OperationTimeLimiter timer = null) =>
+                CheckWord(word.ToString(), cpdSuggest, timer);
 
             /// <summary>
             /// See if a candidate suggestion is spelled correctly
@@ -1241,10 +1244,10 @@ namespace WeCantSpell.Hunspell
                             var prev = 0;
                             while (sp >= 0)
                             {
-                                if (CheckWord(candidate.Substring(prev, sp - prev), false) != 0)
+                                if (CheckWord(candidate.AsSpan(prev, sp - prev), false) != 0)
                                 {
                                     var oldNs = wlst.Count;
-                                    TestSug(wlst, candidate.Subslice(sp + 1), cpdSuggest);
+                                    TestSug(wlst, candidate.AsSpan(sp + 1), cpdSuggest);
                                     if (oldNs < wlst.Count)
                                     {
                                         wlst[wlst.Count - 1] = candidate;
@@ -1823,7 +1826,7 @@ namespace WeCantSpell.Hunspell
                                     (
                                         bad.Length > key.Length
                                         &&
-                                        bad.Subslice(bad.Length - key.Length).Equals(sptr.Append)
+                                        bad.AsSpan(bad.Length - key.Length).Equals(sptr.Append.AsSpan(), StringComparison.Ordinal)
                                     )
                                 )
                                 && // check needaffix flag
@@ -2187,7 +2190,7 @@ namespace WeCantSpell.Hunspell
                         (
                             entry.Strip.Length == 0
                             ||
-                            word.Subslice(word.Length - entry.Strip.Length).Equals(entry.Strip)
+                            word.AsSpan(word.Length - entry.Strip.Length).Equals(entry.Strip.AsSpan(), StringComparison.Ordinal)
                         )
                     )
                     // we have a match so add suffix

@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 
 #if !NO_INLINE
 using System.Runtime.CompilerServices;
@@ -36,7 +37,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public void WriteChars(string text, int destinationIndex)
         {
             toStringCache = null;
-            Buffer.WriteChars(text, destinationIndex);
+            Buffer.WriteChars(text.AsSpan(), destinationIndex);
         }
 
         public void WriteChars(int sourceIndex, string text, int destinationIndex)

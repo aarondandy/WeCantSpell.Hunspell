@@ -875,13 +875,13 @@ namespace WeCantSpell.Hunspell
                                 if (Affix.IsHungarian)
                                 {
                                     // calculate syllable number of the word
-                                    numSyllable += GetSyllable(st.ToString().Subslice(0, i));
+                                    numSyllable += GetSyllable(st.ToString().AsSpan(0, i));
 
                                     // - affix syllable num.
                                     // XXX only second suffix (inflections, not derivations)
                                     if (SuffixAppend != null)
                                     {
-                                        numSyllable -= GetSyllable(SuffixAppend.Reverse());
+                                        numSyllable -= GetSyllable(SuffixAppend.AsSpan().Reversed().AsSpan());
                                     }
                                     if (SuffixExtra)
                                     {
@@ -889,7 +889,7 @@ namespace WeCantSpell.Hunspell
                                     }
 
                                     // + 1 word, if syllable number of the prefix > 1 (hungarian convention)
-                                    if (Prefix != null && GetSyllable(Prefix.Key) > 1)
+                                    if (Prefix != null && GetSyllable(Prefix.Key.AsSpan()) > 1)
                                     {
                                         wordNum++;
                                     }
@@ -984,7 +984,7 @@ namespace WeCantSpell.Hunspell
                                                 (
                                                     Affix.CompoundMaxSyllable != 0
                                                     &&
-                                                    numSyllable + GetSyllable(rv.Word) <= Affix.CompoundMaxSyllable
+                                                    numSyllable + GetSyllable(rv.Word.AsSpan()) <= Affix.CompoundMaxSyllable
                                                 )
                                             )
                                             &&
@@ -1014,7 +1014,7 @@ namespace WeCantSpell.Hunspell
                                             st.Destroy();
 
                                             // forbid compound word, if it is a non compound word with typical fault
-                                            var wordLenPrefix = word.Subslice(0, Math.Min(word.Length, len));
+                                            var wordLenPrefix = word.AsSpan(0, Math.Min(word.Length, len));
                                             return ((Affix.CheckCompoundRep && CompoundReplacementCheck(wordLenPrefix)) || CompoundWordPairCheck(wordLenPrefix))
                                                 ? null
                                                 : rvFirst;
@@ -1107,13 +1107,13 @@ namespace WeCantSpell.Hunspell
                                     if (Affix.IsHungarian)
                                     {
                                         // calculate syllable number of the word
-                                        numSyllable += GetSyllable(word.Subslice(0, i));
+                                        numSyllable += GetSyllable(word.AsSpan(0, i));
 
                                         // - affix syllable num.
                                         // XXX only second suffix (inflections, not derivations)
                                         if (SuffixAppend != null)
                                         {
-                                            numSyllable -= GetSyllable(SuffixAppend.Reverse());
+                                            numSyllable -= GetSyllable(SuffixAppend.AsSpan().Reversed().AsSpan());
                                         }
                                         if (SuffixExtra)
                                         {
@@ -1122,7 +1122,7 @@ namespace WeCantSpell.Hunspell
 
                                         // + 1 word, if syllable number of the prefix > 1 (hungarian
                                         // convention)
-                                        if (Prefix != null && GetSyllable(Prefix.Key) > 1)
+                                        if (Prefix != null && GetSyllable(Prefix.Key.AsSpan()) > 1)
                                         {
                                             wordNum++;
                                         }
@@ -1186,7 +1186,7 @@ namespace WeCantSpell.Hunspell
                                             st.Destroy();
 
                                             // forbid compound word, if it is a non compound word with typical fault
-                                            var wordLenPrefix = word.Subslice(0, Math.Min(word.Length, len));
+                                            var wordLenPrefix = word.AsSpan(0, Math.Min(word.Length, len));
                                             return ((Affix.CheckCompoundRep && CompoundReplacementCheck(wordLenPrefix)) || CompoundWordPairCheck(wordLenPrefix))
                                                 ? null
                                                 : rvFirst;
@@ -1219,7 +1219,7 @@ namespace WeCantSpell.Hunspell
 
                                     if (rv != null)
                                     {
-                                        var wordLenPrefix = word.Subslice(0, Math.Min(word.Length, len));
+                                        var wordLenPrefix = word.AsSpan(0, Math.Min(word.Length, len));
                                         // forbid compound word, if it is a non compound word with typical fault
 
                                         // or a dictionary word pair
@@ -1245,7 +1245,7 @@ namespace WeCantSpell.Hunspell
                                                     st[i + rv.Word.Length] = '\0';
                                                 }
 
-                                                var stString = st.ToString();
+                                                var stString = st.ToString().AsSpan();
                                                 if ((Affix.CheckCompoundRep && CompoundReplacementCheck(stString)) || CompoundWordPairCheck(stString))
                                                 {
                                                     if (i + rv.Word.Length < st.BufferLength)
@@ -1821,17 +1821,15 @@ namespace WeCantSpell.Hunspell
             /// <summary>
             /// Calculate number of syllable for compound-checking.
             /// </summary>
-            private int GetSyllable(StringSlice word)
+            private int GetSyllable(ReadOnlySpan<char> word)
             {
                 var num = 0;
-
                 var vowels = Affix.CompoundVowels;
                 if (Affix.CompoundMaxSyllable != 0 && vowels.HasItems)
                 {
-                    var maxIndex = word.Offset + word.Length;
-                    for (var i = word.Offset; i < maxIndex; i++)
+                    for (var i = 0; i < word.Length; i++)
                     {
-                        if (vowels.Contains(word.Text[i]))
+                        if (vowels.Contains(word[i]))
                         {
                             num++;
                         }
@@ -1847,7 +1845,7 @@ namespace WeCantSpell.Hunspell
             /// <seealso cref="AffixConfig.CheckCompoundRep"/>
             /// <seealso cref="AffixConfig.Replacements"/>
             /// <seealso cref="WordList.AllReplacements"/>
-            private bool CompoundReplacementCheck(StringSlice wordSlice)
+            private bool CompoundReplacementCheck(ReadOnlySpan<char> wordSlice)
             {
                 if (wordSlice.Length < 2 || WordList.AllReplacements.IsEmpty)
                 {
@@ -1859,7 +1857,7 @@ namespace WeCantSpell.Hunspell
                     // use only available mid patterns
                     if (!string.IsNullOrEmpty(replacementEntry.Med))
                     {
-                        var rIndex = wordSlice.IndexOf(replacementEntry.Pattern, StringComparison.Ordinal);
+                        var rIndex = wordSlice.IndexOf(replacementEntry.Pattern.AsSpan(), StringComparison.Ordinal);
                         if (rIndex >= 0)
                         {
                             var word = wordSlice.ToString();
@@ -1884,7 +1882,7 @@ namespace WeCantSpell.Hunspell
                 return false;
             }
 
-            private bool CompoundWordPairCheck(StringSlice wordSlice)
+            private bool CompoundWordPairCheck(ReadOnlySpan<char> wordSlice)
             {
                 if (wordSlice.Length <= 2)
                 {
@@ -1892,14 +1890,13 @@ namespace WeCantSpell.Hunspell
                 }
 
                 var candidate = StringBuilderPool.Get(wordSlice.Length + 1);
-                candidate.Append(wordSlice);
-                candidate.Append(' ');
+                candidate.Append(wordSlice).Append(' ');
 
                 for (var i = 1; i < wordSlice.Length; i++)
                 {
                     candidate[i - 1] = wordSlice[i - 1];
                     candidate[i] = ' ';
-                    candidate.WriteChars(wordSlice.Subslice(i), i + 1);
+                    candidate.WriteChars(wordSlice.Slice(i), i + 1);
                     if (CandidateCheck(candidate.ToString()))
                     {
                         return true;
