@@ -487,26 +487,33 @@ namespace WeCantSpell.Hunspell
 
         private bool TryParseCompoundSyllable(ReadOnlySpan<char> parameters)
         {
-            var parts = new StringSlice(parameters.ToString()).SliceOnTabOrSpace();
-
-            if (parts.Count > 0)
+            var ok = parameters.SplitOnTabOrSpace((part, i) =>
             {
-                if (IntEx.TryParseInvariant(parts[0].AsSpan(), out int maxValue))
+                switch(i)
                 {
-                    Builder.CompoundMaxSyllable = maxValue;
+                    case 0:
+                        var maxValue = IntEx.TryParseInvariant(part);
+                        if (maxValue.HasValue)
+                        {
+                            Builder.CompoundMaxSyllable = maxValue.GetValueOrDefault();
+                            Builder.CompoundVowels = DefaultCompoundVowels;
+                            return true;
+                        }
+                        return false;
+                    case 1:
+                        Builder.CompoundVowels = CharacterSet.Create(part);
+                        return true;
+                    default:
+                        return false;
                 }
-                else
-                {
-                    return LogWarning("Failed to parse CompoundMaxSyllable value from: " + parameters.ToString());
-                }
+            });
+
+            if (!ok)
+            {
+                LogWarning("Failed to parse CompoundMaxSyllable value from: " + parameters.ToString());
             }
 
-            Builder.CompoundVowels =
-                1 < parts.Count
-                ? CharacterSet.Create(parts[1].AsSpan())
-                : DefaultCompoundVowels;
-
-            return true;
+            return ok;
         }
 
         private static CultureInfo GetCultureFromLanguage(string language)
@@ -542,23 +549,36 @@ namespace WeCantSpell.Hunspell
 
         private bool TryParsePhone(ReadOnlySpan<char> parameterText, List<PhoneticEntry> entries)
         {
-            var parts = new StringSlice(parameterText.ToString()).SliceOnTabOrSpace();
-            if (parts.Count == 0)
+            string rule = null;
+            string replace = string.Empty;
+            var ok = parameterText.SplitOnTabOrSpace((part, i) =>
+            {
+                switch (i)
+                {
+                    case 0:
+                        rule = Builder.Dedup(part);
+                        return true;
+                    case 1:
+                        replace = Builder.Dedup(part.Remove('_'));
+                        return true;
+                    default:
+                        return false;
+                }
+            });
+
+            if (rule == null)
             {
                 return LogWarning("Failed to parse phone line: " + parameterText.ToString());
             }
 
-            entries.Add(
-                new PhoneticEntry(
-                    Builder.Dedup(parts[0].AsSpan()),
-                    parts.Count >= 2 ? Builder.Dedup(parts[1].ReplaceString("_", string.Empty)) : string.Empty));
+            entries.Add(new PhoneticEntry(rule, replace));
 
             return true;
         }
 
         private bool TryParseMapEntry(ReadOnlySpan<char> parameterText, List<MapEntry> entries)
         {
-            var values = new List<StringSlice>(parameterText.Length);
+            var values = new List<string>(parameterText.Length);
 
             for (int k = 0; k < parameterText.Length; ++k)
             {
@@ -575,7 +595,7 @@ namespace WeCantSpell.Hunspell
                     }
                 }
 
-                values.Add(new StringSlice(parameterText.Slice(chb, che - chb).ToString()));
+                values.Add(parameterText.Slice(chb, che - chb).ToString());
             }
 
             entries.Add(MapEntry.TakeArray(Builder.DedupIntoArray(values)));
@@ -606,13 +626,29 @@ namespace WeCantSpell.Hunspell
                 entries = new Dictionary<string, MultiReplacementEntry>();
             }
 
-            var parts = new StringSlice(parameterText.ToString()).SliceOnTabOrSpace();
-            if (parts.Count < 2)
+            string pattern1 = null;
+            string pattern2 = null;
+            parameterText.SplitOnTabOrSpace((part, i) =>
+            {
+                switch (i)
+                {
+                    case 0:
+                        pattern1 = Builder.Dedup(part);
+                        return true;
+                    case 1:
+                        pattern2 = Builder.Dedup(part);
+                        return true;
+                    default:
+                        return false;
+                }
+            });
+
+            if (pattern1 == null || pattern2 == null)
             {
                 return LogWarning($"Bad {entryListType}: {parameterText.ToString()}");
             }
 
-            entries.AddReplacementEntry(Builder.Dedup(parts[0].AsSpan()), Builder.Dedup(parts[1].AsSpan()));
+            entries.AddReplacementEntry(pattern1, pattern2);
 
             return true;
         }
@@ -631,15 +667,21 @@ namespace WeCantSpell.Hunspell
 
         private bool TryParseAliasM(ReadOnlySpan<char> parameterText, List<MorphSet> entries)
         {
-            List<StringSlice> parts;
             if (EnumEx.HasFlag(Builder.Options, AffixConfigOptions.ComplexPrefixes))
             {
-                parts = new StringSlice(new StringSlice(parameterText.ToString()).ReverseString()).SliceOnTabOrSpace();
+                parameterText = parameterText.Reversed().AsSpan();
             }
-            else
+
+            var parts = new List<string>();
+            parameterText.SplitOnTabOrSpace((part, _) =>
             {
-                parts = new StringSlice(parameterText.ToString()).SliceOnTabOrSpace();
-            }
+                if (!part.IsEmpty)
+                {
+                    parts.Add(part.ToString());
+                }
+
+                return true;
+            });
 
             entries.Add(Builder.Dedup(MorphSet.TakeArray(Builder.DedupIntoArray(parts))));
 
@@ -986,91 +1028,128 @@ namespace WeCantSpell.Hunspell
 
         private bool TryParseReplacements(ReadOnlySpan<char> parameterText, List<SingleReplacement> entries)
         {
-            var parameters = new StringSlice(parameterText.ToString()).SliceOnTabOrSpace();
-            if (parameters.Count == 0)
+            string pattern = null;
+            string outString = string.Empty;
+            ReplacementValueType type = ReplacementValueType.Med;
+
+            parameterText.SplitOnTabOrSpace((part, i) =>
+            {
+                switch (i)
+                {
+                    case 0:
+                        var hasStartingCarrot = part.StartsWith('^');
+                        var hasTrailingDollar = part.EndsWith('$');
+
+                        var patternBuilder = StringBuilderPool.Get(part);
+                        type = ReplacementValueType.Med;
+
+                        if (hasTrailingDollar)
+                        {
+                            type |= ReplacementValueType.Fin;
+                            patternBuilder.Remove(patternBuilder.Length - 1, 1);
+                        }
+
+                        if (hasStartingCarrot)
+                        {
+                            type |= ReplacementValueType.Ini;
+                            patternBuilder.Remove(0, 1);
+                        }
+
+                        patternBuilder.Replace('_', ' ');
+                        pattern = StringBuilderPool.GetStringAndReturn(patternBuilder);
+                        return true;
+                    case 1:
+                        outString = Builder.Dedup(part.Replace('_', ' '));
+                        return true;
+                    default:
+                        return false;
+                }
+            });
+
+            if (pattern == null)
             {
                 return LogWarning("Failed to parse replacements from: " + parameterText.ToString());
             }
 
-            var patternBuilder = StringBuilderPool.Get(parameters[0].AsSpan());
-            var hasTrailingDollar = patternBuilder.EndsWith('$');
-            var hasStartingCarrot = patternBuilder.StartsWith('^');
-            var type = ReplacementValueType.Med;
-
-            if (hasTrailingDollar)
-            {
-                type |= ReplacementValueType.Fin;
-                patternBuilder.Remove(patternBuilder.Length - 1, 1);
-            }
-
-            if (hasStartingCarrot)
-            {
-                type |= ReplacementValueType.Ini;
-                patternBuilder.Remove(0, 1);
-            }
-
-            patternBuilder.Replace('_', ' ');
-
-            entries.Add(new SingleReplacement(
-                Builder.Dedup(StringBuilderPool.GetStringAndReturn(patternBuilder)),
-                parameters.Count > 1 ?
-                    Builder.Dedup(parameters[1].ReplaceString('_', ' '))
-                    : string.Empty,
-                type));
+            entries.Add(new SingleReplacement(pattern, outString, type));
 
             return true;
         }
 
         private bool TryParseCheckCompoundPatternIntoCompoundPatterns(ReadOnlySpan<char> parameterText, List<PatternEntry> entries)
         {
-            var parameters = new StringSlice(parameterText.ToString()).SliceOnTabOrSpace();
-            if (parameters.Count == 0)
+            string pattern = null;
+            string pattern2 = string.Empty;
+            string pattern3 = string.Empty;
+            FlagValue condition = default;
+            FlagValue condition2 = default;
+            bool failedParsePattern1 = false;
+            bool failedParsePattern2 = false;
+
+            parameterText.SplitOnTabOrSpace((part, i) =>
+            {
+                int slashIndex;
+                switch (i)
+                {
+                    case 0:
+                        slashIndex = part.IndexOf('/');
+                        if (slashIndex >= 0)
+                        {
+                            condition = TryParseFlag(part.Slice(slashIndex + 1));
+                            if (!condition.HasValue)
+                            {
+                                failedParsePattern1 = true;
+                                return false;
+                            }
+
+                            part = part.Slice(0, slashIndex);
+                        }
+
+                        pattern = part.ToString();
+                        return true;
+                    case 1:
+                        slashIndex = part.IndexOf('/');
+                        if (slashIndex >= 0)
+                        {
+                            condition2 = TryParseFlag(part.Slice(slashIndex + 1));
+                            if (!condition2.HasValue)
+                            {
+                                failedParsePattern2 = true;
+                                return false;
+                            }
+
+                            part = part.Slice(0, slashIndex);
+                        }
+
+                        pattern2 = part.ToString();
+                        return true;
+                    case 2:
+                        pattern3 = part.ToString();
+                        Builder.EnableOptions(AffixConfigOptions.SimplifiedCompound);
+                        return true;
+                    default:
+                        return false;
+                }
+            });
+
+            if (pattern == null)
             {
                 return LogWarning("Failed to parse compound pattern from: " + parameterText.ToString());
             }
 
-            var pattern = parameters[0];
-            var condition = default(FlagValue);
-            var slashIndex = pattern.IndexOf('/');
-
-            if (slashIndex >= 0)
+            if (failedParsePattern1)
             {
-                if (!TryParseFlag(pattern.AsSpan(slashIndex + 1), out condition))
-                {
-                    return LogWarning($"Failed to parse compound pattern 1 {pattern} from: {parameterText.ToString()}");
-                }
-
-                pattern = pattern.Subslice(0, slashIndex);
+                return LogWarning($"Failed to parse compound pattern 1 {pattern} from: {parameterText.ToString()}");
             }
 
-            var pattern2 = StringSlice.Empty;
-            var pattern3 = string.Empty;
-            var condition2 = default(FlagValue);
-
-            if (parameters.Count >= 2)
+            if (failedParsePattern2)
             {
-                pattern2 = parameters[1];
-                slashIndex = pattern2.IndexOf('/');
-                if (slashIndex >= 0)
-                {
-                    if (!TryParseFlag(pattern2.AsSpan(slashIndex + 1), out condition2))
-                    {
-                        return LogWarning($"Failed to parse compound pattern 2 {pattern2} from: {parameterText.ToString()}");
-                    }
-
-                    pattern2 = pattern2.Subslice(0, slashIndex);
-                }
-
-                if (parameters.Count >= 3)
-                {
-                    pattern3 = parameters[2].ToString();
-                    Builder.EnableOptions(AffixConfigOptions.SimplifiedCompound);
-                }
+                return LogWarning($"Failed to parse compound pattern 2 {pattern2} from: {parameterText.ToString()}");
             }
 
             entries.Add(new PatternEntry(
-                Builder.Dedup(pattern.ToString()),
-                Builder.Dedup(pattern2.ToString()),
+                Builder.Dedup(pattern),
+                Builder.Dedup(pattern2),
                 Builder.Dedup(pattern3),
                 condition,
                 condition2));

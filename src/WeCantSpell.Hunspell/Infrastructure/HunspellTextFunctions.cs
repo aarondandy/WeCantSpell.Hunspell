@@ -144,6 +144,29 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
+        public static ReadOnlySpan<char> RemoveChars(this ReadOnlySpan<char> @this, CharacterSet chars)
+        {
+#if DEBUG
+            if (chars == null)
+            {
+                throw new ArgumentNullException(nameof(chars));
+            }
+#endif
+
+            if (@this.IsEmpty || chars.IsEmpty)
+            {
+                return @this;
+            }
+
+            var firstMatchingIndex = @this.IndexOfAny(chars);
+            if (firstMatchingIndex < 0)
+            {
+                return @this;
+            }
+
+            return @this.ToString().RemoveChars(chars).AsSpan();
+        }
+
         public static string MakeInitCap(string s, TextInfo textInfo)
         {
 #if DEBUG
@@ -276,27 +299,30 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return textInfo.ToUpper(s);
         }
 
-        public static string MakeTitleCase(string s, TextInfo textInfo)
+        public static ReadOnlySpan<char> MakeTitleCase(ReadOnlySpan<char> s, TextInfo textInfo)
         {
 #if DEBUG
-            if (s == null)
-            {
-                throw new ArgumentNullException(nameof(s));
-            }
             if (textInfo == null)
             {
                 throw new ArgumentNullException(nameof(textInfo));
             }
 #endif
 
-            if (s.Length == 0)
+            if (s.IsEmpty)
             {
                 return s;
             }
 
-            var builder = StringBuilderPool.Get(textInfo.ToLower(s));
-            builder[0] = textInfo.ToUpper(s[0]);
-            return StringBuilderPool.GetStringAndReturn(builder);
+            var builder = StringBuilderPool.Get(s.Length);
+            builder.Append(textInfo.ToUpper(s[0]));
+
+            s = s.Slice(1);
+            for (var i = 0; i < s.Length; i++)
+            {
+                builder.Append(textInfo.ToLower(s[i]));
+            }
+
+            return StringBuilderPool.GetStringAndReturn(builder).AsSpan();
         }
 
         public static ReadOnlySpan<char> ReDecodeConvertedStringAsUtf8(ReadOnlySpan<char> decoded, Encoding encoding)

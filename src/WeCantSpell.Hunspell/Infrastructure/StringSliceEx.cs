@@ -47,34 +47,5 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
             return parts;
         }
-
-        public static List<StringSlice> SplitOnComma(this StringSlice @this)
-        {
-            var parts = new List<StringSlice>();
-
-            var finalIndex = @this.Offset + @this.Length;
-            var startIndex = @this.Offset;
-            int commaIndex;
-            int partLength;
-            while ((commaIndex = @this.Text.IndexOf(',', startIndex, finalIndex - startIndex)) >= 0)
-            {
-                partLength = commaIndex - startIndex;
-                if (partLength > 0)
-                {
-                    parts.Add(new StringSlice(@this.Text, startIndex, partLength));
-                }
-
-                startIndex = commaIndex + 1;
-            }
-
-            commaIndex = finalIndex;
-            partLength = commaIndex - startIndex;
-            if (partLength > 0)
-            {
-                parts.Add(new StringSlice(@this.Text, startIndex, partLength));
-            }
-
-            return parts;
-        }
     }
 }

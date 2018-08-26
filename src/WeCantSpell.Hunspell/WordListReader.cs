@@ -281,7 +281,7 @@ namespace WeCantSpell.Hunspell
             }
 
             var parsed = ParsedWordLine.Parse(line);
-            if (string.IsNullOrEmpty(parsed.Word))
+            if (parsed.Word.IsEmpty)
             {
                 return false;
             }
@@ -340,14 +340,14 @@ namespace WeCantSpell.Hunspell
             return false;
         }
 
-        private bool AddWord(string word, FlagSet flags, string[] morphs)
+        private bool AddWord(ReadOnlySpan<char> word, FlagSet flags, string[] morphs)
         {
-            var capType = HunspellTextFunctions.GetCapitalizationType(word.AsSpan(), TextInfo);
+            var capType = HunspellTextFunctions.GetCapitalizationType(word, TextInfo);
             return AddWord(word, flags, morphs, false, capType)
                 || AddWordCapitalized(word, flags, morphs, capType);
         }
 
-        private bool AddWord(string word, FlagSet flags, string[] morphs, bool onlyUpperCase, CapitalizationType capType)
+        private bool AddWord(ReadOnlySpan<char> word, FlagSet flags, string[] morphs, bool onlyUpperCase, CapitalizationType capType)
         {
             if (Affix.IgnoredChars.HasItems)
             {
@@ -356,7 +356,7 @@ namespace WeCantSpell.Hunspell
 
             if (Affix.ComplexPrefixes)
             {
-                word = word.Reverse();
+                word = word.Reversed().AsSpan();
 
                 if (morphs.Length != 0 && !Affix.IsAliasM)
                 {
@@ -411,7 +411,7 @@ namespace WeCantSpell.Hunspell
                             // dictionary based REP replacement, separated by "->"
                             // for example "pretty ph:prity ph:priti->pretti" to handle
                             // both prity -> pretty and pritier -> prettiest suggestions.
-                            int strippatt = ph.ToString().IndexOfOrdinal("->");
+                            int strippatt = ph.IndexOf("->".AsSpan(), StringComparison.Ordinal);
                             if (strippatt > 0 && strippatt < (ph.Length - 2))
                             {
                                 wordpart = ph.Slice(strippatt + 2);
@@ -419,7 +419,7 @@ namespace WeCantSpell.Hunspell
                             }
                             else
                             {
-                                wordpart = word.AsSpan();
+                                wordpart = word;
                             }
 
                             // when the ph: field ends with the character *,
@@ -436,6 +436,9 @@ namespace WeCantSpell.Hunspell
                                     wordpart = wordpart.Slice(0, word.Length - 1);
                                 }
                             }
+
+                            var phString = ph.ToString();
+                            var wordpartString = wordpart.ToString();
 
                             // capitalize lowercase pattern for capitalized words to support
                             // good suggestions also for capitalized misspellings, eg.
@@ -458,22 +461,22 @@ namespace WeCantSpell.Hunspell
                                     // Hungarian dictionary.)
                                     if (Affix.IsGerman || Affix.IsHungarian)
                                     {
-                                        var wordpartLower = HunspellTextFunctions.MakeAllSmall(wordpart.ToString(), Affix.Culture.TextInfo);
-                                        Builder.PhoneticReplacements.Add(new SingleReplacement(ph.ToString(), wordpartLower, ReplacementValueType.Med));
+                                        var wordpartLower = HunspellTextFunctions.MakeAllSmall(wordpartString, Affix.Culture.TextInfo);
+                                        Builder.PhoneticReplacements.Add(new SingleReplacement(phString, wordpartLower, ReplacementValueType.Med));
                                     }
 
-                                    Builder.PhoneticReplacements.Add(new SingleReplacement(phCapitalized, wordpart.ToString(), ReplacementValueType.Med));
+                                    Builder.PhoneticReplacements.Add(new SingleReplacement(phCapitalized, wordpartString, ReplacementValueType.Med));
                                 }
                             }
 
-                            Builder.PhoneticReplacements.Add(new SingleReplacement(ph.ToString(), wordpart.ToString(), ReplacementValueType.Med));
+                            Builder.PhoneticReplacements.Add(new SingleReplacement(phString, wordpartString, ReplacementValueType.Med));
                         }
                         while (morphPhonEnumerator.MoveNext());
                     }
                 }
             }
 
-            var details = Builder.GetOrCreateDetailList(word);
+            var details = Builder.GetOrCreateDetailList(word.ToString());
 
             var upperCaseHomonym = false;
             if (!onlyUpperCase)
@@ -506,7 +509,7 @@ namespace WeCantSpell.Hunspell
             return false;
         }
 
-        private bool AddWordCapitalized(string word, FlagSet flags, string[] morphs, CapitalizationType capType)
+        private bool AddWordCapitalized(ReadOnlySpan<char> word, FlagSet flags, string[] morphs, CapitalizationType capType)
         {
             // add inner capitalized forms to handle the following allcap forms:
             // Mixed caps: OpenOffice.org -> OPENOFFICE.ORG
@@ -532,11 +535,11 @@ namespace WeCantSpell.Hunspell
 
         private readonly ref struct ParsedWordLine
         {
-            public readonly string Word;
+            public readonly ReadOnlySpan<char> Word;
             public readonly ReadOnlySpan<char> Flags;
             public readonly string[] Morphs;
 
-            private ParsedWordLine(string word, ReadOnlySpan<char> flags, string[] morphs)
+            private ParsedWordLine(ReadOnlySpan<char> word, ReadOnlySpan<char> flags, string[] morphs)
             {
                 Word = word;
                 Flags = flags;
@@ -589,7 +592,7 @@ namespace WeCantSpell.Hunspell
                             : null;
 
                         return new ParsedWordLine(
-                            word: word.ToString().Replace(@"\/", @"/"),
+                            word: word.Replace(@"\/", @"/"),
                             flags: flagsPart,
                             morphs: morphGroup != null && morphGroup.Success ? GetCapturesAsTest(morphGroup.Captures) : null);
                     }

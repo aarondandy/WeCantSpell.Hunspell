@@ -159,16 +159,16 @@ namespace WeCantSpell.Hunspell
                 return new List<FlagValue>(0);
             }
 
-            var textParts = new StringSlice(text.ToString()).SplitOnComma();
-
-            var flags = new List<FlagValue>(textParts.Count);
-            for (var i = 0; i < textParts.Count; i++)
+            var flags = new List<FlagValue>();
+            text.Split(',', (part, _) =>
             {
-                if (TryParseNumberFlag(textParts[i].AsSpan(), out FlagValue value))
+                if (TryParseNumberFlag(part, out var value))
                 {
                     flags.Add(value);
                 }
-            }
+
+                return true;
+            });
 
             return flags;
         }

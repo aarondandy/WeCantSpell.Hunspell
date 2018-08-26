@@ -5,10 +5,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
 {
     static class EncodingEx
     {
-        private const string Utf8Name = "UTF8";
-
-        private const string Utf8NameWithDash = "UTF-8";
-
         public static Encoding GetEncodingByName(ReadOnlySpan<char> encodingName)
         {
             if (encodingName.IsEmpty)
@@ -16,7 +12,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return null;
             }
 
-            if (encodingName.Equals(Utf8NameWithDash.AsSpan(), StringComparison.OrdinalIgnoreCase) || encodingName.Equals(Utf8Name.AsSpan(), StringComparison.OrdinalIgnoreCase))
+            if (encodingName.EqualsOrdinal("UTF8") || encodingName.EqualsOrdinal("UTF-8"))
             {
                 return Encoding.UTF8;
             }

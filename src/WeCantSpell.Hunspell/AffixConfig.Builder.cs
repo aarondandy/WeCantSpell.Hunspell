@@ -531,7 +531,7 @@ namespace WeCantSpell.Hunspell
                 return values;
             }
 
-            internal string[] DedupIntoArray(List<StringSlice> values)
+            internal string[] DedupIntoArray(List<string> values)
             {
                 if (values == null || values.Count == 0)
                 {
@@ -539,9 +539,9 @@ namespace WeCantSpell.Hunspell
                 }
 
                 var result = new string[values.Count];
-                for(var i = 0; i < result.Length; i++)
+                for (var i = 0; i < result.Length; i++)
                 {
-                    result[i] = StringDeduper.GetEqualOrAdd(values[i].ToString());
+                    result[i] = StringDeduper.GetEqualOrAdd(values[i]);
                 }
 
                 return result;
