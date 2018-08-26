@@ -110,7 +110,7 @@ namespace WeCantSpell.Hunspell
                         if (
                             breakEntry.StartsWith('^')
                             && StringEx.EqualsOffset(scw, 0, breakEntry, 1, pLastIndex)
-                            && Check(scw.Substring(pLastIndex))
+                            && Check(scw.AsSpan(pLastIndex))
                         )
                         {
                             return new SpellCheckResult(root, resultType, true);
@@ -121,7 +121,7 @@ namespace WeCantSpell.Hunspell
                             var wlLessBreakIndex = scw.Length - breakEntry.Length + 1;
                             if (
                                 StringEx.EqualsOffset(scw, wlLessBreakIndex, breakEntry, 0, pLastIndex)
-                                && Check(scw.Substring(0, wlLessBreakIndex))
+                                && Check(scw.AsSpan(0, wlLessBreakIndex))
                             )
                             {
                                 return new SpellCheckResult(root, resultType, true);
@@ -144,13 +144,13 @@ namespace WeCantSpell.Hunspell
                                 found = found2;
                             }
 
-                            if (!Check(scw.Substring(found + breakEntry.Length)))
+                            if (!Check(scw.AsSpan(found + breakEntry.Length)))
                             {
                                 continue;
                             }
 
                             // examine 2 sides of the break point
-                            if (Check(scw.Substring(0, found)))
+                            if (Check(scw.AsSpan(0, found)))
                             {
                                 return new SpellCheckResult(root, resultType, true);
                             }
@@ -158,7 +158,7 @@ namespace WeCantSpell.Hunspell
                             // LANG_hu: spec. dash rule
                             if (Affix.IsHungarian && "-".Equals(breakEntry, StringComparison.Ordinal))
                             {
-                                if (Check(scw.Substring(0, found + 1)))
+                                if (Check(scw.AsSpan(0, found + 1)))
                                 {
                                     return new SpellCheckResult(root, resultType, true);
                                 }
@@ -173,13 +173,13 @@ namespace WeCantSpell.Hunspell
                         var remainingLength = scw.Length - breakEntry.Length;
                         if (found > 0 && found < remainingLength)
                         {
-                            if (!Check(scw.Substring(found + breakEntry.Length)))
+                            if (!Check(scw.AsSpan(found + breakEntry.Length)))
                             {
                                 continue;
                             }
 
                             // examine 2 sides of the break point
-                            if (Check(scw.Substring(0, found)))
+                            if (Check(scw.AsSpan(0, found)))
                             {
                                 return new SpellCheckResult(root, resultType, true);
                             }
@@ -187,7 +187,7 @@ namespace WeCantSpell.Hunspell
                             // LANG_hu: spec. dash rule
                             if (Affix.IsHungarian && "-".Equals(breakEntry, StringComparison.Ordinal))
                             {
-                                if (Check(scw.Substring(0, found + 1)))
+                                if (Check(scw.AsSpan(0, found + 1)))
                                 {
                                     return new SpellCheckResult(root, resultType, true);
                                 }

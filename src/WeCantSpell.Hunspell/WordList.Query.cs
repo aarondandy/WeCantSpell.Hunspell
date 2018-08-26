@@ -194,6 +194,8 @@ namespace WeCantSpell.Hunspell
 
             protected bool Check(string word) => new QueryCheck(word, WordList).Check();
 
+            protected bool Check(ReadOnlySpan<char> word) => new QueryCheck(word.ToString(), WordList).Check();
+
             protected WordEntry CheckWord(string word, ref SpellCheckResultType info, out string root)
             {
                 root = null;
@@ -310,7 +312,7 @@ namespace WeCantSpell.Hunspell
                     if (he == null && word.EndsWith('-') && Affix.IsHungarian)
                     {
                         // LANG_hu section: `moving rule' with last dash
-                        he = CompoundCheck(word.Substring(0, word.Length - 1), -5, 0, 100, null, rwords, true, 0, ref info);
+                        he = CompoundCheck(word.AsSpan(0, word.Length - 1), -5, 0, 100, null, rwords, true, 0, ref info);
                     }
 
                     if (he != null)
@@ -411,6 +413,12 @@ namespace WeCantSpell.Hunspell
                 return null;
             }
 
+            private WordEntry HomonymWordSearch(ReadOnlySpan<char> homonymWord, IncrementalWordList words, FlagValue condition2, bool scpdIsZero)
+            {
+                var homonymWordString = homonymWord.ToString();
+                return HomonymWordSearchDetail(homonymWordString, words, condition2, scpdIsZero)?.ToEntry(homonymWordString);
+            }
+
             private WordEntry HomonymWordSearch(string homonymWord, IncrementalWordList words, FlagValue condition2, bool scpdIsZero) =>
                 HomonymWordSearchDetail(homonymWord, words, condition2, scpdIsZero)?.ToEntry(homonymWord);
 
@@ -447,6 +455,9 @@ namespace WeCantSpell.Hunspell
 
                 return null;
             }
+
+            protected WordEntry CompoundCheck(ReadOnlySpan<char> word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info) =>
+                CompoundCheck(word.ToString(), wordNum, numSyllable, maxwordnum, words, rwords, huMovRule, isSug, ref info);
 
             protected WordEntry CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
             {
@@ -921,7 +932,7 @@ namespace WeCantSpell.Hunspell
                                         }
                                     }
 
-                                    rv = HomonymWordSearch(st.ToString().Substring(i), words, scpdPatternEntryCondition2, scpd == 0);
+                                    rv = HomonymWordSearch(st.ToString().AsSpan(i), words, scpdPatternEntryCondition2, scpd == 0);
 
                                     if (rv != null)
                                     {
@@ -1028,7 +1039,7 @@ namespace WeCantSpell.Hunspell
                                     ClearSuffixAndFlag();
 
                                     {
-                                        var wordSubI = word.Substring(i);
+                                        var wordSubI = word.AsSpan(i);
                                         rv = (!onlycpdrule && Affix.CompoundFlag.HasValue)
                                              ? AffixCheck(wordSubI, Affix.CompoundFlag, CompoundOptions.End)
                                              : null;
@@ -1262,7 +1273,7 @@ namespace WeCantSpell.Hunspell
 
                                                     if (rv2 == null)
                                                     {
-                                                        rv2 = AffixCheck(word.Substring(0, len), default, CompoundOptions.Not);
+                                                        rv2 = AffixCheck(word.AsSpan(0, len), default, CompoundOptions.Not);
                                                     }
 
                                                     if (
@@ -1335,6 +1346,12 @@ namespace WeCantSpell.Hunspell
                 st.Destroy();
                 return null;
             }
+
+            /// <summary>
+            /// Check if word with affixes is correctly spelled.
+            /// </summary>
+            private WordEntry AffixCheck(ReadOnlySpan<char> word, FlagValue needFlag, CompoundOptions inCompound) =>
+                AffixCheck(word.ToString(), needFlag, inCompound);
 
             /// <summary>
             /// Check if word with affixes is correctly spelled.
@@ -2163,9 +2180,9 @@ namespace WeCantSpell.Hunspell
                     return string.Empty;
                 }
 
-                var dest = src.Substring(qIndex, nl);
-                capType = HunspellTextFunctions.GetCapitalizationType(dest.AsSpan(), TextInfo);
-                return dest;
+                var dest = src.AsSpan(qIndex, nl);
+                capType = HunspellTextFunctions.GetCapitalizationType(dest, TextInfo);
+                return dest.ToString();
             }
 
             protected enum CompoundOptions : byte

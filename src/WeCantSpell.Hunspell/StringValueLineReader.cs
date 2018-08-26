@@ -30,10 +30,7 @@ namespace WeCantSpell.Hunspell
 
             var result = content.Substring(startPosition, position - startPosition);
 
-            while (position < content.Length && content[position].IsLineBreakChar())
-            {
-                position++;
-            }
+            for (; position < content.Length && content[position].IsLineBreakChar(); position++) ;
 
             return result;
         }

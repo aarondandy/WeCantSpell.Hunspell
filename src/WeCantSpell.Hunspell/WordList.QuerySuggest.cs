@@ -39,6 +39,9 @@ namespace WeCantSpell.Hunspell
 
             public List<string> Suggest() => Suggest(WordToCheck);
 
+            private List<string> Suggest(ReadOnlySpan<char> word) =>
+                Suggest(word.ToString());
+
             private List<string> Suggest(string word)
             {
                 var slst = new List<string>();
@@ -339,7 +342,7 @@ namespace WeCantSpell.Hunspell
                             last = true;
                         }
 
-                        var chunk = scw.Substring(prevPos, dashPos - prevPos);
+                        var chunk = scw.AsSpan(prevPos, dashPos - prevPos);
                         if (!Check(chunk))
                         {
                             var nlst = Suggest(chunk);

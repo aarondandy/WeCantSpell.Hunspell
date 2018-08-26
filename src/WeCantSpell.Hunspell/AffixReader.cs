@@ -732,7 +732,7 @@ namespace WeCantSpell.Hunspell
 
                     if (Builder.IsAliasF)
                     {
-                        if (IntEx.TryParseInvariant(affixInput.Substring(affixSlashIndex + 1), out int aliasNumber) && aliasNumber > 0 && aliasNumber <= Builder.AliasF.Count)
+                        if (IntEx.TryParseInvariant(affixInput.AsSpan(affixSlashIndex + 1), out int aliasNumber) && aliasNumber > 0 && aliasNumber <= Builder.AliasF.Count)
                         {
                             contClass = Builder.AliasF[aliasNumber - 1];
                         }
