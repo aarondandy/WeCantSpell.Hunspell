@@ -172,5 +172,13 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
             return new string(chars);
         }
+
+        public static ReadOnlySpan<char> Limit(this ReadOnlySpan<char> @this, int maxLength)
+        {
+#if DEBUG
+            if (maxLength < 0) throw new ArgumentOutOfRangeException(nameof(maxLength));
+#endif
+            return @this.Length > maxLength ? @this.Slice(0, maxLength) : @this;
+        }
     }
 }

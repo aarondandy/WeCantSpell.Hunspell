@@ -27,24 +27,14 @@ namespace WeCantSpell.Hunspell
         /// <summary>
         /// Forbid compoundings when there are special patterns at word bound.
         /// </summary>
-        internal bool Check(string word, int pos, WordEntry r1, WordEntry r2, bool affixed)
+        internal bool Check(ReadOnlySpan<char> word, int pos, WordEntry r1, WordEntry r2, bool affixed)
         {
 #if DEBUG
-            if (word == null)
-            {
-                throw new ArgumentNullException(nameof(word));
-            }
-            if (r1 == null)
-            {
-                throw new ArgumentNullException(nameof(r1));
-            }
-            if (r2 == null)
-            {
-                throw new ArgumentNullException(nameof(r2));
-            }
+            if (r1 == null) throw new ArgumentNullException(nameof(r1));
+            if (r2 == null) throw new ArgumentNullException(nameof(r2));
 #endif
 
-            var wordAfterPos = word.AsSpan(pos);
+            var wordAfterPos = word.Slice(pos);
 
             foreach (var patternEntry in items)
             {
@@ -82,8 +72,8 @@ namespace WeCantSpell.Hunspell
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        private static bool PatternWordCheck(string word, int pos, string other) =>
+        private static bool PatternWordCheck(ReadOnlySpan<char> word, int pos, string other) =>
             other.Length <= pos
-            && StringEx.EqualsOffset(word, pos - other.Length, other, 0, other.Length);
+            && word.Slice(pos - other.Length).Limit(other.Length).Equals(other.AsSpan(), StringComparison.Ordinal);
     }
 }

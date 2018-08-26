@@ -1,4 +1,5 @@
-﻿using WeCantSpell.Hunspell.Infrastructure;
+﻿using System;
+using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell
 {
@@ -23,7 +24,9 @@ namespace WeCantSpell.Hunspell
 
         public FlagValue Condition2 { get; }
 
-        internal bool Pattern3DoesNotMatch(string word, int offset) =>
-            Pattern3.Length == 0 || !StringEx.EqualsOffset(word, offset, Pattern3, 0, Pattern3.Length);
+        internal bool Pattern3DoesNotMatch(ReadOnlySpan<char> word, int offset) =>
+            Pattern3.Length == 0
+            ||
+            !word.Slice(offset).Limit(Pattern3.Length).Equals(Pattern3.AsSpan(), StringComparison.Ordinal);
     }
 }

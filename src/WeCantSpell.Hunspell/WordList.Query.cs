@@ -527,7 +527,7 @@ namespace WeCantSpell.Hunspell
                             FlagValue scpdPatternEntryCondition2;
                             if (scpd > 0)
                             {
-                                for (; scpd <= Affix.CompoundPatterns.Count && Affix.CompoundPatterns[scpd - 1].Pattern3DoesNotMatch(word, i); scpd++)
+                                for (; scpd <= Affix.CompoundPatterns.Count && Affix.CompoundPatterns[scpd - 1].Pattern3DoesNotMatch(word.AsSpan(), i); scpd++)
                                 {
                                 }
 
@@ -1010,7 +1010,7 @@ namespace WeCantSpell.Hunspell
                                                 ||
                                                 scpd != 0
                                                 ||
-                                                !Affix.CompoundPatterns.Check(word, i, rvFirst, rv, false)
+                                                !Affix.CompoundPatterns.Check(word.AsSpan(), i, rvFirst, rv, false)
                                             )
                                             && // test CHECKCOMPOUNDPATTERN conditions
                                             (
@@ -1090,7 +1090,7 @@ namespace WeCantSpell.Hunspell
                                                 : (
                                                     Affix.CompoundPatterns.HasItems
                                                     &&
-                                                    Affix.CompoundPatterns.Check(word, i, rvFirst, rv, affixed)
+                                                    Affix.CompoundPatterns.Check(word.AsSpan(), i, rvFirst, rv, affixed)
                                                 )
                                             )
                                         )
@@ -1217,7 +1217,7 @@ namespace WeCantSpell.Hunspell
                                             &&
                                             Affix.CompoundPatterns.HasItems
                                             &&
-                                            (scpd != 0 ^ Affix.CompoundPatterns.Check(word, i, rvFirst, rv, affixed))
+                                            (scpd != 0 ^ Affix.CompoundPatterns.Check(word.AsSpan(), i, rvFirst, rv, affixed))
                                         )
                                         {
                                             rv = null;
@@ -1248,7 +1248,7 @@ namespace WeCantSpell.Hunspell
                                             }
 
                                             // check first part
-                                            if (StringEx.EqualsOffset(rv.Word, 0, word, i, rv.Word.Length))
+                                            if (rv.Word.AsSpan().Equals(word.AsSpan(i).Limit(rv.Word.Length), StringComparison.Ordinal))
                                             {
                                                 var r = st[i + rv.Word.Length];
                                                 if (i + rv.Word.Length < st.BufferLength)
@@ -1279,7 +1279,7 @@ namespace WeCantSpell.Hunspell
                                                     if (
                                                         rv2 != null
                                                         && rv2.ContainsFlag(Affix.ForbiddenWord)
-                                                        && StringEx.EqualsLimited(rv2.Word, st.ToString(), i + rv.Word.Length)
+                                                        && rv2.Word.AsSpan().Limit(i + rv.Word.Length).Equals(st.ToString().AsSpan().Limit(i + rv.Word.Length), StringComparison.Ordinal)
                                                     )
                                                     {
                                                         st.Destroy();

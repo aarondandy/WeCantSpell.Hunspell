@@ -54,7 +54,7 @@ namespace WeCantSpell.Hunspell
                 var onlyCompoundSuggest = false;
 
                 // process XML input of the simplified API (see manual)
-                if (StringEx.EqualsLimited(word, DefaultXmlToken, DefaultXmlToken.Length - 3))
+                if (word.AsSpan().Limit(DefaultXmlToken.Length - 3).Equals(DefaultXmlToken.AsSpan(0, DefaultXmlToken.Length - 3), StringComparison.Ordinal))
                 {
                     return slst; // TODO: complete support for XML input
                 }
@@ -1034,7 +1034,7 @@ namespace WeCantSpell.Hunspell
                 {
                     foreach (var mapEntryValue in mapEntry)
                     {
-                        if (StringEx.EqualsOffset(mapEntryValue, 0, word, wn, mapEntryValue.Length))
+                        if (mapEntryValue.AsSpan().Equals(word.AsSpan(wn).Limit(mapEntryValue.Length), StringComparison.Ordinal))
                         {
                             inMap = true;
                             var candidatePrefix = candidate;
@@ -1896,7 +1896,7 @@ namespace WeCantSpell.Hunspell
                                         (
                                             bad.Length > cptr.Key.Length
                                             &&
-                                            StringEx.EqualsLimited(cptr.Key, bad, cptr.Key.Length)
+                                            cptr.Key.AsSpan().Equals(bad.AsSpan().Limit(cptr.Key.Length), StringComparison.Ordinal)
                                         )
                                     )
                                 )
@@ -1932,7 +1932,7 @@ namespace WeCantSpell.Hunspell
                                     (
                                         bad.Length > key.Length
                                         &&
-                                        StringEx.EqualsLimited(key, bad, key.Length)
+                                        key.AsSpan().Equals(bad.AsSpan().Limit(key.Length), StringComparison.Ordinal)
                                     )
                                 )
                                 && // check needaffix flag
@@ -2160,7 +2160,7 @@ namespace WeCantSpell.Hunspell
                         (
                             entry.Strip.Length == 0
                             ||
-                            StringEx.EqualsLimited(word, entry.Strip, entry.Strip.Length)
+                            word.AsSpan().Limit(entry.Strip.Length).Equals(entry.Strip.AsSpan(), StringComparison.Ordinal)
                         )
                     )
                     // we have a match so add prefix

@@ -60,39 +60,13 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return new string(chars);
         }
 
-        public static bool Contains(this string @this, char c) => @this.IndexOf(c) >= 0;
+        public static bool Contains(this string @this, char value) => @this.IndexOf(value) >= 0;
 
         public static string Replace(this string @this, int index, int removeCount, string replacement)
         {
             var builder = StringBuilderPool.Get(@this, Math.Max(@this.Length, @this.Length + replacement.Length - removeCount));
             builder.Replace(index, removeCount, replacement);
             return StringBuilderPool.GetStringAndReturn(builder);
-        }
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static bool EqualsLimited(string a, string b, int length)
-        {
-#if DEBUG
-            if (a == null) throw new ArgumentNullException(nameof(a));
-            if (b == null) throw new ArgumentNullException(nameof(b));
-#endif
-            return length <= 0 || string.CompareOrdinal(a, 0, b, 0, length) == 0;
-        }
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static bool EqualsOffset(string a, int aOffset, string b, int bOffset, int length)
-        {
-#if DEBUG
-            if (a == null) throw new ArgumentNullException(nameof(a));
-            if (b == null) throw new ArgumentNullException(nameof(b));
-            if (aOffset < 0) throw new ArgumentOutOfRangeException(nameof(aOffset));
-            if (bOffset < 0) throw new ArgumentOutOfRangeException(nameof(bOffset));
-#endif
-            return length <= 0 || string.CompareOrdinal(a, aOffset, b, bOffset, length) == 0;
         }
 
 #if !NO_INLINE
@@ -112,7 +86,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             var firstCharIndex = @this.IndexOf(firstChar);
             while (firstCharIndex >= 0)
             {
-                if (EqualsOffset(@this, firstCharIndex, value, startIndex, length))
+                if (@this.AsSpan(firstCharIndex).Limit(length).Equals(value.AsSpan(startIndex).Limit(length), StringComparison.Ordinal))
                 {
                     return true;
                 }
