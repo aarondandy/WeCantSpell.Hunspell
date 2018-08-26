@@ -22,8 +22,6 @@ namespace WeCantSpell.Hunspell
             @"^[\t ]*([^\t ]+)[\t ]+(?:([^\t ]+)[\t ]+([^\t ]+)|([^\t ]+)[\t ]+([^\t ]+)[\t ]+([^\t ]+)(?:[\t ]+(.+))?)[\t ]*(?:[#].*)?$",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-        private static readonly Regex ConvTableSizeCommandRegex = new Regex(@"^\s*(\d+)\s*(?:[#].*)?$", RegexOptions.CultureInvariant);
-
         private static readonly Dictionary<string, AffixConfigOptions> FileBitFlagCommandMappings = new Dictionary<string, AffixConfigOptions>(StringComparer.OrdinalIgnoreCase)
         {
             {"COMPLEXPREFIXES", AffixConfigOptions.ComplexPrefixes},
@@ -608,9 +606,8 @@ namespace WeCantSpell.Hunspell
             if (!IsInitialized(entryListType))
             {
                 SetInitialized(entryListType);
-
-                var match = ConvTableSizeCommandRegex.Match(parameterText.ToString());
-                if (match.Success && IntEx.TryParseInvariant(match.Groups[1].Value, out int expectedSize) && expectedSize >= 0)
+                
+                if (IntEx.TryParseInvariant(ParseLeadingDigits(parameterText), out int expectedSize) && expectedSize >= 0)
                 {
                     if (entries == null)
                     {
@@ -1235,6 +1232,26 @@ namespace WeCantSpell.Hunspell
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private static bool HasFlag(EntryListType value, EntryListType flag) => (value & flag) == flag;
+
+        private static ReadOnlySpan<char> ParseLeadingDigits(ReadOnlySpan<char> text)
+        {
+            text = text.TrimStart();
+
+            if (text.IsEmpty)
+            {
+                return text;
+            }
+
+            var firstNonDigitIndex = 0;
+            for (; firstNonDigitIndex < text.Length && char.IsDigit(text[firstNonDigitIndex]); firstNonDigitIndex++)
+            {
+                ;
+            }
+
+            return (firstNonDigitIndex < text.Length)
+                ? text.Slice(0, firstNonDigitIndex)
+                : text;
+        }
 
         [Flags]
         private enum EntryListType : short
