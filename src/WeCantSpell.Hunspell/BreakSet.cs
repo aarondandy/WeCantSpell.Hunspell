@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -31,7 +32,7 @@ namespace WeCantSpell.Hunspell
                 foreach (var breakEntry in items)
                 {
                     int pos = 0;
-                    while ((pos = scw.IndexOfOrdinal(breakEntry, pos)) >= 0)
+                    while ((pos = scw.IndexOf(breakEntry, pos, StringComparison.Ordinal)) >= 0)
                     {
                         nbr++;
                         pos += breakEntry.Length;

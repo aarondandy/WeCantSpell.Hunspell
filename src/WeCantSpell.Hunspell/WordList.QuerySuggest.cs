@@ -1218,11 +1218,11 @@ namespace WeCantSpell.Hunspell
 
                     // search every occurence of the pattern in the word
                     for (
-                        var r = word.IndexOfOrdinal(replacement.Pattern)
+                        var r = word.IndexOf(replacement.Pattern, StringComparison.Ordinal)
                         ;
                         r >= 0
                         ; 
-                        r = word.IndexOfOrdinal(replacement.Pattern, r + 1) // search for the next letter
+                        r = word.IndexOf(replacement.Pattern, r + 1, StringComparison.Ordinal) // search for the next letter
                     )
                     {
                         var type = (r == 0) ? ReplacementValueType.Ini : ReplacementValueType.Med;
@@ -2215,7 +2215,7 @@ namespace WeCantSpell.Hunspell
                     return false;
                 }
 
-                var pos = morph.IndexOfOrdinal(var);
+                var pos = morph.IndexOf(var, StringComparison.Ordinal);
                 if (pos < 0)
                 {
                     return false;

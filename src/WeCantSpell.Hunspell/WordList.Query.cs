@@ -1889,7 +1889,7 @@ namespace WeCantSpell.Hunspell
                                     return true;
                                 }
 
-                                rIndex = word.IndexOfOrdinal(replacementEntry.Pattern, rIndex + 1);
+                                rIndex = word.IndexOf(replacementEntry.Pattern, rIndex + 1, StringComparison.Ordinal);
                             }
                             while (rIndex >= 0);
                         }

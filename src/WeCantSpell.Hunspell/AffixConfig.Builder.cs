@@ -388,7 +388,7 @@ namespace WeCantSpell.Hunspell
                     Culture = culture,
                     IsHungarian = string.Equals(culture?.TwoLetterISOLanguageName, "HU", StringComparison.OrdinalIgnoreCase),
                     IsGerman = string.Equals(culture?.TwoLetterISOLanguageName, "DE", StringComparison.OrdinalIgnoreCase),
-                    IsLanguageWithDashUsage = !string.IsNullOrEmpty(TryString) && TryString.ContainsAny('-', 'a'),
+                    IsLanguageWithDashUsage = !string.IsNullOrEmpty(TryString) && TryString.AsSpan().ContainsAny('-', 'a'),
                     CultureUsesDottedI =
                         string.Equals(culture?.TwoLetterISOLanguageName, "AZ", StringComparison.OrdinalIgnoreCase)
                         || string.Equals(culture?.TwoLetterISOLanguageName, "TR", StringComparison.OrdinalIgnoreCase)

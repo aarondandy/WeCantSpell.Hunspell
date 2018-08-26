@@ -48,22 +48,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #endif
         public static bool IsTabOrSpace(this char c) => c == ' ' || c == '\t';
 
-        public static int IndexOfNonTabOrSpace(this string text, int offset)
-        {
-#if DEBUG
-            if (text == null) throw new ArgumentNullException(nameof(text));
-#endif
-            for (; offset < text.Length; offset++)
-            {
-                if (!text[offset].IsTabOrSpace())
-                {
-                    return offset;
-                }
-            }
-
-            return -1;
-        }
-
         public static string Reverse(this string @this)
         {
             if (@this == null || @this.Length <= 1)
@@ -109,20 +93,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
             if (bOffset < 0) throw new ArgumentOutOfRangeException(nameof(bOffset));
 #endif
             return length <= 0 || string.CompareOrdinal(a, aOffset, b, bOffset, length) == 0;
-        }
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static bool EqualsOffset(string a, int aOffset, string b, int bOffset, int length, StringComparison comparisonType)
-        {
-#if DEBUG
-            if (a == null) throw new ArgumentNullException(nameof(a));
-            if (b == null) throw new ArgumentNullException(nameof(b));
-            if (aOffset < 0) throw new ArgumentOutOfRangeException(nameof(aOffset));
-            if (bOffset < 0) throw new ArgumentOutOfRangeException(nameof(bOffset));
-#endif
-            return length <= 0 || string.Compare(a, aOffset, b, bOffset, length, comparisonType) == 0;
         }
 
 #if !NO_INLINE
@@ -238,28 +208,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool IsLineBreakChar(this char c) => c == '\n' || c == '\r';
-
-        public static bool ContainsAny(this string text, char a, char b)
-        {
-#if DEBUG
-            if (text == null) throw new ArgumentNullException(nameof(text));
-#endif
-
-            return text.Length != 0
-                && text.IndexOfAny(new[] { a, b }) >= 0;
-        }
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static int IndexOfOrdinal(this string text, string value) =>
-            text.IndexOf(value, StringComparison.Ordinal);
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static int IndexOfOrdinal(this string text, string value, int startIndex) =>
-            text.IndexOf(value, startIndex, StringComparison.Ordinal);
 
         public static string Concat(this string text0, ReadOnlySpan<char> text1)
         {

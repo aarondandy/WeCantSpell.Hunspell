@@ -132,11 +132,11 @@ namespace WeCantSpell.Hunspell
                     // other patterns
                     foreach (var breakEntry in Affix.BreakPoints)
                     {
-                        var found = scw.IndexOfOrdinal(breakEntry);
+                        var found = scw.IndexOf(breakEntry, StringComparison.Ordinal);
                         var remainingLength = scw.Length - breakEntry.Length;
                         if (found > 0 && found < remainingLength)
                         {
-                            var found2 = scw.IndexOfOrdinal(breakEntry, found + 1);
+                            var found2 = scw.IndexOf(breakEntry, found + 1, StringComparison.Ordinal);
                             // try to break at the second occurance
                             // to recognize dictionary words with wordbreak
                             if (found2 > 0 && (found2 < remainingLength))
@@ -169,7 +169,7 @@ namespace WeCantSpell.Hunspell
                     // other patterns (break at first break point)
                     foreach (var breakEntry in Affix.BreakPoints)
                     {
-                        var found = scw.IndexOfOrdinal(breakEntry);
+                        var found = scw.IndexOf(breakEntry, StringComparison.Ordinal);
                         var remainingLength = scw.Length - breakEntry.Length;
                         if (found > 0 && found < remainingLength)
                         {
@@ -368,7 +368,7 @@ namespace WeCantSpell.Hunspell
             /// </summary>
             private WordEntry SpellSharps(ref string @base, int nPos, int n, int repNum, ref SpellCheckResultType info, out string root)
             {
-                var pos = @base.IndexOfOrdinal("ss", nPos);
+                var pos = @base.IndexOf("ss", nPos, StringComparison.Ordinal);
                 if (pos >= 0 && n < MaxSharps)
                 {
                     var baseBuilder = StringBuilderPool.Get(@base, @base.Length);

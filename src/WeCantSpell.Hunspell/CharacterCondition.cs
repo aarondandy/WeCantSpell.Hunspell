@@ -45,13 +45,13 @@ namespace WeCantSpell.Hunspell
             var conditions = new CharacterCondition[captures.Count];
             for (var captureIndex = 0; captureIndex < captures.Count; captureIndex++)
             {
-                conditions[captureIndex] = ParseSingle(captures[captureIndex].Value);
+                conditions[captureIndex] = ParseSingle(captures[captureIndex].Value.AsSpan());
             }
 
             return CharacterConditionGroup.TakeArray(conditions);
         }
 
-        private static CharacterCondition ParseSingle(string text)
+        private static CharacterCondition ParseSingle(ReadOnlySpan<char> text)
         {
 #if DEBUG
             if (text == null)
@@ -80,9 +80,9 @@ namespace WeCantSpell.Hunspell
                 throw new InvalidOperationException();
             }
 
-            return text[1] == '^'
-                ? TakeArray(text.ToCharArray(2, text.Length - 3), true)
-                : TakeArray(text.ToCharArray(1, text.Length - 2), false);
+            var restricted = text[1] == '^';
+            text = restricted ? text.Slice(2, text.Length - 3) : text.Slice(1, text.Length - 2);
+            return TakeArray(text.ToArray(), restricted);
         }
 
         public CharacterCondition(CharacterSet characters, bool restricted)

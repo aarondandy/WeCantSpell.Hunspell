@@ -265,7 +265,11 @@ namespace WeCantSpell.Hunspell
 
         private bool ParseLine(string line)
         {
-            if (string.IsNullOrEmpty(line))
+#if DEBUG
+            if (line == null) throw new ArgumentNullException(nameof(line));
+#endif
+
+            if (line.Length == 0)
             {
                 return true;
             }
@@ -552,50 +556,54 @@ namespace WeCantSpell.Hunspell
 
             public static ParsedWordLine Parse(string line)
             {
-                var firstNonDelimiterPosition = line.IndexOfNonTabOrSpace(0);
-                if (firstNonDelimiterPosition >= 0)
+#if DEBUG
+                if (line == null) throw new ArgumentNullException(nameof(line));
+#endif
+
+                int firstNonDelimiterPosition = 0;
+                for (; firstNonDelimiterPosition < line.Length && line[firstNonDelimiterPosition].IsTabOrSpace(); ++firstNonDelimiterPosition) ;
+                if (firstNonDelimiterPosition >= line.Length)
                 {
-                    var endOfWordAndFlagsPosition = FindIndexOfFirstMorphByColonChar(line, firstNonDelimiterPosition);
-                    if (endOfWordAndFlagsPosition <= firstNonDelimiterPosition)
-                    {
-                        endOfWordAndFlagsPosition = line.IndexOf('\t', firstNonDelimiterPosition);
-                        if (endOfWordAndFlagsPosition < 0)
-                        {
-                            endOfWordAndFlagsPosition = line.Length;
-                        }
-                    }
+                    return default;
+                }
 
-                    while(endOfWordAndFlagsPosition > firstNonDelimiterPosition && line[endOfWordAndFlagsPosition - 1].IsTabOrSpace())
+                var endOfWordAndFlagsPosition = FindIndexOfFirstMorphByColonChar(line, firstNonDelimiterPosition);
+                if (endOfWordAndFlagsPosition <= firstNonDelimiterPosition)
+                {
+                    endOfWordAndFlagsPosition = line.IndexOf('\t', firstNonDelimiterPosition);
+                    if (endOfWordAndFlagsPosition < 0)
                     {
-                        --endOfWordAndFlagsPosition;
+                        endOfWordAndFlagsPosition = line.Length;
                     }
+                }
 
-                    var flagsDelimiterPosition = IndexOfFlagsDelimiter(line, firstNonDelimiterPosition, endOfWordAndFlagsPosition);
+                for(; endOfWordAndFlagsPosition > firstNonDelimiterPosition && line[endOfWordAndFlagsPosition - 1].IsTabOrSpace(); --endOfWordAndFlagsPosition) ;
 
-                    ReadOnlySpan<char> word;
-                    ReadOnlySpan<char> flagsPart;
-                    if (flagsDelimiterPosition < 0)
-                    {
-                        word = line.AsSpan(firstNonDelimiterPosition, endOfWordAndFlagsPosition - firstNonDelimiterPosition);
-                        flagsPart = ReadOnlySpan<char>.Empty;
-                    }
-                    else
-                    {
-                        word = line.AsSpan(firstNonDelimiterPosition, flagsDelimiterPosition - firstNonDelimiterPosition);
-                        flagsPart = line.AsSpan(flagsDelimiterPosition + 1, endOfWordAndFlagsPosition - flagsDelimiterPosition - 1);
-                    }
+                var flagsDelimiterPosition = IndexOfFlagsDelimiter(line, firstNonDelimiterPosition, endOfWordAndFlagsPosition);
 
-                    if (word.Length != 0)
-                    {
-                        var morphGroup = endOfWordAndFlagsPosition >= 0 && endOfWordAndFlagsPosition != line.Length
-                            ? MorphPartRegex.Match(line, endOfWordAndFlagsPosition).Groups["morphs"]
-                            : null;
+                ReadOnlySpan<char> word;
+                ReadOnlySpan<char> flagsPart;
+                if (flagsDelimiterPosition < 0)
+                {
+                    word = line.AsSpan(firstNonDelimiterPosition, endOfWordAndFlagsPosition - firstNonDelimiterPosition);
+                    flagsPart = ReadOnlySpan<char>.Empty;
+                }
+                else
+                {
+                    word = line.AsSpan(firstNonDelimiterPosition, flagsDelimiterPosition - firstNonDelimiterPosition);
+                    flagsPart = line.AsSpan(flagsDelimiterPosition + 1, endOfWordAndFlagsPosition - flagsDelimiterPosition - 1);
+                }
 
-                        return new ParsedWordLine(
-                            word: word.Replace(@"\/", @"/"),
-                            flags: flagsPart,
-                            morphs: morphGroup != null && morphGroup.Success ? GetCapturesAsTest(morphGroup.Captures) : null);
-                    }
+                if (word.Length != 0)
+                {
+                    var morphGroup = endOfWordAndFlagsPosition >= 0 && endOfWordAndFlagsPosition != line.Length
+                        ? MorphPartRegex.Match(line, endOfWordAndFlagsPosition).Groups["morphs"]
+                        : null;
+
+                    return new ParsedWordLine(
+                        word: word.Replace(@"\/", @"/"),
+                        flags: flagsPart,
+                        morphs: morphGroup != null && morphGroup.Success ? GetCapturesAsTest(morphGroup.Captures) : null);
                 }
 
                 return default;
