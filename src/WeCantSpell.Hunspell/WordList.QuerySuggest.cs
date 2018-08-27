@@ -54,7 +54,7 @@ namespace WeCantSpell.Hunspell
                 var onlyCompoundSuggest = false;
 
                 // process XML input of the simplified API (see manual)
-                if (word.AsSpan().Limit(DefaultXmlToken.Length - 3).Equals(DefaultXmlToken.AsSpan(0, DefaultXmlToken.Length - 3), StringComparison.Ordinal))
+                if (word.AsSpan().StartsWith(DefaultXmlToken.AsSpan(0, DefaultXmlToken.Length - 3), StringComparison.Ordinal))
                 {
                     return slst; // TODO: complete support for XML input
                 }
@@ -1034,7 +1034,7 @@ namespace WeCantSpell.Hunspell
                 {
                     foreach (var mapEntryValue in mapEntry)
                     {
-                        if (mapEntryValue.AsSpan().Equals(word.AsSpan(wn).Limit(mapEntryValue.Length), StringComparison.Ordinal))
+                        if (word.AsSpan(wn).StartsWith(mapEntryValue.AsSpan(), StringComparison.Ordinal))
                         {
                             inMap = true;
                             var candidatePrefix = candidate;
@@ -1323,14 +1323,14 @@ namespace WeCantSpell.Hunspell
                             continue;
                         }
 
-                        sc = NGram(3, word, hpSet.Key, NGramOptions.LongerWorse | NGramOptions.Lowering)
+                        sc = NGram(3, word.AsSpan(), hpSet.Key.AsSpan(), NGramOptions.LongerWorse | NGramOptions.Lowering)
                             + LeftCommonSubstring(word, hpSet.Key);
 
                         // check special pronunciation
                         var f = string.Empty;
                         if (EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.Phon) && CopyField(ref f, hpDetail.Morphs, MorphologicalTags.Phon))
                         {
-                            var sc2 = NGram(3, word, f, NGramOptions.LongerWorse | NGramOptions.Lowering)
+                            var sc2 = NGram(3, word.AsSpan(), f.AsSpan(), NGramOptions.LongerWorse | NGramOptions.Lowering)
                                 + LeftCommonSubstring(word, f);
 
                             if (sc2 > sc)
@@ -1342,7 +1342,7 @@ namespace WeCantSpell.Hunspell
                         var scphon = -20000;
                         if (hasPhoneEntries && sc > 2 && wordKeyLengthDifference <= 3)
                         {
-                            scphon = NGram(3, target, Phonet(HunspellTextFunctions.MakeAllCap(hpSet.Key, textInfo)), NGramOptions.LongerWorse) * 2;
+                            scphon = NGram(3, target.AsSpan(), Phonet(HunspellTextFunctions.MakeAllCap(hpSet.Key, textInfo)).AsSpan(), NGramOptions.LongerWorse) * 2;
                         }
 
                         if (sc > roots[lp].Score)
@@ -1392,7 +1392,7 @@ namespace WeCantSpell.Hunspell
                         mw[k] = '*';
                     }
 
-                    thresh += NGram(word.Length, word, mw.ToString(), NGramOptions.AnyMismatch | NGramOptions.Lowering);
+                    thresh += NGram(word.Length, word.AsSpan(), mw.ToString().AsSpan(), NGramOptions.AnyMismatch | NGramOptions.Lowering);
                 }
 
                 StringBuilderPool.Return(mw);
@@ -1427,7 +1427,7 @@ namespace WeCantSpell.Hunspell
                         for (var k = 0; k < nw; k++)
                         {
                             ref var guessWordK = ref glst[k];
-                            sc = NGram(word.Length, word, guessWordK.Word, NGramOptions.AnyMismatch | NGramOptions.Lowering)
+                            sc = NGram(word.Length, word.AsSpan(), guessWordK.Word.AsSpan(), NGramOptions.AnyMismatch | NGramOptions.Lowering)
                                 + LeftCommonSubstring(word, guessWordK.Word);
 
                             if (sc > thresh)
@@ -1503,8 +1503,8 @@ namespace WeCantSpell.Hunspell
                         }
 
                         // using 2-gram instead of 3, and other weightening
-                        var re = NGram(2, word, gl, NGramOptions.AnyMismatch | NGramOptions.Weighted | NGramOptions.Lowering)
-                            + NGram(2, gl, word, NGramOptions.AnyMismatch | NGramOptions.Weighted | NGramOptions.Lowering);
+                        var re = NGram(2, word.AsSpan(), gl.AsSpan(), NGramOptions.AnyMismatch | NGramOptions.Weighted | NGramOptions.Lowering)
+                            + NGram(2, gl.AsSpan(), word.AsSpan(), NGramOptions.AnyMismatch | NGramOptions.Weighted | NGramOptions.Lowering);
 
                         guesses[i].Score =
                             // length of longest common subsequent minus length difference
@@ -1516,7 +1516,7 @@ namespace WeCantSpell.Hunspell
                             // swap character (not neighboring)
                             + (isSwap ? 10 : 0)
                             // ngram
-                            + NGram(4, word, gl, NGramOptions.AnyMismatch | NGramOptions.Lowering)
+                            + NGram(4, word.AsSpan(), gl.AsSpan(), NGramOptions.AnyMismatch | NGramOptions.Lowering)
                             // weighted ngrams
                             + re
                             // different limit for dictionaries with PHONE rules
@@ -1896,7 +1896,7 @@ namespace WeCantSpell.Hunspell
                                         (
                                             bad.Length > cptr.Key.Length
                                             &&
-                                            cptr.Key.AsSpan().Equals(bad.AsSpan().Limit(cptr.Key.Length), StringComparison.Ordinal)
+                                            bad.AsSpan().StartsWith(cptr.Key.AsSpan(), StringComparison.Ordinal)
                                         )
                                     )
                                 )
@@ -1932,7 +1932,7 @@ namespace WeCantSpell.Hunspell
                                     (
                                         bad.Length > key.Length
                                         &&
-                                        key.AsSpan().Equals(bad.AsSpan().Limit(key.Length), StringComparison.Ordinal)
+                                        bad.AsSpan().StartsWith(key.AsSpan(), StringComparison.Ordinal)
                                     )
                                 )
                                 && // check needaffix flag
@@ -2160,7 +2160,7 @@ namespace WeCantSpell.Hunspell
                         (
                             entry.Strip.Length == 0
                             ||
-                            word.AsSpan().Limit(entry.Strip.Length).Equals(entry.Strip.AsSpan(), StringComparison.Ordinal)
+                            word.AsSpan().StartsWith(entry.Strip.AsSpan(), StringComparison.Ordinal)
                         )
                     )
                     // we have a match so add prefix
@@ -2281,7 +2281,7 @@ namespace WeCantSpell.Hunspell
             /// <summary>
             /// Generate an n-gram score comparing s1 and s2.
             /// </summary>
-            private int NGram(int n, string s1, string s2, NGramOptions opt)
+            private int NGram(int n, ReadOnlySpan<char> s1, ReadOnlySpan<char> s2, NGramOptions opt)
             {
                 if (s2.Length == 0)
                 {
@@ -2290,7 +2290,7 @@ namespace WeCantSpell.Hunspell
 
                 if (HasFlag(opt, NGramOptions.Lowering))
                 {
-                    s2 = HunspellTextFunctions.MakeAllSmall(s2, TextInfo);
+                    s2 = HunspellTextFunctions.MakeAllSmall(s2.ToString(), TextInfo).AsSpan();
                 }
 
                 var nscore = HasFlag(opt, NGramOptions.Weighted)
@@ -2319,7 +2319,7 @@ namespace WeCantSpell.Hunspell
                 return nscore;
             }
 
-            private static int NGramWeightedSearch(int n, string s1, string t)
+            private static int NGramWeightedSearch(int n, ReadOnlySpan<char> s1, ReadOnlySpan<char> t)
             {
                 int nscore = 0;
                 for (var j = 1; j <= n; j++)
@@ -2329,7 +2329,7 @@ namespace WeCantSpell.Hunspell
                     {
                         for (var i = 0; i <= s1LenLessJ; i++)
                         {
-                            if (t.ContainsSubstringOrdinal(s1, i, j))
+                            if (t.Contains(s1.Slice(i, j), StringComparison.Ordinal))
                             {
                                 nscore++;
                             }
@@ -2351,7 +2351,7 @@ namespace WeCantSpell.Hunspell
                 return nscore;
             }
 
-            private static int NGramNonWeightedSearch(int n, string s1, string t)
+            private static int NGramNonWeightedSearch(int n, ReadOnlySpan<char> s1, ReadOnlySpan<char> t)
             {
                 int nscore = 0;
                 for (var j = 1; j <= n; j++)
@@ -2360,7 +2360,7 @@ namespace WeCantSpell.Hunspell
                     var s1LenLessJ = s1.Length - j;
                     for (var i = 0; i <= s1LenLessJ; i++)
                     {
-                        if (t.ContainsSubstringOrdinal(s1, i, j))
+                        if (t.Contains(s1.Slice(i, j), StringComparison.Ordinal))
                         {
                             ns++;
                         }

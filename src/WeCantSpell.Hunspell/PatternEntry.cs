@@ -26,7 +26,6 @@ namespace WeCantSpell.Hunspell
 
         internal bool Pattern3DoesNotMatch(ReadOnlySpan<char> word, int offset) =>
             Pattern3.Length == 0
-            ||
-            !word.Slice(offset).Limit(Pattern3.Length).Equals(Pattern3.AsSpan(), StringComparison.Ordinal);
+            || !word.Slice(offset).StartsWith(Pattern3.AsSpan(), StringComparison.Ordinal); 
     }
 }

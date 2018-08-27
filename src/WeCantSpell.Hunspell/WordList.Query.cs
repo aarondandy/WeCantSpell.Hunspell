@@ -527,9 +527,7 @@ namespace WeCantSpell.Hunspell
                             FlagValue scpdPatternEntryCondition2;
                             if (scpd > 0)
                             {
-                                for (; scpd <= Affix.CompoundPatterns.Count && Affix.CompoundPatterns[scpd - 1].Pattern3DoesNotMatch(word.AsSpan(), i); scpd++)
-                                {
-                                }
+                                for (; scpd <= Affix.CompoundPatterns.Count && Affix.CompoundPatterns[scpd - 1].Pattern3DoesNotMatch(word.AsSpan(), i); scpd++) ;
 
                                 if (scpd > Affix.CompoundPatterns.Count)
                                 {
@@ -1248,7 +1246,7 @@ namespace WeCantSpell.Hunspell
                                             }
 
                                             // check first part
-                                            if (rv.Word.AsSpan().Equals(word.AsSpan(i).Limit(rv.Word.Length), StringComparison.Ordinal))
+                                            if (word.AsSpan(i).StartsWith(rv.Word.AsSpan(), StringComparison.Ordinal))
                                             {
                                                 var r = st[i + rv.Word.Length];
                                                 if (i + rv.Word.Length < st.BufferLength)

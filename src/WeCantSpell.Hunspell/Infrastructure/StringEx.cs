@@ -80,23 +80,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return index < @this.Length ? @this[index] : '\0';
         }
 
-        public static bool ContainsSubstringOrdinal(this string @this, string value, int startIndex, int length)
-        {
-            var firstChar = value[startIndex];
-            var firstCharIndex = @this.IndexOf(firstChar);
-            while (firstCharIndex >= 0)
-            {
-                if (@this.AsSpan(firstCharIndex).Limit(length).Equals(value.AsSpan(startIndex).Limit(length), StringComparison.Ordinal))
-                {
-                    return true;
-                }
-
-                firstCharIndex = @this.IndexOf(firstChar, firstCharIndex + 1);
-            }
-
-            return false;
-        }
-
         public static string ConcatString(string str0, int startIndex0, int count0, string str1)
         {
             if (count0 == 0)
