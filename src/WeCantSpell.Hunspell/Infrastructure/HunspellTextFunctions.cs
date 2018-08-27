@@ -158,13 +158,30 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return @this;
             }
 
-            var firstMatchingIndex = @this.IndexOfAny(chars);
-            if (firstMatchingIndex < 0)
+            var removeIndex = @this.IndexOfAny(chars);
+            if (removeIndex < 0)
             {
                 return @this;
             }
 
-            return @this.ToString().RemoveChars(chars).AsSpan();
+            if (removeIndex == @this.Length - 1)
+            {
+                return @this.Slice(0, removeIndex);
+            }
+
+            var builder = StringBuilderPool.Get(@this.Length - 1);
+            builder.Append(@this.Slice(0, removeIndex));
+            @this = @this.Slice(removeIndex + 1);
+            for (var i = 0; i < @this.Length; i++)
+            {
+                ref readonly var c = ref @this[i];
+                if (!chars.Contains(c))
+                {
+                    builder.Append(c);
+                }
+            }
+
+            return StringBuilderPool.GetStringAndReturn(builder).AsSpan();
         }
 
         public static string MakeInitCap(string s, TextInfo textInfo)

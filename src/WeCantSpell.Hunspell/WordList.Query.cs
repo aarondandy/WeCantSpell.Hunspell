@@ -419,9 +419,6 @@ namespace WeCantSpell.Hunspell
                 return HomonymWordSearchDetail(homonymWordString, words, condition2, scpdIsZero)?.ToEntry(homonymWordString);
             }
 
-            private WordEntry HomonymWordSearch(string homonymWord, IncrementalWordList words, FlagValue condition2, bool scpdIsZero) =>
-                HomonymWordSearchDetail(homonymWord, words, condition2, scpdIsZero)?.ToEntry(homonymWord);
-
             private WordEntryDetail HomonymWordSearchDetail(string homonymWord, IncrementalWordList words, FlagValue condition2, bool scpdIsZero)
             {
                 foreach (var homonymCandidate in LookupDetails(homonymWord))
@@ -462,10 +459,7 @@ namespace WeCantSpell.Hunspell
             protected WordEntry CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
             {
 #if DEBUG
-                if (word == null)
-                {
-                    throw new ArgumentNullException(nameof(word));
-                }
+                if (word == null) throw new ArgumentNullException(nameof(word));
 #endif
                 int oldnumsyllable, oldnumsyllable2, oldwordnum, oldwordnum2;
                 WordEntry rv;
@@ -890,7 +884,7 @@ namespace WeCantSpell.Hunspell
                                     // XXX only second suffix (inflections, not derivations)
                                     if (SuffixAppend != null)
                                     {
-                                        numSyllable -= GetSyllable(SuffixAppend.AsSpan().Reversed().AsSpan());
+                                        numSyllable -= GetSyllable(SuffixAppend.AsSpan().Reversed());
                                     }
                                     if (SuffixExtra)
                                     {
@@ -1051,7 +1045,7 @@ namespace WeCantSpell.Hunspell
 
                                         if (rv == null && Affix.CompoundRules.HasItems && words != null)
                                         {
-                                            rv = AffixCheck(wordSubI, new FlagValue(), CompoundOptions.End);
+                                            rv = AffixCheck(wordSubI, default, CompoundOptions.End);
                                             if (rv != null && DefCompoundCheck(words.CreateIncremented(), rv.Detail, true))
                                             {
                                                 st.Destroy();
@@ -1122,7 +1116,7 @@ namespace WeCantSpell.Hunspell
                                         // XXX only second suffix (inflections, not derivations)
                                         if (SuffixAppend != null)
                                         {
-                                            numSyllable -= GetSyllable(SuffixAppend.AsSpan().Reversed().AsSpan());
+                                            numSyllable -= GetSyllable(SuffixAppend.AsSpan().Reversed());
                                         }
                                         if (SuffixExtra)
                                         {

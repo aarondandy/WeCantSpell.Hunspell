@@ -54,9 +54,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static bool EndsWith(this ReadOnlySpan<char> @this, char value) =>
             !@this.IsEmpty && @this[@this.Length - 1] == value;
 
-        public static bool EqualsOrdinal(this ReadOnlySpan<char> @this, string value) =>
-            value != null && @this.Equals(value.AsSpan(), StringComparison.OrdinalIgnoreCase);
-
         public static bool Split(this ReadOnlySpan<char> @this, char value0, SplitPartHandler partHandler)
         {
             int partIndex = 0;
@@ -120,9 +117,24 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return @this;
             }
 
-            // TODO: use firstRemoveIndex to optimize
+            if (removeIndex == @this.Length - 1)
+            {
+                return @this.Slice(0, removeIndex);
+            }
 
-            return @this.ToString().Replace(value.ToString(), string.Empty).AsSpan();
+            var builder = StringBuilderPool.Get(@this.Length - 1);
+            builder.Append(@this.Slice(0, removeIndex));
+            @this = @this.Slice(removeIndex + 1);
+            for (var i = 0; i < @this.Length; i++)
+            {
+                ref readonly var c = ref @this[i];
+                if (c != value)
+                {
+                    builder.Append(c);
+                }
+            }
+
+            return StringBuilderPool.GetStringAndReturn(builder).AsSpan();
         }
 
         public static ReadOnlySpan<char> Replace(this ReadOnlySpan<char> @this, char oldChar, char newChar)
@@ -133,9 +145,16 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return @this;
             }
 
-            // TODO: use replaceIndex to optimize
+            var result = new char[@this.Length];
+            @this.Slice(0, replaceIndex).CopyTo(result.AsSpan());
+            result[replaceIndex] = newChar;
+            for (var i = replaceIndex + 1; i < result.Length; i++)
+            {
+                ref readonly var c = ref @this[i];
+                result[i] = (c == oldChar) ? newChar : c;
+            }
 
-            return @this.ToString().Replace(oldChar, newChar).AsSpan();
+            return new ReadOnlySpan<char>(result);
         }
 
         public static ReadOnlySpan<char> Replace(this ReadOnlySpan<char> @this, string oldText, string newText)
@@ -151,16 +170,11 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return @this.ToString().Replace(oldText, newText).AsSpan();
         }
 
-        public static string Reversed(this ReadOnlySpan<char> @this)
+        public static ReadOnlySpan<char> Reversed(this ReadOnlySpan<char> @this)
         {
-            if (@this.IsEmpty)
+            if (@this.IsEmpty || @this.Length == 1)
             {
-                return string.Empty;
-            }
-
-            if (@this.Length == 1)
-            {
-                return @this.ToString();
+                return @this;
             }
 
             var chars = new char[@this.Length];
@@ -170,7 +184,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 chars[i] = @this[lastIndex - i];
             }
 
-            return new string(chars);
+            return new ReadOnlySpan<char>(chars);
         }
 
         public static ReadOnlySpan<char> Limit(this ReadOnlySpan<char> @this, int maxLength)

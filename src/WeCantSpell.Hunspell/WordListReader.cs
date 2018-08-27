@@ -360,7 +360,7 @@ namespace WeCantSpell.Hunspell
 
             if (Affix.ComplexPrefixes)
             {
-                word = word.Reversed().AsSpan();
+                word = word.Reversed();
 
                 if (morphs.Length != 0 && !Affix.IsAliasM)
                 {

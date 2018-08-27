@@ -586,7 +586,7 @@ namespace WeCantSpell.Hunspell
         {
             if (EnumEx.HasFlag(Builder.Options, AffixConfigOptions.ComplexPrefixes))
             {
-                parameterText = parameterText.Reversed().AsSpan();
+                parameterText = parameterText.Reversed();
             }
 
             var parts = new List<string>();
