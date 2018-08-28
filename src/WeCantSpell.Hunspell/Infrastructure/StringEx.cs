@@ -117,9 +117,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
-        public static string ConcatString(string str0, int startIndex0, int count0, string str1, int startIndex1) =>
-            ConcatString(str0, startIndex0, count0, str1, startIndex1, str1.Length - startIndex1);
-
         public static string ConcatString(string str0, int startIndex0, int count0, string str1, int startIndex1, int count1)
         {
             var builder = StringBuilderPool.Get(count0 + count1);
@@ -155,20 +152,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             if (text0 == null) throw new ArgumentNullException(nameof(text0));
 #endif
 
-            if (text0.Length == 0)
-            {
-                return text1.ToString();
-            }
-
-            if (text1.IsEmpty)
-            {
-                return text0;
-            }
-
-            var builder = StringBuilderPool.Get(text0.Length + text1.Length);
-            builder.Append(text0);
-            builder.Append(text1);
-            return StringBuilderPool.GetStringAndReturn(builder);
+            return text0.AsSpan().ConcatString(text1);
         }
     }
 }

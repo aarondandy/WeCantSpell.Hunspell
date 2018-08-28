@@ -134,67 +134,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
             }
         }
 
-        public static void WriteChars(this StringBuilder @this, ReadOnlySpan<char> text, int destinationIndex)
-        {
-            if (destinationIndex >= @this.Length)
-            {
-                if (destinationIndex > @this.Length)
-                {
-                    var characterGap = destinationIndex - @this.Length;
-                    @this.Append('\0', characterGap);
-                }
-
-                @this.Append(text);
-            }
-            else
-            {
-                var writeUntilIndex = destinationIndex + text.Length;
-                if (writeUntilIndex <= @this.Length)
-                {
-                    for (var i = 0; i < text.Length; i++)
-                    {
-                        @this[destinationIndex + i] = text[i];
-                    }
-                }
-                else
-                {
-                    @this.Remove(destinationIndex, @text.Length - destinationIndex);
-                    @this.Append(text);
-                }
-            }
-        }
-
-        public static void WriteChars(this StringBuilder @this, int sourceIndex, ReadOnlySpan<char> text, int destinationIndex)
-        {
-            if (destinationIndex >= @this.Length)
-            {
-                if (destinationIndex > @this.Length)
-                {
-                    var characterGap = destinationIndex - @this.Length;
-                    @this.Append('\0', characterGap);
-                }
-
-                @this.Append(text.Slice(sourceIndex, text.Length - sourceIndex));
-            }
-            else
-            {
-                var charactersToWrite = text.Length - sourceIndex;
-                var writeUntilIndex = destinationIndex + charactersToWrite;
-                if (writeUntilIndex <= @this.Length)
-                {
-                    for (var i = 0; i < charactersToWrite; i++)
-                    {
-                        @this[destinationIndex + i] = text[sourceIndex + i];
-                    }
-                }
-                else
-                {
-                    @this.Remove(destinationIndex, @text.Length - destinationIndex);
-                    @this.Append(text.Slice(sourceIndex, text.Length - sourceIndex));
-                }
-            }
-        }
-
         public static bool StartsWith(this StringBuilder builder, char c) =>
             builder.Length != 0 && builder[0] == c;
 
@@ -245,16 +184,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return builder.ToString(0, index)
                 + value.ToString()
                 + builder.ToString(index, builder.Length - index);
-        }
-
-        public static StringBuilder Append(this StringBuilder builder, ReadOnlySpan<char> span)
-        {
-            for (var i = 0; i < span.Length; i++)
-            {
-                builder.Append(span[i]);
-            }
-
-            return builder;
         }
     }
 }

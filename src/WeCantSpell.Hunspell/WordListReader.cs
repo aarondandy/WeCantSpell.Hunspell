@@ -348,7 +348,7 @@ namespace WeCantSpell.Hunspell
         {
             if (Affix.IgnoredChars.HasItems)
             {
-                word = word.RemoveChars(Affix.IgnoredChars);
+                word = word.Remove(Affix.IgnoredChars);
             }
 
             if (Affix.ComplexPrefixes)

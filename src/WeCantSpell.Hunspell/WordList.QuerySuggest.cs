@@ -262,7 +262,7 @@ namespace WeCantSpell.Hunspell
                         var pos = sitem.IndexOf('-');
                         if (pos >= 0)
                         {
-                            var info = CheckDetails(StringEx.ConcatString(sitem, 0, pos, sitem, pos + 1)).Info;
+                            var info = CheckDetails(sitem.AsSpan(0, pos).ConcatString(sitem.AsSpan(pos + 1))).Info;
                             var desiredChar = EnumEx.HasFlag(info, SpellCheckResultType.Compound | SpellCheckResultType.Forbidden)
                                 ? ' '
                                 : '-';
@@ -696,7 +696,7 @@ namespace WeCantSpell.Hunspell
                         state++;
                         if (state == 3 || (state == 2 && i >= 4))
                         {
-                            TestSug(wlst, StringEx.ConcatString(word, 0, i - 1, word, i + 1), cpdSuggest);
+                            TestSug(wlst, word.AsSpan(0, i - 1).ConcatString(word.AsSpan(i + 1)), cpdSuggest);
                             state = 0;
                         }
                     }
@@ -720,7 +720,7 @@ namespace WeCantSpell.Hunspell
                     return wlst.Count;
                 }
 
-                var candidate = StringBuilderPool.Get(word, word.Length);
+                var candidate = StringBuilderPool.Get(word);
 
                 var timer = OperationTimeLimiter.Create(TimeLimitMs, MinTimer);
 

@@ -875,7 +875,7 @@ namespace WeCantSpell.Hunspell
                                 if (Affix.IsHungarian)
                                 {
                                     // calculate syllable number of the word
-                                    numSyllable += GetSyllable(st.ToString().AsSpan(0, i));
+                                    numSyllable += GetSyllable(st.GetTerminatedSpan().Slice(0, i));
 
                                     // - affix syllable num.
                                     // XXX only second suffix (inflections, not derivations)
@@ -921,7 +921,7 @@ namespace WeCantSpell.Hunspell
                                         }
                                     }
 
-                                    rv = HomonymWordSearch(st.ToString().AsSpan(i), words, scpdPatternEntryCondition2, scpd == 0);
+                                    rv = HomonymWordSearch(st.GetTerminatedSpan().Slice(i), words, scpdPatternEntryCondition2, scpd == 0);
 
                                     if (rv != null)
                                     {
@@ -1199,7 +1199,7 @@ namespace WeCantSpell.Hunspell
                                     // perhaps second word is a compound word (recursive call)
                                     if (wordNum < maxwordnum)
                                     {
-                                        rv = CompoundCheck(st.ToString().AsSpan(i), wordNum + 1, numSyllable, maxwordnum, words?.CreateIncremented(), rwords.CreateIncremented(), false, isSug, ref info);
+                                        rv = CompoundCheck(st.GetTerminatedSpan().Slice(i), wordNum + 1, numSyllable, maxwordnum, words?.CreateIncremented(), rwords.CreateIncremented(), false, isSug, ref info);
 
                                         if (
                                             rv != null
@@ -1245,7 +1245,7 @@ namespace WeCantSpell.Hunspell
                                                     st[i + rv.Word.Length] = '\0';
                                                 }
 
-                                                var stString = st.ToString().AsSpan();
+                                                var stString = st.GetTerminatedSpan();
                                                 if ((Affix.CheckCompoundRep && CompoundReplacementCheck(stString)) || CompoundWordPairCheck(stString))
                                                 {
                                                     if (i + rv.Word.Length < st.BufferLength)
@@ -1268,7 +1268,7 @@ namespace WeCantSpell.Hunspell
                                                     if (
                                                         rv2 != null
                                                         && rv2.ContainsFlag(Affix.ForbiddenWord)
-                                                        && rv2.Word.AsSpan().Limit(i + rv.Word.Length).Equals(st.ToString().AsSpan().Limit(i + rv.Word.Length), StringComparison.Ordinal)
+                                                        && rv2.Word.AsSpan().EqualsLimited(st.GetTerminatedSpan(), i + rv.Word.Length, StringComparison.Ordinal)
                                                     )
                                                     {
                                                         st.Destroy();
@@ -1895,18 +1895,19 @@ namespace WeCantSpell.Hunspell
                     return false;
                 }
 
-                var candidate = StringBuilderPool.Get(wordSlice.Length + 1);
-                candidate.Append(wordSlice).Append(' ');
+                var candidate = new char[wordSlice.Length + 1];
+                wordSlice.CopyTo(candidate.AsSpan());
 
                 for (var i = 1; i < wordSlice.Length; i++)
                 {
-                    candidate[i - 1] = wordSlice[i - 1];
                     candidate[i] = ' ';
-                    candidate.WriteChars(wordSlice.Slice(i), i + 1);
-                    if (CandidateCheck(candidate.ToString()))
+                    wordSlice.Slice(i).CopyTo(candidate.AsSpan(i + 1));
+                    if (CandidateCheck(new string(candidate)))
                     {
                         return true;
                     }
+
+                    candidate[i] = wordSlice[i];
                 }
 
                 return false;

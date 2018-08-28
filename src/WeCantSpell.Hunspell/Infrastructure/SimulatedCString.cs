@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text;
 
 #if !NO_INLINE
 using System.Runtime.CompilerServices;
@@ -7,24 +6,28 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    sealed class SimulatedCString
+    ref struct SimulatedCString
     {
         public SimulatedCString(ReadOnlySpan<char> text)
         {
-            Buffer = StringBuilderPool.Get(text);
+            buffer = text.ToArray();
+            cachedSpan = buffer.AsSpan();
+            cachedString = null;
+            cacheRequiresRefresh = true;
         }
 
-        private StringBuilder Buffer;
-
-        private string toStringCache = null;
+        private char[] buffer;
+        private string cachedString;
+        private Span<char> cachedSpan;
+        private bool cacheRequiresRefresh;
 
         public char this[int index]
         {
-            get => index < 0 || index >= Buffer.Length ? '\0' : Buffer[index];
+            get => index < 0 || index >= buffer.Length ? '\0' : buffer[index];
             set
             {
-                toStringCache = null;
-                Buffer[index] = value;
+                ResetCache();
+                buffer[index] = value;
             }
         }
 
@@ -33,40 +36,73 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #if !NO_INLINE
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            get => Buffer.Length;
+            get => buffer.Length;
         }
 
         public void WriteChars(string text, int destinationIndex)
         {
-            toStringCache = null;
-            Buffer.WriteChars(text.AsSpan(), destinationIndex);
+            WriteChars(text.AsSpan(), destinationIndex);
+        }
+
+        public void WriteChars(ReadOnlySpan<char> text, int destinationIndex)
+        {
+            ResetCache();
+
+            var neededLength = text.Length + destinationIndex;
+            if (buffer.Length < neededLength)
+            {
+                Array.Resize(ref buffer, neededLength);
+            }
+
+            text.CopyTo(buffer.AsSpan(destinationIndex));
         }
 
         public void WriteChars(int sourceIndex, ReadOnlySpan<char> text, int destinationIndex)
         {
-            toStringCache = null;
-            Buffer.WriteChars(sourceIndex, text, destinationIndex);
+            WriteChars(text.Slice(sourceIndex), destinationIndex);
         }
 
         public void Assign(ReadOnlySpan<char> text)
         {
-            toStringCache = null;
-            Buffer.Clear();
-            Buffer.Append(text);
+#if DEBUG
+            if (text.Length > buffer.Length) throw new ArgumentOutOfRangeException(nameof(text));
+#endif
+            ResetCache();
+
+            text.CopyTo(buffer.AsSpan());
+            if (text.Length < buffer.Length)
+            {
+                Array.Clear(buffer, text.Length, buffer.Length - text.Length);
+            }
         }
 
         public void Destroy()
         {
-            if (Buffer != null)
-            {
-                StringBuilderPool.Return(Buffer);
-            }
-
-            toStringCache = null;
-            Buffer = null;
+            ResetCache();
+            buffer = null;
         }
 
         public override string ToString() =>
-            toStringCache ?? (toStringCache = Buffer.ToStringTerminated());
+            cachedString ?? (cachedString = GetTerminatedSpan().ToString());
+
+        public Span<char> GetTerminatedSpan()
+        {
+            if (cacheRequiresRefresh)
+            {
+                var nullIndex = Array.IndexOf(buffer, '\0');
+                cachedSpan = nullIndex >= 0
+                    ? buffer.AsSpan(0, nullIndex)
+                    : buffer.AsSpan();
+                cacheRequiresRefresh = false;
+            }
+
+            return cachedSpan;
+        }
+
+        private void ResetCache()
+        {
+            cacheRequiresRefresh = true;
+            cachedString = null;
+        }
     }
 }

@@ -45,6 +45,9 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static bool Equals(this ReadOnlySpan<char> @this, string value, StringComparison comparison) =>
             value != null && @this.Equals(value.AsSpan(), comparison);
 
+        public static bool EqualsLimited(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value, int lengthLimit, StringComparison comparison) =>
+            @this.Limit(lengthLimit).Equals(value.Limit(lengthLimit), comparison);
+
         public static bool ContainsAny(this ReadOnlySpan<char> @this, char value0, char value1) =>
             @this.IndexOfAny(value0, value1) >= 0;
 
@@ -125,19 +128,59 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return @this.Slice(0, removeIndex);
             }
 
-            var builder = StringBuilderPool.Get(@this.Length - 1);
-            builder.Append(@this.Slice(0, removeIndex));
-            @this = @this.Slice(removeIndex + 1);
-            for (var i = 0; i < @this.Length; i++)
+            var buffer = new char[@this.Length - 1];
+            @this.Slice(0, removeIndex).CopyTo(buffer.AsSpan());
+            var writeIndex = removeIndex;
+            for (var i = removeIndex; i < @this.Length; i++)
             {
                 ref readonly var c = ref @this[i];
-                if (c != value)
+                if (value != c)
                 {
-                    builder.Append(c);
+                    buffer[writeIndex++] = c;
                 }
             }
 
-            return StringBuilderPool.GetStringAndReturn(builder).AsSpan();
+            return buffer.AsSpan(0, writeIndex);
+        }
+
+        public static ReadOnlySpan<char> Remove(this ReadOnlySpan<char> @this, CharacterSet chars)
+        {
+#if DEBUG
+            if (chars == null)
+            {
+                throw new ArgumentNullException(nameof(chars));
+            }
+#endif
+
+            if (@this.IsEmpty || chars.IsEmpty)
+            {
+                return @this;
+            }
+
+            var removeIndex = @this.IndexOfAny(chars);
+            if (removeIndex < 0)
+            {
+                return @this;
+            }
+
+            if (removeIndex == @this.Length - 1)
+            {
+                return @this.Slice(0, removeIndex);
+            }
+
+            var buffer = new char[@this.Length - 1];
+            @this.Slice(0, removeIndex).CopyTo(buffer.AsSpan());
+            var writeIndex = removeIndex;
+            for (var i = removeIndex; i < @this.Length; i++)
+            {
+                ref readonly var c = ref @this[i];
+                if (!chars.Contains(c))
+                {
+                    buffer[writeIndex++] = c;
+                }
+            }
+
+            return buffer.AsSpan(0, writeIndex);
         }
 
         public static ReadOnlySpan<char> Replace(this ReadOnlySpan<char> @this, char oldChar, char newChar)
@@ -196,6 +239,23 @@ namespace WeCantSpell.Hunspell.Infrastructure
             if (maxLength < 0) throw new ArgumentOutOfRangeException(nameof(maxLength));
 #endif
             return @this.Length > maxLength ? @this.Slice(0, maxLength) : @this;
+        }
+
+        public static string ConcatString(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value)
+        {
+            if (@this.IsEmpty)
+            {
+                return value.ToString();
+            }
+            if (value.IsEmpty)
+            {
+                return @this.ToString();
+            }
+
+            var buffer = new char[@this.Length + value.Length].AsSpan();
+            @this.CopyTo(buffer);
+            value.CopyTo(buffer.Slice(@this.Length));
+            return buffer.ToString();
         }
     }
 }

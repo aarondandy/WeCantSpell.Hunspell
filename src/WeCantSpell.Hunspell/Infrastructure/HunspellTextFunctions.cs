@@ -144,46 +144,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
-        public static ReadOnlySpan<char> RemoveChars(this ReadOnlySpan<char> @this, CharacterSet chars)
-        {
-#if DEBUG
-            if (chars == null)
-            {
-                throw new ArgumentNullException(nameof(chars));
-            }
-#endif
-
-            if (@this.IsEmpty || chars.IsEmpty)
-            {
-                return @this;
-            }
-
-            var removeIndex = @this.IndexOfAny(chars);
-            if (removeIndex < 0)
-            {
-                return @this;
-            }
-
-            if (removeIndex == @this.Length - 1)
-            {
-                return @this.Slice(0, removeIndex);
-            }
-
-            var buffer = new char[@this.Length - 1];
-            @this.Slice(0, removeIndex).CopyTo(buffer.AsSpan());
-            var writeIndex = removeIndex;
-            for (var i = removeIndex; i < @this.Length; i++)
-            {
-                ref readonly var c = ref @this[i];
-                if (!chars.Contains(c))
-                {
-                    buffer[writeIndex++] = c;
-                }
-            }
-
-            return buffer.AsSpan(0, writeIndex);
-        }
-
         public static string MakeInitCap(string s, TextInfo textInfo)
         {
 #if DEBUG
