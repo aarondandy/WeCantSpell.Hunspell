@@ -2286,7 +2286,7 @@ namespace WeCantSpell.Hunspell
 
                 if (HasFlag(opt, NGramOptions.Lowering))
                 {
-                    s2 = HunspellTextFunctions.MakeAllSmall(s2.ToString(), TextInfo).AsSpan();
+                    s2 = HunspellTextFunctions.MakeAllSmall(s2, Affix.Culture);
                 }
 
                 var nscore = HasFlag(opt, NGramOptions.Weighted)

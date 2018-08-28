@@ -41,7 +41,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             GetClearedBuilderWithCapacity(capacity).Append(value, valueStartIndex, valueLength);
 
         public static StringBuilder Get(ReadOnlySpan<char> value) =>
-            GetClearedBuilderWithCapacity(value.Length).Append(value.ToString());
+            GetClearedBuilderWithCapacity(value.Length).Append(value);
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

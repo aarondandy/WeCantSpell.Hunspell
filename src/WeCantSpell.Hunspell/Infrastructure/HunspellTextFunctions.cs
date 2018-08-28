@@ -217,17 +217,26 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return textInfo.ToLower(s);
         }
 
+        /// <summary>
+        /// Convert to all little.
+        /// </summary>
+        public static ReadOnlySpan<char> MakeAllSmall(ReadOnlySpan<char> s, CultureInfo cultureInfo)
+        {
+#if DEBUG
+            if (s == null) throw new ArgumentNullException(nameof(s));
+            if (cultureInfo == null) throw new ArgumentNullException(nameof(cultureInfo));
+#endif
+            var result = new char[s.Length].AsSpan();
+            s.ToLower(result, cultureInfo);
+
+            return result;
+        }
+
         public static string MakeInitSmall(string s, TextInfo textInfo)
         {
 #if DEBUG
-            if (s == null)
-            {
-                throw new ArgumentNullException(nameof(s));
-            }
-            if (textInfo == null)
-            {
-                throw new ArgumentNullException(nameof(textInfo));
-            }
+            if (s == null) throw new ArgumentNullException(nameof(s));
+            if (textInfo == null) throw new ArgumentNullException(nameof(textInfo));
 #endif
 
             if (s.Length == 0)
