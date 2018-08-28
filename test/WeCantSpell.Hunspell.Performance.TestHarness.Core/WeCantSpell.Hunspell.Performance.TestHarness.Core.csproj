@@ -22,6 +22,10 @@
       <Link>files\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="..\..\hunspell-origin\tests\suggestiontest\*.txt">
+        <Link>files\%(Filename)%(Extension)</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   
 </Project>
