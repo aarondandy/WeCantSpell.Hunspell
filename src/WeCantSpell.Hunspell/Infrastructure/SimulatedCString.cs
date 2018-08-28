@@ -9,8 +9,10 @@ namespace WeCantSpell.Hunspell.Infrastructure
 {
     sealed class SimulatedCString
     {
-        public SimulatedCString(string text) =>
+        public SimulatedCString(ReadOnlySpan<char> text)
+        {
             Buffer = StringBuilderPool.Get(text);
+        }
 
         private StringBuilder Buffer;
 
@@ -40,13 +42,13 @@ namespace WeCantSpell.Hunspell.Infrastructure
             Buffer.WriteChars(text.AsSpan(), destinationIndex);
         }
 
-        public void WriteChars(int sourceIndex, string text, int destinationIndex)
+        public void WriteChars(int sourceIndex, ReadOnlySpan<char> text, int destinationIndex)
         {
             toStringCache = null;
             Buffer.WriteChars(sourceIndex, text, destinationIndex);
         }
 
-        public void Assign(string text)
+        public void Assign(ReadOnlySpan<char> text)
         {
             toStringCache = null;
             Buffer.Clear();

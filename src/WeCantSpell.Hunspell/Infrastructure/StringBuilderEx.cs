@@ -164,7 +164,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             }
         }
 
-        public static void WriteChars(this StringBuilder @this, int sourceIndex, string text, int destinationIndex)
+        public static void WriteChars(this StringBuilder @this, int sourceIndex, ReadOnlySpan<char> text, int destinationIndex)
         {
             if (destinationIndex >= @this.Length)
             {
@@ -174,7 +174,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
                     @this.Append('\0', characterGap);
                 }
 
-                @this.Append(text, sourceIndex, text.Length - sourceIndex);
+                @this.Append(text.Slice(sourceIndex, text.Length - sourceIndex));
             }
             else
             {
@@ -190,7 +190,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 else
                 {
                     @this.Remove(destinationIndex, @text.Length - destinationIndex);
-                    @this.Append(text, sourceIndex, text.Length - sourceIndex);
+                    @this.Append(text.Slice(sourceIndex, text.Length - sourceIndex));
                 }
             }
         }

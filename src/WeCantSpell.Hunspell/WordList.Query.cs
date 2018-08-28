@@ -307,7 +307,7 @@ namespace WeCantSpell.Hunspell
                 {
                     // try check compound word
                     var rwords = new IncrementalWordList();
-                    he = CompoundCheck(word, 0, 0, 100, null, rwords, false, 0, ref info);
+                    he = CompoundCheck(word.AsSpan(), 0, 0, 100, null, rwords, false, 0, ref info);
 
                     if (he == null && word.EndsWith('-') && Affix.IsHungarian)
                     {
@@ -453,10 +453,7 @@ namespace WeCantSpell.Hunspell
                 return null;
             }
 
-            protected WordEntry CompoundCheck(ReadOnlySpan<char> word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info) =>
-                CompoundCheck(word.ToString(), wordNum, numSyllable, maxwordnum, words, rwords, huMovRule, isSug, ref info);
-
-            protected WordEntry CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
+            protected WordEntry CompoundCheck(ReadOnlySpan<char> word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
             {
 #if DEBUG
                 if (word == null) throw new ArgumentNullException(nameof(word));
@@ -521,7 +518,7 @@ namespace WeCantSpell.Hunspell
                             FlagValue scpdPatternEntryCondition2;
                             if (scpd > 0)
                             {
-                                for (; scpd <= Affix.CompoundPatterns.Count && Affix.CompoundPatterns[scpd - 1].Pattern3DoesNotMatch(word.AsSpan(), i); scpd++) ;
+                                for (; scpd <= Affix.CompoundPatterns.Count && Affix.CompoundPatterns[scpd - 1].Pattern3DoesNotMatch(word, i); scpd++) ;
 
                                 if (scpd > Affix.CompoundPatterns.Count)
                                 {
@@ -1002,7 +999,7 @@ namespace WeCantSpell.Hunspell
                                                 ||
                                                 scpd != 0
                                                 ||
-                                                !Affix.CompoundPatterns.Check(word.AsSpan(), i, rvFirst, rv, false)
+                                                !Affix.CompoundPatterns.Check(word, i, rvFirst, rv, false)
                                             )
                                             && // test CHECKCOMPOUNDPATTERN conditions
                                             (
@@ -1017,7 +1014,7 @@ namespace WeCantSpell.Hunspell
                                             st.Destroy();
 
                                             // forbid compound word, if it is a non compound word with typical fault
-                                            var wordLenPrefix = word.AsSpan(0, Math.Min(word.Length, len));
+                                            var wordLenPrefix = word.Slice(0, Math.Min(word.Length, len));
                                             return ((Affix.CheckCompoundRep && CompoundReplacementCheck(wordLenPrefix)) || CompoundWordPairCheck(wordLenPrefix))
                                                 ? null
                                                 : rvFirst;
@@ -1031,7 +1028,7 @@ namespace WeCantSpell.Hunspell
                                     ClearSuffixAndFlag();
 
                                     {
-                                        var wordSubI = word.AsSpan(i);
+                                        var wordSubI = word.Slice(i);
                                         rv = (!onlycpdrule && Affix.CompoundFlag.HasValue)
                                              ? AffixCheck(wordSubI, Affix.CompoundFlag, CompoundOptions.End)
                                              : null;
@@ -1082,7 +1079,7 @@ namespace WeCantSpell.Hunspell
                                                 : (
                                                     Affix.CompoundPatterns.HasItems
                                                     &&
-                                                    Affix.CompoundPatterns.Check(word.AsSpan(), i, rvFirst, rv, affixed)
+                                                    Affix.CompoundPatterns.Check(word, i, rvFirst, rv, affixed)
                                                 )
                                             )
                                         )
@@ -1110,7 +1107,7 @@ namespace WeCantSpell.Hunspell
                                     if (Affix.IsHungarian)
                                     {
                                         // calculate syllable number of the word
-                                        numSyllable += GetSyllable(word.AsSpan(0, i));
+                                        numSyllable += GetSyllable(word.Slice(0, i));
 
                                         // - affix syllable num.
                                         // XXX only second suffix (inflections, not derivations)
@@ -1189,7 +1186,7 @@ namespace WeCantSpell.Hunspell
                                             st.Destroy();
 
                                             // forbid compound word, if it is a non compound word with typical fault
-                                            var wordLenPrefix = word.AsSpan(0, Math.Min(word.Length, len));
+                                            var wordLenPrefix = word.Slice(0, Math.Min(word.Length, len));
                                             return ((Affix.CheckCompoundRep && CompoundReplacementCheck(wordLenPrefix)) || CompoundWordPairCheck(wordLenPrefix))
                                                 ? null
                                                 : rvFirst;
@@ -1202,14 +1199,14 @@ namespace WeCantSpell.Hunspell
                                     // perhaps second word is a compound word (recursive call)
                                     if (wordNum < maxwordnum)
                                     {
-                                        rv = CompoundCheck(st.ToString().Substring(i), wordNum + 1, numSyllable, maxwordnum, words?.CreateIncremented(), rwords.CreateIncremented(), false, isSug, ref info);
+                                        rv = CompoundCheck(st.ToString().AsSpan(i), wordNum + 1, numSyllable, maxwordnum, words?.CreateIncremented(), rwords.CreateIncremented(), false, isSug, ref info);
 
                                         if (
                                             rv != null
                                             &&
                                             Affix.CompoundPatterns.HasItems
                                             &&
-                                            (scpd != 0 ^ Affix.CompoundPatterns.Check(word.AsSpan(), i, rvFirst, rv, affixed))
+                                            (scpd != 0 ^ Affix.CompoundPatterns.Check(word, i, rvFirst, rv, affixed))
                                         )
                                         {
                                             rv = null;
@@ -1222,7 +1219,7 @@ namespace WeCantSpell.Hunspell
 
                                     if (rv != null)
                                     {
-                                        var wordLenPrefix = word.AsSpan(0, Math.Min(word.Length, len));
+                                        var wordLenPrefix = word.Slice(0, Math.Min(word.Length, len));
                                         // forbid compound word, if it is a non compound word with typical fault
 
                                         // or a dictionary word pair
@@ -1240,7 +1237,7 @@ namespace WeCantSpell.Hunspell
                                             }
 
                                             // check first part
-                                            if (word.AsSpan(i).StartsWith(rv.Word.AsSpan(), StringComparison.Ordinal))
+                                            if (word.Slice(i).StartsWith(rv.Word.AsSpan(), StringComparison.Ordinal))
                                             {
                                                 var r = st[i + rv.Word.Length];
                                                 if (i + rv.Word.Length < st.BufferLength)
@@ -1261,11 +1258,11 @@ namespace WeCantSpell.Hunspell
 
                                                 if (Affix.ForbiddenWord.HasValue)
                                                 {
-                                                    var rv2 = LookupFirst(word);
+                                                    var rv2 = LookupFirst(word.ToString());
 
                                                     if (rv2 == null)
                                                     {
-                                                        rv2 = AffixCheck(word.AsSpan(0, len), default, CompoundOptions.Not);
+                                                        rv2 = AffixCheck(word.Slice(0, len), default, CompoundOptions.Not);
                                                     }
 
                                                     if (
@@ -1791,7 +1788,7 @@ namespace WeCantSpell.Hunspell
             /// <summary>
             /// Forbid compounding with neighbouring upper and lower case characters at word bounds.
             /// </summary>
-            private static bool CompoundCaseCheck(string word, int pos)
+            private static bool CompoundCaseCheck(ReadOnlySpan<char> word, int pos)
             {
                 // NOTE: this implementation could be much simpler but an attempt is made here
                 // to preserve the same result when indexes may be out of bounds
@@ -1805,7 +1802,7 @@ namespace WeCantSpell.Hunspell
                         return false;
                     }
 
-                    if (char.IsUpper(word, a))
+                    if (char.IsUpper(word[a]))
                     {
                         hasUpper = true;
                     }
@@ -1818,7 +1815,7 @@ namespace WeCantSpell.Hunspell
                         return false;
                     }
 
-                    if (!hasUpper && char.IsUpper(word, pos))
+                    if (!hasUpper && char.IsUpper(word[pos]))
                     {
                         hasUpper = true;
                     }

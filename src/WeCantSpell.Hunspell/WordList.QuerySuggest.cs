@@ -1121,7 +1121,7 @@ namespace WeCantSpell.Hunspell
                     {
                         var rwords = new IncrementalWordList(); // buffer for COMPOUND pattern checking
                         var info = SpellCheckResultType.None;
-                        rv = CompoundCheck(word, 0, 0, 100, null, rwords, false, 1, ref info);
+                        rv = CompoundCheck(word.AsSpan(), 0, 0, 100, null, rwords, false, 1, ref info);
                         if (rv != null)
                         {
                             var rvDetail = LookupFirstDetail(word);
