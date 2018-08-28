@@ -18,10 +18,11 @@
     <PackageReleaseNotes>Changelog can be found at https://github.com/aarondandy/WeCantSpell.Hunspell/blob/master/changelog.md</PackageReleaseNotes>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net45' ">
-    <DefineConstants>$(DefineConstants);NO_COMPAREINFO_HASHCODE;NO_ARRAY_EMPTY</DefineConstants>
+    <DefineConstants>$(DefineConstants);NO_COMPAREINFO_HASHCODE;NO_ARRAY_EMPTY;NO_SB_POINTERS</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' ">

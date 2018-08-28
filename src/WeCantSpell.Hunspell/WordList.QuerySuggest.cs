@@ -403,7 +403,7 @@ namespace WeCantSpell.Hunspell
                 {
                     for (var j = 0; j < slst.Count; j++)
                     {
-                        slst[j] = slst[j].Concat(word.AsSpan(word.Length - abbv));
+                        slst[j] = slst[j].ConcatString(word.AsSpan(word.Length - abbv));
                     }
                 }
 
@@ -851,14 +851,10 @@ namespace WeCantSpell.Hunspell
                     return wlst.Count;
                 }
 
-                var candidate = StringBuilderPool.Get(word, word.Length);
-
-                for (var index = candidate.Length - 1; index >= 0; index--)
+                for (var index = word.Length - 1; index >= 0; index--)
                 {
-                    TestSug(wlst, candidate.ToStringSkippingIndex(index), cpdSuggest);
+                    TestSug(wlst, word.Remove(index, 1), cpdSuggest);
                 }
-
-                StringBuilderPool.Return(candidate);
 
                 return wlst.Count;
             }
@@ -1656,7 +1652,7 @@ namespace WeCantSpell.Hunspell
             {
                 // decapitalize dictionary word
                 var t = Affix.ComplexPrefixes
-                    ? StringEx.ConcatString(s2, 0, s2.Length - 1, TextInfo.ToLower(s2[s2.Length - 1]))
+                    ? s2.AsSpan(0, s2.Length - 1).ConcatString(TextInfo.ToLower(s2[s2.Length - 1]))
                     : HunspellTextFunctions.MakeAllSmall(s2, TextInfo);
 
                 var num = 0;

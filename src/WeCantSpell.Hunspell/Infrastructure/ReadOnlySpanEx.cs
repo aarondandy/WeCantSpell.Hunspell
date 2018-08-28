@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
@@ -241,6 +242,39 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return @this.Length > maxLength ? @this.Slice(0, maxLength) : @this;
         }
 
+        public static string ConcatString(this ReadOnlySpan<char> @this, string value)
+        {
+#if DEBUG
+            if (value == null) throw new ArgumentNullException(nameof(value));
+#endif
+            if (@this.IsEmpty)
+            {
+                return value;
+            }
+            if (value.Length == 0)
+            {
+                return @this.ToString();
+            }
+
+            var builder = StringBuilderPool.Get(@this.Length + value.Length);
+
+#if !NO_SB_POINTERS
+            unsafe
+            {
+                fixed (char* start = &MemoryMarshal.GetReference(@this))
+                {
+                    builder.Append(start, @this.Length);
+                }
+            }
+#else
+            builder.Append(@this.ToString());
+#endif
+
+            builder.Append(value);
+
+            return StringBuilderPool.GetStringAndReturn(builder);
+        }
+
         public static string ConcatString(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value)
         {
             if (@this.IsEmpty)
@@ -252,10 +286,28 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return @this.ToString();
             }
 
-            var buffer = new char[@this.Length + value.Length].AsSpan();
-            @this.CopyTo(buffer);
-            value.CopyTo(buffer.Slice(@this.Length));
-            return buffer.ToString();
+            var builder = StringBuilderPool.Get(@this.Length + value.Length);
+
+#if !NO_SB_POINTERS
+            unsafe
+            {
+                fixed (char* start = &MemoryMarshal.GetReference(@this))
+                {
+                    builder.Append(start, @this.Length);
+                }
+                fixed (char* start = &MemoryMarshal.GetReference(value))
+                {
+                    builder.Append(start, value.Length);
+                }
+            }
+#else
+            builder.Append(@this.ToString());
+            builder.Append(value.ToString());
+#endif
+
+            return StringBuilderPool.GetStringAndReturn(builder);
         }
+
+        public static string ConcatString(this ReadOnlySpan<char> @this, char value) => @this.ConcatString(value.ToString());
     }
 }

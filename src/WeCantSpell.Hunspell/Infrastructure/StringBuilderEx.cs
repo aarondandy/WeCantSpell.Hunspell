@@ -140,29 +140,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static bool EndsWith(this StringBuilder builder, char c) =>
             builder.Length != 0 && builder[builder.Length - 1] == c;
 
-        public static string ToStringSkippingIndex(this StringBuilder builder, int index)
-        {
-#if DEBUG
-            if (index < 0 || index >= builder.Length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(index));
-            }
-#endif
-            var lastIndex = builder.Length - 1;
-
-            if (index == 0)
-            {
-                return builder.ToString(1, lastIndex);
-            }
-            if (index == lastIndex)
-            {
-                return builder.ToString(0, lastIndex);
-            }
-
-            var text = builder.ToString();
-            return StringEx.ConcatString(text, 0, index, text, index + 1, lastIndex - index);
-        }
-
         public static string ToStringWithInsert(this StringBuilder builder, int index, char value)
         {
 #if DEBUG

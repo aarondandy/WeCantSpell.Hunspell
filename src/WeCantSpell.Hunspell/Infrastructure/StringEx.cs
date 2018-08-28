@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 #if !NO_INLINE
 using System.Runtime.CompilerServices;
@@ -80,31 +81,11 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return index < @this.Length ? @this[index] : '\0';
         }
 
-        public static string ConcatString(string str0, int startIndex0, int count0, string str1)
-        {
-            if (count0 == 0)
-            {
-                return str1 ?? string.Empty;
-            }
+        public static string ConcatString(string str0, int startIndex0, int count0, string str1) =>
+            str0.AsSpan(startIndex0, count0).ConcatString(str1);
 
-            var builder = StringBuilderPool.Get(str1.Length + count0);
-            builder.Append(str0, startIndex0, count0);
-            builder.Append(str1);
-            return StringBuilderPool.GetStringAndReturn(builder);
-        }
-
-        public static string ConcatString(string str0, string str1, int startIndex1, int count1)
-        {
-            if (string.IsNullOrEmpty(str0))
-            {
-                return str1.Substring(startIndex1, count1);
-            }
-
-            var builder = StringBuilderPool.Get(str0.Length + count1);
-            builder.Append(str0);
-            builder.Append(str1, startIndex1, count1);
-            return StringBuilderPool.GetStringAndReturn(builder);
-        }
+        public static string ConcatString(string str0, string str1, int startIndex1, int count1) =>
+            str0.ConcatString(str1.AsSpan(startIndex1, count1));
 
         public static string ConcatString(string str0, int startIndex0, int count0, string str1, char char2, string str3, int startIndex3)
         {
@@ -135,24 +116,45 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
-        public static string ConcatString(string str0, int startIndex0, int count0, char char1) =>
-            ConcatString(str0, startIndex0, count0, char1.ToString());
-
         public static string ConcatString(string str0, int startIndex0, int count0, char char1, string str2, int startIndex2) =>
             ConcatString(str0, startIndex0, count0, char1.ToString(), str2, startIndex2);
+
+        public static string ConcatString(this string @this, ReadOnlySpan<char> value)
+        {
+#if DEBUG
+            if (@this == null) throw new ArgumentNullException(nameof(@this));
+#endif
+            if (@this.Length == 0)
+            {
+                return value.ToString();
+            }
+            if (value.IsEmpty)
+            {
+                return @this;
+            }
+
+            var builder = StringBuilderPool.Get(@this.Length + value.Length);
+
+            builder.Append(@this);
+
+#if !NO_SB_POINTERS
+            unsafe
+            {
+                fixed (char* start = &MemoryMarshal.GetReference(value))
+                {
+                    builder.Append(start, value.Length);
+                }
+            }
+#else
+            builder.Append(value.ToString());
+#endif
+
+            return StringBuilderPool.GetStringAndReturn(builder);
+        }
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool IsLineBreakChar(this char c) => c == '\n' || c == '\r';
-
-        public static string Concat(this string text0, ReadOnlySpan<char> text1)
-        {
-#if DEBUG
-            if (text0 == null) throw new ArgumentNullException(nameof(text0));
-#endif
-
-            return text0.AsSpan().ConcatString(text1);
-        }
     }
 }
