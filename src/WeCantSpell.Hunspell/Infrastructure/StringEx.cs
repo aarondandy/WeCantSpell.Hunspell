@@ -134,21 +134,8 @@ namespace WeCantSpell.Hunspell.Infrastructure
             }
 
             var builder = StringBuilderPool.Get(@this.Length + value.Length);
-
             builder.Append(@this);
-
-#if !NO_SB_POINTERS
-            unsafe
-            {
-                fixed (char* start = &MemoryMarshal.GetReference(value))
-                {
-                    builder.Append(start, value.Length);
-                }
-            }
-#else
-            builder.Append(value.ToString());
-#endif
-
+            builder.Append(value);
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 

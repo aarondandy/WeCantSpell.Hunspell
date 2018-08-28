@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Text;
 
 #if !NO_INLINE
@@ -161,6 +162,30 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return builder.ToString(0, index)
                 + value.ToString()
                 + builder.ToString(index, builder.Length - index);
+        }
+
+        public static StringBuilder Append(this StringBuilder builder, ReadOnlySpan<char> value)
+        {
+#if DEBUG
+            if (builder == null) throw new ArgumentNullException(nameof(builder));
+#endif
+
+            if (!value.IsEmpty)
+            {
+#if !NO_SB_POINTERS
+                unsafe
+                {
+                    fixed (char* start = &MemoryMarshal.GetReference(value))
+                    {
+                        builder.Append(start, value.Length);
+                    }
+                }
+#else
+                builder.Append(value.ToString());
+#endif
+            }
+
+            return builder;
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
@@ -129,19 +128,19 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return @this.Slice(0, removeIndex);
             }
 
-            var buffer = new char[@this.Length - 1];
-            @this.Slice(0, removeIndex).CopyTo(buffer.AsSpan());
-            var writeIndex = removeIndex;
+            var builder = StringBuilderPool.Get(@this.Length - 1);
+            builder.Append(@this.Slice(0, removeIndex));
+
             for (var i = removeIndex; i < @this.Length; i++)
             {
                 ref readonly var c = ref @this[i];
                 if (value != c)
                 {
-                    buffer[writeIndex++] = c;
+                    builder.Append(c);
                 }
             }
 
-            return buffer.AsSpan(0, writeIndex);
+            return StringBuilderPool.GetStringAndReturn(builder).AsSpan();
         }
 
         public static ReadOnlySpan<char> Remove(this ReadOnlySpan<char> @this, CharacterSet chars)
@@ -169,19 +168,18 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return @this.Slice(0, removeIndex);
             }
 
-            var buffer = new char[@this.Length - 1];
-            @this.Slice(0, removeIndex).CopyTo(buffer.AsSpan());
-            var writeIndex = removeIndex;
+            var builder = StringBuilderPool.Get(@this.Length - 1);
+            builder.Append(@this.Slice(0, removeIndex));
             for (var i = removeIndex; i < @this.Length; i++)
             {
                 ref readonly var c = ref @this[i];
                 if (!chars.Contains(c))
                 {
-                    buffer[writeIndex++] = c;
+                    builder.Append(c);
                 }
             }
 
-            return buffer.AsSpan(0, writeIndex);
+            return StringBuilderPool.GetStringAndReturn(builder).AsSpan();
         }
 
         public static ReadOnlySpan<char> Replace(this ReadOnlySpan<char> @this, char oldChar, char newChar)
@@ -191,17 +189,17 @@ namespace WeCantSpell.Hunspell.Infrastructure
             {
                 return @this;
             }
-
-            var result = new char[@this.Length];
-            @this.Slice(0, replaceIndex).CopyTo(result.AsSpan());
-            result[replaceIndex] = newChar;
-            for (var i = replaceIndex + 1; i < result.Length; i++)
+            
+            var builder = StringBuilderPool.Get(@this.Length);
+            builder.Append(@this.Slice(0, replaceIndex));
+            builder.Append(newChar);
+            for (var i = replaceIndex + 1; i < @this.Length; i++)
             {
                 ref readonly var c = ref @this[i];
-                result[i] = (c == oldChar) ? newChar : c;
+                builder.Append((c == oldChar) ? newChar : c);
             }
 
-            return new ReadOnlySpan<char>(result);
+            return StringBuilderPool.GetStringAndReturn(builder).AsSpan();
         }
 
         public static ReadOnlySpan<char> Replace(this ReadOnlySpan<char> @this, string oldText, string newText)
@@ -219,7 +217,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public static ReadOnlySpan<char> Reversed(this ReadOnlySpan<char> @this)
         {
-            if (@this.IsEmpty || @this.Length == 1)
+            if (@this.Length <= 1)
             {
                 return @this;
             }
@@ -257,21 +255,8 @@ namespace WeCantSpell.Hunspell.Infrastructure
             }
 
             var builder = StringBuilderPool.Get(@this.Length + value.Length);
-
-#if !NO_SB_POINTERS
-            unsafe
-            {
-                fixed (char* start = &MemoryMarshal.GetReference(@this))
-                {
-                    builder.Append(start, @this.Length);
-                }
-            }
-#else
-            builder.Append(@this.ToString());
-#endif
-
+            builder.Append(@this);
             builder.Append(value);
-
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
@@ -287,24 +272,8 @@ namespace WeCantSpell.Hunspell.Infrastructure
             }
 
             var builder = StringBuilderPool.Get(@this.Length + value.Length);
-
-#if !NO_SB_POINTERS
-            unsafe
-            {
-                fixed (char* start = &MemoryMarshal.GetReference(@this))
-                {
-                    builder.Append(start, @this.Length);
-                }
-                fixed (char* start = &MemoryMarshal.GetReference(value))
-                {
-                    builder.Append(start, value.Length);
-                }
-            }
-#else
-            builder.Append(@this.ToString());
-            builder.Append(value.ToString());
-#endif
-
+            builder.Append(@this);
+            builder.Append(value);
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
