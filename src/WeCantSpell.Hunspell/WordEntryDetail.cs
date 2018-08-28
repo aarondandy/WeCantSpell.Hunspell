@@ -70,7 +70,7 @@ namespace WeCantSpell.Hunspell
                 return true;
             }
 
-            return other.Options.Equals(Options)
+            return other.Options == Options
                 && other.Flags.Equals(Flags)
                 && other.Morphs.Equals(Morphs);
         }

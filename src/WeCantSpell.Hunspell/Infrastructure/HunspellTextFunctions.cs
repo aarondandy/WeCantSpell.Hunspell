@@ -169,32 +169,26 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return @this.Slice(0, removeIndex);
             }
 
-            var builder = StringBuilderPool.Get(@this.Length - 1);
-            builder.Append(@this.Slice(0, removeIndex));
-            @this = @this.Slice(removeIndex + 1);
-            for (var i = 0; i < @this.Length; i++)
+            var buffer = new char[@this.Length - 1];
+            @this.Slice(0, removeIndex).CopyTo(buffer.AsSpan());
+            var writeIndex = removeIndex;
+            for (var i = removeIndex; i < @this.Length; i++)
             {
                 ref readonly var c = ref @this[i];
                 if (!chars.Contains(c))
                 {
-                    builder.Append(c);
+                    buffer[writeIndex++] = c;
                 }
             }
 
-            return StringBuilderPool.GetStringAndReturn(builder).AsSpan();
+            return buffer.AsSpan(0, writeIndex);
         }
 
         public static string MakeInitCap(string s, TextInfo textInfo)
         {
 #if DEBUG
-            if (s == null)
-            {
-                throw new ArgumentNullException(nameof(s));
-            }
-            if (textInfo == null)
-            {
-                throw new ArgumentNullException(nameof(textInfo));
-            }
+            if (s == null) throw new ArgumentNullException(nameof(s));
+            if (textInfo == null) throw new ArgumentNullException(nameof(textInfo));
 #endif
             if (s.Length == 0)
             {
@@ -221,10 +215,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static string MakeInitCap(ReadOnlySpan<char> s, TextInfo textInfo)
         {
 #if DEBUG
-            if (textInfo == null)
-            {
-                throw new ArgumentNullException(nameof(textInfo));
-            }
+            if (textInfo == null) throw new ArgumentNullException(nameof(textInfo));
 #endif
             if (s.IsEmpty)
             {
@@ -304,25 +295,16 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static string MakeAllCap(string s, TextInfo textInfo)
         {
 #if DEBUG
-            if (s == null)
-            {
-                throw new ArgumentNullException(nameof(s));
-            }
-            if (textInfo == null)
-            {
-                throw new ArgumentNullException(nameof(textInfo));
-            }
+            if (s == null) throw new ArgumentNullException(nameof(s));
+            if (textInfo == null) throw new ArgumentNullException(nameof(textInfo));
 #endif
             return textInfo.ToUpper(s);
         }
 
-        public static ReadOnlySpan<char> MakeTitleCase(ReadOnlySpan<char> s, TextInfo textInfo)
+        public static ReadOnlySpan<char> MakeTitleCase(ReadOnlySpan<char> s, CultureInfo cultureInfo)
         {
 #if DEBUG
-            if (textInfo == null)
-            {
-                throw new ArgumentNullException(nameof(textInfo));
-            }
+            if (cultureInfo == null) throw new ArgumentNullException(nameof(cultureInfo));
 #endif
 
             if (s.IsEmpty)
@@ -330,16 +312,13 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return s;
             }
 
-            var builder = StringBuilderPool.Get(s.Length);
-            builder.Append(textInfo.ToUpper(s[0]));
-
-            s = s.Slice(1);
-            for (var i = 0; i < s.Length; i++)
+            var buffer = new char[s.Length];
+            s.Slice(0, 1).ToUpper(buffer.AsSpan(0, 1), cultureInfo);
+            if (s.Length > 1)
             {
-                builder.Append(textInfo.ToLower(s[i]));
+                s.Slice(1).ToLower(buffer.AsSpan(1), cultureInfo);
             }
-
-            return StringBuilderPool.GetStringAndReturn(builder).AsSpan();
+            return new ReadOnlySpan<char>(buffer);
         }
 
         public static ReadOnlySpan<char> ReDecodeConvertedStringAsUtf8(ReadOnlySpan<char> decoded, Encoding encoding)
@@ -363,23 +342,22 @@ namespace WeCantSpell.Hunspell.Infrastructure
             var hasFoundMoreCaps = false;
             var firstIsUpper = false;
             var hasLower = false;
-            ref readonly var c = ref word[0];
-            if (char.IsUpper(c))
-            {
-                firstIsUpper = true;
-            }
-            else if (CharIsNotNeutral(c, textInfo))
-            {
-                hasLower = true;
-            }
 
-            for (int i = 1; i < word.Length; i++)
+            for (int i = 0; i < word.Length; i++)
             {
-                c = ref word[i];
+                ref readonly var c = ref word[i];
 
                 if (!hasFoundMoreCaps && char.IsUpper(c))
                 {
-                    hasFoundMoreCaps = true;
+                    if (i == 0)
+                    {
+                        firstIsUpper = true;
+                    }
+                    else
+                    {
+                        hasFoundMoreCaps = true;
+                    }
+
                     if (hasLower)
                     {
                         break;

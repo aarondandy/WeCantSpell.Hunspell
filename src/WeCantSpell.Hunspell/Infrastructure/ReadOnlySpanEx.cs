@@ -42,6 +42,9 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return -1;
         }
 
+        public static bool Equals(this ReadOnlySpan<char> @this, string value, StringComparison comparison) =>
+            value != null && @this.Equals(value.AsSpan(), comparison);
+
         public static bool ContainsAny(this ReadOnlySpan<char> @this, char value0, char value1) =>
             @this.IndexOfAny(value0, value1) >= 0;
 

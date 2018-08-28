@@ -346,13 +346,6 @@ namespace WeCantSpell.Hunspell
 
         private bool AddWord(ReadOnlySpan<char> word, FlagSet flags, string[] morphs)
         {
-            var capType = HunspellTextFunctions.GetCapitalizationType(word, TextInfo);
-            return AddWord(word, flags, morphs, false, capType)
-                || AddWordCapitalized(word, flags, morphs, capType);
-        }
-
-        private bool AddWord(ReadOnlySpan<char> word, FlagSet flags, string[] morphs, bool onlyUpperCase, CapitalizationType capType)
-        {
             if (Affix.IgnoredChars.HasItems)
             {
                 word = word.RemoveChars(Affix.IgnoredChars);
@@ -368,6 +361,13 @@ namespace WeCantSpell.Hunspell
                 }
             }
 
+            var capType = HunspellTextFunctions.GetCapitalizationType(word, TextInfo);
+            return AddWord(word, flags, morphs, false, capType)
+                || AddWordCapitalized(word, flags, morphs, capType);
+        }
+
+        private bool AddWord(ReadOnlySpan<char> word, FlagSet flags, string[] morphs, bool onlyUpperCase, CapitalizationType capType)
+        {
             // store the description string or its pointer
             var options = capType == CapitalizationType.Init ? WordEntryOptions.InitCap : WordEntryOptions.None;
             if (morphs.Length != 0)
@@ -450,7 +450,7 @@ namespace WeCantSpell.Hunspell
                             // results wendsay -> Wednesday and Wendsay -> Wednesday, too.
                             if (capType == CapitalizationType.Init)
                             {
-                                var phCapitalized = HunspellTextFunctions.MakeInitCap(ph, Affix.Culture.TextInfo);
+                                var phCapitalized = HunspellTextFunctions.MakeInitCap(phString, Affix.Culture.TextInfo);
                                 if (phCapitalized.Length != 0)
                                 {
                                     // add also lowercase word in the case of German or
@@ -530,7 +530,7 @@ namespace WeCantSpell.Hunspell
             )
             {
                 flags = Builder.Dedup(FlagSet.Union(flags, SpecialFlags.OnlyUpcaseFlag));
-                word = HunspellTextFunctions.MakeTitleCase(word, TextInfo);
+                word = HunspellTextFunctions.MakeTitleCase(word, Affix.Culture);
                 return AddWord(word, flags, morphs, true, CapitalizationType.Init);
             }
 

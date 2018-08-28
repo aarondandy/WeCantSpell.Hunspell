@@ -55,7 +55,7 @@ namespace WeCantSpell.Hunspell
             {
                 if (!EntryDetailsByRoot.TryGetValue(word, out List<WordEntryDetail> details))
                 {
-                    details = new List<WordEntryDetail>(2);
+                    details = new List<WordEntryDetail>();
                     EntryDetailsByRoot.Add(word, details);
                 }
 
