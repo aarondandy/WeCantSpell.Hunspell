@@ -45,14 +45,28 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static bool Equals(this ReadOnlySpan<char> @this, string value, StringComparison comparison) =>
             value != null && @this.Equals(value.AsSpan(), comparison);
 
-        public static bool EqualsLimited(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value, int lengthLimit, StringComparison comparison) =>
-            @this.Limit(lengthLimit).Equals(value.Limit(lengthLimit), comparison);
+        public static bool EqualsOrdinal(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value) =>
+            @this.SequenceEqual(value);
+
+        public static bool EqualsLimited(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value, int lengthLimit) =>
+            @this.Limit(lengthLimit).EqualsOrdinal(value.Limit(lengthLimit));
 
         public static bool ContainsAny(this ReadOnlySpan<char> @this, char value0, char value1) =>
             @this.IndexOfAny(value0, value1) >= 0;
 
         public static bool Contains(this ReadOnlySpan<char> @this, char value) =>
             @this.IndexOf(value) >= 0;
+
+        public static bool Contains(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value) =>
+            @this.IndexOf(value) >= 0;
+
+        public static bool StartsWith(this ReadOnlySpan<char> @this, string value, StringComparison comparison)
+        {
+#if DEBUG
+            if (value == null) throw new ArgumentNullException(nameof(value));
+#endif
+            return @this.StartsWith(value.AsSpan(), comparison);
+        }
 
         public static bool StartsWith(this ReadOnlySpan<char> @this, char value) =>
             !@this.IsEmpty && @this[0] == value;

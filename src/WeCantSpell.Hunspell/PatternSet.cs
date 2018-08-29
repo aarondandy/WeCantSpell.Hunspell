@@ -74,6 +74,6 @@ namespace WeCantSpell.Hunspell
 #endif
         private static bool PatternWordCheck(ReadOnlySpan<char> word, int pos, string other) =>
             other.Length <= pos
-            && word.Slice(pos - other.Length).StartsWith(other.AsSpan(), StringComparison.Ordinal);
+            && word.Slice(pos - other.Length).StartsWith(other.AsSpan());
     }
 }

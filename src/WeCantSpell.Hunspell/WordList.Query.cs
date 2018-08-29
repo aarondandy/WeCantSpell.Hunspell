@@ -1237,7 +1237,7 @@ namespace WeCantSpell.Hunspell
                                             }
 
                                             // check first part
-                                            if (word.Slice(i).StartsWith(rv.Word.AsSpan(), StringComparison.Ordinal))
+                                            if (word.Slice(i).StartsWith(rv.Word.AsSpan()))
                                             {
                                                 var r = st[i + rv.Word.Length];
                                                 if (i + rv.Word.Length < st.BufferLength)
@@ -1268,7 +1268,7 @@ namespace WeCantSpell.Hunspell
                                                     if (
                                                         rv2 != null
                                                         && rv2.ContainsFlag(Affix.ForbiddenWord)
-                                                        && rv2.Word.AsSpan().EqualsLimited(st.GetTerminatedSpan(), i + rv.Word.Length, StringComparison.Ordinal)
+                                                        && rv2.Word.AsSpan().EqualsLimited(st.GetTerminatedSpan(), i + rv.Word.Length)
                                                     )
                                                     {
                                                         st.Destroy();
@@ -1863,7 +1863,7 @@ namespace WeCantSpell.Hunspell
                     // use only available mid patterns
                     if (!string.IsNullOrEmpty(replacementEntry.Med))
                     {
-                        var rIndex = wordSlice.IndexOf(replacementEntry.Pattern.AsSpan(), StringComparison.Ordinal);
+                        var rIndex = wordSlice.IndexOf(replacementEntry.Pattern.AsSpan());
                         if (rIndex >= 0)
                         {
                             var word = wordSlice.ToString();

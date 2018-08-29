@@ -10,7 +10,7 @@ namespace WeCantSpell.Hunspell.Benchmarking.LongRunning
         {
             var mainAssemblyLocation = typeof(Program).Assembly.Location;
             var mainAssemblyDirectory = Path.GetDirectoryName(mainAssemblyLocation);
-            var nbenchRunnerPath = Path.Combine(mainAssemblyDirectory, "NBench.Runner.exe");
+            var nbenchRunnerPath = @"..\..\packages\NBench.Runner.1.2.2\tools\netcoreapp2.1\NBench.Runner.exe";
             var perfDirectory = Path.Combine(mainAssemblyDirectory, "perf");
 
             var argumentsForNBench = new string[]

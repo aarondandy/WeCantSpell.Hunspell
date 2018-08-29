@@ -415,7 +415,7 @@ namespace WeCantSpell.Hunspell
                             // dictionary based REP replacement, separated by "->"
                             // for example "pretty ph:prity ph:priti->pretti" to handle
                             // both prity -> pretty and pritier -> prettiest suggestions.
-                            int strippatt = ph.IndexOf("->".AsSpan(), StringComparison.Ordinal);
+                            int strippatt = ph.IndexOf("->".AsSpan());
                             if (strippatt > 0 && strippatt < (ph.Length - 2))
                             {
                                 wordpart = ph.Slice(strippatt + 2);

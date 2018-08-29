@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 
 #if !NO_INLINE
 using System.Runtime.CompilerServices;
@@ -95,14 +94,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
             builder.Append(str1);
             builder.Append(char2);
             builder.Append(str3, startIndex3, count3);
-            return StringBuilderPool.GetStringAndReturn(builder);
-        }
-
-        public static string ConcatString(string str0, int startIndex0, int count0, string str1, int startIndex1, int count1)
-        {
-            var builder = StringBuilderPool.Get(count0 + count1);
-            builder.Append(str0, startIndex0, count0);
-            builder.Append(str1, startIndex1, count1);
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 

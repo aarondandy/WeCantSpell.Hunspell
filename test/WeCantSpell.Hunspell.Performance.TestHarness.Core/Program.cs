@@ -12,8 +12,8 @@ namespace WeCantSpell.Hunspell.Performance.TestHarness.Core
         static void Main(string[] args)
         {
             //DictionaryLoads();
-            Checks();
-            //Suggestions();
+            //Checks();
+            Suggestions();
             //TestBe();
         }
 
