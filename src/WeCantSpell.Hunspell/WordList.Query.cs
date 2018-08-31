@@ -18,6 +18,7 @@ namespace WeCantSpell.Hunspell
                 WordToCheck = word;
                 WordList = wordList;
                 Affix = wordList.Affix;
+                TextInfo = Affix.Culture.TextInfo;
             }
 
             protected const string DefaultXmlToken = "<?xml?>";
@@ -52,13 +53,7 @@ namespace WeCantSpell.Hunspell
 
             public AffixConfig Affix { get; }
 
-            public TextInfo TextInfo
-            {
-#if !NO_INLINE
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-                get => Affix.Culture.TextInfo;
-            }
+            public TextInfo TextInfo { get; }
 
             private PrefixEntry Prefix { get; set; }
 
