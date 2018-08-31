@@ -22,13 +22,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public override bool Equals(string x, string y) => Compare(x, y) == 0;
 
-        public override int GetHashCode(string obj)
-        {
-#if NO_COMPAREINFO_HASHCODE
-            return 0;
-#else
-            return CompareInfo.GetHashCode(obj, CompareOptions.None);
-#endif
-        }
+        public override int GetHashCode(string obj) => CompareInfo.GetHashCode(obj, CompareOptions.None);
     }
 }

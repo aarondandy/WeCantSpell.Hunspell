@@ -5,17 +5,17 @@ using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell
 {
-    public sealed class CompoundRuleSet : ListWrapper<CompoundRule>
+    public sealed class CompoundRuleSet : ArrayWrapper<CompoundRule>
     {
-        public static readonly CompoundRuleSet Empty = TakeList(new List<CompoundRule>(0));
+        public static readonly CompoundRuleSet Empty = TakeArray(ArrayEx<CompoundRule>.Empty);
 
         public static CompoundRuleSet Create(IEnumerable<CompoundRule> rules) =>
-            rules == null ? Empty : TakeList(rules.ToList());
+            rules == null ? Empty : TakeArray(rules.ToArray());
 
-        internal static CompoundRuleSet TakeList(List<CompoundRule> rules) =>
+        internal static CompoundRuleSet TakeArray(CompoundRule[] rules) =>
             rules == null ? Empty : new CompoundRuleSet(rules);
 
-        private CompoundRuleSet(List<CompoundRule> rules)
+        private CompoundRuleSet(CompoundRule[] rules)
             : base(rules)
         {
         }

@@ -112,9 +112,7 @@ namespace WeCantSpell.Hunspell
                     // store ph: field of a morphological description in reptable
                     if (result.AllReplacements.IsEmpty)
                     {
-                        result.AllReplacements = destructive
-                            ? SingleReplacementSet.TakeList(ReferenceHelpers.Steal(ref PhoneticReplacements))
-                            : SingleReplacementSet.Create(PhoneticReplacements);
+                        result.AllReplacements = SingleReplacementSet.Create(PhoneticReplacements);
                     }
                     else
                     {

@@ -4,17 +4,17 @@ using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell
 {
-    public sealed class SingleReplacementSet : ListWrapper<SingleReplacement>
+    public sealed class SingleReplacementSet : ArrayWrapper<SingleReplacement>
     {
-        public static readonly SingleReplacementSet Empty = TakeList(new List<SingleReplacement>(0));
+        public static readonly SingleReplacementSet Empty = TakeArray(ArrayEx<SingleReplacement>.Empty);
 
         public static SingleReplacementSet Create(IEnumerable<SingleReplacement> replacements) =>
-            replacements == null ? Empty : TakeList(replacements.ToList());
+            replacements == null ? Empty : TakeArray(replacements.ToArray());
 
-        internal static SingleReplacementSet TakeList(List<SingleReplacement> replacements) =>
+        internal static SingleReplacementSet TakeArray(SingleReplacement[] replacements) =>
             replacements == null ? Empty : new SingleReplacementSet(replacements);
 
-        private SingleReplacementSet(List<SingleReplacement> replacements)
+        private SingleReplacementSet(SingleReplacement[] replacements)
             : base(replacements)
         {
         }

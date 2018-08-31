@@ -427,38 +427,32 @@ namespace WeCantSpell.Hunspell
                     WordChars = WordChars ?? CharacterSet.Empty,
                     IgnoredChars = IgnoredChars ?? CharacterSet.Empty,
                     Version = Version == null ? null : Dedup(Version),
-                    BreakPoints = BreakSet.Create(BreakPoints)
+                    BreakPoints = BreakSet.Create(BreakPoints),
+                    CompoundRules = CompoundRuleSet.Create(CompoundRules),
+                    Replacements = SingleReplacementSet.Create(Replacements),
+                    CompoundPatterns = PatternSet.Create(CompoundPatterns),
+                    RelatedCharacterMap = MapTable.Create(RelatedCharacterMap),
+                    Phone = PhoneTable.Create(Phone),
+                    Warnings = WarningList.Create(Warnings)
                 };
 
                 if (destructive)
                 {
-                    config.Replacements = SingleReplacementSet.TakeList(ReferenceHelpers.Steal(ref Replacements));
-                    config.CompoundRules = CompoundRuleSet.TakeList(ReferenceHelpers.Steal(ref CompoundRules));
-                    config.CompoundPatterns = PatternSet.TakeList(ReferenceHelpers.Steal(ref CompoundPatterns));
-                    config.RelatedCharacterMap = MapTable.TakeList(ReferenceHelpers.Steal(ref RelatedCharacterMap));
-                    config.Phone = PhoneTable.TakeList(ReferenceHelpers.Steal(ref Phone));
                     config.InputConversions = MultiReplacementTable.TakeDictionary(ReferenceHelpers.Steal(ref InputConversions));
                     config.OutputConversions = MultiReplacementTable.TakeDictionary(ReferenceHelpers.Steal(ref OutputConversions));
-                    config.Warnings = WarningList.TakeList(ReferenceHelpers.Steal(ref Warnings));
 
-                    config.aliasF = AliasF ?? new List<FlagSet>(0);
+                    config.aliasF = AliasF ?? new List<FlagSet>();
                     AliasF = null;
-                    config.aliasM = AliasM ?? new List<MorphSet>(0);
+                    config.aliasM = AliasM ?? new List<MorphSet>();
                     AliasM = null;
                 }
                 else
                 {
-                    config.Replacements = SingleReplacementSet.Create(Replacements);
-                    config.CompoundRules = CompoundRuleSet.Create(CompoundRules);
-                    config.CompoundPatterns = PatternSet.Create(CompoundPatterns);
-                    config.RelatedCharacterMap = MapTable.Create(RelatedCharacterMap);
-                    config.Phone = PhoneTable.Create(Phone);
                     config.InputConversions = MultiReplacementTable.Create(InputConversions);
                     config.OutputConversions = MultiReplacementTable.Create(OutputConversions);
-                    config.Warnings = WarningList.Create(Warnings);
 
-                    config.aliasF = AliasF == null ? new List<FlagSet>(0) : AliasF.ToList();
-                    config.aliasM = AliasM == null ? new List<MorphSet>(0) : AliasM.ToList();
+                    config.aliasF = AliasF == null ? new List<FlagSet>() : AliasF.ToList();
+                    config.aliasM = AliasM == null ? new List<MorphSet>() : AliasM.ToList();
                 }
 
                 config.Prefixes = PrefixCollection.Create(Prefixes);

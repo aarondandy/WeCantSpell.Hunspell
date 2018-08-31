@@ -89,21 +89,22 @@ namespace WeCantSpell.Hunspell
             var affixesByIndexedByKey = new Dictionary<char, AffixEntryGroupCollection<TEntry>>(affixesByIndexedByKeyBuilders.Count);
             foreach (var keyedBuilder in affixesByIndexedByKeyBuilders)
             {
-                var indexedAffixGroup = new List<AffixEntryGroup<TEntry>>(keyedBuilder.Value.Count);
+                var indexedAffixGroup = new AffixEntryGroup<TEntry>[keyedBuilder.Value.Count];
+                var writeIndex = 0;
                 foreach(var builderPair in keyedBuilder.Value)
                 {
-                    indexedAffixGroup.Add(builderPair.Value.ToGroup());
+                    indexedAffixGroup[writeIndex++] = builderPair.Value.ToGroup();
                 }
 
-                affixesByIndexedByKey.Add(keyedBuilder.Key, AffixEntryGroupCollection<TEntry>.TakeList(indexedAffixGroup));
+                affixesByIndexedByKey.Add(keyedBuilder.Key, AffixEntryGroupCollection<TEntry>.TakeArray(indexedAffixGroup));
             }
 
             return constructor
             (
                 affixesByFlag,
                 affixesByIndexedByKey,
-                AffixEntryGroupCollection<TEntry>.TakeList(affixesWithDots),
-                AffixEntryGroupCollection<TEntry>.TakeList(affixesWithEmptyKeys),
+                AffixEntryGroupCollection<TEntry>.Create(affixesWithDots),
+                AffixEntryGroupCollection<TEntry>.Create(affixesWithEmptyKeys),
                 FlagSet.Create(contClasses)
             );
         }

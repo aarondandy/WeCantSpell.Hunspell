@@ -9,17 +9,17 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell
 {
-    public class PatternSet : ListWrapper<PatternEntry>
+    public class PatternSet : ArrayWrapper<PatternEntry>
     {
-        public static readonly PatternSet Empty = TakeList(new List<PatternEntry>(0));
+        public static readonly PatternSet Empty = TakeArray(ArrayEx<PatternEntry>.Empty);
 
         public static PatternSet Create(IEnumerable<PatternEntry> patterns) =>
-            patterns == null ? Empty : TakeList(patterns.ToList());
+            patterns == null ? Empty : TakeArray(patterns.ToArray());
 
-        internal static PatternSet TakeList(List<PatternEntry> patterns) =>
+        internal static PatternSet TakeArray(PatternEntry[] patterns) =>
             patterns == null ? Empty : new PatternSet(patterns);
 
-        private PatternSet(List<PatternEntry> patterns)
+        private PatternSet(PatternEntry[] patterns)
             : base(patterns)
         {
         }

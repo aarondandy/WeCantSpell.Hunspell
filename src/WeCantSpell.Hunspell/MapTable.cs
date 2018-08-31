@@ -4,15 +4,15 @@ using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell
 {
-    public sealed class MapTable : ListWrapper<MapEntry>
+    public sealed class MapTable : ArrayWrapper<MapEntry>
     {
-        public static readonly MapTable Empty = TakeList(new List<MapEntry>(0));
+        public static readonly MapTable Empty = TakeArray(ArrayEx<MapEntry>.Empty);
 
-        public static MapTable Create(IEnumerable<MapEntry> entries) => entries == null ? Empty : TakeList(entries.ToList());
+        public static MapTable Create(IEnumerable<MapEntry> entries) => entries == null ? Empty : TakeArray(entries.ToArray());
 
-        internal static MapTable TakeList(List<MapEntry> entries) => entries == null ? Empty : new MapTable(entries);
+        internal static MapTable TakeArray(MapEntry[] entries) => entries == null ? Empty : new MapTable(entries);
 
-        private MapTable(List<MapEntry> entries)
+        private MapTable(MapEntry[] entries)
             : base(entries)
         {
         }

@@ -4,15 +4,15 @@ using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell
 {
-    public sealed class WarningList : ListWrapper<string>
+    public sealed class WarningList : ArrayWrapper<string>
     {
         public static WarningList Create(IEnumerable<string> warnings) =>
-            warnings == null ? TakeList(null) : TakeList(warnings.ToList());
+            warnings == null ? TakeArray(null) : TakeArray(warnings.ToArray());
 
-        internal static WarningList TakeList(List<string> warnings) =>
-            new WarningList(warnings ?? new List<string>(0));
+        internal static WarningList TakeArray(string[] warnings) =>
+            new WarningList(warnings ?? ArrayEx<string>.Empty);
 
-        private WarningList(List<string> warnings)
+        private WarningList(string[] warnings)
             : base(warnings)
         {
         }

@@ -19,10 +19,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
             int timeLimitInMs)
         {
 #if DEBUG
-            if (queriesToTriggerCheck < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(queriesToTriggerCheck));
-            }
+            if (queriesToTriggerCheck < 0) throw new ArgumentOutOfRangeException(nameof(queriesToTriggerCheck));
 #endif
 
             OperationStartTime = operationStartTime;

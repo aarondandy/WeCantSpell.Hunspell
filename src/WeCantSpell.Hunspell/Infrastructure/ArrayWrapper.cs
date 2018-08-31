@@ -63,8 +63,10 @@ namespace WeCantSpell.Hunspell.Infrastructure
             IEqualityComparer<TCollection>
             where TCollection : ArrayWrapper<TValue>
         {
-            public ArrayWrapperComparer() =>
+            public ArrayWrapperComparer()
+            {
                 arrayComparer = ArrayComparer<TValue>.Default;
+            }
 
             private ArrayComparer<TValue> arrayComparer;
 

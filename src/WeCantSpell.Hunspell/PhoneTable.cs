@@ -4,15 +4,15 @@ using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell
 {
-    public sealed class PhoneTable : ListWrapper<PhoneticEntry>
+    public sealed class PhoneTable : ArrayWrapper<PhoneticEntry>
     {
-        public static readonly PhoneTable Empty = TakeList(new List<PhoneticEntry>(0));
+        public static readonly PhoneTable Empty = TakeArray(ArrayEx<PhoneticEntry>.Empty);
 
-        public static PhoneTable Create(IEnumerable<PhoneticEntry> entries) => entries == null ? Empty : TakeList(entries.ToList());
+        public static PhoneTable Create(IEnumerable<PhoneticEntry> entries) => entries == null ? Empty : TakeArray(entries.ToArray());
 
-        internal static PhoneTable TakeList(List<PhoneticEntry> entries) => entries == null ? Empty : new PhoneTable(entries);
+        internal static PhoneTable TakeArray(PhoneticEntry[] entries) => entries == null ? Empty : new PhoneTable(entries);
 
-        private PhoneTable(List<PhoneticEntry> entries)
+        private PhoneTable(PhoneticEntry[] entries)
             : base(entries)
         {
         }
