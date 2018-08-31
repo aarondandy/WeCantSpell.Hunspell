@@ -13,6 +13,10 @@ namespace WeCantSpell.Hunspell.Infrastructure
     {
         public static bool IsReverseSubset(string s1, string s2)
         {
+#if DEBUG
+            if (s1 == null) throw new ArgumentNullException(nameof(s1));
+            if (s2 == null) throw new ArgumentNullException(nameof(s2));
+#endif
             if (s2.Length < s1.Length)
             {
                 return false;
@@ -124,14 +128,8 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static string RemoveChars(this string @this, CharacterSet chars)
         {
 #if DEBUG
-            if (@this == null)
-            {
-                throw new ArgumentNullException(nameof(@this));
-            }
-            if (chars == null)
-            {
-                throw new ArgumentNullException(nameof(chars));
-            }
+            if (@this == null) throw new ArgumentNullException(nameof(@this));
+            if (chars == null) throw new ArgumentNullException(nameof(chars));
 #endif
 
             if (@this.Length == 0 || chars.IsEmpty)
@@ -139,8 +137,31 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return @this;
             }
 
-            var builder = StringBuilderPool.Get(@this);
-            builder.RemoveChars(chars);
+            var thisSpan = @this.AsSpan();
+            var index = thisSpan.IndexOfAny(chars);
+            if (index < 0)
+            {
+                return @this;
+            }
+
+            var lastIndex = thisSpan.Length - 1;
+            if (index == lastIndex)
+            {
+                return @this.Substring(0, lastIndex);
+            }
+
+            var builder = StringBuilderPool.Get(lastIndex);
+            builder.Append(thisSpan.Slice(0, index));
+            index++;
+            for (; index < thisSpan.Length; index++)
+            {
+                ref readonly var c = ref thisSpan[index];
+                if (!chars.Contains(c))
+                {
+                    builder.Append(c);
+                }
+            }
+
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
@@ -205,14 +226,8 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static string MakeAllSmall(string s, TextInfo textInfo)
         {
 #if DEBUG
-            if (s == null)
-            {
-                throw new ArgumentNullException(nameof(s));
-            }
-            if (textInfo == null)
-            {
-                throw new ArgumentNullException(nameof(textInfo));
-            }
+            if (s == null) throw new ArgumentNullException(nameof(s));
+            if (textInfo == null) throw new ArgumentNullException(nameof(textInfo));
 #endif
             return textInfo.ToLower(s);
         }

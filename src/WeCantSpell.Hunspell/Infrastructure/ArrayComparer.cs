@@ -61,9 +61,12 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 throw new ArgumentOutOfRangeException(nameof(length));
             }
 
+            var xSpan = x.AsSpan(xOffset);
+            var ySpan = y.AsSpan(yOffset);
+
             for (var i = 0; i < length; i++)
             {
-                if (!ValueComparer.Equals(x[xOffset + i], y[yOffset + i]))
+                if (!ValueComparer.Equals(xSpan[i], ySpan[i]))
                 {
                     return false;
                 }

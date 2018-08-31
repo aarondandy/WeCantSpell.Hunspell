@@ -53,40 +53,11 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public Enumerator GetEnumerator() => new Enumerator(items);
+        public ReadOnlySpan<T>.Enumerator GetEnumerator() => new ReadOnlySpan<T>(items).GetEnumerator();
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator() => ((IEnumerable<T>)items).GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => items.GetEnumerator();
-
-        public struct Enumerator
-        {
-            private readonly T[] values;
-
-            private int index;
-
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            public Enumerator(T[] values)
-            {
-                this.values = values;
-                index = -1;
-            }
-
-            public T Current
-            {
-#if !NO_INLINE
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-                get => values[index];
-            }
-
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            public bool MoveNext() => (++index) < values.Length;
-        }
 
         public class ArrayWrapperComparer<TValue, TCollection> :
             IEqualityComparer<TCollection>

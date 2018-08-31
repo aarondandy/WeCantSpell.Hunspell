@@ -450,9 +450,6 @@ namespace WeCantSpell.Hunspell
 
             protected WordEntry CompoundCheck(ReadOnlySpan<char> word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
             {
-#if DEBUG
-                if (word == null) throw new ArgumentNullException(nameof(word));
-#endif
                 int oldnumsyllable, oldnumsyllable2, oldwordnum, oldwordnum2;
                 WordEntry rv;
                 WordEntry rvFirst;
