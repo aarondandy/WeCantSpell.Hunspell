@@ -17,14 +17,8 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static void Swap(this StringBuilder @this, int indexA, int indexB)
         {
 #if DEBUG
-            if (indexA < 0 || indexA > @this.Length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(indexA));
-            }
-            if (indexB < 0 || indexB > @this.Length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(indexB));
-            }
+            if (indexA < 0 || indexA > @this.Length) throw new ArgumentOutOfRangeException(nameof(indexA));
+            if (indexB < 0 || indexB > @this.Length) throw new ArgumentOutOfRangeException(nameof(indexB));
 #endif
 
             var temp = @this[indexA];

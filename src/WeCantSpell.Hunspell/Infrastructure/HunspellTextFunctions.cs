@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Globalization;
 using System.Text;
-using System.Runtime.InteropServices;
 using System.Buffers;
 
 #if !NO_INLINE
@@ -265,26 +264,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
             if (textInfo == null) throw new ArgumentNullException(nameof(textInfo));
 #endif
             return textInfo.ToUpper(s);
-        }
-
-        public static ReadOnlySpan<char> MakeTitleCase(ReadOnlySpan<char> s, CultureInfo cultureInfo)
-        {
-#if DEBUG
-            if (cultureInfo == null) throw new ArgumentNullException(nameof(cultureInfo));
-#endif
-
-            if (s.IsEmpty)
-            {
-                return s;
-            }
-
-            var buffer = new char[s.Length];
-            s.Slice(0, 1).ToUpper(buffer.AsSpan(0, 1), cultureInfo);
-            if (s.Length > 1)
-            {
-                s.Slice(1).ToLower(buffer.AsSpan(1), cultureInfo);
-            }
-            return new ReadOnlySpan<char>(buffer);
         }
 
         public static string MakeTitleCase(string s, CultureInfo cultureInfo)

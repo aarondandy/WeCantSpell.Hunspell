@@ -2,7 +2,7 @@
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    static class ReadOnlySpanEx
+    static class MemoryEx
     {
         public delegate bool SplitPartHandler(ReadOnlySpan<char> part, int index);
 
@@ -157,45 +157,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
-        public static ReadOnlySpan<char> Remove(this ReadOnlySpan<char> @this, CharacterSet chars)
-        {
-#if DEBUG
-            if (chars == null)
-            {
-                throw new ArgumentNullException(nameof(chars));
-            }
-#endif
-
-            if (@this.IsEmpty || chars.IsEmpty)
-            {
-                return @this;
-            }
-
-            var removeIndex = @this.IndexOfAny(chars);
-            if (removeIndex < 0)
-            {
-                return @this;
-            }
-
-            if (removeIndex == @this.Length - 1)
-            {
-                return @this.Slice(0, removeIndex);
-            }
-
-            var builder = StringBuilderPool.Get(@this.Length - 1);
-            builder.Append(@this.Slice(0, removeIndex));
-            for (var i = removeIndex; i < @this.Length; i++)
-            {
-                ref readonly var c = ref @this[i];
-                if (!chars.Contains(c))
-                {
-                    builder.Append(c);
-                }
-            }
-
-            return StringBuilderPool.GetStringAndReturn(builder).AsSpan();
-        }
-
         public static ReadOnlySpan<char> Replace(this ReadOnlySpan<char> @this, char oldChar, char newChar)
         {
             var replaceIndex = @this.IndexOf(oldChar);
@@ -264,23 +225,6 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return value;
             }
             if (value.Length == 0)
-            {
-                return @this.ToString();
-            }
-
-            var builder = StringBuilderPool.Get(@this.Length + value.Length);
-            builder.Append(@this);
-            builder.Append(value);
-            return StringBuilderPool.GetStringAndReturn(builder);
-        }
-
-        public static string ConcatString(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value)
-        {
-            if (@this.IsEmpty)
-            {
-                return value.ToString();
-            }
-            if (value.IsEmpty)
             {
                 return @this.ToString();
             }
