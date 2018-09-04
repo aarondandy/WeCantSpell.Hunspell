@@ -477,7 +477,7 @@ namespace WeCantSpell.Hunspell
                         rule = Builder.Dedup(part);
                         return true;
                     case 1:
-                        replace = Builder.Dedup(part.Remove('_'));
+                        replace = Builder.Dedup(part.Without('_'));
                         return true;
                     default:
                         return false;

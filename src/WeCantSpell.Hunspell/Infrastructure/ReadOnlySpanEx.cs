@@ -129,17 +129,17 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static bool SplitOnTabOrSpace(this ReadOnlySpan<char> @this, SplitPartHandler partHandler) =>
             @this.Split(' ', '\t', partHandler);
 
-        public static ReadOnlySpan<char> Remove(this ReadOnlySpan<char> @this, char value)
+        public static string Without(this ReadOnlySpan<char> @this, char value)
         {
             var removeIndex = @this.IndexOf(value);
             if (removeIndex < 0)
             {
-                return @this;
+                return @this.ToString();
             }
 
             if (removeIndex == @this.Length - 1)
             {
-                return @this.Slice(0, removeIndex);
+                return @this.Slice(0, removeIndex).ToString();
             }
 
             var builder = StringBuilderPool.Get(@this.Length - 1);
@@ -154,7 +154,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 }
             }
 
-            return StringBuilderPool.GetStringAndReturn(builder).AsSpan();
+            return StringBuilderPool.GetStringAndReturn(builder);
         }
 
         public static ReadOnlySpan<char> Remove(this ReadOnlySpan<char> @this, CharacterSet chars)

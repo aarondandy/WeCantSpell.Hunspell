@@ -39,9 +39,6 @@ namespace WeCantSpell.Hunspell
 
             public List<string> Suggest() => Suggest(WordToCheck);
 
-            private List<string> Suggest(ReadOnlySpan<char> word) =>
-                Suggest(word.ToString());
-
             private List<string> Suggest(string word)
             {
                 var slst = new List<string>();
@@ -262,7 +259,7 @@ namespace WeCantSpell.Hunspell
                         var pos = sitem.IndexOf('-');
                         if (pos >= 0)
                         {
-                            var info = CheckDetails(sitem.AsSpan(0, pos).ConcatString(sitem.AsSpan(pos + 1))).Info;
+                            var info = CheckDetails(sitem.WithoutIndex(pos)).Info;
                             var desiredChar = EnumEx.HasFlag(info, SpellCheckResultType.Compound | SpellCheckResultType.Forbidden)
                                 ? ' '
                                 : '-';
@@ -342,7 +339,7 @@ namespace WeCantSpell.Hunspell
                             last = true;
                         }
 
-                        var chunk = scw.AsSpan(prevPos, dashPos - prevPos);
+                        var chunk = scw.Substring(prevPos, dashPos - prevPos);
                         if (!Check(chunk))
                         {
                             var nlst = Suggest(chunk);
@@ -689,6 +686,7 @@ namespace WeCantSpell.Hunspell
                 }
 
                 var state = 0;
+                var builder = StringBuilderPool.Get(word.Length);
                 for (var i = 2; i < word.Length; i++)
                 {
                     if (word[i] == word[i - 2])
@@ -696,7 +694,10 @@ namespace WeCantSpell.Hunspell
                         state++;
                         if (state == 3 || (state == 2 && i >= 4))
                         {
-                            TestSug(wlst, word.AsSpan(0, i - 1).ConcatString(word.AsSpan(i + 1)), cpdSuggest);
+                            builder.Clear();
+                            builder.Append(word, 0, i - 1);
+                            builder.Append(word, i + 1, word.Length - i - 1);
+                            TestSug(wlst, builder.ToString(), cpdSuggest);
                             state = 0;
                         }
                     }

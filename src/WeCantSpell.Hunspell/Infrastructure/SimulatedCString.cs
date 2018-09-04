@@ -41,7 +41,15 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public void WriteChars(string text, int destinationIndex)
         {
-            WriteChars(text.AsSpan(), destinationIndex);
+            ResetCache();
+
+            var neededLength = text.Length + destinationIndex;
+            if (buffer.Length < neededLength)
+            {
+                Array.Resize(ref buffer, neededLength);
+            }
+
+            text.CopyTo(0, buffer, destinationIndex, text.Length);
         }
 
         public void WriteChars(ReadOnlySpan<char> text, int destinationIndex)

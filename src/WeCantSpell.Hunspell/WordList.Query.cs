@@ -1023,7 +1023,7 @@ namespace WeCantSpell.Hunspell
                                     ClearSuffixAndFlag();
 
                                     {
-                                        var wordSubI = word.AsSpan(i);
+                                        var wordSubI = word.Substring(i);
                                         rv = (!onlycpdrule && Affix.CompoundFlag.HasValue)
                                              ? AffixCheck(wordSubI, Affix.CompoundFlag, CompoundOptions.End)
                                              : null;
@@ -1253,7 +1253,7 @@ namespace WeCantSpell.Hunspell
 
                                                 if (Affix.ForbiddenWord.HasValue)
                                                 {
-                                                    var rv2 = LookupFirst(word.ToString());
+                                                    var rv2 = LookupFirst(word);
 
                                                     if (rv2 == null)
                                                     {
@@ -2165,9 +2165,9 @@ namespace WeCantSpell.Hunspell
                     return string.Empty;
                 }
 
-                var dest = src.AsSpan(qIndex, nl);
+                var dest = qIndex == 0 && nl == src.Length ? src : src.Substring(qIndex, nl);
                 capType = HunspellTextFunctions.GetCapitalizationType(dest, TextInfo);
-                return dest.ToString();
+                return dest;
             }
 
             protected enum CompoundOptions : byte

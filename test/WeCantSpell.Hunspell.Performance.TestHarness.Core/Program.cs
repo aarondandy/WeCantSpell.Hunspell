@@ -13,7 +13,7 @@ namespace WeCantSpell.Hunspell.Performance.TestHarness.Core
         {
             //DictionaryLoads();
             Checks();
-            //Suggestions();
+            Suggestions();
             //TestBe();
         }
 

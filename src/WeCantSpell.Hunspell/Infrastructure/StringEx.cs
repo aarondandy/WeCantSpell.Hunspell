@@ -143,5 +143,29 @@ namespace WeCantSpell.Hunspell.Infrastructure
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool IsLineBreakChar(this char c) => c == '\n' || c == '\r';
+
+        public static string WithoutIndex(this string @this, int index)
+        {
+#if DEBUG
+            if (@this == null) throw new ArgumentNullException(nameof(@this));
+            if (index < 0) throw new ArgumentOutOfRangeException(nameof(index));
+            if (index >= @this.Length) throw new ArgumentOutOfRangeException(nameof(index));
+#endif
+
+            if (index == 0)
+            {
+                return @this.Substring(1);
+            }
+            var lastIndex = @this.Length - 1;
+            if (index == lastIndex)
+            {
+                return @this.Substring(0, lastIndex);
+            }
+
+            var builder = StringBuilderPool.Get(lastIndex);
+            builder.Append(@this, 0, index);
+            builder.Append(@this, index + 1, lastIndex - index);
+            return StringBuilderPool.GetStringAndReturn(builder);
+        }
     }
 }
