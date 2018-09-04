@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Globalization;
-using System.Linq;
 using WeCantSpell.Hunspell.Infrastructure;
 
 #if !NO_INLINE
@@ -13,9 +12,8 @@ namespace WeCantSpell.Hunspell
     {
         private abstract class Query
         {
-            protected Query(string word, WordList wordList)
+            protected Query(WordList wordList)
             {
-                WordToCheck = word;
                 WordList = wordList;
                 Affix = wordList.Affix;
                 TextInfo = Affix.Culture.TextInfo;
@@ -46,8 +44,6 @@ namespace WeCantSpell.Hunspell
             protected const int TimeLimitCompoundCheckMs = 1000 / 20;
 
             protected const int TimeLimitGlobalMs = 1000 / 4;
-
-            public string WordToCheck { get; private set; }
 
             public WordList WordList { get; }
 
@@ -186,10 +182,6 @@ namespace WeCantSpell.Hunspell
 
             private bool HasSpecialInitCap(SpellCheckResultType info, WordEntryDetail he) =>
                 EnumEx.HasFlag(info, SpellCheckResultType.InitCap) && he.ContainsFlag(SpecialFlags.OnlyUpcaseFlag);
-
-            protected bool Check(string word) => new QueryCheck(word, WordList).Check();
-
-            protected bool Check(ReadOnlySpan<char> word) => new QueryCheck(word.ToString(), WordList).Check();
 
             protected WordEntry CheckWord(string word, ref SpellCheckResultType info, out string root)
             {

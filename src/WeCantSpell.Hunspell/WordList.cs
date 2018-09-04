@@ -96,11 +96,11 @@ namespace WeCantSpell.Hunspell
 
         private Dictionary<string, WordEntryDetail[]> NGramRestrictedDetails { get; set; }
 
-        public bool Check(string word) => new QueryCheck(word, this).Check();
+        public bool Check(string word) => new QueryCheck(this).Check(word);
 
-        public SpellCheckResult CheckDetails(string word) => new QueryCheck(word, this).CheckDetails();
+        public SpellCheckResult CheckDetails(string word) => new QueryCheck(this).CheckDetails(word);
 
-        public IEnumerable<string> Suggest(string word) => new QuerySuggest(word, this).Suggest();
+        public IEnumerable<string> Suggest(string word) => new QuerySuggest(this).Suggest(word);
 
         internal WordEntry FindFirstEntryByRootWord(string rootWord)
         {

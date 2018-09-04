@@ -32,14 +32,16 @@ namespace WeCantSpell.Hunspell
             /// </summary>
             private OperationTimeLimiter CompoundSuggestTimeLimiter;
 
-            public QuerySuggest(string word, WordList wordList)
-                : base(word, wordList)
+            public QuerySuggest(WordList wordList)
+                : base(wordList)
             {
             }
 
-            public List<string> Suggest() => Suggest(WordToCheck);
+            private List<string> SuggestNested(string word) => new QuerySuggest(WordList).Suggest(word);
 
-            private List<string> Suggest(string word)
+            private bool Check(string word) => new QueryCheck(WordList).Check(word);
+
+            public List<string> Suggest(string word)
             {
                 var slst = new List<string>();
 
@@ -342,7 +344,7 @@ namespace WeCantSpell.Hunspell
                         var chunk = scw.Substring(prevPos, dashPos - prevPos);
                         if (!Check(chunk))
                         {
-                            var nlst = Suggest(chunk);
+                            var nlst = SuggestNested(chunk);
 
                             foreach (var j in nlst)
                             {
@@ -668,7 +670,7 @@ namespace WeCantSpell.Hunspell
                 return goodSuggestion;
             }
 
-            private SpellCheckResult CheckDetails(string word) => new QueryCheck(word, WordList).CheckDetails();
+            private SpellCheckResult CheckDetails(string word) => new QueryCheck(WordList).CheckDetails(word);
 
             /// <summary>
             /// perhaps we doubled two characters (pattern aba -> ababa, for example vacation -> vacacation)
