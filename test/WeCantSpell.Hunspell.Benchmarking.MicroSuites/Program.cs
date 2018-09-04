@@ -6,7 +6,7 @@ namespace WeCantSpell.Hunspell.Benchmarking.MicroSuites
     {
         static void Main(string[] args)
         {
-            //BenchmarkRunner.Run<EnUsWordListCheckSuite>();
+            BenchmarkRunner.Run<EnUsWordListCheckSuite>();
             BenchmarkRunner.Run<EnUsWordListSuggestSuite>();
         }
     }

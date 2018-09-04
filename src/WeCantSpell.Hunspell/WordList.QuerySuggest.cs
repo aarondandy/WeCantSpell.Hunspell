@@ -709,6 +709,8 @@ namespace WeCantSpell.Hunspell
                     }
                 }
 
+                StringBuilderPool.Return(builder);
+
                 return wlst.Count;
             }
 
@@ -856,7 +858,7 @@ namespace WeCantSpell.Hunspell
 
                 for (var index = word.Length - 1; index >= 0; index--)
                 {
-                    TestSug(wlst, word.Remove(index, 1), cpdSuggest);
+                    TestSug(wlst, word.WithoutIndex(index), cpdSuggest);
                 }
 
                 return wlst.Count;
