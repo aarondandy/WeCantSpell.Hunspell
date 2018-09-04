@@ -8,9 +8,9 @@ namespace WeCantSpell.Hunspell.Infrastructure
 {
     ref struct SimulatedCString
     {
-        public SimulatedCString(ReadOnlySpan<char> text)
+        public SimulatedCString(string text)
         {
-            buffer = text.ToArray();
+            buffer = text.ToCharArray();
             cachedSpan = buffer.AsSpan();
             cachedString = null;
             cacheRequiresRefresh = true;
@@ -57,19 +57,16 @@ namespace WeCantSpell.Hunspell.Infrastructure
             text.CopyTo(buffer.AsSpan(destinationIndex));
         }
 
-        public void WriteChars(int sourceIndex, ReadOnlySpan<char> text, int destinationIndex)
-        {
-            WriteChars(text.Slice(sourceIndex), destinationIndex);
-        }
-
-        public void Assign(ReadOnlySpan<char> text)
+        public void Assign(string text)
         {
 #if DEBUG
+            if (text == null) throw new ArgumentNullException(nameof(text));
             if (text.Length > buffer.Length) throw new ArgumentOutOfRangeException(nameof(text));
 #endif
             ResetCache();
 
-            text.CopyTo(buffer.AsSpan());
+            text.CopyTo(0, buffer, 0, text.Length);
+
             if (text.Length < buffer.Length)
             {
                 Array.Clear(buffer, text.Length, buffer.Length - text.Length);
@@ -89,11 +86,8 @@ namespace WeCantSpell.Hunspell.Infrastructure
         {
             if (cacheRequiresRefresh)
             {
-                var nullIndex = Array.IndexOf(buffer, '\0');
-                cachedSpan = nullIndex >= 0
-                    ? buffer.AsSpan(0, nullIndex)
-                    : buffer.AsSpan();
                 cacheRequiresRefresh = false;
+                cachedSpan = buffer.AsSpan(0, FindTerminatedLength());
             }
 
             return cachedSpan;
@@ -103,6 +97,15 @@ namespace WeCantSpell.Hunspell.Infrastructure
         {
             cacheRequiresRefresh = true;
             cachedString = null;
+        }
+
+#if !NO_INLINE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private int FindTerminatedLength()
+        {
+            var length = Array.IndexOf(buffer, '\0');
+            return length < 0 ? buffer.Length : length;
         }
     }
 }

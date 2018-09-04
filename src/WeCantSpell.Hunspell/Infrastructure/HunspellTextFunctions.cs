@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Text;
 using System.Runtime.InteropServices;
+using System.Buffers;
 
 #if !NO_INLINE
 using System.Runtime.CompilerServices;
@@ -125,7 +126,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static bool CharIsNotNeutral(char c, TextInfo textInfo) =>
             (c < 127 || textInfo.ToUpper(c) != c) && char.IsLower(c);
 
-        public static string RemoveChars(this string @this, CharacterSet chars)
+        public static string WithoutChars(this string @this, CharacterSet chars)
         {
 #if DEBUG
             if (@this == null) throw new ArgumentNullException(nameof(@this));
@@ -176,20 +177,20 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return s;
             }
 
-            var actualFirstLetter = s[0];
+            var sSpan = s.AsSpan();
+            ref readonly var actualFirstLetter = ref sSpan[0];
             var expectedFirstLetter = textInfo.ToUpper(actualFirstLetter);
             if (expectedFirstLetter == actualFirstLetter)
             {
                 return s;
             }
 
-            if (s.Length == 1)
+            var builder = StringBuilderPool.Get(s.Length);
+            builder.Append(expectedFirstLetter);
+            if (sSpan.Length > 1)
             {
-                return expectedFirstLetter.ToString();
+                builder.Append(sSpan.Slice(1));
             }
-
-            var builder = StringBuilderPool.Get(s);
-            builder[0] = expectedFirstLetter;
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
@@ -203,20 +204,19 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return string.Empty;
             }
 
-            var actualFirstLetter = s[0];
+            ref readonly var actualFirstLetter = ref s[0];
             var expectedFirstLetter = textInfo.ToUpper(actualFirstLetter);
             if (expectedFirstLetter == actualFirstLetter)
             {
                 return s.ToString();
             }
 
-            if (s.Length == 1)
+            var builder = StringBuilderPool.Get(s.Length);
+            builder.Append(expectedFirstLetter);
+            if (s.Length > 1)
             {
-                return expectedFirstLetter.ToString();
+                builder.Append(s.Slice(1));
             }
-
-            var builder = StringBuilderPool.Get(s);
-            builder[0] = expectedFirstLetter;
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
@@ -244,20 +244,17 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return s;
             }
 
-            var actualFirstLetter = s[0];
+            var sSpan = s.AsSpan();
+            ref readonly var actualFirstLetter = ref sSpan[0];
             var expectedFirstLetter = textInfo.ToLower(actualFirstLetter);
             if (expectedFirstLetter == actualFirstLetter)
             {
                 return s;
             }
 
-            if (s.Length == 1)
-            {
-                return expectedFirstLetter.ToString();
-            }
-
-            var builder = StringBuilderPool.Get(s);
-            builder[0] = expectedFirstLetter;
+            var builder = StringBuilderPool.Get(s.Length);
+            builder.Append(expectedFirstLetter);
+            builder.Append(sSpan.Slice(1));
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
@@ -290,6 +287,32 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return new ReadOnlySpan<char>(buffer);
         }
 
+        public static string MakeTitleCase(string s, CultureInfo cultureInfo)
+        {
+#if DEBUG
+            if (s == null) throw new ArgumentNullException(nameof(s));
+            if (cultureInfo == null) throw new ArgumentNullException(nameof(cultureInfo));
+#endif
+
+            if (s.Length == 0)
+            {
+                return s;
+            }
+
+            using (var mo = MemoryPool<char>.Shared.Rent(s.Length))
+            {
+                var sSpan = s.AsSpan();
+                var buffer = mo.Memory.Span.Slice(0, sSpan.Length);
+                sSpan.Slice(0, 1).ToUpper(buffer.Slice(0, 1), cultureInfo);
+                if (sSpan.Length > 1)
+                {
+                    sSpan.Slice(1).ToLower(buffer.Slice(1), cultureInfo);
+                }
+
+                return buffer.ToString();
+            }
+        }
+
         public static ReadOnlySpan<char> ReDecodeConvertedStringAsUtf8(ReadOnlySpan<char> decoded, Encoding encoding)
         {
             if (Encoding.UTF8.Equals(encoding))
@@ -300,6 +323,9 @@ namespace WeCantSpell.Hunspell.Infrastructure
             var encodedBytes = encoding.GetBytes(decoded.ToArray());
             return Encoding.UTF8.GetString(encodedBytes, 0, encodedBytes.Length).AsSpan();
         }
+
+        public static CapitalizationType GetCapitalizationType(string word, TextInfo textInfo) =>
+            GetCapitalizationType(word.AsSpan(), textInfo);
 
         public static CapitalizationType GetCapitalizationType(ReadOnlySpan<char> word, TextInfo textInfo)
         {

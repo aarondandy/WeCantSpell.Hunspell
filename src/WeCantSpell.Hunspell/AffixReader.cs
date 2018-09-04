@@ -719,7 +719,7 @@ namespace WeCantSpell.Hunspell
                 }
                 else if (EnumEx.HasFlag(Builder.Options, AffixConfigOptions.ComplexPrefixes))
                 {
-                    strip = strip.Reverse();
+                    strip = strip.GetReversed();
                 }
 
                 // piece 4 - is affix string or 0 for null
@@ -816,7 +816,7 @@ namespace WeCantSpell.Hunspell
                     {
                         if (EnumEx.HasFlag(Builder.Options, AffixConfigOptions.ComplexPrefixes))
                         {
-                            morphAffixText = morphAffixText.Reverse();
+                            morphAffixText = morphAffixText.GetReversed();
                         }
 
                         morph = Builder.Dedup(MorphSet.TakeArray(Builder.DedupInPlace(morphAffixText.SplitOnTabOrSpace())));

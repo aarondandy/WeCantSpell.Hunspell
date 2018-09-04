@@ -19,7 +19,7 @@ namespace WeCantSpell.Hunspell
             FlagSet contClass)
             : base(strip, affixText, conditions, morph, contClass)
         {
-            Key = affixText.Reverse();
+            Key = affixText.GetReversed();
         }
 
         public sealed override string Key { get; }

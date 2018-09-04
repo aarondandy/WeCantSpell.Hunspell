@@ -24,8 +24,8 @@ namespace WeCantSpell.Hunspell
 
         public FlagValue Condition2 { get; }
 
-        internal bool Pattern3DoesNotMatch(ReadOnlySpan<char> word, int offset) =>
+        internal bool Pattern3DoesNotMatch(string word, int offset) =>
             Pattern3.Length == 0
-            || !word.Slice(offset).StartsWith(Pattern3.AsSpan()); 
+            || !word.AsSpan(offset).StartsWith(Pattern3.AsSpan()); 
     }
 }

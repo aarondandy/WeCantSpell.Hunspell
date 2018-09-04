@@ -21,7 +21,7 @@ namespace WeCantSpell.Hunspell
             var lastIndex = oldMorphs.Length - 1;
             for (int i = 0; i < oldMorphs.Length; i++)
             {
-                newMorphs[i] = oldMorphs[lastIndex - i].Reverse();
+                newMorphs[i] = oldMorphs[lastIndex - i].GetReversed();
             }
 
             return newMorphs;

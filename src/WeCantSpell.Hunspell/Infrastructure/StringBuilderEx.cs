@@ -181,7 +181,10 @@ namespace WeCantSpell.Hunspell.Infrastructure
                     }
                 }
 #else
-                builder.Append(value.ToString());
+                for (var i = 0; i < value.Length; i++)
+                {
+                    builder.Append(value[i]);
+                }
 #endif
             }
 

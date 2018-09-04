@@ -202,7 +202,7 @@ namespace WeCantSpell.Hunspell
 
                 if (Affix.IgnoredChars.HasItems)
                 {
-                    word = word.RemoveChars(Affix.IgnoredChars);
+                    word = word.WithoutChars(Affix.IgnoredChars);
 
                     if (word.Length == 0)
                     {
@@ -213,7 +213,7 @@ namespace WeCantSpell.Hunspell
                 // word reversing wrapper for complex prefixes
                 if (Affix.ComplexPrefixes)
                 {
-                    word = word.Reverse();
+                    word = word.GetReversed();
                 }
 
                 // look word in hash table
@@ -295,19 +295,19 @@ namespace WeCantSpell.Hunspell
                     root = he.Word;
                     if (Affix.ComplexPrefixes)
                     {
-                        root = root.Reverse();
+                        root = root.GetReversed();
                     }
                 }
                 else if (Affix.HasCompound)
                 {
                     // try check compound word
                     var rwords = new IncrementalWordList();
-                    he = CompoundCheck(word.AsSpan(), 0, 0, 100, null, rwords, false, 0, ref info);
+                    he = CompoundCheck(word, 0, 0, 100, null, rwords, false, 0, ref info);
 
                     if (he == null && word.EndsWith('-') && Affix.IsHungarian)
                     {
                         // LANG_hu section: `moving rule' with last dash
-                        he = CompoundCheck(word.AsSpan(0, word.Length - 1), -5, 0, 100, null, rwords, true, 0, ref info);
+                        he = CompoundCheck(word.Substring(0, word.Length - 1), -5, 0, 100, null, rwords, true, 0, ref info);
                     }
 
                     if (he != null)
@@ -315,7 +315,7 @@ namespace WeCantSpell.Hunspell
                         root = he.Word;
                         if (Affix.ComplexPrefixes)
                         {
-                            root = root.Reverse();
+                            root = root.GetReversed();
                         }
 
                         info |= SpellCheckResultType.Compound;
@@ -448,7 +448,7 @@ namespace WeCantSpell.Hunspell
                 return null;
             }
 
-            protected WordEntry CompoundCheck(ReadOnlySpan<char> word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
+            protected WordEntry CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
             {
                 int oldnumsyllable, oldnumsyllable2, oldwordnum, oldwordnum2;
                 WordEntry rv;
@@ -528,7 +528,7 @@ namespace WeCantSpell.Hunspell
 
                                 st.WriteChars(scpdPatternEntry.Pattern2, i);
 
-                                st.WriteChars(soldi + scpdPatternEntry.Pattern3.Length, word, i + scpdPatternEntry.Pattern2.Length);
+                                st.WriteChars(word.AsSpan(soldi + scpdPatternEntry.Pattern3.Length), i + scpdPatternEntry.Pattern2.Length);
 
                                 oldlen = len;
                                 len += scpdPatternEntry.Pattern.Length + scpdPatternEntry.Pattern2.Length + scpdPatternEntry.Pattern3.Length;
@@ -639,13 +639,14 @@ namespace WeCantSpell.Hunspell
 
                                 if (Affix.CompoundFlag.HasValue)
                                 {
-                                    rv = PrefixCheck(st.ToString(), movCompoundOptions, Affix.CompoundFlag);
+                                    var stAffix = st.ToString();
+                                    rv = PrefixCheck(stAffix, movCompoundOptions, Affix.CompoundFlag);
                                     if (rv == null)
                                     {
-                                        rv = SuffixCheck(st.ToString(), 0, default, new FlagValue(), Affix.CompoundFlag, movCompoundOptions);
+                                        rv = SuffixCheck(stAffix, 0, default, new FlagValue(), Affix.CompoundFlag, movCompoundOptions);
                                         if (rv == null && Affix.CompoundMoreSuffixes)
                                         {
-                                            rv = SuffixCheckTwoSfx(st.ToString(), 0, default, Affix.CompoundFlag);
+                                            rv = SuffixCheckTwoSfx(stAffix, 0, default, Affix.CompoundFlag);
                                         }
 
                                         if (
@@ -669,13 +670,14 @@ namespace WeCantSpell.Hunspell
                                 }
                                 else if (wordNum == 0 && Affix.CompoundBegin.HasValue)
                                 {
-                                    rv = SuffixCheck(st.ToString(), 0, default, default, Affix.CompoundBegin, movCompoundOptions);
+                                    var stAffix = st.ToString();
+                                    rv = SuffixCheck(stAffix, 0, default, default, Affix.CompoundBegin, movCompoundOptions);
 
                                     if(rv == null)
                                     {
                                         if(Affix.CompoundMoreSuffixes)
                                         {
-                                            rv = SuffixCheckTwoSfx(st.ToString(), 0, default, Affix.CompoundBegin);
+                                            rv = SuffixCheckTwoSfx(stAffix, 0, default, Affix.CompoundBegin);
                                             if (rv != null)
                                             {
                                                 checkedPrefix = true;
@@ -684,7 +686,7 @@ namespace WeCantSpell.Hunspell
 
                                         if (rv == null)
                                         {
-                                            rv = PrefixCheck(st.ToString(), movCompoundOptions, Affix.CompoundBegin);
+                                            rv = PrefixCheck(stAffix, movCompoundOptions, Affix.CompoundBegin);
                                             if (rv != null)
                                             {
                                                 checkedPrefix = true;
@@ -698,12 +700,13 @@ namespace WeCantSpell.Hunspell
                                 }
                                 else if (wordNum > 0 && Affix.CompoundMiddle.HasValue)
                                 {
-                                    rv = SuffixCheck(st.ToString(), 0, default, default, Affix.CompoundMiddle, movCompoundOptions);
+                                    var stAffix = st.ToString();
+                                    rv = SuffixCheck(stAffix, 0, default, default, Affix.CompoundMiddle, movCompoundOptions);
                                     if (rv == null)
                                     {
                                         if (Affix.CompoundMoreSuffixes)
                                         {
-                                            rv = SuffixCheckTwoSfx(st.ToString(), 0, default, Affix.CompoundMiddle);
+                                            rv = SuffixCheckTwoSfx(stAffix, 0, default, Affix.CompoundMiddle);
                                             if (rv != null)
                                             {
                                                 checkedPrefix = true;
@@ -712,7 +715,7 @@ namespace WeCantSpell.Hunspell
 
                                         if (rv == null)
                                         {
-                                            rv = PrefixCheck(st.ToString(), movCompoundOptions, Affix.CompoundMiddle);
+                                            rv = PrefixCheck(stAffix, movCompoundOptions, Affix.CompoundMiddle);
                                             if (rv != null)
                                             {
                                                 checkedPrefix = true;
@@ -1006,7 +1009,7 @@ namespace WeCantSpell.Hunspell
                                             st.Destroy();
 
                                             // forbid compound word, if it is a non compound word with typical fault
-                                            var wordLenPrefix = word.Slice(0, Math.Min(word.Length, len));
+                                            var wordLenPrefix = word.AsSpan(0, Math.Min(word.Length, len));
                                             return ((Affix.CheckCompoundRep && CompoundReplacementCheck(wordLenPrefix)) || CompoundWordPairCheck(wordLenPrefix))
                                                 ? null
                                                 : rvFirst;
@@ -1020,7 +1023,7 @@ namespace WeCantSpell.Hunspell
                                     ClearSuffixAndFlag();
 
                                     {
-                                        var wordSubI = word.Slice(i);
+                                        var wordSubI = word.AsSpan(i);
                                         rv = (!onlycpdrule && Affix.CompoundFlag.HasValue)
                                              ? AffixCheck(wordSubI, Affix.CompoundFlag, CompoundOptions.End)
                                              : null;
@@ -1099,7 +1102,7 @@ namespace WeCantSpell.Hunspell
                                     if (Affix.IsHungarian)
                                     {
                                         // calculate syllable number of the word
-                                        numSyllable += GetSyllable(word.Slice(0, i));
+                                        numSyllable += GetSyllable(word.AsSpan(0, i));
 
                                         // - affix syllable num.
                                         // XXX only second suffix (inflections, not derivations)
@@ -1178,7 +1181,7 @@ namespace WeCantSpell.Hunspell
                                             st.Destroy();
 
                                             // forbid compound word, if it is a non compound word with typical fault
-                                            var wordLenPrefix = word.Slice(0, Math.Min(word.Length, len));
+                                            var wordLenPrefix = word.AsSpan(0, Math.Min(word.Length, len));
                                             return ((Affix.CheckCompoundRep && CompoundReplacementCheck(wordLenPrefix)) || CompoundWordPairCheck(wordLenPrefix))
                                                 ? null
                                                 : rvFirst;
@@ -1191,7 +1194,7 @@ namespace WeCantSpell.Hunspell
                                     // perhaps second word is a compound word (recursive call)
                                     if (wordNum < maxwordnum)
                                     {
-                                        rv = CompoundCheck(st.GetTerminatedSpan().Slice(i), wordNum + 1, numSyllable, maxwordnum, words?.CreateIncremented(), rwords.CreateIncremented(), false, isSug, ref info);
+                                        rv = CompoundCheck(st.GetTerminatedSpan().Slice(i).ToString(), wordNum + 1, numSyllable, maxwordnum, words?.CreateIncremented(), rwords.CreateIncremented(), false, isSug, ref info);
 
                                         if (
                                             rv != null
@@ -1211,7 +1214,7 @@ namespace WeCantSpell.Hunspell
 
                                     if (rv != null)
                                     {
-                                        var wordLenPrefix = word.Slice(0, Math.Min(word.Length, len));
+                                        var wordLenPrefix = word.AsSpan(0, Math.Min(word.Length, len));
                                         // forbid compound word, if it is a non compound word with typical fault
 
                                         // or a dictionary word pair
@@ -1229,7 +1232,7 @@ namespace WeCantSpell.Hunspell
                                             }
 
                                             // check first part
-                                            if (word.Slice(i).StartsWith(rv.Word.AsSpan()))
+                                            if (word.AsSpan(i).StartsWith(rv.Word.AsSpan()))
                                             {
                                                 var r = st[i + rv.Word.Length];
                                                 if (i + rv.Word.Length < st.BufferLength)
@@ -1254,7 +1257,7 @@ namespace WeCantSpell.Hunspell
 
                                                     if (rv2 == null)
                                                     {
-                                                        rv2 = AffixCheck(word.Slice(0, len), default, CompoundOptions.Not);
+                                                        rv2 = AffixCheck(word.AsSpan(0, len), default, CompoundOptions.Not);
                                                     }
 
                                                     if (
@@ -1780,7 +1783,7 @@ namespace WeCantSpell.Hunspell
             /// <summary>
             /// Forbid compounding with neighbouring upper and lower case characters at word bounds.
             /// </summary>
-            private static bool CompoundCaseCheck(ReadOnlySpan<char> word, int pos)
+            private static bool CompoundCaseCheck(string word, int pos)
             {
                 // NOTE: this implementation could be much simpler but an attempt is made here
                 // to preserve the same result when indexes may be out of bounds

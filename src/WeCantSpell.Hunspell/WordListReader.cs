@@ -323,7 +323,7 @@ namespace WeCantSpell.Hunspell
                 ? parsed.Morphs
                 : ArrayEx<string>.Empty;
 
-            return AddWord(parsed.Word, flags, morphValues);
+            return AddWord(parsed.Word.ToString(), flags, morphValues);
         }
 
         private bool AttemptToProcessInitializationLine(string line)
@@ -344,16 +344,16 @@ namespace WeCantSpell.Hunspell
             return false;
         }
 
-        private bool AddWord(ReadOnlySpan<char> word, FlagSet flags, string[] morphs)
+        private bool AddWord(string word, FlagSet flags, string[] morphs)
         {
             if (Affix.IgnoredChars.HasItems)
             {
-                word = word.Remove(Affix.IgnoredChars);
+                word = word.WithoutChars(Affix.IgnoredChars);
             }
 
             if (Affix.ComplexPrefixes)
             {
-                word = word.Reversed();
+                word = word.GetReversed();
 
                 if (morphs.Length != 0 && !Affix.IsAliasM)
                 {
@@ -366,7 +366,7 @@ namespace WeCantSpell.Hunspell
                 || AddWordCapitalized(word, flags, morphs, capType);
         }
 
-        private bool AddWord(ReadOnlySpan<char> word, FlagSet flags, string[] morphs, bool onlyUpperCase, CapitalizationType capType)
+        private bool AddWord(string word, FlagSet flags, string[] morphs, bool onlyUpperCase, CapitalizationType capType)
         {
             // store the description string or its pointer
             var options = capType == CapitalizationType.Init ? WordEntryOptions.InitCap : WordEntryOptions.None;
@@ -423,7 +423,7 @@ namespace WeCantSpell.Hunspell
                             }
                             else
                             {
-                                wordpart = word;
+                                wordpart = word.AsSpan();
                             }
 
                             // when the ph: field ends with the character *,
@@ -480,7 +480,7 @@ namespace WeCantSpell.Hunspell
                 }
             }
 
-            var details = Builder.GetOrCreateDetailList(word.ToString());
+            var details = Builder.GetOrCreateDetailList(word);
 
             var upperCaseHomonym = false;
             if (!onlyUpperCase)
@@ -513,7 +513,7 @@ namespace WeCantSpell.Hunspell
             return false;
         }
 
-        private bool AddWordCapitalized(ReadOnlySpan<char> word, FlagSet flags, string[] morphs, CapitalizationType capType)
+        private bool AddWordCapitalized(string word, FlagSet flags, string[] morphs, CapitalizationType capType)
         {
             // add inner capitalized forms to handle the following allcap forms:
             // Mixed caps: OpenOffice.org -> OPENOFFICE.ORG

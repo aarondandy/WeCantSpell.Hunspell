@@ -385,7 +385,7 @@ namespace WeCantSpell.Hunspell
                 {
                     for (var j = 0; j < slst.Count; j++)
                     {
-                        slst[j] = slst[j].Reverse();
+                        slst[j] = slst[j].GetReversed();
                     }
                 }
 
@@ -494,7 +494,7 @@ namespace WeCantSpell.Hunspell
                 // word reversing wrapper for complex prefixes
                 if (Affix.ComplexPrefixes)
                 {
-                    word = word.Reverse();
+                    word = word.GetReversed();
                 }
 
                 if (CompoundSuggestTimeLimiter == null)
@@ -1117,7 +1117,7 @@ namespace WeCantSpell.Hunspell
                     {
                         var rwords = new IncrementalWordList(); // buffer for COMPOUND pattern checking
                         var info = SpellCheckResultType.None;
-                        rv = CompoundCheck(word.AsSpan(), 0, 0, 100, null, rwords, false, 1, ref info);
+                        rv = CompoundCheck(word, 0, 0, 100, null, rwords, false, 1, ref info);
                         if (rv != null)
                         {
                             var rvDetail = LookupFirstDetail(word);
@@ -1285,7 +1285,7 @@ namespace WeCantSpell.Hunspell
                 // word reversing wrapper for complex prefixes
                 if (Affix.ComplexPrefixes)
                 {
-                    word = word.Reverse();
+                    word = word.GetReversed();
                 }
 
                 var hasPhoneEntries = Affix.Phone.HasItems;
@@ -1843,7 +1843,7 @@ namespace WeCantSpell.Hunspell
                                         // add special phonetic version
                                         if (phon != null && nh < wlst.Length)
                                         {
-                                            wlst[nh].Word = phon + key.Reverse();
+                                            wlst[nh].Word = phon + key.GetReversed();
                                             if (wlst[nh].Word == null)
                                             {
                                                 return nh - 1;

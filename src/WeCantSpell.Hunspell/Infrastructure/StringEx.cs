@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 
 #if !NO_INLINE
 using System.Runtime.CompilerServices;
@@ -48,16 +49,24 @@ namespace WeCantSpell.Hunspell.Infrastructure
 #endif
         public static bool IsTabOrSpace(this char c) => c == ' ' || c == '\t';
 
-        public static string Reverse(this string @this)
+        public static string GetReversed(this string @this)
         {
             if (@this == null || @this.Length <= 1)
             {
                 return @this;
             }
 
-            var chars = @this.ToCharArray();
-            Array.Reverse(chars);
-            return new string(chars);
+            using (var mo = MemoryPool<char>.Shared.Rent(@this.Length))
+            {
+                var buffer = mo.Memory.Span.Slice(0, @this.Length);
+                var lastIndex = @this.Length - 1;
+                for (var i = 0; i < buffer.Length; i++)
+                {
+                    buffer[i] = @this[lastIndex - i];
+                }
+                
+                return buffer.ToString();
+            }
         }
 
         public static bool Contains(this string @this, char value) => @this.IndexOf(value) >= 0;
