@@ -14,13 +14,53 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public static bool TryParseInvariant(string text, out int value) =>
             int.TryParse(text, NumberStyles.Integer, InvariantNumberFormat, out value);
 
-        public static bool TryParseInvariant(ReadOnlySpan<char> text, out int value) =>
-            text.Length == 1
-                ? TryParseInvariant(text[0], out value)
-                : TryParseInvariant(text.ToString(), out value);
+        public static bool TryParseInvariant(ReadOnlySpan<char> text, out int value)
+        {
+            text = text.Trim();
+            if (text.IsEmpty)
+            {
+                value = default;
+                return false;
+            }
+
+            var isNegative = false;
+            if (text[0] == '-')
+            {
+                isNegative = true;
+                text = text.Slice(1);
+            }
+
+            if (text.IsEmpty)
+            {
+                value = default;
+                return false;
+            }
+
+            if (!TryParseInvariant(text[text.Length - 1], out value))
+            {
+                return false;
+            }
+
+            for (int i = text.Length - 2, multiplier = 10; i >= 0; i--, multiplier *= 10)
+            {
+                if (!TryParseInvariant(text[i], out int digit))
+                {
+                    return false;
+                }
+
+                value += (multiplier * digit);
+            }
+
+            if (isNegative)
+            {
+                value = -value;
+            }
+
+            return true;
+        }
 
         public static int? TryParseInvariant(ReadOnlySpan<char> text) =>
-            TryParseInvariant(text, out int value) ? (int?)value : null;
+            TryParseInvariant(text, out int value) ? value : default(int?);
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -15,14 +15,8 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public IncrementalWordList(List<WordEntryDetail> words, int wNum)
         {
 #if DEBUG
-            if (words == null)
-            {
-                throw new ArgumentNullException(nameof(words));
-            }
-            if (WNum < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(wNum));
-            }
+            if (words == null) throw new ArgumentNullException(nameof(words));
+            if (WNum < 0) throw new ArgumentOutOfRangeException(nameof(wNum));
 #endif
             Words = words;
             WNum = wNum;
@@ -85,10 +79,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public bool ContainsFlagAt(int wordIndex, FlagValue flag)
         {
 #if DEBUG
-            if (wordIndex < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(wordIndex));
-            }
+            if (wordIndex < 0) throw new ArgumentOutOfRangeException(nameof(wordIndex));
 #endif
 
             if (wordIndex < Words.Count)
