@@ -53,7 +53,8 @@ namespace WeCantSpell.Hunspell.Benchmarking.LongRunning
             Description = "Ensure that dictionary files can be loaded asynchronously and quickly.",
             NumberOfIterations = 1,
             RunMode = RunMode.Throughput,
-            TestMode = TestMode.Measurement)]
+            TestMode = TestMode.Measurement,
+            Skip = "All the perf improvements so far will impact sync")]
         [MemoryMeasurement(MemoryMetric.TotalBytesAllocated)]
         [GcMeasurement(GcMetric.TotalCollections, GcGeneration.AllGc)]
         [TimingMeasurement]

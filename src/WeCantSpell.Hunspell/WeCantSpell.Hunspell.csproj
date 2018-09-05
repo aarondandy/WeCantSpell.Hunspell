@@ -29,15 +29,15 @@
       <DefineConstants>$(DefineConstants);NO_ISO3_LANG</DefineConstants>
   </PropertyGroup>
 
-    <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-        <DefineConstants>$(DefineConstants)</DefineConstants>
-    </PropertyGroup>
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+      <DefineConstants>$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' != 'Release' ">
-    <DefineConstants>$(DefineConstants);NO_INLINE</DefineConstants>
+    <DefineConstants>$(DefineConstants);NO_INLINE;DEBUG</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

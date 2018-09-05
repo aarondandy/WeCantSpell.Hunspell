@@ -58,12 +58,12 @@ The performance of this port while not fantastic relative to the original
 binaries and NHunspell is definitely acceptable.
 If you need better performance you should check out [NHunspell](https://www.nuget.org/packages/NHunspell/).
 
-| [Benchmark](./test/WeCantSpell.Hunspell.Performance.Comparison/) | [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/) | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
-|---------------------|-------------------|------------|
-| Dictionary Loads /s | 🐌 3.08           | 🐇 13.62   |
-| Words Checked /s    | 🐢 724,855        | 🐇 986,026 |
+| Benchmark | [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/) netcore2.1 | [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/) net471 | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
+|---------------------|-------------|-------------|------------|
+| Dictionary Loads /s | 🐌 3.51    | 🐌 3.07     | 🐇 14.49   |
+| Words Checked /s    | 🐢 636,598 | 🐢  554,200 | 🐇 973,043 |
 
-_Note: Measurements taken on a Intel 6700K with a 850 PRO 256GB._
+_Note: Measurements taken on a Intel 6700K._
 
 ## Specialized Examples
 

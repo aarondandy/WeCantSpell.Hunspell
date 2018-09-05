@@ -11,7 +11,7 @@ namespace WeCantSpell.Hunspell.Performance.TestHarness.Core
     {
         static void Main(string[] args)
         {
-            //DictionaryLoads();
+            DictionaryLoads();
             Checks();
             Suggestions();
             //TestBe();
@@ -19,6 +19,8 @@ namespace WeCantSpell.Hunspell.Performance.TestHarness.Core
 
         static void DictionaryLoads()
         {
+            Console.WriteLine("DictionaryLoads");
+
             var testAssemblyPath = Path.GetFullPath(typeof(Program).Assembly.Location);
             var filesDirectory = Path.Combine(Path.GetDirectoryName(testAssemblyPath), "files/");
             var dictionaryFilePaths = Directory.GetFiles(filesDirectory, "*.dic").OrderBy(p => p);
@@ -74,6 +76,8 @@ namespace WeCantSpell.Hunspell.Performance.TestHarness.Core
 
         static void TestBe()
         {
+            Console.WriteLine("TestBe");
+
             var exeDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
             var filePath = Path.Combine(exeDirectory, "files/be-official.dic");
 

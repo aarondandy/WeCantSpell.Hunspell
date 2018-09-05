@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## 3.0.0 - 2018-09-05
+### Added
+- Adds a target for netstandard2.0
+- References System.Memory
+
+### Removed
+- Removes the net35 target
+
+### Changed
+- A bunch of performance improvements
+- Uses System.Memory instead of older custom solution
+
 ## 2.1.0 - 2018-08-22
 ### Fixed
 - Allowed more usage of comments in ICONV and OCONV
