@@ -32,8 +32,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
         {
             for (var searchLocation = 0; searchLocation < @this.Length; searchLocation++)
             {
-                var c = @this[searchLocation];
-                if (chars.Contains(c))
+                if (chars.Contains(@this[searchLocation]))
                 {
                     return searchLocation;
                 }

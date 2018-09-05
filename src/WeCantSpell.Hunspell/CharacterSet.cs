@@ -22,10 +22,7 @@ namespace WeCantSpell.Hunspell
         internal static CharacterSet TakeArray(char[] values)
         {
 #if DEBUG
-            if (values == null)
-            {
-                throw new ArgumentNullException(nameof(values));
-            }
+            if (values == null) throw new ArgumentNullException(nameof(values));
 #endif
 
             Array.Sort(values);
@@ -35,10 +32,21 @@ namespace WeCantSpell.Hunspell
         private CharacterSet(char[] values)
             : base(values)
         {
+            mask = default;
+            for (var i = 0; i < values.Length; i++)
+            {
+                unchecked
+                {
+                    mask |= values[i];
+                }
+            }
         }
 
+        private readonly char mask;
+
         public bool Contains(char value) =>
-            // TODO: possible to optimize with a binary mask
+            unchecked((value & mask) != default)
+            &&
             Array.BinarySearch(items, value) >= 0;
 
 #if !NO_INLINE

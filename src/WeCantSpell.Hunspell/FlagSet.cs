@@ -90,7 +90,17 @@ namespace WeCantSpell.Hunspell
         private FlagSet(FlagValue[] values)
             : base(values)
         {
+            mask = default;
+            for (var i = 0; i < values.Length; i++)
+            {
+                unchecked
+                {
+                    mask |= values[i];
+                }
+            }
         }
+
+        private readonly char mask;
 
         public bool Contains(FlagValue value)
         {
@@ -103,7 +113,10 @@ namespace WeCantSpell.Hunspell
                 return value.Equals(items[0]);
             }
 
-            return value >= items[0] && value <= items[items.Length - 1] && Array.BinarySearch(items, value) >= 0;
+            return (unchecked(value & mask) != default)
+                && value >= items[0]
+                && value <= items[items.Length - 1]
+                && Array.BinarySearch(items, value) >= 0;
         }
 
 #if !NO_INLINE
