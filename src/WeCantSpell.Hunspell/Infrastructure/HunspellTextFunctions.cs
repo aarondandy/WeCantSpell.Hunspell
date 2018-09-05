@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Text;
 using System.Buffers;
+using System.Runtime.InteropServices;
 
 #if !NO_INLINE
 using System.Runtime.CompilerServices;
@@ -35,6 +36,10 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public static bool IsSubset(string s1, string s2)
         {
+#if DEBUG
+            if (s1 == null) throw new ArgumentNullException(nameof(s1));
+            if (s2 == null) throw new ArgumentNullException(nameof(s2));
+#endif
             if (s1.Length > s2.Length)
             {
                 return false;
@@ -53,14 +58,19 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public static bool IsSubset(string s1, ReadOnlySpan<char> s2)
         {
+#if DEBUG
+            if (s1 == null) throw new ArgumentNullException(nameof(s1));
+#endif
             if (s1.Length > s2.Length)
             {
                 return false;
             }
 
-            for (var i = 0; i < s1.Length; i++)
+            var s1Span = s1.AsSpan();
+            for (var i = 0; i < s1Span.Length; i++)
             {
-                if (s1[i] != '.' && s1[i] != s2[i])
+                ref readonly var s1c = ref s1Span[i];
+                if (s1c != '.' && s1c != s2[i])
                 {
                     return false;
                 }
@@ -71,10 +81,14 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         public static bool IsNumericWord(string word)
         {
+#if DEBUG
+            if (word == null) throw new ArgumentNullException(nameof(word));
+#endif
             byte state = 0; // 0 = begin, 1 = number, 2 = separator
-            for (var i = 0; i < word.Length; i++)
+            var wordSpan = word.AsSpan();
+            for (var i = 0; i < wordSpan.Length; i++)
             {
-                var c = word[i];
+                ref readonly var c = ref wordSpan[i];
                 if (char.IsNumber(c))
                 {
                     state = 1;
@@ -176,8 +190,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return s;
             }
 
-            var sSpan = s.AsSpan();
-            ref readonly var actualFirstLetter = ref sSpan[0];
+            var actualFirstLetter = s[0];
             var expectedFirstLetter = textInfo.ToUpper(actualFirstLetter);
             if (expectedFirstLetter == actualFirstLetter)
             {
@@ -186,9 +199,9 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
             var builder = StringBuilderPool.Get(s.Length);
             builder.Append(expectedFirstLetter);
-            if (sSpan.Length > 1)
+            if (s.Length > 1)
             {
-                builder.Append(sSpan.Slice(1));
+                builder.Append(s, 1, s.Length - 1);
             }
             return StringBuilderPool.GetStringAndReturn(builder);
         }
@@ -243,8 +256,7 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return s;
             }
 
-            var sSpan = s.AsSpan();
-            ref readonly var actualFirstLetter = ref sSpan[0];
+            var actualFirstLetter = s[0];
             var expectedFirstLetter = textInfo.ToLower(actualFirstLetter);
             if (expectedFirstLetter == actualFirstLetter)
             {
@@ -253,7 +265,10 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
             var builder = StringBuilderPool.Get(s.Length);
             builder.Append(expectedFirstLetter);
-            builder.Append(sSpan.Slice(1));
+            if (s.Length > 1)
+            {
+                builder.Append(s, 1, s.Length - 1);
+            }
             return StringBuilderPool.GetStringAndReturn(builder);
         }
 
@@ -299,8 +314,22 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return decoded;
             }
 
-            var encodedBytes = encoding.GetBytes(decoded.ToArray());
-            return Encoding.UTF8.GetString(encodedBytes, 0, encodedBytes.Length).AsSpan();
+            byte[] encodedBytes;
+            int encodedBytesCount;
+
+            unsafe
+            {
+                fixed (char* decodedPointer = &MemoryMarshal.GetReference(decoded))
+                {
+                    encodedBytes = new byte[Encoding.UTF8.GetByteCount(decodedPointer, decoded.Length)];
+                    fixed (byte* encodedBytesPointer = &encodedBytes[0])
+                    {
+                        encodedBytesCount = encoding.GetBytes(decodedPointer, decoded.Length, encodedBytesPointer, encodedBytes.Length);
+                    }
+                }
+            }
+
+            return Encoding.UTF8.GetString(encodedBytes, 0, encodedBytesCount).AsSpan();
         }
 
         public static CapitalizationType GetCapitalizationType(string word, TextInfo textInfo) =>
