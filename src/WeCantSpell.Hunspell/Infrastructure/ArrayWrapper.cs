@@ -2,10 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell.Infrastructure
 {
     public class ArrayWrapper<T> : IReadOnlyList<T>
@@ -18,41 +14,16 @@ namespace WeCantSpell.Hunspell.Infrastructure
 
         internal readonly T[] items;
 
-        public bool IsEmpty
-        {
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            get;
-        }
+        public bool IsEmpty { get; }
 
-        public bool HasItems
-        {
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            get => !IsEmpty;
-        }
+        public bool HasItems => !IsEmpty;
 
-        public T this[int index]
-        {
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            get => items[index];
-        }
+        public ref readonly T this[int index] => ref items[index];
 
-        public int Count
-        {
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            get => items.Length;
-        }
+        public int Count => items.Length;
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
+        T IReadOnlyList<T>.this[int index] => items[index];
+
         public ReadOnlySpan<T>.Enumerator GetEnumerator() => new ReadOnlySpan<T>(items).GetEnumerator();
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator() => ((IEnumerable<T>)items).GetEnumerator();
@@ -62,25 +33,30 @@ namespace WeCantSpell.Hunspell.Infrastructure
         public class ArrayWrapperComparer<TValue, TCollection> :
             IEqualityComparer<TCollection>
             where TCollection : ArrayWrapper<TValue>
+            where TValue : IEquatable<TValue>
         {
             public ArrayWrapperComparer()
             {
                 arrayComparer = ArrayComparer<TValue>.Default;
             }
 
-            private ArrayComparer<TValue> arrayComparer;
+            private readonly ArrayComparer<TValue> arrayComparer;
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            public bool Equals(TCollection x, TCollection y) =>
-                arrayComparer.Equals(x.items, y.items);
+            public bool Equals(TCollection x, TCollection y)
+            {
+                if (x == null)
+                {
+                    return y == null;
+                }
+                if (y == null)
+                {
+                    return false;
+                }
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-            public int GetHashCode(TCollection obj) =>
-                arrayComparer.GetHashCode(obj.items);
+                return arrayComparer.Equals(x.items, y.items);
+            }
+
+            public int GetHashCode(TCollection obj) => obj == null ? 0 : arrayComparer.GetHashCode(obj.items);
         }
     }
 }

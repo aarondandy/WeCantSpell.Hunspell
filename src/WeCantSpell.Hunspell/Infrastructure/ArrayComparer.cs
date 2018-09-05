@@ -1,35 +1,61 @@
 ﻿using System;
 using System.Collections.Generic;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell.Infrastructure
 {
     sealed class ArrayComparer<T> : IEqualityComparer<T[]>
+        where T : IEquatable<T>
     {
-        public static readonly ArrayComparer<T> Default = new ArrayComparer<T>(EqualityComparer<T>.Default);
+        public static readonly ArrayComparer<T> Default = new ArrayComparer<T>();
 
-        public ArrayComparer(IEqualityComparer<T> valueComparer) =>
-            ValueComparer = valueComparer ?? throw new ArgumentNullException(nameof(valueComparer));
+        private static readonly StringComparer StringComparer = typeof(T) == typeof(string) ? StringComparer.Ordinal : null;
 
-        public IEqualityComparer<T> ValueComparer { get; }
+        private static readonly EqualityComparer<T> EqualityComparer = EqualityComparer<T>.Default;
+
+        public ArrayComparer()
+        {
+        }
 
         public bool Equals(T[] x, T[] y)
         {
-            if (ReferenceEquals(x, y))
+            if (x == null)
             {
-                return true;
+                return y == null;
             }
-            if (x == null || y == null || x.Length != y.Length)
+
+            if (y == null)
             {
                 return false;
             }
 
+            if (ReferenceEquals(x, y))
+            {
+                return true;
+            }
+
+            if (x.Length != y.Length)
+            {
+                return false;
+            }
+
+            if (typeof(T) == typeof(char) || typeof(T) == typeof(FlagValue))
+            {
+                return x.AsSpan<T>().SequenceEqual(y.AsSpan<T>());
+            }
+
+            if (typeof(T) == typeof(string))
+            {
+                return CompareStrings((string[])(object)x, (string[])(object)y);
+            }
+
+            return CompareAnything(x, y);
+        }
+
+        private bool CompareStrings(string[] x, string[] y)
+        {
             for (var i = 0; i < x.Length; i++)
             {
-                if (!ValueComparer.Equals(x[i], y[i]))
+                if (!StringComparer.Equals(x[i], y[i]))
                 {
                     return false;
                 }
@@ -38,35 +64,11 @@ namespace WeCantSpell.Hunspell.Infrastructure
             return true;
         }
 
-        public bool Equals(T[] x, int xOffset, T[] y, int yOffset, int length)
+        private bool CompareAnything(T[] x, T[] y)
         {
-            if (x == null)
+            for (var i = 0; i < x.Length; i++)
             {
-                throw new ArgumentNullException(nameof(x));
-            }
-            if (y == null)
-            {
-                throw new ArgumentNullException(nameof(y));
-            }
-            if (xOffset < 0 || xOffset >= x.Length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(xOffset));
-            }
-            if (yOffset < 0 || yOffset >= y.Length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(yOffset));
-            }
-            if (xOffset + length > x.Length || yOffset + length > y.Length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(length));
-            }
-
-            var xSpan = x.AsSpan(xOffset);
-            var ySpan = y.AsSpan(yOffset);
-
-            for (var i = 0; i < length; i++)
-            {
-                if (!ValueComparer.Equals(xSpan[i], ySpan[i]))
+                if (!EqualityComparer.Equals(x[i], y[i]))
                 {
                     return false;
                 }
@@ -82,24 +84,28 @@ namespace WeCantSpell.Hunspell.Infrastructure
                 return 0;
             }
 
+            if (obj.Length == 0)
+            {
+                return 17;
+            }
+
             unchecked
             {
-                var code = -obj.Length * 449;
+                int hash = (17 * 31) + obj.Length.GetHashCode();
 
-                if (obj.Length > 0)
+                hash = (hash * 31) + obj[0].GetHashCode();
+
+                if (obj.Length > 1)
                 {
-                    code ^= ValueComparer.GetHashCode(obj[0]);
-                    if (obj.Length > 1)
+                    if (obj.Length > 2)
                     {
-                        code ^= ValueComparer.GetHashCode(obj[obj.Length - 1]);
-                        if (obj.Length > 2)
-                        {
-                            code ^= ValueComparer.GetHashCode(obj[obj.Length / 2]);
-                        }
+                        hash = (hash * 31) + obj[obj.Length / 2].GetHashCode();
                     }
+
+                    hash = (hash * 31) + obj[obj.Length - 1].GetHashCode();
                 }
 
-                return code;
+                return hash;
             }
         }
     }

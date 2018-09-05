@@ -9,7 +9,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell
 {
-    public struct FlagValue :
+    public readonly struct FlagValue :
         IEquatable<FlagValue>,
         IEquatable<int>,
         IEquatable<char>,

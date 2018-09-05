@@ -284,7 +284,8 @@ namespace WeCantSpell.Hunspell
 
                 if (
                     possiblePreambleBytes.Length >= encodingPreamble.Length
-                    && ArrayComparer<byte>.Default.Equals(possiblePreambleBytes, 0, encodingPreamble, 0, encodingPreamble.Length)
+                    &&
+                    possiblePreambleBytes.AsSpan(0, encodingPreamble.Length).SequenceEqual(encodingPreamble.AsSpan())
                 )
                 {
                     bytesToRestore = possiblePreambleBytes.Length - encodingPreamble.Length;
