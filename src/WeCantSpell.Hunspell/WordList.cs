@@ -141,33 +141,6 @@ namespace WeCantSpell.Hunspell
                 : null;
         }
 
-        private IEnumerable<KeyValuePair<string, WordEntryDetail[]>> GetAllNGramAllowedEntries(Func<string, bool> rootFilter) =>
-            EntriesByRoot
-            .Where(rootPair => rootFilter(rootPair.Key))
-            .Select(rootPair =>
-            {
-                if (NGramRestrictedDetails.TryGetValue(rootPair.Key, out WordEntryDetail[] restrictedDetails))
-                {
-                    WordEntryDetail[] filteredValues;
-                    if (restrictedDetails.Length == 0)
-                    {
-                        filteredValues = rootPair.Value;
-                    }
-                    else if (restrictedDetails.Length == rootPair.Value.Length)
-                    {
-                        filteredValues = ArrayEx<WordEntryDetail>.Empty;
-                    }
-                    else
-                    {
-                        filteredValues = rootPair.Value.Where(d => !restrictedDetails.Contains(d)).ToArray();
-                    }
-
-                    return new KeyValuePair<string, WordEntryDetail[]>(rootPair.Key, filteredValues);
-                }
-
-                return rootPair;
-            });
-
         private class NGramAllowedEntries : IEnumerable<KeyValuePair<string, WordEntryDetail[]>>
         {
             public NGramAllowedEntries(WordList wordList, Func<string, bool> rootKeyFilter)

@@ -1693,10 +1693,7 @@ namespace WeCantSpell.Hunspell
             protected WordEntry SuffixCheckTwoSfx(string word, AffixEntryOptions sfxopts, Affix<PrefixEntry> pfx, FlagValue needflag)
             {
 #if DEBUG
-                if (word == null)
-                {
-                    throw new ArgumentNullException(nameof(word));
-                }
+                if (word == null) throw new ArgumentNullException(nameof(word));
 #endif
                 WordEntry rv;
 
