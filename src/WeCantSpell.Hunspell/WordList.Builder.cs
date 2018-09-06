@@ -55,7 +55,7 @@ namespace WeCantSpell.Hunspell
             {
                 if (!EntryDetailsByRoot.TryGetValue(word, out List<WordEntryDetail> details))
                 {
-                    details = new List<WordEntryDetail>();
+                    details = new List<WordEntryDetail>(2);
                     EntryDetailsByRoot.Add(word, details);
                 }
 
@@ -90,7 +90,7 @@ namespace WeCantSpell.Hunspell
 
                 if (EntryDetailsByRoot == null)
                 {
-                    result.EntriesByRoot = new Dictionary<string, WordEntryDetail[]>(0);
+                    result.EntriesByRoot = new Dictionary<string, WordEntryDetail[]>();
                 }
                 else
                 {
@@ -122,23 +122,19 @@ namespace WeCantSpell.Hunspell
 
                 result.NGramRestrictedDetails = new Dictionary<string, WordEntryDetail[]>();
 
+                var details = new List<WordEntryDetail>();
                 foreach (var rootSet in result.EntriesByRoot)
                 {
-                    List<WordEntryDetail> details = null;
+                    details.Clear();
                     foreach (var entry in rootSet.Value)
                     {
                         if (nGramRestrictedFlags.ContainsAny(entry.Flags))
                         {
-                            if (details == null)
-                            {
-                                details = new List<WordEntryDetail>();
-                            }
-
                             details.Add(entry);
                         }
                     }
 
-                    if (details != null)
+                    if (details.Count != 0)
                     {
                         result.NGramRestrictedDetails.Add(rootSet.Key, details.ToArray());
                     }

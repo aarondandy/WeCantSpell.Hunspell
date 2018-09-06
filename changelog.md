@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## 3.0.0 - 2018-09-05
+## 3.0.1 - 2018-09-05
 ### Added
 - Adds a target for netstandard2.0
 - References System.Memory
