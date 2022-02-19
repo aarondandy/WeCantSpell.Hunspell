@@ -1,8 +1,12 @@
-﻿using FluentAssertions;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+
+using FluentAssertions;
+
+using WeCantSpell.Hunspell.Tests.Infrastructure;
+
 using Xunit;
 
 namespace WeCantSpell.Hunspell.Tests
@@ -691,7 +695,7 @@ namespace WeCantSpell.Hunspell.Tests
                     "gata",
                     "kontoret" });
                 actual["gata"][0].Flags.Should().ContainInOrder(new[] { 'A' });
-                actual["kontoret"][0].Flags.Should().ContainInOrder(new object[] { 'X' });
+                actual["kontoret"][0].Flags.Should().ContainInOrder(new[] { 'X' });
             }
 
             [Fact]

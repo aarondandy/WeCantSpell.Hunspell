@@ -11,9 +11,6 @@
 
   <ItemGroup>
     <None Remove="WeCantSpell.Hunspell.Benchmarking.MicroSuites.v3.ncrunchproject" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Include="..\hunspell-origin\tests\suggestiontest\List_of_common_misspellings.txt">
       <Link>files\List_of_common_misspellings.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

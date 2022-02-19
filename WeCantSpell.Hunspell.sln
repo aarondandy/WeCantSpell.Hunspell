@@ -15,9 +15,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeCantSpell.Hunspell.Benchm
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeCantSpell.Hunspell.Benchmarking.MicroSuites", "WeCantSpell.Hunspell.Benchmarking.MicroSuites\WeCantSpell.Hunspell.Benchmarking.MicroSuites.csproj", "{4937A7F4-8B4A-4CA6-A5AA-2B0208518C37}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeCantSpell.Hunspell.Benchmarking.NHunspell", "WeCantSpell.Hunspell.Benchmarking.NHunspell\WeCantSpell.Hunspell.Benchmarking.NHunspell.csproj", "{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeCantSpell.Hunspell.Tests", "WeCantSpell.Hunspell.Tests\WeCantSpell.Hunspell.Tests.csproj", "{C1F12C43-0BE1-44A3-AF7A-97F22ADAB198}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeCantSpell.Hunspell.Benchmarking.NHunspell", "WeCantSpell.Hunspell.Benchmarking.NHunspell\WeCantSpell.Hunspell.Benchmarking.NHunspell.csproj", "{D4955F32-5E3C-4B68-8EFE-66B0162F9581}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,14 +37,14 @@ Global
 		{4937A7F4-8B4A-4CA6-A5AA-2B0208518C37}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4937A7F4-8B4A-4CA6-A5AA-2B0208518C37}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4937A7F4-8B4A-4CA6-A5AA-2B0208518C37}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C1F12C43-0BE1-44A3-AF7A-97F22ADAB198}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C1F12C43-0BE1-44A3-AF7A-97F22ADAB198}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C1F12C43-0BE1-44A3-AF7A-97F22ADAB198}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C1F12C43-0BE1-44A3-AF7A-97F22ADAB198}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4955F32-5E3C-4B68-8EFE-66B0162F9581}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4955F32-5E3C-4B68-8EFE-66B0162F9581}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4955F32-5E3C-4B68-8EFE-66B0162F9581}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4955F32-5E3C-4B68-8EFE-66B0162F9581}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

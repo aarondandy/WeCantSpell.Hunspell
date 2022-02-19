@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+
 using FluentAssertions;
+
 using WeCantSpell.Hunspell.Tests.Infrastructure;
+
 using Xunit;
 
 namespace WeCantSpell.Hunspell.Tests
@@ -248,8 +251,8 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
                 actual.AliasF.Should().HaveCount(2);
-                actual.AliasF.First().Should().ContainInOrder(new int[] { 'A', 'B' });
-                actual.AliasF.Last().Should().ContainInOrder(new int[] { 'A' });
+                actual.AliasF.First().Should().ContainInOrder(new[] { 'A', 'B' });
+                actual.AliasF.Last().Should().ContainInOrder(new[] { 'A' });
                 actual.Suffixes.Should().HaveCount(2);
                 actual.Suffixes.First().AFlag.Should().Be('A');
                 actual.Suffixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF);
@@ -274,8 +277,8 @@ namespace WeCantSpell.Hunspell.Tests
                 var actual = await AffixReader.ReadFileAsync(filePath);
 
                 actual.AliasF.Should().HaveCount(2);
-                actual.AliasF.First().Should().ContainInOrder(new int[] { 'A', 'B' });
-                actual.AliasF.Last().Should().ContainInOrder(new int[] { 'A' });
+                actual.AliasF.First().Should().ContainInOrder(new[] { 'A', 'B' });
+                actual.AliasF.Last().Should().ContainInOrder(new[] { 'A' });
 
                 actual.AliasM.Should().HaveCount(3);
                 actual.AliasM.First().Should().OnlyContain(x => x == "is:affix_x");
@@ -299,7 +302,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var suffixEntry2 = actual.Suffixes.Last().Entries.Single();
                 suffixEntry2.Strip.Should().BeEmpty();
                 suffixEntry2.Append.Should().Be("y");
-                suffixEntry2.ContClass.Should().ContainInOrder(new int[] { 'A' });
+                suffixEntry2.ContClass.Should().ContainInOrder(new[] { 'A' });
                 suffixEntry2.Conditions.GetEncoded().Should().Be(".");
                 suffixEntry2.MorphCode.Should().OnlyContain(x => x == "ds:affix_y");
             }
@@ -342,7 +345,7 @@ namespace WeCantSpell.Hunspell.Tests
                 var suffixEntry2 = suffixGroup2.Entries.Single();
                 suffixEntry2.Strip.Should().BeEmpty();
                 suffixEntry2.Append.Should().Be("tem");
-                suffixEntry2.ContClass.Should().ContainInOrder(new int[] { 'A' });
+                suffixEntry2.ContClass.Should().ContainInOrder(new[] { 'A' });
                 suffixEntry2.Conditions.GetEncoded().Should().Be(".");
                 suffixEntry2.MorphCode.Should().ContainSingle(Reversed(@"affix_2/"));
 
