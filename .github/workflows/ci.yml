@@ -20,11 +20,11 @@ jobs:
         with:
           submodules: true
 
-      - run: dotnet build --configuration Release WeCantSpell.Hunspell/WeCantSpell.Hunspell.csproj
+      - run: dotnet build -c Release WeCantSpell.Hunspell.sln
 
-      - run: dotnet test --configuration Release WeCantSpell.Hunspell.Tests/WeCantSpell.Hunspell.Tests.csproj
+      - run: dotnet test -c Release WeCantSpell.Hunspell.Tests/WeCantSpell.Hunspell.Tests.csproj
 
-      - run: dotnet pack --configuration Release --output ./artifacts WeCantSpell.Hunspell/WeCantSpell.Hunspell.csproj
+      - run: dotnet pack -c Release --output ./artifacts WeCantSpell.Hunspell/WeCantSpell.Hunspell.csproj
 
       - uses: actions/upload-artifact@v2
         with:
