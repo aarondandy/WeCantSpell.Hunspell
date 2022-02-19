@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_NOLOGO: true
+
+workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - run: dotnet build --configuration Release
+
+      - run: dotnet test --configuration Release --no-build
+
+      - run: dotnet pack --configuration Release --output ./artifacts
+
+      - uses: actions/upload-artifact@v2
+        with:
+          path: ./artifacts/*.nupkg
