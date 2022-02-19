@@ -44,7 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\SharedAssemblyInfo.cs">
+    <Compile Include="..\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="Program.cs" />
@@ -54,23 +54,23 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\hunspell-origin\tests\suggestiontest\List_of_common_misspellings.txt">
+    <None Include="..\hunspell-origin\tests\suggestiontest\List_of_common_misspellings.txt">
       <Link>files\List_of_common_misspellings.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\samples\*.dic">
+    <None Include="..\samples\*.dic">
       <Link>files\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="..\..\samples\*.aff">
+    <None Include="..\samples\*.aff">
       <Link>files\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\WeCantSpell.Hunspell\WeCantSpell.Hunspell.csproj">
+    <ProjectReference Include="..\WeCantSpell.Hunspell\WeCantSpell.Hunspell.csproj">
       <Project>{e73edf00-eab6-420b-abba-b18283be7064}</Project>
       <Name>WeCantSpell.Hunspell</Name>
     </ProjectReference>

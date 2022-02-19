@@ -23,9 +23,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\icon.png" Pack="true" Visible="false" PackagePath="" />
-    <None Include="..\..\readme.md" Pack="true" Visible="false" PackagePath="" />
-    <None Include="..\..\license.txt" Pack="true" Visible="false" PackagePath="" />
+    <None Include="..\icon.png" Pack="true" Visible="false" PackagePath="" />
+    <None Include="..\readme.md" Pack="true" Visible="false" PackagePath="" />
+    <None Include="..\license.txt" Pack="true" Visible="false" PackagePath="" />
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net451' ">
@@ -52,7 +52,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\SharedAssemblyInfo.cs" Link="Properties\SharedAssemblyInfo.cs" />
+    <Compile Include="..\SharedAssemblyInfo.cs" Link="Properties\SharedAssemblyInfo.cs" />
   </ItemGroup>
 
   <ItemGroup>

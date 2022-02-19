@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\packages\NBench.1.2.2\build\NBench.props" Condition="Exists('..\..\packages\NBench.1.2.2\build\NBench.props')" />
+  <Import Project="..\packages\NBench.1.2.2\build\NBench.props" Condition="Exists('..\..\packages\NBench.1.2.2\build\NBench.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -43,13 +43,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="NBench, Version=1.2.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\NBench.1.2.2\lib\net452\NBench.dll</HintPath>
+      <HintPath>..\packages\NBench.1.2.2\lib\net452\NBench.dll</HintPath>
     </Reference>
     <Reference Include="NBench.PerformanceCounters, Version=1.2.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\NBench.PerformanceCounters.1.2.2\lib\net452\NBench.PerformanceCounters.dll</HintPath>
+      <HintPath>..\packages\NBench.PerformanceCounters.1.2.2\lib\net452\NBench.PerformanceCounters.dll</HintPath>
     </Reference>
     <Reference Include="NHunspell, Version=1.2.5554.16953, Culture=neutral, PublicKeyToken=1ac793ea843b4366, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\NHunspell.1.2.5554.16953\lib\net\NHunspell.dll</HintPath>
+      <HintPath>..\packages\NHunspell.1.2.5554.16953\lib\net\NHunspell.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -61,7 +61,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\SharedAssemblyInfo.cs">
+    <Compile Include="..\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="EnWordPerfBase.cs" />
@@ -79,19 +79,19 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\hunspell-origin\tests\suggestiontest\List_of_common_misspellings.txt">
+    <None Include="..\hunspell-origin\tests\suggestiontest\List_of_common_misspellings.txt">
       <Link>files\List_of_common_misspellings.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\samples\*.*">
+    <None Include="..\samples\*.*">
       <Link>files\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\WeCantSpell.Hunspell\WeCantSpell.Hunspell.csproj">
+    <ProjectReference Include="..\WeCantSpell.Hunspell\WeCantSpell.Hunspell.csproj">
       <Project>{e73edf00-eab6-420b-abba-b18283be7064}</Project>
       <Name>WeCantSpell.Hunspell</Name>
     </ProjectReference>
@@ -109,10 +109,10 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\packages\NBench.1.2.2\build\NBench.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\NBench.1.2.2\build\NBench.props'))" />
-    <Error Condition="!Exists('..\..\packages\NBench.1.2.2\build\NBench.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\NBench.1.2.2\build\NBench.targets'))" />
+    <Error Condition="!Exists('..\packages\NBench.1.2.2\build\NBench.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\NBench.1.2.2\build\NBench.props'))" />
+    <Error Condition="!Exists('..\packages\NBench.1.2.2\build\NBench.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\NBench.1.2.2\build\NBench.targets'))" />
   </Target>
-  <Import Project="..\..\packages\NBench.1.2.2\build\NBench.targets" Condition="Exists('..\..\packages\NBench.1.2.2\build\NBench.targets')" />
+  <Import Project="..\packages\NBench.1.2.2\build\NBench.targets" Condition="Exists('..\..\packages\NBench.1.2.2\build\NBench.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

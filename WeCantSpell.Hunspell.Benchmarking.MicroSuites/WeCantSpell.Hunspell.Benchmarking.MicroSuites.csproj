@@ -14,18 +14,18 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\hunspell-origin\tests\suggestiontest\List_of_common_misspellings.txt">
+    <None Include="..\hunspell-origin\tests\suggestiontest\List_of_common_misspellings.txt">
       <Link>files\List_of_common_misspellings.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="..\..\samples\English (American).*">
+    <None Include="..\samples\English (American).*">
       <Link>files\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\WeCantSpell.Hunspell\WeCantSpell.Hunspell.csproj" />
+    <ProjectReference Include="..\WeCantSpell.Hunspell\WeCantSpell.Hunspell.csproj" />
   </ItemGroup>
 
 </Project>

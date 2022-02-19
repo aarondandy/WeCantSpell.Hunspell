@@ -10,19 +10,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\WeCantSpell.Hunspell\WeCantSpell.Hunspell.csproj" />
+    <ProjectReference Include="..\WeCantSpell.Hunspell\WeCantSpell.Hunspell.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\samples\*.dic">
+    <None Include="..\samples\*.dic">
       <Link>files\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="..\..\samples\*.aff">
+    <None Include="..\samples\*.aff">
       <Link>files\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="..\..\hunspell-origin\tests\suggestiontest\*.txt">
+    <None Include="..\hunspell-origin\tests\suggestiontest\*.txt">
         <Link>files\%(Filename)%(Extension)</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

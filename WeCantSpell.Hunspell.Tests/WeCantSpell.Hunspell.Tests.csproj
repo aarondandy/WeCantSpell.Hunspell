@@ -15,11 +15,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\SharedAssemblyInfo.cs" Link="Properties\SharedAssemblyInfo.cs" />
+    <Compile Include="..\SharedAssemblyInfo.cs" Link="Properties\SharedAssemblyInfo.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\hunspell-origin\tests\v1cmdline\*.*">
+    <None Include="..\hunspell-origin\tests\v1cmdline\*.*">
       <Link>files\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -30,7 +30,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <None Include="..\..\hunspell-origin\tests\suggestiontest\List_of_common_misspellings.txt">
+    <None Include="..\hunspell-origin\tests\suggestiontest\List_of_common_misspellings.txt">
       <Link>files\List_of_common_misspellings.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -55,25 +55,25 @@
   </ItemGroup>
   
   <ItemGroup>
-    <None Include="..\..\samples\English %28American%29.aff">
+    <None Include="..\samples\English %28American%29.aff">
       <Link>files\English %28American%29.aff</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="..\..\samples\English %28American%29.dic">
+    <None Include="..\samples\English %28American%29.dic">
       <Link>files\English %28American%29.dic</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="..\..\samples\English %28American%29.txt">
+    <None Include="..\samples\English %28American%29.txt">
       <Link>files\English %28American%29.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\samples\*.aff">
+    <None Include="..\samples\*.aff">
       <Link>samples\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="..\..\samples\*.dic">
+    <None Include="..\samples\*.dic">
       <Link>samples\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -93,7 +93,7 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\WeCantSpell.Hunspell\WeCantSpell.Hunspell.csproj" />
+    <ProjectReference Include="..\WeCantSpell.Hunspell\WeCantSpell.Hunspell.csproj" />
   </ItemGroup>
 
 
