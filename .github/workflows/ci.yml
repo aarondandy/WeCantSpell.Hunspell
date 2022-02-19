@@ -17,6 +17,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: true
 
       - run: dotnet build --configuration Release src/WeCantSpell.Hunspell/WeCantSpell.Hunspell.csproj
 
