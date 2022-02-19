@@ -1,14 +1,24 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <AssemblyTitle>WeCantSpell.Hunspell</AssemblyTitle>
     <TargetFrameworks>netstandard2.0;netstandard1.3;net451</TargetFrameworks>
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <LangVersion>latest</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <AssemblyName>WeCantSpell.Hunspell</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <Target Name="PreparePackageReleaseNotesFromFile" BeforeTargets="GenerateNuspec">
+    <ReadLinesFromFile File="../changelog.md">
+      <Output TaskParameter="Lines" ItemName="ReleaseNoteLines" />
+    </ReadLinesFromFile>
+  </Target>
+
+  <PropertyGroup>
     <PackageId>WeCantSpell.Hunspell</PackageId>
-    <Description>A port of Hunspell v1 for .NET, .NET Standard, and .NET Core.</Description>
-    <PackageTags>spell;check;spell-check;spelling;hunspell;we-cant-spell</PackageTags>
+    <Description>A port of Hunspell for .NET.</Description>
+    <Product>WeCantSpell.Hunspell</Product>
+    <PackageTags>spell;spell-check;spellcheck;spell-checker;spellchecker;spelling;hunspell;dictionary;spelling-suggestions</PackageTags>
     <PackageProjectUrl>https://github.com/aarondandy/WeCantSpell.Hunspell/</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/aarondandy/WeCantSpell.Hunspell.git</RepositoryUrl>
@@ -16,17 +26,8 @@
     <Authors>aarondandy</Authors>
     <PackageLicenseFile>license.txt</PackageLicenseFile>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
-    <PackageReleaseNotes>Changelog can be found at https://github.com/aarondandy/WeCantSpell.Hunspell/blob/main/changelog.md</PackageReleaseNotes>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <LangVersion>latest</LangVersion>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PackageReleaseNotes>@(ReleaseNoteLines, '%0a')</PackageReleaseNotes>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Include="..\icon.png" Pack="true" Visible="false" PackagePath="" />
-    <None Include="..\readme.md" Pack="true" Visible="false" PackagePath="" />
-    <None Include="..\license.txt" Pack="true" Visible="false" PackagePath="" />
-  </ItemGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net451' ">
     <DefineConstants>$(DefineConstants);NO_COMPAREINFO_HASHCODE;NO_ARRAY_EMPTY;NO_SB_POINTERS</DefineConstants>
@@ -48,15 +49,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="*.v3.ncrunchproject" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="..\SharedAssemblyInfo.cs" Link="Properties\SharedAssemblyInfo.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="System.Memory" Version="4.5.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\icon.png" Pack="true" Visible="false" PackagePath="" />
+    <None Include="..\readme.md" Pack="true" Visible="false" PackagePath="" />
+    <None Include="..\license.txt" Pack="true" Visible="false" PackagePath="" />
   </ItemGroup>
 
 </Project>
