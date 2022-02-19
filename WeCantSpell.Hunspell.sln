@@ -17,10 +17,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeCantSpell.Hunspell.Benchm
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeCantSpell.Hunspell.Benchmarking.NHunspell", "WeCantSpell.Hunspell.Benchmarking.NHunspell\WeCantSpell.Hunspell.Benchmarking.NHunspell.csproj", "{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeCantSpell.Hunspell.Performance.TestHarness", "WeCantSpell.Hunspell.Performance.TestHarness\WeCantSpell.Hunspell.Performance.TestHarness.csproj", "{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeCantSpell.Hunspell.Performance.TestHarness.Core", "WeCantSpell.Hunspell.Performance.TestHarness.Core\WeCantSpell.Hunspell.Performance.TestHarness.Core.csproj", "{B091A66A-7F65-4FF3-91D8-05A701A6A33E}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeCantSpell.Hunspell.Tests", "WeCantSpell.Hunspell.Tests\WeCantSpell.Hunspell.Tests.csproj", "{C1F12C43-0BE1-44A3-AF7A-97F22ADAB198}"
 EndProject
 Global
@@ -45,14 +41,6 @@ Global
 		{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B091A66A-7F65-4FF3-91D8-05A701A6A33E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B091A66A-7F65-4FF3-91D8-05A701A6A33E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B091A66A-7F65-4FF3-91D8-05A701A6A33E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B091A66A-7F65-4FF3-91D8-05A701A6A33E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C1F12C43-0BE1-44A3-AF7A-97F22ADAB198}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C1F12C43-0BE1-44A3-AF7A-97F22ADAB198}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C1F12C43-0BE1-44A3-AF7A-97F22ADAB198}.Release|Any CPU.ActiveCfg = Release|Any CPU
