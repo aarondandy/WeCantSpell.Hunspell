@@ -12,14 +12,21 @@
     <PackageProjectUrl>https://github.com/aarondandy/WeCantSpell.Hunspell/</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/aarondandy/WeCantSpell.Hunspell.git</RepositoryUrl>
-    <PackageIconUrl>https://raw.githubusercontent.com/aarondandy/WeCantSpell.Hunspell/master/icon.png</PackageIconUrl>
+    <PackageIcon>icon.png</PackageIcon>
     <Authors>aarondandy</Authors>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/aarondandy/WeCantSpell.Hunspell/master/license.txt</PackageLicenseUrl>
-    <PackageReleaseNotes>Changelog can be found at https://github.com/aarondandy/WeCantSpell.Hunspell/blob/master/changelog.md</PackageReleaseNotes>
+    <PackageLicenseFile>license.txt</PackageLicenseFile>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <PackageReleaseNotes>Changelog can be found at https://github.com/aarondandy/WeCantSpell.Hunspell/blob/main/changelog.md</PackageReleaseNotes>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <LangVersion>latest</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\icon.png" Pack="true" Visible="false" PackagePath="" />
+    <None Include="..\..\readme.md" Pack="true" Visible="false" PackagePath="" />
+    <None Include="..\..\license.txt" Pack="true" Visible="false" PackagePath="" />
+  </ItemGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net451' ">
     <DefineConstants>$(DefineConstants);NO_COMPAREINFO_HASHCODE;NO_ARRAY_EMPTY;NO_SB_POINTERS</DefineConstants>
