@@ -1,62 +1,62 @@
 ﻿using System.IO;
+
 using BenchmarkDotNet.Attributes;
+
 using WeCantSpell.Hunspell.Benchmarking.MicroSuites.Infrastructure;
 
-namespace WeCantSpell.Hunspell.Benchmarking.MicroSuites
+namespace WeCantSpell.Hunspell.Benchmarking.MicroSuites;
+
+[SimpleJob]
+public class EnUsWordListCheckSuite
 {
-    [SimpleJob]
-    public class EnUsWordListCheckSuite
+    private WordList _wordList;
+    private CategorizedWordData _wordData;
+
+    [GlobalSetup]
+    public void Setup()
     {
-        private WordList WordList;
+        _wordList = WordList.CreateFromFiles(Path.Combine(DataFilePaths.TestFilesFolderPath, "English (American).dic"));
 
-        private CategorizedWordData WordData;
+        _wordData = CategorizedWordData.Create(
+            CategorizedWordData.GetAssortedEnUsWords(),
+            isCorrect: _wordList.Check,
+            isRoot: _wordList.ContainsEntriesForRootWord);
+    }
 
-        [GlobalSetup]
-        public void Setup()
+
+    [Benchmark(Description = "Check an assortment of words")]
+    public void CheckAllWords()
+    {
+        foreach (var word in _wordData.AllWords)
         {
-            WordList = WordList.CreateFromFiles(Path.Combine(DataFilePaths.TestFilesFolderPath, "English (American).dic"));
-
-            WordData = CategorizedWordData.Create(
-                CategorizedWordData.GetAssortedEnUsWords(),
-                isCorrect: WordList.Check,
-                isRoot: WordList.ContainsEntriesForRootWord);
+            _ = _wordList.Check(word);
         }
+    }
 
-
-        [Benchmark(Description = "Check an assortment of words")]
-        public void CheckAllWords()
+    [Benchmark(Description = "Check root words", Baseline = true)]
+    public void CheckRootWords()
+    {
+        foreach (var word in _wordData.RootWords)
         {
-            foreach (var word in WordData.AllWords)
-            {
-                var result = WordList.Check(word);
-            }
+            _ = _wordList.Check(word);
         }
+    }
 
-        [Benchmark(Description = "Check root words", Baseline = true)]
-        public void CheckRootWords()
+    [Benchmark(Description = "Check correct words")]
+    public void CheckCorrectWords()
+    {
+        foreach (var word in _wordData.CorrectWords)
         {
-            foreach (var word in WordData.RootWords)
-            {
-                var result = WordList.Check(word);
-            }
+            _ = _wordList.Check(word);
         }
+    }
 
-        [Benchmark(Description = "Check correct words")]
-        public void CheckCorrectWords()
+    [Benchmark(Description = "Check wrong words")]
+    public void CheckWrongWords()
+    {
+        foreach (var word in _wordData.WrongWords)
         {
-            foreach (var word in WordData.CorrectWords)
-            {
-                var result = WordList.Check(word);
-            }
-        }
-
-        [Benchmark(Description = "Check wrong words")]
-        public void CheckWrongWords()
-        {
-            foreach (var word in WordData.WrongWords)
-            {
-                var result = WordList.Check(word);
-            }
+            _ = _wordList.Check(word);
         }
     }
 }

@@ -1,13 +1,10 @@
-﻿using BenchmarkDotNet.Running;
+﻿namespace WeCantSpell.Hunspell.Benchmarking.MicroSuites;
 
-namespace WeCantSpell.Hunspell.Benchmarking.MicroSuites
+class Program
 {
-    class Program
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
-        {
-            BenchmarkRunner.Run<EnUsWordListCheckSuite>();
-            BenchmarkRunner.Run<EnUsWordListSuggestSuite>();
-        }
+        BenchmarkDotNet.Running.BenchmarkRunner.Run<EnUsWordListCheckSuite>();
+        BenchmarkDotNet.Running.BenchmarkRunner.Run<EnUsWordListSuggestSuite>();
     }
 }

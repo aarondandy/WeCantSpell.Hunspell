@@ -1,7 +1,6 @@
-﻿namespace WeCantSpell.Hunspell.Benchmarking.NHunspell
+﻿namespace WeCantSpell.Hunspell.Benchmarking.NHunspell;
+
+class Program
 {
-    class Program
-    {
-        static int Main(string[] _) => NBench.NBenchRunner.Run<Program>();
-    }
+    static int Main(string[] _) => NBench.NBenchRunner.Run<Program>();
 }
