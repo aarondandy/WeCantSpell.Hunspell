@@ -32,20 +32,20 @@ namespace WeCantSpell.Hunspell
         {
         }
 
-        internal string Join(string seperator) => string.Join(seperator, items);
+        internal string Join(string seperator) => string.Join(seperator, Items);
 
         public bool Equals(MorphSet other) =>
             !ReferenceEquals(other, null)
             &&
             (
                 ReferenceEquals(this, other)
-                || ArrayComparer<string>.Default.Equals(other.items, items)
+                || ArrayComparer<string>.Default.Equals(other.Items, Items)
             );
 
         public override bool Equals(object obj) =>
             Equals(obj as MorphSet);
 
         public override int GetHashCode() =>
-            ArrayComparer<string>.Default.GetHashCode(items);
+            ArrayComparer<string>.Default.GetHashCode(Items);
     }
 }

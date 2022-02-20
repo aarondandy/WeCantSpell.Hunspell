@@ -4,26 +4,26 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure
 {
-    static class EnumEx
-    {
+static class EnumEx
+{
 #if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static bool HasFlag(this AffixConfigOptions value, AffixConfigOptions flag) => (value & flag) == flag;
+    public static bool HasFlag(this AffixConfigOptions value, AffixConfigOptions flag) => (value & flag) == flag;
 
 #if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static bool HasFlag(this WordEntryOptions value, WordEntryOptions flag) => (value & flag) == flag;
+    public static bool HasFlag(this WordEntryOptions value, WordEntryOptions flag) => (value & flag) == flag;
 
 #if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static bool HasFlag(this AffixEntryOptions value, AffixEntryOptions flag) => (value & flag) == flag;
+    public static bool HasFlag(this AffixEntryOptions value, AffixEntryOptions flag) => (value & flag) == flag;
 
 #if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static bool HasFlag(this SpellCheckResultType value, SpellCheckResultType flag) => (value & flag) == flag;
-    }
+    public static bool HasFlag(this SpellCheckResultType value, SpellCheckResultType flag) => (value & flag) == flag;
+}
 }

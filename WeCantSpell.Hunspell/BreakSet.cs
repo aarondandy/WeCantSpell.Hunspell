@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell
@@ -29,7 +30,7 @@ namespace WeCantSpell.Hunspell
 
             if (!string.IsNullOrEmpty(scw))
             {
-                foreach (var breakEntry in items)
+                foreach (var breakEntry in Items)
                 {
                     int pos = 0;
                     while ((pos = scw.IndexOf(breakEntry, pos, StringComparison.Ordinal)) >= 0)

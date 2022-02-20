@@ -71,7 +71,7 @@ namespace WeCantSpell.Hunspell
 
         internal Affix<TEntry>[] CreateAffixes()
         {
-            var source = Entries.items;
+            var source = Entries.Items;
             var result = new Affix<TEntry>[source.Length];
             for (var i = 0; i < source.Length; i++)
             {

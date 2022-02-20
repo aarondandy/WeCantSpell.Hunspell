@@ -24,7 +24,7 @@ namespace WeCantSpell.Hunspell
         {
             if (details != null && details.HasFlags)
             {
-                foreach(var rule in items)
+                foreach(var rule in Items)
                 {
                     if (rule.ContainsRuleFlagForEntry(details))
                     {
@@ -44,7 +44,7 @@ namespace WeCantSpell.Hunspell
                 new MetacharData()
             };
 
-            foreach (var compoundRule in items)
+            foreach (var compoundRule in Items)
             {
                 var pp = 0; // pattern position
                 var wp = 0; // "words" position

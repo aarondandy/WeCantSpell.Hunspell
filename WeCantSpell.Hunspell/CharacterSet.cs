@@ -47,11 +47,11 @@ namespace WeCantSpell.Hunspell
         public bool Contains(char value) =>
             unchecked((value & mask) != default)
             &&
-            Array.BinarySearch(items, value) >= 0;
+            Array.BinarySearch(Items, value) >= 0;
 
 #if !NO_INLINE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public string GetCharactersAsString() => new string(items);
+        public string GetCharactersAsString() => new string(Items);
     }
 }

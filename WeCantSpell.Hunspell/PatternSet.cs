@@ -36,7 +36,7 @@ namespace WeCantSpell.Hunspell
 
             var wordAfterPos = word.AsSpan(pos);
 
-            foreach (var patternEntry in items)
+            foreach (var patternEntry in Items)
             {
                 if (
                     HunspellTextFunctions.IsSubset(patternEntry.Pattern2, wordAfterPos)

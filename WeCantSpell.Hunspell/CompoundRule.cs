@@ -27,7 +27,7 @@ namespace WeCantSpell.Hunspell
 
         internal bool ContainsRuleFlagForEntry(WordEntryDetail details)
         {
-            foreach (var flag in items)
+            foreach (var flag in Items)
             {
                 if (!flag.IsWildcard && details.ContainsFlag(flag))
                 {
