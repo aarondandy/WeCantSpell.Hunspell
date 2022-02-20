@@ -1,42 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace WeCantSpell.Hunspell.Infrastructure
+namespace WeCantSpell.Hunspell.Infrastructure;
+
+sealed class StringDeduper
 {
-    sealed class StringDeduper
+    public StringDeduper() : this(StringComparer.Ordinal)
     {
-        public StringDeduper()
-            : this(StringComparer.Ordinal)
+    }
+
+    public StringDeduper(IEqualityComparer<string> comparer)
+    {
+        _lookup = new Dictionary<string, string>(comparer);
+        Add(string.Empty);
+    }
+
+    private readonly Dictionary<string, string> _lookup;
+
+    public string GetEqualOrAdd(string item)
+    {
+        if (_lookup.TryGetValue(item, out string existing))
         {
+            return existing;
         }
-
-        public StringDeduper(IEqualityComparer<string> comparer)
+        else
         {
-            lookup = new Dictionary<string, string>(comparer);
-            Add(string.Empty);
+            _lookup[item] = item;
+            return item;
         }
+    }
 
-        private readonly Dictionary<string, string> lookup;
-
-        public string GetEqualOrAdd(string item)
+    public void Add(string item)
+    {
+        if (!_lookup.ContainsKey(item))
         {
-            if (lookup.TryGetValue(item, out string existing))
-            {
-                return existing;
-            }
-            else
-            {
-                lookup[item] = item;
-                return item;
-            }
-        }
-
-        public void Add(string item)
-        {
-            if (!lookup.ContainsKey(item))
-            {
-                lookup[item] = item;
-            }
+            _lookup[item] = item;
         }
     }
 }

@@ -1,23 +1,22 @@
-﻿namespace WeCantSpell.Hunspell
+﻿namespace WeCantSpell.Hunspell;
+
+public static class MorphologicalTags
 {
-    public static class MorphologicalTags
-    {
-        public static readonly string Stem = "st:";
-        public static readonly string AlloMorph = "al:";
-        public static readonly string Pos = "po:";
-        public static readonly string DeriPfx = "dp:";
-        public static readonly string InflPfx = "ip:";
-        public static readonly string TermPfx = "tp:";
-        public static readonly string DeriSfx = "ds:";
-        public static readonly string InflSfx = "is:";
-        public static readonly string TermSfx = "ts:";
-        public static readonly string SurfPfx = "sp:";
-        public static readonly string Freq = "fr:";
-        public static readonly string Phon = "ph:";
-        public static readonly string Hyph = "hy:";
-        public static readonly string Part = "pa:";
-        public static readonly string Flag = "fl:";
-        public static readonly string HashEntry = "_H:";
-        public static readonly int TagLength = Stem.Length;
-    }
+    public static string Stem = "st:";
+    public static string AlloMorph = "al:";
+    public static string Pos = "po:";
+    public static string DeriPfx = "dp:";
+    public static string InflPfx = "ip:";
+    public static string TermPfx = "tp:";
+    public static string DeriSfx = "ds:";
+    public static string InflSfx = "is:";
+    public static string TermSfx = "ts:";
+    public static string SurfPfx = "sp:";
+    public static string Freq = "fr:";
+    public static string Phon = "ph:";
+    public static string Hyph = "hy:";
+    public static string Part = "pa:";
+    public static string Flag = "fl:";
+    public static string HashEntry = "_H:";
+    public static int TagLength = Stem.Length;
 }

@@ -1,77 +1,74 @@
 ﻿using System;
 
-namespace WeCantSpell.Hunspell.Infrastructure
+namespace WeCantSpell.Hunspell.Infrastructure;
+
+class OperationTimeLimiter
 {
-    class OperationTimeLimiter
+    public static OperationTimeLimiter Create(int timeLimitInMs, int queriesToTriggerCheck) =>
+        new OperationTimeLimiter(
+            Environment.TickCount,
+            queriesToTriggerCheck,
+            timeLimitInMs);
+
+    public static OperationTimeLimiter Create(int timeLimitInMs) =>
+        Create(timeLimitInMs, 0);
+
+    private OperationTimeLimiter(
+        long operationStartTime,
+        int queriesToTriggerCheck,
+        int timeLimitInMs)
     {
-        public static OperationTimeLimiter Create(int timeLimitInMs, int queriesToTriggerCheck) =>
-            new OperationTimeLimiter(
-                Environment.TickCount,
-                queriesToTriggerCheck,
-                timeLimitInMs);
-
-        public static OperationTimeLimiter Create(int timeLimitInMs) =>
-            Create(timeLimitInMs, 0);
-
-        private OperationTimeLimiter(
-            long operationStartTime,
-            int queriesToTriggerCheck,
-            int timeLimitInMs)
-        {
 #if DEBUG
-            if (queriesToTriggerCheck < 0) throw new ArgumentOutOfRangeException(nameof(queriesToTriggerCheck));
+        if (queriesToTriggerCheck < 0) throw new ArgumentOutOfRangeException(nameof(queriesToTriggerCheck));
 #endif
 
-            OperationStartTime = operationStartTime;
-            QueriesToTriggerCheck = queriesToTriggerCheck;
-            TimeLimitInMs = timeLimitInMs;
-            QueryCounter = queriesToTriggerCheck;
-            HasExpired = false;
-        }
+        _operationStartTime = operationStartTime;
+        _queriesToTriggerCheck = queriesToTriggerCheck;
+        _timeLimitInMs = timeLimitInMs;
+        QueryCounter = queriesToTriggerCheck;
+        HasExpired = false;
+    }
 
-        private long OperationStartTime;
+    private long _operationStartTime;
+    private readonly int _queriesToTriggerCheck;
+    private readonly int _timeLimitInMs;
 
-        private int QueriesToTriggerCheck;
+    public int QueryCounter { get; private set; }
 
-        private int TimeLimitInMs;
+    public bool HasExpired { get; private set; }
 
-        public int QueryCounter { get; private set; }
-
-        public bool HasExpired { get; private set; }
-
-        public bool QueryForExpiration()
+    public bool QueryForExpiration()
+    {
+        if (!HasExpired)
         {
-            if (!HasExpired)
+            if (QueryCounter == 0)
             {
-                if (QueryCounter == 0)
-                {
-                    HandleQueryCounterTrigger();
-                }
-                else
-                {
-                    QueryCounter--;
-                }
+                HandleQueryCounterTrigger();
             }
-
-            return HasExpired;
-        }
-
-        public void Reset()
-        {
-            OperationStartTime = Environment.TickCount;
-            QueryCounter = QueriesToTriggerCheck;
-            HasExpired = false;
-        }
-
-        private void HandleQueryCounterTrigger()
-        {
-            var currentTicks = Environment.TickCount - OperationStartTime;
-            if (currentTicks > TimeLimitInMs)
+            else
             {
-                HasExpired = true;
+                QueryCounter--;
             }
-
-            QueryCounter = QueriesToTriggerCheck;
         }
+
+        return HasExpired;
+    }
+
+    public void Reset()
+    {
+        _operationStartTime = Environment.TickCount;
+        QueryCounter = _queriesToTriggerCheck;
+        HasExpired = false;
+    }
+
+    private void HandleQueryCounterTrigger()
+    {
+        var currentTicks = Environment.TickCount - _operationStartTime;
+        if (currentTicks > _timeLimitInMs)
+        {
+            HasExpired = true;
+        }
+
+        QueryCounter = _queriesToTriggerCheck;
     }
 }

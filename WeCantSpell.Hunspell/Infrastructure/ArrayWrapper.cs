@@ -2,61 +2,54 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace WeCantSpell.Hunspell.Infrastructure
+namespace WeCantSpell.Hunspell.Infrastructure;
+
+public class ArrayWrapper<T> : IReadOnlyList<T>
 {
-    public class ArrayWrapper<T> : IReadOnlyList<T>
+    protected ArrayWrapper(T[] items)
     {
-        protected ArrayWrapper(T[] items)
+        Items = items ?? throw new ArgumentNullException(nameof(items));
+        IsEmpty = items.Length == 0;
+    }
+
+    internal readonly T[] Items;
+
+    public bool IsEmpty { get; }
+
+    public bool HasItems => !IsEmpty;
+
+    public ref readonly T this[int index] => ref Items[index];
+
+    public int Count => Items.Length;
+
+    T IReadOnlyList<T>.this[int index] => Items[index];
+
+    public ReadOnlySpan<T>.Enumerator GetEnumerator() => new ReadOnlySpan<T>(Items).GetEnumerator();
+
+    IEnumerator<T> IEnumerable<T>.GetEnumerator() => ((IEnumerable<T>)Items).GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => Items.GetEnumerator();
+
+    public class ArrayWrapperComparer<TValue, TCollection> :
+        IEqualityComparer<TCollection>
+        where TCollection : ArrayWrapper<TValue>
+        where TValue : IEquatable<TValue>
+    {
+        public ArrayWrapperComparer()
         {
-            this.items = items ?? throw new ArgumentNullException(nameof(items));
-            IsEmpty = items.Length == 0;
+            arrayComparer = ArrayComparer<TValue>.Default;
         }
 
-        internal readonly T[] items;
+        private readonly ArrayComparer<TValue> arrayComparer;
 
-        public bool IsEmpty { get; }
-
-        public bool HasItems => !IsEmpty;
-
-        public ref readonly T this[int index] => ref items[index];
-
-        public int Count => items.Length;
-
-        T IReadOnlyList<T>.this[int index] => items[index];
-
-        public ReadOnlySpan<T>.Enumerator GetEnumerator() => new ReadOnlySpan<T>(items).GetEnumerator();
-
-        IEnumerator<T> IEnumerable<T>.GetEnumerator() => ((IEnumerable<T>)items).GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => items.GetEnumerator();
-
-        public class ArrayWrapperComparer<TValue, TCollection> :
-            IEqualityComparer<TCollection>
-            where TCollection : ArrayWrapper<TValue>
-            where TValue : IEquatable<TValue>
+        public bool Equals(TCollection x, TCollection y)
         {
-            public ArrayWrapperComparer()
-            {
-                arrayComparer = ArrayComparer<TValue>.Default;
-            }
+            if (x is null) return y is null;
+            if (y is null) return false;
 
-            private readonly ArrayComparer<TValue> arrayComparer;
-
-            public bool Equals(TCollection x, TCollection y)
-            {
-                if (x == null)
-                {
-                    return y == null;
-                }
-                if (y == null)
-                {
-                    return false;
-                }
-
-                return arrayComparer.Equals(x.items, y.items);
-            }
-
-            public int GetHashCode(TCollection obj) => obj == null ? 0 : arrayComparer.GetHashCode(obj.items);
+            return arrayComparer.Equals(x.Items, y.Items);
         }
+
+        public int GetHashCode(TCollection obj) => obj is null ? 0 : arrayComparer.GetHashCode(obj.Items);
     }
 }

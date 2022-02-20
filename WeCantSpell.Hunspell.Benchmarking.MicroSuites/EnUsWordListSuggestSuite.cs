@@ -1,65 +1,65 @@
 ﻿using System.IO;
 using System.Linq;
+
 using BenchmarkDotNet.Attributes;
+
 using WeCantSpell.Hunspell.Benchmarking.MicroSuites.Infrastructure;
 
-namespace WeCantSpell.Hunspell.Benchmarking.MicroSuites
+namespace WeCantSpell.Hunspell.Benchmarking.MicroSuites;
+
+[SimpleJob]
+public class EnUsWordListSuggestSuite
 {
-    [SimpleJob]
-    public class EnUsWordListSuggestSuite
+    private const int MaxWords = 5;
+
+    private WordList _wordList;
+    private CategorizedWordData _wordData;
+
+    [GlobalSetup]
+    public void Setup()
     {
-        private WordList WordList;
+        _wordList = WordList.CreateFromFiles(Path.Combine(DataFilePaths.TestFilesFolderPath, "English (American).dic"));
 
-        private CategorizedWordData WordData;
+        _wordData = CategorizedWordData.Create(
+            CategorizedWordData.GetAssortedEnUsWords(),
+            isCorrect: _wordList.Check,
+            isRoot: _wordList.ContainsEntriesForRootWord);
+    }
 
-        private const int MaxWords = 5;
 
-        [GlobalSetup]
-        public void Setup()
+    [Benchmark(Description = "Suggest an assortment of words")]
+    public void CheckAllWords()
+    {
+        foreach (var word in _wordData.AllWords.Take(MaxWords))
         {
-            WordList = WordList.CreateFromFiles(Path.Combine(DataFilePaths.TestFilesFolderPath, "English (American).dic"));
-
-            WordData = CategorizedWordData.Create(
-                CategorizedWordData.GetAssortedEnUsWords(),
-                isCorrect: WordList.Check,
-                isRoot: WordList.ContainsEntriesForRootWord);
+            _ = _wordList.Suggest(word);
         }
+    }
 
-
-        [Benchmark(Description = "Suggest an assortment of words")]
-        public void CheckAllWords()
+    [Benchmark(Description = "Suggest root words", Baseline = true)]
+    public void CheckRootWords()
+    {
+        foreach (var word in _wordData.RootWords.Take(MaxWords))
         {
-            foreach (var word in WordData.AllWords.Take(MaxWords))
-            {
-                var result = WordList.Suggest(word);
-            }
+            _ = _wordList.Suggest(word);
         }
+    }
 
-        [Benchmark(Description = "Suggest root words", Baseline = true)]
-        public void CheckRootWords()
+    [Benchmark(Description = "Suggest correct words")]
+    public void CheckCorrectWords()
+    {
+        foreach (var word in _wordData.CorrectWords.Take(MaxWords))
         {
-            foreach (var word in WordData.RootWords.Take(MaxWords))
-            {
-                var result = WordList.Suggest(word);
-            }
+            _ = _wordList.Suggest(word);
         }
+    }
 
-        [Benchmark(Description = "Suggest correct words")]
-        public void CheckCorrectWords()
+    [Benchmark(Description = "Suggest wrong words")]
+    public void CheckWrongWords()
+    {
+        foreach (var word in _wordData.WrongWords.Take(MaxWords))
         {
-            foreach (var word in WordData.CorrectWords.Take(MaxWords))
-            {
-                var result = WordList.Suggest(word);
-            }
-        }
-
-        [Benchmark(Description = "Suggest wrong words")]
-        public void CheckWrongWords()
-        {
-            foreach (var word in WordData.WrongWords.Take(MaxWords))
-            {
-                var result = WordList.Suggest(word);
-            }
+            _ = _wordList.Suggest(word);
         }
     }
 }

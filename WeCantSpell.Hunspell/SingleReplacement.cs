@@ -1,38 +1,34 @@
-﻿using System;
-
-#if !NO_INLINE
+﻿#if !NO_INLINE
 using System.Runtime.CompilerServices;
 #endif
 
-namespace WeCantSpell.Hunspell
+namespace WeCantSpell.Hunspell;
+
+public sealed class SingleReplacement : ReplacementEntry
 {
-    public sealed class SingleReplacement : ReplacementEntry
+    public SingleReplacement(string pattern, string outString, ReplacementValueType type) : base(pattern)
     {
-        public SingleReplacement(string pattern, string outString, ReplacementValueType type)
-            : base(pattern)
-        {
-            OutString = outString;
-            Type = type;
-        }
+        OutString = outString;
+        Type = type;
+    }
 
-        public string OutString { get; }
+    public string OutString { get; }
 
-        public ReplacementValueType Type { get; }
+    public ReplacementValueType Type { get; }
 
-        public override string Med => this[ReplacementValueType.Med];
+    public override string Med => this[ReplacementValueType.Med];
 
-        public override string Ini => this[ReplacementValueType.Ini];
+    public override string Ini => this[ReplacementValueType.Ini];
 
-        public override string Fin => this[ReplacementValueType.Fin];
+    public override string Fin => this[ReplacementValueType.Fin];
 
-        public override string Isol => this[ReplacementValueType.Isol];
+    public override string Isol => this[ReplacementValueType.Isol];
 
-        public override string this[ReplacementValueType type]
-        {
+    public override string this[ReplacementValueType type]
+    {
 #if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-            get => Type == type ? OutString : null;
-        }
+        get => Type == type ? OutString : null;
     }
 }
