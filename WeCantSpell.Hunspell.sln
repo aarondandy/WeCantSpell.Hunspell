@@ -6,7 +6,6 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{312E1AA7-E8A4-4AEB-8D9D-6327A0ED57FB}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
-		GitVersion.yml = GitVersion.yml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeCantSpell.Hunspell", "WeCantSpell.Hunspell\WeCantSpell.Hunspell.csproj", "{6E337874-1C2A-467F-A3F3-0E3908022651}"
@@ -17,7 +16,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeCantSpell.Hunspell.Benchm
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeCantSpell.Hunspell.Tests", "WeCantSpell.Hunspell.Tests\WeCantSpell.Hunspell.Tests.csproj", "{C1F12C43-0BE1-44A3-AF7A-97F22ADAB198}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeCantSpell.Hunspell.Benchmarking.NHunspell", "WeCantSpell.Hunspell.Benchmarking.NHunspell\WeCantSpell.Hunspell.Benchmarking.NHunspell.csproj", "{D4955F32-5E3C-4B68-8EFE-66B0162F9581}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeCantSpell.Hunspell.Benchmarking.NHunspell", "WeCantSpell.Hunspell.Benchmarking.NHunspell\WeCantSpell.Hunspell.Benchmarking.NHunspell.csproj", "{D4955F32-5E3C-4B68-8EFE-66B0162F9581}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
