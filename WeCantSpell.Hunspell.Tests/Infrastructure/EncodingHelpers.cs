@@ -1,18 +1,17 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace WeCantSpell.Hunspell.Tests.Infrastructure
-{
-    static class EncodingHelpers
-    {
-        static EncodingHelpers()
-        {
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-        }
+namespace WeCantSpell.Hunspell.Tests.Infrastructure;
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        public static void EnsureEncodingsReady()
-        {
-        }
+static class EncodingHelpers
+{
+    static EncodingHelpers()
+    {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+    public static void EnsureEncodingsReady()
+    {
     }
 }
