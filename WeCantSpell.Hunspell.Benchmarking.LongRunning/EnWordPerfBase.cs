@@ -40,7 +40,7 @@ public abstract class EnWordPerfBase
             using var reader = new StreamReader(stram, Encoding.UTF8, true);
             string line;
 
-            while ((line = reader.ReadLine()) != null)
+            while ((line = reader.ReadLine()) is not null)
             {
                 line = line.Trim();
 

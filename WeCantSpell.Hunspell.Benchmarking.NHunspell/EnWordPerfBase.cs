@@ -25,7 +25,7 @@ public abstract class EnWordPerfBase
         using var reader = new StreamReader(Path.Combine(filesDirectory, "List_of_common_misspellings.txt"), Encoding.UTF8, true);
 
         string line;
-        while ((line = reader.ReadLine()) != null)
+        while ((line = reader.ReadLine()) is not null)
         {
             line = line.Trim();
 

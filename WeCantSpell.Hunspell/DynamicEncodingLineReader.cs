@@ -237,16 +237,16 @@ public sealed class DynamicEncodingLineReader : IHunspellLineReader, IDisposable
     {
         _singleDecoderByteArray[0] = byteValue;
         _decoder.Convert(
-                _singleDecoderByteArray,
-                0,
-                1,
-                chars,
-                0,
-                chars.Length,
-                false,
-                out int bytesConverted,
-                out int charsProduced,
-                out bool completed);
+            _singleDecoderByteArray,
+            0,
+            1,
+            chars,
+            0,
+            chars.Length,
+            false,
+            out _,
+            out int charsProduced,
+            out _);
 
         return charsProduced;
     }

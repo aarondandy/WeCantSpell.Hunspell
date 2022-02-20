@@ -102,7 +102,7 @@ public struct CharacterCondition :
     /// </summary>
     public bool Restricted { get; }
 
-    public bool IsMatch(char c) => (Characters != null && Characters.Contains(c)) ^ Restricted;
+    public bool IsMatch(char c) => (Characters is not null && Characters.Contains(c)) ^ Restricted;
 
     public bool AllowsAny => Restricted && (Characters is null || Characters.Count == 0);
 
