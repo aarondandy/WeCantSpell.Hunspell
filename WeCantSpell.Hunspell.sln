@@ -1,33 +1,22 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26430.14
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32210.238
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{7DB151C3-9662-414F-84EF-7C6BD40C8AC6}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{312E1AA7-E8A4-4AEB-8D9D-6327A0ED57FB}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
-		appveyor.yml = appveyor.yml
-		GitVersion.yml = GitVersion.yml
-		SharedAssemblyInfo.cs = SharedAssemblyInfo.cs
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{97D2DB91-AE3A-44AE-9FA3-43557AA8F5FD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeCantSpell.Hunspell", "WeCantSpell.Hunspell\WeCantSpell.Hunspell.csproj", "{6E337874-1C2A-467F-A3F3-0E3908022651}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeCantSpell.Hunspell", "src\WeCantSpell.Hunspell\WeCantSpell.Hunspell.csproj", "{E73EDF00-EAB6-420B-ABBA-B18283BE7064}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeCantSpell.Hunspell.Benchmarking.LongRunning", "WeCantSpell.Hunspell.Benchmarking.LongRunning\WeCantSpell.Hunspell.Benchmarking.LongRunning.csproj", "{5BEA51BE-624E-4895-A206-2EA3D36193F8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeCantSpell.Hunspell.Tests", "test\WeCantSpell.Hunspell.Tests\WeCantSpell.Hunspell.Tests.csproj", "{9BBF7BFD-2EA4-4C17-8D38-ECACFBBBC922}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeCantSpell.Hunspell.Benchmarking.MicroSuites", "WeCantSpell.Hunspell.Benchmarking.MicroSuites\WeCantSpell.Hunspell.Benchmarking.MicroSuites.csproj", "{4937A7F4-8B4A-4CA6-A5AA-2B0208518C37}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeCantSpell.Hunspell.Performance.TestHarness", "test\WeCantSpell.Hunspell.Performance.TestHarness\WeCantSpell.Hunspell.Performance.TestHarness.csproj", "{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeCantSpell.Hunspell.Tests", "WeCantSpell.Hunspell.Tests\WeCantSpell.Hunspell.Tests.csproj", "{C1F12C43-0BE1-44A3-AF7A-97F22ADAB198}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeCantSpell.Hunspell.Performance.TestHarness.Core", "test\WeCantSpell.Hunspell.Performance.TestHarness.Core\WeCantSpell.Hunspell.Performance.TestHarness.Core.csproj", "{FFFDC9E9-D4AB-4D10-8D1B-0561FB98CAC1}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeCantSpell.Hunspell.Benchmarking.LongRunning", "test\WeCantSpell.Hunspell.Benchmarking.LongRunning\WeCantSpell.Hunspell.Benchmarking.LongRunning.csproj", "{0D9B92F4-F669-427A-95FB-14FC6A555973}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeCantSpell.Hunspell.Benchmarking.NHunspell", "test\WeCantSpell.Hunspell.Benchmarking.NHunspell\WeCantSpell.Hunspell.Benchmarking.NHunspell.csproj", "{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeCantSpell.Hunspell.Benchmarking.MicroSuites", "test\WeCantSpell.Hunspell.Benchmarking.MicroSuites\WeCantSpell.Hunspell.Benchmarking.MicroSuites.csproj", "{6C5DDE76-CB7D-4955-B385-FA395C5BFB94}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeCantSpell.Hunspell.Benchmarking.NHunspell", "WeCantSpell.Hunspell.Benchmarking.NHunspell\WeCantSpell.Hunspell.Benchmarking.NHunspell.csproj", "{D4955F32-5E3C-4B68-8EFE-66B0162F9581}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,46 +24,32 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{E73EDF00-EAB6-420B-ABBA-B18283BE7064}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E73EDF00-EAB6-420B-ABBA-B18283BE7064}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E73EDF00-EAB6-420B-ABBA-B18283BE7064}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E73EDF00-EAB6-420B-ABBA-B18283BE7064}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9BBF7BFD-2EA4-4C17-8D38-ECACFBBBC922}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9BBF7BFD-2EA4-4C17-8D38-ECACFBBBC922}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9BBF7BFD-2EA4-4C17-8D38-ECACFBBBC922}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9BBF7BFD-2EA4-4C17-8D38-ECACFBBBC922}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FFFDC9E9-D4AB-4D10-8D1B-0561FB98CAC1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FFFDC9E9-D4AB-4D10-8D1B-0561FB98CAC1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FFFDC9E9-D4AB-4D10-8D1B-0561FB98CAC1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FFFDC9E9-D4AB-4D10-8D1B-0561FB98CAC1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0D9B92F4-F669-427A-95FB-14FC6A555973}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0D9B92F4-F669-427A-95FB-14FC6A555973}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0D9B92F4-F669-427A-95FB-14FC6A555973}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0D9B92F4-F669-427A-95FB-14FC6A555973}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0EBAB771-D55F-430A-ADBD-EA81D97C94AD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6C5DDE76-CB7D-4955-B385-FA395C5BFB94}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6C5DDE76-CB7D-4955-B385-FA395C5BFB94}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6C5DDE76-CB7D-4955-B385-FA395C5BFB94}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6C5DDE76-CB7D-4955-B385-FA395C5BFB94}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E337874-1C2A-467F-A3F3-0E3908022651}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E337874-1C2A-467F-A3F3-0E3908022651}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E337874-1C2A-467F-A3F3-0E3908022651}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E337874-1C2A-467F-A3F3-0E3908022651}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5BEA51BE-624E-4895-A206-2EA3D36193F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BEA51BE-624E-4895-A206-2EA3D36193F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BEA51BE-624E-4895-A206-2EA3D36193F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5BEA51BE-624E-4895-A206-2EA3D36193F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4937A7F4-8B4A-4CA6-A5AA-2B0208518C37}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4937A7F4-8B4A-4CA6-A5AA-2B0208518C37}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4937A7F4-8B4A-4CA6-A5AA-2B0208518C37}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4937A7F4-8B4A-4CA6-A5AA-2B0208518C37}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C1F12C43-0BE1-44A3-AF7A-97F22ADAB198}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1F12C43-0BE1-44A3-AF7A-97F22ADAB198}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1F12C43-0BE1-44A3-AF7A-97F22ADAB198}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1F12C43-0BE1-44A3-AF7A-97F22ADAB198}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4955F32-5E3C-4B68-8EFE-66B0162F9581}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4955F32-5E3C-4B68-8EFE-66B0162F9581}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4955F32-5E3C-4B68-8EFE-66B0162F9581}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4955F32-5E3C-4B68-8EFE-66B0162F9581}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{E73EDF00-EAB6-420B-ABBA-B18283BE7064} = {7DB151C3-9662-414F-84EF-7C6BD40C8AC6}
-		{9BBF7BFD-2EA4-4C17-8D38-ECACFBBBC922} = {97D2DB91-AE3A-44AE-9FA3-43557AA8F5FD}
-		{0002E7C7-3EF1-4AD9-A8E6-31C93DF165DE} = {97D2DB91-AE3A-44AE-9FA3-43557AA8F5FD}
-		{FFFDC9E9-D4AB-4D10-8D1B-0561FB98CAC1} = {97D2DB91-AE3A-44AE-9FA3-43557AA8F5FD}
-		{0D9B92F4-F669-427A-95FB-14FC6A555973} = {97D2DB91-AE3A-44AE-9FA3-43557AA8F5FD}
-		{0EBAB771-D55F-430A-ADBD-EA81D97C94AD} = {97D2DB91-AE3A-44AE-9FA3-43557AA8F5FD}
-		{6C5DDE76-CB7D-4955-B385-FA395C5BFB94} = {97D2DB91-AE3A-44AE-9FA3-43557AA8F5FD}
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {97AA2C90-7178-4466-A9AF-E97B3AE9D202}
 	EndGlobalSection
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true

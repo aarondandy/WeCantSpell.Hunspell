@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="WeCantSpell.Hunspell.Benchmarking.NHunspell.v3.ncrunchproject" />
+    <None Include="App.config" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NBench" Version="2.0.1" />
+    <PackageReference Include="NHunspell" Version="1.2.5554.16953" GeneratePathProperty="true" />
+  </ItemGroup>
+
+  <Target Name="CopyNHunspellBinaries" BeforeTargets="BeforeBuild">
+    <ItemGroup>
+      <NHunspellNativeBinaryFiles Include="$(PkgNHunspell)\content\Hunspellx*.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(NHunspellNativeBinaryFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WeCantSpell.Hunspell\WeCantSpell.Hunspell.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\hunspell-origin\tests\suggestiontest\List_of_common_misspellings.txt">
+      <Link>files\List_of_common_misspellings.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\samples\*.*">
+      <Link>files\%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

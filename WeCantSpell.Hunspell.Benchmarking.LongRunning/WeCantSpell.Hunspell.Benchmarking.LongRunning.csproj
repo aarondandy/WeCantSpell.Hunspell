@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NBench" Version="2.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WeCantSpell.Hunspell\WeCantSpell.Hunspell.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="WeCantSpell.Hunspell.Benchmarking.LongRunning.v3.ncrunchproject" />
+    <None Include="..\samples\*.*">
+      <Link>files\%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\hunspell-origin\tests\suggestiontest\List_of_common_misspellings.txt">
+      <Link>files\List_of_common_misspellings.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
