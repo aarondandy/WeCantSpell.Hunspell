@@ -4,24 +4,23 @@
 using System.Runtime.CompilerServices;
 #endif
 
-namespace WeCantSpell.Hunspell
-{
-    public sealed class SuffixEntry : AffixEntry
-    {
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public SuffixEntry(
-            string strip,
-            string affixText,
-            CharacterConditionGroup conditions,
-            MorphSet morph,
-            FlagSet contClass)
-            : base(strip, affixText, conditions, morph, contClass)
-        {
-            Key = affixText.GetReversed();
-        }
+namespace WeCantSpell.Hunspell;
 
-        public sealed override string Key { get; }
+public sealed class SuffixEntry : AffixEntry
+{
+#if !NO_INLINE
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+    public SuffixEntry(
+        string strip,
+        string affixText,
+        CharacterConditionGroup conditions,
+        MorphSet morph,
+        FlagSet contClass)
+        : base(strip, affixText, conditions, morph, contClass)
+    {
+        Key = affixText.GetReversed();
     }
+
+    public sealed override string Key { get; }
 }

@@ -50,6 +50,6 @@ public class ArrayWrapper<T> : IReadOnlyList<T>
             return arrayComparer.Equals(x.Items, y.Items);
         }
 
-        public int GetHashCode(TCollection obj) => obj == null ? 0 : arrayComparer.GetHashCode(obj.Items);
+        public int GetHashCode(TCollection obj) => obj is null ? 0 : arrayComparer.GetHashCode(obj.Items);
     }
 }

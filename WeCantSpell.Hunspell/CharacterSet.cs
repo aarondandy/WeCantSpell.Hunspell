@@ -1,57 +1,57 @@
 ﻿using System;
+
 using WeCantSpell.Hunspell.Infrastructure;
 
 #if !NO_INLINE
 using System.Runtime.CompilerServices;
 #endif
 
-namespace WeCantSpell.Hunspell
+namespace WeCantSpell.Hunspell;
+
+public sealed class CharacterSet : ArrayWrapper<char>
 {
-    public sealed class CharacterSet : ArrayWrapper<char>
+    public static readonly CharacterSet Empty = new CharacterSet(ArrayEx<char>.Empty);
+
+    public static readonly ArrayWrapperComparer<char, CharacterSet> DefaultComparer = new ArrayWrapperComparer<char, CharacterSet>();
+
+    public static CharacterSet Create(string values) => values is null ? Empty : TakeArray(values.ToCharArray());
+
+    public static CharacterSet Create(char value) => TakeArray(new[] { value });
+
+    internal static CharacterSet Create(ReadOnlySpan<char> values) => TakeArray(values.ToArray());
+
+    internal static CharacterSet TakeArray(char[] values)
     {
-        public static readonly CharacterSet Empty = new CharacterSet(ArrayEx<char>.Empty);
-
-        public static readonly ArrayWrapperComparer<char, CharacterSet> DefaultComparer = new ArrayWrapperComparer<char, CharacterSet>();
-
-        public static CharacterSet Create(string values) => values == null ? Empty : TakeArray(values.ToCharArray());
-
-        public static CharacterSet Create(char value) => TakeArray(new[] { value });
-
-        internal static CharacterSet Create(ReadOnlySpan<char> values) => TakeArray(values.ToArray());
-
-        internal static CharacterSet TakeArray(char[] values)
-        {
 #if DEBUG
-            if (values == null) throw new ArgumentNullException(nameof(values));
+        if (values is null) throw new ArgumentNullException(nameof(values));
 #endif
 
-            Array.Sort(values);
-            return new CharacterSet(values);
-        }
+        Array.Sort(values);
+        return new CharacterSet(values);
+    }
 
-        private CharacterSet(char[] values)
-            : base(values)
+    private CharacterSet(char[] values)
+        : base(values)
+    {
+        mask = default;
+        for (var i = 0; i < values.Length; i++)
         {
-            mask = default;
-            for (var i = 0; i < values.Length; i++)
+            unchecked
             {
-                unchecked
-                {
-                    mask |= values[i];
-                }
+                mask |= values[i];
             }
         }
+    }
 
-        private readonly char mask;
+    private readonly char mask;
 
-        public bool Contains(char value) =>
-            unchecked((value & mask) != default)
-            &&
-            Array.BinarySearch(Items, value) >= 0;
+    public bool Contains(char value) =>
+        unchecked((value & mask) != default)
+        &&
+        Array.BinarySearch(Items, value) >= 0;
 
 #if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public string GetCharactersAsString() => new string(Items);
-    }
+    public string GetCharactersAsString() => new string(Items);
 }

@@ -4,69 +4,59 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
 using WeCantSpell.Hunspell.Infrastructure;
 
 #if !NO_INLINE
 using System.Runtime.CompilerServices;
 #endif
 
-namespace WeCantSpell.Hunspell
+namespace WeCantSpell.Hunspell;
+
+public sealed class StaticEncodingLineReader : IHunspellLineReader, IDisposable
 {
-    public sealed class StaticEncodingLineReader : IHunspellLineReader, IDisposable
+    public StaticEncodingLineReader(Stream stream, Encoding encoding)
     {
-        public StaticEncodingLineReader(Stream stream, Encoding encoding)
-        {
-            this.stream = stream ?? throw new ArgumentNullException(nameof(stream));
-            reader = new StreamReader(stream, encoding ?? Encoding.UTF8, true);
-        }
+        _stream = stream ?? throw new ArgumentNullException(nameof(stream));
+        _reader = new StreamReader(stream, encoding ?? Encoding.UTF8, true);
+    }
 
-        private readonly Stream stream;
-        private readonly StreamReader reader;
+    private readonly Stream _stream;
+    private readonly StreamReader _reader;
 
-        public Encoding CurrentEncoding => reader.CurrentEncoding;
+    public Encoding CurrentEncoding => _reader.CurrentEncoding;
 
-        public static List<string> ReadLines(string filePath, Encoding encoding)
-        {
-            if (filePath == null)
-            {
-                throw new ArgumentNullException(nameof(filePath));
-            }
+    public static List<string> ReadLines(string filePath, Encoding encoding)
+    {
+        if (filePath == null) throw new ArgumentNullException(nameof(filePath));
 
-            using (var stream = FileStreamEx.OpenReadFileStream(filePath))
-            using (var reader = new StaticEncodingLineReader(stream, encoding))
-            {
-                return reader.ReadLines().ToList();
-            }
-        }
+        using var stream = FileStreamEx.OpenReadFileStream(filePath);
+        using var reader = new StaticEncodingLineReader(stream, encoding);
+        return reader.ReadLines().ToList();
+    }
 
-        public static async Task<IEnumerable<string>> ReadLinesAsync(string filePath, Encoding encoding)
-        {
-            if (filePath == null)
-            {
-                throw new ArgumentNullException(nameof(filePath));
-            }
+    public static async Task<IEnumerable<string>> ReadLinesAsync(string filePath, Encoding encoding)
+    {
+        if (filePath == null) throw new ArgumentNullException(nameof(filePath));
 
-            using (var stream = FileStreamEx.OpenAsyncReadFileStream(filePath))
-            using (var reader = new StaticEncodingLineReader(stream, encoding))
-            {
-                return await reader.ReadLinesAsync().ConfigureAwait(false);
-            }
-        }
+        using var stream = FileStreamEx.OpenAsyncReadFileStream(filePath);
+        using var reader = new StaticEncodingLineReader(stream, encoding);
+        return await reader.ReadLinesAsync().ConfigureAwait(false);
+    }
 
 #if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public string ReadLine() => reader.ReadLine();
+    public string ReadLine() => _reader.ReadLine();
 
 #if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public Task<string> ReadLineAsync() => reader.ReadLineAsync();
+    public Task<string> ReadLineAsync() => _reader.ReadLineAsync();
 
-        public void Dispose()
-        {
-            reader.Dispose();
-            stream.Dispose();
-        }
+    public void Dispose()
+    {
+        _reader.Dispose();
+        _stream.Dispose();
     }
 }

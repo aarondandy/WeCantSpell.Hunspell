@@ -2,325 +2,319 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+
 using WeCantSpell.Hunspell.Infrastructure;
 
-namespace WeCantSpell.Hunspell
+namespace WeCantSpell.Hunspell;
+
+public abstract class AffixCollection<TEntry> :
+    IEnumerable<AffixEntryGroup<TEntry>>
+    where TEntry : AffixEntry
 {
-    public abstract class AffixCollection<TEntry> :
-        IEnumerable<AffixEntryGroup<TEntry>>
-        where TEntry : AffixEntry
+    internal delegate TResult Constructor<TResult>(
+        Dictionary<FlagValue, AffixEntryGroup<TEntry>> affixesByFlag,
+        Dictionary<char, AffixEntryGroupCollection<TEntry>> affixesByIndexedByKey,
+        AffixEntryGroupCollection<TEntry> affixesWithDots,
+        AffixEntryGroupCollection<TEntry> affixesWithEmptyKeys,
+        FlagSet contClasses)
+        where TResult : AffixCollection<TEntry>;
+
+    internal static TResult Create<TResult>(List<AffixEntryGroup<TEntry>.Builder> builders, Constructor<TResult> constructor)
+        where TResult : AffixCollection<TEntry>
     {
-        internal delegate TResult Constructor<TResult>(
-            Dictionary<FlagValue, AffixEntryGroup<TEntry>> affixesByFlag,
-            Dictionary<char, AffixEntryGroupCollection<TEntry>> affixesByIndexedByKey,
-            AffixEntryGroupCollection<TEntry> affixesWithDots,
-            AffixEntryGroupCollection<TEntry> affixesWithEmptyKeys,
-            FlagSet contClasses)
-            where TResult : AffixCollection<TEntry>;
+        var affixesByFlag = new Dictionary<FlagValue, AffixEntryGroup<TEntry>>(builders.Count);
+        var affixesByIndexedByKeyBuilders = new Dictionary<char, Dictionary<FlagValue, AffixEntryGroup<TEntry>.Builder>>();
+        var affixesWithEmptyKeys = new List<AffixEntryGroup<TEntry>>();
+        var affixesWithDots = new List<AffixEntryGroup<TEntry>>();
+        var contClasses = new HashSet<FlagValue>();
 
-        internal static TResult Create<TResult>(List<AffixEntryGroup<TEntry>.Builder> builders, Constructor<TResult> constructor)
-            where TResult : AffixCollection<TEntry>
+        if (builders != null)
         {
-            var affixesByFlag = new Dictionary<FlagValue, AffixEntryGroup<TEntry>>(builders.Count);
-            var affixesByIndexedByKeyBuilders = new Dictionary<char, Dictionary<FlagValue, AffixEntryGroup<TEntry>.Builder>>();
-            var affixesWithEmptyKeys = new List<AffixEntryGroup<TEntry>>();
-            var affixesWithDots = new List<AffixEntryGroup<TEntry>>();
-            var contClasses = new HashSet<FlagValue>();
-
-            if (builders != null)
+            foreach (var builder in builders)
             {
-                foreach (var builder in builders)
+                var group = builder.ToGroup();
+                affixesByFlag.Add(group.AFlag, group);
+
+                var entriesWithNoKey = new List<TEntry>();
+                var entriesWithDots = new List<TEntry>();
+
+                foreach (var entry in group.Entries)
                 {
-                    var group = builder.ToGroup();
-                    affixesByFlag.Add(group.AFlag, group);
+                    var key = entry.Key;
 
-                    var entriesWithNoKey = new List<TEntry>();
-                    var entriesWithDots = new List<TEntry>();
+                    contClasses.UnionWith(entry.ContClass);
 
-                    foreach (var entry in group.Entries)
+                    if (string.IsNullOrEmpty(key))
                     {
-                        var key = entry.Key;
-
-                        contClasses.UnionWith(entry.ContClass);
-
-                        if (string.IsNullOrEmpty(key))
+                        entriesWithNoKey.Add(entry);
+                    }
+                    else if (key.Contains('.'))
+                    {
+                        entriesWithDots.Add(entry);
+                    }
+                    else
+                    {
+                        var indexedKey = key[0];
+                        if (!affixesByIndexedByKeyBuilders.TryGetValue(indexedKey, out var keyedAffixes))
                         {
-                            entriesWithNoKey.Add(entry);
+                            keyedAffixes = new Dictionary<FlagValue, AffixEntryGroup<TEntry>.Builder>();
+                            affixesByIndexedByKeyBuilders.Add(indexedKey, keyedAffixes);
                         }
-                        else if (key.Contains('.'))
+
+                        if (!keyedAffixes.TryGetValue(group.AFlag, out var groupBuilder))
                         {
-                            entriesWithDots.Add(entry);
-                        }
-                        else
-                        {
-                            var indexedKey = key[0];
-                            if (!affixesByIndexedByKeyBuilders.TryGetValue(indexedKey, out var keyedAffixes))
+                            groupBuilder = new AffixEntryGroup<TEntry>.Builder
                             {
-                                keyedAffixes = new Dictionary<FlagValue, AffixEntryGroup<TEntry>.Builder>();
-                                affixesByIndexedByKeyBuilders.Add(indexedKey, keyedAffixes);
-                            }
-
-                            if (!keyedAffixes.TryGetValue(group.AFlag, out var groupBuilder))
-                            {
-                                groupBuilder = new AffixEntryGroup<TEntry>.Builder
-                                {
-                                    AFlag = group.AFlag,
-                                    Options = group.Options,
-                                    Entries = new List<TEntry>()
-                                };
-                                keyedAffixes.Add(group.AFlag, groupBuilder);
-                            }
-
-                            groupBuilder.Entries.Add(entry);
+                                AFlag = group.AFlag,
+                                Options = group.Options,
+                                Entries = new List<TEntry>()
+                            };
+                            keyedAffixes.Add(group.AFlag, groupBuilder);
                         }
-                    }
 
-                    if (entriesWithNoKey.Count > 0)
-                    {
-                        affixesWithEmptyKeys.Add(new AffixEntryGroup<TEntry>(group.AFlag, group.Options, AffixEntryCollection<TEntry>.Create(entriesWithNoKey)));
-                    }
-                    if (entriesWithDots.Count > 0)
-                    {
-                        affixesWithDots.Add(new AffixEntryGroup<TEntry>(group.AFlag, group.Options, AffixEntryCollection<TEntry>.Create(entriesWithDots)));
+                        groupBuilder.Entries.Add(entry);
                     }
                 }
-            }
 
-            var affixesByIndexedByKey = new Dictionary<char, AffixEntryGroupCollection<TEntry>>(affixesByIndexedByKeyBuilders.Count);
-            foreach (var keyedBuilder in affixesByIndexedByKeyBuilders)
-            {
-                var indexedAffixGroup = new AffixEntryGroup<TEntry>[keyedBuilder.Value.Count];
-                var writeIndex = 0;
-                foreach(var builderPair in keyedBuilder.Value)
+                if (entriesWithNoKey.Count > 0)
                 {
-                    indexedAffixGroup[writeIndex++] = builderPair.Value.ToGroup();
+                    affixesWithEmptyKeys.Add(new AffixEntryGroup<TEntry>(group.AFlag, group.Options, AffixEntryCollection<TEntry>.Create(entriesWithNoKey)));
                 }
-
-                affixesByIndexedByKey.Add(keyedBuilder.Key, AffixEntryGroupCollection<TEntry>.TakeArray(indexedAffixGroup));
-            }
-
-            return constructor
-            (
-                affixesByFlag,
-                affixesByIndexedByKey,
-                AffixEntryGroupCollection<TEntry>.Create(affixesWithDots),
-                AffixEntryGroupCollection<TEntry>.Create(affixesWithEmptyKeys),
-                FlagSet.Create(contClasses)
-            );
-        }
-
-        internal AffixCollection(
-            Dictionary<FlagValue, AffixEntryGroup<TEntry>> affixesByFlag,
-            Dictionary<char, AffixEntryGroupCollection<TEntry>> affixesByIndexedByKey,
-            AffixEntryGroupCollection<TEntry> affixesWithDots,
-            AffixEntryGroupCollection<TEntry> affixesWithEmptyKeys,
-            FlagSet contClasses)
-        {
-            AffixesByFlag = affixesByFlag;
-            AffixesByIndexedByKey = affixesByIndexedByKey;
-            AffixesWithDots = affixesWithDots;
-            AffixesWithEmptyKeys = affixesWithEmptyKeys;
-            ContClasses = contClasses;
-            HasAffixes = affixesByFlag.Count != 0;
-        }
-
-        protected Dictionary<FlagValue, AffixEntryGroup<TEntry>> AffixesByFlag { get; }
-
-        protected Dictionary<char, AffixEntryGroupCollection<TEntry>> AffixesByIndexedByKey { get; }
-
-        public AffixEntryGroupCollection<TEntry> AffixesWithDots { get; }
-
-        public AffixEntryGroupCollection<TEntry> AffixesWithEmptyKeys { get; }
-
-        public FlagSet ContClasses { get; }
-
-        public bool HasAffixes { get; }
-
-        public IEnumerable<FlagValue> FlagValues => AffixesByFlag.Keys;
-
-        public AffixEntryGroup<TEntry> GetByFlag(FlagValue flag)
-        {
-            AffixesByFlag.TryGetValue(flag, out AffixEntryGroup<TEntry> result);
-            return result;
-        }
-
-        public IEnumerator<AffixEntryGroup<TEntry>> GetEnumerator() => AffixesByFlag.Values.GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => AffixesByFlag.Values.GetEnumerator();
-
-        internal List<AffixEntryGroup<TEntry>> GetByFlags(FlagSet flags)
-        {
-#if DEBUG
-            if (flags == null)
-            {
-                throw new ArgumentNullException(nameof(flags));
-            }
-#endif
-
-            var results = new List<AffixEntryGroup<TEntry>>(flags.Count);
-            foreach(var flag in flags)
-            {
-                if (AffixesByFlag.TryGetValue(flag, out AffixEntryGroup<TEntry> result))
+                if (entriesWithDots.Count > 0)
                 {
-                    results.Add(result);
+                    affixesWithDots.Add(new AffixEntryGroup<TEntry>(group.AFlag, group.Options, AffixEntryCollection<TEntry>.Create(entriesWithDots)));
                 }
             }
-
-            return results;
         }
 
-        internal List<AffixEntryGroup<TEntry>> GetAffixesWithEmptyKeysAndFlag(FlagSet flags)
+        var affixesByIndexedByKey = new Dictionary<char, AffixEntryGroupCollection<TEntry>>(affixesByIndexedByKeyBuilders.Count);
+        foreach (var keyedBuilder in affixesByIndexedByKeyBuilders)
         {
-#if DEBUG
-            if (flags == null)
+            var indexedAffixGroup = new AffixEntryGroup<TEntry>[keyedBuilder.Value.Count];
+            var writeIndex = 0;
+            foreach(var builderPair in keyedBuilder.Value)
             {
-                throw new ArgumentNullException(nameof(flags));
-            }
-#endif
-
-            var results = new List<AffixEntryGroup<TEntry>>(flags.Count);
-            foreach (var group in AffixesWithEmptyKeys)
-            {
-                if (flags.Contains(group.AFlag))
-                {
-                    results.Add(group);
-                }
+                indexedAffixGroup[writeIndex++] = builderPair.Value.ToGroup();
             }
 
-            return results;
+            affixesByIndexedByKey.Add(keyedBuilder.Key, AffixEntryGroupCollection<TEntry>.TakeArray(indexedAffixGroup));
         }
 
-        internal IEnumerable<Affix<TEntry>> GetMatchingWithDotAffixes(string word, Func<string, string, bool> predicate) =>
-            AffixesWithDots.SelectMany(group =>
-                group.Entries
-                    .Where(entry => predicate(entry.Key, word))
-                    .Select(entry => Affix<TEntry>.Create(entry, group)));
+        return constructor
+        (
+            affixesByFlag,
+            affixesByIndexedByKey,
+            AffixEntryGroupCollection<TEntry>.Create(affixesWithDots),
+            AffixEntryGroupCollection<TEntry>.Create(affixesWithEmptyKeys),
+            FlagSet.Create(contClasses)
+        );
     }
 
-    public sealed class SuffixCollection : AffixCollection<SuffixEntry>
+    internal AffixCollection(
+        Dictionary<FlagValue, AffixEntryGroup<TEntry>> affixesByFlag,
+        Dictionary<char, AffixEntryGroupCollection<TEntry>> affixesByIndexedByKey,
+        AffixEntryGroupCollection<TEntry> affixesWithDots,
+        AffixEntryGroupCollection<TEntry> affixesWithEmptyKeys,
+        FlagSet contClasses)
     {
-        public static readonly SuffixCollection Empty = new SuffixCollection(
-            new Dictionary<FlagValue, AffixEntryGroup<SuffixEntry>>(0),
-            new Dictionary<char, AffixEntryGroupCollection<SuffixEntry>>(0),
-            AffixEntryGroupCollection<SuffixEntry>.Empty,
-            AffixEntryGroupCollection<SuffixEntry>.Empty,
-            FlagSet.Empty);
-
-        public static SuffixCollection Create(List<AffixEntryGroup<SuffixEntry>.Builder> builders)
-        {
-            if (builders == null || builders.Count == 0)
-            {
-                return Empty;
-            }
-
-            return Create(
-                builders,
-                (affixesByFlag, affixesByIndexedByKey, affixesWithDots, affixesWithEmptyKeys, contClasses) =>
-                    new SuffixCollection(affixesByFlag, affixesByIndexedByKey, affixesWithDots, affixesWithEmptyKeys, contClasses));
-        }
-
-        private SuffixCollection(
-            Dictionary<FlagValue, AffixEntryGroup<SuffixEntry>> affixesByFlag,
-            Dictionary<char, AffixEntryGroupCollection<SuffixEntry>> affixesByIndexedByKey,
-            AffixEntryGroupCollection<SuffixEntry> affixesWithDots,
-            AffixEntryGroupCollection<SuffixEntry> affixesWithEmptyKeys,
-            FlagSet contClasses)
-            : base(affixesByFlag, affixesByIndexedByKey, affixesWithDots, affixesWithEmptyKeys, contClasses) { }
-
-        internal List<Affix<SuffixEntry>> GetMatchingAffixes(string word, FlagSet groupFlagFilter = null)
-        {
-            if (string.IsNullOrEmpty(word))
-            {
-                return new List<Affix<SuffixEntry>>(0);
-            }
-
-            var results = new List<Affix<SuffixEntry>>();
-
-            if (AffixesByIndexedByKey.TryGetValue(word[word.Length - 1], out AffixEntryGroupCollection<SuffixEntry> indexedGroups))
-            {
-                foreach (var group in indexedGroups)
-                {
-                    if (groupFlagFilter == null || groupFlagFilter.Contains(group.AFlag))
-                    {
-                        foreach (var entry in group.Entries)
-                        {
-                            if (HunspellTextFunctions.IsReverseSubset(entry.Key, word))
-                            {
-                                results.Add(Affix<SuffixEntry>.Create(entry, group));
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (AffixesWithDots.HasItems)
-            {
-                results.AddRange(GetMatchingWithDotAffixes(word, HunspellTextFunctions.IsReverseSubset));
-            }
-
-            return results;
-        }
+        AffixesByFlag = affixesByFlag;
+        AffixesByIndexedByKey = affixesByIndexedByKey;
+        AffixesWithDots = affixesWithDots;
+        AffixesWithEmptyKeys = affixesWithEmptyKeys;
+        ContClasses = contClasses;
+        HasAffixes = affixesByFlag.Count != 0;
     }
 
-    public sealed class PrefixCollection : AffixCollection<PrefixEntry>
+    protected Dictionary<FlagValue, AffixEntryGroup<TEntry>> AffixesByFlag { get; }
+
+    protected Dictionary<char, AffixEntryGroupCollection<TEntry>> AffixesByIndexedByKey { get; }
+
+    public AffixEntryGroupCollection<TEntry> AffixesWithDots { get; }
+
+    public AffixEntryGroupCollection<TEntry> AffixesWithEmptyKeys { get; }
+
+    public FlagSet ContClasses { get; }
+
+    public bool HasAffixes { get; }
+
+    public IEnumerable<FlagValue> FlagValues => AffixesByFlag.Keys;
+
+    public AffixEntryGroup<TEntry> GetByFlag(FlagValue flag)
     {
-        public static readonly PrefixCollection Empty = new PrefixCollection(
-            new Dictionary<FlagValue, AffixEntryGroup<PrefixEntry>>(0),
-            new Dictionary<char, AffixEntryGroupCollection<PrefixEntry>>(0),
-            AffixEntryGroupCollection<PrefixEntry>.Empty,
-            AffixEntryGroupCollection<PrefixEntry>.Empty,
-            FlagSet.Empty);
+        AffixesByFlag.TryGetValue(flag, out AffixEntryGroup<TEntry> result);
+        return result;
+    }
 
-        public static PrefixCollection Create(List<AffixEntryGroup<PrefixEntry>.Builder> builders)
+    public IEnumerator<AffixEntryGroup<TEntry>> GetEnumerator() => AffixesByFlag.Values.GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => AffixesByFlag.Values.GetEnumerator();
+
+    internal List<AffixEntryGroup<TEntry>> GetByFlags(FlagSet flags)
+    {
+#if DEBUG
+        if (flags is null) throw new ArgumentNullException(nameof(flags));
+#endif
+
+        var results = new List<AffixEntryGroup<TEntry>>(flags.Count);
+        foreach(var flag in flags)
         {
-            if (builders == null || builders.Count == 0)
+            if (AffixesByFlag.TryGetValue(flag, out AffixEntryGroup<TEntry> result))
             {
-                return Empty;
+                results.Add(result);
             }
-
-            return Create(
-                builders,
-                (affixesByFlag, affixesByIndexedByKey, affixesWithDots, affixesWithEmptyKeys, contClasses) =>
-                    new PrefixCollection(affixesByFlag, affixesByIndexedByKey, affixesWithDots, affixesWithEmptyKeys, contClasses));
         }
 
-        private PrefixCollection(
-            Dictionary<FlagValue, AffixEntryGroup<PrefixEntry>> affixesByFlag,
-            Dictionary<char, AffixEntryGroupCollection<PrefixEntry>> affixesByIndexedByKey,
-            AffixEntryGroupCollection<PrefixEntry> affixesWithDots,
-            AffixEntryGroupCollection<PrefixEntry> affixesWithEmptyKeys,
-            FlagSet contClasses)
-            : base(affixesByFlag, affixesByIndexedByKey, affixesWithDots, affixesWithEmptyKeys, contClasses) { }
+        return results;
+    }
 
-        internal List<Affix<PrefixEntry>> GetMatchingAffixes(string word)
+    internal List<AffixEntryGroup<TEntry>> GetAffixesWithEmptyKeysAndFlag(FlagSet flags)
+    {
+#if DEBUG
+        if (flags is null) throw new ArgumentNullException(nameof(flags));
+#endif
+
+        var results = new List<AffixEntryGroup<TEntry>>(flags.Count);
+        foreach (var group in AffixesWithEmptyKeys)
         {
-            if (string.IsNullOrEmpty(word))
+            if (flags.Contains(group.AFlag))
             {
-                return new List<Affix<PrefixEntry>>(0);
+                results.Add(group);
             }
+        }
 
-            var results = new List<Affix<PrefixEntry>>();
+        return results;
+    }
 
-            if (AffixesByIndexedByKey.TryGetValue(word[0], out AffixEntryGroupCollection<PrefixEntry> indexedGroups))
+    internal IEnumerable<Affix<TEntry>> GetMatchingWithDotAffixes(string word, Func<string, string, bool> predicate) =>
+        AffixesWithDots.SelectMany(group =>
+            group.Entries
+                .Where(entry => predicate(entry.Key, word))
+                .Select(entry => Affix<TEntry>.Create(entry, group)));
+}
+
+public sealed class SuffixCollection : AffixCollection<SuffixEntry>
+{
+    public static readonly SuffixCollection Empty = new SuffixCollection(
+        new Dictionary<FlagValue, AffixEntryGroup<SuffixEntry>>(0),
+        new Dictionary<char, AffixEntryGroupCollection<SuffixEntry>>(0),
+        AffixEntryGroupCollection<SuffixEntry>.Empty,
+        AffixEntryGroupCollection<SuffixEntry>.Empty,
+        FlagSet.Empty);
+
+    public static SuffixCollection Create(List<AffixEntryGroup<SuffixEntry>.Builder> builders)
+    {
+        if (builders is null || builders.Count == 0)
+        {
+            return Empty;
+        }
+
+        return Create(
+            builders,
+            (affixesByFlag, affixesByIndexedByKey, affixesWithDots, affixesWithEmptyKeys, contClasses) =>
+                new SuffixCollection(affixesByFlag, affixesByIndexedByKey, affixesWithDots, affixesWithEmptyKeys, contClasses));
+    }
+
+    private SuffixCollection(
+        Dictionary<FlagValue, AffixEntryGroup<SuffixEntry>> affixesByFlag,
+        Dictionary<char, AffixEntryGroupCollection<SuffixEntry>> affixesByIndexedByKey,
+        AffixEntryGroupCollection<SuffixEntry> affixesWithDots,
+        AffixEntryGroupCollection<SuffixEntry> affixesWithEmptyKeys,
+        FlagSet contClasses)
+        : base(affixesByFlag, affixesByIndexedByKey, affixesWithDots, affixesWithEmptyKeys, contClasses) { }
+
+    internal List<Affix<SuffixEntry>> GetMatchingAffixes(string word, FlagSet groupFlagFilter = null)
+    {
+        if (string.IsNullOrEmpty(word))
+        {
+            return new List<Affix<SuffixEntry>>(0);
+        }
+
+        var results = new List<Affix<SuffixEntry>>();
+
+        if (AffixesByIndexedByKey.TryGetValue(word[word.Length - 1], out AffixEntryGroupCollection<SuffixEntry> indexedGroups))
+        {
+            foreach (var group in indexedGroups)
             {
-                foreach (var group in indexedGroups)
+                if (groupFlagFilter == null || groupFlagFilter.Contains(group.AFlag))
                 {
                     foreach (var entry in group.Entries)
                     {
-                        if (HunspellTextFunctions.IsSubset(entry.Key, word))
+                        if (HunspellTextFunctions.IsReverseSubset(entry.Key, word))
                         {
-                            results.Add(Affix<PrefixEntry>.Create(entry, group));
+                            results.Add(Affix<SuffixEntry>.Create(entry, group));
                         }
                     }
                 }
             }
-
-            if (AffixesWithDots.HasItems)
-            {
-                results.AddRange(GetMatchingWithDotAffixes(word, HunspellTextFunctions.IsSubset));
-            }
-
-            return results;
         }
+
+        if (AffixesWithDots.HasItems)
+        {
+            results.AddRange(GetMatchingWithDotAffixes(word, HunspellTextFunctions.IsReverseSubset));
+        }
+
+        return results;
+    }
+}
+
+public sealed class PrefixCollection : AffixCollection<PrefixEntry>
+{
+    public static readonly PrefixCollection Empty = new PrefixCollection(
+        new Dictionary<FlagValue, AffixEntryGroup<PrefixEntry>>(0),
+        new Dictionary<char, AffixEntryGroupCollection<PrefixEntry>>(0),
+        AffixEntryGroupCollection<PrefixEntry>.Empty,
+        AffixEntryGroupCollection<PrefixEntry>.Empty,
+        FlagSet.Empty);
+
+    public static PrefixCollection Create(List<AffixEntryGroup<PrefixEntry>.Builder> builders)
+    {
+        if (builders is null || builders.Count == 0)
+        {
+            return Empty;
+        }
+
+        return Create(
+            builders,
+            (affixesByFlag, affixesByIndexedByKey, affixesWithDots, affixesWithEmptyKeys, contClasses) =>
+                new PrefixCollection(affixesByFlag, affixesByIndexedByKey, affixesWithDots, affixesWithEmptyKeys, contClasses));
+    }
+
+    private PrefixCollection(
+        Dictionary<FlagValue, AffixEntryGroup<PrefixEntry>> affixesByFlag,
+        Dictionary<char, AffixEntryGroupCollection<PrefixEntry>> affixesByIndexedByKey,
+        AffixEntryGroupCollection<PrefixEntry> affixesWithDots,
+        AffixEntryGroupCollection<PrefixEntry> affixesWithEmptyKeys,
+        FlagSet contClasses)
+        : base(affixesByFlag, affixesByIndexedByKey, affixesWithDots, affixesWithEmptyKeys, contClasses) { }
+
+    internal List<Affix<PrefixEntry>> GetMatchingAffixes(string word)
+    {
+        if (string.IsNullOrEmpty(word))
+        {
+            return new List<Affix<PrefixEntry>>(0);
+        }
+
+        var results = new List<Affix<PrefixEntry>>();
+
+        if (AffixesByIndexedByKey.TryGetValue(word[0], out AffixEntryGroupCollection<PrefixEntry> indexedGroups))
+        {
+            foreach (var group in indexedGroups)
+            {
+                foreach (var entry in group.Entries)
+                {
+                    if (HunspellTextFunctions.IsSubset(entry.Key, word))
+                    {
+                        results.Add(Affix<PrefixEntry>.Create(entry, group));
+                    }
+                }
+            }
+        }
+
+        if (AffixesWithDots.HasItems)
+        {
+            results.AddRange(GetMatchingWithDotAffixes(word, HunspellTextFunctions.IsSubset));
+        }
+
+        return results;
     }
 }

@@ -3,63 +3,56 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WeCantSpell.Hunspell
+namespace WeCantSpell.Hunspell;
+
+/// <summary>
+/// Defines operations to read affix or dictionary lines from a stream sequentially.
+/// </summary>
+public interface IHunspellLineReader
 {
     /// <summary>
-    /// Defines operations to read affix or dictionary lines from a stream sequentially.
+    /// Reads the next line from a stream.
     /// </summary>
-    public interface IHunspellLineReader
+    /// <returns>A task that represents the asynchronous read operation. The reult value will contain the contents of the next line as a string or the value <c>null</c> indicating there are no more lines to be read.</returns>
+    Task<string> ReadLineAsync();
+
+    /// <summary>
+    /// Reads the next line from a stream.
+    /// </summary>
+    /// <returns></returns>
+    string ReadLine();
+
+    /// <summary>
+    /// Gets the current encoding that the reader is using to decode text.
+    /// </summary>
+    Encoding CurrentEncoding { get; }
+}
+
+public static class HunspellLineReaderExtensions
+{
+    public static async Task<IEnumerable<string>> ReadLinesAsync(this IHunspellLineReader reader)
     {
-        /// <summary>
-        /// Reads the next line from a stream.
-        /// </summary>
-        /// <returns>A task that represents the asynchronous read operation. The reult value will contain the contents of the next line as a string or the value <c>null</c> indicating there are no more lines to be read.</returns>
-        Task<string> ReadLineAsync();
+        if (reader is null) throw new ArgumentNullException(nameof(reader));
 
-        /// <summary>
-        /// Reads the next line from a stream.
-        /// </summary>
-        /// <returns></returns>
-        string ReadLine();
+        var lines = new List<string>();
 
-        /// <summary>
-        /// Gets the current encoding that the reader is using to decode text.
-        /// </summary>
-        Encoding CurrentEncoding { get; }
-    }
-
-    public static class HunspellLineReaderExtensions
-    {
-        public static async Task<IEnumerable<string>> ReadLinesAsync(this IHunspellLineReader reader)
+        string line;
+        while ((line = await reader.ReadLineAsync().ConfigureAwait(false)) is not null)
         {
-            if (reader == null)
-            {
-                throw new ArgumentNullException(nameof(reader));
-            }
-
-            var lines = new List<string>();
-
-            string line;
-            while ((line = await reader.ReadLineAsync().ConfigureAwait(false)) != null)
-            {
-                lines.Add(line);
-            }
-
-            return lines;
+            lines.Add(line);
         }
 
-        public static IEnumerable<string> ReadLines(this IHunspellLineReader reader)
-        {
-            if (reader == null)
-            {
-                throw new ArgumentNullException(nameof(reader));
-            }
+        return lines;
+    }
 
-            string line;
-            while ((line = reader.ReadLine()) != null)
-            {
-                yield return line;
-            }
+    public static IEnumerable<string> ReadLines(this IHunspellLineReader reader)
+    {
+        if (reader is null) throw new ArgumentNullException(nameof(reader));
+
+        string line;
+        while ((line = reader.ReadLine()) is not null)
+        {
+            yield return line;
         }
     }
 }
