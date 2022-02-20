@@ -2,8 +2,8 @@
 using System.Runtime.CompilerServices;
 #endif
 
-namespace WeCantSpell.Hunspell.Infrastructure
-{
+namespace WeCantSpell.Hunspell.Infrastructure;
+
 static class EnumEx
 {
 #if !NO_INLINE
@@ -25,5 +25,4 @@ static class EnumEx
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
     public static bool HasFlag(this SpellCheckResultType value, SpellCheckResultType flag) => (value & flag) == flag;
-}
 }

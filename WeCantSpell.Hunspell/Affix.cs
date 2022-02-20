@@ -6,8 +6,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell;
 
-sealed class Affix<TEntry>
-    where TEntry : AffixEntry
+sealed class Affix<TEntry> where TEntry : AffixEntry
 {
 #if !NO_INLINE
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

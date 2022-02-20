@@ -13,7 +13,6 @@ public sealed class StringValueLineReader : IHunspellLineReader
     }
 
     private readonly string _content;
-
     private int _position = 0;
 
     public Encoding CurrentEncoding => Encoding.Unicode;

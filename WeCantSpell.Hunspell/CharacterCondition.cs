@@ -27,7 +27,7 @@ public struct CharacterCondition :
         new CharacterCondition(character, restricted);
 
     public static CharacterCondition Create(IEnumerable<char> characters, bool restricted) =>
-        TakeArray(characters == null ? ArrayEx<char>.Empty : characters.ToArray(), restricted);
+        TakeArray(characters is null ? ArrayEx<char>.Empty : characters.ToArray(), restricted);
 
     public static CharacterConditionGroup Parse(string text)
     {
@@ -102,12 +102,11 @@ public struct CharacterCondition :
     /// </summary>
     public bool Restricted { get; }
 
-    public bool IsMatch(char c) =>
-        (Characters != null && Characters.Contains(c)) ^ Restricted;
+    public bool IsMatch(char c) => (Characters != null && Characters.Contains(c)) ^ Restricted;
 
-    public bool AllowsAny => Restricted && (Characters == null || Characters.Count == 0);
+    public bool AllowsAny => Restricted && (Characters is null || Characters.Count == 0);
 
-    public bool PermitsSingleCharacter => !Restricted && Characters != null && Characters.Count == 1;
+    public bool PermitsSingleCharacter => !Restricted && Characters is not null && Characters.Count == 1;
 
     public string GetEncoded()
     {
@@ -133,8 +132,7 @@ public struct CharacterCondition :
     public bool Equals(CharacterCondition other) =>
         Restricted == other.Restricted && CharacterSet.DefaultComparer.Equals(Characters, other.Characters);
 
-    public override bool Equals(object obj) =>
-        obj is CharacterCondition cc && Equals(cc);
+    public override bool Equals(object obj) => obj is CharacterCondition cc && Equals(cc);
 
     public override int GetHashCode() =>
         unchecked((Restricted.GetHashCode() * 149) ^ CharacterSet.DefaultComparer.GetHashCode(Characters));

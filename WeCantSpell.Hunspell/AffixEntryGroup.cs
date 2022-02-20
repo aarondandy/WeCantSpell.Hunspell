@@ -12,8 +12,7 @@ namespace WeCantSpell.Hunspell;
 /// Contains a set of <see cref="AffixEntry"/> instances based on the same <see cref="AFlag"/>.
 /// </summary>
 /// <typeparam name="TEntry">The specific entry type.</typeparam>
-public sealed class AffixEntryGroup<TEntry>
-    where TEntry : AffixEntry
+public sealed class AffixEntryGroup<TEntry> where TEntry : AffixEntry
 {
     public sealed class Builder
     {

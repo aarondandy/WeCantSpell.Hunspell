@@ -13,8 +13,7 @@ public sealed class MapTable : ArrayWrapper<MapEntry>
 
     internal static MapTable TakeArray(MapEntry[] entries) => entries is null ? Empty : new MapTable(entries);
 
-    private MapTable(MapEntry[] entries)
-        : base(entries)
+    private MapTable(MapEntry[] entries) : base(entries)
     {
     }
 }

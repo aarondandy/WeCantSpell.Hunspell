@@ -30,23 +30,22 @@ public sealed class CharacterSet : ArrayWrapper<char>
         return new CharacterSet(values);
     }
 
-    private CharacterSet(char[] values)
-        : base(values)
+    private CharacterSet(char[] values) : base(values)
     {
-        mask = default;
+        _mask = default;
         for (var i = 0; i < values.Length; i++)
         {
             unchecked
             {
-                mask |= values[i];
+                _mask |= values[i];
             }
         }
     }
 
-    private readonly char mask;
+    private readonly char _mask;
 
     public bool Contains(char value) =>
-        unchecked((value & mask) != default)
+        unchecked((value & _mask) != default)
         &&
         Array.BinarySearch(Items, value) >= 0;
 

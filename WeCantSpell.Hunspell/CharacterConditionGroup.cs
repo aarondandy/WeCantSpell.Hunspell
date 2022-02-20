@@ -14,10 +14,9 @@ public sealed class CharacterConditionGroup : ArrayWrapper<CharacterCondition>
 
     public static CharacterConditionGroup Create(CharacterCondition condition) => TakeArray(new[] { condition });
 
-    internal static CharacterConditionGroup TakeArray(CharacterCondition[] conditions) => conditions == null ? Empty : new CharacterConditionGroup(conditions);
+    internal static CharacterConditionGroup TakeArray(CharacterCondition[] conditions) => conditions is null ? Empty : new CharacterConditionGroup(conditions);
 
-    private CharacterConditionGroup(CharacterCondition[] conditions)
-        : base(conditions)
+    private CharacterConditionGroup(CharacterCondition[] conditions) : base(conditions)
     {
     }
 

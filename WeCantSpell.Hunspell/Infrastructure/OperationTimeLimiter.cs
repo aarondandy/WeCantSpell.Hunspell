@@ -22,18 +22,16 @@ class OperationTimeLimiter
         if (queriesToTriggerCheck < 0) throw new ArgumentOutOfRangeException(nameof(queriesToTriggerCheck));
 #endif
 
-        OperationStartTime = operationStartTime;
-        QueriesToTriggerCheck = queriesToTriggerCheck;
-        TimeLimitInMs = timeLimitInMs;
+        _operationStartTime = operationStartTime;
+        _queriesToTriggerCheck = queriesToTriggerCheck;
+        _timeLimitInMs = timeLimitInMs;
         QueryCounter = queriesToTriggerCheck;
         HasExpired = false;
     }
 
-    private long OperationStartTime;
-
-    private int QueriesToTriggerCheck;
-
-    private int TimeLimitInMs;
+    private long _operationStartTime;
+    private readonly int _queriesToTriggerCheck;
+    private readonly int _timeLimitInMs;
 
     public int QueryCounter { get; private set; }
 
@@ -58,19 +56,19 @@ class OperationTimeLimiter
 
     public void Reset()
     {
-        OperationStartTime = Environment.TickCount;
-        QueryCounter = QueriesToTriggerCheck;
+        _operationStartTime = Environment.TickCount;
+        QueryCounter = _queriesToTriggerCheck;
         HasExpired = false;
     }
 
     private void HandleQueryCounterTrigger()
     {
-        var currentTicks = Environment.TickCount - OperationStartTime;
-        if (currentTicks > TimeLimitInMs)
+        var currentTicks = Environment.TickCount - _operationStartTime;
+        if (currentTicks > _timeLimitInMs)
         {
             HasExpired = true;
         }
 
-        QueryCounter = QueriesToTriggerCheck;
+        QueryCounter = _queriesToTriggerCheck;
     }
 }

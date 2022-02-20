@@ -16,17 +16,17 @@ public class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacemen
     public static readonly MultiReplacementTable Empty = TakeDictionary(new Dictionary<string, MultiReplacementEntry>(0));
 
     public static MultiReplacementTable Create(IEnumerable<KeyValuePair<string, MultiReplacementEntry>> replacements) =>
-        replacements == null ? Empty : TakeDictionary(replacements.ToDictionary(s => s.Key, s => s.Value));
+        replacements is null ? Empty : TakeDictionary(replacements.ToDictionary(s => s.Key, s => s.Value));
 
     internal static MultiReplacementTable TakeDictionary(Dictionary<string, MultiReplacementEntry> replacements) =>
-        replacements == null ? Empty : new MultiReplacementTable(replacements);
+        replacements is null ? Empty : new MultiReplacementTable(replacements);
 
     private MultiReplacementTable(Dictionary<string, MultiReplacementEntry> replacements)
     {
         _replacements = replacements;
     }
 
-    private Dictionary<string, MultiReplacementEntry> _replacements;
+    private readonly Dictionary<string, MultiReplacementEntry> _replacements;
 
     public MultiReplacementEntry this[string key] => _replacements[key];
 

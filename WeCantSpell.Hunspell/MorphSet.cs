@@ -44,6 +44,5 @@ public sealed class MorphSet : ArrayWrapper<string>, IEquatable<MorphSet>
 
     public override bool Equals(object obj) => Equals(obj as MorphSet);
 
-    public override int GetHashCode() =>
-        ArrayComparer<string>.Default.GetHashCode(Items);
+    public override int GetHashCode() => ArrayComparer<string>.Default.GetHashCode(Items);
 }

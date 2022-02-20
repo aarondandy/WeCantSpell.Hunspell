@@ -16,8 +16,7 @@ public sealed class FlagSet : ArrayWrapper<FlagValue>, IEquatable<FlagSet>
 
     public static readonly ArrayWrapperComparer<FlagValue, FlagSet> DefaultComparer = new ArrayWrapperComparer<FlagValue, FlagSet>();
 
-    public static FlagSet Create(IEnumerable<FlagValue> given) =>
-        given == null ? Empty : TakeArray(given.Distinct().ToArray());
+    public static FlagSet Create(IEnumerable<FlagValue> given) => given is null ? Empty : TakeArray(given.Distinct().ToArray());
 
     public static FlagSet Union(FlagSet a, FlagSet b) => Create(Enumerable.Concat(a, b));
 

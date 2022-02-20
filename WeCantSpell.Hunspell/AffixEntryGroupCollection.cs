@@ -5,8 +5,7 @@ using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
-public sealed class AffixEntryGroupCollection<TEntry> : ArrayWrapper<AffixEntryGroup<TEntry>>
-    where TEntry : AffixEntry
+public sealed class AffixEntryGroupCollection<TEntry> : ArrayWrapper<AffixEntryGroup<TEntry>> where TEntry : AffixEntry
 {
     public static readonly AffixEntryGroupCollection<TEntry> Empty = TakeArray(ArrayEx<AffixEntryGroup<TEntry>>.Empty);
 
@@ -14,9 +13,7 @@ public sealed class AffixEntryGroupCollection<TEntry> : ArrayWrapper<AffixEntryG
     {
     }
 
-    internal static AffixEntryGroupCollection<TEntry> TakeArray(AffixEntryGroup<TEntry>[] entries) =>
-        entries is null ? Empty : new AffixEntryGroupCollection<TEntry>(entries);
+    internal static AffixEntryGroupCollection<TEntry> TakeArray(AffixEntryGroup<TEntry>[] entries) => entries is null ? Empty : new AffixEntryGroupCollection<TEntry>(entries);
 
-    public static AffixEntryGroupCollection<TEntry> Create(IEnumerable<AffixEntryGroup<TEntry>> entries) =>
-        entries is null ? Empty : TakeArray(entries.ToArray());
+    public static AffixEntryGroupCollection<TEntry> Create(IEnumerable<AffixEntryGroup<TEntry>> entries) => entries is null ? Empty : TakeArray(entries.ToArray());
 }

@@ -9,13 +9,11 @@ public partial class WordList
 {
     public sealed class Builder
     {
-        public Builder()
-            : this(null, null, null)
+        public Builder() : this(null, null, null)
         {
         }
 
-        public Builder(AffixConfig affix)
-            : this(affix, null, null)
+        public Builder(AffixConfig affix) : this(affix, null, null)
         {
         }
 
