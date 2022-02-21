@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -439,8 +440,8 @@ public partial class AffixConfig
 
             if (destructive)
             {
-                config.InputConversions = MultiReplacementTable.TakeDictionary(ReferenceHelpers.Steal(ref InputConversions));
-                config.OutputConversions = MultiReplacementTable.TakeDictionary(ReferenceHelpers.Steal(ref OutputConversions));
+                config.InputConversions = MultiReplacementTable.TakeDictionary(Interlocked.Exchange(ref InputConversions, null));
+                config.OutputConversions = MultiReplacementTable.TakeDictionary(Interlocked.Exchange(ref OutputConversions, null));
 
                 config.aliasF = AliasF ?? new List<FlagSet>();
                 AliasF = null;

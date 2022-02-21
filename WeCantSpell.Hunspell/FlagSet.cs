@@ -20,36 +20,6 @@ public sealed class FlagSet : ArrayWrapper<FlagValue>, IEquatable<FlagSet>
 
     public static FlagSet Union(FlagSet a, FlagSet b) => Create(Enumerable.Concat(a, b));
 
-    public static bool ContainsAny(FlagSet a, FlagSet b)
-    {
-        if (a is not null && !a.IsEmpty && b is not null && !b.IsEmpty)
-        {
-            if (a.Count == 1)
-            {
-                return b.Contains(a[0]);
-            }
-            if (b.Count == 1)
-            {
-                return a.Contains(b[0]);
-            }
-
-            if (a.Count > b.Count)
-            {
-                ReferenceHelpers.Swap(ref a, ref b);
-            }
-
-            foreach (var item in a)
-            {
-                if (b.Contains(item))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
     internal static FlagSet TakeArray(FlagValue[] values)
     {
         if (values is null || values.Length == 0)
@@ -103,25 +73,77 @@ public sealed class FlagSet : ArrayWrapper<FlagValue>, IEquatable<FlagSet>
 
     public bool Contains(FlagValue value)
     {
-        if (!value.HasValue || IsEmpty)
+        if (value.HasValue && HasItems)
         {
-            return false;
-        }
-        if (Items.Length == 1)
-        {
-            return value.Equals(Items[0]);
+            if (Items.Length == 1)
+            {
+                return value.Equals(Items[0]);
+            }
+
+            if (unchecked(value & _mask) != default)
+            {
+                return search();
+                bool search()
+                {
+                    if (Items.Length <= 8)
+                    {
+                        return Array.IndexOf(Items, value) >= 0;
+                    }
+
+                    return value >= Items[0]
+                        && value <= Items[Items.Length - 1]
+                        && Array.BinarySearch(Items, value) >= 0;
+                }
+            }
         }
 
-        return (unchecked(value & _mask) != default)
-            && value >= Items[0]
-            && value <= Items[Items.Length - 1]
-            && Array.BinarySearch(Items, value) >= 0;
+        return false;
     }
 
 #if !NO_INLINE
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-    public bool ContainsAny(FlagSet values) => ContainsAny(this, values);
+    public bool ContainsAny(FlagSet values)
+    {
+        if (values is null) throw new ArgumentNullException(nameof(values));
+
+        if (IsEmpty || values.IsEmpty)
+        {
+            return false;
+        }
+
+        if (Count == 1)
+        {
+            return values.Contains(Items[0]);
+        }
+
+        if (values.Count == 1)
+        {
+            return Contains(values[0]);
+        }
+
+        if ((_mask & values._mask) == default)
+        {
+            return false;
+        }
+
+        return Count <= values.Count
+            ? checkIterative(this, values)
+            : checkIterative(values, this);
+
+        static bool checkIterative(FlagSet a, FlagSet b)
+        {
+            foreach (var value in a)
+            {
+                if (b.Contains(value))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
 
     public bool ContainsAny(FlagValue a, FlagValue b) =>
         HasItems && (Contains(a) || Contains(b));
