@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 3.1.0 - 2022-02-21
+### Added
+- Adds a target for net461
+- Applies new changes and fixes to match origin
+
+### Changed
+- Project and build has been modernized for newer .NET versions.
+
 ## 3.0.1 - 2018-09-05
 ### Added
 - Adds a target for netstandard2.0

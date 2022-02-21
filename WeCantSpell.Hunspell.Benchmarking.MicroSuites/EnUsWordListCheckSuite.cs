@@ -7,6 +7,8 @@ using WeCantSpell.Hunspell.Benchmarking.MicroSuites.Infrastructure;
 namespace WeCantSpell.Hunspell.Benchmarking.MicroSuites;
 
 [SimpleJob]
+[MinWarmupCount(1), MaxWarmupCount(5)]
+[MinIterationCount(1), MaxIterationCount(20), MinInvokeCount(1), IterationTime(250)]
 public class EnUsWordListCheckSuite
 {
     private WordList _wordList;

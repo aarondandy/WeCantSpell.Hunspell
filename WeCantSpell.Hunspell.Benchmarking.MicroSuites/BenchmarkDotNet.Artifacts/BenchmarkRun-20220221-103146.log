@@ -1,0 +1,713 @@
+// Validating benchmarks:
+// ***** BenchmarkRunner: Start   *****
+// ***** Found 8 benchmark(s) in total *****
+// ***** Building 1 exe(s) in Parallel: Start   *****
+// start dotnet restore  /p:UseSharedCompilation=false /p:BuildInParallel=false /m:1 /p:Deterministic=true /p:Optimize=true in D:\repos\WeCantSpell.Hunspell\WeCantSpell.Hunspell.Benchmarking.MicroSuites\bin\Release\net6.0\1bae1158-f61d-4537-a4b8-f2b3f809a00d
+// command took 0.96s and exited with 0
+// start dotnet build -c Release  --no-restore /p:UseSharedCompilation=false /p:BuildInParallel=false /m:1 /p:Deterministic=true /p:Optimize=true in D:\repos\WeCantSpell.Hunspell\WeCantSpell.Hunspell.Benchmarking.MicroSuites\bin\Release\net6.0\1bae1158-f61d-4537-a4b8-f2b3f809a00d
+// command took 2.18s and exited with 0
+// ***** Done, took 00:00:03 (3.21 sec)   *****
+// Found 4 benchmarks:
+//   EnUsWordListCheckSuite.'Check an assortment of words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+//   EnUsWordListCheckSuite.'Check root words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+//   EnUsWordListCheckSuite.'Check correct words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+//   EnUsWordListCheckSuite.'Check wrong words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+
+// **************************
+// Benchmark: EnUsWordListCheckSuite.'Check an assortment of words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet "1bae1158-f61d-4537-a4b8-f2b3f809a00d.dll" --benchmarkName "WeCantSpell.Hunspell.Benchmarking.MicroSuites.EnUsWordListCheckSuite.CheckAllWords" --job "MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1" --benchmarkId 0 in D:\repos\WeCantSpell.Hunspell\WeCantSpell.Hunspell.Benchmarking.MicroSuites\bin\Release\net6.0\1bae1158-f61d-4537-a4b8-f2b3f809a00d\bin\Release\net6.0
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// Runtime=.NET 6.0.2 (6.0.222.6406), X64 RyuJIT
+// GC=Concurrent Workstation
+// Job: Job-WWPKRO(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+
+OverheadJitting  1: 1 op, 147900.00 ns, 147.9000 us/op
+WorkloadJitting  1: 1 op, 10799300.00 ns, 10.7993 ms/op
+
+OverheadJitting  2: 16 op, 158600.00 ns, 9.9125 us/op
+WorkloadJitting  2: 16 op, 158653400.00 ns, 9.9158 ms/op
+
+WorkloadPilot    1: 16 op, 144814900.00 ns, 9.0509 ms/op
+WorkloadPilot    2: 32 op, 229984800.00 ns, 7.1870 ms/op
+WorkloadPilot    3: 48 op, 344961900.00 ns, 7.1867 ms/op
+
+OverheadWarmup   1: 48 op, 1300.00 ns, 27.0833 ns/op
+OverheadWarmup   2: 48 op, 600.00 ns, 12.5000 ns/op
+OverheadWarmup   3: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadWarmup   4: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadWarmup   5: 48 op, 500.00 ns, 10.4167 ns/op
+OverheadWarmup   6: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadWarmup   7: 48 op, 400.00 ns, 8.3333 ns/op
+
+OverheadActual   1: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadActual   2: 48 op, 700.00 ns, 14.5833 ns/op
+OverheadActual   3: 48 op, 500.00 ns, 10.4167 ns/op
+OverheadActual   4: 48 op, 700.00 ns, 14.5833 ns/op
+OverheadActual   5: 48 op, 600.00 ns, 12.5000 ns/op
+OverheadActual   6: 48 op, 500.00 ns, 10.4167 ns/op
+OverheadActual   7: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadActual   8: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadActual   9: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadActual  10: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadActual  11: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadActual  12: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadActual  13: 48 op, 700.00 ns, 14.5833 ns/op
+OverheadActual  14: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadActual  15: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadActual  16: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadActual  17: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadActual  18: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadActual  19: 48 op, 500.00 ns, 10.4167 ns/op
+OverheadActual  20: 48 op, 1100.00 ns, 22.9167 ns/op
+
+WorkloadWarmup   1: 48 op, 349566400.00 ns, 7.2826 ms/op
+WorkloadWarmup   2: 48 op, 344882100.00 ns, 7.1850 ms/op
+WorkloadWarmup   3: 48 op, 347064000.00 ns, 7.2305 ms/op
+WorkloadWarmup   4: 48 op, 344061300.00 ns, 7.1679 ms/op
+WorkloadWarmup   5: 48 op, 342468200.00 ns, 7.1348 ms/op
+
+// BeforeActualRun
+WorkloadActual   1: 48 op, 344013700.00 ns, 7.1670 ms/op
+WorkloadActual   2: 48 op, 343165000.00 ns, 7.1493 ms/op
+WorkloadActual   3: 48 op, 340528900.00 ns, 7.0944 ms/op
+WorkloadActual   4: 48 op, 341536100.00 ns, 7.1153 ms/op
+WorkloadActual   5: 48 op, 341508600.00 ns, 7.1148 ms/op
+
+// AfterActualRun
+WorkloadResult   1: 48 op, 344013300.00 ns, 7.1669 ms/op
+WorkloadResult   2: 48 op, 343164600.00 ns, 7.1493 ms/op
+WorkloadResult   3: 48 op, 340528500.00 ns, 7.0943 ms/op
+WorkloadResult   4: 48 op, 341535700.00 ns, 7.1153 ms/op
+WorkloadResult   5: 48 op, 341508200.00 ns, 7.1148 ms/op
+
+// AfterAll
+// Benchmark Process 34112 has exited with code 0.
+
+Mean = 7.128 ms, StdErr = 0.013 ms (0.18%), N = 5, StdDev = 0.029 ms
+Min = 7.094 ms, Q1 = 7.115 ms, Median = 7.115 ms, Q3 = 7.149 ms, Max = 7.167 ms
+IQR = 0.035 ms, LowerFence = 7.063 ms, UpperFence = 7.201 ms
+ConfidenceInterval = [7.015 ms; 7.241 ms] (CI 99.9%), Margin = 0.113 ms (1.58% of Mean)
+Skewness = 0.2, Kurtosis = 1.04, MValue = 2
+
+// **************************
+// Benchmark: EnUsWordListCheckSuite.'Check root words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet "1bae1158-f61d-4537-a4b8-f2b3f809a00d.dll" --benchmarkName "WeCantSpell.Hunspell.Benchmarking.MicroSuites.EnUsWordListCheckSuite.CheckRootWords" --job "MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1" --benchmarkId 1 in D:\repos\WeCantSpell.Hunspell\WeCantSpell.Hunspell.Benchmarking.MicroSuites\bin\Release\net6.0\1bae1158-f61d-4537-a4b8-f2b3f809a00d\bin\Release\net6.0
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// Runtime=.NET 6.0.2 (6.0.222.6406), X64 RyuJIT
+// GC=Concurrent Workstation
+// Job: Job-LDRXHD(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+
+OverheadJitting  1: 1 op, 167500.00 ns, 167.5000 us/op
+WorkloadJitting  1: 1 op, 1086000.00 ns, 1.0860 ms/op
+
+OverheadJitting  2: 16 op, 180100.00 ns, 11.2562 us/op
+WorkloadJitting  2: 16 op, 5931200.00 ns, 370.7000 us/op
+
+WorkloadPilot    1: 16 op, 5704700.00 ns, 356.5437 us/op
+WorkloadPilot    2: 704 op, 216992400.00 ns, 308.2278 us/op
+WorkloadPilot    3: 816 op, 216541800.00 ns, 265.3699 us/op
+WorkloadPilot    4: 944 op, 230917000.00 ns, 244.6155 us/op
+WorkloadPilot    5: 1024 op, 252588400.00 ns, 246.6684 us/op
+
+OverheadWarmup   1: 1024 op, 3700.00 ns, 3.6133 ns/op
+OverheadWarmup   2: 1024 op, 2200.00 ns, 2.1484 ns/op
+OverheadWarmup   3: 1024 op, 2100.00 ns, 2.0508 ns/op
+OverheadWarmup   4: 1024 op, 2100.00 ns, 2.0508 ns/op
+OverheadWarmup   5: 1024 op, 2100.00 ns, 2.0508 ns/op
+OverheadWarmup   6: 1024 op, 2100.00 ns, 2.0508 ns/op
+OverheadWarmup   7: 1024 op, 2100.00 ns, 2.0508 ns/op
+
+OverheadActual   1: 1024 op, 2100.00 ns, 2.0508 ns/op
+OverheadActual   2: 1024 op, 2000.00 ns, 1.9531 ns/op
+OverheadActual   3: 1024 op, 2100.00 ns, 2.0508 ns/op
+OverheadActual   4: 1024 op, 2100.00 ns, 2.0508 ns/op
+OverheadActual   5: 1024 op, 2100.00 ns, 2.0508 ns/op
+OverheadActual   6: 1024 op, 2000.00 ns, 1.9531 ns/op
+OverheadActual   7: 1024 op, 2000.00 ns, 1.9531 ns/op
+OverheadActual   8: 1024 op, 2000.00 ns, 1.9531 ns/op
+
+WorkloadWarmup   1: 1024 op, 249695700.00 ns, 243.8435 us/op
+WorkloadWarmup   2: 1024 op, 248618900.00 ns, 242.7919 us/op
+WorkloadWarmup   3: 1024 op, 256488200.00 ns, 250.4768 us/op
+WorkloadWarmup   4: 1024 op, 254964300.00 ns, 248.9886 us/op
+WorkloadWarmup   5: 1024 op, 248009900.00 ns, 242.1972 us/op
+
+// BeforeActualRun
+WorkloadActual   1: 1024 op, 247575200.00 ns, 241.7727 us/op
+WorkloadActual   2: 1024 op, 258272900.00 ns, 252.2196 us/op
+WorkloadActual   3: 1024 op, 251511200.00 ns, 245.6164 us/op
+WorkloadActual   4: 1024 op, 247678800.00 ns, 241.8738 us/op
+WorkloadActual   5: 1024 op, 250659400.00 ns, 244.7846 us/op
+WorkloadActual   6: 1024 op, 259991000.00 ns, 253.8975 us/op
+WorkloadActual   7: 1024 op, 250392500.00 ns, 244.5239 us/op
+WorkloadActual   8: 1024 op, 254022500.00 ns, 248.0688 us/op
+WorkloadActual   9: 1024 op, 252007500.00 ns, 246.1011 us/op
+WorkloadActual  10: 1024 op, 261727800.00 ns, 255.5936 us/op
+WorkloadActual  11: 1024 op, 250817300.00 ns, 244.9388 us/op
+WorkloadActual  12: 1024 op, 247929000.00 ns, 242.1182 us/op
+WorkloadActual  13: 1024 op, 246625800.00 ns, 240.8455 us/op
+WorkloadActual  14: 1024 op, 249412200.00 ns, 243.5666 us/op
+WorkloadActual  15: 1024 op, 249396000.00 ns, 243.5508 us/op
+
+// AfterActualRun
+WorkloadResult   1: 1024 op, 247573150.00 ns, 241.7707 us/op
+WorkloadResult   2: 1024 op, 258270850.00 ns, 252.2176 us/op
+WorkloadResult   3: 1024 op, 251509150.00 ns, 245.6144 us/op
+WorkloadResult   4: 1024 op, 247676750.00 ns, 241.8718 us/op
+WorkloadResult   5: 1024 op, 250657350.00 ns, 244.7826 us/op
+WorkloadResult   6: 1024 op, 250390450.00 ns, 244.5219 us/op
+WorkloadResult   7: 1024 op, 254020450.00 ns, 248.0668 us/op
+WorkloadResult   8: 1024 op, 252005450.00 ns, 246.0991 us/op
+WorkloadResult   9: 1024 op, 250815250.00 ns, 244.9368 us/op
+WorkloadResult  10: 1024 op, 247926950.00 ns, 242.1162 us/op
+WorkloadResult  11: 1024 op, 246623750.00 ns, 240.8435 us/op
+WorkloadResult  12: 1024 op, 249410150.00 ns, 243.5646 us/op
+WorkloadResult  13: 1024 op, 249393950.00 ns, 243.5488 us/op
+
+// AfterAll
+// Benchmark Process 48376 has exited with code 0.
+
+Mean = 244.612 μs, StdErr = 0.845 μs (0.35%), N = 13, StdDev = 3.047 μs
+Min = 240.844 μs, Q1 = 242.116 μs, Median = 244.522 μs, Q3 = 245.614 μs, Max = 252.218 μs
+IQR = 3.498 μs, LowerFence = 236.869 μs, UpperFence = 250.862 μs
+ConfidenceInterval = [240.963 μs; 248.260 μs] (CI 99.9%), Margin = 3.648 μs (1.49% of Mean)
+Skewness = 1.01, Kurtosis = 3.45, MValue = 2
+
+// **************************
+// Benchmark: EnUsWordListCheckSuite.'Check correct words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet "1bae1158-f61d-4537-a4b8-f2b3f809a00d.dll" --benchmarkName "WeCantSpell.Hunspell.Benchmarking.MicroSuites.EnUsWordListCheckSuite.CheckCorrectWords" --job "MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1" --benchmarkId 2 in D:\repos\WeCantSpell.Hunspell\WeCantSpell.Hunspell.Benchmarking.MicroSuites\bin\Release\net6.0\1bae1158-f61d-4537-a4b8-f2b3f809a00d\bin\Release\net6.0
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// Runtime=.NET 6.0.2 (6.0.222.6406), X64 RyuJIT
+// GC=Concurrent Workstation
+// Job: Job-PKMLZJ(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+
+OverheadJitting  1: 1 op, 152100.00 ns, 152.1000 us/op
+WorkloadJitting  1: 1 op, 1749700.00 ns, 1.7497 ms/op
+
+OverheadJitting  2: 16 op, 146700.00 ns, 9.1687 us/op
+WorkloadJitting  2: 16 op, 16988600.00 ns, 1.0618 ms/op
+
+WorkloadPilot    1: 16 op, 15655100.00 ns, 978.4438 us/op
+WorkloadPilot    2: 256 op, 216966800.00 ns, 847.5266 us/op
+WorkloadPilot    3: 304 op, 219877800.00 ns, 723.2822 us/op
+WorkloadPilot    4: 352 op, 254441600.00 ns, 722.8455 us/op
+
+OverheadWarmup   1: 352 op, 2500.00 ns, 7.1023 ns/op
+OverheadWarmup   2: 352 op, 1000.00 ns, 2.8409 ns/op
+OverheadWarmup   3: 352 op, 1100.00 ns, 3.1250 ns/op
+OverheadWarmup   4: 352 op, 1000.00 ns, 2.8409 ns/op
+OverheadWarmup   5: 352 op, 900.00 ns, 2.5568 ns/op
+OverheadWarmup   6: 352 op, 1000.00 ns, 2.8409 ns/op
+OverheadWarmup   7: 352 op, 1000.00 ns, 2.8409 ns/op
+
+OverheadActual   1: 352 op, 900.00 ns, 2.5568 ns/op
+OverheadActual   2: 352 op, 1100.00 ns, 3.1250 ns/op
+OverheadActual   3: 352 op, 1000.00 ns, 2.8409 ns/op
+OverheadActual   4: 352 op, 1100.00 ns, 3.1250 ns/op
+OverheadActual   5: 352 op, 1200.00 ns, 3.4091 ns/op
+OverheadActual   6: 352 op, 900.00 ns, 2.5568 ns/op
+OverheadActual   7: 352 op, 900.00 ns, 2.5568 ns/op
+OverheadActual   8: 352 op, 800.00 ns, 2.2727 ns/op
+OverheadActual   9: 352 op, 800.00 ns, 2.2727 ns/op
+OverheadActual  10: 352 op, 900.00 ns, 2.5568 ns/op
+OverheadActual  11: 352 op, 900.00 ns, 2.5568 ns/op
+OverheadActual  12: 352 op, 800.00 ns, 2.2727 ns/op
+OverheadActual  13: 352 op, 700.00 ns, 1.9886 ns/op
+OverheadActual  14: 352 op, 900.00 ns, 2.5568 ns/op
+OverheadActual  15: 352 op, 800.00 ns, 2.2727 ns/op
+OverheadActual  16: 352 op, 800.00 ns, 2.2727 ns/op
+OverheadActual  17: 352 op, 800.00 ns, 2.2727 ns/op
+OverheadActual  18: 352 op, 1100.00 ns, 3.1250 ns/op
+OverheadActual  19: 352 op, 900.00 ns, 2.5568 ns/op
+OverheadActual  20: 352 op, 1900.00 ns, 5.3977 ns/op
+
+WorkloadWarmup   1: 352 op, 257497500.00 ns, 731.5270 us/op
+WorkloadWarmup   2: 352 op, 260595400.00 ns, 740.3278 us/op
+WorkloadWarmup   3: 352 op, 258363400.00 ns, 733.9869 us/op
+WorkloadWarmup   4: 352 op, 258956100.00 ns, 735.6707 us/op
+WorkloadWarmup   5: 352 op, 255208600.00 ns, 725.0244 us/op
+
+// BeforeActualRun
+WorkloadActual   1: 352 op, 258877300.00 ns, 735.4469 us/op
+WorkloadActual   2: 352 op, 258416200.00 ns, 734.1369 us/op
+WorkloadActual   3: 352 op, 255880800.00 ns, 726.9341 us/op
+WorkloadActual   4: 352 op, 257795300.00 ns, 732.3730 us/op
+WorkloadActual   5: 352 op, 258526500.00 ns, 734.4503 us/op
+
+// AfterActualRun
+WorkloadResult   1: 352 op, 258876400.00 ns, 735.4443 us/op
+WorkloadResult   2: 352 op, 258415300.00 ns, 734.1344 us/op
+WorkloadResult   3: 352 op, 255879900.00 ns, 726.9315 us/op
+WorkloadResult   4: 352 op, 257794400.00 ns, 732.3705 us/op
+WorkloadResult   5: 352 op, 258525600.00 ns, 734.4477 us/op
+
+// AfterAll
+// Benchmark Process 48096 has exited with code 0.
+
+Mean = 732.666 μs, StdErr = 1.517 μs (0.21%), N = 5, StdDev = 3.392 μs
+Min = 726.932 μs, Q1 = 732.370 μs, Median = 734.134 μs, Q3 = 734.448 μs, Max = 735.444 μs
+IQR = 2.077 μs, LowerFence = 729.255 μs, UpperFence = 737.564 μs
+ConfidenceInterval = [719.605 μs; 745.727 μs] (CI 99.9%), Margin = 13.061 μs (1.78% of Mean)
+Skewness = -0.81, Kurtosis = 1.75, MValue = 2
+
+// **************************
+// Benchmark: EnUsWordListCheckSuite.'Check wrong words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet "1bae1158-f61d-4537-a4b8-f2b3f809a00d.dll" --benchmarkName "WeCantSpell.Hunspell.Benchmarking.MicroSuites.EnUsWordListCheckSuite.CheckWrongWords" --job "MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1" --benchmarkId 3 in D:\repos\WeCantSpell.Hunspell\WeCantSpell.Hunspell.Benchmarking.MicroSuites\bin\Release\net6.0\1bae1158-f61d-4537-a4b8-f2b3f809a00d\bin\Release\net6.0
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// Runtime=.NET 6.0.2 (6.0.222.6406), X64 RyuJIT
+// GC=Concurrent Workstation
+// Job: Job-ANTCND(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+
+OverheadJitting  1: 1 op, 136900.00 ns, 136.9000 us/op
+WorkloadJitting  1: 1 op, 9349200.00 ns, 9.3492 ms/op
+
+OverheadJitting  2: 16 op, 159400.00 ns, 9.9625 us/op
+WorkloadJitting  2: 16 op, 131240300.00 ns, 8.2025 ms/op
+
+WorkloadPilot    1: 16 op, 130596600.00 ns, 8.1623 ms/op
+WorkloadPilot    2: 32 op, 234766400.00 ns, 7.3365 ms/op
+WorkloadPilot    3: 48 op, 301726300.00 ns, 6.2860 ms/op
+
+OverheadWarmup   1: 48 op, 2400.00 ns, 50.0000 ns/op
+OverheadWarmup   2: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadWarmup   3: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadWarmup   4: 48 op, 300.00 ns, 6.2500 ns/op
+OverheadWarmup   5: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadWarmup   6: 48 op, 400.00 ns, 8.3333 ns/op
+
+OverheadActual   1: 48 op, 500.00 ns, 10.4167 ns/op
+OverheadActual   2: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadActual   3: 48 op, 1000.00 ns, 20.8333 ns/op
+OverheadActual   4: 48 op, 500.00 ns, 10.4167 ns/op
+OverheadActual   5: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadActual   6: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadActual   7: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadActual   8: 48 op, 500.00 ns, 10.4167 ns/op
+OverheadActual   9: 48 op, 500.00 ns, 10.4167 ns/op
+OverheadActual  10: 48 op, 300.00 ns, 6.2500 ns/op
+OverheadActual  11: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadActual  12: 48 op, 300.00 ns, 6.2500 ns/op
+OverheadActual  13: 48 op, 300.00 ns, 6.2500 ns/op
+OverheadActual  14: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadActual  15: 48 op, 300.00 ns, 6.2500 ns/op
+OverheadActual  16: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadActual  17: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadActual  18: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadActual  19: 48 op, 400.00 ns, 8.3333 ns/op
+OverheadActual  20: 48 op, 400.00 ns, 8.3333 ns/op
+
+WorkloadWarmup   1: 48 op, 304387200.00 ns, 6.3414 ms/op
+WorkloadWarmup   2: 48 op, 304574800.00 ns, 6.3453 ms/op
+WorkloadWarmup   3: 48 op, 304341400.00 ns, 6.3404 ms/op
+WorkloadWarmup   4: 48 op, 300834300.00 ns, 6.2674 ms/op
+WorkloadWarmup   5: 48 op, 305210200.00 ns, 6.3585 ms/op
+
+// BeforeActualRun
+WorkloadActual   1: 48 op, 303919800.00 ns, 6.3317 ms/op
+WorkloadActual   2: 48 op, 301375700.00 ns, 6.2787 ms/op
+WorkloadActual   3: 48 op, 303199600.00 ns, 6.3167 ms/op
+WorkloadActual   4: 48 op, 303391100.00 ns, 6.3206 ms/op
+WorkloadActual   5: 48 op, 303011600.00 ns, 6.3127 ms/op
+
+// AfterActualRun
+WorkloadResult   1: 48 op, 303919400.00 ns, 6.3317 ms/op
+WorkloadResult   2: 48 op, 301375300.00 ns, 6.2787 ms/op
+WorkloadResult   3: 48 op, 303199200.00 ns, 6.3167 ms/op
+WorkloadResult   4: 48 op, 303390700.00 ns, 6.3206 ms/op
+WorkloadResult   5: 48 op, 303011200.00 ns, 6.3127 ms/op
+
+// AfterAll
+// Benchmark Process 48808 has exited with code 0.
+
+Mean = 6.312 ms, StdErr = 0.009 ms (0.14%), N = 5, StdDev = 0.020 ms
+Min = 6.279 ms, Q1 = 6.313 ms, Median = 6.317 ms, Q3 = 6.321 ms, Max = 6.332 ms
+IQR = 0.008 ms, LowerFence = 6.301 ms, UpperFence = 6.332 ms
+ConfidenceInterval = [6.235 ms; 6.389 ms] (CI 99.9%), Margin = 0.077 ms (1.22% of Mean)
+Skewness = -0.73, Kurtosis = 1.76, MValue = 2
+
+// ***** BenchmarkRunner: Finish  *****
+
+// * Export *
+  BenchmarkDotNet.Artifacts\results\WeCantSpell.Hunspell.Benchmarking.MicroSuites.EnUsWordListCheckSuite-report.csv
+  BenchmarkDotNet.Artifacts\results\WeCantSpell.Hunspell.Benchmarking.MicroSuites.EnUsWordListCheckSuite-report-github.md
+  BenchmarkDotNet.Artifacts\results\WeCantSpell.Hunspell.Benchmarking.MicroSuites.EnUsWordListCheckSuite-report.html
+
+// * Detailed results *
+EnUsWordListCheckSuite.'Check an assortment of words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+Runtime = .NET 6.0.2 (6.0.222.6406), X64 RyuJIT; GC = Concurrent Workstation
+Mean = 7.128 ms, StdErr = 0.013 ms (0.18%), N = 5, StdDev = 0.029 ms
+Min = 7.094 ms, Q1 = 7.115 ms, Median = 7.115 ms, Q3 = 7.149 ms, Max = 7.167 ms
+IQR = 0.035 ms, LowerFence = 7.063 ms, UpperFence = 7.201 ms
+ConfidenceInterval = [7.015 ms; 7.241 ms] (CI 99.9%), Margin = 0.113 ms (1.58% of Mean)
+Skewness = 0.2, Kurtosis = 1.04, MValue = 2
+-------------------- Histogram --------------------
+[7.072 ms ; 7.189 ms) | @@@@@
+---------------------------------------------------
+
+EnUsWordListCheckSuite.'Check root words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+Runtime = .NET 6.0.2 (6.0.222.6406), X64 RyuJIT; GC = Concurrent Workstation
+Mean = 244.612 μs, StdErr = 0.845 μs (0.35%), N = 13, StdDev = 3.047 μs
+Min = 240.844 μs, Q1 = 242.116 μs, Median = 244.522 μs, Q3 = 245.614 μs, Max = 252.218 μs
+IQR = 3.498 μs, LowerFence = 236.869 μs, UpperFence = 250.862 μs
+ConfidenceInterval = [240.963 μs; 248.260 μs] (CI 99.9%), Margin = 3.648 μs (1.49% of Mean)
+Skewness = 1.01, Kurtosis = 3.45, MValue = 2
+-------------------- Histogram --------------------
+[239.143 μs ; 245.787 μs) | @@@@@@@@@@
+[245.787 μs ; 253.918 μs) | @@@
+---------------------------------------------------
+
+EnUsWordListCheckSuite.'Check correct words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+Runtime = .NET 6.0.2 (6.0.222.6406), X64 RyuJIT; GC = Concurrent Workstation
+Mean = 732.666 μs, StdErr = 1.517 μs (0.21%), N = 5, StdDev = 3.392 μs
+Min = 726.932 μs, Q1 = 732.370 μs, Median = 734.134 μs, Q3 = 734.448 μs, Max = 735.444 μs
+IQR = 2.077 μs, LowerFence = 729.255 μs, UpperFence = 737.564 μs
+ConfidenceInterval = [719.605 μs; 745.727 μs] (CI 99.9%), Margin = 13.061 μs (1.78% of Mean)
+Skewness = -0.81, Kurtosis = 1.75, MValue = 2
+-------------------- Histogram --------------------
+[724.328 μs ; 738.048 μs) | @@@@@
+---------------------------------------------------
+
+EnUsWordListCheckSuite.'Check wrong words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+Runtime = .NET 6.0.2 (6.0.222.6406), X64 RyuJIT; GC = Concurrent Workstation
+Mean = 6.312 ms, StdErr = 0.009 ms (0.14%), N = 5, StdDev = 0.020 ms
+Min = 6.279 ms, Q1 = 6.313 ms, Median = 6.317 ms, Q3 = 6.321 ms, Max = 6.332 ms
+IQR = 0.008 ms, LowerFence = 6.301 ms, UpperFence = 6.332 ms
+ConfidenceInterval = [6.235 ms; 6.389 ms] (CI 99.9%), Margin = 0.077 ms (1.22% of Mean)
+Skewness = -0.73, Kurtosis = 1.76, MValue = 2
+-------------------- Histogram --------------------
+[6.263 ms ; 6.347 ms) | @@@@@
+---------------------------------------------------
+
+// * Summary *
+
+BenchmarkDotNet=v0.13.1, OS=Windows 10.0.19043.1526 (21H1/May2021Update)
+AMD Ryzen 7 5800H with Radeon Graphics, 1 CPU, 16 logical and 8 physical cores
+.NET SDK=6.0.200
+  [Host]     : .NET 6.0.2 (6.0.222.6406), X64 RyuJIT
+  Job-ATTJGT : .NET 6.0.2 (6.0.222.6406), X64 RyuJIT
+
+MinInvokeCount=1  IterationTime=250.0000 ms  MaxIterationCount=20  
+MaxWarmupIterationCount=5  MinIterationCount=1  MinWarmupIterationCount=1  
+
+|                         Method |       Mean |     Error |   StdDev | Ratio | RatioSD |
+|------------------------------- |-----------:|----------:|---------:|------:|--------:|
+| 'Check an assortment of words' | 7,128.1 μs | 112.88 μs | 29.31 μs | 29.07 |    0.50 |
+|             'Check root words' |   244.6 μs |   3.65 μs |  3.05 μs |  1.00 |    0.00 |
+|          'Check correct words' |   732.7 μs |  13.06 μs |  3.39 μs |  2.99 |    0.05 |
+|            'Check wrong words' | 6,312.1 μs |  76.90 μs | 19.97 μs | 25.74 |    0.52 |
+
+// * Hints *
+Outliers
+  EnUsWordListCheckSuite.'Check root words': MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1    -> 2 outliers were removed (253.90 μs, 255.59 μs)
+  EnUsWordListCheckSuite.'Check correct words': MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1 -> 1 outlier  was  detected (726.93 μs)
+  EnUsWordListCheckSuite.'Check wrong words': MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1   -> 1 outlier  was  detected (6.28 ms)
+
+// * Legends *
+  Mean    : Arithmetic mean of all measurements
+  Error   : Half of 99.9% confidence interval
+  StdDev  : Standard deviation of all measurements
+  Ratio   : Mean of the ratio distribution ([Current]/[Baseline])
+  RatioSD : Standard deviation of the ratio distribution ([Current]/[Baseline])
+  1 μs    : 1 Microsecond (0.000001 sec)
+
+// ***** BenchmarkRunner: End *****
+// ** Remained 4 benchmark(s) to run **
+Run time: 00:00:20 (20.14 sec), executed benchmarks: 4
+
+// Found 4 benchmarks:
+//   EnUsWordListSuggestSuite.'Suggest an assortment of words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+//   EnUsWordListSuggestSuite.'Suggest root words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+//   EnUsWordListSuggestSuite.'Suggest correct words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+//   EnUsWordListSuggestSuite.'Suggest wrong words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+
+// **************************
+// Benchmark: EnUsWordListSuggestSuite.'Suggest an assortment of words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet "1bae1158-f61d-4537-a4b8-f2b3f809a00d.dll" --benchmarkName "WeCantSpell.Hunspell.Benchmarking.MicroSuites.EnUsWordListSuggestSuite.CheckAllWords" --job "MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1" --benchmarkId 4 in D:\repos\WeCantSpell.Hunspell\WeCantSpell.Hunspell.Benchmarking.MicroSuites\bin\Release\net6.0\1bae1158-f61d-4537-a4b8-f2b3f809a00d\bin\Release\net6.0
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// Runtime=.NET 6.0.2 (6.0.222.6406), X64 RyuJIT
+// GC=Concurrent Workstation
+// Job: Job-VQWPSV(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+
+OverheadJitting  1: 1 op, 147100.00 ns, 147.1000 us/op
+WorkloadJitting  1: 1 op, 58517000.00 ns, 58.5170 ms/op
+
+WorkloadPilot    1: 4 op, 119764900.00 ns, 29.9412 ms/op
+WorkloadPilot    2: 8 op, 203598500.00 ns, 25.4498 ms/op
+WorkloadPilot    3: 10 op, 251171200.00 ns, 25.1171 ms/op
+
+WorkloadWarmup   1: 10 op, 251775000.00 ns, 25.1775 ms/op
+WorkloadWarmup   2: 10 op, 251899900.00 ns, 25.1900 ms/op
+WorkloadWarmup   3: 10 op, 251509500.00 ns, 25.1510 ms/op
+WorkloadWarmup   4: 10 op, 249881900.00 ns, 24.9882 ms/op
+WorkloadWarmup   5: 10 op, 251266500.00 ns, 25.1267 ms/op
+
+// BeforeActualRun
+WorkloadActual   1: 10 op, 251347000.00 ns, 25.1347 ms/op
+WorkloadActual   2: 10 op, 250021400.00 ns, 25.0021 ms/op
+WorkloadActual   3: 10 op, 249838000.00 ns, 24.9838 ms/op
+WorkloadActual   4: 10 op, 252816700.00 ns, 25.2817 ms/op
+WorkloadActual   5: 10 op, 250539000.00 ns, 25.0539 ms/op
+
+// AfterActualRun
+WorkloadResult   1: 10 op, 251347000.00 ns, 25.1347 ms/op
+WorkloadResult   2: 10 op, 250021400.00 ns, 25.0021 ms/op
+WorkloadResult   3: 10 op, 249838000.00 ns, 24.9838 ms/op
+WorkloadResult   4: 10 op, 252816700.00 ns, 25.2817 ms/op
+WorkloadResult   5: 10 op, 250539000.00 ns, 25.0539 ms/op
+
+// AfterAll
+// Benchmark Process 20036 has exited with code 0.
+
+Mean = 25.091 ms, StdErr = 0.054 ms (0.22%), N = 5, StdDev = 0.121 ms
+Min = 24.984 ms, Q1 = 25.002 ms, Median = 25.054 ms, Q3 = 25.135 ms, Max = 25.282 ms
+IQR = 0.133 ms, LowerFence = 24.803 ms, UpperFence = 25.334 ms
+ConfidenceInterval = [24.623 ms; 25.559 ms] (CI 99.9%), Margin = 0.468 ms (1.86% of Mean)
+Skewness = 0.56, Kurtosis = 1.39, MValue = 2
+
+// **************************
+// Benchmark: EnUsWordListSuggestSuite.'Suggest root words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet "1bae1158-f61d-4537-a4b8-f2b3f809a00d.dll" --benchmarkName "WeCantSpell.Hunspell.Benchmarking.MicroSuites.EnUsWordListSuggestSuite.CheckRootWords" --job "MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1" --benchmarkId 5 in D:\repos\WeCantSpell.Hunspell\WeCantSpell.Hunspell.Benchmarking.MicroSuites\bin\Release\net6.0\1bae1158-f61d-4537-a4b8-f2b3f809a00d\bin\Release\net6.0
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// Runtime=.NET 6.0.2 (6.0.222.6406), X64 RyuJIT
+// GC=Concurrent Workstation
+// Job: Job-ZEQHJZ(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+
+OverheadJitting  1: 1 op, 152100.00 ns, 152.1000 us/op
+WorkloadJitting  1: 1 op, 62605000.00 ns, 62.6050 ms/op
+
+WorkloadPilot    1: 4 op, 133818700.00 ns, 33.4547 ms/op
+WorkloadPilot    2: 7 op, 213487200.00 ns, 30.4982 ms/op
+
+WorkloadWarmup   1: 7 op, 212666200.00 ns, 30.3809 ms/op
+WorkloadWarmup   2: 7 op, 211667300.00 ns, 30.2382 ms/op
+WorkloadWarmup   3: 7 op, 211564000.00 ns, 30.2234 ms/op
+WorkloadWarmup   4: 7 op, 212126900.00 ns, 30.3038 ms/op
+WorkloadWarmup   5: 7 op, 213883000.00 ns, 30.5547 ms/op
+
+// BeforeActualRun
+WorkloadActual   1: 7 op, 212787300.00 ns, 30.3982 ms/op
+WorkloadActual   2: 7 op, 211444600.00 ns, 30.2064 ms/op
+WorkloadActual   3: 7 op, 211181100.00 ns, 30.1687 ms/op
+WorkloadActual   4: 7 op, 211551400.00 ns, 30.2216 ms/op
+WorkloadActual   5: 7 op, 210888200.00 ns, 30.1269 ms/op
+
+// AfterActualRun
+WorkloadResult   1: 7 op, 211444600.00 ns, 30.2064 ms/op
+WorkloadResult   2: 7 op, 211181100.00 ns, 30.1687 ms/op
+WorkloadResult   3: 7 op, 211551400.00 ns, 30.2216 ms/op
+WorkloadResult   4: 7 op, 210888200.00 ns, 30.1269 ms/op
+
+// AfterAll
+// Benchmark Process 38860 has exited with code 0.
+
+Mean = 30.181 ms, StdErr = 0.021 ms (0.07%), N = 4, StdDev = 0.042 ms
+Min = 30.127 ms, Q1 = 30.158 ms, Median = 30.188 ms, Q3 = 30.210 ms, Max = 30.222 ms
+IQR = 0.052 ms, LowerFence = 30.080 ms, UpperFence = 30.288 ms
+ConfidenceInterval = [29.907 ms; 30.454 ms] (CI 99.9%), Margin = 0.273 ms (0.91% of Mean)
+Skewness = -0.25, Kurtosis = 0.91, MValue = 2
+
+// **************************
+// Benchmark: EnUsWordListSuggestSuite.'Suggest correct words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet "1bae1158-f61d-4537-a4b8-f2b3f809a00d.dll" --benchmarkName "WeCantSpell.Hunspell.Benchmarking.MicroSuites.EnUsWordListSuggestSuite.CheckCorrectWords" --job "MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1" --benchmarkId 6 in D:\repos\WeCantSpell.Hunspell\WeCantSpell.Hunspell.Benchmarking.MicroSuites\bin\Release\net6.0\1bae1158-f61d-4537-a4b8-f2b3f809a00d\bin\Release\net6.0
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// Runtime=.NET 6.0.2 (6.0.222.6406), X64 RyuJIT
+// GC=Concurrent Workstation
+// Job: Job-VPLQQC(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+
+OverheadJitting  1: 1 op, 137700.00 ns, 137.7000 us/op
+WorkloadJitting  1: 1 op, 63014900.00 ns, 63.0149 ms/op
+
+WorkloadPilot    1: 4 op, 134202700.00 ns, 33.5507 ms/op
+WorkloadPilot    2: 7 op, 219949000.00 ns, 31.4213 ms/op
+
+WorkloadWarmup   1: 7 op, 220004000.00 ns, 31.4291 ms/op
+WorkloadWarmup   2: 7 op, 219526200.00 ns, 31.3609 ms/op
+WorkloadWarmup   3: 7 op, 219214700.00 ns, 31.3164 ms/op
+WorkloadWarmup   4: 7 op, 219146400.00 ns, 31.3066 ms/op
+WorkloadWarmup   5: 7 op, 220741700.00 ns, 31.5345 ms/op
+
+// BeforeActualRun
+WorkloadActual   1: 7 op, 222210300.00 ns, 31.7443 ms/op
+WorkloadActual   2: 7 op, 218427600.00 ns, 31.2039 ms/op
+WorkloadActual   3: 7 op, 218500300.00 ns, 31.2143 ms/op
+WorkloadActual   4: 7 op, 218549800.00 ns, 31.2214 ms/op
+WorkloadActual   5: 7 op, 219193800.00 ns, 31.3134 ms/op
+
+// AfterActualRun
+WorkloadResult   1: 7 op, 218427600.00 ns, 31.2039 ms/op
+WorkloadResult   2: 7 op, 218500300.00 ns, 31.2143 ms/op
+WorkloadResult   3: 7 op, 218549800.00 ns, 31.2214 ms/op
+WorkloadResult   4: 7 op, 219193800.00 ns, 31.3134 ms/op
+
+// AfterAll
+// Benchmark Process 55712 has exited with code 0.
+
+Mean = 31.238 ms, StdErr = 0.025 ms (0.08%), N = 4, StdDev = 0.051 ms
+Min = 31.204 ms, Q1 = 31.212 ms, Median = 31.218 ms, Q3 = 31.244 ms, Max = 31.313 ms
+IQR = 0.033 ms, LowerFence = 31.163 ms, UpperFence = 31.293 ms
+ConfidenceInterval = [30.911 ms; 31.565 ms] (CI 99.9%), Margin = 0.327 ms (1.05% of Mean)
+Skewness = 0.7, Kurtosis = 1.28, MValue = 2
+
+// **************************
+// Benchmark: EnUsWordListSuggestSuite.'Suggest wrong words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet "1bae1158-f61d-4537-a4b8-f2b3f809a00d.dll" --benchmarkName "WeCantSpell.Hunspell.Benchmarking.MicroSuites.EnUsWordListSuggestSuite.CheckWrongWords" --job "MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1" --benchmarkId 7 in D:\repos\WeCantSpell.Hunspell\WeCantSpell.Hunspell.Benchmarking.MicroSuites\bin\Release\net6.0\1bae1158-f61d-4537-a4b8-f2b3f809a00d\bin\Release\net6.0
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// Runtime=.NET 6.0.2 (6.0.222.6406), X64 RyuJIT
+// GC=Concurrent Workstation
+// Job: Job-CMWDYI(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+
+OverheadJitting  1: 1 op, 141900.00 ns, 141.9000 us/op
+WorkloadJitting  1: 1 op, 68629700.00 ns, 68.6297 ms/op
+
+WorkloadPilot    1: 4 op, 153022700.00 ns, 38.2557 ms/op
+WorkloadPilot    2: 7 op, 258088200.00 ns, 36.8697 ms/op
+
+WorkloadWarmup   1: 7 op, 235653000.00 ns, 33.6647 ms/op
+WorkloadWarmup   2: 7 op, 238786900.00 ns, 34.1124 ms/op
+WorkloadWarmup   3: 7 op, 233509200.00 ns, 33.3585 ms/op
+WorkloadWarmup   4: 7 op, 233154100.00 ns, 33.3077 ms/op
+WorkloadWarmup   5: 7 op, 233918100.00 ns, 33.4169 ms/op
+
+// BeforeActualRun
+WorkloadActual   1: 7 op, 233849200.00 ns, 33.4070 ms/op
+WorkloadActual   2: 7 op, 232682600.00 ns, 33.2404 ms/op
+WorkloadActual   3: 7 op, 233899700.00 ns, 33.4142 ms/op
+WorkloadActual   4: 7 op, 235160100.00 ns, 33.5943 ms/op
+WorkloadActual   5: 7 op, 233653200.00 ns, 33.3790 ms/op
+
+// AfterActualRun
+WorkloadResult   1: 7 op, 233849200.00 ns, 33.4070 ms/op
+WorkloadResult   2: 7 op, 232682600.00 ns, 33.2404 ms/op
+WorkloadResult   3: 7 op, 233899700.00 ns, 33.4142 ms/op
+WorkloadResult   4: 7 op, 233653200.00 ns, 33.3790 ms/op
+
+// AfterAll
+// Benchmark Process 21984 has exited with code 0.
+
+Mean = 33.360 ms, StdErr = 0.041 ms (0.12%), N = 4, StdDev = 0.081 ms
+Min = 33.240 ms, Q1 = 33.344 ms, Median = 33.393 ms, Q3 = 33.409 ms, Max = 33.414 ms
+IQR = 0.064 ms, LowerFence = 33.248 ms, UpperFence = 33.506 ms
+ConfidenceInterval = [32.835 ms; 33.885 ms] (CI 99.9%), Margin = 0.525 ms (1.57% of Mean)
+Skewness = -0.68, Kurtosis = 1.26, MValue = 2
+
+// ***** BenchmarkRunner: Finish  *****
+
+// * Export *
+  BenchmarkDotNet.Artifacts\results\WeCantSpell.Hunspell.Benchmarking.MicroSuites.EnUsWordListSuggestSuite-report.csv
+  BenchmarkDotNet.Artifacts\results\WeCantSpell.Hunspell.Benchmarking.MicroSuites.EnUsWordListSuggestSuite-report-github.md
+  BenchmarkDotNet.Artifacts\results\WeCantSpell.Hunspell.Benchmarking.MicroSuites.EnUsWordListSuggestSuite-report.html
+
+// * Detailed results *
+EnUsWordListSuggestSuite.'Suggest an assortment of words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+Runtime = .NET 6.0.2 (6.0.222.6406), X64 RyuJIT; GC = Concurrent Workstation
+Mean = 25.091 ms, StdErr = 0.054 ms (0.22%), N = 5, StdDev = 0.121 ms
+Min = 24.984 ms, Q1 = 25.002 ms, Median = 25.054 ms, Q3 = 25.135 ms, Max = 25.282 ms
+IQR = 0.133 ms, LowerFence = 24.803 ms, UpperFence = 25.334 ms
+ConfidenceInterval = [24.623 ms; 25.559 ms] (CI 99.9%), Margin = 0.468 ms (1.86% of Mean)
+Skewness = 0.56, Kurtosis = 1.39, MValue = 2
+-------------------- Histogram --------------------
+[24.891 ms ; 25.375 ms) | @@@@@
+---------------------------------------------------
+
+EnUsWordListSuggestSuite.'Suggest root words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+Runtime = .NET 6.0.2 (6.0.222.6406), X64 RyuJIT; GC = Concurrent Workstation
+Mean = 30.181 ms, StdErr = 0.021 ms (0.07%), N = 4, StdDev = 0.042 ms
+Min = 30.127 ms, Q1 = 30.158 ms, Median = 30.188 ms, Q3 = 30.210 ms, Max = 30.222 ms
+IQR = 0.052 ms, LowerFence = 30.080 ms, UpperFence = 30.288 ms
+ConfidenceInterval = [29.907 ms; 30.454 ms] (CI 99.9%), Margin = 0.273 ms (0.91% of Mean)
+Skewness = -0.25, Kurtosis = 0.91, MValue = 2
+-------------------- Histogram --------------------
+[30.092 ms ; 30.257 ms) | @@@@
+---------------------------------------------------
+
+EnUsWordListSuggestSuite.'Suggest correct words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+Runtime = .NET 6.0.2 (6.0.222.6406), X64 RyuJIT; GC = Concurrent Workstation
+Mean = 31.238 ms, StdErr = 0.025 ms (0.08%), N = 4, StdDev = 0.051 ms
+Min = 31.204 ms, Q1 = 31.212 ms, Median = 31.218 ms, Q3 = 31.244 ms, Max = 31.313 ms
+IQR = 0.033 ms, LowerFence = 31.163 ms, UpperFence = 31.293 ms
+ConfidenceInterval = [30.911 ms; 31.565 ms] (CI 99.9%), Margin = 0.327 ms (1.05% of Mean)
+Skewness = 0.7, Kurtosis = 1.28, MValue = 2
+-------------------- Histogram --------------------
+[31.162 ms ; 31.355 ms) | @@@@
+---------------------------------------------------
+
+EnUsWordListSuggestSuite.'Suggest wrong words': Job-ATTJGT(MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1)
+Runtime = .NET 6.0.2 (6.0.222.6406), X64 RyuJIT; GC = Concurrent Workstation
+Mean = 33.360 ms, StdErr = 0.041 ms (0.12%), N = 4, StdDev = 0.081 ms
+Min = 33.240 ms, Q1 = 33.344 ms, Median = 33.393 ms, Q3 = 33.409 ms, Max = 33.414 ms
+IQR = 0.064 ms, LowerFence = 33.248 ms, UpperFence = 33.506 ms
+ConfidenceInterval = [32.835 ms; 33.885 ms] (CI 99.9%), Margin = 0.525 ms (1.57% of Mean)
+Skewness = -0.68, Kurtosis = 1.26, MValue = 2
+-------------------- Histogram --------------------
+[33.173 ms ; 33.481 ms) | @@@@
+---------------------------------------------------
+
+// * Summary *
+
+BenchmarkDotNet=v0.13.1, OS=Windows 10.0.19043.1526 (21H1/May2021Update)
+AMD Ryzen 7 5800H with Radeon Graphics, 1 CPU, 16 logical and 8 physical cores
+.NET SDK=6.0.200
+  [Host]     : .NET 6.0.2 (6.0.222.6406), X64 RyuJIT
+  Job-ATTJGT : .NET 6.0.2 (6.0.222.6406), X64 RyuJIT
+
+MinInvokeCount=1  IterationTime=250.0000 ms  MaxIterationCount=20  
+MaxWarmupIterationCount=5  MinIterationCount=1  MinWarmupIterationCount=1  
+
+|                           Method |     Mean |    Error |   StdDev | Ratio |
+|--------------------------------- |---------:|---------:|---------:|------:|
+| 'Suggest an assortment of words' | 25.09 ms | 0.468 ms | 0.121 ms |  0.83 |
+|             'Suggest root words' | 30.18 ms | 0.273 ms | 0.042 ms |  1.00 |
+|          'Suggest correct words' | 31.24 ms | 0.327 ms | 0.051 ms |  1.04 |
+|            'Suggest wrong words' | 33.36 ms | 0.525 ms | 0.081 ms |  1.11 |
+
+// * Hints *
+Outliers
+  EnUsWordListSuggestSuite.'Suggest root words': MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1    -> 1 outlier  was  removed (30.40 ms)
+  EnUsWordListSuggestSuite.'Suggest correct words': MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1 -> 1 outlier  was  removed (31.74 ms)
+  EnUsWordListSuggestSuite.'Suggest wrong words': MinInvokeCount=1, IterationTime=250.0000 ms, MaxIterationCount=20, MaxWarmupIterationCount=5, MinIterationCount=1, MinWarmupIterationCount=1   -> 1 outlier  was  removed, 2 outliers were detected (33.24 ms, 33.59 ms)
+
+// * Legends *
+  Mean   : Arithmetic mean of all measurements
+  Error  : Half of 99.9% confidence interval
+  StdDev : Standard deviation of all measurements
+  Ratio  : Mean of the ratio distribution ([Current]/[Baseline])
+  1 ms   : 1 Millisecond (0.001 sec)
+
+// ***** BenchmarkRunner: End *****
+// ** Remained 0 benchmark(s) to run **
+Run time: 00:00:12 (12.69 sec), executed benchmarks: 4
+
+Global total time: 00:00:36 (36.04 sec), executed benchmarks: 8
+// * Artifacts cleanup *

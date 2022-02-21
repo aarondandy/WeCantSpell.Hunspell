@@ -1,13 +1,13 @@
 # WeCantSpell: Hunspell
 
-A port of [Hunspell](https://github.com/hunspell/hunspell) v1 for .NET, .NET Standard, and .NET Core.
+A port of [Hunspell](https://github.com/hunspell/hunspell) for .NET.
 
 ![bee](icon.png)
 
 **Download and install with NuGet: [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/)**
 
-[![Build status](https://ci.appveyor.com/api/projects/status/shfkt9mgpfhwykqv/branch/master?svg=true)](https://ci.appveyor.com/project/aarondandy/wecantspell-hunspell)
-[![NuGet version](https://badge.fury.io/nu/WeCantSpell.Hunspell.svg)](https://www.nuget.org/packages/WeCantSpell.Hunspell/)
+[![NuGet version](https://img.shields.io/nuget/v/WeCantSpell.Hunspell.svg?style=flat&label=nuget%3A%20WeCantSpell.Hunspell)](https://www.nuget.org/packages/WeCantSpell.Hunspell/)
+[![CI](https://github.com/aarondandy/WeCantSpell.Hunspell/actions/workflows/ci.yml/badge.svg)](https://github.com/aarondandy/WeCantSpell.Hunspell/actions/workflows/ci.yml)
 
 ## Features
 
@@ -58,12 +58,18 @@ The performance of this port while not fantastic relative to the original
 binaries and NHunspell is definitely acceptable.
 If you need better performance you should check out [NHunspell](https://www.nuget.org/packages/NHunspell/).
 
-| Benchmark | [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/) netcore2.1 | [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/) net471 | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
-|---------------------|-------------|-------------|------------|
-| Dictionary Loads /s | 🐌 3.51    | 🐌 3.07     | 🐇 14.49   |
-| Words Checked /s    | 🐢 636,598 | 🐢  554,200 | 🐇 973,043 |
+| Benchmark | [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/) net6 | [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/) net48 | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
+|---------------------|--------------|--------------|--------------|
+| Dictionary Loads /s | 🥌 5.28      | 🐌 3.99     | 🐇 18.84     |
+| Words Checked /s    | 🐇 1,125,462 | 🐢 633,642  | 🐇 1,321,598 |
 
-_Note: Measurements taken on a Intel 6700K._
+_Note: Measurements taken on an AMD 5800H._
+
+To reproduce:
+```
+dotnet run -c Release --project .\WeCantSpell.Hunspell.Benchmarking.LongRunning\WeCantSpell.Hunspell.Benchmarking.LongRunning.csproj --output ./perf-reports/
+dotnet run -c Release --project .\WeCantSpell.Hunspell.Benchmarking.NHunspell\WeCantSpell.Hunspell.Benchmarking.NHunspell.csproj --output ./perf-reports/
+```
 
 ## Specialized Examples
 
