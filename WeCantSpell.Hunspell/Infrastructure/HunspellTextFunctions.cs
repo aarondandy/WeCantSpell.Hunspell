@@ -128,10 +128,15 @@ static class HunspellTextFunctions
         return lastIndex - searchIndex;
     }
 
+    /// <summary>
+    /// This is a character class function used within Hunspell to determine if a character is an ASCII letter.
+    /// </summary>
+    /// <param name="ch">The character value to check.</param>
+    /// <returns><c>true</c> is a given character is an ASCII letter.</returns>
 #if !NO_INLINE
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-    public static bool MyIsAlpha(char ch) => ch < 128 || char.IsLetter(ch);
+    public static bool MyIsAlpha(char ch) => ch >= 128 || char.IsLetter(ch);
 
 #if !NO_INLINE
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
