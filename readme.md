@@ -70,26 +70,18 @@ dotnet run -c Release --project .\WeCantSpell.Hunspell.Benchmarking.NHunspell\We
 Construct from a list:
 
 ```csharp
-static void Main(string[] args)
-{
-    var words = "The quick brown fox jumps over the lazy dog".Split(' ');
-    var dictionary = WordList.CreateFromWords(words);
-    bool notOk = dictionary.Check("teh");
-}
+var words = "The quick brown fox jumps over the lazy dog".Split(' ');
+var dictionary = WordList.CreateFromWords(words);
+bool notOk = dictionary.Check("teh");
 ```
 
 Construct from streams:
 
 ```csharp
-static void Main(string[] args)
-{
-    using(var dictionaryStream = File.OpenRead(@"English (British).dic"))
-    using(var affixStream = File.OpenRead(@"English (British).aff"))
-    {
-        var dictionary = WordList.CreateFromStreams(dictionaryStream, affixStream);
-        bool notOk = dictionary.Check("teh");
-    }
-}
+using var dictionaryStream = File.OpenRead(@"English (British).dic");
+using var affixStream = File.OpenRead(@"English (British).aff");
+var dictionary = WordList.CreateFromStreams(dictionaryStream, affixStream);
+bool notOk = dictionary.Check("teh");
 ```
 
 ## Encoding Issues
