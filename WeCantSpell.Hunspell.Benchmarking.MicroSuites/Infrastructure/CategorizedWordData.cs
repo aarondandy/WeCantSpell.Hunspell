@@ -53,8 +53,8 @@ public class CategorizedWordData
     {
     }
 
-    public List<string> AllWords { get; private init; }
-    public HashSet<string> CorrectWords { get; private init; }
-    public HashSet<string> WrongWords { get; private init; }
-    public HashSet<string> RootWords { get; private init; }
+    public List<string> AllWords { get; private set; }
+    public HashSet<string> CorrectWords { get; private set; }
+    public HashSet<string> WrongWords { get; private set; }
+    public HashSet<string> RootWords { get; private set; }
 }

@@ -1,4 +1,5 @@
-Note that this license in inherited from the original Hunspell project.
+Note that this license is inherited from the original Hunspell project
+as this is derived from that work. Original license:
 
 Version: MPL 1.1/GPL 2.0/LGPL 2.1
 
