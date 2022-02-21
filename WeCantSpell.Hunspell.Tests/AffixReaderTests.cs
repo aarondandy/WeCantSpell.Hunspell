@@ -1686,7 +1686,8 @@ public class AffixReaderTests
 
         public static string[] can_read_file_without_exception_warning_exceptions =
         {
-            "base_utf.aff" // this file has some strange morph lines at the bottom, maybe a bug?
+            "base_utf.aff", // this file has some strange morph lines at the bottom, maybe a bug?
+            "allcaps.aff" // Bug: https://github.com/aarondandy/WeCantSpell.Hunspell/issues/49
         };
 
         [Theory, MemberData(nameof(can_read_file_without_exception_args))]

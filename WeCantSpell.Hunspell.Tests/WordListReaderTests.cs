@@ -125,7 +125,7 @@ public class WordListReaderTests
 
             var actual = await WordListReader.ReadFileAsync(filePath);
 
-            actual.RootWords.Should().HaveCount(4);
+            actual.RootWords.Should().HaveCountGreaterThanOrEqualTo(4);
             actual["OpenOffice.org"].Should().HaveCount(1);
             actual["OpenOffice.org"][0].Flags.Should().BeEmpty();
             actual["Openoffice.org"].Should().HaveCount(1);

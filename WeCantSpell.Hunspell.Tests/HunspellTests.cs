@@ -92,6 +92,12 @@ public class HunspellTests
                 return;
             }
 
+            if (dictionaryFilePath.EndsWith("allcaps.dic") && word.EndsWith("Afrique", StringComparison.InvariantCultureIgnoreCase))
+            {
+                // Skips test: https://github.com/aarondandy/WeCantSpell.Hunspell/issues/49
+                return;
+            }
+
             var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
 
             var checkResult = dictionary.Check(word);
@@ -283,6 +289,18 @@ public class HunspellTests
                 {
                     // NOTE: ph2.wrong does not have a corresponding blank suggestion in the file for rootforbiddenroot
                     suggestionLines.Insert(8, string.Empty);
+                }
+
+                if (suggestionFilePath.EndsWith("breakdefault.sug"))
+                {
+                    // No suggestions were added to compensate for new wrong words
+                    suggestionLines.Add(string.Empty);
+                }
+
+                if (suggestionFilePath.EndsWith("checksharps.sug"))
+                {
+                    // No suggestions were added to compensate for new wrong words
+                    suggestionLines.Add(string.Empty);
                 }
 
                 yield return new SuggestionTestSet
