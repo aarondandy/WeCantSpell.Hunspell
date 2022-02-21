@@ -31,7 +31,7 @@ public partial class AffixConfig
 
         internal readonly Deduper<CharacterConditionGroup> CharacterConditionGroupDeduper;
 
-        internal readonly StringDeduper StringDeduper;
+        internal readonly Deduper<string> StringDeduper;
 
         public Builder()
         {
@@ -42,7 +42,7 @@ public partial class AffixConfig
             CharacterConditionGroupDeduper = new Deduper<CharacterConditionGroup>(CharacterConditionGroup.DefaultComparer);
             CharacterConditionGroupDeduper.Add(CharacterConditionGroup.Empty);
             CharacterConditionGroupDeduper.Add(CharacterConditionGroup.AllowAnySingleCharacter);
-            StringDeduper = new StringDeduper();
+            StringDeduper = new Deduper<string>(StringComparer.Ordinal);
             StringDeduper.Add(string.Empty);
         }
 
