@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 3.1.1 - 2022-02-21
+### Fixed
+- [Fixes a character classification bug](https://github.com/aarondandy/WeCantSpell.Hunspell/pull/54)
+
+### Changed
+- Code simplification
+
 ## 3.1.0 - 2022-02-21
 ### Added
 - Adds a target for net461
