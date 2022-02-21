@@ -38,19 +38,17 @@ class IncrementalWordList
         }
         else
         {
-            AppendForCurrent(value);
-        }
-    }
+            appendWithLeadingBlanks();
+            void appendWithLeadingBlanks()
+            {
+                for (var i = WNum - Words.Count; i > 0; i--)
+                {
+                    Words.Add(null);
+                }
 
-    private void AppendForCurrent(WordEntryDetail value)
-    {
-        var blanksToInsert = WNum - Words.Count;
-        for (var i = WNum - Words.Count; i > 0; i--)
-        {
-            Words.Add(null);
+                Words.Add(value);
+            }
         }
-
-        Words.Add(value);
     }
 
     public void ClearCurrent()
