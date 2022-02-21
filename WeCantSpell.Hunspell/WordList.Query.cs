@@ -1480,8 +1480,7 @@ public partial class WordList
             // to meet the number of characters conditions, then test it
 
             var peEntry = pe.Entry;
-            var appendLength = peEntry.Append.Length;
-            var tmpl = word.Length - appendLength; // length of tmpword
+            var tmpl = word.Length - peEntry.Append.Length; // length of tmpword
 
             if (
                 (tmpl > 0 || (tmpl == 0 && Affix.FullStrip))
@@ -1492,7 +1491,7 @@ public partial class WordList
                 // generate new root word by removing prefix and adding
                 // back any characters that would have been stripped
 
-                var tmpword = StringEx.ConcatString(peEntry.Strip, word, appendLength, word.Length - appendLength);
+                var tmpword = StringEx.ConcatString(peEntry.Strip, word.AsSpan(peEntry.Append.Length));
 
                 // now make sure all of the conditions on characters
                 // are met.  Please see the appendix at the end of
@@ -1910,15 +1909,14 @@ public partial class WordList
             // to meet the number of characters conditions, then test it
 
             var entry = affix.Entry;
-            var appendLength = entry.Append.Length;
-            var tmpl = word.Length - appendLength; // length of tmpword
+            var tmpl = word.Length - entry.Append.Length; // length of tmpword
 
             if (tmpl > 0 || (tmpl == 0 && Affix.FullStrip))
             {
                 // generate new root word by removing prefix and adding
                 // back any characters that would have been stripped
 
-                var tmpword = StringEx.ConcatString(entry.Strip, word, appendLength, word.Length - appendLength);
+                var tmpword = StringEx.ConcatString(entry.Strip, word.AsSpan(entry.Append.Length));
 
                 // now make sure all of the conditions on characters
                 // are met.  Please see the appendix at the end of
@@ -2145,6 +2143,11 @@ public partial class WordList
         /// </remarks>
         protected string CleanWord2(string src, out CapitalizationType capType, out int abbv)
         {
+            if (Affix.IgnoredChars.HasItems)
+            {
+                src = src.WithoutChars(Affix.IgnoredChars);
+            }
+
             // first skip over any leading blanks
             var qIndex = HunspellTextFunctions.CountMatchingFromLeft(src, ' ');
 

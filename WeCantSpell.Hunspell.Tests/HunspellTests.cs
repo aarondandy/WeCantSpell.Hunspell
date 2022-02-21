@@ -92,6 +92,12 @@ public class HunspellTests
                 return;
             }
 
+            if (dictionaryFilePath.EndsWith("allcaps.dic") && word.EndsWith("Afrique", StringComparison.InvariantCultureIgnoreCase))
+            {
+                // Skips test: https://github.com/aarondandy/WeCantSpell.Hunspell/issues/49
+                return;
+            }
+
             var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
 
             var checkResult = dictionary.Check(word);
@@ -110,6 +116,24 @@ public class HunspellTests
         public async Task cant_find_wrong_words_in_dictionary(string dictionaryFilePath, string word)
         {
             var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
+
+            var checkResult = dictionary.Check(word);
+
+            checkResult.Should().BeFalse();
+        }
+
+        /// <remarks>
+        /// Removed from tests in origin but I wanted to keep it around:
+        /// https://github.com/hunspell/hunspell/commit/8d2f85556e7d6712277547cdeea0e424e80527c4 .
+        /// The comment on the commit shows why it may have been removed, but I want this test so
+        /// I know if changes in behavior ever impact the limit:
+        ///   This is an artificial limit, it would be better not to limit the recognition of this kind of compounding.
+        /// </remarks>
+        [Fact]
+        public async Task can_still_find_10_break_pattern_word_wrong()
+        {
+            var word = "foo-bar-foo-bar-foo-bar-foo-bar-foo-bar-foo";
+            var dictionary = await WordList.CreateFromFilesAsync("files/break.dic");
 
             var checkResult = dictionary.Check(word);
 
@@ -159,6 +183,12 @@ public class HunspellTests
         [InlineData("files/rep.dic", "autos", new[] { "auto's", "auto" })]
         [InlineData("files/ngram_utf_fix.dic", "человеко", new[] { "человек" })]
         [InlineData("files/utf8_nonbmp.dic", "𐏑𐏒𐏒", new[] { "𐏑 𐏒𐏒", "𐏒𐏑", "𐏒𐏒" })]
+        [InlineData("files/ignoresug.dic", "ինչ", new[] { "ինչ" })]
+        [InlineData("files/ignoresug.dic", "ի՞նչ", new[] { "ինչ" })]
+        [InlineData("files/ignoresug.dic", "մնաս", new[] { "մնաս" })]
+        [InlineData("files/ignoresug.dic", "մնա՜ս", new[] { "մնաս" })]
+        [InlineData("files/ignoresug.dic", "որտեղ", new[] { "որտեղ" })]
+        [InlineData("files/ignoresug.dic", "որտե՞ղ", new[] { "որտեղ" })]
         public async Task words_offer_specific_suggestions(string dictionaryFilePath, string word, string[] expectedSuggestions)
         {
             var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
@@ -259,6 +289,18 @@ public class HunspellTests
                 {
                     // NOTE: ph2.wrong does not have a corresponding blank suggestion in the file for rootforbiddenroot
                     suggestionLines.Insert(8, string.Empty);
+                }
+
+                if (suggestionFilePath.EndsWith("breakdefault.sug"))
+                {
+                    // No suggestions were added to compensate for new wrong words
+                    suggestionLines.Add(string.Empty);
+                }
+
+                if (suggestionFilePath.EndsWith("checksharps.sug"))
+                {
+                    // No suggestions were added to compensate for new wrong words
+                    suggestionLines.Add(string.Empty);
                 }
 
                 yield return new SuggestionTestSet

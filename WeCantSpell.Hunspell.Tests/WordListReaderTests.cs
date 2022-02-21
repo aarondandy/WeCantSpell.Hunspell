@@ -125,7 +125,7 @@ public class WordListReaderTests
 
             var actual = await WordListReader.ReadFileAsync(filePath);
 
-            actual.RootWords.Should().HaveCount(4);
+            actual.RootWords.Should().HaveCountGreaterThanOrEqualTo(4);
             actual["OpenOffice.org"].Should().HaveCount(1);
             actual["OpenOffice.org"][0].Flags.Should().BeEmpty();
             actual["Openoffice.org"].Should().HaveCount(1);
@@ -705,25 +705,31 @@ public class WordListReaderTests
 
             var actual = await WordListReader.ReadFileAsync(filePath);
 
-
-            actual.RootWords.Should().HaveCount(4);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
+            actual.RootWords.Should().BeEquivalentTo(new[]
+            {
                 "foo",
                 "bar",
                 "bars",
-                "foos" });
+                "foos",
+                "kg",
+                "Kg",
+                "KG",
+                "cm",
+                "Cm"
+            });
             actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'S' });
-            actual["foo"][0].Morphs.Should().BeEquivalentTo(new[] { "[1]" });
+            actual["foo"][0].Morphs.Should().BeEmpty();
             actual["foo"][1].Flags.Should().ContainInOrder(new[] { 'X', 'Y' });
-            actual["foo"][1].Morphs.Should().BeEquivalentTo(new[] { "[2]" });
-            actual["foo"][2].Flags.Should().ContainInOrder(new[] { 'Y' });
-            actual["foo"][2].Morphs.Should().BeEquivalentTo(new[] { "[3]" });
-            actual["foo"][3].Flags.Should().ContainInOrder(new[] { 'S' });
-            actual["foo"][3].Morphs.Should().BeEquivalentTo(new[] { "[4]" });
+            actual["foo"][1].Morphs.Should().BeEmpty();
             actual["bar"][0].Flags.Should().ContainInOrder(new[] { 'S', 'Y' });
-            actual["bar"][0].Morphs.Should().BeEquivalentTo(new[] { "[5]" });
+            actual["bar"][0].Morphs.Should().BeEmpty();
             actual["bars"][0].Flags.Should().ContainInOrder(new[] { 'X' });
             actual["foos"][0].Flags.Should().ContainInOrder(new[] { 'X' });
+            actual["kg"][0].Flags.Should().BeEmpty();
+            actual["Kg"][0].Flags.Should().ContainInOrder(new[] { 'X' });
+            actual["KG"][0].Flags.Should().ContainInOrder(new[] { 'X' });
+            actual["cm"][0].Flags.Should().BeEmpty();
+            actual["Cm"][0].Flags.Should().ContainInOrder(new[] { 'X' });
         }
 
         [Fact]
