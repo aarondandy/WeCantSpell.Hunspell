@@ -245,7 +245,7 @@ public sealed class WordListReader
 
         var morphValues = (parsed.Morphs != null && parsed.Morphs.Length != 0)
             ? parsed.Morphs
-            : ArrayEx<string>.Empty;
+            : Array.Empty<string>();
 
         return AddWord(parsed.Word.ToString(), flags, morphValues);
     }

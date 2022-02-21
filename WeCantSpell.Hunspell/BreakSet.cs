@@ -8,7 +8,7 @@ namespace WeCantSpell.Hunspell;
 
 public sealed class BreakSet : ArrayWrapper<string>
 {
-    public static readonly BreakSet Empty = TakeArray(ArrayEx<string>.Empty);
+    public static readonly BreakSet Empty = TakeArray(Array.Empty<string>());
 
     internal static BreakSet TakeArray(string[] breaks) => breaks is null ? Empty : new BreakSet(breaks);
 

@@ -27,7 +27,7 @@ public struct CharacterCondition :
         new CharacterCondition(character, restricted);
 
     public static CharacterCondition Create(IEnumerable<char> characters, bool restricted) =>
-        TakeArray(characters is null ? ArrayEx<char>.Empty : characters.ToArray(), restricted);
+        TakeArray(characters is null ? Array.Empty<char>() : characters.ToArray(), restricted);
 
     public static CharacterConditionGroup Parse(string text)
     {

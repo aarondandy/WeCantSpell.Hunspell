@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -7,7 +8,7 @@ namespace WeCantSpell.Hunspell;
 
 public sealed class PhoneTable : ArrayWrapper<PhoneticEntry>
 {
-    public static readonly PhoneTable Empty = TakeArray(ArrayEx<PhoneticEntry>.Empty);
+    public static readonly PhoneTable Empty = TakeArray(Array.Empty<PhoneticEntry>());
 
     public static PhoneTable Create(IEnumerable<PhoneticEntry> entries) => entries is null ? Empty : TakeArray(entries.ToArray());
 

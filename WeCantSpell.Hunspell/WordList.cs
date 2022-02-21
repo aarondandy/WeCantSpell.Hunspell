@@ -81,7 +81,7 @@ public sealed partial class WordList
     public WordEntryDetail[] this[string rootWord] =>
         rootWord is not null
             ? (WordEntryDetail[])FindEntryDetailsByRootWord(rootWord).Clone()
-            : ArrayEx<WordEntryDetail>.Empty;
+            : Array.Empty<WordEntryDetail>();
 
     private Dictionary<string, WordEntryDetail[]> EntriesByRoot { get; set; }
 
@@ -114,7 +114,7 @@ public sealed partial class WordList
         if (rootWord is null) throw new ArgumentNullException(nameof(rootWord));
 #endif
         return (rootWord is null || !EntriesByRoot.TryGetValue(rootWord, out WordEntryDetail[] details))
-            ? ArrayEx<WordEntryDetail>.Empty
+            ? Array.Empty<WordEntryDetail>()
             : details;
     }
 

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -7,7 +8,7 @@ namespace WeCantSpell.Hunspell;
 
 public sealed class CompoundRule : ArrayWrapper<FlagValue>
 {
-    public static readonly CompoundRule Empty = TakeArray(ArrayEx<FlagValue>.Empty);
+    public static readonly CompoundRule Empty = TakeArray(Array.Empty<FlagValue>());
 
     public static CompoundRule Create(List<FlagValue> values) => values is null ? Empty : TakeArray(values.ToArray());
 

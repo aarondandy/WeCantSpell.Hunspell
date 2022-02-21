@@ -167,7 +167,6 @@ static class StringBuilderEx
 
         if (!value.IsEmpty)
         {
-#if !NO_SB_POINTERS
             unsafe
             {
                 fixed (char* start = &MemoryMarshal.GetReference(value))
@@ -175,12 +174,6 @@ static class StringBuilderEx
                     builder.Append(start, value.Length);
                 }
             }
-#else
-            for (var i = 0; i < value.Length; i++)
-            {
-                builder.Append(value[i]);
-            }
-#endif
         }
 
         return builder;

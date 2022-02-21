@@ -527,7 +527,7 @@ public partial class AffixConfig
         {
             if (values is null || values.Count == 0)
             {
-                return ArrayEx<string>.Empty;
+                return Array.Empty<string>();
             }
 
             var result = new string[values.Count];

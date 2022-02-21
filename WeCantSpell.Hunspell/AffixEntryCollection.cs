@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -8,7 +9,7 @@ namespace WeCantSpell.Hunspell;
 public sealed class AffixEntryCollection<TEntry> : ArrayWrapper<TEntry>
     where TEntry : AffixEntry
 {
-    public static readonly AffixEntryCollection<TEntry> Empty = TakeArray(ArrayEx<TEntry>.Empty);
+    public static readonly AffixEntryCollection<TEntry> Empty = TakeArray(Array.Empty<TEntry>());
 
     public static AffixEntryCollection<TEntry> Create(List<TEntry> entries) => entries is null ? Empty : TakeArray(entries.ToArray());
 

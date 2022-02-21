@@ -21,12 +21,5 @@ sealed class CulturedStringComparer : StringComparer
 
     public override bool Equals(string x, string y) => _compareInfo.Compare(x, y) == 0;
 
-    public override int GetHashCode(string obj)
-    {
-#if NO_COMPAREINFO_HASHCODE
-        return 0;
-#else
-        return _compareInfo.GetHashCode(obj, CompareOptions.None);
-#endif
-    }
+    public override int GetHashCode(string obj) => _compareInfo.GetHashCode(obj, CompareOptions.None);
 }

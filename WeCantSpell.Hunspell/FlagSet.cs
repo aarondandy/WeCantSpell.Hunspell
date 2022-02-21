@@ -12,7 +12,7 @@ namespace WeCantSpell.Hunspell;
 
 public sealed class FlagSet : ArrayWrapper<FlagValue>, IEquatable<FlagSet>
 {
-    public static readonly FlagSet Empty = new FlagSet(ArrayEx<FlagValue>.Empty);
+    public static readonly FlagSet Empty = new FlagSet(Array.Empty<FlagValue>());
 
     public static readonly ArrayWrapperComparer<FlagValue, FlagSet> DefaultComparer = new ArrayWrapperComparer<FlagValue, FlagSet>();
 
