@@ -2145,6 +2145,11 @@ public partial class WordList
         /// </remarks>
         protected string CleanWord2(string src, out CapitalizationType capType, out int abbv)
         {
+            if (Affix.IgnoredChars.HasItems)
+            {
+                src = src.WithoutChars(Affix.IgnoredChars);
+            }
+
             // first skip over any leading blanks
             var qIndex = HunspellTextFunctions.CountMatchingFromLeft(src, ' ');
 

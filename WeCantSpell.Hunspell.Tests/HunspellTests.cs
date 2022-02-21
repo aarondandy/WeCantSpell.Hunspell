@@ -159,6 +159,12 @@ public class HunspellTests
         [InlineData("files/rep.dic", "autos", new[] { "auto's", "auto" })]
         [InlineData("files/ngram_utf_fix.dic", "человеко", new[] { "человек" })]
         [InlineData("files/utf8_nonbmp.dic", "𐏑𐏒𐏒", new[] { "𐏑 𐏒𐏒", "𐏒𐏑", "𐏒𐏒" })]
+        [InlineData("files/ignoresug.dic", "ինչ", new[] { "ինչ" })]
+        [InlineData("files/ignoresug.dic", "ի՞նչ", new[] { "ինչ" })]
+        [InlineData("files/ignoresug.dic", "մնաս", new[] { "մնաս" })]
+        [InlineData("files/ignoresug.dic", "մնա՜ս", new[] { "մնաս" })]
+        [InlineData("files/ignoresug.dic", "որտեղ", new[] { "որտեղ" })]
+        [InlineData("files/ignoresug.dic", "որտե՞ղ", new[] { "որտեղ" })]
         public async Task words_offer_specific_suggestions(string dictionaryFilePath, string word, string[] expectedSuggestions)
         {
             var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
