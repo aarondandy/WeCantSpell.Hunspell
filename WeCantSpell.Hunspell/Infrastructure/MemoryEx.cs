@@ -73,13 +73,13 @@ static class MemoryEx
     public static bool EndsWith(this ReadOnlySpan<char> @this, char value) =>
         !@this.IsEmpty && @this[@this.Length - 1] == value;
 
-    public static bool Split(this ReadOnlySpan<char> @this, char value0, SplitPartHandler partHandler)
+    public static bool SplitOnComma(this ReadOnlySpan<char> @this, SplitPartHandler partHandler)
     {
         int partIndex = 0;
         int startIndex = 0;
         int commaIndex;
         int partLength;
-        while ((commaIndex = @this.IndexOf(value0, startIndex)) >= 0)
+        while ((commaIndex = @this.IndexOf(',', startIndex)) >= 0)
         {
             partLength = commaIndex - startIndex;
             if (partLength > 0)
