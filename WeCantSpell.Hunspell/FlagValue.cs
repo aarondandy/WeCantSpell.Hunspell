@@ -164,11 +164,11 @@ public readonly struct FlagValue :
     {
         if (text.IsEmpty)
         {
-            return new List<FlagValue>(0);
+            return new();
         }
 
         var flags = new List<FlagValue>();
-        text.Split(',', (part, _) =>
+        text.SplitOnComma((part, _) =>
         {
             if (TryParseNumberFlag(part, out var value))
             {

@@ -71,23 +71,17 @@ public partial class WordList
         {
             var affix = Affix ?? new AffixConfig.Builder().MoveToImmutable();
 
-            var nGramRestrictedFlags = Dedup(FlagSet.Create(
-                new[]
-                {
-                    affix.ForbiddenWord,
-                    affix.NoSuggest,
-                    affix.NoNgramSuggest,
-                    affix.OnlyInCompound,
-                    SpecialFlags.OnlyUpcaseFlag
-                }
-                .Where(f => f.HasValue)));
-
-            var result = new WordList(affix)
+            var result = new WordList(affix);
+            result.NGramRestrictedFlags = Dedup(FlagSet.Create(new[]
             {
-                NGramRestrictedFlags = nGramRestrictedFlags,
-            };
+                affix.ForbiddenWord,
+                affix.NoSuggest,
+                affix.NoNgramSuggest,
+                affix.OnlyInCompound,
+                SpecialFlags.OnlyUpcaseFlag
+            }));
 
-            if (EntryDetailsByRoot == null)
+            if (EntryDetailsByRoot is null)
             {
                 result.EntriesByRoot = new Dictionary<string, WordEntryDetail[]>();
             }
@@ -127,7 +121,7 @@ public partial class WordList
                 details.Clear();
                 foreach (var entry in rootSet.Value)
                 {
-                    if (nGramRestrictedFlags.ContainsAny(entry.Flags))
+                    if (result.NGramRestrictedFlags.ContainsAny(entry.Flags))
                     {
                         details.Add(entry);
                     }
