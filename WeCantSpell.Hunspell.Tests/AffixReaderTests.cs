@@ -1674,7 +1674,7 @@ public class AffixReaderTests
         [Fact]
         public async Task can_read_flag_mode_from_russian_english_bilingual()
         {
-            var filePath = @"samples/Russian-English Bilingual.aff";
+            var filePath = @"files/Russian-English Bilingual.aff";
 
             var actual = await AffixReader.ReadFileAsync(filePath);
 
@@ -1684,10 +1684,11 @@ public class AffixReaderTests
         public static IEnumerable<object[]> can_read_file_without_exception_args =>
             Directory.GetFiles("files/", "*.aff").Select(filePath => new object[] { filePath });
 
-        public static string[] can_read_file_without_exception_warning_exceptions =
+        public static HashSet<string> can_read_file_without_exception_warning_exceptions = new(StringComparer.OrdinalIgnoreCase)
         {
             "base_utf.aff", // this file has some strange morph lines at the bottom, maybe a bug?
-            "allcaps.aff" // Bug: https://github.com/aarondandy/WeCantSpell.Hunspell/issues/49
+            "allcaps.aff", // Bug: https://github.com/aarondandy/WeCantSpell.Hunspell/issues/49
+            "Russian-English Bilingual.aff"
         };
 
         [Theory, MemberData(nameof(can_read_file_without_exception_args))]
