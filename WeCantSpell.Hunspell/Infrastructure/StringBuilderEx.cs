@@ -158,6 +158,7 @@ static class StringBuilderEx
             + builder.ToString(index, builder.Length - index);
     }
 
+#if NO_SB_SPANS
     public static StringBuilder Append(this StringBuilder builder, ReadOnlySpan<char> value)
     {
 #if DEBUG
@@ -184,4 +185,6 @@ static class StringBuilderEx
 
         return builder;
     }
+#endif
+
 }
