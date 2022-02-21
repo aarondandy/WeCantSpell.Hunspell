@@ -2,7 +2,7 @@
 
 A port of [Hunspell](https://github.com/hunspell/hunspell) for .NET.
 
-![bee](icon.png)
+![bee](https://raw.githubusercontent.com/aarondandy/WeCantSpell.Hunspell/main/icon.png)
 
 **Download and install with NuGet: [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/)**
 
@@ -24,26 +24,20 @@ A port of [Hunspell](https://github.com/hunspell/hunspell) for .NET.
 
 "It's complicated"
 
-Read the license: [LICENSE](./license.txt)
+Read the license: [LICENSE](license.txt)
 
 This library was ported from the original Hunspell source
-and as a result is licensed under an MPL, LGPL, and GPL tri-license. Read the [LICENSE](./license.txt) file to be sure you can use this library.
+and as a result is licensed under an MPL, LGPL, and GPL tri-license. Read the [LICENSE](license.txt) file to be sure you can use this library.
 
 ## Quick Start Example
 
 ```csharp
 using WeCantSpell.Hunspell;
 
-public class Program
-{
-    static void Main(string[] args)
-    {
-        var dictionary = WordList.CreateFromFiles(@"English (British).dic");
-        bool notOk = dictionary.Check("teh");
-        var suggestions = dictionary.Suggest("teh");
-        bool ok = dictionary.Check("the");
-    }
-}
+var dictionary = WordList.CreateFromFiles(@"English (British).dic");
+bool notOk = dictionary.Check("Color");
+var suggestions = dictionary.Suggest("Color");
+bool ok = dictionary.Check("Colour");
 ```
 
 ## Upstream
