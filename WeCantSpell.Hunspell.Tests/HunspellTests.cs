@@ -115,6 +115,24 @@ public class HunspellTests
 
             checkResult.Should().BeFalse();
         }
+
+        /// <remarks>
+        /// Removed from tests in origin but I wanted to keep it around:
+        /// https://github.com/hunspell/hunspell/commit/8d2f85556e7d6712277547cdeea0e424e80527c4 .
+        /// The comment on the commit shows why it may have been removed, but I want this test so
+        /// I know if chanes in behavior ever impact the limit:
+        ///   This is an artificial limit, it would be better not to limit the recognition of this kind of compounding.
+        /// </remarks>
+        [Fact]
+        public async Task can_still_find_10_break_pattern_word_wrong()
+        {
+            var word = "foo-bar-foo-bar-foo-bar-foo-bar-foo-bar-foo";
+            var dictionary = await WordList.CreateFromFilesAsync("files/break.dic");
+
+            var checkResult = dictionary.Check(word);
+
+            checkResult.Should().BeFalse();
+        }
     }
 
     public class Suggest : HunspellTests
