@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -7,7 +8,7 @@ namespace WeCantSpell.Hunspell;
 
 public sealed class SingleReplacementSet : ArrayWrapper<SingleReplacement>
 {
-    public static readonly SingleReplacementSet Empty = TakeArray(ArrayEx<SingleReplacement>.Empty);
+    public static readonly SingleReplacementSet Empty = TakeArray(Array.Empty<SingleReplacement>());
 
     public static SingleReplacementSet Create(IEnumerable<SingleReplacement> replacements) => replacements is null ? Empty : TakeArray(replacements.ToArray());
 

@@ -123,7 +123,7 @@ public readonly struct FlagValue :
     internal static FlagValue[] ParseFlagsInOrder(ReadOnlySpan<char> text, FlagMode mode) =>
         mode switch
         {
-            FlagMode.Char => text.IsEmpty ? ArrayEx<FlagValue>.Empty : ConvertCharsToFlagsInOrder(text),
+            FlagMode.Char => text.IsEmpty ? Array.Empty<FlagValue>() : ConvertCharsToFlagsInOrder(text),
             FlagMode.Long => ParseLongFlagsInOrder(text),
             FlagMode.Num => ParseNumberFlagsInOrder(text).ToArray(),
             _ => throw new NotSupportedException(),
@@ -141,7 +141,7 @@ public readonly struct FlagValue :
     {
         if (text.IsEmpty)
         {
-            return ArrayEx<FlagValue>.Empty;
+            return Array.Empty<FlagValue>();
         }
 
         var flags = new FlagValue[(text.Length + 1) / 2];

@@ -10,7 +10,7 @@ namespace WeCantSpell.Hunspell;
 
 public sealed class CharacterSet : ArrayWrapper<char>
 {
-    public static readonly CharacterSet Empty = new CharacterSet(ArrayEx<char>.Empty);
+    public static readonly CharacterSet Empty = new CharacterSet(Array.Empty<char>());
 
     public static readonly ArrayWrapperComparer<char, CharacterSet> DefaultComparer = new ArrayWrapperComparer<char, CharacterSet>();
 

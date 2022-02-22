@@ -8,7 +8,7 @@ namespace WeCantSpell.Hunspell;
 
 public sealed class MorphSet : ArrayWrapper<string>, IEquatable<MorphSet>
 {
-    public static readonly MorphSet Empty = TakeArray(ArrayEx<string>.Empty);
+    public static readonly MorphSet Empty = TakeArray(Array.Empty<string>());
 
     public static readonly ArrayWrapperComparer<string, MorphSet> DefaultComparer = new ArrayWrapperComparer<string, MorphSet>();
 

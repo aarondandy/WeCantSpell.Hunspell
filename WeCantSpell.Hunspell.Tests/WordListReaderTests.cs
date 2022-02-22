@@ -1068,10 +1068,19 @@ public class WordListReaderTests
         }
     }
 
-    public static IEnumerable<object[]> large_assortment_of_dic_files =
-        Directory.GetFiles("files/", "*.dic")
-        .Concat(Directory.GetFiles("samples/", "*.dic"))
-        .OrderBy(x => x)
-        .Select(filePath => new object[] { filePath })
-        .ToList();
+    public static IEnumerable<object[]> large_assortment_of_dic_files
+    {
+        get
+        {
+            IEnumerable<string> files = Directory.GetFiles("files/", "*.dic");
+            if (Directory.Exists("samples"))
+            {
+                files = files.Concat(Directory.GetFiles("samples/", "*.dic"));
+            }
+
+            return files
+                .OrderBy(x => x)
+                .Select(filePath => new object[] { filePath });
+        }
+    }
 }

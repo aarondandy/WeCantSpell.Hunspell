@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -6,7 +7,7 @@ namespace WeCantSpell.Hunspell;
 
 public sealed class CharacterConditionGroup : ArrayWrapper<CharacterCondition>
 {
-    public static readonly CharacterConditionGroup Empty = TakeArray(ArrayEx<CharacterCondition>.Empty);
+    public static readonly CharacterConditionGroup Empty = TakeArray(Array.Empty<CharacterCondition>());
 
     public static readonly CharacterConditionGroup AllowAnySingleCharacter = Create(CharacterCondition.AllowAny);
 
