@@ -1,9 +1,5 @@
 ﻿using System;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell.Infrastructure;
 
 ref struct SimulatedCString
@@ -31,13 +27,7 @@ ref struct SimulatedCString
         }
     }
 
-    public int BufferLength
-    {
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        get => _buffer.Length;
-    }
+    public int BufferLength => _buffer.Length;
 
     public void WriteChars(string text, int destinationIndex)
     {
@@ -107,9 +97,6 @@ ref struct SimulatedCString
         _cachedString = null;
     }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     private int FindTerminatedLength()
     {
         var length = Array.IndexOf(_buffer, '\0');

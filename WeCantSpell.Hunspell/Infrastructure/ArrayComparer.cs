@@ -39,36 +39,42 @@ sealed class ArrayComparer<T> : IEqualityComparer<T[]>
 
         if (typeof(T) == typeof(string))
         {
-            return CompareStrings((string[])(object)x, (string[])(object)y);
-        }
-
-        return CompareAnything(x, y);
-    }
-
-    private bool CompareStrings(string[] x, string[] y)
-    {
-        for (var i = 0; i < x.Length; i++)
-        {
-            if (!StringComparer.Equals(x[i], y[i]))
+#if NO_SPAN_SEQUENCEEQUAL_COMPARER
+            sequenceEqualsString((string[])(object)x, (string[])(object)y);
+            static bool sequenceEqualsString(string[] x, string[] y)
             {
-                return false;
+                for (var i = 0; i < x.Length; i++)
+                {
+                    if (!StringComparer.Equals(x[i], y[i]))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
             }
+#else
+            return ((string[])(object)x).AsSpan().SequenceEqual((string[])(object)y, StringComparer);
+#endif
         }
 
-        return true;
-    }
-
-    private bool CompareAnything(T[] x, T[] y)
-    {
-        for (var i = 0; i < x.Length; i++)
+#if NO_SPAN_SEQUENCEEQUAL_COMPARER
+        return compareAnything(x, y);
+        static bool compareAnything(T[] x, T[] y)
         {
-            if (!EqualityComparer.Equals(x[i], y[i]))
+            for (var i = 0; i < x.Length; i++)
             {
-                return false;
+                if (!EqualityComparer.Equals(x[i], y[i]))
+                {
+                    return false;
+                }
             }
-        }
 
-        return true;
+            return true;
+        }
+#else
+        return x.AsSpan().SequenceEqual(y, EqualityComparer);
+#endif
     }
 
     public int GetHashCode(T[] obj)

@@ -5,10 +5,6 @@ using System.Text.RegularExpressions;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell;
 
 public struct CharacterCondition :
@@ -120,9 +116,9 @@ public struct CharacterCondition :
             return Characters[0].ToString();
         }
 
-        var lettersText = (Characters is null || Characters.Count == 0)
-            ? string.Empty
-            : Characters.GetCharactersAsString();
+        var lettersText = Characters is { Count: > 0 }
+            ? Characters.GetCharactersAsString()
+            : string.Empty;
 
         return (Restricted ? "[^" : "[") + lettersText + "]";
     }

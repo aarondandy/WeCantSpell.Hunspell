@@ -8,10 +8,6 @@ using System.Threading.Tasks;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell;
 
 public sealed class WordListReader
@@ -32,13 +28,7 @@ public sealed class WordListReader
 
     private AffixConfig Affix { get; }
 
-    private TextInfo TextInfo
-    {
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        get => Affix.Culture.TextInfo;
-    }
+    private TextInfo TextInfo => Affix.Culture.TextInfo;
 
     public static async Task<WordList> ReadAsync(Stream dictionaryStream, Stream affixStream)
     {

@@ -1,18 +1,11 @@
 ﻿using System;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell;
 
 sealed class WordEntry : IEquatable<WordEntry>
 {
     public static bool operator ==(WordEntry a, WordEntry b) => a is null ? b is null : a.Equals(b);
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static bool operator !=(WordEntry a, WordEntry b) => !(a == b);
 
     public WordEntry(string word, FlagSet flags, MorphSet morphs, WordEntryOptions options)
@@ -28,9 +21,6 @@ sealed class WordEntry : IEquatable<WordEntry>
 
     public WordEntryDetail Detail { get; }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public bool ContainsFlag(FlagValue flag) => Detail.ContainsFlag(flag);
 
     public bool Equals(WordEntry other)

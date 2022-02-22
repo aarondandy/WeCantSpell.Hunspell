@@ -4,10 +4,6 @@ using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell;
 
 public class PatternSet : ArrayWrapper<PatternEntry>
@@ -67,9 +63,6 @@ public class PatternSet : ArrayWrapper<PatternEntry>
         return false;
     }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     private static bool PatternWordCheck(string word, int pos, string other) =>
         other.Length <= pos
         && word.AsSpan(pos - other.Length).StartsWith(other.AsSpan());

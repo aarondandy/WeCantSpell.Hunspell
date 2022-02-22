@@ -1,19 +1,12 @@
 ﻿using System;
 using System.Buffers;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class StringEx
 {
     private static readonly char[] SpaceOrTab = { ' ', '\t' };
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static bool StartsWith(this string @this, char character)
     {
 #if DEBUG
@@ -22,9 +15,6 @@ static class StringEx
         return @this.Length != 0 && @this[0] == character;
     }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static bool EndsWith(this string @this, char character)
     {
 #if DEBUG
@@ -33,9 +23,6 @@ static class StringEx
         return @this.Length != 0 && @this[@this.Length - 1] == character;
     }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static string[] SplitOnTabOrSpace(this string @this)
     {
 #if DEBUG
@@ -44,9 +31,6 @@ static class StringEx
         return @this.Split(SpaceOrTab, StringSplitOptions.RemoveEmptyEntries);
     }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static bool IsTabOrSpace(this char c) => c == ' ' || c == '\t';
 
     public static string GetReversed(this string @this)
@@ -78,9 +62,6 @@ static class StringEx
         return StringBuilderPool.GetStringAndReturn(builder);
     }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static char GetCharOrTerminator(this string @this, int index)
     {
 #if DEBUG
@@ -139,10 +120,7 @@ static class StringEx
         return StringBuilderPool.GetStringAndReturn(builder);
     }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-    public static bool IsLineBreakChar(this char c) => c == '\n' || c == '\r';
+    public static bool IsLineBreakChar(this char c) => c is '\n' or '\r';
 
     public static string WithoutIndex(this string @this, int index)
     {

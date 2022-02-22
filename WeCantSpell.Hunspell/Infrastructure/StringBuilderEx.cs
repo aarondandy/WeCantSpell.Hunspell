@@ -2,18 +2,10 @@
 using System.Runtime.InteropServices;
 using System.Text;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class StringBuilderEx
 {
-
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static void Swap(this StringBuilder @this, int indexA, int indexB)
     {
 #if DEBUG
@@ -71,9 +63,6 @@ static class StringBuilderEx
         return -1;
     }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static char GetCharOrTerminator(this StringBuilder @this, int index) =>
         index < @this.Length ? @this[index] : '\0';
 
@@ -95,16 +84,14 @@ static class StringBuilderEx
 
     public static void Reverse(this StringBuilder @this)
     {
-        if (@this is null || @this.Length <= 1)
+        if (@this is { Length: > 1 })
         {
-            return;
-        }
-
-        var swapOtherIndexOffset = @this.Length - 1;
-        var stopIndex = @this.Length / 2;
-        for (var i = 0; i < stopIndex; i++)
-        {
-            @this.Swap(i, swapOtherIndexOffset - i);
+            var swapOtherIndexOffset = @this.Length - 1;
+            var stopIndex = @this.Length / 2;
+            for (var i = 0; i < stopIndex; i++)
+            {
+                @this.Swap(i, swapOtherIndexOffset - i);
+            }
         }
     }
 

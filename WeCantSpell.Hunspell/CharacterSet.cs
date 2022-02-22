@@ -2,10 +2,6 @@
 
 using WeCantSpell.Hunspell.Infrastructure;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell;
 
 public sealed class CharacterSet : ArrayWrapper<char>
@@ -49,8 +45,5 @@ public sealed class CharacterSet : ArrayWrapper<char>
         &&
         Array.BinarySearch(Items, value) >= 0;
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public string GetCharactersAsString() => new string(Items);
 }

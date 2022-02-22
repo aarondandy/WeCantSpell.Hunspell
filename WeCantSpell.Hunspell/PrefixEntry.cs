@@ -1,14 +1,7 @@
-﻿#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
-namespace WeCantSpell.Hunspell;
+﻿namespace WeCantSpell.Hunspell;
 
 public sealed class PrefixEntry : AffixEntry
 {
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public PrefixEntry(
         string strip,
         string affixText,
@@ -19,11 +12,7 @@ public sealed class PrefixEntry : AffixEntry
     {
     }
 
-    public sealed override string Key
-    {
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        get => Append;
-    }
+    public sealed override string Key => Append;
+
+    internal bool TestCondition(string word) => Conditions.IsStartingMatch(word);
 }

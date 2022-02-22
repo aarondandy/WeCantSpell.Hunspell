@@ -7,10 +7,6 @@ using System.Threading;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell;
 
 public partial class AffixConfig
@@ -470,17 +466,11 @@ public partial class AffixConfig
         /// Enables the given <paramref name="options"/> bits.
         /// </summary>
         /// <param name="options">Various bit options to enable.</param>
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public void EnableOptions(AffixConfigOptions options)
         {
             Options |= options;
         }
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public FlagSet Dedup(FlagSet values)
         {
 #if DEBUG
@@ -489,15 +479,9 @@ public partial class AffixConfig
             return FlagSetDeduper.GetEqualOrAdd(values);
         }
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         internal string Dedup(ReadOnlySpan<char> value) =>
             StringDeduper.GetEqualOrAdd(value.ToString());
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public string Dedup(string value)
         {
 #if DEBUG
