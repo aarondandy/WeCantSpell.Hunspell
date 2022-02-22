@@ -7,13 +7,13 @@ ref struct SimulatedCString
     public SimulatedCString(string text)
     {
         _buffer = text.ToCharArray();
-        _cachedSpan = _buffer.AsSpan();
         _cachedString = null;
+        _cachedSpan = _buffer.AsSpan();
         _cacheRequiresRefresh = true;
     }
 
     private char[] _buffer;
-    private string _cachedString;
+    private string? _cachedString;
     private Span<char> _cachedSpan;
     private bool _cacheRequiresRefresh;
 
@@ -77,8 +77,10 @@ ref struct SimulatedCString
         _buffer = null;
     }
 
-    public override string ToString() =>
-        _cachedString ?? (_cachedString = GetTerminatedSpan().ToString());
+    public override string ToString()
+    {
+        return _cachedString ??= GetTerminatedSpan().ToString();
+    }
 
     public Span<char> GetTerminatedSpan()
     {

@@ -39,7 +39,7 @@ static class IntEx
 
         for (int i = text.Length - 2, multiplier = 10; i >= 0; i--, multiplier *= 10)
         {
-            if (!TryParseInvariant(text[i], out int digit))
+            if (!TryParseInvariant(text[i], out var digit))
             {
                 return false;
             }

@@ -30,56 +30,50 @@ static class MemoryEx
 
     public static int IndexOfAny(this ReadOnlySpan<char> @this, CharacterSet chars)
     {
-        for (var searchLocation = 0; searchLocation < @this.Length; searchLocation++)
+        if (chars.HasItems)
         {
-            if (chars.Contains(@this[searchLocation]))
+            if (chars.Count == 1)
             {
-                return searchLocation;
+                return @this.IndexOf(chars[0]);
+            }
+
+            for (var searchLocation = 0; searchLocation < @this.Length; searchLocation++)
+            {
+                if (chars.Contains(@this[searchLocation]))
+                {
+                    return searchLocation;
+                }
             }
         }
 
         return -1;
     }
 
-    public static bool Equals(this ReadOnlySpan<char> @this, string value, StringComparison comparison) =>
-        value != null && @this.Equals(value.AsSpan(), comparison);
+    public static bool Equals(this ReadOnlySpan<char> @this, string value, StringComparison comparison) => @this.Equals(value.AsSpan(), comparison);
 
-    public static bool EqualsOrdinal(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value) =>
-        @this.SequenceEqual(value);
+    public static bool EqualsOrdinal(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value) => @this.Equals(value, StringComparison.Ordinal);
 
     public static bool EqualsLimited(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value, int lengthLimit) =>
         @this.Limit(lengthLimit).EqualsOrdinal(value.Limit(lengthLimit));
 
-    public static bool ContainsAny(this ReadOnlySpan<char> @this, char value0, char value1) =>
-        @this.IndexOfAny(value0, value1) >= 0;
+    public static bool ContainsAny(this ReadOnlySpan<char> @this, char value0, char value1) => @this.IndexOfAny(value0, value1) >= 0;
 
-    public static bool Contains(this ReadOnlySpan<char> @this, char value) =>
-        @this.IndexOf(value) >= 0;
+    public static bool Contains(this ReadOnlySpan<char> @this, char value) => @this.IndexOf(value) >= 0;
 
-    public static bool Contains(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value) =>
-        @this.IndexOf(value) >= 0;
+    public static bool Contains(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value) => @this.IndexOf(value) >= 0;
 
-    public static bool StartsWith(this ReadOnlySpan<char> @this, string value, StringComparison comparison)
-    {
-#if DEBUG
-        if (value is null) throw new ArgumentNullException(nameof(value));
-#endif
-        return @this.StartsWith(value.AsSpan(), comparison);
-    }
+    public static bool StartsWith(this ReadOnlySpan<char> @this, string value, StringComparison comparison) => @this.StartsWith(value.AsSpan(), comparison);
 
-    public static bool StartsWith(this ReadOnlySpan<char> @this, char value) =>
-        !@this.IsEmpty && @this[0] == value;
+    public static bool StartsWith(this ReadOnlySpan<char> @this, char value) => !@this.IsEmpty && @this[0] == value;
 
-    public static bool EndsWith(this ReadOnlySpan<char> @this, char value) =>
-        !@this.IsEmpty && @this[@this.Length - 1] == value;
+    public static bool EndsWith(this ReadOnlySpan<char> @this, char value) => !@this.IsEmpty && @this[@this.Length - 1] == value;
 
     public static bool SplitOnComma(this ReadOnlySpan<char> @this, SplitPartHandler partHandler)
     {
         int partIndex = 0;
         int startIndex = 0;
-        int commaIndex;
         int partLength;
-        while ((commaIndex = @this.IndexOf(',', startIndex)) >= 0)
+        while (@this.IndexOf(',', startIndex) is { } commaIndex and >= 0)
         {
             partLength = commaIndex - startIndex;
             if (partLength > 0)
@@ -104,9 +98,8 @@ static class MemoryEx
     {
         int partIndex = 0;
         int startIndex = 0;
-        int commaIndex;
         int partLength;
-        while ((commaIndex = @this.IndexOfAny(value0, value1, startIndex)) >= 0)
+        while (@this.IndexOfAny(value0, value1, startIndex) is { } commaIndex and >= 0)
         {
             partLength = commaIndex - startIndex;
             if (partLength > 0)
@@ -125,8 +118,7 @@ static class MemoryEx
             && partHandler(@this.Slice(startIndex, partLength), partIndex);
     }
 
-    public static bool SplitOnTabOrSpace(this ReadOnlySpan<char> @this, SplitPartHandler partHandler) =>
-        @this.Split(' ', '\t', partHandler);
+    public static bool SplitOnTabOrSpace(this ReadOnlySpan<char> @this, SplitPartHandler partHandler) => @this.Split(' ', '\t', partHandler);
 
     public static string Without(this ReadOnlySpan<char> @this, char value)
     {

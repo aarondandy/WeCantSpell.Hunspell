@@ -8,7 +8,7 @@ static class StringBuilderPool
 {
     private const int MaxCachedBuilderCapacity = WordList.MaxWordLen;
 
-    private static StringBuilder Cache;
+    private static StringBuilder? Cache;
 
     public static StringBuilder Get() => GetClearedBuilder();
 

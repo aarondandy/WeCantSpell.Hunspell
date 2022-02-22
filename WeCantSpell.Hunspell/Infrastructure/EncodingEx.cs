@@ -5,9 +5,9 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class EncodingEx
 {
-    public static Encoding GetEncodingByName(string encodingName) => GetEncodingByName(encodingName.AsSpan());
+    public static Encoding? GetEncodingByName(string encodingName) => GetEncodingByName(encodingName.AsSpan());
 
-    public static Encoding GetEncodingByName(ReadOnlySpan<char> encodingName)
+    public static Encoding? GetEncodingByName(ReadOnlySpan<char> encodingName)
     {
         if (encodingName.IsEmpty)
         {
@@ -30,7 +30,7 @@ static class EncodingEx
         }
     }
 
-    private static Encoding GetEncodingByAlternateNames(string encodingName)
+    private static Encoding? GetEncodingByAlternateNames(string encodingName)
     {
         var spaceIndex = encodingName.IndexOf(' ');
         if (spaceIndex > 0)

@@ -394,7 +394,7 @@ public partial class AffixConfig
                     || string.Equals(culture?.ThreeLetterISOLanguageName, "CRH", StringComparison.OrdinalIgnoreCase)
 #endif
                     || string.Equals(culture?.TwoLetterISOLanguageName, "CRH", StringComparison.OrdinalIgnoreCase), // wikipedia says: this is an ISO2 code
-                StringComparer = new CulturedStringComparer(culture),
+                StringComparer = culture?.CompareInfo.GetStringComparer(CompareOptions.None) ?? StringComparer.InvariantCulture,
                 CompoundFlag = CompoundFlag,
                 CompoundBegin = CompoundBegin,
                 CompoundEnd = CompoundEnd,

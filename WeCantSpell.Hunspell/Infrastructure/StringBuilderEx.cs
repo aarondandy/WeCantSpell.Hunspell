@@ -13,9 +13,7 @@ static class StringBuilderEx
         if (indexB < 0 || indexB > @this.Length) throw new ArgumentOutOfRangeException(nameof(indexB));
 #endif
 
-        var temp = @this[indexA];
-        @this[indexA] = @this[indexB];
-        @this[indexB] = temp;
+        (@this[indexB], @this[indexA]) = (@this[indexA], @this[indexB]);
     }
 
     public static string ToStringTerminated(this StringBuilder @this)
@@ -63,8 +61,7 @@ static class StringBuilderEx
         return -1;
     }
 
-    public static char GetCharOrTerminator(this StringBuilder @this, int index) =>
-        index < @this.Length ? @this[index] : '\0';
+    public static char GetCharOrTerminator(this StringBuilder @this, int index) => index < @this.Length ? @this[index] : '\0';
 
     public static void RemoveChars(this StringBuilder @this, CharacterSet chars)
     {
@@ -116,20 +113,16 @@ static class StringBuilderEx
         }
     }
 
-    public static bool StartsWith(this StringBuilder builder, char c) =>
-        builder.Length != 0 && builder[0] == c;
+    public static bool StartsWith(this StringBuilder builder, char c) => builder.Length > 0 && builder[0] == c;
 
-    public static bool EndsWith(this StringBuilder builder, char c) =>
-        builder.Length != 0 && builder[builder.Length - 1] == c;
+    public static bool EndsWith(this StringBuilder builder, char c) => builder.Length > 0 && builder[builder.Length - 1] == c;
 
     public static string ToStringWithInsert(this StringBuilder builder, int index, char value)
     {
 #if DEBUG
-        if (index < 0 || index > builder.Length)
-        {
-            throw new ArgumentOutOfRangeException(nameof(index));
-        }
+        if (index < 0 || index > builder.Length) throw new ArgumentOutOfRangeException(nameof(index));
 #endif
+
         if (index == 0)
         {
             return value.ToString() + builder.ToString();

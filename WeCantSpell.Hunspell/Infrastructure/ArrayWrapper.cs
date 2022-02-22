@@ -37,19 +37,19 @@ public class ArrayWrapper<T> : IReadOnlyList<T>
     {
         public ArrayWrapperComparer()
         {
-            arrayComparer = ArrayComparer<TValue>.Default;
+            _arrayComparer = ArrayComparer<TValue>.Default;
         }
 
-        private readonly ArrayComparer<TValue> arrayComparer;
+        private readonly ArrayComparer<TValue> _arrayComparer;
 
-        public bool Equals(TCollection x, TCollection y)
+        public bool Equals(TCollection? x, TCollection? y)
         {
             if (x is null) return y is null;
             if (y is null) return false;
 
-            return arrayComparer.Equals(x.Items, y.Items);
+            return _arrayComparer.Equals(x.Items, y.Items);
         }
 
-        public int GetHashCode(TCollection obj) => obj is null ? 0 : arrayComparer.GetHashCode(obj.Items);
+        public int GetHashCode(TCollection obj) => _arrayComparer.GetHashCode(obj.Items);
     }
 }

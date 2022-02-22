@@ -16,7 +16,7 @@ sealed class ArrayComparer<T> : IEqualityComparer<T[]>
     {
     }
 
-    public bool Equals(T[] x, T[] y)
+    public bool Equals(T[]? x, T[]? y)
     {
         if (x is null) return y == null;
 
@@ -79,33 +79,20 @@ sealed class ArrayComparer<T> : IEqualityComparer<T[]>
 
     public int GetHashCode(T[] obj)
     {
-        if (obj == null)
+        if (obj is not { Length: > 0 })
         {
             return 0;
         }
 
-        if (obj.Length == 0)
+        if (obj.Length == 1)
         {
-            return 17;
+            return HashCode.Combine(obj.Length, obj[0]);
+        }
+        else if (obj.Length == 2)
+        {
+            return HashCode.Combine(obj.Length, obj[0], obj[1]);
         }
 
-        unchecked
-        {
-            int hash = (17 * 31) + obj.Length.GetHashCode();
-
-            hash = (hash * 31) + obj[0].GetHashCode();
-
-            if (obj.Length > 1)
-            {
-                if (obj.Length > 2)
-                {
-                    hash = (hash * 31) + obj[obj.Length / 2].GetHashCode();
-                }
-
-                hash = (hash * 31) + obj[obj.Length - 1].GetHashCode();
-            }
-
-            return hash;
-        }
+        return HashCode.Combine(obj.Length, obj[0], obj[obj.Length / 2], obj[obj.Length - 1]);
     }
 }

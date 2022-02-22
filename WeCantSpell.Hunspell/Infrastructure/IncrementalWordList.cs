@@ -1,24 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
-class IncrementalWordList
+sealed class IncrementalWordList
 {
-    public IncrementalWordList()
-        : this(new List<WordEntryDetail>(), 0) { }
+    public IncrementalWordList() : this(new List<WordEntryDetail?>(), 0)
+    {
+    }
 
-    public IncrementalWordList(List<WordEntryDetail> words, int wNum)
+    public IncrementalWordList(List<WordEntryDetail?> words, int wNum)
     {
 #if DEBUG
-        if (words is null) throw new ArgumentNullException(nameof(words));
         if (WNum < 0) throw new ArgumentOutOfRangeException(nameof(wNum));
 #endif
         Words = words;
         WNum = wNum;
     }
 
-    public List<WordEntryDetail> Words { get; }
+    public List<WordEntryDetail?> Words { get; }
 
     public int WNum { get; }
 
@@ -37,11 +38,8 @@ class IncrementalWordList
             appendWithLeadingBlanks();
             void appendWithLeadingBlanks()
             {
-                for (var i = WNum - Words.Count; i > 0; i--)
-                {
-                    Words.Add(null);
-                }
-
+                var filler = WNum - Words.Count;
+                Words.AddRange(Enumerable.Repeat<WordEntryDetail?>(null, Math.Max(filler, 0)));
                 Words.Add(value);
             }
         }
@@ -59,7 +57,7 @@ class IncrementalWordList
 
     public bool CheckIfNextIsNotNull() => CheckIfNotNull(WNum + 1);
 
-    private bool CheckIfNotNull(int index) => (index < Words.Count) && Words[index] is not null;
+    private bool CheckIfNotNull(int index) => index < Words.Count && Words[index] is not null;
 
     public bool ContainsFlagAt(int wordIndex, FlagValue flag)
     {
@@ -67,13 +65,9 @@ class IncrementalWordList
         if (wordIndex < 0) throw new ArgumentOutOfRangeException(nameof(wordIndex));
 #endif
 
-        if (wordIndex < Words.Count)
+        if (wordIndex < Words.Count && Words[wordIndex] is { } detail)
         {
-            var detail = Words[wordIndex];
-            if (detail != null)
-            {
-                return detail.ContainsFlag(flag);
-            }
+            return detail.ContainsFlag(flag);
         }
 
         return false;
