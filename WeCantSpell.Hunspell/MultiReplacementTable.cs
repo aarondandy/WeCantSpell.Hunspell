@@ -5,10 +5,6 @@ using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell;
 
 public class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacementEntry>
@@ -32,7 +28,7 @@ public class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacemen
 
     public int Count => _replacements.Count;
 
-    public bool HasReplacements => _replacements.Count != 0;
+    public bool HasReplacements => _replacements.Count > 0;
 
     public IEnumerable<string> Keys => _replacements.Keys;
 
@@ -92,7 +88,7 @@ public class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacemen
     {
         for (var searchLength = text.Length; searchLength > 0; searchLength--)
         {
-            if (_replacements.TryGetValue(text.Slice(0, searchLength).ToString(), out MultiReplacementEntry entry))
+            if (_replacements.TryGetValue(text.Slice(0, searchLength).ToString(), out var entry))
             {
                 return entry;
             }

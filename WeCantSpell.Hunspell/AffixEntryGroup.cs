@@ -1,10 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 using WeCantSpell.Hunspell.Infrastructure;
-
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
 
 namespace WeCantSpell.Hunspell;
 
@@ -61,23 +58,9 @@ public sealed class AffixEntryGroup<TEntry> where TEntry : AffixEntry
     /// Indicates if a group has the <see cref="AffixEntryOptions.CrossProduct"/> option enabled.
     /// </summary>
     /// <seealso cref="AffixEntryOptions"/>
-    public bool AllowCross
-    {
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        get => EnumEx.HasFlag(Options, AffixEntryOptions.CrossProduct);
-    }
+    public bool AllowCross => EnumEx.HasFlag(Options, AffixEntryOptions.CrossProduct);
 
-    internal Affix<TEntry>[] CreateAffixes()
-    {
-        var source = Entries.Items;
-        var result = new Affix<TEntry>[source.Length];
-        for (var i = 0; i < source.Length; i++)
-        {
-            result[i] = Affix<TEntry>.Create(source[i], this);
-        }
+    internal Affix<TEntry>[] CreateAffixes() => Array.ConvertAll(Entries.Items, ProduceFromEntry);
 
-        return result;
-    }
+    private Affix<TEntry> ProduceFromEntry(TEntry entry) => new(entry, this);
 }

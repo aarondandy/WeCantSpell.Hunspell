@@ -9,10 +9,6 @@ using System.Threading.Tasks;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell;
 
 public sealed class AffixReader
@@ -169,21 +165,14 @@ public sealed class AffixReader
         return LogWarning("Failed to parse line: " + line);
     }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     private static bool IsCommentPrefix(char c) => c == '#' || c == '/';
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-    private bool IsInitialized(EntryListType flags) => HasFlag(Initialized, flags);
+    private bool IsInitialized(EntryListType flags) => (Initialized & flags) == flags;
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-    private void SetInitialized(EntryListType flags) =>
+    private void SetInitialized(EntryListType flags)
+    {
         Initialized |= flags;
+    }
 
     private void AddDefaultBreakTableIfEmpty()
     {
@@ -814,9 +803,6 @@ public sealed class AffixReader
         return LogWarning("Affix line not fully parsed: " + parameterText);
     }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     private static TEntry CreateEntry<TEntry>(string strip,
         string affixText,
         CharacterConditionGroup conditions,
@@ -1086,11 +1072,6 @@ public sealed class AffixReader
         TryParseFlag(text, out FlagValue value)
             ? value
             : default;
-
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-    private static bool HasFlag(EntryListType value, EntryListType flag) => (value & flag) == flag;
 
     private static ReadOnlySpan<char> ParseLeadingDigits(ReadOnlySpan<char> text)
     {

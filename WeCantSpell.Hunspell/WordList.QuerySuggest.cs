@@ -5,10 +5,6 @@ using System.Text;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell;
 
 public partial class WordList
@@ -1325,7 +1321,7 @@ public partial class WordList
 
                     // check special pronunciation
                     var f = string.Empty;
-                    if (EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.Phon) && CopyField(ref f, hpDetail.Morphs, MorphologicalTags.Phon))
+                    if (EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.Phon) && QuerySuggest.CopyField(ref f, hpDetail.Morphs, MorphologicalTags.Phon))
                     {
                         var sc2 = NGram(3, word, f, NGramOptions.LongerWorse | NGramOptions.Lowering)
                             + LeftCommonSubstring(word, f);
@@ -1414,7 +1410,7 @@ public partial class WordList
                 if (rp != null)
                 {
                     var field = string.Empty;
-                    if (!EnumEx.HasFlag(rp.Detail.Options, WordEntryOptions.Phon) || !CopyField(ref field, rp.Detail.Morphs, MorphologicalTags.Phon))
+                    if (!EnumEx.HasFlag(rp.Detail.Options, WordEntryOptions.Phon) || !QuerySuggest.CopyField(ref field, rp.Detail.Morphs, MorphologicalTags.Phon))
                     {
                         field = null;
                     }
@@ -2149,7 +2145,7 @@ public partial class WordList
                     &&
                     word.Length >= entry.Conditions.Count
                     &&
-                    TestCondition(entry, word)
+                    entry.TestCondition(word)
                     &&
                     (
                         entry.Strip.Length == 0
@@ -2182,7 +2178,7 @@ public partial class WordList
                     &&
                     word.Length >= entry.Conditions.Count
                     &&
-                    TestCondition(entry, word)
+                    entry.TestCondition(word)
                     &&
                     (
                         entry.Strip.Length == 0
@@ -2195,7 +2191,7 @@ public partial class WordList
                 : string.Empty;
         }
 
-        private bool CopyField(ref string dest, MorphSet morphs, string var)
+        private static bool CopyField(ref string dest, MorphSet morphs, string var)
         {
             if (morphs.Count == 0)
             {
@@ -2240,7 +2236,7 @@ public partial class WordList
         {
             if (Affix.ComplexPrefixes)
             {
-                return LeftCommonSubstringComplex(s1, s2);
+                return leftCommonSubstringComplex(s1, s2);
             }
 
             if (s1[0] != s2[0] && s1[0] != TextInfo.ToLower(s2[0]))
@@ -2249,28 +2245,23 @@ public partial class WordList
             }
 
             var minIndex = Math.Min(s1.Length, s2.Length);
-            var index = 1;
-            while (index < minIndex && s1[index] == s2[index])
-            {
-                index++;
-            };
+            int index = 1;
+
+            for ( ; index < minIndex && s1[index] == s2[index]; index++) ;
 
             return index;
-        }
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.NoInlining)]
-#endif
-        private static int LeftCommonSubstringComplex(string s1, string s2) =>
-            (
-                s1.Length != 0
-                &&
-                s2.Length != 0
-                &&
-                s1[s1.Length - 1] == s2[s2.Length - 1]
-            )
-            ? 1
-            : 0;
+            static int leftCommonSubstringComplex(string s1, string s2) =>
+                (
+                    s1.Length > 0
+                    &&
+                    s2.Length > 0
+                    &&
+                    s1[s1.Length - 1] == s2[s2.Length - 1]
+                )
+                ? 1
+                : 0;
+        }
 
         /// <summary>
         /// Generate an n-gram score comparing s1 and s2.
@@ -2729,10 +2720,10 @@ public partial class WordList
             }
         }
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        private static void InsertSuggestion(List<string> slst, string word) => slst.Insert(0, word);
+        private static void InsertSuggestion(List<string> slst, string word)
+        {
+            slst.Insert(0, word);
+        }
 
         private struct NGramSuggestSearchRoot
         {
@@ -2768,9 +2759,6 @@ public partial class WordList
 
             public int Score;
 
-#if !NO_INLINE
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
             public void ClearGuessAndOrig()
             {
                 Guess = null;
@@ -2793,9 +2781,6 @@ public partial class WordList
             }
         }
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static bool HasFlag(NGramOptions value, NGramOptions flag) => (value & flag) == flag;
 
         [Flags]

@@ -7,10 +7,6 @@ using System.Threading.Tasks;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell;
 
 public sealed partial class WordList
@@ -44,14 +40,7 @@ public sealed partial class WordList
 
         var wordListBuilder = new Builder(affix ?? new AffixConfig.Builder().MoveToImmutable());
 
-        if (words is IList<string> wordsAsList)
-        {
-            wordListBuilder.InitializeEntriesByRoot(wordsAsList.Count);
-        }
-        else
-        {
-            wordListBuilder.InitializeEntriesByRoot(-1);
-        }
+        wordListBuilder.InitializeEntriesByRoot((words as ICollection<string>)?.Count ?? 0);
 
         var entryDetail = WordEntryDetail.Default;
 

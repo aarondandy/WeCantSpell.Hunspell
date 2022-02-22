@@ -1,8 +1,4 @@
-﻿#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
-namespace WeCantSpell.Hunspell;
+﻿namespace WeCantSpell.Hunspell;
 
 /// <summary>
 /// An affix is either a prefix or a suffix attached to root words to make other words.
@@ -102,9 +98,6 @@ namespace WeCantSpell.Hunspell;
 /// <seealso cref="SuffixEntry"/>
 public abstract class AffixEntry
 {
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     protected AffixEntry(
         string strip,
         string affixText,
@@ -150,18 +143,9 @@ public abstract class AffixEntry
 
     public abstract string Key { get; }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public bool ContainsContClass(FlagValue flag) => ContClass.Contains(flag);
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public bool ContainsAnyContClass(FlagValue a, FlagValue b) => ContClass.ContainsAny(a,b);
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public bool ContainsAnyContClass(FlagValue a, FlagValue b, FlagValue c) => ContClass.ContainsAny(a, b, c);
 }

@@ -7,10 +7,6 @@ using System.Threading.Tasks;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell;
 
 public sealed class StaticEncodingLineReader : IHunspellLineReader, IDisposable
@@ -44,14 +40,8 @@ public sealed class StaticEncodingLineReader : IHunspellLineReader, IDisposable
         return await reader.ReadLinesAsync().ConfigureAwait(false);
     }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public string ReadLine() => _reader.ReadLine();
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public Task<string> ReadLineAsync() => _reader.ReadLineAsync();
 
     public void Dispose()

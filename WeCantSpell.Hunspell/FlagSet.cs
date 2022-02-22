@@ -4,10 +4,6 @@ using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell;
 
 public sealed class FlagSet : ArrayWrapper<FlagValue>, IEquatable<FlagSet>
@@ -100,9 +96,6 @@ public sealed class FlagSet : ArrayWrapper<FlagValue>, IEquatable<FlagSet>
         return false;
     }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public bool ContainsAny(FlagSet values)
     {
         if (values is null) throw new ArgumentNullException(nameof(values));

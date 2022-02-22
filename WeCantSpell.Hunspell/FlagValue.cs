@@ -4,10 +4,6 @@ using System.Globalization;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell;
 
 public readonly struct FlagValue :
@@ -20,64 +16,28 @@ public readonly struct FlagValue :
 {
     private const char ZeroValue = '\0';
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static implicit operator int(FlagValue flag) => flag._value;
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-    public static implicit operator FlagValue(int value) => new FlagValue(value);
+    public static implicit operator FlagValue(int value) => new(value);
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static implicit operator char(FlagValue flag) => flag._value;
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-    public static implicit operator FlagValue(char value) => new FlagValue(value);
+    public static implicit operator FlagValue(char value) => new(value);
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static bool operator !=(FlagValue a, FlagValue b) => a._value != b._value;
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static bool operator ==(FlagValue a, FlagValue b) => a._value == b._value;
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static bool operator >=(FlagValue a, FlagValue b) => a._value >= b._value;
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static bool operator <=(FlagValue a, FlagValue b) => a._value <= b._value;
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static bool operator >(FlagValue a, FlagValue b) => a._value > b._value;
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static bool operator <(FlagValue a, FlagValue b) => a._value < b._value;
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-    internal static FlagValue Create(char high, char low) => new FlagValue(unchecked((char)((high << 8) | low)));
+    internal static FlagValue Create(char high, char low) => new(unchecked((char)((high << 8) | low)));
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static bool TryParseFlag(string text, FlagMode mode, out FlagValue value) =>
         TryParseFlag(text.AsSpan(), mode, out value);
 
@@ -110,9 +70,9 @@ public readonly struct FlagValue :
 
     private static bool TryParseNumberFlag(ReadOnlySpan<char> text, out FlagValue value)
     {
-        if (!text.IsEmpty && IntEx.TryParseInvariant(text, out int integerValue) && integerValue >= char.MinValue && integerValue <= char.MaxValue)
+        if (!text.IsEmpty && IntEx.TryParseInvariant(text, out var integerValue) && integerValue >= char.MinValue && integerValue <= char.MaxValue)
         {
-            value = new FlagValue(unchecked((char)integerValue));
+            value = new(unchecked((char)integerValue));
             return true;
         }
 
@@ -131,9 +91,6 @@ public readonly struct FlagValue :
 
     public static FlagSet ParseFlags(string text, FlagMode mode) => ParseFlags(text.AsSpan(), mode);
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     internal static FlagSet ParseFlags(ReadOnlySpan<char> text, FlagMode mode) =>
         FlagSet.TakeArray(ParseFlagsInOrder(text, mode));
 
@@ -162,21 +119,20 @@ public readonly struct FlagValue :
 
     private static List<FlagValue> ParseNumberFlagsInOrder(ReadOnlySpan<char> text)
     {
-        if (text.IsEmpty)
-        {
-            return new();
-        }
-
         var flags = new List<FlagValue>();
-        text.SplitOnComma((part, _) =>
-        {
-            if (TryParseNumberFlag(part, out var value))
-            {
-                flags.Add(value);
-            }
 
-            return true;
-        });
+        if (!text.IsEmpty)
+        {
+            text.SplitOnComma((part, _) =>
+            {
+                if (TryParseNumberFlag(part, out var value))
+                {
+                    flags.Add(value);
+                }
+
+                return true;
+            });
+        }
 
         return flags;
     }
@@ -192,17 +148,11 @@ public readonly struct FlagValue :
         return values;
     }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public FlagValue(char value)
     {
         _value = value;
     }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public FlagValue(int value)
     {
         _value = checked((char)value);
@@ -210,43 +160,16 @@ public readonly struct FlagValue :
 
     private readonly char _value;
 
-    public bool HasValue
-    {
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        get => _value != ZeroValue;
-    }
+    public bool HasValue => _value != ZeroValue;
 
-    public bool IsZero
-    {
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        get => _value == ZeroValue;
-    }
+    public bool IsZero => _value == ZeroValue;
 
-    public bool IsWildcard
-    {
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        get => _value == '*' || _value == '?';
-    }
+    public bool IsWildcard => _value is '*' or '?';
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public bool Equals(FlagValue other) => other._value == _value;
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public bool Equals(int other) => other == _value;
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public bool Equals(char other) => other == _value;
 
     public override bool Equals(object obj) =>

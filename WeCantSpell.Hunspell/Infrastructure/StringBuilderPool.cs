@@ -2,10 +2,6 @@
 using System.Text;
 using System.Threading;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class StringBuilderPool
@@ -14,9 +10,6 @@ static class StringBuilderPool
 
     private static StringBuilder Cache;
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static StringBuilder Get() => GetClearedBuilder();
 
     public static StringBuilder Get(string value) =>
@@ -25,15 +18,9 @@ static class StringBuilderPool
     public static StringBuilder Get(string value, int capacity) =>
         GetClearedBuilderWithCapacity(capacity).Append(value);
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static StringBuilder Get(int capacity) =>
         GetClearedBuilderWithCapacity(capacity);
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static StringBuilder Get(string value, int valueStartIndex, int valueLength) =>
         Get(value, valueStartIndex, valueLength, valueLength);
 
@@ -43,9 +30,6 @@ static class StringBuilderPool
     public static StringBuilder Get(ReadOnlySpan<char> value) =>
         GetClearedBuilderWithCapacity(value.Length).Append(value);
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static void Return(StringBuilder builder)
     {
 #if DEBUG
@@ -58,9 +42,6 @@ static class StringBuilderPool
         }
     }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static string GetStringAndReturn(StringBuilder builder)
     {
         var value = builder.ToString();
@@ -68,9 +49,6 @@ static class StringBuilderPool
         return value;
     }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     private static StringBuilder GetClearedBuilder()
     {
         var taken = Interlocked.Exchange(ref Cache, null);
@@ -79,13 +57,10 @@ static class StringBuilderPool
             : new StringBuilder();
     }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     private static StringBuilder GetClearedBuilderWithCapacity(int minimumCapacity)
     {
         var taken = Interlocked.Exchange(ref Cache, null);
-        return (taken is not null && taken.Capacity >= minimumCapacity)
+        return taken?.Capacity >= minimumCapacity
             ? taken.Clear()
             :  new StringBuilder(minimumCapacity);
     }

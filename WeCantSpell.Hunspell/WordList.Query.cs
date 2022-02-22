@@ -3,10 +3,6 @@ using System.Globalization;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell;
 
 public partial class WordList
@@ -80,43 +76,28 @@ public partial class WordList
 
         protected OperationTimeLimiter GlobalTimeLimiter;
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private void ClearPrefix()
         {
             Prefix = null;
         }
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private void ClearSuffix()
         {
             Suffix = null;
         }
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private void ClearSuffixAndFlag()
         {
             ClearSuffix();
             SuffixFlag = default;
         }
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private void ClearSuffixAppendAndExtra()
         {
             SuffixAppend = null;
             SuffixExtra = false;
         }
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private void ClearAllAppendAndExtra()
         {
             PrefixAppend = null;
@@ -124,41 +105,26 @@ public partial class WordList
             SuffixExtra = false;
         }
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private void SetPrefix(PrefixEntry prefix)
         {
             Prefix = prefix;
         }
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private void SetSuffix(Affix<SuffixEntry> suffix)
         {
             Suffix = suffix;
         }
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private void SetSuffixFlag(FlagValue flag)
         {
             SuffixFlag = flag;
         }
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private void SetSuffixExtra(bool extra)
         {
             SuffixExtra = extra;
         }
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private void SetSuffixAppend(string append)
         {
             SuffixAppend = append;
@@ -1402,7 +1368,7 @@ public partial class WordList
                     )
                     {
                         // check prefix
-                        rv = CheckWordPrefix(Affix<PrefixEntry>.Create(pe, peGroup), word, inCompound, needFlag);
+                        rv = CheckWordPrefix(new Affix<PrefixEntry>(pe, peGroup), word, inCompound, needFlag);
                         if (rv is not null)
                         {
                             SetPrefix(pe);
@@ -1501,7 +1467,7 @@ public partial class WordList
                 // if all conditions are met then check if resulting
                 // root word in the dictionary
 
-                if (TestCondition(peEntry, tmpword))
+                if (peEntry.TestCondition(tmpword))
                 {
                     // prefix matched but no root word was found
                     // if CrossProduct is allowed, try again but now
@@ -1521,16 +1487,6 @@ public partial class WordList
 
             return null;
         }
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        protected bool TestCondition(PrefixEntry entry, string word) => entry.Conditions.IsStartingMatch(word);
-
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        protected bool TestCondition(SuffixEntry entry, string word) => entry.Conditions.IsEndingMatch(word);
 
         protected WordEntry SuffixCheck(string word, AffixEntryOptions sfxOpts, Affix<PrefixEntry> pfx, FlagValue cclass, FlagValue needFlag, CompoundOptions inCompound)
         {
@@ -1596,7 +1552,7 @@ public partial class WordList
                         )
                     )
                     {
-                        var affix = Affix<SuffixEntry>.Create(se, seGroup);
+                        var affix = new Affix<SuffixEntry>(se, seGroup);
                         rv = CheckWordSuffix(affix, word, sfxOpts, pfx, cclass, needFlag, checkWordCclassFlag);
                         if (rv is not null)
                         {
@@ -1739,19 +1695,10 @@ public partial class WordList
             return null;
         }
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         protected WordEntry LookupFirst(string word) => WordList.FindFirstEntryByRootWord(word);
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         protected WordEntryDetail[] LookupDetails(string word) => WordList.FindEntryDetailsByRootWord(word);
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         protected WordEntryDetail LookupFirstDetail(string word) => WordList.FindFirstEntryDetailByRootWord(word);
 
         /// <summary>
@@ -1926,7 +1873,7 @@ public partial class WordList
                 // if all conditions are met then check if resulting
                 // root word in the dictionary
 
-                if (TestCondition(entry, tmpword))
+                if (entry.TestCondition(tmpword))
                 {
                     foreach (var detail in LookupDetails(tmpword))
                     {
@@ -2106,7 +2053,7 @@ public partial class WordList
                 // tested
 
                 // if all conditions are met then recall suffix_check
-                if (TestCondition(entry, tmpword))
+                if (entry.TestCondition(tmpword))
                 {
                     var he = ppfx is not null && entry.ContainsContClass(ppfx.AFlag)
                         // handle conditional suffix

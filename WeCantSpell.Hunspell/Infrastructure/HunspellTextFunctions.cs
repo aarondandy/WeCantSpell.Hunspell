@@ -4,10 +4,6 @@ using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class HunspellTextFunctions
@@ -133,14 +129,8 @@ static class HunspellTextFunctions
     /// </summary>
     /// <param name="ch">The character value to check.</param>
     /// <returns><c>true</c> is a given character is an ASCII letter.</returns>
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static bool MyIsAlpha(char ch) => ch >= 128 || char.IsLetter(ch);
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public static bool CharIsNotNeutral(char c, TextInfo textInfo) =>
         (c < 127 || textInfo.ToUpper(c) != c) && char.IsLower(c);
 

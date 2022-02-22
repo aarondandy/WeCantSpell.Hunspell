@@ -1,6 +1,6 @@
 ﻿# WeCantSpell.Hunspell.Benchmarking.NHunspell.FileLoadNHunspellPerfSpec+Benchmark
 __How fast can NHunspell load files?__
-_02/21/2022 23:45:39_
+_02/22/2022 02:18:58_
 ### System Info
 ```ini
 NBench=NBench, Version=2.0.1.0, Culture=neutral, PublicKeyToken=null
@@ -23,58 +23,58 @@ Tracing=False
 ### Totals
 |          Metric |           Units |             Max |         Average |             Min |          StdDev |
 |---------------- |---------------- |---------------- |---------------- |---------------- |---------------- |
-|TotalBytesAllocated |           bytes |   89,624,176.00 |   89,624,164.00 |   89,624,152.00 |           16.97 |
+|TotalBytesAllocated |           bytes |   89,624,208.00 |   89,624,180.00 |   89,624,152.00 |           39.60 |
 |TotalCollections [Gen0] |     collections |           13.00 |           13.00 |           13.00 |            0.00 |
 |TotalCollections [Gen1] |     collections |           13.00 |           13.00 |           13.00 |            0.00 |
 |TotalCollections [Gen2] |     collections |           13.00 |           13.00 |           13.00 |            0.00 |
-|    Elapsed Time |              ms |        4,001.00 |        3,995.50 |        3,990.00 |            7.78 |
+|    Elapsed Time |              ms |        4,013.00 |        3,998.00 |        3,983.00 |           21.21 |
 |[Counter] FilePairsLoaded |      operations |           59.00 |           59.00 |           59.00 |            0.00 |
 
 ### Per-second Totals
 |          Metric |       Units / s |         Max / s |     Average / s |         Min / s |      StdDev / s |
 |---------------- |---------------- |---------------- |---------------- |---------------- |---------------- |
-|TotalBytesAllocated |           bytes |   22,463,468.10 |   22,429,878.98 |   22,396,289.86 |       47,502.19 |
-|TotalCollections [Gen0] |     collections |            3.26 |            3.25 |            3.25 |            0.01 |
-|TotalCollections [Gen1] |     collections |            3.26 |            3.25 |            3.25 |            0.01 |
-|TotalCollections [Gen2] |     collections |            3.26 |            3.25 |            3.25 |            0.01 |
-|    Elapsed Time |              ms |        1,000.06 |          999.94 |          999.81 |            0.17 |
-|[Counter] FilePairsLoaded |      operations |           14.79 |           14.77 |           14.74 |            0.03 |
+|TotalBytesAllocated |           bytes |   22,503,433.36 |   22,417,274.67 |   22,331,115.99 |      121,846.78 |
+|TotalCollections [Gen0] |     collections |            3.26 |            3.25 |            3.24 |            0.02 |
+|TotalCollections [Gen1] |     collections |            3.26 |            3.25 |            3.24 |            0.02 |
+|TotalCollections [Gen2] |     collections |            3.26 |            3.25 |            3.24 |            0.02 |
+|    Elapsed Time |              ms |        1,000.08 |          999.99 |          999.90 |            0.13 |
+|[Counter] FilePairsLoaded |      operations |           14.81 |           14.76 |           14.70 |            0.08 |
 
 ### Raw Data
 #### TotalBytesAllocated
 |           Run # |           bytes |       bytes / s |      ns / bytes |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |   89,624,152.00 |   22,463,468.10 |           44.52 |
-|               2 |   89,624,176.00 |   22,396,289.86 |           44.65 |
+|               1 |   89,624,152.00 |   22,331,115.99 |           44.78 |
+|               2 |   89,624,208.00 |   22,503,433.36 |           44.44 |
 
 #### TotalCollections [Gen0]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |           13.00 |            3.26 |  306,905,661.54 |
-|               2 |           13.00 |            3.25 |  307,826,315.38 |
+|               1 |           13.00 |            3.24 |  308,724,630.77 |
+|               2 |           13.00 |            3.26 |  306,360,800.00 |
 
 #### TotalCollections [Gen1]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |           13.00 |            3.26 |  306,905,661.54 |
-|               2 |           13.00 |            3.25 |  307,826,315.38 |
+|               1 |           13.00 |            3.24 |  308,724,630.77 |
+|               2 |           13.00 |            3.26 |  306,360,800.00 |
 
 #### TotalCollections [Gen2]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |           13.00 |            3.26 |  306,905,661.54 |
-|               2 |           13.00 |            3.25 |  307,826,315.38 |
+|               1 |           13.00 |            3.24 |  308,724,630.77 |
+|               2 |           13.00 |            3.26 |  306,360,800.00 |
 
 #### Elapsed Time
 |           Run # |              ms |          ms / s |         ns / ms |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |        3,990.00 |        1,000.06 |      999,943.26 |
-|               2 |        4,001.00 |          999.81 |    1,000,185.48 |
+|               1 |        4,013.00 |          999.90 |    1,000,104.71 |
+|               2 |        3,983.00 |        1,000.08 |      999,922.27 |
 
 #### [Counter] FilePairsLoaded
 |           Run # |      operations |  operations / s | ns / operations |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |           59.00 |           14.79 |   67,623,281.36 |
-|               2 |           59.00 |           14.74 |   67,826,137.29 |
+|               1 |           59.00 |           14.70 |   68,024,071.19 |
+|               2 |           59.00 |           14.81 |   67,503,227.12 |
 
 
