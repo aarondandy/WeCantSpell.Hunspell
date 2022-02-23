@@ -1411,7 +1411,7 @@ public partial class WordList
             // first handle the special case of 0 length prefixes
             foreach (var peGroup in Affix.Prefixes.AffixesWithEmptyKeys)
             {
-                foreach (var pe in peGroup.CreateAffixes())
+                foreach (var pe in peGroup.ToAffixes())
                 {
                     rv = CheckTwoSfx(pe, word, inCompound, needFlag);
                     if (rv is not null)
@@ -1660,7 +1660,7 @@ public partial class WordList
             // first handle the special case of 0 length suffixes
             foreach (var seGroup in Affix.Suffixes.GetAffixesWithEmptyKeysAndFlag(Affix.ContClasses))
             {
-                foreach (var se in seGroup.CreateAffixes())
+                foreach (var se in seGroup.ToAffixes())
                 {
                     rv = CheckTwoSfx(se, word, sfxopts, pfx, needflag);
                     if (rv is not null)

@@ -2424,7 +2424,7 @@ public partial class WordList
                 return string.Empty;
             }
 
-            var word = StringBuilderPool.Get(inword, 0, Math.Min(inword.Length, MaxPhoneTUtf8Len));
+            var word = StringBuilderPool.Get(inword.AsSpan(0, Math.Min(inword.Length, MaxPhoneTUtf8Len)));
             var target = StringBuilderPool.Get();
 
             // check word

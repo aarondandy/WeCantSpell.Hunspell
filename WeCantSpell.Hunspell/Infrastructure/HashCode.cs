@@ -4,6 +4,12 @@
 
 static class HashCode
 {
+    public static int Combine<T>(T value) => value switch
+    {
+        null => 0,
+        _ => value.GetHashCode()
+    };
+
     public static int Combine<T>(int value0, T value1) => value1 switch
     {
         null => value0,
@@ -14,7 +20,11 @@ static class HashCode
 
     public static int Combine<T>(int value0, T value1, T value2) => Combine(Combine(value0, value1), value2);
 
-    public static int Combine<T>(int value0, T value1, T value2, T value3) => Combine(Combine(Combine(value0, value1), value2), value3);
+    public static int Combine<T>(int value0, T value1, T value2, T value3) => Combine(Combine(value0, value1, value2), value3);
+
+    public static int Combine<T>(T value0, T value1) => Combine(Combine(value0), value1);
+
+    public static int Combine<T>(T value0, T value1, T value2) => Combine(Combine(value0, value1), value2);
 }
 
 #endif

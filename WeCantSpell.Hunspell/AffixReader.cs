@@ -23,6 +23,76 @@ public sealed class AffixReader
 
     private static readonly CharacterSet DefaultCompoundVowels = CharacterSet.TakeArray(new[] { 'A', 'E', 'I', 'O', 'U', 'a', 'e', 'i', 'o', 'u' });
 
+    private static readonly CommandParseMap<AffixConfigOptions> _bitFlagCommandMap;
+    private static readonly CommandParseMap<AffixReaderCommandKind> _commandMap;
+
+    static AffixReader()
+    {
+        _bitFlagCommandMap = new();
+        _bitFlagCommandMap.Add("CHECKCOMPOUNDDUP", AffixConfigOptions.CheckCompoundDup);
+        _bitFlagCommandMap.Add("CHECKCOMPOUNDREP", AffixConfigOptions.CheckCompoundRep);
+        _bitFlagCommandMap.Add("CHECKCOMPOUNDTRIPLE", AffixConfigOptions.CheckCompoundTriple);
+        _bitFlagCommandMap.Add("CHECKCOMPOUNDCASE", AffixConfigOptions.CheckCompoundCase);
+        _bitFlagCommandMap.Add("CHECKNUM", AffixConfigOptions.CheckNum);
+        _bitFlagCommandMap.Add("CHECKSHARPS", AffixConfigOptions.CheckSharps);
+        _bitFlagCommandMap.Add("COMPLEXPREFIXES", AffixConfigOptions.ComplexPrefixes);
+        _bitFlagCommandMap.Add("COMPOUNDMORESUFFIXES", AffixConfigOptions.CompoundMoreSuffixes);
+        _bitFlagCommandMap.Add("FULLSTRIP", AffixConfigOptions.FullStrip);
+        _bitFlagCommandMap.Add("FORBIDWARN", AffixConfigOptions.ForbidWarn);
+        _bitFlagCommandMap.Add("NOSPLITSUGS", AffixConfigOptions.NoSplitSuggestions);
+        _bitFlagCommandMap.Add("ONLYMAXDIFF", AffixConfigOptions.OnlyMaxDiff);
+        _bitFlagCommandMap.Add("SIMPLIFIEDTRIPLE", AffixConfigOptions.SimplifiedTriple);
+        _bitFlagCommandMap.Add("SUGSWITHDOTS", AffixConfigOptions.SuggestWithDots);
+
+        _commandMap = new();
+        _commandMap.Add("AF", AffixReaderCommandKind.AliasF);
+        _commandMap.Add("AM", AffixReaderCommandKind.AliasM);
+        _commandMap.Add("BREAK", AffixReaderCommandKind.Break);
+        _commandMap.Add("COMPOUNDBEGIN", AffixReaderCommandKind.CompoundBegin);
+        _commandMap.Add("COMPOUNDEND", AffixReaderCommandKind.CompoundEnd);
+        _commandMap.Add("COMPOUNDFLAG", AffixReaderCommandKind.CompoundFlag);
+        _commandMap.Add("COMPOUNDFORBIDFLAG", AffixReaderCommandKind.CompoundForbidFlag);
+        _commandMap.Add("COMPOUNDMIDDLE", AffixReaderCommandKind.CompoundMiddle);
+        _commandMap.Add("COMPOUNDMIN", AffixReaderCommandKind.CompoundMin);
+        _commandMap.Add("COMPOUNDPERMITFLAG", AffixReaderCommandKind.CompoundPermitFlag);
+        _commandMap.Add("COMPOUNDROOT", AffixReaderCommandKind.CompoundRoot);
+        _commandMap.Add("COMPOUNDRULE", AffixReaderCommandKind.CompoundRule);
+        _commandMap.Add("COMPOUNDSYLLABLE", AffixReaderCommandKind.CompoundSyllable);
+        _commandMap.Add("COMPOUNDWORDMAX", AffixReaderCommandKind.CompoundWordMax);
+        _commandMap.Add("CIRCUMFIX", AffixReaderCommandKind.Circumfix);
+        _commandMap.Add("CHECKCOMPOUNDPATTERN", AffixReaderCommandKind.CheckCompoundPattern);
+        _commandMap.Add("FLAG", AffixReaderCommandKind.Flag);
+        _commandMap.Add("FORBIDDENWORD", AffixReaderCommandKind.ForbiddenWord);
+        _commandMap.Add("FORCEUCASE", AffixReaderCommandKind.ForceUpperCase);
+        _commandMap.Add("ICONV", AffixReaderCommandKind.InputConversions);
+        _commandMap.Add("IGNORE", AffixReaderCommandKind.Ignore);
+        _commandMap.Add("KEY", AffixReaderCommandKind.KeyString);
+        _commandMap.Add("KEEPCASE", AffixReaderCommandKind.KeepCase);
+        _commandMap.Add("LANG", AffixReaderCommandKind.Language);
+        _commandMap.Add("LEMMA_PRESENT", AffixReaderCommandKind.LemmaPresent);
+        _commandMap.Add("MAP", AffixReaderCommandKind.Map);
+        _commandMap.Add("MAXNGRAMSUGS", AffixReaderCommandKind.MaxNgramSuggestions);
+        _commandMap.Add("MAXDIFF", AffixReaderCommandKind.MaxDifferency);
+        _commandMap.Add("MAXCPDSUGS", AffixReaderCommandKind.MaxCompoundSuggestions);
+        _commandMap.Add("NEEDAFFIX", AffixReaderCommandKind.NeedAffix);
+        _commandMap.Add("NOSUGGEST", AffixReaderCommandKind.NoSuggest);
+        _commandMap.Add("NONGRAMSUGGEST", AffixReaderCommandKind.NoNGramSuggest);
+        _commandMap.Add("OCONV", AffixReaderCommandKind.OutputConversions);
+        _commandMap.Add("ONLYINCOMPOUND", AffixReaderCommandKind.OnlyInCompound);
+        _commandMap.Add("PFX", AffixReaderCommandKind.Prefix);
+        _commandMap.Add("PSEUDOROOT", AffixReaderCommandKind.NeedAffix);
+        _commandMap.Add("PHONE", AffixReaderCommandKind.Phone);
+        _commandMap.Add("REP", AffixReaderCommandKind.Replacement);
+        _commandMap.Add("SFX", AffixReaderCommandKind.Suffix);
+        _commandMap.Add("SET", AffixReaderCommandKind.SetEncoding);
+        _commandMap.Add("SYLLABLENUM", AffixReaderCommandKind.CompoundSyllableNum);
+        _commandMap.Add("SUBSTANDARD", AffixReaderCommandKind.SubStandard);
+        _commandMap.Add("TRY", AffixReaderCommandKind.TryString);
+        _commandMap.Add("VERSION", AffixReaderCommandKind.Version);
+        _commandMap.Add("WORDCHARS", AffixReaderCommandKind.WordChars);
+        _commandMap.Add("WARN", AffixReaderCommandKind.Warn);
+    }
+
     public AffixReader(AffixConfig.Builder builder, IHunspellLineReader reader)
     {
         Builder = builder ?? new AffixConfig.Builder();
@@ -35,11 +105,11 @@ public sealed class AffixReader
 
     private EntryListType Initialized { get; set; } = EntryListType.None;
 
-    public static async Task<AffixConfig> ReadAsync(IHunspellLineReader reader, AffixConfig.Builder builder = null)
+    public static async Task<AffixConfig> ReadAsync(IHunspellLineReader reader, AffixConfig.Builder? builder = null)
     {
-        var readerInstance = new AffixReader(
-            builder,
-            reader ?? throw new ArgumentNullException(nameof(reader)));
+        if (reader is null) throw new ArgumentNullException(nameof(reader));
+
+        var readerInstance = new AffixReader(builder ?? new(), reader);
 
         await readerInstance.ReadAsync().ConfigureAwait(false);
 
@@ -61,11 +131,11 @@ public sealed class AffixReader
         AddDefaultBreakTableIfEmpty();
     }
 
-    public static AffixConfig Read(IHunspellLineReader reader, AffixConfig.Builder builder = null)
+    public static AffixConfig Read(IHunspellLineReader reader, AffixConfig.Builder? builder = null)
     {
-        var readerInstance = new AffixReader(
-            builder,
-            reader ?? throw new ArgumentNullException(nameof(reader)));
+        if (reader is null) throw new ArgumentNullException(nameof(reader));
+
+        var readerInstance = new AffixReader(builder ?? new(), reader);
 
         readerInstance.Read();
 
@@ -87,14 +157,14 @@ public sealed class AffixReader
         AddDefaultBreakTableIfEmpty();
     }
 
-    public static async Task<AffixConfig> ReadAsync(Stream stream, AffixConfig.Builder builder = null)
+    public static async Task<AffixConfig> ReadAsync(Stream stream, AffixConfig.Builder? builder = null)
     {
         if (stream is null) throw new ArgumentNullException(nameof(stream));
 
         using var reader = new DynamicEncodingLineReader(stream, DefaultEncoding);
         return await ReadAsync(reader, builder).ConfigureAwait(false);
     }
-    public static async Task<AffixConfig> ReadFileAsync(string filePath, AffixConfig.Builder builder = null)
+    public static async Task<AffixConfig> ReadFileAsync(string filePath, AffixConfig.Builder? builder = null)
     {
         if (filePath is null) throw new ArgumentNullException(nameof(filePath));
 
@@ -102,7 +172,7 @@ public sealed class AffixReader
         return await ReadAsync(stream, builder).ConfigureAwait(false);
     }
 
-    public static AffixConfig Read(Stream stream, AffixConfig.Builder builder = null)
+    public static AffixConfig Read(Stream stream, AffixConfig.Builder? builder = null)
     {
         if (stream is null) throw new ArgumentNullException(nameof(stream));
 
@@ -110,7 +180,7 @@ public sealed class AffixReader
         return Read(reader, builder);
     }
 
-    public static AffixConfig ReadFile(string filePath, AffixConfig.Builder builder = null)
+    public static AffixConfig ReadFile(string filePath, AffixConfig.Builder? builder = null)
     {
         if (filePath is null) throw new ArgumentNullException(nameof(filePath));
 
@@ -124,7 +194,7 @@ public sealed class AffixReader
         var commandStartIndex = 0;
         for (; commandStartIndex < line.Length && line[commandStartIndex].IsTabOrSpace(); commandStartIndex++) ;
 
-        if (commandStartIndex == line.Length || IsCommentPrefix(line[commandStartIndex]))
+        if (commandStartIndex == line.Length || isCommentPrefix(line[commandStartIndex]))
         {
             return true; // empty, whitespace, or comment
         }
@@ -146,26 +216,22 @@ public sealed class AffixReader
         if (parameterStartIndex <= lineEndIndex)
         {
             if (TryHandleParameterizedCommand(
-                    command,
-                    line.AsSpan(parameterStartIndex, lineEndIndex - parameterStartIndex + 1)))
+                command,
+                line.AsSpan(parameterStartIndex, lineEndIndex - parameterStartIndex + 1)))
             {
                 return true;
             }
         }
-        else
+        else if (_bitFlagCommandMap.TryParse(command) is { } option)
         {
-            var option = TryParseFileBitFlagCommand(command);
-            if (option.HasValue)
-            {
-                Builder.EnableOptions(option.GetValueOrDefault());
-                return true;
-            }
+            Builder.EnableOptions(option);
+            return true;
         }
 
         return LogWarning("Failed to parse line: " + line);
-    }
 
-    private static bool IsCommentPrefix(char c) => c == '#' || c == '/';
+        static bool isCommentPrefix(char c) => c is '#' or '/';
+    }
 
     private bool IsInitialized(EntryListType flags) => (Initialized & flags) == flags;
 
@@ -193,13 +259,12 @@ public sealed class AffixReader
         if (parameters.IsEmpty) throw new ArgumentException(nameof(parameters));
 #endif
 
-        var command = TryParseCommandKind(commandName);
-        if (!command.HasValue)
+        if (_commandMap.TryParse(commandName) is not { } command)
         {
             return LogWarning($"Unknown command {commandName.ToString()} with params: {parameters.ToString()}");
         }
 
-        switch (command.GetValueOrDefault())
+        switch (command)
         {
             case AffixReaderCommandKind.Flag:
                 return TrySetFlagMode(parameters);
@@ -210,8 +275,7 @@ public sealed class AffixReader
                 Builder.TryString = Builder.Dedup(parameters);
                 return true;
             case AffixReaderCommandKind.SetEncoding:
-                var encoding = EncodingEx.GetEncodingByName(parameters);
-                if (encoding == null)
+                if (EncodingEx.GetEncodingByName(parameters) is not { } encoding)
                 {
                     return LogWarning("Failed to get encoding: " + parameters.ToString());
                 }
@@ -248,14 +312,14 @@ public sealed class AffixReader
                 return Builder.CompoundWordMax.HasValue;
             case AffixReaderCommandKind.CompoundMin:
                 Builder.CompoundMin = IntEx.TryParseInvariant(parameters);
-                if (!Builder.CompoundMin.HasValue)
-                {
-                    return LogWarning("Failed to parse CompoundMin: " + parameters.ToString());
-                }
 
-                if (Builder.CompoundMin.GetValueOrDefault() < 1)
+                switch (Builder.CompoundMin)
                 {
-                    Builder.CompoundMin = 1;
+                    case null:
+                        return LogWarning("Failed to parse CompoundMin: " + parameters.ToString());
+                    case < 1:
+                        Builder.CompoundMin = 1;
+                        break;
                 }
 
                 return true;
@@ -321,6 +385,7 @@ public sealed class AffixReader
             case AffixReaderCommandKind.Prefix:
             case AffixReaderCommandKind.Suffix:
                 var parseAsPrefix = AffixReaderCommandKind.Prefix == command;
+
                 if (EnumEx.HasFlag(Builder.Options, AffixConfigOptions.ComplexPrefixes))
                 {
                     parseAsPrefix = !parseAsPrefix;
@@ -344,12 +409,9 @@ public sealed class AffixReader
         {
             SetInitialized(entryListType);
 
-            if (IntEx.TryParseInvariant(parameterText, out int expectedSize) && expectedSize >= 0)
+            if (IntEx.TryParseInvariant(parameterText, out var expectedSize) && expectedSize >= 0)
             {
-                if (entries == null)
-                {
-                    entries = new List<T>(expectedSize);
-                }
+                entries ??= new(expectedSize);
 
                 return true;
             }
@@ -367,13 +429,13 @@ public sealed class AffixReader
             switch(i)
             {
                 case 0:
-                    var maxValue = IntEx.TryParseInvariant(part);
-                    if (maxValue.HasValue)
+                    if (IntEx.TryParseInvariant(part) is { } maxValue)
                     {
-                        Builder.CompoundMaxSyllable = maxValue.GetValueOrDefault();
+                        Builder.CompoundMaxSyllable = maxValue;
                         Builder.CompoundVowels = DefaultCompoundVowels;
                         return true;
                     }
+
                     return false;
                 case 1:
                     Builder.CompoundVowels = CharacterSet.Create(part);
@@ -406,8 +468,7 @@ public sealed class AffixReader
         }
         catch (CultureNotFoundException)
         {
-            var dashIndex = language.IndexOf('-');
-            if (dashIndex > 0)
+            if (language.IndexOf('-') is int dashIndex and > 0)
             {
                 return GetCultureFromLanguage(language.Substring(0, dashIndex));
             }
@@ -424,8 +485,8 @@ public sealed class AffixReader
 
     private bool TryParsePhone(ReadOnlySpan<char> parameterText, List<PhoneticEntry> entries)
     {
-        string rule = null;
-        string replace = string.Empty;
+        string? rule = null;
+        var replace = string.Empty;
         var ok = parameterText.SplitOnTabOrSpace((part, i) =>
         {
             switch (i)
@@ -455,19 +516,15 @@ public sealed class AffixReader
     {
         var values = new List<string>(parameterText.Length);
 
-        for (int k = 0; k < parameterText.Length; ++k)
+        for (var k = 0; k < parameterText.Length; k++)
         {
-            int chb = k;
-            int che = k + 1;
-            if (parameterText[k] == '(')
+            var chb = k;
+            var che = k + 1;
+            if (parameterText[k] == '(' && parameterText.IndexOf(')', k) is int parpos and >= 0)
             {
-                var parpos = parameterText.IndexOf(')', k);
-                if (parpos >= 0)
-                {
-                    chb = k + 1;
-                    che = parpos;
-                    k = parpos;
-                }
+                chb = k + 1;
+                che = parpos;
+                k = parpos;
             }
 
             values.Add(parameterText.Slice(chb, che - chb).ToString());
@@ -484,12 +541,9 @@ public sealed class AffixReader
         {
             SetInitialized(entryListType);
             
-            if (IntEx.TryParseInvariant(ParseLeadingDigits(parameterText), out int expectedSize) && expectedSize >= 0)
+            if (IntEx.TryParseInvariant(ParseLeadingDigits(parameterText), out var expectedSize) && expectedSize >= 0)
             {
-                if (entries == null)
-                {
-                    entries = new Dictionary<string, MultiReplacementEntry>(expectedSize);
-                }
+                entries ??= new(expectedSize);
 
                 return true;
             }
@@ -497,8 +551,8 @@ public sealed class AffixReader
 
         entries ??= new();
 
-        string pattern1 = null;
-        string pattern2 = null;
+        string? pattern1 = null;
+        string? pattern2 = null;
         parameterText.SplitOnTabOrSpace((part, i) =>
         {
             switch (i)
@@ -569,15 +623,11 @@ public sealed class AffixReader
             {
                 var indexBegin = index;
                 var indexEnd = indexBegin + 1;
-                if (parameterText[indexBegin] == '(')
+                if (parameterText[indexBegin] == '(' && parameterText.IndexOf(')', indexEnd) is int closeParenIndex and >= 0)
                 {
-                    var closeParenIndex = parameterText.IndexOf(')', indexEnd);
-                    if (closeParenIndex >= 0)
-                    {
-                        indexBegin = indexEnd;
-                        indexEnd = closeParenIndex;
-                        index = closeParenIndex;
-                    }
+                    indexBegin = indexEnd;
+                    indexEnd = closeParenIndex;
+                    index = closeParenIndex;
                 }
 
                 var beginFlagValue = new FlagValue(parameterText[indexBegin]);
@@ -617,7 +667,7 @@ public sealed class AffixReader
 
         var lineMatchGroups = lineMatch.Groups;
 
-        if (!TryParseFlag(lineMatchGroups[1].Value.AsSpan(), out FlagValue characterFlag))
+        if (!TryParseFlag(lineMatchGroups[1].Value.AsSpan(), out var characterFlag))
         {
             return LogWarning($"Failed to parse affix flag for {lineMatchGroups[1].Value} from: {parameterText}");
         }
@@ -646,14 +696,14 @@ public sealed class AffixReader
                 options |= AffixEntryOptions.AliasF;
             }
 
-            IntEx.TryParseInvariant(lineMatchGroups[3].Value, out int expectedEntryCount);
+            IntEx.TryParseInvariant(lineMatchGroups[3].Value, out var expectedEntryCount);
 
-            affixGroup = new AffixEntryGroup<TEntry>.Builder
-            {
-                AFlag = characterFlag,
-                Options = options,
-                Entries = new List<TEntry>(expectedEntryCount)
-            };
+            affixGroup = new AffixEntryGroup<TEntry>.Builder(
+                characterFlag,
+                options,
+                expectedEntryCount is > 2 and <= 1000
+                    ? new(expectedEntryCount)
+                    : new());
 
             groups.Add(affixGroup);
 
@@ -675,15 +725,14 @@ public sealed class AffixReader
 
             // piece 4 - is affix string or 0 for null
             var affixInput = lineMatchGroups[5].Value;
-            var affixSlashIndex = affixInput.IndexOf('/');
             StringBuilder affixText;
-            if (affixSlashIndex >= 0)
+            if (affixInput.IndexOf('/') is int affixSlashIndex and >= 0)
             {
-                affixText = StringBuilderPool.Get(affixInput, 0, affixSlashIndex);
+                affixText = StringBuilderPool.Get(affixInput.AsSpan(0, affixSlashIndex));
 
                 if (Builder.IsAliasF)
                 {
-                    if (IntEx.TryParseInvariant(affixInput.AsSpan(affixSlashIndex + 1), out int aliasNumber) && aliasNumber > 0 && aliasNumber <= Builder.AliasF.Count)
+                    if (IntEx.TryParseInvariant(affixInput.AsSpan(affixSlashIndex + 1), out var aliasNumber) && aliasNumber > 0 && aliasNumber <= Builder.AliasF.Count)
                     {
                         contClass = Builder.AliasF[aliasNumber - 1];
                     }
@@ -702,7 +751,7 @@ public sealed class AffixReader
                 affixText = StringBuilderPool.Get(affixInput);
             }
 
-            if (Builder.IgnoredChars != null && Builder.IgnoredChars.HasItems)
+            if (Builder.IgnoredChars is { HasItems: true })
             {
                 affixText.RemoveChars(Builder.IgnoredChars);
             }
@@ -754,7 +803,7 @@ public sealed class AffixReader
                 var morphAffixText = lineMatchGroups[7].Value;
                 if (Builder.IsAliasM)
                 {
-                    if (IntEx.TryParseInvariant(morphAffixText, out int morphNumber) && morphNumber > 0 && morphNumber <= Builder.AliasM.Count)
+                    if (IntEx.TryParseInvariant(morphAffixText, out var morphNumber) && morphNumber > 0 && morphNumber <= Builder.AliasM.Count)
                     {
                         morph = Builder.AliasM[morphNumber - 1];
                     }
@@ -778,12 +827,7 @@ public sealed class AffixReader
                 morph = MorphSet.Empty;
             }
 
-            affixGroup ??= new AffixEntryGroup<TEntry>.Builder
-            {
-                AFlag = characterFlag,
-                Options = AffixEntryOptions.None,
-                Entries = new List<TEntry>()
-            };
+            affixGroup ??= new AffixEntryGroup<TEntry>.Builder(characterFlag, AffixEntryOptions.None);
 
             if (!Builder.HasContClass && contClass.HasItems)
             {
@@ -803,7 +847,8 @@ public sealed class AffixReader
         return LogWarning("Affix line not fully parsed: " + parameterText);
     }
 
-    private static TEntry CreateEntry<TEntry>(string strip,
+    private static TEntry CreateEntry<TEntry>(
+        string strip,
         string affixText,
         CharacterConditionGroup conditions,
         MorphSet morph,
@@ -824,6 +869,9 @@ public sealed class AffixReader
 
     private static string ReverseCondition(string conditionText)
     {
+        // TODO: Would it be better to reverse the conditions after parsing?
+        //       Instead of reversing a string it could reverse a CharacterConditionGroup.
+
         if (string.IsNullOrEmpty(conditionText))
         {
             return conditionText;
@@ -834,7 +882,7 @@ public sealed class AffixReader
         var neg = false;
         var lastIndex = chars.Length - 1;
 
-        for (int k = lastIndex; k >= 0; k--)
+        for (var k = lastIndex; k >= 0; k--)
         {
             switch (chars[k])
             {
@@ -890,35 +938,33 @@ public sealed class AffixReader
 
     private bool TryParseReplacements(ReadOnlySpan<char> parameterText, List<SingleReplacement> entries)
     {
-        string pattern = null;
-        string outString = string.Empty;
-        ReplacementValueType type = ReplacementValueType.Med;
+        string? pattern = null;
+        var outString = string.Empty;
+        var type = ReplacementValueType.Med;
 
         parameterText.SplitOnTabOrSpace((part, i) =>
         {
             switch (i)
             {
                 case 0:
-                    var hasStartingCarrot = part.StartsWith('^');
-                    var hasTrailingDollar = part.EndsWith('$');
-
-                    var patternBuilder = StringBuilderPool.Get(part);
                     type = ReplacementValueType.Med;
 
-                    if (hasTrailingDollar)
+                    if (part.EndsWith('$'))
                     {
                         type |= ReplacementValueType.Fin;
-                        patternBuilder.Remove(patternBuilder.Length - 1, 1);
+                        part = part.Slice(0, part.Length - 1);
                     }
 
-                    if (hasStartingCarrot)
+                    if (part.StartsWith('^'))
                     {
                         type |= ReplacementValueType.Ini;
-                        patternBuilder.Remove(0, 1);
+                        part = part.Slice(1);
                     }
 
+                    var patternBuilder = StringBuilderPool.Get(part);
                     patternBuilder.Replace('_', ' ');
                     pattern = StringBuilderPool.GetStringAndReturn(patternBuilder);
+
                     return true;
                 case 1:
                     outString = Builder.Dedup(part.Replace('_', ' '));
@@ -940,7 +986,7 @@ public sealed class AffixReader
 
     private bool TryParseCheckCompoundPatternIntoCompoundPatterns(ReadOnlySpan<char> parameterText, List<PatternEntry> entries)
     {
-        string pattern = null;
+        string? pattern = null;
         string pattern2 = string.Empty;
         string pattern3 = string.Empty;
         FlagValue condition = default;
@@ -1026,21 +1072,18 @@ public sealed class AffixReader
             return LogWarning("Attempt to set empty flag mode.");
         }
 
-        var mode = TryParseFlagMode(modeText);
-        if (mode.HasValue)
+        if (TryParseFlagMode(modeText) is not { } mode)
         {
-            if (mode == Builder.FlagMode)
-            {
-                return LogWarning("Redundant FlagMode: " + modeText.ToString());
-            }
+            return LogWarning($"Unknown FlagMode: {modeText.ToString()}");
+        }
 
-            Builder.FlagMode = mode.GetValueOrDefault();
-            return true;
-        }
-        else
+        if (mode == Builder.FlagMode)
         {
-            return LogWarning("Unknown FlagMode: " + modeText.ToString());
+            return LogWarning($"Redundant FlagMode: {modeText.ToString()}");
         }
+
+        Builder.FlagMode = mode;
+        return true;
     }
 
     private bool LogWarning(string text)
@@ -1069,9 +1112,7 @@ public sealed class AffixReader
     }
 
     private FlagValue TryParseFlag(ReadOnlySpan<char> text) =>
-        TryParseFlag(text, out FlagValue value)
-            ? value
-            : default;
+        TryParseFlag(text, out var value) ? value : default;
 
     private static ReadOnlySpan<char> ParseLeadingDigits(ReadOnlySpan<char> text)
     {
@@ -1083,425 +1124,32 @@ public sealed class AffixReader
         }
 
         var firstNonDigitIndex = 0;
-        for (; firstNonDigitIndex < text.Length && char.IsDigit(text[firstNonDigitIndex]); firstNonDigitIndex++)
-        {
-            ;
-        }
+        for (; firstNonDigitIndex < text.Length && char.IsDigit(text[firstNonDigitIndex]); firstNonDigitIndex++) ;
 
-        return (firstNonDigitIndex < text.Length)
+        return firstNonDigitIndex < text.Length
             ? text.Slice(0, firstNonDigitIndex)
             : text;
-    }
-
-    private static AffixConfigOptions? TryParseFileBitFlagCommand(ReadOnlySpan<char> value)
-    {
-        if (value.Length >= 2)
-        {
-            switch (value[0])
-            {
-                case 'C':
-                case 'c':
-                    if (value.StartsWith("CHECK", StringComparison.OrdinalIgnoreCase))
-                    {
-                        value = value.Slice(5);
-                        if (value.Equals("COMPOUNDDUP", StringComparison.OrdinalIgnoreCase))
-                        {
-                            return AffixConfigOptions.CheckCompoundDup;
-                        }
-                        if (value.Equals("COMPOUNDREP", StringComparison.OrdinalIgnoreCase))
-                        {
-                            return AffixConfigOptions.CheckCompoundRep;
-                        }
-                        if (value.Equals("COMPOUNDTRIPLE", StringComparison.OrdinalIgnoreCase))
-                        {
-                            return AffixConfigOptions.CheckCompoundTriple;
-                        }
-                        if (value.Equals("COMPOUNDCASE", StringComparison.OrdinalIgnoreCase))
-                        {
-                            return AffixConfigOptions.CheckCompoundCase;
-                        }
-                        if (value.Equals("NUM", StringComparison.OrdinalIgnoreCase))
-                        {
-                            return AffixConfigOptions.CheckNum;
-                        }
-                        if (value.Equals("SHARPS", StringComparison.OrdinalIgnoreCase))
-                        {
-                            return AffixConfigOptions.CheckSharps;
-                        }
-                    }
-                    else if (value.Equals("COMPLEXPREFIXES", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixConfigOptions.ComplexPrefixes;
-                    }
-                    else if (value.Equals("COMPOUNDMORESUFFIXES", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixConfigOptions.CompoundMoreSuffixes;
-                    }
-
-                    break;
-
-                case 'F':
-                case 'f':
-                    if (value.Equals("FULLSTRIP", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixConfigOptions.FullStrip;
-                    }
-                    if (value.Equals("FORBIDWARN", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixConfigOptions.ForbidWarn;
-                    }
-
-                    break;
-
-                case 'N':
-                case 'n':
-                    if (value.Equals("NOSPLITSUGS", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixConfigOptions.NoSplitSuggestions;
-                    }
-
-                    break;
-
-                case 'O':
-                case 'o':
-                    if (value.Equals("ONLYMAXDIFF", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixConfigOptions.OnlyMaxDiff;
-                    }
-
-                    break;
-
-                case 'S':
-                case 's':
-                    if (value.Equals("SIMPLIFIEDTRIPLE", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixConfigOptions.SimplifiedTriple;
-                    }
-                    if (value.Equals("SUGSWITHDOTS", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixConfigOptions.SuggestWithDots;
-                    }
-
-                    break;
-            }
-        }
-
-        return null;
-    }
-
-    private static AffixReaderCommandKind? TryParseCommandKind(ReadOnlySpan<char> value)
-    {
-        if (value.Length >= 2)
-        {
-            switch(value[0])
-            {
-                case 'A':
-                case 'a':
-                    if (value.Equals("AF", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.AliasF;
-                    }
-                    if (value.Equals("AM", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.AliasM;
-                    }
-
-                    break;
-
-                case 'B':
-                case 'b':
-                    if (value.Equals("BREAK", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.Break;
-                    }
-
-                    break;
-
-                case 'C':
-                case 'c':
-                    if (value.Length > 8 && value.StartsWith("COMPOUND", StringComparison.OrdinalIgnoreCase))
-                    {
-                        value = value.Slice(8);
-                        if (value.Equals("BEGIN", StringComparison.OrdinalIgnoreCase))
-                        {
-                            return AffixReaderCommandKind.CompoundBegin;
-                        }
-                        if (value.Equals("END", StringComparison.OrdinalIgnoreCase))
-                        {
-                            return AffixReaderCommandKind.CompoundEnd;
-                        }
-                        if (value.Equals("FLAG", StringComparison.OrdinalIgnoreCase))
-                        {
-                            return AffixReaderCommandKind.CompoundFlag;
-                        }
-                        if (value.Equals("FORBIDFLAG", StringComparison.OrdinalIgnoreCase))
-                        {
-                            return AffixReaderCommandKind.CompoundForbidFlag;
-                        }
-                        if (value.Equals("MIDDLE", StringComparison.OrdinalIgnoreCase))
-                        {
-                            return AffixReaderCommandKind.CompoundMiddle;
-                        }
-                        if (value.Equals("MIN", StringComparison.OrdinalIgnoreCase))
-                        {
-                            return AffixReaderCommandKind.CompoundMin;
-                        }
-                        if (value.Equals("PERMITFLAG", StringComparison.OrdinalIgnoreCase))
-                        {
-                            return AffixReaderCommandKind.CompoundPermitFlag;
-                        }
-                        if (value.Equals("ROOT", StringComparison.OrdinalIgnoreCase))
-                        {
-                            return AffixReaderCommandKind.CompoundRoot;
-                        }
-                        if (value.Equals("RULE", StringComparison.OrdinalIgnoreCase))
-                        {
-                            return AffixReaderCommandKind.CompoundRule;
-                        }
-                        if (value.Equals("SYLLABLE", StringComparison.OrdinalIgnoreCase))
-                        {
-                            return AffixReaderCommandKind.CompoundSyllable;
-                        }
-                        if (value.Equals("WORDMAX", StringComparison.OrdinalIgnoreCase))
-                        {
-                            return AffixReaderCommandKind.CompoundWordMax;
-                        }
-                    }
-                    else if (value.Equals("CIRCUMFIX", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.Circumfix;
-                    }
-                    else if (value.Equals("CHECKCOMPOUNDPATTERN", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.CheckCompoundPattern;
-                    }
-
-                    break;
-
-                case 'F':
-                case 'f':
-                    if (value.Equals("FLAG", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.Flag;
-                    }
-                    if (value.Equals("FORBIDDENWORD", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.ForbiddenWord;
-                    }
-                    if (value.Equals("FORCEUCASE", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.ForceUpperCase;
-                    }
-
-                    break;
-
-                case 'I':
-                case 'i':
-                    if (value.Equals("ICONV", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.InputConversions;
-                    }
-                    if (value.Equals("IGNORE", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.Ignore;
-                    }
-
-                    break;
-
-                case 'K':
-                case 'k':
-                    if (value.Equals("KEY", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.KeyString;
-                    }
-                    if (value.Equals("KEEPCASE", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.KeepCase;
-                    }
-
-                    break;
-
-                case 'L':
-                case 'l':
-                    if (value.Equals("LANG", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.Language;
-                    } 
-                    if (value.Equals("LEMMA_PRESENT", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.LemmaPresent;
-                    }
-
-                    break;
-
-                case 'M':
-                case 'm':
-                    if (value.Equals("MAP", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.Map;
-                    }
-                    if (value.Equals("MAXNGRAMSUGS", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.MaxNgramSuggestions;
-                    }
-                    if (value.Equals("MAXDIFF", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.MaxDifferency;
-                    }
-                    if (value.Equals("MAXCPDSUGS", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.MaxCompoundSuggestions;
-                    }
-
-                    break;
-
-                case 'N':
-                case 'n':
-                    if (value.Equals("NEEDAFFIX", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.NeedAffix;
-                    }
-                    if (value.Equals("NOSUGGEST", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.NoSuggest;
-                    }
-                    if (value.Equals("NONGRAMSUGGEST", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.NoNGramSuggest;
-                    }
-
-                    break;
-
-                case 'O':
-                case 'o':
-                    if (value.Equals("OCONV", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.OutputConversions;
-                    }
-                    if (value.Equals("ONLYINCOMPOUND", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.OnlyInCompound;
-                    }
-
-                    break;
-
-                case 'P':
-                case 'p':
-                    if (value.Equals("PFX", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.Prefix;
-                    }
-                    if (value.Equals("PSEUDOROOT", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.NeedAffix;
-                    }
-                    if (value.Equals("PHONE", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.Phone;
-                    }
-
-                    break;
-
-                case 'R':
-                case 'r':
-                    if (value.Equals("REP", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.Replacement;
-                    }
-
-                    break;
-
-                case 'S':
-                case 's':
-                    if (value.Equals("SFX", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.Suffix;
-                    }
-                    if (value.Equals("SET", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.SetEncoding;
-                    }
-                    if (value.Equals("SYLLABLENUM", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.CompoundSyllableNum;
-                    }
-                    if (value.Equals("SUBSTANDARD", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.SubStandard;
-                    }
-
-                    break;
-
-                case 'T':
-                case 't':
-                    if (value.Equals("TRY", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.TryString;
-                    }
-
-                    break;
-
-                case 'V':
-                case 'v':
-                    if (value.Equals("VERSION", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.Version;
-                    }
-
-                    break;
-
-                case 'W':
-                case 'w':
-                    if (value.Equals("WORDCHARS", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.WordChars;
-                    }
-                    if (value.Equals("WARN", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return AffixReaderCommandKind.Warn;
-                    }
-
-                    break;
-            }
-        }
-
-        return default;
     }
 
     private static FlagMode? TryParseFlagMode(ReadOnlySpan<char> value)
     {
         if (value.Length >= 2)
         {
-            switch(value[0])
+            if (value.StartsWith("CHAR", StringComparison.OrdinalIgnoreCase))
             {
-                case 'C':
-                case 'c':
-                    if (value.StartsWith("CHAR", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return FlagMode.Char;
-                    }
-                    break;
-                case 'L':
-                case 'l':
-                    if (value.StartsWith("LONG", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return FlagMode.Long;
-                    }
-                    break;
-                case 'N':
-                case 'n':
-                    if (value.StartsWith("NUM", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return FlagMode.Num;
-                    }
-                    break;
-                case 'U':
-                case 'u':
-                    if (value.StartsWith("UTF", StringComparison.OrdinalIgnoreCase) || value.StartsWith("UNI", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return FlagMode.Uni;
-                    }
-                    break;
+                return FlagMode.Char;
+            }
+            if (value.StartsWith("LONG", StringComparison.OrdinalIgnoreCase))
+            {
+                return FlagMode.Long;
+            }
+            if (value.StartsWith("NUM", StringComparison.OrdinalIgnoreCase))
+            {
+                return FlagMode.Num;
+            }
+            if (value.StartsWith("UTF", StringComparison.OrdinalIgnoreCase) || value.StartsWith("UNI", StringComparison.OrdinalIgnoreCase))
+            {
+                return FlagMode.Uni;
             }
         }
 

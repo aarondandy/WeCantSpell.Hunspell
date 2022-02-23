@@ -10,11 +10,32 @@ public sealed class AffixEntryGroupCollection<TEntry> : ArrayWrapper<AffixEntryG
 {
     public static readonly AffixEntryGroupCollection<TEntry> Empty = TakeArray(Array.Empty<AffixEntryGroup<TEntry>>());
 
-    private AffixEntryGroupCollection(AffixEntryGroup<TEntry>[] entries) : base(entries)
+    internal static AffixEntryGroupCollection<TEntry> TakeArray(AffixEntryGroup<TEntry>[] entries) => new(entries, canStealArray: true);
+
+    private static AffixEntryGroup<TEntry>[] ToCleanArray(IEnumerable<AffixEntryGroup<TEntry>> entries) => entries.ToArray();
+
+    public AffixEntryGroupCollection(IEnumerable<AffixEntryGroup<TEntry>> entries) : this(ToCleanArray(entries ?? throw new ArgumentNullException(nameof(entries))), canStealArray: true)
     {
     }
 
-    internal static AffixEntryGroupCollection<TEntry> TakeArray(AffixEntryGroup<TEntry>[] entries) => entries is null ? Empty : new AffixEntryGroupCollection<TEntry>(entries);
+    private AffixEntryGroupCollection(AffixEntryGroup<TEntry>[] entries, bool canStealArray) : base(entries, canStealArray: canStealArray)
+    {
+    }
 
-    public static AffixEntryGroupCollection<TEntry> Create(IEnumerable<AffixEntryGroup<TEntry>> entries) => entries is null ? Empty : TakeArray(entries.ToArray());
+    public sealed class Builder
+    {
+        public List<AffixEntryGroup<TEntry>> Groups { get; } = new();
+
+        public AffixEntryGroupCollection<TEntry> ToGroupCollection() => new(Groups);
+
+        public void Add(AffixEntryGroup<TEntry> group)
+        {
+            Groups.Add(group);
+        }
+
+        public void AddRange(IEnumerable<AffixEntryGroup<TEntry>> groups)
+        {
+            Groups.AddRange(groups);
+        }
+    }
 }

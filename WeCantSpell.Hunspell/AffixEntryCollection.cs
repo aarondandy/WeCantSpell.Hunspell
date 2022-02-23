@@ -11,13 +11,15 @@ public sealed class AffixEntryCollection<TEntry> : ArrayWrapper<TEntry>
 {
     public static readonly AffixEntryCollection<TEntry> Empty = TakeArray(Array.Empty<TEntry>());
 
-    public static AffixEntryCollection<TEntry> Create(List<TEntry> entries) => entries is null ? Empty : TakeArray(entries.ToArray());
+    internal static AffixEntryCollection<TEntry> TakeArray(TEntry[] entries) => new(entries, canStealArray: true);
 
-    public static AffixEntryCollection<TEntry> Create(IEnumerable<TEntry> entries) => entries is null ? Empty : TakeArray(entries.ToArray());
+    private static TEntry[] ToCleanArray(IEnumerable<TEntry> entries) => entries.ToArray();
 
-    internal static AffixEntryCollection<TEntry> TakeArray(TEntry[] entries) => entries is null ? Empty : new AffixEntryCollection<TEntry>(entries);
+    public AffixEntryCollection(IEnumerable<TEntry> entries) : this(ToCleanArray(entries ?? throw new ArgumentNullException(nameof(entries))), canStealArray: true)
+    {
+    }
 
-    private AffixEntryCollection(TEntry[] entries) : base(entries)
+    private AffixEntryCollection(TEntry[] entries, bool canStealArray) : base(entries, canStealArray: canStealArray)
     {
     }
 }

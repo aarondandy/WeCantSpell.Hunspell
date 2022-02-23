@@ -21,12 +21,6 @@ static class StringBuilderPool
     public static StringBuilder Get(int capacity) =>
         GetClearedBuilderWithCapacity(capacity);
 
-    public static StringBuilder Get(string value, int valueStartIndex, int valueLength) =>
-        Get(value, valueStartIndex, valueLength, valueLength);
-
-    public static StringBuilder Get(string value, int valueStartIndex, int valueLength, int capacity) =>
-        GetClearedBuilderWithCapacity(capacity).Append(value, valueStartIndex, valueLength);
-
     public static StringBuilder Get(ReadOnlySpan<char> value) =>
         GetClearedBuilderWithCapacity(value.Length).Append(value);
 

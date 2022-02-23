@@ -14,20 +14,9 @@ public partial class AffixConfig
     public sealed class Builder
     {
         private const int DefaultCompoundMinLength = 3;
-
         private const int DefaultMaxNgramSuggestions = 4;
-
         private const int DefaultMaxCompoundSuggestions = 3;
-
         private const string DefaultKeyString = "qwertyuiop|asdfghjkl|zxcvbnm";
-
-        internal readonly Deduper<FlagSet> FlagSetDeduper;
-
-        internal readonly Deduper<MorphSet> MorphSetDeduper;
-
-        internal readonly Deduper<CharacterConditionGroup> CharacterConditionGroupDeduper;
-
-        internal readonly Deduper<string> StringDeduper;
 
         public Builder()
         {
@@ -35,11 +24,11 @@ public partial class AffixConfig
             FlagSetDeduper.Add(FlagSet.Empty);
             MorphSetDeduper = new Deduper<MorphSet>(MorphSet.DefaultComparer);
             MorphSetDeduper.Add(MorphSet.Empty);
-            CharacterConditionGroupDeduper = new Deduper<CharacterConditionGroup>(CharacterConditionGroup.DefaultComparer);
-            CharacterConditionGroupDeduper.Add(CharacterConditionGroup.Empty);
-            CharacterConditionGroupDeduper.Add(CharacterConditionGroup.AllowAnySingleCharacter);
-            StringDeduper = new Deduper<string>(StringComparer.Ordinal);
-            StringDeduper.Add(string.Empty);
+            _characterConditionGroupDeduper = new Deduper<CharacterConditionGroup>(CharacterConditionGroup.DefaultComparer);
+            _characterConditionGroupDeduper.Add(CharacterConditionGroup.Empty);
+            _characterConditionGroupDeduper.Add(CharacterConditionGroup.AllowAnySingleCharacter);
+            _stringDeduper = new Deduper<string>(StringComparer.Ordinal);
+            _stringDeduper.Add(string.Empty);
         }
 
         /// <summary>
@@ -372,6 +361,14 @@ public partial class AffixConfig
         /// </remarks>
         public AffixConfig MoveToImmutable() => ToImmutable(destructive: true);
 
+        internal Deduper<FlagSet> FlagSetDeduper { get; }
+
+        internal Deduper<MorphSet> MorphSetDeduper { get; }
+
+        private readonly Deduper<CharacterConditionGroup> _characterConditionGroupDeduper;
+
+        private readonly Deduper<string> _stringDeduper;
+
         private AffixConfig ToImmutable(bool destructive)
         {
             var culture = CultureInfo.ReadOnly(Culture ?? CultureInfo.InvariantCulture);
@@ -480,14 +477,14 @@ public partial class AffixConfig
         }
 
         internal string Dedup(ReadOnlySpan<char> value) =>
-            StringDeduper.GetEqualOrAdd(value.ToString());
+            _stringDeduper.GetEqualOrAdd(value.ToString());
 
         public string Dedup(string value)
         {
 #if DEBUG
             if (value is null) throw new ArgumentNullException(nameof(value));
 #endif
-            return StringDeduper.GetEqualOrAdd(value);
+            return _stringDeduper.GetEqualOrAdd(value);
         }
 
         public string[] DedupInPlace(string[] values)
@@ -499,7 +496,7 @@ public partial class AffixConfig
                     ref string value = ref values[i];
                     if (value != null)
                     {
-                        value = StringDeduper.GetEqualOrAdd(value);
+                        value = _stringDeduper.GetEqualOrAdd(value);
                     }
                 }
             }
@@ -517,15 +514,15 @@ public partial class AffixConfig
             var result = new string[values.Count];
             for (var i = 0; i < result.Length; i++)
             {
-                result[i] = StringDeduper.GetEqualOrAdd(values[i]);
+                result[i] = _stringDeduper.GetEqualOrAdd(values[i]);
             }
 
             return result;
         }
 
-        public MorphSet Dedup(MorphSet value) => value is null ? null : MorphSetDeduper.GetEqualOrAdd(value);
+        internal MorphSet Dedup(MorphSet value) => MorphSetDeduper.GetEqualOrAdd(value);
 
-        public CharacterConditionGroup Dedup(CharacterConditionGroup value) => CharacterConditionGroupDeduper.GetEqualOrAdd(value);
+        public CharacterConditionGroup Dedup(CharacterConditionGroup value) => _characterConditionGroupDeduper.GetEqualOrAdd(value);
 
         public void LogWarning(string warning)
         {

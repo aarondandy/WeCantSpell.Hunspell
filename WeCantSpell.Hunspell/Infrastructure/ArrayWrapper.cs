@@ -1,15 +1,22 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
 public class ArrayWrapper<T> : IReadOnlyList<T>
 {
-    protected ArrayWrapper(T[] items)
+    protected ArrayWrapper(T[] items) : this(items, canStealArray: false)
     {
-        Items = items ?? throw new ArgumentNullException(nameof(items));
-        IsEmpty = items.Length == 0;
+    }
+
+    protected ArrayWrapper(T[] items, bool canStealArray)
+    {
+        if (items is null) throw new ArgumentNullException(nameof(items));
+
+        Items = canStealArray ? items : items.ToArray();
+        IsEmpty = Items.Length == 0;
     }
 
     internal readonly T[] Items;

@@ -11,30 +11,9 @@ namespace WeCantSpell.Hunspell;
 /// <typeparam name="TEntry">The specific entry type.</typeparam>
 public sealed class AffixEntryGroup<TEntry> where TEntry : AffixEntry
 {
-    public sealed class Builder
-    {
-        /// <summary>
-        /// All of the entries that make up this group.
-        /// </summary>
-        public List<TEntry> Entries { get; set; }
-
-        /// <summary>
-        /// ID used to represent the affix group.
-        /// </summary>
-        public FlagValue AFlag { get; set; }
-
-        /// <summary>
-        /// Options for this affix group.
-        /// </summary>
-        public AffixEntryOptions Options { get; set; }
-
-        public AffixEntryGroup<TEntry> ToGroup() =>
-            new AffixEntryGroup<TEntry>(AFlag, Options, AffixEntryCollection<TEntry>.Create(Entries));
-    }
-
     public AffixEntryGroup(FlagValue aFlag, AffixEntryOptions options, AffixEntryCollection<TEntry> entries)
     {
-        Entries = entries;
+        Entries = entries ?? throw new ArgumentNullException(nameof(entries));
         AFlag = aFlag;
         Options = options;
     }
@@ -60,7 +39,47 @@ public sealed class AffixEntryGroup<TEntry> where TEntry : AffixEntry
     /// <seealso cref="AffixEntryOptions"/>
     public bool AllowCross => EnumEx.HasFlag(Options, AffixEntryOptions.CrossProduct);
 
-    internal Affix<TEntry>[] CreateAffixes() => Array.ConvertAll(Entries.Items, ProduceFromEntry);
+    internal Affix<TEntry>[] ToAffixes()
+    {
+        return Array.ConvertAll(Entries.Items, produceFromEntry);
+        Affix<TEntry> produceFromEntry(TEntry entry) => new(entry, this);
+    }
 
-    private Affix<TEntry> ProduceFromEntry(TEntry entry) => new(entry, this);
+    public sealed class Builder
+    {
+        public Builder(FlagValue aFlag, AffixEntryOptions options) : this(aFlag, options, new())
+        {
+        }
+
+        public Builder(FlagValue aFlag, AffixEntryOptions options, List<TEntry> entries)
+        {
+            AFlag = aFlag;
+            Options = options;
+            Entries = entries ?? throw new ArgumentNullException(nameof(entries));
+        }
+
+        /// <summary>
+        /// All of the entries that make up this group.
+        /// </summary>
+        public List<TEntry> Entries { get; }
+
+        /// <summary>
+        /// ID used to represent the affix group.
+        /// </summary>
+        public FlagValue AFlag { get; set; }
+
+        /// <summary>
+        /// Options for this affix group.
+        /// </summary>
+        public AffixEntryOptions Options { get; set; }
+
+        public bool HasEntries => Entries.Count > 0;
+
+        public AffixEntryGroup<TEntry> ToGroup() => new(AFlag, Options, new(Entries));
+
+        public void Add(TEntry entry)
+        {
+            Entries.Add(entry);
+        }
+    }
 }
