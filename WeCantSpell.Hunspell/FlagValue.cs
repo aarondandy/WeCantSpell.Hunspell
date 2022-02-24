@@ -18,11 +18,11 @@ public readonly struct FlagValue :
 
     public static implicit operator int(FlagValue flag) => flag._value;
 
-    public static implicit operator FlagValue(int value) => new(value);
+    public static explicit operator FlagValue(int value) => new(value);
 
     public static implicit operator char(FlagValue flag) => flag._value;
 
-    public static implicit operator FlagValue(char value) => new(value);
+    public static explicit operator FlagValue(char value) => new(value);
 
     public static bool operator !=(FlagValue a, FlagValue b) => a._value != b._value;
 

@@ -11,10 +11,10 @@ public class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacemen
 {
     public static readonly MultiReplacementTable Empty = TakeDictionary(new Dictionary<string, MultiReplacementEntry>(0));
 
-    public static MultiReplacementTable Create(IEnumerable<KeyValuePair<string, MultiReplacementEntry>> replacements) =>
+    public static MultiReplacementTable Create(IEnumerable<KeyValuePair<string, MultiReplacementEntry>>? replacements) =>
         replacements is null ? Empty : TakeDictionary(replacements.ToDictionary(s => s.Key, s => s.Value));
 
-    internal static MultiReplacementTable TakeDictionary(Dictionary<string, MultiReplacementEntry> replacements) =>
+    internal static MultiReplacementTable TakeDictionary(Dictionary<string, MultiReplacementEntry>? replacements) =>
         replacements is null ? Empty : new MultiReplacementTable(replacements);
 
     private MultiReplacementTable(Dictionary<string, MultiReplacementEntry> replacements)

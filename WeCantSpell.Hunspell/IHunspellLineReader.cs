@@ -14,13 +14,13 @@ public interface IHunspellLineReader
     /// Reads the next line from a stream.
     /// </summary>
     /// <returns>A task that represents the asynchronous read operation. The reult value will contain the contents of the next line as a string or the value <c>null</c> indicating there are no more lines to be read.</returns>
-    Task<string> ReadLineAsync();
+    Task<string?> ReadLineAsync();
 
     /// <summary>
     /// Reads the next line from a stream.
     /// </summary>
     /// <returns></returns>
-    string ReadLine();
+    string? ReadLine();
 
     /// <summary>
     /// Gets the current encoding that the reader is using to decode text.
@@ -36,7 +36,7 @@ public static class HunspellLineReaderExtensions
 
         var lines = new List<string>();
 
-        string line;
+        string? line;
         while ((line = await reader.ReadLineAsync().ConfigureAwait(false)) is not null)
         {
             lines.Add(line);
@@ -49,7 +49,7 @@ public static class HunspellLineReaderExtensions
     {
         if (reader is null) throw new ArgumentNullException(nameof(reader));
 
-        string line;
+        string? line;
         while ((line = reader.ReadLine()) is not null)
         {
             yield return line;

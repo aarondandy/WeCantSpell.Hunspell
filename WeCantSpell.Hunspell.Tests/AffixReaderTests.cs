@@ -1719,13 +1719,12 @@ public class AffixReaderTests
         [InlineData("ar")]
         [InlineData("uk")]
         [InlineData("xx")]
-        [InlineData("")]
         [InlineData("-")]
         [InlineData("en-XX")]
         [InlineData("en-")]
         public async Task can_read_all_languages(string langCode)
         {
-            var textFileContents = "LANG " + langCode;
+            var textFileContents = $"LANG {langCode}";
             var expectedCulture = langCode;
             if (expectedCulture.EndsWith("-"))
             {
@@ -1742,14 +1741,22 @@ public class AffixReaderTests
             {
                 actual.Culture.Name.Should().Be(expectedCulture);
             }
-            else if (!string.IsNullOrEmpty(actual.Culture.Name))
-            {
-                expectedCulture.Should().StartWith(actual.Culture.Name, "Not all platforms have the values but they should be similar.");
-            }
             else
             {
-                actual.Culture.Name.Should().BeEmpty("Okay well maybe not all platforms can even keep the culture name then?");
+                throw new InvalidOperationException();
             }
+        }
+
+        [Fact]
+        public async Task reading_empty_lang_code_leave_language_unset_and_culture_invariant()
+        {
+            var langCode = string.Empty;
+            var textFileContents = $"LANG {langCode}";
+
+            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+
+            actual.Language.Should().BeNullOrEmpty();
+            actual.Culture.Should().Be(System.Globalization.CultureInfo.InvariantCulture);
         }
 
         [Theory]

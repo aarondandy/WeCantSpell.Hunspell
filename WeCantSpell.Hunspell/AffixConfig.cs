@@ -9,11 +9,16 @@ namespace WeCantSpell.Hunspell;
 
 public sealed partial class AffixConfig
 {
+    private const string DefaultKeyString = "qwertyuiop|asdfghjkl|zxcvbnm";
+    private const int DefaultCompoundMinLength = 3;
+    private const int DefaultMaxNgramSuggestions = 4;
+    private const int DefaultMaxCompoundSuggestions = 3;
+
     private AffixConfig()
     {
     }
 
-    private AffixConfigOptions options;
+    private AffixConfigOptions _options;
 
     /// <summary>
     /// The flag type.
@@ -32,25 +37,25 @@ public sealed partial class AffixConfig
     /// </summary>
     public AffixConfigOptions Options
     {
-        get => options;
+        get => _options;
         private set
         {
-            options = value;
-            ComplexPrefixes = EnumEx.HasFlag(options, AffixConfigOptions.ComplexPrefixes);
-            CompoundMoreSuffixes = EnumEx.HasFlag(options, AffixConfigOptions.CompoundMoreSuffixes);
-            CheckCompoundDup = EnumEx.HasFlag(options, AffixConfigOptions.CheckCompoundDup);
-            CheckCompoundRep = EnumEx.HasFlag(options, AffixConfigOptions.CheckCompoundRep);
-            CheckCompoundTriple = EnumEx.HasFlag(options, AffixConfigOptions.CheckCompoundTriple);
-            SimplifiedTriple = EnumEx.HasFlag(options, AffixConfigOptions.SimplifiedTriple);
-            CheckCompoundCase = EnumEx.HasFlag(options, AffixConfigOptions.CheckCompoundCase);
-            CheckNum = EnumEx.HasFlag(options, AffixConfigOptions.CheckNum);
-            OnlyMaxDiff = EnumEx.HasFlag(options, AffixConfigOptions.OnlyMaxDiff);
-            NoSplitSuggestions = EnumEx.HasFlag(options, AffixConfigOptions.NoSplitSuggestions);
-            FullStrip = EnumEx.HasFlag(options, AffixConfigOptions.FullStrip);
-            SuggestWithDots = EnumEx.HasFlag(options, AffixConfigOptions.SuggestWithDots);
-            ForbidWarn = EnumEx.HasFlag(options, AffixConfigOptions.ForbidWarn);
-            CheckSharps = EnumEx.HasFlag(options, AffixConfigOptions.CheckSharps);
-            SimplifiedCompound = EnumEx.HasFlag(options, AffixConfigOptions.SimplifiedCompound);
+            _options = value;
+            ComplexPrefixes = EnumEx.HasFlag(_options, AffixConfigOptions.ComplexPrefixes);
+            CompoundMoreSuffixes = EnumEx.HasFlag(_options, AffixConfigOptions.CompoundMoreSuffixes);
+            CheckCompoundDup = EnumEx.HasFlag(_options, AffixConfigOptions.CheckCompoundDup);
+            CheckCompoundRep = EnumEx.HasFlag(_options, AffixConfigOptions.CheckCompoundRep);
+            CheckCompoundTriple = EnumEx.HasFlag(_options, AffixConfigOptions.CheckCompoundTriple);
+            SimplifiedTriple = EnumEx.HasFlag(_options, AffixConfigOptions.SimplifiedTriple);
+            CheckCompoundCase = EnumEx.HasFlag(_options, AffixConfigOptions.CheckCompoundCase);
+            CheckNum = EnumEx.HasFlag(_options, AffixConfigOptions.CheckNum);
+            OnlyMaxDiff = EnumEx.HasFlag(_options, AffixConfigOptions.OnlyMaxDiff);
+            NoSplitSuggestions = EnumEx.HasFlag(_options, AffixConfigOptions.NoSplitSuggestions);
+            FullStrip = EnumEx.HasFlag(_options, AffixConfigOptions.FullStrip);
+            SuggestWithDots = EnumEx.HasFlag(_options, AffixConfigOptions.SuggestWithDots);
+            ForbidWarn = EnumEx.HasFlag(_options, AffixConfigOptions.ForbidWarn);
+            CheckSharps = EnumEx.HasFlag(_options, AffixConfigOptions.CheckSharps);
+            SimplifiedCompound = EnumEx.HasFlag(_options, AffixConfigOptions.SimplifiedCompound);
         }
     }
 
@@ -204,7 +209,7 @@ public sealed partial class AffixConfig
     /// KEY qwertzuop|yxcvbnm|qaw|say|wse|dsx|sy|edr|fdc|dx|rft|gfv|fc|tgz|hgb|gv|zhu|jhn|hb|uji|kjm|jn|iko|lkm
     /// </code>
     /// </example>
-    public string KeyString { get; private set; }
+    public string KeyString { get; private set; } = DefaultKeyString;
 
     /// <summary>
     /// Characters used to permit some suggestions.
@@ -213,7 +218,7 @@ public sealed partial class AffixConfig
     /// Hunspell can suggest right word forms, when they differ from the
     /// bad input word by one TRY character.The parameter of TRY is case sensitive.
     /// </remarks>
-    public string TryString { get; private set; }
+    public string TryString { get; private set; } = string.Empty;
 
     /// <summary>
     /// The language code used for language specific functions.
@@ -221,17 +226,17 @@ public sealed partial class AffixConfig
     /// <remarks>
     /// Use this to activate special casing of Azeri(LANG az) and Turkish(LANG tr).
     /// </remarks>
-    public string Language { get; private set; }
+    public string? Language { get; private set; }
 
     /// <summary>
     /// The culture associated with the language.
     /// </summary>
-    public CultureInfo Culture { get; private set; }
+    public CultureInfo Culture { get; private set; } = CultureInfo.InvariantCulture;
 
     /// <summary>
     /// The string comparer associated with the culture.
     /// </summary>
-    public StringComparer StringComparer { get; private set; }
+    public StringComparer StringComparer { get; private set; } = StringComparer.InvariantCulture;
 
     /// <summary>
     /// Flag indicating that a word may be in compound words.
@@ -283,7 +288,7 @@ public sealed partial class AffixConfig
     /// <remarks>
     /// Default value is documented as 3 but may be 1.
     /// </remarks>
-    public int CompoundMin { get; private set; }
+    public int CompoundMin { get; private set; } = DefaultCompoundMinLength;
 
     /// <summary>
     /// A flag marking compounds as a compound root.
@@ -388,7 +393,7 @@ public sealed partial class AffixConfig
     /// Maximum number of n-gram suggestions. A value of 0 switches off the n-gram suggestions.
     /// </summary>
     /// <seealso cref="MaxDifferency"/>
-    public int MaxNgramSuggestions { get; private set; }
+    public int MaxNgramSuggestions { get; private set; } = DefaultMaxNgramSuggestions;
 
     /// <summary>
     /// Similarity factor for the n-gram based suggestions.
@@ -408,7 +413,7 @@ public sealed partial class AffixConfig
     /// number of the suggested compound words may be greater from the same 1-character
     /// distance type.
     /// </remarks>
-    public int MaxCompoundSuggestions { get; private set; }
+    public int MaxCompoundSuggestions { get; private set; } = DefaultMaxCompoundSuggestions;
 
     /// <summary>
     /// A flag indicating that uppercased and capitalized forms of words are forbidden.
@@ -469,12 +474,12 @@ public sealed partial class AffixConfig
     /// Need for special compounding rules in Hungarian.
     /// It appears that this string is used as a boolean where <c>null</c> or <see cref="string.Empty"/> indicates <c>false</c>.
     /// </remarks>
-    public string CompoundSyllableNum { get; private set; }
+    public string? CompoundSyllableNum { get; private set; }
 
     /// <summary>
     /// The encoding name to be used in morpheme, affix, and dictionary files.
     /// </summary>
-    public Encoding Encoding { get; private set; }
+    public Encoding Encoding { get; private set; } = AffixReader.DefaultEncoding;
 
     /// <summary>
     /// Specifies modifications to try first
@@ -801,7 +806,7 @@ public sealed partial class AffixConfig
     /// <summary>
     /// Affix and dictionary file version string.
     /// </summary>
-    public string Version { get; private set; }
+    public string? Version { get; private set; }
 
     /// <summary>
     /// The set of cont classes used across all affixes.
@@ -823,7 +828,7 @@ public sealed partial class AffixConfig
 
     public bool CultureUsesDottedI { get; private set; }
 
-    public WarningList Warnings { get; private set; }
+    public WarningList Warnings { get; private set; } = WarningList.Empty;
 
     public bool HasCompound => CompoundFlag.HasValue || CompoundBegin.HasValue || CompoundRules.HasItems;
 
@@ -831,7 +836,7 @@ public sealed partial class AffixConfig
     {
         if (number <= 0 || number > aliasF.Count)
         {
-            result = null;
+            result = FlagSet.Empty;
             return false;
         }
 

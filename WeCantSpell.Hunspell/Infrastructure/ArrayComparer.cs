@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
+[Obsolete("This needs to be removed")]
 sealed class ArrayComparer<T> : IEqualityComparer<T[]>
     where T : IEquatable<T>
 {

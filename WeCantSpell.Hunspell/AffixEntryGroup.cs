@@ -39,11 +39,9 @@ public sealed class AffixEntryGroup<TEntry> where TEntry : AffixEntry
     /// <seealso cref="AffixEntryOptions"/>
     public bool AllowCross => EnumEx.HasFlag(Options, AffixEntryOptions.CrossProduct);
 
-    internal Affix<TEntry>[] ToAffixes()
-    {
-        return Array.ConvertAll(Entries.Items, produceFromEntry);
-        Affix<TEntry> produceFromEntry(TEntry entry) => new(entry, this);
-    }
+    internal Affix<TEntry>[] ToAffixes() => Array.ConvertAll(Entries.Items, CreateAffix);
+
+    internal Affix<TEntry> CreateAffix(TEntry entry) => new(entry, AFlag, Options);
 
     public sealed class Builder
     {

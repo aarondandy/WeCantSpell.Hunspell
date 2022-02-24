@@ -5,6 +5,7 @@ using System.Linq;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
+[Obsolete("This needs to be removed")]
 public class ArrayWrapper<T> : IReadOnlyList<T>
 {
     protected ArrayWrapper(T[] items) : this(items, canStealArray: false)

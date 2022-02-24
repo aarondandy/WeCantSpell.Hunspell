@@ -118,7 +118,7 @@ public sealed class AffixReader
 
     private async Task ReadToEndAsync()
     {
-        string line;
+        string? line;
         while ((line = await Reader.ReadLineAsync().ConfigureAwait(false)) != null)
         {
             ParseLine(line);
@@ -144,7 +144,7 @@ public sealed class AffixReader
 
     private void ReadToEnd()
     {
-        string line;
+        string? line;
         while ((line = Reader.ReadLine()) != null)
         {
             ParseLine(line);
@@ -336,7 +336,7 @@ public sealed class AffixReader
             case AffixReaderCommandKind.NoNGramSuggest:
                 return TryParseFlag(parameters, out Builder.NoNgramSuggest);
             case AffixReaderCommandKind.ForbiddenWord:
-                Builder.ForbiddenWord = TryParseFlag(parameters);
+                Builder.ForbiddenWord = ParseFlagOrDefault(parameters);
                 return Builder.ForbiddenWord.HasValue;
             case AffixReaderCommandKind.LemmaPresent:
                 return TryParseFlag(parameters, out Builder.LemmaPresent);
@@ -403,7 +403,7 @@ public sealed class AffixReader
         }
     }
 
-    private bool TryParseStandardListItem<T>(EntryListType entryListType, ReadOnlySpan<char> parameterText, ref List<T> entries, EntryParser<T> parse)
+    private bool TryParseStandardListItem<T>(EntryListType entryListType, ReadOnlySpan<char> parameterText, ref List<T>? entries, EntryParser<T> parse)
     {
         if (!IsInitialized(entryListType))
         {
@@ -426,7 +426,7 @@ public sealed class AffixReader
     {
         var ok = parameters.SplitOnTabOrSpace((part, i) =>
         {
-            switch(i)
+            switch (i)
             {
                 case 0:
                     if (IntEx.TryParseInvariant(part) is { } maxValue)
@@ -535,12 +535,12 @@ public sealed class AffixReader
         return true;
     }
 
-    private bool TryParseConv(ReadOnlySpan<char> parameterText, EntryListType entryListType, ref Dictionary<string, MultiReplacementEntry> entries)
+    private bool TryParseConv(ReadOnlySpan<char> parameterText, EntryListType entryListType, ref Dictionary<string, MultiReplacementEntry>? entries)
     {
         if (!IsInitialized(entryListType))
         {
             SetInitialized(entryListType);
-            
+
             if (IntEx.TryParseInvariant(ParseLeadingDigits(parameterText), out var expectedSize) && expectedSize >= 0)
             {
                 entries ??= new(expectedSize);
@@ -650,15 +650,16 @@ public sealed class AffixReader
         return true;
     }
 
-    private bool TryParseAffixIntoList<TEntry>(ReadOnlySpan<char> parameterText, ref List<AffixEntryGroup<TEntry>.Builder> groups)
+    private bool TryParseAffixIntoList<TEntry>(ReadOnlySpan<char> parameterText, ref List<AffixEntryGroup<TEntry>.Builder>? groups)
         where TEntry : AffixEntry
-        => TryParseAffixIntoList(parameterText.ToString(), ref groups);
+    {
+        groups ??= new();
+        return TryParseAffixIntoList(parameterText.ToString(), ref groups);
+    }
 
     private bool TryParseAffixIntoList<TEntry>(string parameterText, ref List<AffixEntryGroup<TEntry>.Builder> groups)
         where TEntry : AffixEntry
     {
-        groups ??= new();
-
         var lineMatch = AffixLineRegex.Match(parameterText);
         if (!lineMatch.Success)
         {
@@ -687,11 +688,11 @@ public sealed class AffixReader
             {
                 options |= AffixEntryOptions.CrossProduct;
             }
-            if (Builder.IsAliasM)
+            if (Builder.AliasM is { Count: > 0 })
             {
                 options |= AffixEntryOptions.AliasM;
             }
-            if (Builder.IsAliasF)
+            if (Builder.AliasF is { Count: > 0 })
             {
                 options |= AffixEntryOptions.AliasF;
             }
@@ -730,11 +731,11 @@ public sealed class AffixReader
             {
                 affixText = StringBuilderPool.Get(affixInput.AsSpan(0, affixSlashIndex));
 
-                if (Builder.IsAliasF)
+                if (Builder.AliasF is { } aliasF)
                 {
-                    if (IntEx.TryParseInvariant(affixInput.AsSpan(affixSlashIndex + 1), out var aliasNumber) && aliasNumber > 0 && aliasNumber <= Builder.AliasF.Count)
+                    if (IntEx.TryParseInvariant(affixInput.AsSpan(affixSlashIndex + 1), out var aliasNumber) && aliasNumber > 0 && aliasNumber <= aliasF.Count)
                     {
-                        contClass = Builder.AliasF[aliasNumber - 1];
+                        contClass = aliasF[aliasNumber - 1];
                     }
                     else
                     {
@@ -801,11 +802,11 @@ public sealed class AffixReader
             if (lineMatchGroups[7].Success)
             {
                 var morphAffixText = lineMatchGroups[7].Value;
-                if (Builder.IsAliasM)
+                if (Builder.AliasM is { } aliasM)
                 {
-                    if (IntEx.TryParseInvariant(morphAffixText, out var morphNumber) && morphNumber > 0 && morphNumber <= Builder.AliasM.Count)
+                    if (IntEx.TryParseInvariant(morphAffixText, out var morphNumber) && morphNumber > 0 && morphNumber <= aliasM.Count)
                     {
-                        morph = Builder.AliasM[morphNumber - 1];
+                        morph = aliasM[morphNumber - 1];
                     }
                     else
                     {
@@ -1003,7 +1004,7 @@ public sealed class AffixReader
                     slashIndex = part.IndexOf('/');
                     if (slashIndex >= 0)
                     {
-                        condition = TryParseFlag(part.Slice(slashIndex + 1));
+                        condition = ParseFlagOrDefault(part.Slice(slashIndex + 1));
                         if (!condition.HasValue)
                         {
                             failedParsePattern1 = true;
@@ -1019,7 +1020,7 @@ public sealed class AffixReader
                     slashIndex = part.IndexOf('/');
                     if (slashIndex >= 0)
                     {
-                        condition2 = TryParseFlag(part.Slice(slashIndex + 1));
+                        condition2 = ParseFlagOrDefault(part.Slice(slashIndex + 1));
                         if (!condition2.HasValue)
                         {
                             failedParsePattern2 = true;
@@ -1111,8 +1112,20 @@ public sealed class AffixReader
             : FlagValue.TryParseFlag(text, flagMode, out value);
     }
 
-    private FlagValue TryParseFlag(ReadOnlySpan<char> text) =>
-        TryParseFlag(text, out var value) ? value : default;
+    private FlagValue ParseFlagOrDefault(ReadOnlySpan<char> text)
+    {
+        FlagValue result;
+        if (Builder.FlagMode == FlagMode.Uni)
+        {
+            FlagValue.TryParseFlag(ReDecodeConvertedStringAsUtf8(text), FlagMode.Char, out result);
+        }
+        else
+        {
+            FlagValue.TryParseFlag(text, Builder.FlagMode, out result);
+        }
+
+        return result;
+    }
 
     private static ReadOnlySpan<char> ParseLeadingDigits(ReadOnlySpan<char> text)
     {

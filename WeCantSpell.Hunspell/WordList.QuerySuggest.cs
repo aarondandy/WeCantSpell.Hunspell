@@ -440,7 +440,7 @@ public partial class WordList
             }
 
             // remove duplications
-            slst = slst.Distinct(Affix.StringComparer).ToList();
+            slst.RemoveDuplicates(Affix.StringComparer);
 
             // output conversion
             if (Affix.OutputConversions.HasReplacements)
@@ -713,8 +713,7 @@ public partial class WordList
         /// </summary>
         private int BadChar(List<string> wlst, string word, bool cpdSuggest)
         {
-            var tryString = Affix.TryString;
-            if (string.IsNullOrEmpty(tryString))
+            if (Affix.TryString is not { Length: > 0 } tryString)
             {
                 return wlst.Count;
             }

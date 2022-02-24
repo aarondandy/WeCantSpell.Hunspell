@@ -53,9 +53,9 @@ public sealed class DynamicEncodingLineReader : IHunspellLineReader, IDisposable
     private int _maxSingleCharResultsCount;
 
     private readonly int _bufferMaxSize = 4096;
-    private char[] _charBuffer = null;
+    private char[]? _charBuffer = null;
     private int _charBufferUsedSize = 0;
-    private byte[] _buffer = null;
+    private byte[]? _buffer = null;
     private int _byteBufferUsedSize = 0;
     private int _bufferIndex = -1;
     private bool _hasCheckedForPreamble = false;
@@ -82,7 +82,7 @@ public sealed class DynamicEncodingLineReader : IHunspellLineReader, IDisposable
         return await reader.ReadLinesAsync().ConfigureAwait(false);
     }
 
-    public string ReadLine()
+    public string? ReadLine()
     {
         if (!_hasCheckedForPreamble)
         {

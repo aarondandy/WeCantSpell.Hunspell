@@ -141,7 +141,7 @@ public abstract class AffixCollection<TEntry> :
         AffixesWithDots.SelectMany(group =>
             group.Entries
                 .Where(entry => predicate(entry.Key, word))
-                .Select(entry => new Affix<TEntry>(entry, group)));
+                .Select(group.CreateAffix));
 }
 
 public sealed class SuffixCollection : AffixCollection<SuffixEntry>
@@ -190,7 +190,7 @@ public sealed class SuffixCollection : AffixCollection<SuffixEntry>
                         {
                             if (HunspellTextFunctions.IsReverseSubset(entry.Key, word))
                             {
-                                results.Add(new(entry, group));
+                                results.Add(group.CreateAffix(entry));
                             }
                         }
                     }
@@ -243,7 +243,7 @@ public sealed class PrefixCollection : AffixCollection<PrefixEntry>
 
         if (!string.IsNullOrEmpty(word))
         {
-            if (AffixesByIndexedByKey.TryGetValue(word[0], out AffixEntryGroupCollection<PrefixEntry> indexedGroups))
+            if (AffixesByIndexedByKey.TryGetValue(word[0], out var indexedGroups))
             {
                 foreach (var group in indexedGroups)
                 {
@@ -251,7 +251,7 @@ public sealed class PrefixCollection : AffixCollection<PrefixEntry>
                     {
                         if (HunspellTextFunctions.IsSubset(entry.Key, word))
                         {
-                            results.Add(new(entry, group));
+                            results.Add(group.CreateAffix(entry));
                         }
                     }
                 }

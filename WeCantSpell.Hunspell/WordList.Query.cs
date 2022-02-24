@@ -1368,7 +1368,7 @@ public partial class WordList
                     )
                     {
                         // check prefix
-                        rv = CheckWordPrefix(new Affix<PrefixEntry>(pe, peGroup), word, inCompound, needFlag);
+                        rv = CheckWordPrefix(peGroup.CreateAffix(pe), word, inCompound, needFlag);
                         if (rv is not null)
                         {
                             SetPrefix(pe);
@@ -1552,7 +1552,7 @@ public partial class WordList
                         )
                     )
                     {
-                        var affix = new Affix<SuffixEntry>(se, seGroup);
+                        var affix = seGroup.CreateAffix(se);
                         rv = CheckWordSuffix(affix, word, sfxOpts, pfx, cclass, needFlag, checkWordCclassFlag);
                         if (rv is not null)
                         {
