@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
@@ -83,4 +84,7 @@ static class CollectionsEx
             return duplicateCount;
         }
     }
+
+    public static ImmutableArray<T> MoveToOrCreateImmutable<T>(this ImmutableArray<T>.Builder builder) =>
+        builder.Capacity == builder.Count ? builder.MoveToImmutable() : builder.ToImmutable();
 }

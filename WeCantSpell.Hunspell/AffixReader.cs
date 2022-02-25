@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -395,15 +396,16 @@ public sealed class AffixReader
                     ? TryParseAffixIntoList(parameters, ref Builder.Prefixes)
                     : TryParseAffixIntoList(parameters, ref Builder.Suffixes);
             case AffixReaderCommandKind.AliasF:
-                return TryParseStandardListItem(EntryListType.AliasF, parameters, ref Builder.AliasF, TryParseAliasF);
+                return TryParseStandardListItem(EntryListType.AliasF, parameters, Builder.AliasF, TryParseAliasF);
             case AffixReaderCommandKind.AliasM:
-                return TryParseStandardListItem(EntryListType.AliasM, parameters, ref Builder.AliasM, TryParseAliasM);
+                return TryParseStandardListItem(EntryListType.AliasM, parameters, Builder.AliasM, TryParseAliasM);
             default:
                 return LogWarning($"Unknown parsed command {command}");
         }
     }
 
-    private bool TryParseStandardListItem<T>(EntryListType entryListType, ReadOnlySpan<char> parameterText, ref List<T>? entries, EntryParser<T> parse)
+    private delegate bool EntryParserForList<T>(ReadOnlySpan<char> parameterText, List<T> entries);
+    private bool TryParseStandardListItem<T>(EntryListType entryListType, ReadOnlySpan<char> parameterText, ref List<T>? entries, EntryParserForList<T> parse)
     {
         if (!IsInitialized(entryListType))
         {
@@ -412,12 +414,28 @@ public sealed class AffixReader
             if (IntEx.TryParseInvariant(parameterText, out var expectedSize) && expectedSize >= 0)
             {
                 entries ??= new(expectedSize);
-
                 return true;
             }
         }
 
         entries ??= new();
+
+        return parse(parameterText, entries);
+    }
+
+    private delegate bool EntryParserForArray<T>(ReadOnlySpan<char> parameterText, ImmutableArray<T>.Builder entries);
+    private bool TryParseStandardListItem<T>(EntryListType entryListType, ReadOnlySpan<char> parameterText, ImmutableArray<T>.Builder entries, EntryParserForArray<T> parse)
+    {
+        if (!IsInitialized(entryListType))
+        {
+            SetInitialized(entryListType);
+
+            if (IntEx.TryParseInvariant(parameterText, out var expectedSize) && expectedSize >= 0)
+            {
+                entries.Capacity = expectedSize;
+                return true;
+            }
+        }
 
         return parse(parameterText, entries);
     }
@@ -584,13 +602,13 @@ public sealed class AffixReader
         return true;
     }
 
-    private bool TryParseAliasF(ReadOnlySpan<char> parameterText, List<FlagSet> entries)
+    private bool TryParseAliasF(ReadOnlySpan<char> parameterText, ImmutableArray<FlagSet>.Builder entries)
     {
         entries.Add(Builder.Dedup(FlagSet.TakeArray(ParseFlagsInOrder(parameterText))));
         return true;
     }
 
-    private bool TryParseAliasM(ReadOnlySpan<char> parameterText, List<MorphSet> entries)
+    private bool TryParseAliasM(ReadOnlySpan<char> parameterText, ImmutableArray<MorphSet>.Builder entries)
     {
         if (EnumEx.HasFlag(Builder.Options, AffixConfigOptions.ComplexPrefixes))
         {
@@ -731,7 +749,7 @@ public sealed class AffixReader
             {
                 affixText = StringBuilderPool.Get(affixInput.AsSpan(0, affixSlashIndex));
 
-                if (Builder.AliasF is { } aliasF)
+                if (Builder.AliasF is { Count: > 0 } aliasF)
                 {
                     if (IntEx.TryParseInvariant(affixInput.AsSpan(affixSlashIndex + 1), out var aliasNumber) && aliasNumber > 0 && aliasNumber <= aliasF.Count)
                     {
@@ -802,7 +820,7 @@ public sealed class AffixReader
             if (lineMatchGroups[7].Success)
             {
                 var morphAffixText = lineMatchGroups[7].Value;
-                if (Builder.AliasM is { } aliasM)
+                if (Builder.AliasM is { Count: > 0 } aliasM)
                 {
                     if (IntEx.TryParseInvariant(morphAffixText, out var morphNumber) && morphNumber > 0 && morphNumber <= aliasM.Count)
                     {
@@ -1168,8 +1186,6 @@ public sealed class AffixReader
 
         return default;
     }
-
-    private delegate bool EntryParser<T>(ReadOnlySpan<char> parameterText, List<T> entries);
 
     [Flags]
     private enum EntryListType : short

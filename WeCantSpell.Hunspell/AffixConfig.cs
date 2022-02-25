@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
 
@@ -574,26 +575,22 @@ public sealed partial class AffixConfig
     /// work/AB
     /// </code>
     /// </example>
-    public IEnumerable<FlagSet> AliasF => aliasF;
-
-    private List<FlagSet> aliasF;
+    public ImmutableArray<FlagSet> AliasF { get; private set; } = ImmutableArray<FlagSet>.Empty;
 
     /// <summary>
     /// Inidicates if any <see cref="AliasF"/> entries have been defined.
     /// </summary>
-    public bool IsAliasF => aliasF is { Count: > 0 };
-
-    private List<MorphSet> aliasM;
+    public bool IsAliasF => AliasF.Length > 0;
 
     /// <summary>
     /// Values used for morphological alias compression.
     /// </summary>
-    public IEnumerable<MorphSet> AliasM => aliasM;
+    public ImmutableArray<MorphSet> AliasM { get; private set; } = ImmutableArray<MorphSet>.Empty;
 
     /// <summary>
     /// Indicates if any <see cref="AliasM"/> entries have been defined.
     /// </summary>
-    public bool IsAliasM => aliasM is { Count: > 0 };
+    public bool IsAliasM => AliasM.Length > 0;
 
     /// <summary>
     /// Defines custom compound patterns with a regex-like syntax.
@@ -834,25 +831,25 @@ public sealed partial class AffixConfig
 
     public bool TryGetAliasF(int number, out FlagSet result)
     {
-        if (number <= 0 || number > aliasF.Count)
+        if (number <= 0 || number > AliasF.Length)
         {
             result = FlagSet.Empty;
             return false;
         }
 
-        result = aliasF[number - 1];
+        result = AliasF[number - 1];
         return true;
     }
 
     public bool TryGetAliasM(int number, out MorphSet result)
     {
-        if (number <= 0 || number > aliasM.Count)
+        if (number <= 0 || number > AliasM.Length)
         {
             result = MorphSet.Empty;
             return false;
         }
 
-        result = aliasM[number - 1];
+        result = AliasM[number - 1];
         return true;
     }
 }

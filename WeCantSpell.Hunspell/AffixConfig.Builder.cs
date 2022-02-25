@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -233,13 +234,13 @@ public partial class AffixConfig
         /// Ordinal numbers for affix flag compression.
         /// </summary>
         /// <seealso cref="AffixConfig.AliasF"/>
-        public List<FlagSet>? AliasF;
+        public ImmutableArray<FlagSet>.Builder AliasF { get; } = ImmutableArray.CreateBuilder<FlagSet>();
 
         /// <summary>
         /// Values used for morphological alias compression.
         /// </summary>
         /// <seealso cref="AffixConfig.AliasM"/>
-        public List<MorphSet>? AliasM;
+        public ImmutableArray<MorphSet>.Builder AliasM { get; } = ImmutableArray.CreateBuilder<MorphSet>();
 
         /// <summary>
         /// Defines custom compound patterns with a regex-like syntax.
@@ -427,17 +428,15 @@ public partial class AffixConfig
                 config.OutputConversions = MultiReplacementTable.TakeDictionary(OutputConversions);
                 OutputConversions = null;
 
-                config.aliasF = AliasF ?? new();
-                AliasF = null;
-                config.aliasM = AliasM ?? new();
-                AliasM = null;
+                config.AliasF = AliasF.MoveToOrCreateImmutable();
+                config.AliasM = AliasM.MoveToOrCreateImmutable();
             }
             else
             {
                 config.InputConversions = MultiReplacementTable.Create(InputConversions);
                 config.OutputConversions = MultiReplacementTable.Create(OutputConversions);
-                config.aliasF = AliasF is null ? new() : AliasF.ToList();
-                config.aliasM = AliasM is null ? new() : AliasM.ToList();
+                config.AliasF = AliasF.ToImmutable();
+                config.AliasM = AliasM.ToImmutable();
             }
 
             config.Prefixes = PrefixCollection.Create(Prefixes);
