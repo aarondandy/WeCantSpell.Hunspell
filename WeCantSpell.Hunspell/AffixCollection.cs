@@ -11,15 +11,7 @@ public abstract class AffixCollection<TEntry> :
     IEnumerable<AffixEntryGroup<TEntry>>
     where TEntry : AffixEntry
 {
-    internal delegate TResult Constructor<TResult>(
-        Dictionary<FlagValue, AffixEntryGroup<TEntry>> affixesByFlag,
-        Dictionary<char, AffixEntryGroupCollection<TEntry>> affixesByIndexedByKey,
-        AffixEntryGroupCollection<TEntry> affixesWithDots,
-        AffixEntryGroupCollection<TEntry> affixesWithEmptyKeys,
-        FlagSet contClasses)
-        where TResult : AffixCollection<TEntry>;
-
-    internal static TResult Create<TResult>(List<AffixEntryGroup<TEntry>.Builder> builders, Constructor<TResult> constructor)
+    protected static void Apply<TResult>(TResult result, List<AffixEntryGroup<TEntry>.Builder> builders)
         where TResult : AffixCollection<TEntry>
     {
         var affixesByFlag = new Dictionary<FlagValue, AffixEntryGroup<TEntry>>(builders.Count);
@@ -86,42 +78,28 @@ public abstract class AffixCollection<TEntry> :
             affixesByKey.Add(keyedBuilder.Key, indexedAffixGroup.ToGroupCollection());
         }
 
-        return constructor
-        (
-            affixesByFlag,
-            affixesByKey,
-            affixesWithDots: affixesWithDots.ToGroupCollection(),
-            affixesWithEmptyKeys: affixesWithEmptyKeys.ToGroupCollection(),
-            FlagSet.Create(contClasses)
-        );
+        result.AffixesByFlag = affixesByFlag;
+        result.AffixesByIndexedByKey = affixesByKey;
+        result.AffixesWithDots = affixesWithDots.ToGroupCollection();
+        result.AffixesWithEmptyKeys = affixesWithEmptyKeys.ToGroupCollection();
+        result.ContClasses = FlagSet.Create(contClasses);
     }
 
-    internal AffixCollection(
-        Dictionary<FlagValue, AffixEntryGroup<TEntry>> affixesByFlag,
-        Dictionary<char, AffixEntryGroupCollection<TEntry>> affixesByIndexedByKey,
-        AffixEntryGroupCollection<TEntry> affixesWithDots,
-        AffixEntryGroupCollection<TEntry> affixesWithEmptyKeys,
-        FlagSet contClasses)
+    private protected AffixCollection()
     {
-        AffixesByFlag = affixesByFlag;
-        AffixesByIndexedByKey = affixesByIndexedByKey;
-        AffixesWithDots = affixesWithDots;
-        AffixesWithEmptyKeys = affixesWithEmptyKeys;
-        ContClasses = contClasses;
-        HasAffixes = affixesByFlag.Count != 0;
     }
 
-    protected Dictionary<FlagValue, AffixEntryGroup<TEntry>> AffixesByFlag { get; }
+    protected Dictionary<FlagValue, AffixEntryGroup<TEntry>> AffixesByFlag { get; private set; } = new();
 
-    protected Dictionary<char, AffixEntryGroupCollection<TEntry>> AffixesByIndexedByKey { get; }
+    protected Dictionary<char, AffixEntryGroupCollection<TEntry>> AffixesByIndexedByKey { get; private set; } = new();
 
-    public AffixEntryGroupCollection<TEntry> AffixesWithDots { get; }
+    public AffixEntryGroupCollection<TEntry> AffixesWithDots { get; private set; } = AffixEntryGroupCollection<TEntry>.Empty;
 
-    public AffixEntryGroupCollection<TEntry> AffixesWithEmptyKeys { get; }
+    public AffixEntryGroupCollection<TEntry> AffixesWithEmptyKeys { get; private set; } = AffixEntryGroupCollection<TEntry>.Empty;
 
-    public FlagSet ContClasses { get; }
+    public FlagSet ContClasses { get; private set; } = FlagSet.Empty;
 
-    public bool HasAffixes { get; }
+    public bool HasAffixes => AffixesByFlag.Count != 0;
 
     public IEnumerable<FlagValue> FlagValues => AffixesByFlag.Keys;
 
@@ -146,33 +124,21 @@ public abstract class AffixCollection<TEntry> :
 
 public sealed class SuffixCollection : AffixCollection<SuffixEntry>
 {
-    public static readonly SuffixCollection Empty = new SuffixCollection(
-        new(0),
-        new(0),
-        AffixEntryGroupCollection<SuffixEntry>.Empty,
-        AffixEntryGroupCollection<SuffixEntry>.Empty,
-        FlagSet.Empty);
-
     public static SuffixCollection Create(List<AffixEntryGroup<SuffixEntry>.Builder>? builders)
     {
-        if (builders is not { Count: > 0 })
+        var result = new SuffixCollection();
+
+        if (builders is { Count: > 0 })
         {
-            return Empty;
+            Apply(result, builders);
         }
 
-        return Create(
-            builders,
-            constructor: static (affixesByFlag, affixesByIndexedByKey, affixesWithDots, affixesWithEmptyKeys, contClasses) =>
-                new SuffixCollection(affixesByFlag, affixesByIndexedByKey, affixesWithDots, affixesWithEmptyKeys, contClasses));
+        return result;
     }
 
-    private SuffixCollection(
-        Dictionary<FlagValue, AffixEntryGroup<SuffixEntry>> affixesByFlag,
-        Dictionary<char, AffixEntryGroupCollection<SuffixEntry>> affixesByIndexedByKey,
-        AffixEntryGroupCollection<SuffixEntry> affixesWithDots,
-        AffixEntryGroupCollection<SuffixEntry> affixesWithEmptyKeys,
-        FlagSet contClasses)
-        : base(affixesByFlag, affixesByIndexedByKey, affixesWithDots, affixesWithEmptyKeys, contClasses) { }
+    private SuffixCollection()
+    {
+    }
 
     internal List<Affix<SuffixEntry>> GetMatchingAffixes(string word, FlagSet? groupFlagFilter = null)
     {
@@ -209,33 +175,21 @@ public sealed class SuffixCollection : AffixCollection<SuffixEntry>
 
 public sealed class PrefixCollection : AffixCollection<PrefixEntry>
 {
-    public static readonly PrefixCollection Empty = new PrefixCollection(
-        new(0),
-        new(0),
-        AffixEntryGroupCollection<PrefixEntry>.Empty,
-        AffixEntryGroupCollection<PrefixEntry>.Empty,
-        FlagSet.Empty);
-
     public static PrefixCollection Create(List<AffixEntryGroup<PrefixEntry>.Builder>? builders)
     {
-        if (builders is not { Count: > 0 })
+        var result = new PrefixCollection();
+
+        if (builders is { Count: > 0 })
         {
-            return Empty;
+            Apply(result, builders);
         }
 
-        return Create(
-            builders,
-            constructor: static (affixesByFlag, affixesByIndexedByKey, affixesWithDots, affixesWithEmptyKeys, contClasses) =>
-                new PrefixCollection(affixesByFlag, affixesByIndexedByKey, affixesWithDots, affixesWithEmptyKeys, contClasses));
+        return result;
     }
 
-    private PrefixCollection(
-        Dictionary<FlagValue, AffixEntryGroup<PrefixEntry>> affixesByFlag,
-        Dictionary<char, AffixEntryGroupCollection<PrefixEntry>> affixesByIndexedByKey,
-        AffixEntryGroupCollection<PrefixEntry> affixesWithDots,
-        AffixEntryGroupCollection<PrefixEntry> affixesWithEmptyKeys,
-        FlagSet contClasses)
-        : base(affixesByFlag, affixesByIndexedByKey, affixesWithDots, affixesWithEmptyKeys, contClasses) { }
+    private PrefixCollection()
+    {
+    }
 
     internal List<Affix<PrefixEntry>> GetMatchingAffixes(string word)
     {
