@@ -216,7 +216,7 @@ public partial class AffixConfig
         /// Specifies modifications to try first.
         /// </summary>
         /// <seealso cref="AffixConfig.Replacements"/>
-        public List<SingleReplacement>? Replacements;
+        public ImmutableArray<SingleReplacement>.Builder Replacements { get; } = ImmutableArray.CreateBuilder<SingleReplacement>();
 
         /// <summary>
         /// Suffixes attached to root words to make other words.
@@ -246,20 +246,20 @@ public partial class AffixConfig
         /// Defines custom compound patterns with a regex-like syntax.
         /// </summary>
         /// <seealso cref="AffixConfig.CompoundRules"/>
-        public List<CompoundRule>? CompoundRules;
+        public ImmutableArray<CompoundRule>.Builder CompoundRules { get; } = ImmutableArray.CreateBuilder<CompoundRule>();
 
         /// <summary>
         /// Forbid compounding, if the first word in the compound ends with endchars, and
         /// next word begins with beginchars and(optionally) they have the requested flags.
         /// </summary>
         /// <seealso cref="AffixConfig.CompoundPatterns"/>
-        public List<PatternEntry>? CompoundPatterns;
+        public ImmutableArray<PatternEntry>.Builder CompoundPatterns { get; } = ImmutableArray.CreateBuilder<PatternEntry>();
 
         /// <summary>
         /// Defines new break points for breaking words and checking word parts separately.
         /// </summary>
         /// <seealso cref="AffixConfig.BreakPoints"/>
-        public List<string>? BreakPoints;
+        public ImmutableArray<string>.Builder BreakPoints { get; } = ImmutableArray.CreateBuilder<string>();
 
         /// <summary>
         /// Input conversion entries.
@@ -277,13 +277,13 @@ public partial class AffixConfig
         /// Mappings between related characters.
         /// </summary>
         /// <seealso cref="AffixConfig.RelatedCharacterMap"/>
-        public List<MapEntry>? RelatedCharacterMap;
+        public ImmutableArray<MapEntry>.Builder RelatedCharacterMap { get; } = ImmutableArray.CreateBuilder<MapEntry>();
 
         /// <summary>
         /// Phonetic transcription entries.
         /// </summary>
         /// <seealso cref="AffixConfig.Phone"/>
-        public List<PhoneticEntry>? Phone;
+        public ImmutableArray<PhoneticEntry>.Builder Phone { get; } = ImmutableArray.CreateBuilder<PhoneticEntry>();
 
         /// <summary>
         /// Maximum syllable number, that may be in a
@@ -412,12 +412,6 @@ public partial class AffixConfig
                 WordChars = WordChars ?? CharacterSet.Empty,
                 IgnoredChars = IgnoredChars ?? CharacterSet.Empty,
                 Version = Version is null ? null : Dedup(Version),
-                BreakPoints = BreakPoints is { Count: > 0 } ? BreakSet.Create(BreakPoints) : BreakSet.Empty,
-                CompoundRules = CompoundRules is { Count: > 0 } ? CompoundRuleSet.Create(CompoundRules) : CompoundRuleSet.Empty,
-                Replacements = Replacements is { Count: > 0 } ? SingleReplacementSet.Create(Replacements) : SingleReplacementSet.Empty,
-                CompoundPatterns = CompoundPatterns is { Count: > 0 } ? PatternSet.Create(CompoundPatterns) : PatternSet.Empty,
-                RelatedCharacterMap = RelatedCharacterMap is { Count: > 0 } ? MapTable.Create(RelatedCharacterMap) : MapTable.Empty,
-                Phone = Phone is { Count: > 0 } ? PhoneTable.Create(Phone) : PhoneTable.Empty,
                 Warnings = WarningList.Create(Warnings)
             };
 
@@ -427,17 +421,21 @@ public partial class AffixConfig
                 InputConversions = null;
                 config.OutputConversions = MultiReplacementTable.TakeDictionary(OutputConversions);
                 OutputConversions = null;
-
-                config.AliasF = AliasF.MoveToOrCreateImmutable();
-                config.AliasM = AliasM.MoveToOrCreateImmutable();
             }
             else
             {
                 config.InputConversions = MultiReplacementTable.Create(InputConversions);
                 config.OutputConversions = MultiReplacementTable.Create(OutputConversions);
-                config.AliasF = AliasF.ToImmutable();
-                config.AliasM = AliasM.ToImmutable();
             }
+
+            config.AliasF = AliasF.ToImmutable(destructive);
+            config.AliasM = AliasM.ToImmutable(destructive);
+            config.BreakPoints = new(BreakPoints.ToImmutable(destructive));
+            config.Replacements = new(Replacements.ToImmutable(destructive));
+            config.CompoundRules = new(CompoundRules.ToImmutable(destructive));
+            config.CompoundPatterns = new(CompoundPatterns.ToImmutable(destructive));
+            config.RelatedCharacterMap = new(RelatedCharacterMap.ToImmutable(destructive));
+            config.Phone = new(Phone.ToImmutable(destructive));
 
             config.Prefixes = PrefixCollection.Create(Prefixes);
 

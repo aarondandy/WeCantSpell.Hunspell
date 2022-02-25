@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -35,7 +36,7 @@ public partial class WordList
         /// <summary>
         /// Spelling replacement suggestions based on phonetics.
         /// </summary>
-        public List<SingleReplacement> PhoneticReplacements;
+        public ImmutableArray<SingleReplacement>.Builder PhoneticReplacements { get; } = ImmutableArray.CreateBuilder<SingleReplacement>();
 
         internal readonly Deduper<FlagSet> FlagSetDeduper;
 
@@ -100,16 +101,21 @@ public partial class WordList
             }
 
             result.AllReplacements = affix.Replacements;
-            if (PhoneticReplacements != null && PhoneticReplacements.Count != 0)
+            if (PhoneticReplacements is { Count: > 0 })
             {
                 // store ph: field of a morphological description in reptable
                 if (result.AllReplacements.IsEmpty)
                 {
-                    result.AllReplacements = SingleReplacementSet.Create(PhoneticReplacements);
+                    result.AllReplacements = new(PhoneticReplacements.ToImmutable(destructive));
+                }
+                else if (destructive)
+                {
+                    PhoneticReplacements.AddRange(result.AllReplacements);
+                    result.AllReplacements = new(PhoneticReplacements.ToImmutable(destructive));
                 }
                 else
                 {
-                    result.AllReplacements = SingleReplacementSet.Create(result.AllReplacements.Concat(PhoneticReplacements));
+                    result.AllReplacements = new(PhoneticReplacements.Concat(result.AllReplacements).ToImmutableArray());
                 }
             }
 

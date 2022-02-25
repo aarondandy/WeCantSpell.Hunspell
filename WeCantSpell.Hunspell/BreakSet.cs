@@ -1,25 +1,30 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-
-using WeCantSpell.Hunspell.Infrastructure;
+using System.Collections.Immutable;
 
 namespace WeCantSpell.Hunspell;
 
-public sealed class BreakSet : ArrayWrapper<string>
+public readonly struct BreakSet : IReadOnlyList<string>
 {
-    public static readonly BreakSet Empty = TakeArray(Array.Empty<string>());
-
-    internal static BreakSet TakeArray(string[] breaks) => breaks is null ? Empty : new BreakSet(breaks);
-
-    public static BreakSet Create(List<string> breaks) => breaks is null ? Empty : TakeArray(breaks.ToArray());
-
-    public static BreakSet Create(IEnumerable<string> breaks) => breaks is null ? Empty : TakeArray(breaks.ToArray());
-
-    private BreakSet(string[] breaks)
-        : base(breaks)
+    internal BreakSet(ImmutableArray<string> items)
     {
+#if DEBUG
+        if (items.IsDefault) throw new ArgumentOutOfRangeException(nameof(items));
+#endif
+        _items = items;
     }
+
+    private readonly ImmutableArray<string> _items;
+
+    public int Count => _items.Length;
+    public bool IsEmpty => _items.IsEmpty;
+    public bool HasItems => !IsEmpty;
+    public string this[int index] => _items[index];
+
+    public ImmutableArray<string>.Enumerator GetEnumerator() => _items.GetEnumerator();
+    IEnumerator<string> IEnumerable<string>.GetEnumerator() => ((IEnumerable<string>)_items).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_items).GetEnumerator();
 
     /// <summary>
     /// Calculate break points for recursion limit.
@@ -30,7 +35,7 @@ public sealed class BreakSet : ArrayWrapper<string>
 
         if (!string.IsNullOrEmpty(scw))
         {
-            foreach (var breakEntry in Items)
+            foreach (var breakEntry in _items)
             {
                 int pos = 0;
                 while ((pos = scw.IndexOf(breakEntry, pos, StringComparison.Ordinal)) >= 0)

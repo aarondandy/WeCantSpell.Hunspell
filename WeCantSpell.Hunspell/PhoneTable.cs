@@ -1,20 +1,28 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-
-using WeCantSpell.Hunspell.Infrastructure;
+using System.Collections.Immutable;
 
 namespace WeCantSpell.Hunspell;
 
-public sealed class PhoneTable : ArrayWrapper<PhoneticEntry>
+public readonly struct PhoneTable : IReadOnlyList<PhoneticEntry>
 {
-    public static readonly PhoneTable Empty = TakeArray(Array.Empty<PhoneticEntry>());
-
-    public static PhoneTable Create(IEnumerable<PhoneticEntry> entries) => entries is null ? Empty : TakeArray(entries.ToArray());
-
-    internal static PhoneTable TakeArray(PhoneticEntry[] entries) => entries is null ? Empty : new PhoneTable(entries);
-
-    private PhoneTable(PhoneticEntry[] entries) : base(entries)
+    internal PhoneTable(ImmutableArray<PhoneticEntry> items)
     {
+#if DEBUG
+        if (items.IsDefault) throw new ArgumentOutOfRangeException(nameof(items));
+#endif
+        _items = items;
     }
+
+    private readonly ImmutableArray<PhoneticEntry> _items;
+
+    public int Count => _items.Length;
+    public bool IsEmpty => _items.IsEmpty;
+    public bool HasItems => !IsEmpty;
+    public PhoneticEntry this[int index] => _items[index];
+
+    public ImmutableArray<PhoneticEntry>.Enumerator GetEnumerator() => _items.GetEnumerator();
+    IEnumerator<PhoneticEntry> IEnumerable<PhoneticEntry>.GetEnumerator() => ((IEnumerable<PhoneticEntry>)_items).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_items).GetEnumerator();
 }

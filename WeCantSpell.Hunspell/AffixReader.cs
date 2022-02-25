@@ -245,7 +245,7 @@ public sealed class AffixReader
     {
         if (!IsInitialized(EntryListType.Break))
         {
-            Builder.BreakPoints ??= new List<string>(DefaultBreakTableEntries.Length);
+            Builder.BreakPoints.Capacity = DefaultBreakTableEntries.Length;
 
             if (Builder.BreakPoints.Count == 0)
             {
@@ -348,21 +348,21 @@ public sealed class AffixReader
             case AffixReaderCommandKind.NeedAffix:
                 return TryParseFlag(parameters, out Builder.NeedAffix);
             case AffixReaderCommandKind.Replacement:
-                return TryParseStandardListItem(EntryListType.Replacements, parameters, ref Builder.Replacements, TryParseReplacements);
+                return TryParseStandardListItem(EntryListType.Replacements, parameters, Builder.Replacements, TryParseReplacements);
             case AffixReaderCommandKind.InputConversions:
                 return TryParseConv(parameters, EntryListType.Iconv, ref Builder.InputConversions);
             case AffixReaderCommandKind.OutputConversions:
                 return TryParseConv(parameters, EntryListType.Oconv, ref Builder.OutputConversions);
             case AffixReaderCommandKind.Phone:
-                return TryParseStandardListItem(EntryListType.Phone, parameters, ref Builder.Phone, TryParsePhone);
+                return TryParseStandardListItem(EntryListType.Phone, parameters, Builder.Phone, TryParsePhone);
             case AffixReaderCommandKind.CheckCompoundPattern:
-                return TryParseStandardListItem(EntryListType.CompoundPatterns, parameters, ref Builder.CompoundPatterns, TryParseCheckCompoundPatternIntoCompoundPatterns);
+                return TryParseStandardListItem(EntryListType.CompoundPatterns, parameters, Builder.CompoundPatterns, TryParseCheckCompoundPatternIntoCompoundPatterns);
             case AffixReaderCommandKind.CompoundRule:
-                return TryParseStandardListItem(EntryListType.CompoundRules, parameters, ref Builder.CompoundRules, TryParseCompoundRuleIntoList);
+                return TryParseStandardListItem(EntryListType.CompoundRules, parameters, Builder.CompoundRules, TryParseCompoundRuleIntoList);
             case AffixReaderCommandKind.Map:
-                return TryParseStandardListItem(EntryListType.Map, parameters, ref Builder.RelatedCharacterMap, TryParseMapEntry);
+                return TryParseStandardListItem(EntryListType.Map, parameters, Builder.RelatedCharacterMap, TryParseMapEntry);
             case AffixReaderCommandKind.Break:
-                return TryParseStandardListItem(EntryListType.Break, parameters, ref Builder.BreakPoints, TryParseBreak);
+                return TryParseStandardListItem(EntryListType.Break, parameters, Builder.BreakPoints, TryParseBreak);
             case AffixReaderCommandKind.Version:
                 Builder.Version = parameters.ToString();
                 return true;
@@ -402,25 +402,6 @@ public sealed class AffixReader
             default:
                 return LogWarning($"Unknown parsed command {command}");
         }
-    }
-
-    private delegate bool EntryParserForList<T>(ReadOnlySpan<char> parameterText, List<T> entries);
-    private bool TryParseStandardListItem<T>(EntryListType entryListType, ReadOnlySpan<char> parameterText, ref List<T>? entries, EntryParserForList<T> parse)
-    {
-        if (!IsInitialized(entryListType))
-        {
-            SetInitialized(entryListType);
-
-            if (IntEx.TryParseInvariant(parameterText, out var expectedSize) && expectedSize >= 0)
-            {
-                entries ??= new(expectedSize);
-                return true;
-            }
-        }
-
-        entries ??= new();
-
-        return parse(parameterText, entries);
     }
 
     private delegate bool EntryParserForArray<T>(ReadOnlySpan<char> parameterText, ImmutableArray<T>.Builder entries);
@@ -501,7 +482,7 @@ public sealed class AffixReader
         }
     }
 
-    private bool TryParsePhone(ReadOnlySpan<char> parameterText, List<PhoneticEntry> entries)
+    private bool TryParsePhone(ReadOnlySpan<char> parameterText, ImmutableArray<PhoneticEntry>.Builder entries)
     {
         string? rule = null;
         var replace = string.Empty;
@@ -530,7 +511,7 @@ public sealed class AffixReader
         return true;
     }
 
-    private bool TryParseMapEntry(ReadOnlySpan<char> parameterText, List<MapEntry> entries)
+    private bool TryParseMapEntry(ReadOnlySpan<char> parameterText, ImmutableArray<MapEntry>.Builder entries)
     {
         var values = new List<string>(parameterText.Length);
 
@@ -596,7 +577,7 @@ public sealed class AffixReader
         return true;
     }
 
-    private bool TryParseBreak(ReadOnlySpan<char> parameterText, List<string> entries)
+    private bool TryParseBreak(ReadOnlySpan<char> parameterText, ImmutableArray<string>.Builder entries)
     {
         entries.Add(Builder.Dedup(parameterText));
         return true;
@@ -631,7 +612,7 @@ public sealed class AffixReader
         return true;
     }
 
-    private bool TryParseCompoundRuleIntoList(ReadOnlySpan<char> parameterText, List<CompoundRule> entries)
+    private bool TryParseCompoundRuleIntoList(ReadOnlySpan<char> parameterText, ImmutableArray<CompoundRule>.Builder entries)
     {
         var entryBuilder = new List<FlagValue>();
 
@@ -955,7 +936,7 @@ public sealed class AffixReader
         return StringBuilderPool.GetStringAndReturn(chars);
     }
 
-    private bool TryParseReplacements(ReadOnlySpan<char> parameterText, List<SingleReplacement> entries)
+    private bool TryParseReplacements(ReadOnlySpan<char> parameterText, ImmutableArray<SingleReplacement>.Builder entries)
     {
         string? pattern = null;
         var outString = string.Empty;
@@ -1003,7 +984,7 @@ public sealed class AffixReader
         return true;
     }
 
-    private bool TryParseCheckCompoundPatternIntoCompoundPatterns(ReadOnlySpan<char> parameterText, List<PatternEntry> entries)
+    private bool TryParseCheckCompoundPatternIntoCompoundPatterns(ReadOnlySpan<char> parameterText, ImmutableArray<PatternEntry>.Builder entries)
     {
         string? pattern = null;
         string pattern2 = string.Empty;

@@ -549,7 +549,7 @@ public partial class WordList
                                 {
                                     if (onlycpdrule)
                                     {
-                                        if (!Affix.CompoundRules.IsEmpty && (wordNum == 0 || words is not null))
+                                        if (Affix.CompoundRules.HasItems && (wordNum == 0 || words is not null))
                                         {
                                             rvDetail = CompoundCheckWordSearch_OnlyCpdRule(
                                                 searchEntryDetails,

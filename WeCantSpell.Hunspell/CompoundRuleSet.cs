@@ -1,28 +1,38 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
+using System.Collections.Immutable;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
-public sealed class CompoundRuleSet : ArrayWrapper<CompoundRule>
+public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
 {
-    public static readonly CompoundRuleSet Empty = TakeArray(Array.Empty<CompoundRule>());
-
-    public static CompoundRuleSet Create(IEnumerable<CompoundRule> rules) => rules is null ? Empty : TakeArray(rules.ToArray());
-
-    internal static CompoundRuleSet TakeArray(CompoundRule[] rules) => rules is null ? Empty : new CompoundRuleSet(rules);
-
-    private CompoundRuleSet(CompoundRule[] rules) : base(rules)
+    internal CompoundRuleSet(ImmutableArray<CompoundRule> rules)
     {
+#if DEBUG
+        if (rules.IsDefault) throw new ArgumentOutOfRangeException(nameof(rules));
+#endif
+        _rules = rules;
     }
+
+    private readonly ImmutableArray<CompoundRule> _rules;
+
+    public int Count => _rules.Length;
+    public bool IsEmpty => _rules.IsEmpty;
+    public bool HasItems => !IsEmpty;
+    public CompoundRule this[int index] => _rules[index];
+
+    public ImmutableArray<CompoundRule>.Enumerator GetEnumerator() => _rules.GetEnumerator();
+    IEnumerator<CompoundRule> IEnumerable<CompoundRule>.GetEnumerator() => ((IEnumerable<CompoundRule>)_rules).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_rules).GetEnumerator();
 
     internal bool EntryContainsRuleFlags(WordEntryDetail details)
     {
         if (details is not null && details.HasFlags)
         {
-            foreach(var rule in Items)
+            foreach(var rule in _rules)
             {
                 if (rule.ContainsRuleFlagForEntry(details))
                 {
@@ -42,7 +52,7 @@ public sealed class CompoundRuleSet : ArrayWrapper<CompoundRule>
             new MetacharData()
         };
 
-        foreach (var compoundRule in Items)
+        foreach (var compoundRule in _rules)
         {
             var pp = 0; // pattern position
             var wp = 0; // "words" position

@@ -306,12 +306,9 @@ public sealed class WordListReader
             if (morphPhonEnumerator.MoveNext())
             {
                 options |= WordEntryOptions.Phon;
+
                 // store ph: fields (pronounciation, misspellings, old orthography etc.)
                 // of a morphological description in reptable to use in REP replacements.
-                if (Builder.PhoneticReplacements == null)
-                {
-                    Builder.PhoneticReplacements = new List<SingleReplacement>();
-                }
 
                 do
                 {
