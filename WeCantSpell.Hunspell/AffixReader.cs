@@ -29,69 +29,73 @@ public sealed class AffixReader
 
     static AffixReader()
     {
-        BitFlagCommandMap = new();
-        BitFlagCommandMap.Add("CHECKCOMPOUNDDUP", AffixConfigOptions.CheckCompoundDup);
-        BitFlagCommandMap.Add("CHECKCOMPOUNDREP", AffixConfigOptions.CheckCompoundRep);
-        BitFlagCommandMap.Add("CHECKCOMPOUNDTRIPLE", AffixConfigOptions.CheckCompoundTriple);
-        BitFlagCommandMap.Add("CHECKCOMPOUNDCASE", AffixConfigOptions.CheckCompoundCase);
-        BitFlagCommandMap.Add("CHECKNUM", AffixConfigOptions.CheckNum);
-        BitFlagCommandMap.Add("CHECKSHARPS", AffixConfigOptions.CheckSharps);
-        BitFlagCommandMap.Add("COMPLEXPREFIXES", AffixConfigOptions.ComplexPrefixes);
-        BitFlagCommandMap.Add("COMPOUNDMORESUFFIXES", AffixConfigOptions.CompoundMoreSuffixes);
-        BitFlagCommandMap.Add("FULLSTRIP", AffixConfigOptions.FullStrip);
-        BitFlagCommandMap.Add("FORBIDWARN", AffixConfigOptions.ForbidWarn);
-        BitFlagCommandMap.Add("NOSPLITSUGS", AffixConfigOptions.NoSplitSuggestions);
-        BitFlagCommandMap.Add("ONLYMAXDIFF", AffixConfigOptions.OnlyMaxDiff);
-        BitFlagCommandMap.Add("SIMPLIFIEDTRIPLE", AffixConfigOptions.SimplifiedTriple);
-        BitFlagCommandMap.Add("SUGSWITHDOTS", AffixConfigOptions.SuggestWithDots);
+        BitFlagCommandMap = new(new KeyValuePair<string, AffixConfigOptions>[]
+        {
+            new("CHECKCOMPOUNDDUP", AffixConfigOptions.CheckCompoundDup),
+            new("CHECKCOMPOUNDREP", AffixConfigOptions.CheckCompoundRep),
+            new("CHECKCOMPOUNDTRIPLE", AffixConfigOptions.CheckCompoundTriple),
+            new("CHECKCOMPOUNDCASE", AffixConfigOptions.CheckCompoundCase),
+            new("CHECKNUM", AffixConfigOptions.CheckNum),
+            new("CHECKSHARPS", AffixConfigOptions.CheckSharps),
+            new("COMPLEXPREFIXES", AffixConfigOptions.ComplexPrefixes),
+            new("COMPOUNDMORESUFFIXES", AffixConfigOptions.CompoundMoreSuffixes),
+            new("FULLSTRIP", AffixConfigOptions.FullStrip),
+            new("FORBIDWARN", AffixConfigOptions.ForbidWarn),
+            new("NOSPLITSUGS", AffixConfigOptions.NoSplitSuggestions),
+            new("ONLYMAXDIFF", AffixConfigOptions.OnlyMaxDiff),
+            new("SIMPLIFIEDTRIPLE", AffixConfigOptions.SimplifiedTriple),
+            new("SUGSWITHDOTS", AffixConfigOptions.SuggestWithDots),
+        });
 
-        CommandMap = new();
-        CommandMap.Add("AF", AffixReaderCommandKind.AliasF);
-        CommandMap.Add("AM", AffixReaderCommandKind.AliasM);
-        CommandMap.Add("BREAK", AffixReaderCommandKind.Break);
-        CommandMap.Add("COMPOUNDBEGIN", AffixReaderCommandKind.CompoundBegin);
-        CommandMap.Add("COMPOUNDEND", AffixReaderCommandKind.CompoundEnd);
-        CommandMap.Add("COMPOUNDFLAG", AffixReaderCommandKind.CompoundFlag);
-        CommandMap.Add("COMPOUNDFORBIDFLAG", AffixReaderCommandKind.CompoundForbidFlag);
-        CommandMap.Add("COMPOUNDMIDDLE", AffixReaderCommandKind.CompoundMiddle);
-        CommandMap.Add("COMPOUNDMIN", AffixReaderCommandKind.CompoundMin);
-        CommandMap.Add("COMPOUNDPERMITFLAG", AffixReaderCommandKind.CompoundPermitFlag);
-        CommandMap.Add("COMPOUNDROOT", AffixReaderCommandKind.CompoundRoot);
-        CommandMap.Add("COMPOUNDRULE", AffixReaderCommandKind.CompoundRule);
-        CommandMap.Add("COMPOUNDSYLLABLE", AffixReaderCommandKind.CompoundSyllable);
-        CommandMap.Add("COMPOUNDWORDMAX", AffixReaderCommandKind.CompoundWordMax);
-        CommandMap.Add("CIRCUMFIX", AffixReaderCommandKind.Circumfix);
-        CommandMap.Add("CHECKCOMPOUNDPATTERN", AffixReaderCommandKind.CheckCompoundPattern);
-        CommandMap.Add("FLAG", AffixReaderCommandKind.Flag);
-        CommandMap.Add("FORBIDDENWORD", AffixReaderCommandKind.ForbiddenWord);
-        CommandMap.Add("FORCEUCASE", AffixReaderCommandKind.ForceUpperCase);
-        CommandMap.Add("ICONV", AffixReaderCommandKind.InputConversions);
-        CommandMap.Add("IGNORE", AffixReaderCommandKind.Ignore);
-        CommandMap.Add("KEY", AffixReaderCommandKind.KeyString);
-        CommandMap.Add("KEEPCASE", AffixReaderCommandKind.KeepCase);
-        CommandMap.Add("LANG", AffixReaderCommandKind.Language);
-        CommandMap.Add("LEMMA_PRESENT", AffixReaderCommandKind.LemmaPresent);
-        CommandMap.Add("MAP", AffixReaderCommandKind.Map);
-        CommandMap.Add("MAXNGRAMSUGS", AffixReaderCommandKind.MaxNgramSuggestions);
-        CommandMap.Add("MAXDIFF", AffixReaderCommandKind.MaxDifferency);
-        CommandMap.Add("MAXCPDSUGS", AffixReaderCommandKind.MaxCompoundSuggestions);
-        CommandMap.Add("NEEDAFFIX", AffixReaderCommandKind.NeedAffix);
-        CommandMap.Add("NOSUGGEST", AffixReaderCommandKind.NoSuggest);
-        CommandMap.Add("NONGRAMSUGGEST", AffixReaderCommandKind.NoNGramSuggest);
-        CommandMap.Add("OCONV", AffixReaderCommandKind.OutputConversions);
-        CommandMap.Add("ONLYINCOMPOUND", AffixReaderCommandKind.OnlyInCompound);
-        CommandMap.Add("PFX", AffixReaderCommandKind.Prefix);
-        CommandMap.Add("PSEUDOROOT", AffixReaderCommandKind.NeedAffix);
-        CommandMap.Add("PHONE", AffixReaderCommandKind.Phone);
-        CommandMap.Add("REP", AffixReaderCommandKind.Replacement);
-        CommandMap.Add("SFX", AffixReaderCommandKind.Suffix);
-        CommandMap.Add("SET", AffixReaderCommandKind.SetEncoding);
-        CommandMap.Add("SYLLABLENUM", AffixReaderCommandKind.CompoundSyllableNum);
-        CommandMap.Add("SUBSTANDARD", AffixReaderCommandKind.SubStandard);
-        CommandMap.Add("TRY", AffixReaderCommandKind.TryString);
-        CommandMap.Add("VERSION", AffixReaderCommandKind.Version);
-        CommandMap.Add("WORDCHARS", AffixReaderCommandKind.WordChars);
-        CommandMap.Add("WARN", AffixReaderCommandKind.Warn);
+        CommandMap = new(new KeyValuePair<string, AffixReaderCommandKind>[]
+        {
+            new("AF", AffixReaderCommandKind.AliasF),
+            new("AM", AffixReaderCommandKind.AliasM),
+            new("BREAK", AffixReaderCommandKind.Break),
+            new("COMPOUNDBEGIN", AffixReaderCommandKind.CompoundBegin),
+            new("COMPOUNDEND", AffixReaderCommandKind.CompoundEnd),
+            new("COMPOUNDFLAG", AffixReaderCommandKind.CompoundFlag),
+            new("COMPOUNDFORBIDFLAG", AffixReaderCommandKind.CompoundForbidFlag),
+            new("COMPOUNDMIDDLE", AffixReaderCommandKind.CompoundMiddle),
+            new("COMPOUNDMIN", AffixReaderCommandKind.CompoundMin),
+            new("COMPOUNDPERMITFLAG", AffixReaderCommandKind.CompoundPermitFlag),
+            new("COMPOUNDROOT", AffixReaderCommandKind.CompoundRoot),
+            new("COMPOUNDRULE", AffixReaderCommandKind.CompoundRule),
+            new("COMPOUNDSYLLABLE", AffixReaderCommandKind.CompoundSyllable),
+            new("COMPOUNDWORDMAX", AffixReaderCommandKind.CompoundWordMax),
+            new("CIRCUMFIX", AffixReaderCommandKind.Circumfix),
+            new("CHECKCOMPOUNDPATTERN", AffixReaderCommandKind.CheckCompoundPattern),
+            new("FLAG", AffixReaderCommandKind.Flag),
+            new("FORBIDDENWORD", AffixReaderCommandKind.ForbiddenWord),
+            new("FORCEUCASE", AffixReaderCommandKind.ForceUpperCase),
+            new("ICONV", AffixReaderCommandKind.InputConversions),
+            new("IGNORE", AffixReaderCommandKind.Ignore),
+            new("KEY", AffixReaderCommandKind.KeyString),
+            new("KEEPCASE", AffixReaderCommandKind.KeepCase),
+            new("LANG", AffixReaderCommandKind.Language),
+            new("LEMMA_PRESENT", AffixReaderCommandKind.LemmaPresent),
+            new("MAP", AffixReaderCommandKind.Map),
+            new("MAXNGRAMSUGS", AffixReaderCommandKind.MaxNgramSuggestions),
+            new("MAXDIFF", AffixReaderCommandKind.MaxDifferency),
+            new("MAXCPDSUGS", AffixReaderCommandKind.MaxCompoundSuggestions),
+            new("NEEDAFFIX", AffixReaderCommandKind.NeedAffix),
+            new("NOSUGGEST", AffixReaderCommandKind.NoSuggest),
+            new("NONGRAMSUGGEST", AffixReaderCommandKind.NoNGramSuggest),
+            new("OCONV", AffixReaderCommandKind.OutputConversions),
+            new("ONLYINCOMPOUND", AffixReaderCommandKind.OnlyInCompound),
+            new("PFX", AffixReaderCommandKind.Prefix),
+            new("PSEUDOROOT", AffixReaderCommandKind.NeedAffix),
+            new("PHONE", AffixReaderCommandKind.Phone),
+            new("REP", AffixReaderCommandKind.Replacement),
+            new("SFX", AffixReaderCommandKind.Suffix),
+            new("SET", AffixReaderCommandKind.SetEncoding),
+            new("SYLLABLENUM", AffixReaderCommandKind.CompoundSyllableNum),
+            new("SUBSTANDARD", AffixReaderCommandKind.SubStandard),
+            new("TRY", AffixReaderCommandKind.TryString),
+            new("VERSION", AffixReaderCommandKind.Version),
+            new("WORDCHARS", AffixReaderCommandKind.WordChars),
+            new("WARN", AffixReaderCommandKind.Warn),
+        });
     }
 
     public AffixReader(AffixConfig.Builder builder, IHunspellLineReader reader)

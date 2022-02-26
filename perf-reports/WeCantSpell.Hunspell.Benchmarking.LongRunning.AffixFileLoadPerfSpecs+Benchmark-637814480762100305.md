@@ -1,6 +1,6 @@
 ﻿# WeCantSpell.Hunspell.Benchmarking.LongRunning.AffixFileLoadPerfSpecs+Benchmark
 __Ensure that affix files can be loaded quickly.__
-_2/25/2022 3:51:11 AM_
+_2/26/2022 4:54:36 AM_
 ### System Info
 ```ini
 NBench=NBench, Version=2.0.1.0, Culture=neutral, PublicKeyToken=null
@@ -23,52 +23,52 @@ Tracing=False
 ### Totals
 |          Metric |           Units |             Max |         Average |             Min |          StdDev |
 |---------------- |---------------- |---------------- |---------------- |---------------- |---------------- |
-|TotalBytesAllocated |           bytes |   11,991,176.00 |   11,991,176.00 |   11,991,176.00 |            0.00 |
-|TotalCollections [Gen0] |     collections |          132.00 |          132.00 |          132.00 |            0.00 |
-|TotalCollections [Gen1] |     collections |           35.00 |           35.00 |           35.00 |            0.00 |
-|TotalCollections [Gen2] |     collections |           10.00 |           10.00 |           10.00 |            0.00 |
-|    Elapsed Time |              ms |        1,806.00 |        1,806.00 |        1,806.00 |            0.00 |
+|TotalBytesAllocated |           bytes |   13,259,344.00 |   13,259,344.00 |   13,259,344.00 |            0.00 |
+|TotalCollections [Gen0] |     collections |          133.00 |          133.00 |          133.00 |            0.00 |
+|TotalCollections [Gen1] |     collections |           32.00 |           32.00 |           32.00 |            0.00 |
+|TotalCollections [Gen2] |     collections |            9.00 |            9.00 |            9.00 |            0.00 |
+|    Elapsed Time |              ms |        2,011.00 |        2,011.00 |        2,011.00 |            0.00 |
 |[Counter] AffixFilesLoaded |      operations |           59.00 |           59.00 |           59.00 |            0.00 |
 
 ### Per-second Totals
 |          Metric |       Units / s |         Max / s |     Average / s |         Min / s |      StdDev / s |
 |---------------- |---------------- |---------------- |---------------- |---------------- |---------------- |
-|TotalBytesAllocated |           bytes |    6,639,732.34 |    6,639,732.34 |    6,639,732.34 |            0.00 |
-|TotalCollections [Gen0] |     collections |           73.09 |           73.09 |           73.09 |            0.00 |
-|TotalCollections [Gen1] |     collections |           19.38 |           19.38 |           19.38 |            0.00 |
-|TotalCollections [Gen2] |     collections |            5.54 |            5.54 |            5.54 |            0.00 |
-|    Elapsed Time |              ms |        1,000.02 |        1,000.02 |        1,000.02 |            0.00 |
-|[Counter] AffixFilesLoaded |      operations |           32.67 |           32.67 |           32.67 |            0.00 |
+|TotalBytesAllocated |           bytes |    6,595,806.16 |    6,595,806.16 |    6,595,806.16 |            0.00 |
+|TotalCollections [Gen0] |     collections |           66.16 |           66.16 |           66.16 |            0.00 |
+|TotalCollections [Gen1] |     collections |           15.92 |           15.92 |           15.92 |            0.00 |
+|TotalCollections [Gen2] |     collections |            4.48 |            4.48 |            4.48 |            0.00 |
+|    Elapsed Time |              ms |        1,000.36 |        1,000.36 |        1,000.36 |            0.00 |
+|[Counter] AffixFilesLoaded |      operations |           29.35 |           29.35 |           29.35 |            0.00 |
 
 ### Raw Data
 #### TotalBytesAllocated
 |           Run # |           bytes |       bytes / s |      ns / bytes |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |   11,991,176.00 |    6,639,732.34 |          150.61 |
+|               1 |   13,259,344.00 |    6,595,806.16 |          151.61 |
 
 #### TotalCollections [Gen0]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |          132.00 |           73.09 |   13,681,612.12 |
+|               1 |          133.00 |           66.16 |   15,114,803.76 |
 
 #### TotalCollections [Gen1]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |           35.00 |           19.38 |   51,599,222.86 |
+|               1 |           32.00 |           15.92 |   62,820,903.12 |
 
 #### TotalCollections [Gen2]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |           10.00 |            5.54 |  180,597,280.00 |
+|               1 |            9.00 |            4.48 |  223,363,211.11 |
 
 #### Elapsed Time
 |           Run # |              ms |          ms / s |         ns / ms |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |        1,806.00 |        1,000.02 |      999,984.94 |
+|               1 |        2,011.00 |        1,000.36 |      999,636.45 |
 
 #### [Counter] AffixFilesLoaded
 |           Run # |      operations |  operations / s | ns / operations |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |           59.00 |           32.67 |   30,609,708.47 |
+|               1 |           59.00 |           29.35 |   34,072,354.24 |
 
 

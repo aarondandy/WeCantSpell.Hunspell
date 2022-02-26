@@ -1,60 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
 class CommandParseMap<TCommand> where TCommand : struct
 {
-    public CommandParseMap()
+    internal CommandParseMap(KeyValuePair<string, TCommand>[] values)
     {
-        _map = new();
+        _map = values;
+        Array.Sort(_map, (a, b) => string.Compare(a.Key, b.Key, StringComparison.OrdinalIgnoreCase));
     }
 
-    private readonly Dictionary<int, List<KeyValuePair<string, TCommand>>> _map;
+    private readonly KeyValuePair<string, TCommand>[] _map;
 
-    public void Add(string key, TCommand command)
+    public TCommand? TryParse(string key) => TryParse(key.AsSpan());
+
+    public TCommand? TryParse(ReadOnlySpan<char> key)
     {
-        var hash = Hash(key.AsSpan());
-        if (!_map.TryGetValue(hash, out var bucket))
+        var min = 0;
+        var max = _map.Length - 1;
+
+        while (min <= max)
         {
-            bucket = new();
-            _map.Add(hash, bucket);
-        }
-
-        if (bucket.Any(p => key.Equals(p.Key, StringComparison.OrdinalIgnoreCase)))
-        {
-            throw new InvalidOperationException();
-        }
-
-        bucket.Add(new(key, command));
-    }
-
-    public TCommand? TryParse(string value) => TryParse(value.AsSpan());
-
-    public TCommand? TryParse(ReadOnlySpan<char> value)
-    {
-        var hash = Hash(value);
-
-        if (_map.TryGetValue(hash, out var bucket))
-        {
-            foreach (var pair in bucket)
+            var mid = (min + max) / 2;
+            var cmp = key.CompareTo(_map[mid].Key.AsSpan(), StringComparison.OrdinalIgnoreCase);
+            if (cmp < 0)
             {
-                if (value.Equals(pair.Key, StringComparison.OrdinalIgnoreCase))
-                {
-                    return pair.Value;
-                }
+                max = mid - 1;
+            }
+            else if (cmp > 0)
+            {
+                min = mid + 1;
+            }
+            else
+            {
+                return _map[mid].Value;
             }
         }
 
         return null;
     }
-
-    private int Hash(ReadOnlySpan<char> value) => value.Length switch
-    {
-        >3 => HashCode.Combine(value.Length, char.ToUpperInvariant(value[0]), char.ToUpperInvariant(value[value.Length - 2]), char.ToUpperInvariant(value[value.Length - 1])),
-        3 => HashCode.Combine(char.ToUpperInvariant(value[0]), char.ToUpperInvariant(value[1]), char.ToUpperInvariant(value[2])),
-        2 => HashCode.Combine(char.ToUpperInvariant(value[0]), char.ToUpperInvariant(value[1])),
-        _ => value.Length,
-    };
 }
