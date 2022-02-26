@@ -23,7 +23,7 @@ public partial class WordList
             Affix = affix;
             FlagSetDeduper = flagSetDeduper ?? new Deduper<FlagSet>(FlagSet.DefaultComparer);
             FlagSetDeduper.Add(FlagSet.Empty);
-            MorphSetDeduper = morphSet ?? new Deduper<MorphSet>(MorphSet.DefaultComparer);
+            MorphSetDeduper = morphSet ?? new Deduper<MorphSet>(MorphSet.Comparer.Instance);
             MorphSetDeduper.Add(MorphSet.Empty);
             WordEntryDetailDeduper = new Deduper<WordEntryDetail>(EqualityComparer<WordEntryDetail>.Default);
             WordEntryDetailDeduper.Add(WordEntryDetail.Default);

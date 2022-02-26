@@ -517,7 +517,7 @@ public sealed class AffixReader
 
     private bool TryParseMapEntry(ReadOnlySpan<char> parameterText, ImmutableArray<MapEntry>.Builder entries)
     {
-        var values = new List<string>(parameterText.Length);
+        var valuesBuilder = ImmutableArray.CreateBuilder<string>(parameterText.Length / 2);
 
         for (var k = 0; k < parameterText.Length; k++)
         {
@@ -530,10 +530,10 @@ public sealed class AffixReader
                 k = parpos;
             }
 
-            values.Add(parameterText.Slice(chb, che - chb).ToString());
+            valuesBuilder.Add(parameterText.Slice(chb, che - chb).ToString());
         }
 
-        entries.Add(MapEntry.TakeArray(Builder.DedupIntoArray(values)));
+        entries.Add(new MapEntry(Builder.DedupIntoImmutableArray(valuesBuilder, destructive: true)));
 
         return true;
     }
@@ -600,7 +600,7 @@ public sealed class AffixReader
             parameterText = parameterText.Reversed();
         }
 
-        var parts = new List<string>();
+        var parts = ImmutableArray.CreateBuilder<string>();
         parameterText.SplitOnTabOrSpace((part, _) =>
         {
             if (!part.IsEmpty)
@@ -611,14 +611,14 @@ public sealed class AffixReader
             return true;
         });
 
-        entries.Add(Builder.Dedup(MorphSet.TakeArray(Builder.DedupIntoArray(parts))));
+        entries.Add(Builder.Dedup(new MorphSet(Builder.DedupIntoImmutableArray(parts, true))));
 
         return true;
     }
 
     private bool TryParseCompoundRuleIntoList(ReadOnlySpan<char> parameterText, ImmutableArray<CompoundRule>.Builder entries)
     {
-        var entryBuilder = new List<FlagValue>();
+        var entryBuilder = ImmutableArray.CreateBuilder<FlagValue>();
 
         if (parameterText.Contains('('))
         {
@@ -649,7 +649,7 @@ public sealed class AffixReader
             entryBuilder.AddRange(ParseFlagsInOrder(parameterText));
         }
 
-        entries.Add(CompoundRule.Create(entryBuilder));
+        entries.Add(new(entryBuilder.ToImmutable(true)));
         return true;
     }
 
@@ -823,7 +823,7 @@ public sealed class AffixReader
                         morphAffixText = morphAffixText.GetReversed();
                     }
 
-                    morph = Builder.Dedup(MorphSet.TakeArray(Builder.DedupInPlace(morphAffixText.SplitOnTabOrSpace())));
+                    morph = Builder.Dedup(new MorphSet(Builder.DedupIntoImmutableArray(morphAffixText.SplitOnTabOrSpace(), true)));
                 }
             }
             else

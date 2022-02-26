@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
-using System.Linq;
 using System.Text;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -17,8 +16,7 @@ public partial class AffixConfig
         {
             FlagSetDeduper = new Deduper<FlagSet>(FlagSet.DefaultComparer);
             FlagSetDeduper.Add(FlagSet.Empty);
-            MorphSetDeduper = new Deduper<MorphSet>(MorphSet.DefaultComparer);
-            MorphSetDeduper.Add(MorphSet.Empty);
+            MorphSetDeduper = new Deduper<MorphSet>(MorphSet.Comparer.Instance);
             _characterConditionGroupDeduper = new Deduper<CharacterConditionGroup>(CharacterConditionGroup.Comparer.Instance);
             _characterConditionGroupDeduper.Add(CharacterConditionGroup.Empty);
             _characterConditionGroupDeduper.Add(CharacterConditionGroup.AllowAnySingleCharacter);
@@ -325,7 +323,7 @@ public partial class AffixConfig
         /// <summary>
         /// A list of the warnings that were produced while reading or building an <see cref="AffixConfig"/>.
         /// </summary>
-        public List<string> Warnings { get; } = new();
+        public ImmutableList<string>.Builder Warnings { get; } = ImmutableList.CreateBuilder<string>();
 
         /// <summary>
         /// Constructs a <see cref="AffixConfig"/> based on the values set in the builder.
@@ -411,8 +409,7 @@ public partial class AffixConfig
                 CompoundVowels = CompoundVowels,
                 WordChars = WordChars,
                 IgnoredChars = IgnoredChars,
-                Version = Version is null ? null : Dedup(Version),
-                Warnings = WarningList.Create(Warnings)
+                Version = Version is null ? null : Dedup(Version)
             };
 
             if (destructive)
@@ -442,6 +439,8 @@ public partial class AffixConfig
             config.Suffixes = SuffixCollection.Create(Suffixes);
 
             config.ContClasses = FlagSet.Union(config.Prefixes.ContClasses, config.Suffixes.ContClasses);
+
+            config.Warnings = Warnings.ToImmutable();
 
             return config;
         }
@@ -503,6 +502,16 @@ public partial class AffixConfig
             }
 
             return DedupInPlace(values.ToArray());
+        }
+
+        internal ImmutableArray<string> DedupIntoImmutableArray(string[] values, bool destructive)
+        {
+            return values.ToImmutableArray();
+        }
+
+        internal ImmutableArray<string> DedupIntoImmutableArray(ImmutableArray<string>.Builder builder, bool destructive)
+        {
+            return builder.ToImmutable(destructive);
         }
 
         internal MorphSet Dedup(MorphSet value) => MorphSetDeduper.GetEqualOrAdd(value);

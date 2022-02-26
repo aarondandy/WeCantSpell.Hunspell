@@ -14,6 +14,10 @@ public readonly struct CharacterCondition : IEquatable<CharacterCondition>
 
     public static readonly CharacterCondition AllowAny = new(CharacterSet.Empty, true);
 
+    public static bool operator ==(CharacterCondition left, CharacterCondition right) => left.Equals(right);
+
+    public static bool operator !=(CharacterCondition left, CharacterCondition right) => !(left == right);
+
     public static CharacterConditionGroup Parse(string text)
     {
         if (string.IsNullOrEmpty(text))

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -233,11 +234,7 @@ public sealed class WordListReader
             flags = FlagSet.Empty;
         }
 
-        var morphValues = (parsed.Morphs != null && parsed.Morphs.Length != 0)
-            ? parsed.Morphs
-            : Array.Empty<string>();
-
-        return AddWord(parsed.Word.ToString(), flags, morphValues);
+        return AddWord(parsed.Word.ToString(), flags, parsed.Morphs);
     }
 
     private bool AttemptToProcessInitializationLine(string line)
@@ -258,7 +255,7 @@ public sealed class WordListReader
         return false;
     }
 
-    private bool AddWord(string word, FlagSet flags, string[] morphs)
+    private bool AddWord(string word, FlagSet flags, ImmutableArray<string> morphs)
     {
         if (Affix.IgnoredChars.HasItems)
         {
@@ -271,7 +268,7 @@ public sealed class WordListReader
 
             if (morphs.Length != 0 && !Affix.IsAliasM)
             {
-                morphs = MorphSet.CreateReversed(morphs);
+                morphs = MorphSet.CreateReversedStrings(morphs);
             }
         }
 
@@ -280,15 +277,15 @@ public sealed class WordListReader
             || AddWordCapitalized(word, flags, morphs, capType);
     }
 
-    private string[] AddWord_HandleMorph(string[] morphs, string word, CapitalizationType capType, ref WordEntryOptions options)
+    private ImmutableArray<string> AddWord_HandleMorph(ImmutableArray<string> morphs, string word, CapitalizationType capType, ref WordEntryOptions options)
     {
         if (Affix.IsAliasM)
         {
             options |= WordEntryOptions.AliasM;
-            var morphBuilder = new List<string>();
+            var morphBuilder = ImmutableArray.CreateBuilder<string>();
             foreach (var originalValue in morphs)
             {
-                if (IntEx.TryParseInvariant(originalValue, out int morphNumber) && Affix.TryGetAliasM(morphNumber, out MorphSet aliasedMorph))
+                if (IntEx.TryParseInvariant(originalValue, out var morphNumber) && Affix.TryGetAliasM(morphNumber, out var aliasedMorph))
                 {
                     morphBuilder.AddRange(aliasedMorph);
                 }
@@ -298,7 +295,7 @@ public sealed class WordListReader
                 }
             }
 
-            morphs = morphBuilder.ToArray();
+            morphs = morphBuilder.ToImmutable(allowDestructive: true);
         }
 
         using (var morphPhonEnumerator = morphs.Where(m => m != null && m.StartsWith(MorphologicalTags.Phon)).GetEnumerator())
@@ -389,7 +386,7 @@ public sealed class WordListReader
         return morphs;
     }
 
-    private bool AddWord(string word, FlagSet flags, string[] morphs, bool onlyUpperCase, CapitalizationType capType)
+    private bool AddWord(string word, FlagSet flags, ImmutableArray<string> morphs, bool onlyUpperCase, CapitalizationType capType)
     {
         // store the description string or its pointer
         var options = capType == CapitalizationType.Init ? WordEntryOptions.InitCap : WordEntryOptions.None;
@@ -424,14 +421,14 @@ public sealed class WordListReader
                 Builder.Dedup(
                     new WordEntryDetail(
                         flags,
-                        Builder.Dedup(MorphSet.TakeArray(morphs)),
+                        Builder.Dedup(new MorphSet(morphs)),
                         options)));
         }
 
         return false;
     }
 
-    private bool AddWordCapitalized(string word, FlagSet flags, string[] morphs, CapitalizationType capType)
+    private bool AddWordCapitalized(string word, FlagSet flags, ImmutableArray<string> morphs, CapitalizationType capType)
     {
         // add inner capitalized forms to handle the following allcap forms:
         // Mixed caps: OpenOffice.org -> OPENOFFICE.ORG
@@ -457,16 +454,16 @@ public sealed class WordListReader
 
     private readonly ref struct ParsedWordLine
     {
-        public readonly ReadOnlySpan<char> Word;
-        public readonly ReadOnlySpan<char> Flags;
-        public readonly string[] Morphs;
-
-        private ParsedWordLine(ReadOnlySpan<char> word, ReadOnlySpan<char> flags, string[] morphs)
+        private ParsedWordLine(ReadOnlySpan<char> word, ReadOnlySpan<char> flags, ImmutableArray<string> morphs)
         {
             Word = word;
             Flags = flags;
             Morphs = morphs;
         }
+
+        public readonly ReadOnlySpan<char> Word;
+        public readonly ReadOnlySpan<char> Flags;
+        public readonly ImmutableArray<string> Morphs;
 
         private static readonly Regex MorphPartRegex = new Regex(
             @"\G([\t ]+(?<morphs>[^\t ]+))*[\t ]*$",
@@ -521,7 +518,7 @@ public sealed class WordListReader
                 return new ParsedWordLine(
                     word: word.Replace(@"\/", @"/"),
                     flags: flagsPart,
-                    morphs: morphGroup != null && morphGroup.Success ? GetCapturesAsTest(morphGroup.Captures) : null);
+                    morphs: morphGroup is { Success: true } ? GetCapturesAsTest(morphGroup.Captures) : ImmutableArray<string>.Empty);
             }
 
             return default;
@@ -543,15 +540,15 @@ public sealed class WordListReader
             return -1;
         }
 
-        private static string[] GetCapturesAsTest(CaptureCollection collection)
+        private static ImmutableArray<string> GetCapturesAsTest(CaptureCollection collection)
         {
-            var results = new string[collection.Count];
-            for (var i = 0; i < collection.Count; i++)
+            var builder = ImmutableArray.CreateBuilder<string>(collection.Count);
+            foreach (Capture capture in collection)
             {
-                results[i] = collection[i].Value;
+                builder.Add(capture.Value);
             }
 
-            return results;
+            return builder.ToImmutable(allowDestructive: true);
         }
 
         private static int IndexOfFlagsDelimiter(string text, int startIndex, int boundaryIndex)
