@@ -87,4 +87,16 @@ static class CollectionsEx
 
     public static ImmutableArray<T> ToImmutable<T>(this ImmutableArray<T>.Builder builder, bool allowDestructive) =>
         allowDestructive && builder.Capacity == builder.Count ? builder.MoveToImmutable() : builder.ToImmutable();
+
+    public static ImmutableArray<T> ToImmutableArray<T>(this ReadOnlySpan<T> span)
+    {
+        var builder = ImmutableArray.CreateBuilder<T>(span.Length);
+
+        foreach (var value in span)
+        {
+            builder.Add(value);
+        }
+
+        return builder.ToImmutable(true);
+    }
 }

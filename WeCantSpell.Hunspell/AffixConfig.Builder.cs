@@ -19,7 +19,7 @@ public partial class AffixConfig
             FlagSetDeduper.Add(FlagSet.Empty);
             MorphSetDeduper = new Deduper<MorphSet>(MorphSet.DefaultComparer);
             MorphSetDeduper.Add(MorphSet.Empty);
-            _characterConditionGroupDeduper = new Deduper<CharacterConditionGroup>(CharacterConditionGroup.DefaultComparer);
+            _characterConditionGroupDeduper = new Deduper<CharacterConditionGroup>(CharacterConditionGroup.Comparer.Instance);
             _characterConditionGroupDeduper.Add(CharacterConditionGroup.Empty);
             _characterConditionGroupDeduper.Add(CharacterConditionGroup.AllowAnySingleCharacter);
             _stringDeduper = new Deduper<string>(StringComparer.Ordinal);
@@ -296,20 +296,20 @@ public partial class AffixConfig
         /// Voewls for calculating syllables.
         /// </summary>
         /// <seealso cref="AffixConfig.CompoundVowels"/>
-        public CharacterSet? CompoundVowels { get; set; }
+        public CharacterSet CompoundVowels { get; set; } = CharacterSet.Empty;
 
         /// <summary>
         /// Extra word characters.
         /// </summary>
         /// <seealso cref="AffixConfig.WordChars"/>
-        public CharacterSet? WordChars { get; set; }
+        public CharacterSet WordChars { get; set; } = CharacterSet.Empty;
 
         /// <summary>
         /// Ignored characters (for example, Arabic optional diacretics characters)
         /// for dictionary words, affixes and input words.
         /// </summary>
         /// <seealso cref="AffixConfig.IgnoredChars"/>
-        public CharacterSet? IgnoredChars { get; set; }
+        public CharacterSet IgnoredChars { get; set; } = CharacterSet.Empty;
 
         /// <summary>
         /// Affix and dictionary file version string.
@@ -408,9 +408,9 @@ public partial class AffixConfig
                 CompoundSyllableNum = CompoundSyllableNum,
                 Encoding = Encoding,
                 CompoundMaxSyllable = CompoundMaxSyllable,
-                CompoundVowels = CompoundVowels ?? CharacterSet.Empty,
-                WordChars = WordChars ?? CharacterSet.Empty,
-                IgnoredChars = IgnoredChars ?? CharacterSet.Empty,
+                CompoundVowels = CompoundVowels,
+                WordChars = WordChars,
+                IgnoredChars = IgnoredChars,
                 Version = Version is null ? null : Dedup(Version),
                 Warnings = WarningList.Create(Warnings)
             };

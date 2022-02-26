@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -16,11 +17,11 @@ public abstract class AffixCollection<TEntry> :
     {
         var affixesByFlag = new Dictionary<FlagValue, AffixEntryGroup<TEntry>>(builders.Count);
         var groupBuildersByKeyAndFlag = new Dictionary<char, Dictionary<FlagValue, AffixEntryGroup<TEntry>.Builder>>();
-        var affixesWithEmptyKeys = new AffixEntryGroupCollection<TEntry>.Builder();
-        var affixesWithDots = new AffixEntryGroupCollection<TEntry>.Builder();
+        var affixesWithEmptyKeys = ImmutableArray.CreateBuilder<AffixEntryGroup<TEntry>>();
+        var affixesWithDots = ImmutableArray.CreateBuilder<AffixEntryGroup<TEntry>>();
         var contClasses = new HashSet<FlagValue>();
 
-        foreach (var group in builders.Select(static builder => builder.ToGroup()))
+        foreach (var group in builders.Select(static builder => builder.ToImmutable(false))) // TODO: refactor this to allow for destructive ToImmutable
         {
             affixesByFlag.Add(group.AFlag, group);
 
@@ -61,27 +62,27 @@ public abstract class AffixCollection<TEntry> :
 
             if (entriesWithNoKey.HasEntries)
             {
-                affixesWithEmptyKeys.Add(entriesWithNoKey.ToGroup());
+                affixesWithEmptyKeys.Add(entriesWithNoKey.ToImmutable(true));
             }
 
             if (entriesWithDots.HasEntries)
             {
-                affixesWithDots.Add(entriesWithDots.ToGroup());
+                affixesWithDots.Add(entriesWithDots.ToImmutable(true));
             }
         }
 
         var affixesByKey = new Dictionary<char, AffixEntryGroupCollection<TEntry>>(groupBuildersByKeyAndFlag.Count);
         foreach (var keyedBuilder in groupBuildersByKeyAndFlag)
         {
-            var indexedAffixGroup = new AffixEntryGroupCollection<TEntry>.Builder();
-            indexedAffixGroup.AddRange(keyedBuilder.Value.Values.Select(b => b.ToGroup()));
-            affixesByKey.Add(keyedBuilder.Key, indexedAffixGroup.ToGroupCollection());
+            var indexedAffixGroupBuilder = ImmutableArray.CreateBuilder<AffixEntryGroup<TEntry>>(keyedBuilder.Value.Count);
+            indexedAffixGroupBuilder.AddRange(keyedBuilder.Value.Values.Select(b => b.ToImmutable(true)));
+            affixesByKey.Add(keyedBuilder.Key, new(indexedAffixGroupBuilder.ToImmutable(true)));
         }
 
         result.AffixesByFlag = affixesByFlag;
         result.AffixesByIndexedByKey = affixesByKey;
-        result.AffixesWithDots = affixesWithDots.ToGroupCollection();
-        result.AffixesWithEmptyKeys = affixesWithEmptyKeys.ToGroupCollection();
+        result.AffixesWithDots = new(affixesWithDots.ToImmutable(true));
+        result.AffixesWithEmptyKeys = new(affixesWithEmptyKeys.ToImmutable(true));
         result.ContClasses = FlagSet.Create(contClasses);
     }
 
@@ -140,36 +141,62 @@ public sealed class SuffixCollection : AffixCollection<SuffixEntry>
     {
     }
 
-    internal List<Affix<SuffixEntry>> GetMatchingAffixes(string word, FlagSet? groupFlagFilter = null)
+    internal IEnumerable<Affix<SuffixEntry>> GetMatchingAffixes(string word, FlagSet? groupFlagFilter = null)
     {
-        var results = new List<Affix<SuffixEntry>>();
+        var results = Enumerable.Empty<Affix<SuffixEntry>>();
 
         if (!string.IsNullOrEmpty(word))
         {
             if (AffixesByIndexedByKey.TryGetValue(word[word.Length - 1], out var indexedGroups))
             {
-                foreach (var group in indexedGroups)
+                if (groupFlagFilter is null)
                 {
-                    if (groupFlagFilter == null || groupFlagFilter.Contains(group.AFlag))
-                    {
-                        foreach (var entry in group.Entries)
-                        {
-                            if (HunspellTextFunctions.IsReverseSubset(entry.Key, word))
-                            {
-                                results.Add(group.CreateAffix(entry));
-                            }
-                        }
-                    }
+                    results = getGroupAffixes(word, indexedGroups);
+                }
+                else if (groupFlagFilter.HasItems)
+                {
+                    results = getFilteredGroupAffixes(word, indexedGroups, groupFlagFilter);
                 }
             }
 
             if (AffixesWithDots.HasItems)
             {
-                results.AddRange(GetMatchingWithDotAffixes(word, HunspellTextFunctions.IsReverseSubset));
+                results = results.Concat(GetMatchingWithDotAffixes(word, HunspellTextFunctions.IsReverseSubset));
             }
         }
 
         return results;
+
+        static IEnumerable<Affix<SuffixEntry>> getGroupAffixes(string word, AffixEntryGroupCollection<SuffixEntry> indexedGroups)
+        {
+            foreach (var group in indexedGroups)
+            {
+                foreach (var entry in group.Entries)
+                {
+                    if (HunspellTextFunctions.IsReverseSubset(entry.Key, word))
+                    {
+                        yield return group.CreateAffix(entry);
+                    }
+                }
+            }
+        }
+
+        static IEnumerable<Affix<SuffixEntry>> getFilteredGroupAffixes(string word, AffixEntryGroupCollection<SuffixEntry> indexedGroups, FlagSet groupFlagFilter)
+        {
+            foreach (var group in indexedGroups)
+            {
+                if (groupFlagFilter.Contains(group.AFlag))
+                {
+                    foreach (var entry in group.Entries)
+                    {
+                        if (HunspellTextFunctions.IsReverseSubset(entry.Key, word))
+                        {
+                            yield return group.CreateAffix(entry);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -191,32 +218,37 @@ public sealed class PrefixCollection : AffixCollection<PrefixEntry>
     {
     }
 
-    internal List<Affix<PrefixEntry>> GetMatchingAffixes(string word)
+    internal IEnumerable<Affix<PrefixEntry>> GetMatchingAffixes(string word)
     {
-        var results = new List<Affix<PrefixEntry>>();
+        var results = Enumerable.Empty<Affix<PrefixEntry>>();
 
         if (!string.IsNullOrEmpty(word))
         {
             if (AffixesByIndexedByKey.TryGetValue(word[0], out var indexedGroups))
             {
-                foreach (var group in indexedGroups)
-                {
-                    foreach (var entry in group.Entries)
-                    {
-                        if (HunspellTextFunctions.IsSubset(entry.Key, word))
-                        {
-                            results.Add(group.CreateAffix(entry));
-                        }
-                    }
-                }
+                results = getGroupAffixes(word, indexedGroups);
             }
 
             if (AffixesWithDots.HasItems)
             {
-                results.AddRange(GetMatchingWithDotAffixes(word, HunspellTextFunctions.IsSubset));
+                results = results.Concat(GetMatchingWithDotAffixes(word, HunspellTextFunctions.IsSubset));
             }
         }
 
         return results;
+
+        static IEnumerable<Affix<PrefixEntry>> getGroupAffixes(string word, AffixEntryGroupCollection<PrefixEntry> indexedGroups)
+        {
+            foreach (var group in indexedGroups)
+            {
+                foreach (var entry in group.Entries)
+                {
+                    if (HunspellTextFunctions.IsSubset(entry.Key, word))
+                    {
+                        yield return group.CreateAffix(entry);
+                    }
+                }
+            }
+        }
     }
 }

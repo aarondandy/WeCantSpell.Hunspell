@@ -230,7 +230,7 @@ public class CharacterConditionTests
         [InlineData('오', 'ي', false)]
         public void single_character_allows_exactly_that_character(char allowedLetter, char givenLetter, bool expected)
         {
-            var condition = CharacterCondition.Create(allowedLetter, false);
+            var condition = new CharacterCondition(CharacterSet.Create(allowedLetter), false);
 
             var actual = condition.IsMatch(givenLetter);
 
@@ -238,18 +238,18 @@ public class CharacterConditionTests
         }
 
         [Theory]
-        [InlineData(new char[0], 'x', false)]
-        [InlineData(new[] { 'a' }, 'x', false)]
-        [InlineData(new[] { 'a', 'b' }, 'x', false)]
-        [InlineData(new[] { 'x', 'y', 'z' }, 'a', false)]
-        [InlineData(new[] { 'x' }, 'x', true)]
-        [InlineData(new[] { 'x', 'y' }, 'x', true)]
-        [InlineData(new[] { 'x', 'y', 'z' }, 'x', true)]
-        [InlineData(new[] { 'x', 'y', 'z' }, 'y', true)]
-        [InlineData(new[] { 'x', 'y', 'z' }, 'z', true)]
-        public void range_allows_only_specified_characters(char[] range, char givenLetter, bool expected)
+        [InlineData("", 'x', false)]
+        [InlineData("a", 'x', false)]
+        [InlineData("ab", 'x', false)]
+        [InlineData("xyz", 'a', false)]
+        [InlineData("x", 'x', true)]
+        [InlineData("xy", 'x', true)]
+        [InlineData("xyz", 'x', true)]
+        [InlineData("xyz", 'y', true)]
+        [InlineData("xyz", 'z', true)]
+        public void range_allows_only_specified_characters(string range, char givenLetter, bool expected)
         {
-            var condition = CharacterCondition.Create(range, false);
+            var condition = new CharacterCondition(CharacterSet.Create(range), false);
 
             var actual = condition.IsMatch(givenLetter);
 
@@ -257,18 +257,18 @@ public class CharacterConditionTests
         }
 
         [Theory]
-        [InlineData(new char[0], 'x', true)]
-        [InlineData(new[] { 'a' }, 'x', true)]
-        [InlineData(new[] { 'a', 'b' }, 'x', true)]
-        [InlineData(new[] { 'x', 'y', 'z' }, 'a', true)]
-        [InlineData(new[] { 'x' }, 'x', false)]
-        [InlineData(new[] { 'x', 'y' }, 'x', false)]
-        [InlineData(new[] { 'x', 'y', 'z' }, 'x', false)]
-        [InlineData(new[] { 'x', 'y', 'z' }, 'y', false)]
-        [InlineData(new[] { 'x', 'y', 'z' }, 'z', false)]
-        public void range_resricts_specified_characters(char[] range, char givenLetter, bool expected)
+        [InlineData("", 'x', true)]
+        [InlineData("a", 'x', true)]
+        [InlineData("ab", 'x', true)]
+        [InlineData("xyz", 'a', true)]
+        [InlineData("x", 'x', false)]
+        [InlineData("xy", 'x', false)]
+        [InlineData("xyz", 'x', false)]
+        [InlineData("xyz", 'y', false)]
+        [InlineData("xyz", 'z', false)]
+        public void range_resricts_specified_characters(string range, char givenLetter, bool expected)
         {
-            var condition = CharacterCondition.Create(range, true);
+            var condition = new CharacterCondition(CharacterSet.Create(range), true);
 
             var actual = condition.IsMatch(givenLetter);
 

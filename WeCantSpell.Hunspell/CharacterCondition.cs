@@ -1,29 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Collections.Immutable;
 using System.Text.RegularExpressions;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
-public struct CharacterCondition :
-    IEquatable<CharacterCondition>
+public readonly struct CharacterCondition : IEquatable<CharacterCondition>
 {
     private static Regex ConditionParsingRegex = new Regex(
         @"^(\[[^\]]*\]|\.|[^\[\]\.])*$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-    public static readonly CharacterCondition AllowAny = new CharacterCondition(CharacterSet.Empty, true);
-
-    internal static CharacterCondition TakeArray(char[] characters, bool restricted) =>
-        new CharacterCondition(characters, restricted);
-
-    public static CharacterCondition Create(char character, bool restricted) =>
-        new CharacterCondition(character, restricted);
-
-    public static CharacterCondition Create(IEnumerable<char> characters, bool restricted) =>
-        TakeArray(characters is null ? Array.Empty<char>() : characters.ToArray(), restricted);
+    public static readonly CharacterCondition AllowAny = new(CharacterSet.Empty, true);
 
     public static CharacterConditionGroup Parse(string text)
     {
@@ -39,13 +28,13 @@ public struct CharacterCondition :
         }
 
         var captures = match.Groups[1].Captures;
-        var conditions = new CharacterCondition[captures.Count];
-        for (var captureIndex = 0; captureIndex < captures.Count; captureIndex++)
+        var conditions = ImmutableArray.CreateBuilder<CharacterCondition>(captures.Count);
+        foreach (Capture capture in captures)
         {
-            conditions[captureIndex] = ParseSingle(captures[captureIndex].Value.AsSpan());
+            conditions.Add(ParseSingle(capture.Value.AsSpan()));
         }
 
-        return CharacterConditionGroup.TakeArray(conditions);
+        return new(conditions.ToImmutable(true));
     }
 
     private static CharacterCondition ParseSingle(ReadOnlySpan<char> text)
@@ -62,7 +51,7 @@ public struct CharacterCondition :
                 return AllowAny;
             }
 
-            return Create(singleChar, false);
+            return new(CharacterSet.Create(singleChar), false);
         }
 
         if (!text.StartsWith('[') || !text.EndsWith(']'))
@@ -72,23 +61,13 @@ public struct CharacterCondition :
 
         var restricted = text[1] == '^';
         text = restricted ? text.Slice(2, text.Length - 3) : text.Slice(1, text.Length - 2);
-        return TakeArray(text.ToArray(), restricted);
+        return new(CharacterSet.Create(text), restricted);
     }
 
     public CharacterCondition(CharacterSet characters, bool restricted)
     {
         Characters = characters;
         Restricted = restricted;
-    }
-
-    private CharacterCondition(char character, bool restricted)
-        : this(CharacterSet.Create(character), restricted)
-    {
-    }
-
-    private CharacterCondition(char[] characters, bool restricted)
-        : this(CharacterSet.TakeArray(characters), restricted)
-    {
     }
 
     public CharacterSet Characters { get; }
@@ -98,11 +77,11 @@ public struct CharacterCondition :
     /// </summary>
     public bool Restricted { get; }
 
-    public bool IsMatch(char c) => (Characters is not null && Characters.Contains(c)) ^ Restricted;
+    public bool IsMatch(char c) => Characters.Contains(c) ^ Restricted;
 
-    public bool AllowsAny => Restricted && (Characters is null || Characters.Count == 0);
+    public bool AllowsAny => Restricted && Characters is not { Count: > 0 };
 
-    public bool PermitsSingleCharacter => !Restricted && Characters is not null && Characters.Count == 1;
+    public bool PermitsSingleCharacter => !Restricted && Characters is { Count: 1 };
 
     public string GetEncoded()
     {
@@ -116,20 +95,26 @@ public struct CharacterCondition :
             return Characters[0].ToString();
         }
 
-        var lettersText = Characters is { Count: > 0 }
-            ? Characters.GetCharactersAsString()
-            : string.Empty;
+        var result = Restricted ? "[^" : "[";
+        if (Characters is { Count: > 0 })
+        {
+            result += Characters.GetCharactersAsString() + "]";
+        }
+        else
+        {
+            result += "]";
+        }
 
-        return (Restricted ? "[^" : "[") + lettersText + "]";
+        return result;
     }
 
     public override string ToString() => GetEncoded();
 
     public bool Equals(CharacterCondition other) =>
-        Restricted == other.Restricted && CharacterSet.DefaultComparer.Equals(Characters, other.Characters);
+        Restricted == other.Restricted
+        && CharacterSet.Comparer.Instance.Equals(Characters, other.Characters);
 
-    public override bool Equals(object obj) => obj is CharacterCondition cc && Equals(cc);
+    public override bool Equals(object? obj) => obj is CharacterCondition cc && Equals(cc);
 
-    public override int GetHashCode() =>
-        unchecked((Restricted.GetHashCode() * 149) ^ CharacterSet.DefaultComparer.GetHashCode(Characters));
+    public override int GetHashCode() => HashCode.Combine(CharacterSet.Comparer.Instance.GetHashCode(Characters), Restricted);
 }
