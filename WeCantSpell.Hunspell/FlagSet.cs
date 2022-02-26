@@ -1,95 +1,179 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
-public sealed class FlagSet : ArrayWrapper<FlagValue>, IEquatable<FlagSet>
+public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 {
-    public static readonly FlagSet Empty = new FlagSet(Array.Empty<FlagValue>());
+    public static readonly FlagSet Empty = new(ImmutableArray<FlagValue>.Empty);
 
-    public static readonly ArrayWrapperComparer<FlagValue, FlagSet> DefaultComparer = new ArrayWrapperComparer<FlagValue, FlagSet>();
+    public static bool operator ==(FlagSet left, FlagSet right) => left.Equals(right);
 
-    public static FlagSet Create(IEnumerable<FlagValue> given) => given is null ? Empty : TakeArray(given.Distinct().Where(static v => v.HasValue).ToArray());
+    public static bool operator !=(FlagSet left, FlagSet right) => !(left == right);
 
-    public static FlagSet Union(FlagSet a, FlagSet b) => Create(Enumerable.Concat(a, b));
+    public static FlagSet Create(FlagValue value) => new(ImmutableArray.Create(value));
 
-    internal static FlagSet TakeArray(FlagValue[] values)
+    public static FlagSet Create(IEnumerable<FlagValue> values)
     {
-        if (values is null || values.Length == 0)
+        if (values is null) throw new ArgumentNullException(nameof(values));
+
+        var hashSet = new HashSet<FlagValue>();
+        var builder = ImmutableArray.CreateBuilder<FlagValue>();
+
+        foreach (var value in values)
         {
-            return Empty;
+            if (hashSet.Add(value))
+            {
+                builder.Add(value);
+            }
         }
 
-        Array.Sort(values);
-        return new FlagSet(values);
+        builder.Sort();
+
+        return new(builder.ToImmutable(allowDestructive: true));
     }
 
-    internal static FlagSet Union(FlagSet set, FlagValue value)
+    [Obsolete]
+    internal static FlagSet Create(FlagValue[] values)
     {
-        var valueIndex = Array.BinarySearch(set.Items, value);
+        if (values is null) throw new ArgumentNullException(nameof(values));
+
+        var builder = ImmutableArray.CreateBuilder<FlagValue>(values.Length);
+        builder.AddRange(values);
+        return CreateDestructuve(builder);
+    }
+
+    internal static FlagSet CreateDestructuve(ImmutableArray<FlagValue>.Builder builder)
+    {
+        var hashSet = new HashSet<FlagValue>();
+
+        var i = 0;
+        while (i < builder.Count)
+        {
+            if (hashSet.Add(builder[i]))
+            {
+                i++;
+            }
+            else
+            {
+                builder.RemoveAt(i);
+            }
+        }
+
+        builder.Sort();
+        return new(builder.ToImmutable(allowDestructive: true));
+    }
+
+    private static char CalculateMask(ImmutableArray<FlagValue> values)
+    {
+#if DEBUG
+        var previous = values.FirstOrDefault();
+#endif
+
+        char mask = default;
+        foreach (var c in values)
+        {
+#if DEBUG
+            if (previous > c)
+            {
+                throw new ArgumentOutOfRangeException(nameof(values));
+            }
+
+            previous = c;
+#endif
+
+            unchecked
+            {
+                mask |= c;
+            }
+        }
+
+        return mask;
+    }
+
+
+    private FlagSet(ImmutableArray<FlagValue> values) : this(values, CalculateMask(values))
+    {
+    }
+
+    private FlagSet(ImmutableArray<FlagValue> values, char mask)
+    {
+        _mask = mask;
+        _values = values;
+    }
+
+    private readonly char _mask;
+    private readonly ImmutableArray<FlagValue> _values;
+
+    public int Count => _values.Length;
+    public bool IsEmpty => _values.IsDefaultOrEmpty;
+    public bool HasItems => !IsEmpty;
+    public FlagValue this[int index] => _values[index];
+
+    public ImmutableArray<FlagValue>.Enumerator GetEnumerator() => _values.GetEnumerator();
+    IEnumerator<FlagValue> IEnumerable<FlagValue>.GetEnumerator() => ((IEnumerable<FlagValue>)_values).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_values).GetEnumerator();
+
+    internal FlagSet Union(FlagValue value)
+    {
+        var valueIndex = _values.BinarySearch(value);
         if (valueIndex >= 0)
         {
-            return set;
+            return this;
         }
 
         valueIndex = ~valueIndex; // locate the best insertion point
 
-        var newItems = new FlagValue[set.Items.Length + 1];
-        if (valueIndex >= set.Items.Length)
-        {
-            Array.Copy(set.Items, newItems, set.Items.Length);
-            newItems[set.Items.Length] = value;
-        }
-        else
-        {
-            Array.Copy(set.Items, newItems, valueIndex);
-            Array.Copy(set.Items, valueIndex, newItems, valueIndex + 1, set.Items.Length - valueIndex);
-            newItems[valueIndex] = value;
-        }
-
-        return new FlagSet(newItems);
+        return new(valueIndex >= _values.Length ? _values.Add(value) : _values.Insert(valueIndex, value));
     }
 
-    private FlagSet(FlagValue[] values) : base(values)
+    public FlagSet Union(FlagSet other)
     {
-        _mask = default;
-        for (var i = 0; i < values.Length; i++)
+        if (other.IsEmpty)
         {
-            unchecked
-            {
-                _mask |= values[i];
-            }
+            return this;
         }
-    }
 
-    private readonly char _mask;
+        if (IsEmpty)
+        {
+            return other;
+        }
+
+        if (other._values.Length == 1)
+        {
+            return Union(other._values[0]);
+        }
+
+        if (_values.Length == 1)
+        {
+            return other.Union(_values[0]);
+        }
+
+        return Create(_values.Concat(other._values));
+    }
 
     public bool Contains(FlagValue value)
     {
         if (value.HasValue && HasItems)
         {
-            if (Items.Length == 1)
+            if (_values.Length == 1)
             {
-                return value.Equals(Items[0]);
+                return _values[0].Equals(value);
             }
 
             if (unchecked(value & _mask) != default)
             {
-                return search();
-                bool search()
+                if (_values.Length <= 8)
                 {
-                    if (Items.Length <= 8)
-                    {
-                        return Array.IndexOf(Items, value) >= 0;
-                    }
-
-                    return value >= Items[0]
-                        && value <= Items[Items.Length - 1]
-                        && Array.BinarySearch(Items, value) >= 0;
+                    return _values.Contains(value);
                 }
+
+                return _values.BinarySearch(value) >= 0;
             }
         }
 
@@ -98,16 +182,9 @@ public sealed class FlagSet : ArrayWrapper<FlagValue>, IEquatable<FlagSet>
 
     public bool ContainsAny(FlagSet values)
     {
-        if (values is null) throw new ArgumentNullException(nameof(values));
-
-        if (IsEmpty || values.IsEmpty)
+        if (IsEmpty || values.IsEmpty || (_mask & values._mask) == default)
         {
             return false;
-        }
-
-        if (Count == 1)
-        {
-            return values.Contains(Items[0]);
         }
 
         if (values.Count == 1)
@@ -115,10 +192,12 @@ public sealed class FlagSet : ArrayWrapper<FlagValue>, IEquatable<FlagSet>
             return Contains(values[0]);
         }
 
-        if ((_mask & values._mask) == default)
+        if (Count == 1)
         {
-            return false;
+            return values.Contains(_values[0]);
         }
+
+        // TODO: use the sorted nature of the data as an advantage when detecting an intersection
 
         return Count <= values.Count
             ? checkIterative(this, values)
@@ -147,15 +226,21 @@ public sealed class FlagSet : ArrayWrapper<FlagValue>, IEquatable<FlagSet>
     public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c, FlagValue d) =>
         HasItems && (Contains(a) || Contains(b) || Contains(c) || Contains(d));
 
-    public bool Equals(FlagSet other) =>
-        other is not null
-        &&
-        (
-            ReferenceEquals(this, other)
-            || ArrayComparer<FlagValue>.Default.Equals(other.Items, Items)
-        );
+    public bool Equals(FlagSet other) => _values.SequenceEqual(other._values);
 
-    public override bool Equals(object obj) => Equals(obj as FlagSet);
+    public override bool Equals(object? obj) => obj is FlagSet set && Equals(set);
 
-    public override int GetHashCode() => ArrayComparer<FlagValue>.Default.GetHashCode(Items);
+    public override int GetHashCode() => ((IStructuralEquatable)_values).GetHashCode(EqualityComparer<FlagValue>.Default);
+
+    public class Comparer : IEqualityComparer<FlagSet>
+    {
+        public static Comparer Instance { get; } = new();
+
+        private Comparer()
+        {
+        }
+
+        public bool Equals(FlagSet x, FlagSet y) => x._values.SequenceEqual(y._values);
+        public int GetHashCode(FlagSet obj) => ((IStructuralEquatable)obj._values).GetHashCode(EqualityComparer<FlagValue>.Default);
+    }
 }

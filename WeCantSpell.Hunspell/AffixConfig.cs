@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
@@ -524,7 +523,7 @@ public sealed partial class AffixConfig
     /// </code>
     /// </example>
     /// <seealso cref="CheckCompoundRep"/>
-    public SingleReplacementSet Replacements { get; private set; }
+    public SingleReplacementSet Replacements { get; private set; } = SingleReplacementSet.Empty;
 
     /// <summary>
     /// Preffixes attached to root words to make other words.
@@ -580,7 +579,7 @@ public sealed partial class AffixConfig
     /// <summary>
     /// Inidicates if any <see cref="AliasF"/> entries have been defined.
     /// </summary>
-    public bool IsAliasF => AliasF.Length > 0;
+    public bool IsAliasF => !AliasF.IsDefaultOrEmpty;
 
     /// <summary>
     /// Values used for morphological alias compression.
@@ -590,7 +589,7 @@ public sealed partial class AffixConfig
     /// <summary>
     /// Indicates if any <see cref="AliasM"/> entries have been defined.
     /// </summary>
-    public bool IsAliasM => AliasM.Length > 0;
+    public bool IsAliasM => !AliasM.IsDefaultOrEmpty;
 
     /// <summary>
     /// Defines custom compound patterns with a regex-like syntax.
@@ -618,7 +617,7 @@ public sealed partial class AffixConfig
     /// flags. (Use these flags on different enhtries for words).
     /// </para>
     /// </remarks>
-    public CompoundRuleSet CompoundRules { get; private set; }
+    public CompoundRuleSet CompoundRules { get; private set; } = CompoundRuleSet.Empty;
 
     /// <summary>
     /// Forbid compounding, if the first word in the compound ends with endchars, and
@@ -640,7 +639,7 @@ public sealed partial class AffixConfig
     /// CHECKCOMPOUNDPATTERN 0/x /y
     /// </code>
     /// </example>
-    public PatternSet CompoundPatterns { get; private set; }
+    public PatternSet CompoundPatterns { get; private set; } = PatternSet.Empty;
 
     /// <summary>
     /// Defines new break points for breaking words and checking word parts separately.
@@ -698,7 +697,7 @@ public sealed partial class AffixConfig
     /// </code>
     /// </example>
     /// <seealso cref="CompoundRules"/>
-    public BreakSet BreakPoints { get; private set; }
+    public BreakSet BreakPoints { get; private set; } = BreakSet.Empty;
 
     /// <summary>
     /// Input conversion entries.
@@ -706,12 +705,12 @@ public sealed partial class AffixConfig
     /// <remarks>
     /// Useful to convert one type of quote to another one, or change ligature.
     /// </remarks>
-    public MultiReplacementTable InputConversions { get; private set; }
+    public MultiReplacementTable InputConversions { get; private set; } = MultiReplacementTable.Empty;
 
     /// <summary>
     /// Output conversion entries.
     /// </summary>
-    public MultiReplacementTable OutputConversions { get; private set; }
+    public MultiReplacementTable OutputConversions { get; private set; } = MultiReplacementTable.Empty;
 
     /// <summary>
     /// Mappings between related characters.
@@ -744,7 +743,7 @@ public sealed partial class AffixConfig
     /// </code>
     /// </example>
     /// <seealso cref="Replacements"/>
-    public MapTable RelatedCharacterMap { get; private set; }
+    public MapTable RelatedCharacterMap { get; private set; } = MapTable.Empty;
 
     /// <summary>
     /// Phonetic transcription entries.
@@ -764,7 +763,7 @@ public sealed partial class AffixConfig
     /// UTF-8 characters yet.
     /// </para>
     /// </remarks>
-    public PhoneTable Phone { get; private set; }
+    public PhoneTable Phone { get; private set; } = PhoneTable.Empty;
 
     /// <summary>
     /// Maximum syllable number, that may be in a
@@ -777,7 +776,7 @@ public sealed partial class AffixConfig
     /// Voewls for calculating syllables.
     /// </summary>
     /// <seealso cref="CompoundMaxSyllable"/>
-    public CharacterSet CompoundVowels { get; private set; }
+    public CharacterSet CompoundVowels { get; private set; } = CharacterSet.Empty;
 
     /// <summary>
     /// Extra word characters.
@@ -788,7 +787,7 @@ public sealed partial class AffixConfig
     /// For example, dot, dash, n-dash, numbers, percent sign
     /// are word character in Hungarian.
     /// </remarks>
-    public CharacterSet WordChars { get; private set; }
+    public CharacterSet WordChars { get; private set; } = CharacterSet.Empty;
 
     /// <summary>
     /// Ignored characters (for example, Arabic optional diacretics characters)
@@ -798,7 +797,7 @@ public sealed partial class AffixConfig
     /// Useful for optional characters, as Arabic (harakat) or Hebrew (niqqud) diacritical marks (see
     /// tests/ignore.* test dictionary in Hunspell distribution).
     /// </remarks>
-    public CharacterSet IgnoredChars { get; private set; }
+    public CharacterSet IgnoredChars { get; private set; } = CharacterSet.Empty;
 
     /// <summary>
     /// Affix and dictionary file version string.
@@ -809,7 +808,7 @@ public sealed partial class AffixConfig
     /// The set of cont classes used across all affixes.
     /// </summary>
     /// <seealso cref="AffixEntry.ContClass"/>
-    public FlagSet ContClasses { get; private set; }
+    public FlagSet ContClasses { get; private set; } = FlagSet.Empty;
 
     public bool IsHungarian { get; private set; }
 

@@ -7,6 +7,8 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct BreakSet : IReadOnlyList<string>
 {
+    public static BreakSet Empty { get; } = new(ImmutableArray<string>.Empty);
+
     internal BreakSet(ImmutableArray<string> items)
     {
 #if DEBUG
@@ -18,7 +20,7 @@ public readonly struct BreakSet : IReadOnlyList<string>
     private readonly ImmutableArray<string> _items;
 
     public int Count => _items.Length;
-    public bool IsEmpty => _items.IsEmpty;
+    public bool IsEmpty => _items.IsDefaultOrEmpty;
     public bool HasItems => !IsEmpty;
     public string this[int index] => _items[index];
 

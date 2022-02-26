@@ -41,7 +41,7 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
     private readonly ImmutableArray<string> _morphs;
 
     public int Count => _morphs.Length;
-    public bool IsEmpty => _morphs.IsEmpty;
+    public bool IsEmpty => _morphs.IsDefaultOrEmpty;
     public bool HasItems => !IsEmpty;
     public string this[int index] => _morphs[index];
 

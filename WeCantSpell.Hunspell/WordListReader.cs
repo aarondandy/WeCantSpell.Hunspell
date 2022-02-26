@@ -210,7 +210,7 @@ public sealed class WordListReader
         {
             if (Affix.IsAliasF)
             {
-                if (IntEx.TryParseInvariant(parsed.Flags, out int flagAliasNumber) && Affix.TryGetAliasF(flagAliasNumber, out FlagSet aliasedFlags))
+                if (IntEx.TryParseInvariant(parsed.Flags, out var flagAliasNumber) && Affix.TryGetAliasF(flagAliasNumber, out var aliasedFlags))
                 {
                     flags = aliasedFlags;
                 }
@@ -444,7 +444,7 @@ public sealed class WordListReader
             !flags.Contains(Affix.ForbiddenWord)
         )
         {
-            flags = Builder.Dedup(FlagSet.Union(flags, SpecialFlags.OnlyUpcaseFlag));
+            flags = Builder.Dedup(flags.Union(SpecialFlags.OnlyUpcaseFlag));
             word = HunspellTextFunctions.MakeTitleCase(word, Affix.Culture);
             return AddWord(word, flags, morphs, true, CapitalizationType.Init);
         }

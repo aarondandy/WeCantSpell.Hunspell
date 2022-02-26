@@ -9,6 +9,8 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
 {
+    public static CompoundRuleSet Empty { get; } = new(ImmutableArray<CompoundRule>.Empty);
+
     internal CompoundRuleSet(ImmutableArray<CompoundRule> rules)
     {
 #if DEBUG
@@ -20,7 +22,7 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
     private readonly ImmutableArray<CompoundRule> _rules;
 
     public int Count => _rules.Length;
-    public bool IsEmpty => _rules.IsEmpty;
+    public bool IsEmpty => _rules.IsDefaultOrEmpty;
     public bool HasItems => !IsEmpty;
     public CompoundRule this[int index] => _rules[index];
 

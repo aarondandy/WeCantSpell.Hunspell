@@ -589,7 +589,7 @@ public sealed class AffixReader
 
     private bool TryParseAliasF(ReadOnlySpan<char> parameterText, ImmutableArray<FlagSet>.Builder entries)
     {
-        entries.Add(Builder.Dedup(FlagSet.TakeArray(ParseFlagsInOrder(parameterText))));
+        entries.Add(Builder.Dedup(FlagSet.Create(ParseFlagsInOrder(parameterText))));
         return true;
     }
 
@@ -747,7 +747,7 @@ public sealed class AffixReader
                 }
                 else
                 {
-                    contClass = Builder.Dedup(FlagSet.TakeArray(ParseFlagsInOrder(affixInput.AsSpan(affixSlashIndex + 1))));
+                    contClass = Builder.Dedup(FlagSet.Create(ParseFlagsInOrder(affixInput.AsSpan(affixSlashIndex + 1))));
                 }
             }
             else

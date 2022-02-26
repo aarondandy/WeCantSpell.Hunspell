@@ -65,12 +65,9 @@ sealed class IncrementalWordList
         if (wordIndex < 0) throw new ArgumentOutOfRangeException(nameof(wordIndex));
 #endif
 
-        if (wordIndex < Words.Count && Words[wordIndex] is { } detail)
-        {
-            return detail.ContainsFlag(flag);
-        }
-
-        return false;
+        return wordIndex < Words.Count
+            && Words[wordIndex] is { } detail
+            && detail.ContainsFlag(flag);
     }
 
     public IncrementalWordList CreateIncremented() => new(Words, WNum + 1);

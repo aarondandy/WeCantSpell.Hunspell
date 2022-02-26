@@ -7,6 +7,8 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct CompoundRule : IReadOnlyList<FlagValue>
 {
+    public static CompoundRule Empty { get; } = new(ImmutableArray<FlagValue>.Empty);
+
     internal CompoundRule(ImmutableArray<FlagValue> items)
     {
 #if DEBUG
@@ -18,7 +20,7 @@ public readonly struct CompoundRule : IReadOnlyList<FlagValue>
     private readonly ImmutableArray<FlagValue> _values;
 
     public int Count => _values.Length;
-    public bool IsEmpty => _values.IsEmpty;
+    public bool IsEmpty => _values.IsDefaultOrEmpty;
     public bool HasItems => !IsEmpty;
     public FlagValue this[int index] => _values[index];
 

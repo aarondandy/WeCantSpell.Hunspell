@@ -12,7 +12,7 @@ public class WordEntryDetail : IEquatable<WordEntryDetail>
 
     public WordEntryDetail(FlagSet flags, MorphSet morphs, WordEntryOptions options)
     {
-        Flags = flags ?? FlagSet.Empty;
+        Flags = flags;
         Morphs = morphs;
         Options = options;
     }

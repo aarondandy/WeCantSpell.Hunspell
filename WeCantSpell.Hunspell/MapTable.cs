@@ -7,6 +7,8 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct MapTable : IReadOnlyList<MapEntry>
 {
+    public static MapTable Empty { get; } = new(ImmutableArray<MapEntry>.Empty);
+
     internal MapTable(ImmutableArray<MapEntry> items)
     {
 #if DEBUG
@@ -18,7 +20,8 @@ public readonly struct MapTable : IReadOnlyList<MapEntry>
     private readonly ImmutableArray<MapEntry> _items;
 
     public int Count => _items.Length;
-    public bool IsEmpty => _items.IsEmpty;
+    public bool IsEmpty => _items.IsDefaultOrEmpty;
+    public bool HasItems => !IsEmpty;
     public MapEntry this[int index] => _items[index];
 
     public ImmutableArray<MapEntry>.Enumerator GetEnumerator() => _items.GetEnumerator();

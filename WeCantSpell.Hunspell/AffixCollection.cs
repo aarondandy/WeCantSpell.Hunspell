@@ -141,7 +141,7 @@ public sealed class SuffixCollection : AffixCollection<SuffixEntry>
     {
     }
 
-    internal IEnumerable<Affix<SuffixEntry>> GetMatchingAffixes(string word, FlagSet? groupFlagFilter = null)
+    internal IEnumerable<Affix<SuffixEntry>> GetMatchingAffixes(string word)
     {
         var results = Enumerable.Empty<Affix<SuffixEntry>>();
 
@@ -149,14 +149,7 @@ public sealed class SuffixCollection : AffixCollection<SuffixEntry>
         {
             if (AffixesByIndexedByKey.TryGetValue(word[word.Length - 1], out var indexedGroups))
             {
-                if (groupFlagFilter is null)
-                {
-                    results = getGroupAffixes(word, indexedGroups);
-                }
-                else if (groupFlagFilter.HasItems)
-                {
-                    results = getFilteredGroupAffixes(word, indexedGroups, groupFlagFilter);
-                }
+                results = getGroupAffixes(word, indexedGroups);
             }
 
             if (AffixesWithDots.HasItems)
@@ -180,6 +173,29 @@ public sealed class SuffixCollection : AffixCollection<SuffixEntry>
                 }
             }
         }
+    }
+
+    internal IEnumerable<Affix<SuffixEntry>> GetMatchingAffixes(string word, FlagSet groupFlagFilter)
+    {
+        var results = Enumerable.Empty<Affix<SuffixEntry>>();
+
+        if (!string.IsNullOrEmpty(word))
+        {
+            if (AffixesByIndexedByKey.TryGetValue(word[word.Length - 1], out var indexedGroups))
+            {
+                if (groupFlagFilter.HasItems)
+                {
+                    results = getFilteredGroupAffixes(word, indexedGroups, groupFlagFilter);
+                }
+            }
+
+            if (AffixesWithDots.HasItems)
+            {
+                results = results.Concat(GetMatchingWithDotAffixes(word, HunspellTextFunctions.IsReverseSubset));
+            }
+        }
+
+        return results;
 
         static IEnumerable<Affix<SuffixEntry>> getFilteredGroupAffixes(string word, AffixEntryGroupCollection<SuffixEntry> indexedGroups, FlagSet groupFlagFilter)
         {

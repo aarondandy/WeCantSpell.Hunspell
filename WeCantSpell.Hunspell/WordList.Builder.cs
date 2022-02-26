@@ -21,7 +21,7 @@ public partial class WordList
         internal Builder(AffixConfig affix, Deduper<FlagSet> flagSetDeduper, Deduper<MorphSet> morphSet)
         {
             Affix = affix;
-            FlagSetDeduper = flagSetDeduper ?? new Deduper<FlagSet>(FlagSet.DefaultComparer);
+            FlagSetDeduper = flagSetDeduper ?? new Deduper<FlagSet>(FlagSet.Comparer.Instance);
             FlagSetDeduper.Add(FlagSet.Empty);
             MorphSetDeduper = morphSet ?? new Deduper<MorphSet>(MorphSet.Comparer.Instance);
             MorphSetDeduper.Add(MorphSet.Empty);
@@ -155,22 +155,12 @@ public partial class WordList
                 : new Dictionary<string, List<WordEntryDetail>>((expectedSize / 100) + expectedSize);
         }
 
-        public FlagSet Dedup(FlagSet value) =>
-            value == null
-            ? value
-            : value.Count == 0
-            ? FlagSet.Empty
-            : FlagSetDeduper.GetEqualOrAdd(value);
+        public FlagSet Dedup(FlagSet value) => FlagSetDeduper.GetEqualOrAdd(value);
 
-        public MorphSet Dedup(MorphSet value) =>
-            value == null
-            ? value
-            : value.Count == 0
-            ? MorphSet.Empty
-            : MorphSetDeduper.GetEqualOrAdd(value);
+        public MorphSet Dedup(MorphSet value) => MorphSetDeduper.GetEqualOrAdd(value);
 
         public WordEntryDetail Dedup(WordEntryDetail value) =>
-            value == null
+            value is null
             ? value
             : WordEntryDetailDeduper.GetEqualOrAdd(value);
     }

@@ -8,9 +8,13 @@ using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
-public readonly struct CharacterSet : IReadOnlyList<char>
+public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterSet>
 {
     public static readonly CharacterSet Empty = new(ImmutableArray<char>.Empty);
+
+    public static bool operator ==(CharacterSet left, CharacterSet right) => left.Equals(right);
+
+    public static bool operator !=(CharacterSet left, CharacterSet right) => !(left == right);
 
     public static CharacterSet Create(char value) => new(ImmutableArray.Create(value));
 
@@ -66,7 +70,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>
     private readonly ImmutableArray<char> _values;
 
     public int Count => _values.Length;
-    public bool IsEmpty => _values.IsEmpty;
+    public bool IsEmpty => _values.IsDefaultOrEmpty;
     public bool HasItems => !IsEmpty;
     public char this[int index] => _values[index];
 
@@ -80,6 +84,12 @@ public readonly struct CharacterSet : IReadOnlyList<char>
         _values.BinarySearch(value) >= 0;
 
     public string GetCharactersAsString() => new string(_values.ToArray());
+
+    public bool Equals(CharacterSet obj) => Comparer.Instance.Equals(this, obj);
+
+    public override bool Equals(object? obj) => obj is CharacterSet set && Equals(set);
+
+    public override int GetHashCode() => Comparer.Instance.GetHashCode(this);
 
     public sealed class Comparer : IEqualityComparer<CharacterSet>
     {

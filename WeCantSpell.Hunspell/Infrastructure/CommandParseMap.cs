@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
-class CommandParseMap<TCommand> where TCommand : struct
+readonly struct CommandParseMap<TCommand> where TCommand : struct
 {
     internal CommandParseMap(KeyValuePair<string, TCommand>[] values)
     {
@@ -23,18 +23,17 @@ class CommandParseMap<TCommand> where TCommand : struct
         while (min <= max)
         {
             var mid = (min + max) / 2;
-            var cmp = key.CompareTo(_map[mid].Key.AsSpan(), StringComparison.OrdinalIgnoreCase);
-            if (cmp < 0)
+
+            switch (key.CompareTo(_map[mid].Key.AsSpan(), StringComparison.OrdinalIgnoreCase))
             {
-                max = mid - 1;
-            }
-            else if (cmp > 0)
-            {
-                min = mid + 1;
-            }
-            else
-            {
-                return _map[mid].Value;
+                case < 0:
+                    max = mid - 1;
+                    break;
+                case > 0:
+                    min = mid + 1;
+                    break;
+                default:
+                    return _map[mid].Value;
             }
         }
 

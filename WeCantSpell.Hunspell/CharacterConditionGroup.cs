@@ -23,7 +23,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
     private readonly ImmutableArray<CharacterCondition> _items;
 
     public int Count => _items.Length;
-    public bool IsEmpty => _items.IsEmpty;
+    public bool IsEmpty => _items.IsDefaultOrEmpty;
     public bool HasItems => !IsEmpty;
     public CharacterCondition this[int index] => _items[index];
 

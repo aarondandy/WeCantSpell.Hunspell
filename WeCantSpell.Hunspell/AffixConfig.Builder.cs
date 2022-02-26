@@ -14,7 +14,7 @@ public partial class AffixConfig
     {
         public Builder()
         {
-            FlagSetDeduper = new Deduper<FlagSet>(FlagSet.DefaultComparer);
+            FlagSetDeduper = new Deduper<FlagSet>(FlagSet.Comparer.Instance);
             FlagSetDeduper.Add(FlagSet.Empty);
             MorphSetDeduper = new Deduper<MorphSet>(MorphSet.Comparer.Instance);
             _characterConditionGroupDeduper = new Deduper<CharacterConditionGroup>(CharacterConditionGroup.Comparer.Instance);
@@ -438,7 +438,7 @@ public partial class AffixConfig
 
             config.Suffixes = SuffixCollection.Create(Suffixes);
 
-            config.ContClasses = FlagSet.Union(config.Prefixes.ContClasses, config.Suffixes.ContClasses);
+            config.ContClasses = config.Prefixes.ContClasses.Union(config.Suffixes.ContClasses);
 
             config.Warnings = Warnings.ToImmutable();
 
@@ -454,13 +454,7 @@ public partial class AffixConfig
             Options |= options;
         }
 
-        internal FlagSet Dedup(FlagSet values)
-        {
-#if DEBUG
-            if (values is null) throw new ArgumentNullException(nameof(values));
-#endif
-            return FlagSetDeduper.GetEqualOrAdd(values);
-        }
+        internal FlagSet Dedup(FlagSet values) => FlagSetDeduper.GetEqualOrAdd(values);
 
         internal string Dedup(ReadOnlySpan<char> value) => _stringDeduper.GetEqualOrAdd(value.ToString());
 

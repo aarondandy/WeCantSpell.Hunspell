@@ -20,7 +20,7 @@ public readonly struct AffixEntryGroupCollection<TEntry> : IReadOnlyList<AffixEn
     private readonly ImmutableArray<AffixEntryGroup<TEntry>> _items;
 
     public int Count => _items.Length;
-    public bool IsEmpty => _items.IsEmpty;
+    public bool IsEmpty => _items.IsDefaultOrEmpty;
     public bool HasItems => !IsEmpty;
     public AffixEntryGroup<TEntry> this[int index] => _items[index];
 

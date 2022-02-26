@@ -109,7 +109,7 @@ public abstract class AffixEntry
         Append = affixText ?? string.Empty;
         Conditions = conditions;
         MorphCode = morph;
-        ContClass = contClass ?? FlagSet.Empty;
+        ContClass = contClass;
     }
 
     /// <summary>

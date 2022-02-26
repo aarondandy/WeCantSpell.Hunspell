@@ -7,6 +7,8 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct PhoneTable : IReadOnlyList<PhoneticEntry>
 {
+    public static PhoneTable Empty { get; } = new(ImmutableArray<PhoneticEntry>.Empty);
+
     internal PhoneTable(ImmutableArray<PhoneticEntry> items)
     {
 #if DEBUG
@@ -18,7 +20,7 @@ public readonly struct PhoneTable : IReadOnlyList<PhoneticEntry>
     private readonly ImmutableArray<PhoneticEntry> _items;
 
     public int Count => _items.Length;
-    public bool IsEmpty => _items.IsEmpty;
+    public bool IsEmpty => _items.IsDefaultOrEmpty;
     public bool HasItems => !IsEmpty;
     public PhoneticEntry this[int index] => _items[index];
 

@@ -9,6 +9,8 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct PatternSet : IReadOnlyList<PatternEntry>
 {
+    public static PatternSet Empty { get; } = new(ImmutableArray<PatternEntry>.Empty);
+
     internal PatternSet(ImmutableArray<PatternEntry> patterns)
     {
 #if DEBUG
@@ -21,7 +23,7 @@ public readonly struct PatternSet : IReadOnlyList<PatternEntry>
     private readonly ImmutableArray<PatternEntry> _patterns;
 
     public int Count => _patterns.Length;
-    public bool IsEmpty => _patterns.IsEmpty;
+    public bool IsEmpty => _patterns.IsDefaultOrEmpty;
     public bool HasItems => !IsEmpty;
     public PatternEntry this[int index] => _patterns[index];
 

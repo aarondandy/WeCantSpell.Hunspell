@@ -92,7 +92,7 @@ public readonly struct FlagValue :
     public static FlagSet ParseFlags(string text, FlagMode mode) => ParseFlags(text.AsSpan(), mode);
 
     internal static FlagSet ParseFlags(ReadOnlySpan<char> text, FlagMode mode) =>
-        FlagSet.TakeArray(ParseFlagsInOrder(text, mode));
+        FlagSet.Create(ParseFlagsInOrder(text, mode));
 
     private static FlagValue[] ParseLongFlagsInOrder(ReadOnlySpan<char> text)
     {
