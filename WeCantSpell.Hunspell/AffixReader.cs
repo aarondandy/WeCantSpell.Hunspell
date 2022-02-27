@@ -20,10 +20,8 @@ public sealed class AffixReader
         @"^[\t ]*([^\t ]+)[\t ]+(?:([^\t ]+)[\t ]+([^\t ]+)|([^\t ]+)[\t ]+([^\t ]+)[\t ]+([^\t ]+)(?:[\t ]+(.+))?)[\t ]*(?:[#].*)?$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-    private static readonly string[] DefaultBreakTableEntries = { "-", "^-", "-$" };
-
+    private static readonly ImmutableArray<string> DefaultBreakTableEntries = ImmutableArray.Create("-", "^-", "-$");
     private static readonly CharacterSet DefaultCompoundVowels = CharacterSet.Create("AEIOUaeiou");
-
     private static readonly CommandParseMap<AffixConfigOptions> BitFlagCommandMap;
     private static readonly CommandParseMap<AffixReaderCommandKind> CommandMap;
 
@@ -233,7 +231,8 @@ public sealed class AffixReader
             return true;
         }
 
-        return LogWarning("Failed to parse line: " + line);
+        LogWarning("Failed to parse line: " + line);
+        return false;
 
         static bool isCommentPrefix(char c) => c is '#' or '/';
     }
@@ -249,11 +248,9 @@ public sealed class AffixReader
     {
         if (!IsInitialized(EntryListType.Break))
         {
-            Builder.BreakPoints.Capacity = DefaultBreakTableEntries.Length;
-
             if (Builder.BreakPoints.Count == 0)
             {
-                Builder.BreakPoints.AddRange(DefaultBreakTableEntries.Select(Builder.Dedup));
+                Builder.BreakPoints.AddRange(DefaultBreakTableEntries);
             }
         }
     }
@@ -266,7 +263,8 @@ public sealed class AffixReader
 
         if (CommandMap.TryParse(commandName) is not { } command)
         {
-            return LogWarning($"Unknown command {commandName.ToString()} with params: {parameters.ToString()}");
+            LogWarning($"Unknown command {commandName.ToString()} with params: {parameters.ToString()}");
+            return false;
         }
 
         switch (command)
@@ -282,7 +280,8 @@ public sealed class AffixReader
             case AffixReaderCommandKind.SetEncoding:
                 if (EncodingEx.GetEncodingByName(parameters) is not { } encoding)
                 {
-                    return LogWarning("Failed to get encoding: " + parameters.ToString());
+                    LogWarning("Failed to get encoding: " + parameters.ToString());
+                    return false;
                 }
 
                 Builder.Encoding = encoding;
@@ -321,7 +320,8 @@ public sealed class AffixReader
                 switch (Builder.CompoundMin)
                 {
                     case null:
-                        return LogWarning("Failed to parse CompoundMin: " + parameters.ToString());
+                        LogWarning("Failed to parse CompoundMin: " + parameters.ToString());
+                        return false;
                     case < 1:
                         Builder.CompoundMin = 1;
                         break;
@@ -404,7 +404,8 @@ public sealed class AffixReader
             case AffixReaderCommandKind.AliasM:
                 return TryParseStandardListItem(EntryListType.AliasM, parameters, Builder.AliasM, TryParseAliasM);
             default:
-                return LogWarning($"Unknown parsed command {command}");
+                LogWarning($"Unknown parsed command {command}");
+                return false;
         }
     }
 
@@ -427,33 +428,38 @@ public sealed class AffixReader
 
     private bool TryParseCompoundSyllable(ReadOnlySpan<char> parameters)
     {
-        var ok = parameters.SplitOnTabOrSpace((part, i) =>
+        var state = 0;
+
+        foreach (var part in parameters.SplitOnTabOrSpace())
         {
-            switch (i)
+            if (state == 0)
             {
-                case 0:
-                    if (IntEx.TryParseInvariant(part) is { } maxValue)
-                    {
-                        Builder.CompoundMaxSyllable = maxValue;
-                        Builder.CompoundVowels = DefaultCompoundVowels;
-                        return true;
-                    }
-
-                    return false;
-                case 1:
-                    Builder.CompoundVowels = CharacterSet.Create(part);
-                    return true;
-                default:
-                    return false;
+                if (IntEx.TryParseInvariant(part) is { } maxValue)
+                {
+                    Builder.CompoundMaxSyllable = maxValue;
+                    Builder.CompoundVowels = DefaultCompoundVowels;
+                    state = 1;
+                    continue;
+                }
             }
-        });
+            else if (state == 1)
+            {
+                Builder.CompoundVowels = CharacterSet.Create(part);
+                state = 2;
+                continue;
+            }
 
-        if (!ok)
-        {
-            LogWarning("Failed to parse CompoundMaxSyllable value from: " + parameters.ToString());
+            state = -1;
+            break;
         }
 
-        return ok;
+        if (state > 0)
+        {
+            return true;
+        }
+
+        LogWarning("Failed to parse CompoundMaxSyllable value from: " + parameters.ToString());
+        return false;
     }
 
     private static CultureInfo GetCultureFromLanguage(string language)
@@ -488,29 +494,38 @@ public sealed class AffixReader
 
     private bool TryParsePhone(ReadOnlySpan<char> parameterText, ImmutableArray<PhoneticEntry>.Builder entries)
     {
-        string? rule = null;
-        var replace = string.Empty;
-        var ok = parameterText.SplitOnTabOrSpace((part, i) =>
-        {
-            switch (i)
-            {
-                case 0:
-                    rule = Builder.Dedup(part);
-                    return true;
-                case 1:
-                    replace = Builder.Dedup(part.Without('_'));
-                    return true;
-                default:
-                    return false;
-            }
-        });
+        var rule = ReadOnlySpan<char>.Empty;
+        var replace = ReadOnlySpan<char>.Empty;
+        var state = 0;
 
-        if (rule is null)
+        foreach (var part in parameterText.SplitOnTabOrSpace())
         {
-            return LogWarning("Failed to parse phone line: " + parameterText.ToString());
+            if (state == 0)
+            {
+                rule = part;
+                state = 1;
+                continue;
+            }
+            else if (state == 1)
+            {
+                replace = part;
+                state = 2;
+                continue;
+            }
+            else
+            {
+                state = -1;
+                break;
+            }
         }
 
-        entries.Add(new PhoneticEntry(rule, replace));
+        if (state < 1)
+        {
+            LogWarning("Failed to parse phone line: " + parameterText.ToString());
+            return false;
+        }
+
+        entries.Add(new PhoneticEntry(Builder.Dedup(rule), Builder.Dedup(replace.Without('_'))));
 
         return true;
     }
@@ -554,30 +569,60 @@ public sealed class AffixReader
 
         entries ??= new();
 
-        string? pattern1 = null;
-        string? pattern2 = null;
-        parameterText.SplitOnTabOrSpace((part, i) =>
+        var pattern1 = ReadOnlySpan<char>.Empty;
+        var pattern2 = ReadOnlySpan<char>.Empty;
+        var state = 0;
+        foreach (var part in parameterText.SplitOnTabOrSpace())
         {
-            switch (i)
+            if (state == 0)
             {
-                case 0:
-                    pattern1 = Builder.Dedup(part);
-                    return true;
-                case 1:
-                    pattern2 = Builder.Dedup(part);
-                    return true;
-                default:
-                    return false;
+                pattern1 = part;
+                state = 1;
+                continue;
             }
-        });
-
-        if (pattern1 is null || pattern2 is null)
-        {
-            return LogWarning($"Bad {entryListType}: {parameterText.ToString()}");
+            else if (state == 1)
+            {
+                pattern2 = part;
+                state = 2;
+                break; // There may be comments after this, so processing needs to stop here
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
         }
 
-        entries.AddReplacementEntry(pattern1, pattern2);
+        if (state < 2)
+        {
+            LogWarning($"Bad {entryListType}: {parameterText.ToString()}");
+            return false;
+        }
 
+        var type = ReplacementValueType.Med;
+
+        if (pattern1.StartsWith('_'))
+        {
+            type |= ReplacementValueType.Ini;
+            pattern1 = pattern1.Slice(1);
+        }
+
+        if (pattern1.EndsWith('_'))
+        {
+            type |= ReplacementValueType.Fin;
+            pattern1 = pattern1.Slice(0, pattern1.Length - 1);
+        }
+
+        var pattern1String = Builder.Dedup(pattern1.ReplaceIntoString('_', ' '));
+
+        // find existing entry
+        if (!entries.TryGetValue(pattern1String, out var entry))
+        {
+            // make a new entry if none exists
+            entry = new MultiReplacementEntry(pattern1String);
+            entries[pattern1String] = entry;
+        }
+
+        entry.Set(type, Builder.Dedup(pattern2.ReplaceIntoString('_', ' ')));
         return true;
     }
 
@@ -601,15 +646,13 @@ public sealed class AffixReader
         }
 
         var parts = ImmutableArray.CreateBuilder<string>();
-        parameterText.SplitOnTabOrSpace((part, _) =>
+        foreach (var part in parameterText.SplitOnTabOrSpace())
         {
             if (!part.IsEmpty)
             {
-                parts.Add(part.ToString());
+                parts.Add(Builder.Dedup(part));
             }
-
-            return true;
-        });
+        }
 
         entries.Add(Builder.Dedup(new MorphSet(Builder.DedupIntoImmutableArray(parts, true))));
 
@@ -649,7 +692,7 @@ public sealed class AffixReader
             entryBuilder.AddRange(ParseFlagsInOrder(parameterText));
         }
 
-        entries.Add(new(entryBuilder.ToImmutable(true)));
+        entries.Add(new(entryBuilder.ToImmutable(allowDestructive: true)));
         return true;
     }
 
@@ -666,14 +709,16 @@ public sealed class AffixReader
         var lineMatch = AffixLineRegex.Match(parameterText);
         if (!lineMatch.Success)
         {
-            return LogWarning("Failed to parse affix line: " + parameterText);
+            LogWarning("Failed to parse affix line: " + parameterText);
+            return false;
         }
 
         var lineMatchGroups = lineMatch.Groups;
 
         if (!TryParseFlag(lineMatchGroups[1].Value.AsSpan(), out var characterFlag))
         {
-            return LogWarning($"Failed to parse affix flag for {lineMatchGroups[1].Value} from: {parameterText}");
+            LogWarning($"Failed to parse affix flag for {lineMatchGroups[1].Value} from: {parameterText}");
+            return false;
         }
 
         var affixGroup = groups.FindLast(g => g.AFlag == characterFlag);
@@ -683,7 +728,8 @@ public sealed class AffixReader
         {
             if (affixGroup is not null)
             {
-                return LogWarning($"Duplicate affix group definition for {affixGroup.AFlag} from: {parameterText}");
+                LogWarning($"Duplicate affix group definition for {affixGroup.AFlag} from: {parameterText}");
+                return false;
             }
 
             var options = AffixEntryOptions.None;
@@ -742,7 +788,8 @@ public sealed class AffixReader
                     }
                     else
                     {
-                        return LogWarning($"Failed to parse contclasses from : {parameterText}");
+                        LogWarning($"Failed to parse contclasses from : {parameterText}");
+                        return false;
                     }
                 }
                 else
@@ -813,7 +860,8 @@ public sealed class AffixReader
                     }
                     else
                     {
-                        return LogWarning($"Failed to parse morph {morphAffixText} from: {parameterText}");
+                        LogWarning($"Failed to parse morph {morphAffixText} from: {parameterText}");
+                        return false;
                     }
                 }
                 else
@@ -848,7 +896,8 @@ public sealed class AffixReader
             return true;
         }
 
-        return LogWarning("Affix line not fully parsed: " + parameterText);
+        LogWarning("Affix line not fully parsed: " + parameterText);
+        return false;
     }
 
     private static TEntry CreateEntry<TEntry>(
@@ -942,128 +991,163 @@ public sealed class AffixReader
 
     private bool TryParseReplacements(ReadOnlySpan<char> parameterText, ImmutableArray<SingleReplacement>.Builder entries)
     {
-        string? pattern = null;
-        var outString = string.Empty;
-        var type = ReplacementValueType.Med;
-
-        parameterText.SplitOnTabOrSpace((part, i) =>
+        var pattern = ReadOnlySpan<char>.Empty;
+        var outString = ReadOnlySpan<char>.Empty;
+        var state = 0;
+        foreach (var part in parameterText.SplitOnTabOrSpace())
         {
-            switch (i)
+            if (state == 0)
             {
-                case 0:
-                    type = ReplacementValueType.Med;
-
-                    if (part.EndsWith('$'))
-                    {
-                        type |= ReplacementValueType.Fin;
-                        part = part.Slice(0, part.Length - 1);
-                    }
-
-                    if (part.StartsWith('^'))
-                    {
-                        type |= ReplacementValueType.Ini;
-                        part = part.Slice(1);
-                    }
-
-                    var patternBuilder = StringBuilderPool.Get(part);
-                    patternBuilder.Replace('_', ' ');
-                    pattern = StringBuilderPool.GetStringAndReturn(patternBuilder);
-
-                    return true;
-                case 1:
-                    outString = Builder.Dedup(part.Replace('_', ' '));
-                    return true;
-                default:
-                    return false;
+                pattern = part;
+                state = 1;
+                continue;
             }
-        });
-
-        if (pattern is null)
-        {
-            return LogWarning("Failed to parse replacements from: " + parameterText.ToString());
+            else if (state == 1)
+            {
+                outString = part;
+                state = 2;
+                continue;
+            }
+            else
+            {
+                break;
+            }
         }
 
-        entries.Add(new SingleReplacement(pattern, outString, type));
+        if (state < 1)
+        {
+            LogWarning("Failed to parse replacements from: " + parameterText.ToString());
+            return false;
+        }
+
+        var type = ReplacementValueType.Med;
+
+        if (pattern.StartsWith('^'))
+        {
+            type |= ReplacementValueType.Ini;
+            pattern = pattern.Slice(1);
+        }
+
+        if (pattern.EndsWith('$'))
+        {
+            type |= ReplacementValueType.Fin;
+            pattern = pattern.Slice(0, pattern.Length - 1);
+        }
+
+        entries.Add(new SingleReplacement(
+            Builder.Dedup(pattern.ReplaceIntoString('_', ' ')),
+            Builder.Dedup(outString.ReplaceIntoString('_', ' ')),
+            type));
 
         return true;
     }
 
+    private enum ParseCheckCompoundPatternState : sbyte
+    {
+        ParsePattern1 = 0,
+        ParsePattern2 = 1,
+        ParsePattern3 = 2,
+        Done = 3,
+        UnknownFailure = -1,
+        FailCondition1 = -2,
+        FailCondition2 = -3
+    }
+
     private bool TryParseCheckCompoundPatternIntoCompoundPatterns(ReadOnlySpan<char> parameterText, ImmutableArray<PatternEntry>.Builder entries)
     {
-        string? pattern = null;
-        string pattern2 = string.Empty;
-        string pattern3 = string.Empty;
-        FlagValue condition = default;
+        int slashIndex;
+        var pattern1 = ReadOnlySpan<char>.Empty;
+        var pattern2 = ReadOnlySpan<char>.Empty;
+        var pattern3 = ReadOnlySpan<char>.Empty;
+        FlagValue condition1 = default;
         FlagValue condition2 = default;
-        bool failedParsePattern1 = false;
-        bool failedParsePattern2 = false;
+        var state = ParseCheckCompoundPatternState.ParsePattern1;
 
-        parameterText.SplitOnTabOrSpace((part, i) =>
+        foreach (var part in parameterText.SplitOnTabOrSpace())
         {
-            int slashIndex;
-            switch (i)
+            if (state == ParseCheckCompoundPatternState.ParsePattern1)
             {
-                case 0:
-                    slashIndex = part.IndexOf('/');
-                    if (slashIndex >= 0)
+                slashIndex = part.IndexOf('/');
+                if (slashIndex >= 0)
+                {
+                    condition1 = ParseFlagOrDefault(part.Slice(slashIndex + 1));
+                    if (!condition1.HasValue)
                     {
-                        condition = ParseFlagOrDefault(part.Slice(slashIndex + 1));
-                        if (!condition.HasValue)
-                        {
-                            failedParsePattern1 = true;
-                            return false;
-                        }
-
-                        part = part.Slice(0, slashIndex);
+                        state = ParseCheckCompoundPatternState.FailCondition1;
+                        break;
                     }
 
-                    pattern = part.ToString();
-                    return true;
-                case 1:
-                    slashIndex = part.IndexOf('/');
-                    if (slashIndex >= 0)
-                    {
-                        condition2 = ParseFlagOrDefault(part.Slice(slashIndex + 1));
-                        if (!condition2.HasValue)
-                        {
-                            failedParsePattern2 = true;
-                            return false;
-                        }
+                    pattern1 = part.Slice(0, slashIndex);
+                }
+                else
+                {
+                    pattern1 = part;
+                }
 
-                        part = part.Slice(0, slashIndex);
-                    }
 
-                    pattern2 = part.ToString();
-                    return true;
-                case 2:
-                    pattern3 = part.ToString();
-                    Builder.EnableOptions(AffixConfigOptions.SimplifiedCompound);
-                    return true;
-                default:
-                    return false;
+                state = ParseCheckCompoundPatternState.ParsePattern2;
+                continue;
             }
-        });
+            else if (state == ParseCheckCompoundPatternState.ParsePattern2)
+            {
+                slashIndex = part.IndexOf('/');
+                if (slashIndex >= 0)
+                {
+                    condition2 = ParseFlagOrDefault(part.Slice(slashIndex + 1));
+                    if (!condition2.HasValue)
+                    {
+                        state = ParseCheckCompoundPatternState.FailCondition2;
+                        break;
+                    }
 
-        if (pattern is null)
-        {
-            return LogWarning("Failed to parse compound pattern from: " + parameterText.ToString());
+                    pattern2 = part.Slice(0, slashIndex);
+                }
+                else
+                {
+                    pattern2 = part;
+                }
+
+                state = ParseCheckCompoundPatternState.ParsePattern3;
+                continue;
+            }
+            else if (state == ParseCheckCompoundPatternState.ParsePattern3)
+            {
+                pattern3 = part;
+                Builder.EnableOptions(AffixConfigOptions.SimplifiedCompound);
+
+                state = ParseCheckCompoundPatternState.Done;
+                continue;
+            }
+            else
+            {
+                state = ParseCheckCompoundPatternState.UnknownFailure;
+                break;
+            }
         }
 
-        if (failedParsePattern1)
+        if (state < 0)
         {
-            return LogWarning($"Failed to parse compound pattern 1 {pattern} from: {parameterText.ToString()}");
-        }
+            if (state == ParseCheckCompoundPatternState.FailCondition1)
+            {
+                LogWarning($"Failed to parse pattern condition 1 from: {parameterText.ToString()}");
+            }
+            else if (state == ParseCheckCompoundPatternState.FailCondition2)
+            {
+                LogWarning($"Failed to parse pattern condition 2 from: {parameterText.ToString()}");
+            }
+            else
+            {
+                LogWarning($"Failed to parse compound pattern from: {parameterText.ToString()}");
+            }
 
-        if (failedParsePattern2)
-        {
-            return LogWarning($"Failed to parse compound pattern 2 {pattern2} from: {parameterText.ToString()}");
+            return false;
         }
 
         entries.Add(new PatternEntry(
-            Builder.Dedup(pattern),
+            Builder.Dedup(pattern1),
             Builder.Dedup(pattern2),
             Builder.Dedup(pattern3),
-            condition,
+            condition1,
             condition2));
 
         return true;
@@ -1073,27 +1157,29 @@ public sealed class AffixReader
     {
         if (modeText.IsEmpty)
         {
-            return LogWarning("Attempt to set empty flag mode.");
+            LogWarning("Attempt to set empty flag mode.");
+            return false;
         }
 
         if (TryParseFlagMode(modeText) is not { } mode)
         {
-            return LogWarning($"Unknown FlagMode: {modeText.ToString()}");
+            LogWarning($"Unknown FlagMode: {modeText.ToString()}");
+            return false;
         }
 
-        if (mode == Builder.FlagMode)
+        if (Builder.FlagMode == mode)
         {
-            return LogWarning($"Redundant FlagMode: {modeText.ToString()}");
+            LogWarning($"Redundant FlagMode: {modeText.ToString()}");
+            return false;
         }
 
         Builder.FlagMode = mode;
         return true;
     }
 
-    private bool LogWarning(string text)
+    private void LogWarning(string text)
     {
         Builder.LogWarning(text);
-        return false;
     }
 
     private ReadOnlySpan<char> ReDecodeConvertedStringAsUtf8(ReadOnlySpan<char> decoded) =>

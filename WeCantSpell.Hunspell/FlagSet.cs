@@ -76,15 +76,13 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
         var flags = new Builder();
 
-        text.SplitOnComma((part, _) =>
+        foreach (var part in text.SplitOnComma(StringSplitOptions.RemoveEmptyEntries))
         {
             if (FlagValue.TryParseAsNumber(part, out var value))
             {
                 flags.Add(value);
             }
-
-            return true;
-        });
+        }
 
         return flags.Create(allowDestructive: true);
     }

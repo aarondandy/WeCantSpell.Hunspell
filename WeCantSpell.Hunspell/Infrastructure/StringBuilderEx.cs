@@ -35,6 +35,23 @@ static class StringBuilderEx
         return @this.ToString(startIndex, terminatedIndex - startIndex);
     }
 
+    public static int IndexOf(this StringBuilder @this, char target, int startIndex)
+    {
+#if DEBUG
+        if (startIndex < 0) throw new ArgumentOutOfRangeException(nameof(startIndex));
+#endif
+
+        for (var i = startIndex; i < @this.Length; i++)
+        {
+            if (@this[i] == target)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
     public static int IndexOfNullChar(this StringBuilder @this)
     {
         for (var i = 0; i < @this.Length; i++)

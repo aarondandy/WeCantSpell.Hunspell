@@ -125,15 +125,13 @@ public readonly struct FlagValue :
 
         var flags = new List<FlagValue>();
 
-        text.SplitOnComma((part, _) =>
+        foreach (var part in text.SplitOnComma(StringSplitOptions.RemoveEmptyEntries))
         {
             if (TryParseAsNumber(part, out var value))
             {
                 flags.Add(value);
             }
-
-            return true;
-        });
+        }
 
         return flags.ToArray();
     }

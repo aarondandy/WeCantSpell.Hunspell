@@ -4,22 +4,9 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class MemoryEx
 {
-    public delegate bool SplitPartHandler(ReadOnlySpan<char> part, int index);
-
     public static int IndexOf(this ReadOnlySpan<char> @this, char value, int startIndex)
     {
         var result = @this.Slice(startIndex).IndexOf(value);
-        if (result >= 0)
-        {
-            result += startIndex;
-        }
-
-        return result;
-    }
-
-    public static int IndexOfAny(this ReadOnlySpan<char> @this, char value0, char value1, int startIndex)
-    {
-        var result = @this.Slice(startIndex).IndexOfAny(value0, value1);
         if (result >= 0)
         {
             result += startIndex;
@@ -68,57 +55,81 @@ static class MemoryEx
 
     public static bool EndsWith(this ReadOnlySpan<char> @this, char value) => !@this.IsEmpty && @this[@this.Length - 1] == value;
 
-    public static bool SplitOnComma(this ReadOnlySpan<char> @this, SplitPartHandler partHandler)
+    public static SpanSeparatorSplitEnumerator<char> SplitOnComma(this ReadOnlySpan<char> @this, StringSplitOptions options = StringSplitOptions.None) => new(@this, options, static span => span.IndexOf(','));
+
+    public static SpanSeparatorSplitEnumerator<char> SplitOnTabOrSpace(this ReadOnlySpan<char> @this) => new(@this, StringSplitOptions.RemoveEmptyEntries, static span => span.IndexOfAny(' ', '\t'));
+
+    public ref struct SpanSeparatorSplitEnumerator<T> where T : IEquatable<T>
     {
-        int partIndex = 0;
-        int startIndex = 0;
-        int partLength;
-        while (@this.IndexOf(',', startIndex) is { } commaIndex and >= 0)
+        public delegate int FindNextSeparator(ReadOnlySpan<T> text);
+
+        public SpanSeparatorSplitEnumerator(ReadOnlySpan<T> span, StringSplitOptions options, FindNextSeparator findNextSeparator)
         {
-            partLength = commaIndex - startIndex;
-            if (partLength > 0)
+#if DEBUG
+            if (options != StringSplitOptions.None && options != StringSplitOptions.RemoveEmptyEntries)
             {
-                if (!partHandler(@this.Slice(startIndex, partLength), partIndex))
-                {
-                    return false;
-                }
-
-                partIndex++;
+                throw new ArgumentOutOfRangeException(nameof(options));
             }
+#endif
 
-            startIndex = commaIndex + 1;
+            _span = span;
+            _options = options;
+            _findNextSeparator = findNextSeparator;
         }
 
-        partLength = @this.Length - startIndex;
-        return partLength > 0
-            && partHandler(@this.Slice(startIndex, partLength), partIndex);
-    }
+        private ReadOnlySpan<T> _span;
+        private readonly StringSplitOptions _options;
+        private readonly FindNextSeparator _findNextSeparator;
+        private bool _done = false;
 
-    public static bool Split(this ReadOnlySpan<char> @this, char value0, char value1, SplitPartHandler partHandler)
-    {
-        int partIndex = 0;
-        int startIndex = 0;
-        int partLength;
-        while (@this.IndexOfAny(value0, value1, startIndex) is { } commaIndex and >= 0)
+        public ReadOnlySpan<T> Current { get; private set; } = ReadOnlySpan<T>.Empty;
+
+        public SpanSeparatorSplitEnumerator<T> GetEnumerator() => this;
+
+        public bool MoveNext()
         {
-            partLength = commaIndex - startIndex;
-            if (partLength > 0)
+            if (_options == StringSplitOptions.RemoveEmptyEntries)
             {
-                if (!partHandler(@this.Slice(startIndex, partLength), partIndex++))
+                while (MoveNextPart())
                 {
-                    return false;
+                    if (!Current.IsEmpty)
+                    {
+                        return true;
+                    }
                 }
+
+                return false;
             }
 
-            startIndex = commaIndex + 1;
+            return MoveNextPart();
         }
 
-        partLength = @this.Length - startIndex;
-        return partLength > 0
-            && partHandler(@this.Slice(startIndex, partLength), partIndex);
-    }
+        private bool MoveNextPart()
+        {
+            if (_done)
+            {
+                return false;
+            }
 
-    public static bool SplitOnTabOrSpace(this ReadOnlySpan<char> @this, SplitPartHandler partHandler) => @this.Split(' ', '\t', partHandler);
+            var separatorIndex = _findNextSeparator(_span);
+            if (separatorIndex >= 0)
+            {
+                Current = _span.Slice(0, separatorIndex);
+
+                var nextStartIndex = separatorIndex + 1;
+                _span = _span.Length > nextStartIndex
+                    ? _span.Slice(nextStartIndex)
+                    : ReadOnlySpan<T>.Empty;
+            }
+            else
+            {
+                Current = _span;
+                _done = true;
+            }
+
+            return true;
+        }
+    }
 
     public static string Without(this ReadOnlySpan<char> @this, char value)
     {
@@ -148,24 +159,28 @@ static class MemoryEx
         return StringBuilderPool.GetStringAndReturn(builder);
     }
 
-    public static ReadOnlySpan<char> Replace(this ReadOnlySpan<char> @this, char oldChar, char newChar)
+    public static string ReplaceIntoString(this ReadOnlySpan<char> @this, char oldChar, char newChar)
     {
+        if (@this.IsEmpty)
+        {
+            return string.Empty;
+        }
+
         var replaceIndex = @this.IndexOf(oldChar);
         if (replaceIndex < 0)
         {
-            return @this;
-        }
-        
-        var builder = StringBuilderPool.Get(@this.Length);
-        builder.Append(@this.Slice(0, replaceIndex));
-        builder.Append(newChar);
-        for (var i = replaceIndex + 1; i < @this.Length; i++)
-        {
-            ref readonly var c = ref @this[i];
-            builder.Append((c == oldChar) ? newChar : c);
+            return @this.ToString();
         }
 
-        return StringBuilderPool.GetStringAndReturn(builder).AsSpan();
+        var builder = StringBuilderPool.Get(@this);
+
+        do
+        {
+            builder[replaceIndex] = newChar;
+        }
+        while ((replaceIndex = builder.IndexOf(oldChar, replaceIndex + 1)) >= 0);
+
+        return StringBuilderPool.GetStringAndReturn(builder);
     }
 
     public static ReadOnlySpan<char> Replace(this ReadOnlySpan<char> @this, string oldText, string newText)
