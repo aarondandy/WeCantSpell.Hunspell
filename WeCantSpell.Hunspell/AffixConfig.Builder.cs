@@ -17,6 +17,7 @@ public partial class AffixConfig
             FlagSetDeduper = new Deduper<FlagSet>(FlagSet.Comparer.Instance);
             FlagSetDeduper.Add(FlagSet.Empty);
             MorphSetDeduper = new Deduper<MorphSet>(MorphSet.Comparer.Instance);
+            MorphSetDeduper.Add(MorphSet.Empty);
             _characterConditionGroupDeduper = new Deduper<CharacterConditionGroup>(CharacterConditionGroup.Comparer.Instance);
             _characterConditionGroupDeduper.Add(CharacterConditionGroup.Empty);
             _characterConditionGroupDeduper.Add(CharacterConditionGroup.AllowAnySingleCharacter);

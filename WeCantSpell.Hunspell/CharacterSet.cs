@@ -10,60 +10,46 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterSet>
 {
-    public static readonly CharacterSet Empty = new(ImmutableArray<char>.Empty);
+    public static readonly CharacterSet Empty = new(ImmutableArray<char>.Empty, default);
 
     public static bool operator ==(CharacterSet left, CharacterSet right) => left.Equals(right);
 
     public static bool operator !=(CharacterSet left, CharacterSet right) => !(left == right);
 
-    public static CharacterSet Create(char value) => new(ImmutableArray.Create(value));
+    public static CharacterSet Create(char value) => new(ImmutableArray.Create(value), value);
+
+    public static CharacterSet Create(IEnumerable<char> values)
+    {
+        if (values is null) throw new ArgumentNullException(nameof(values));
+
+        var builder = new Builder();
+        builder.AddRange(values);
+        return builder.Create(allowDestructive: true);
+    }
 
     public static CharacterSet Create(string values)
     {
         if (values is null) throw new ArgumentNullException(nameof(values));
 
-        var builder = ImmutableArray.CreateBuilder<char>(values.Length);
+        return Create(values.AsSpan());
+    }
+
+    public static CharacterSet Create(ReadOnlySpan<char> values)
+    {
+        if (values.IsEmpty)
+        {
+            return Empty;
+        }
+
+        var builder = new Builder(values.Length);
         builder.AddRange(values);
-        builder.Sort();
-        return new(builder.ToImmutable(true));
+        return builder.Create(allowDestructive: true);
     }
 
-    internal static CharacterSet Create(ReadOnlySpan<char> values)
+    private CharacterSet(ImmutableArray<char> values, char mask)
     {
-        var builder = ImmutableArray.CreateBuilder<char>(values.Length);
-
-        foreach (var value in values)
-        {
-            builder.Add(value);
-        }
-
-        builder.Sort();
-
-        return new(builder.ToImmutable(true));
-    }
-
-    private CharacterSet(ImmutableArray<char> values)
-    {
-#if DEBUG
-        for (var i = 1; i < values.Length; i++)
-        {
-            if (values[i-1] > values[i])
-            {
-                throw new ArgumentOutOfRangeException(nameof(values));
-            }
-        }
-#endif
-
-        _mask = default;
+        _mask = mask;
         _values = values;
-
-        foreach (var c in values)
-        {
-            unchecked
-            {
-                _mask |= c;
-            }
-        }
     }
 
     private readonly char _mask;
@@ -78,18 +64,40 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
     IEnumerator<char> IEnumerable<char>.GetEnumerator() => ((IEnumerable<char>)_values).GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_values).GetEnumerator();
 
-    public bool Contains(char value) =>
-        unchecked((value & _mask) != default)
-        &&
-        _values.BinarySearch(value) >= 0;
+    public bool Contains(char value)
+    {
+        if (HasItems)
+        {
+            if (_values.Length == 1)
+            {
+                return _values[0] == value;
+            }
 
-    public string GetCharactersAsString() => new string(_values.ToArray());
+            if (unchecked((value & _mask) != default))
+            {
+                if (_values.Length <= 8)
+                {
+                    return _values.Contains(value);
+                }
 
-    public bool Equals(CharacterSet obj) => Comparer.Instance.Equals(this, obj);
+                return _values.BinarySearch(value) >= 0;
+            }
+        }
+
+        return false;
+    }
+
+    public string GetCharactersAsString()
+    {
+        var builder = StringBuilderPool.Get(_values.AsSpan());
+        return StringBuilderPool.GetStringAndReturn(builder);
+    }
+
+    public bool Equals(CharacterSet obj) => _values.SequenceEqual(obj._values);
 
     public override bool Equals(object? obj) => obj is CharacterSet set && Equals(set);
 
-    public override int GetHashCode() => Comparer.Instance.GetHashCode(this);
+    public override int GetHashCode() => HashCode.Combine(Count, _mask);
 
     public sealed class Comparer : IEqualityComparer<CharacterSet>
     {
@@ -101,7 +109,74 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
         public bool Equals(CharacterSet x, CharacterSet y) => x._values.SequenceEqual(y._values);
 
-        public int GetHashCode(CharacterSet obj) =>
-            ((IStructuralEquatable)obj._values).GetHashCode(EqualityComparer<char>.Default);
+        public int GetHashCode(CharacterSet obj) => HashCode.Combine(obj.Count, obj._mask);
+    }
+
+    public sealed class Builder
+    {
+        public Builder()
+        {
+            _builder = ImmutableArray.CreateBuilder<char>();
+        }
+
+        public Builder(int capacity)
+        {
+            _builder = ImmutableArray.CreateBuilder<char>(capacity);
+        }
+
+        private readonly ImmutableArray<char>.Builder _builder;
+        private char _mask = default;
+
+        public void AddRange(IEnumerable<char> values)
+        {
+            if (values is null) throw new ArgumentNullException(nameof(values));
+
+            foreach (var value in values)
+            {
+                Add(value);
+            }
+        }
+
+        public void AddRange(ReadOnlySpan<char> values)
+        {
+            foreach (var value in values)
+            {
+                Add(value);
+            }
+        }
+
+        public void Add(char value)
+        {
+            if (_builder.Count == 0)
+            {
+                _builder.Add(value);
+                _mask = value;
+                return;
+            }
+
+            var valueIndex = _builder.BinarySearch(value);
+            if (valueIndex < 0)
+            {
+                valueIndex = ~valueIndex; // locate the best insertion point
+
+                if (valueIndex >= _builder.Count)
+                {
+                    _builder.Add(value);
+                }
+                else
+                {
+                    _builder.Insert(valueIndex, value);
+                }
+
+                unchecked
+                {
+                    _mask |= value;
+                }
+            }
+        }
+
+        public CharacterSet Create() => Create(allowDestructive: false);
+
+        internal CharacterSet Create(bool allowDestructive) => new(_builder.ToImmutable(allowDestructive: allowDestructive), _mask);
     }
 }

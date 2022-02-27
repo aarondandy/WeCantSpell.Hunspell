@@ -10,13 +10,13 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 {
-    public static readonly FlagSet Empty = new(ImmutableArray<FlagValue>.Empty);
+    public static readonly FlagSet Empty = new(ImmutableArray<FlagValue>.Empty, default);
 
     public static bool operator ==(FlagSet left, FlagSet right) => left.Equals(right);
 
     public static bool operator !=(FlagSet left, FlagSet right) => !(left == right);
 
-    public static FlagSet Create(FlagValue value) => new(ImmutableArray.Create(value));
+    public static FlagSet Create(FlagValue value) => new(ImmutableArray.Create(value), value);
 
     public static FlagSet Create(IEnumerable<FlagValue> values)
     {
@@ -89,38 +89,6 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         return flags.Create(allowDestructive: true);
     }
 
-    private static char CalculateMask(ImmutableArray<FlagValue> values)
-    {
-#if DEBUG
-        var previous = values.FirstOrDefault();
-#endif
-
-        char mask = default;
-        foreach (var c in values)
-        {
-#if DEBUG
-            if (previous > c)
-            {
-                throw new ArgumentOutOfRangeException(nameof(values));
-            }
-
-            previous = c;
-#endif
-
-            unchecked
-            {
-                mask |= c;
-            }
-        }
-
-        return mask;
-    }
-
-
-    private FlagSet(ImmutableArray<FlagValue> values) : this(values, CalculateMask(values))
-    {
-    }
-
     private FlagSet(ImmutableArray<FlagValue> values, char mask)
     {
         _mask = mask;
@@ -139,7 +107,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     IEnumerator<FlagValue> IEnumerable<FlagValue>.GetEnumerator() => ((IEnumerable<FlagValue>)_values).GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_values).GetEnumerator();
 
-    internal FlagSet Union(FlagValue value)
+    public FlagSet Union(FlagValue value)
     {
         var valueIndex = _values.BinarySearch(value);
         if (valueIndex >= 0)
@@ -281,7 +249,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         public int GetHashCode(FlagSet obj) => HashCode.Combine(obj.Count, obj._mask);
     }
 
-    public class Builder
+    public sealed class Builder
     {
         public Builder()
         {
