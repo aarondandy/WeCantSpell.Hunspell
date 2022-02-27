@@ -10,18 +10,18 @@ public abstract class ReplacementEntry
     public string Pattern { get; }
 
     /// <seealso cref="ReplacementValueType.Med"/>
-    public abstract string Med { get; }
+    public abstract string? Med { get; }
 
     /// <seealso cref="ReplacementValueType.Ini"/>
-    public abstract string Ini { get; }
+    public abstract string? Ini { get; }
 
     /// <seealso cref="ReplacementValueType.Fin"/>
-    public abstract string Fin { get; }
+    public abstract string? Fin { get; }
 
     /// <seealso cref="ReplacementValueType.Isol"/>
-    public abstract string Isol { get; }
+    public abstract string? Isol { get; }
 
-    public abstract string this[ReplacementValueType type] { get; }
+    public abstract string? this[ReplacementValueType type] { get; }
 
     internal string ExtractReplacementText(int remainingCharactersToReplace, bool atStart)
     {

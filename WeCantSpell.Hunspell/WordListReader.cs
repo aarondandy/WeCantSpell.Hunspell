@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.IO;
@@ -17,7 +16,7 @@ public sealed class WordListReader
         @"^\s*(\d+)\s*(?:[#].*)?$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-    private WordListReader(WordList.Builder builder, AffixConfig affix)
+    private WordListReader(WordList.Builder? builder, AffixConfig affix)
     {
         Builder = builder ?? new WordList.Builder(affix);
         Affix = affix;
@@ -30,33 +29,6 @@ public sealed class WordListReader
     private AffixConfig Affix { get; }
 
     private TextInfo TextInfo => Affix.Culture.TextInfo;
-
-    public static async Task<WordList> ReadAsync(Stream dictionaryStream, Stream affixStream)
-    {
-        if (dictionaryStream is null) throw new ArgumentNullException(nameof(dictionaryStream));
-        if (affixStream is null) throw new ArgumentNullException(nameof(affixStream));
-
-        var affixBuilder = new AffixConfig.Builder();
-        var affix = await AffixReader.ReadAsync(affixStream, affixBuilder).ConfigureAwait(false);
-        var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper);
-        return await ReadAsync(dictionaryStream, affix, wordListBuilder);
-    }
-
-    public static async Task<WordList> ReadAsync(IHunspellLineReader dictionaryReader, AffixConfig affix, WordList.Builder builder = null)
-    {
-        if (dictionaryReader is null) throw new ArgumentNullException(nameof(dictionaryReader));
-        if (affix is null) throw new ArgumentNullException(nameof(affix));
-
-        var readerInstance = new WordListReader(builder, affix);
-
-        string line;
-        while ((line = await dictionaryReader.ReadLineAsync().ConfigureAwait(false)) != null)
-        {
-            readerInstance.ParseLine(line);
-        }
-
-        return readerInstance.Builder.MoveToImmutable();
-    }
 
     public static async Task<WordList> ReadFileAsync(string dictionaryFilePath)
     {
@@ -77,16 +49,7 @@ public sealed class WordListReader
         return await ReadFileAsync(dictionaryFilePath, affix, wordListBuilder);
     }
 
-    public static async Task<WordList> ReadAsync(Stream dictionaryStream, AffixConfig affix, WordList.Builder builder = null)
-    {
-        if (dictionaryStream is null) throw new ArgumentNullException(nameof(dictionaryStream));
-        if (affix is null) throw new ArgumentNullException(nameof(affix));
-
-        using var reader = new StaticEncodingLineReader(dictionaryStream, affix.Encoding);
-        return await ReadAsync(reader, affix, builder).ConfigureAwait(false);
-    }
-
-    public static async Task<WordList> ReadFileAsync(string dictionaryFilePath, AffixConfig affix, WordList.Builder builder = null)
+    public static async Task<WordList> ReadFileAsync(string dictionaryFilePath, AffixConfig affix, WordList.Builder? builder = null)
     {
         if (dictionaryFilePath is null) throw new ArgumentNullException(nameof(dictionaryFilePath));
         if (affix is null) throw new ArgumentNullException(nameof(affix));
@@ -95,26 +58,35 @@ public sealed class WordListReader
         return await ReadAsync(stream, affix, builder).ConfigureAwait(false);
     }
 
-    public static WordList Read(Stream dictionaryStream, Stream affixStream)
+    public static async Task<WordList> ReadAsync(Stream dictionaryStream, Stream affixStream)
     {
         if (dictionaryStream is null) throw new ArgumentNullException(nameof(dictionaryStream));
         if (affixStream is null) throw new ArgumentNullException(nameof(affixStream));
 
         var affixBuilder = new AffixConfig.Builder();
-        var affix = AffixReader.Read(affixStream, affixBuilder);
+        var affix = await AffixReader.ReadAsync(affixStream, affixBuilder).ConfigureAwait(false);
         var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper);
-        return Read(dictionaryStream, affix, wordListBuilder);
+        return await ReadAsync(dictionaryStream, affix, wordListBuilder);
     }
 
-    public static WordList Read(IHunspellLineReader dictionaryReader, AffixConfig affix, WordList.Builder builder = null)
+    public static async Task<WordList> ReadAsync(Stream dictionaryStream, AffixConfig affix, WordList.Builder? builder = null)
+    {
+        if (dictionaryStream is null) throw new ArgumentNullException(nameof(dictionaryStream));
+        if (affix is null) throw new ArgumentNullException(nameof(affix));
+
+        using var reader = new StaticEncodingLineReader(dictionaryStream, affix.Encoding);
+        return await ReadAsync(reader, affix, builder).ConfigureAwait(false);
+    }
+
+    public static async Task<WordList> ReadAsync(IHunspellLineReader dictionaryReader, AffixConfig affix, WordList.Builder? builder = null)
     {
         if (dictionaryReader is null) throw new ArgumentNullException(nameof(dictionaryReader));
         if (affix is null) throw new ArgumentNullException(nameof(affix));
 
         var readerInstance = new WordListReader(builder, affix);
 
-        string line;
-        while ((line = dictionaryReader.ReadLine()) != null)
+        string? line;
+        while ((line = await dictionaryReader.ReadLineAsync().ConfigureAwait(false)) != null)
         {
             readerInstance.ParseLine(line);
         }
@@ -141,6 +113,51 @@ public sealed class WordListReader
         return ReadFile(dictionaryFilePath, affix, wordListBuilder);
     }
 
+    public static WordList ReadFile(string dictionaryFilePath, AffixConfig affix, WordList.Builder? builder = null)
+    {
+        if (dictionaryFilePath is null) throw new ArgumentNullException(nameof(dictionaryFilePath));
+        if (affix is null) throw new ArgumentNullException(nameof(affix));
+
+        using var stream = FileStreamEx.OpenReadFileStream(dictionaryFilePath);
+        return Read(stream, affix, builder);
+    }
+
+    public static WordList Read(Stream dictionaryStream, Stream affixStream)
+    {
+        if (dictionaryStream is null) throw new ArgumentNullException(nameof(dictionaryStream));
+        if (affixStream is null) throw new ArgumentNullException(nameof(affixStream));
+
+        var affixBuilder = new AffixConfig.Builder();
+        var affix = AffixReader.Read(affixStream, affixBuilder);
+        var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper);
+        return Read(dictionaryStream, affix, wordListBuilder);
+    }
+
+    public static WordList Read(Stream dictionaryStream, AffixConfig affix, WordList.Builder? builder = null)
+    {
+        if (dictionaryStream is null) throw new ArgumentNullException(nameof(affix));
+        if (affix is null) throw new ArgumentNullException(nameof(affix));
+
+        using var reader = new StaticEncodingLineReader(dictionaryStream, affix.Encoding);
+        return Read(reader, affix, builder);
+    }
+
+    public static WordList Read(IHunspellLineReader dictionaryReader, AffixConfig affix, WordList.Builder? builder = null)
+    {
+        if (dictionaryReader is null) throw new ArgumentNullException(nameof(dictionaryReader));
+        if (affix is null) throw new ArgumentNullException(nameof(affix));
+
+        var readerInstance = new WordListReader(builder, affix);
+
+        string? line;
+        while ((line = dictionaryReader.ReadLine()) is not null)
+        {
+            readerInstance.ParseLine(line);
+        }
+
+        return readerInstance.Builder.MoveToImmutable();
+    }
+
     private static string FindAffixFilePath(string dictionaryFilePath)
     {
         if (dictionaryFilePath is null) throw new ArgumentNullException(nameof(dictionaryFilePath));
@@ -158,24 +175,6 @@ public sealed class WordListReader
         }
 
         return Path.ChangeExtension(dictionaryFilePath, "aff");
-    }
-
-    public static WordList Read(Stream dictionaryStream, AffixConfig affix, WordList.Builder builder = null)
-    {
-        if (dictionaryStream is null) throw new ArgumentNullException(nameof(affix));
-        if (affix is null) throw new ArgumentNullException(nameof(affix));
-
-        using var reader = new StaticEncodingLineReader(dictionaryStream, affix.Encoding);
-        return Read(reader, affix, builder);
-    }
-
-    public static WordList ReadFile(string dictionaryFilePath, AffixConfig affix, WordList.Builder builder = null)
-    {
-        if (dictionaryFilePath is null) throw new ArgumentNullException(nameof(dictionaryFilePath));
-        if (affix is null) throw new ArgumentNullException(nameof(affix));
-
-        using var stream = FileStreamEx.OpenReadFileStream(dictionaryFilePath);
-        return Read(stream, affix, builder);
     }
 
     private bool ParseLine(string line)

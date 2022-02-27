@@ -162,7 +162,7 @@ public readonly struct FlagValue :
 
     public bool Equals(char other) => other == _value;
 
-    public override bool Equals(object obj) =>
+    public override bool Equals(object? obj) =>
         obj switch
         {
             FlagValue value => Equals(value),

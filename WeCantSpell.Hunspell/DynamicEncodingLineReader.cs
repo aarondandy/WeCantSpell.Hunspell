@@ -106,7 +106,7 @@ public sealed class DynamicEncodingLineReader : IHunspellLineReader, IDisposable
         return ProcessLine(StringBuilderPool.GetStringAndReturn(builder));
     }
 
-    public async Task<string> ReadLineAsync()
+    public async Task<string?> ReadLineAsync()
     {
         if (!_hasCheckedForPreamble)
         {

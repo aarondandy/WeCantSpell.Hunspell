@@ -125,6 +125,8 @@ public abstract class AffixCollection<TEntry> :
 
 public sealed class SuffixCollection : AffixCollection<SuffixEntry>
 {
+    public static SuffixCollection Empty { get; } = new();
+
     public static SuffixCollection Create(List<AffixEntryGroup<SuffixEntry>.Builder>? builders)
     {
         var result = new SuffixCollection();
@@ -218,6 +220,8 @@ public sealed class SuffixCollection : AffixCollection<SuffixEntry>
 
 public sealed class PrefixCollection : AffixCollection<PrefixEntry>
 {
+    public static PrefixCollection Empty { get; } = new();
+
     public static PrefixCollection Create(List<AffixEntryGroup<PrefixEntry>.Builder>? builders)
     {
         var result = new PrefixCollection();
