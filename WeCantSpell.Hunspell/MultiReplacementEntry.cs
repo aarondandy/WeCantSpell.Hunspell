@@ -11,25 +11,20 @@ public sealed class MultiReplacementEntry : ReplacementEntry
     {
     }
 
-    public MultiReplacementEntry(string pattern, ReplacementValueType type, string value) : base(pattern)
-    {
-        Set(type, value);
-    }
+    private string? _med;
+    private string? _ini;
+    private string? _fin;
+    private string? _isol;
 
-    private string _med;
-    private string _ini;
-    private string _fin;
-    private string _isol;
+    public override string? Med => _med;
 
-    public override string Med => _med;
+    public override string? Ini => _ini;
 
-    public override string Ini => _ini;
+    public override string? Fin => _fin;
 
-    public override string Fin => _fin;
+    public override string? Isol => _isol;
 
-    public override string Isol => _isol;
-
-    public override string this[ReplacementValueType type] =>
+    public override string? this[ReplacementValueType type] =>
         type switch
         {
             ReplacementValueType.Med => _med,
@@ -78,60 +73,54 @@ public sealed class MultiReplacementEntry : ReplacementEntry
 
 static class MultiReplacementEntryExtensions
 {
-    public static bool AddReplacementEntry(this Dictionary<string, MultiReplacementEntry> list, string pattern1, string pattern2)
+    internal static bool AddReplacementEntry(this Dictionary<string, MultiReplacementEntry> list, string pattern1, string pattern2)
     {
-        if (string.IsNullOrEmpty(pattern1) || pattern2 is null)
+#if DEBUG
+        if (pattern1 is null) throw new ArgumentNullException(nameof(pattern1));
+        if (pattern2 is null) throw new ArgumentNullException(nameof(pattern2));
+#endif
+
+        var pattern1Span = pattern1.AsSpan();
+        var type = ReplacementValueType.Med;
+
+        if (pattern1Span.StartsWith('_'))
         {
-            return false;
+            type |= ReplacementValueType.Ini;
+            pattern1Span = pattern1Span.Slice(1);
         }
 
-        var pattern1Builder = StringBuilderPool.Get(pattern1);
-        ReplacementValueType type;
-        var trailingUnderscore = pattern1Builder.EndsWith('_');
-        if (pattern1Builder.StartsWith('_'))
+        if (pattern1Span.EndsWith('_'))
         {
-            if (trailingUnderscore)
-            {
-                type = ReplacementValueType.Isol;
-                pattern1Builder.Remove(pattern1Builder.Length - 1, 1);
-            }
-            else
-            {
-                type = ReplacementValueType.Ini;
-            }
+            type |= ReplacementValueType.Fin;
+            pattern1Span = pattern1Span.Slice(0, pattern1Span.Length - 1);
+        }
 
-            pattern1Builder.Remove(0, 1);
+        if (type == ReplacementValueType.Med && pattern1Span.Length == pattern1.Length)
+        {
+            pattern1 = pattern1.Replace('_', ' ');
+        }
+        else if (pattern1Span.Contains('_'))
+        {
+            var pattern1Builder = StringBuilderPool.Get(pattern1Span);
+            pattern1Builder.Replace('_', ' ');
+            pattern1 = StringBuilderPool.GetStringAndReturn(pattern1Builder);
         }
         else
         {
-            if (trailingUnderscore)
-            {
-                type = ReplacementValueType.Fin;
-                pattern1Builder.Remove(pattern1Builder.Length - 1, 1);
-            }
-            else
-            {
-                type = ReplacementValueType.Med;
-            }
+            pattern1 = pattern1Span.ToString().Replace('_', ' ');
         }
 
-        pattern1Builder.Replace('_', ' ');
-
-        pattern1 = StringBuilderPool.GetStringAndReturn(pattern1Builder);
         pattern2 = pattern2.Replace('_', ' ');
 
         // find existing entry
-        if (list .TryGetValue(pattern1, out MultiReplacementEntry entry))
-        {
-            entry.Set(type, pattern2);
-        }
-        else
+        if (!list.TryGetValue(pattern1, out var entry))
         {
             // make a new entry if none exists
-            entry = new MultiReplacementEntry(pattern1, type, pattern2);
+            entry = new MultiReplacementEntry(pattern1);
+            list[pattern1] = entry;
         }
 
-        list[pattern1] = entry;
+        entry.Set(type, pattern2);
 
         return true;
     }
