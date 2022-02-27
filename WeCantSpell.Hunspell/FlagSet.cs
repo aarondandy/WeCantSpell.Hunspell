@@ -149,7 +149,9 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
         valueIndex = ~valueIndex; // locate the best insertion point
 
-        return new(valueIndex >= _values.Length ? _values.Add(value) : _values.Insert(valueIndex, value));
+        var newValues = valueIndex >= _values.Length ? _values.Add(value) : _values.Insert(valueIndex, value);
+
+        return new(newValues, unchecked((char)(_mask | value)));
     }
 
     public FlagSet Union(FlagSet other)
@@ -174,7 +176,10 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             return other.Union(_values[0]);
         }
 
-        return Create(_values.Concat(other._values));
+        var builder = new Builder();
+        builder.AddRange(_values);
+        builder.AddRange(other._values);
+        return builder.Create(allowDestructive: true);
     }
 
     public bool Contains(FlagValue value)
@@ -207,29 +212,40 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             return false;
         }
 
-        if (values.Count == 1)
-        {
-            return Contains(values[0]);
-        }
-
         if (Count == 1)
         {
             return values.Contains(_values[0]);
         }
 
-        // TODO: use the sorted nature of the data as an advantage when detecting an intersection
-
-        return Count <= values.Count
-            ? checkIterative(this, values)
-            : checkIterative(values, this);
-
-        static bool checkIterative(FlagSet a, FlagSet b)
+        if (values.Count == 1)
         {
-            foreach (var value in a)
+            return Contains(values[0]);
+        }
+
+        return checkIterative(_values, values._values);
+
+        static bool checkIterative(ImmutableArray<FlagValue> aSet, ImmutableArray<FlagValue> bSet)
+        {
+            int aIndex = 0;
+            int bIndex = 0;
+
+            while (aIndex < aSet.Length && bIndex < bSet.Length)
             {
-                if (b.Contains(value))
+                var a = aSet[aIndex];
+                var b = bSet[bIndex];
+
+                if (a == b)
                 {
                     return true;
+                }
+
+                if (a < b)
+                {
+                    aIndex++;
+                }
+                else
+                {
+                    bIndex++;
                 }
             }
 
@@ -250,7 +266,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     public override bool Equals(object? obj) => obj is FlagSet set && Equals(set);
 
-    public override int GetHashCode() => ((IStructuralEquatable)_values).GetHashCode(EqualityComparer<FlagValue>.Default);
+    public override int GetHashCode() => HashCode.Combine(Count, _mask);
 
     public class Comparer : IEqualityComparer<FlagSet>
     {
@@ -261,7 +277,8 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         }
 
         public bool Equals(FlagSet x, FlagSet y) => x._values.SequenceEqual(y._values);
-        public int GetHashCode(FlagSet obj) => ((IStructuralEquatable)obj._values).GetHashCode(EqualityComparer<FlagValue>.Default);
+
+        public int GetHashCode(FlagSet obj) => HashCode.Combine(obj.Count, obj._mask);
     }
 
     public class Builder
@@ -276,15 +293,28 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             _builder = ImmutableArray.CreateBuilder<FlagValue>(capacity);
         }
 
-        internal Builder(ImmutableArray<FlagValue>.Builder builder)
-        {
-            _builder = builder;
-        }
-
         private readonly ImmutableArray<FlagValue>.Builder _builder;
+        private char _mask = default;
+
+        public void AddRange(IEnumerable<FlagValue> values)
+        {
+            if (values is null) throw new ArgumentNullException(nameof(values));
+
+            foreach (var value in values)
+            {
+                Add(value);
+            }
+        }
 
         public void Add(FlagValue value)
         {
+            if (_builder.Count == 0)
+            {
+                _builder.Add(value);
+                _mask = value;
+                return;
+            }
+
             var valueIndex = _builder.BinarySearch(value);
             if (valueIndex < 0)
             {
@@ -298,31 +328,63 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
                 {
                     _builder.Insert(valueIndex, value);
                 }
-            }
-        }
 
-        public void AddRange(IEnumerable<FlagValue> values)
-        {
-            if (values is null) throw new ArgumentNullException(nameof(values));
-
-            foreach (var value in values)
-            {
-                Add(value);
+                unchecked
+                {
+                    _mask |= value;
+                }
             }
         }
 
         public void AddRange(FlagSet values)
         {
-            // TODO: use the sorted nature of the data to improve performance for binary search and insert
+            if (_builder.Count == 0)
+            {
+                _builder.AddRange(values._values);
+                _mask = values._mask;
+                return;
+            }
 
+            if (values.IsEmpty)
+            {
+                return;
+            }
+
+            var lowBoundIndex = 0;
             foreach (var value in values)
             {
-                Add(value);
+                unchecked
+                {
+                    _mask |= value;
+                }
+
+                var valueIndex = _builder.BinarySearch(value, lowBoundIndex, _builder.Count - 1);
+                if (valueIndex < 0)
+                {
+                    valueIndex = ~valueIndex; // locate the best insertion point
+
+                    if (valueIndex >= _builder.Count)
+                    {
+#if DEBUG
+                        if (valueIndex > _builder.Count)
+                        {
+                            throw new InvalidOperationException();
+                        }
+#endif
+                        _builder.Add(value);
+                    }
+                    else
+                    {
+                        _builder.Insert(valueIndex, value);
+                    }
+                }
+
+                lowBoundIndex = valueIndex;
             }
         }
 
-        public FlagSet Create() => new(_builder.ToImmutable());
+        public FlagSet Create() => Create(allowDestructive: false);
 
-        internal FlagSet Create(bool allowDestructive) => new(_builder.ToImmutable(allowDestructive: allowDestructive));
+        internal FlagSet Create(bool allowDestructive) => new(_builder.ToImmutable(allowDestructive: allowDestructive), _mask);
     }
 }
