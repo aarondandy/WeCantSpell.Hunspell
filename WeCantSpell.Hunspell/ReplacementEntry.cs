@@ -23,7 +23,7 @@ public abstract class ReplacementEntry
 
     public abstract string? this[ReplacementValueType type] { get; }
 
-    internal string ExtractReplacementText(int remainingCharactersToReplace, bool atStart)
+    internal string? ExtractReplacementText(int remainingCharactersToReplace, bool atStart)
     {
         var type = remainingCharactersToReplace == Pattern.Length
             ? ReplacementValueType.Fin

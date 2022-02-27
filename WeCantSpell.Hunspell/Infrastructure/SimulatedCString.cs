@@ -74,7 +74,6 @@ ref struct SimulatedCString
     public void Destroy()
     {
         ResetCache();
-        _buffer = null;
     }
 
     public override string ToString()

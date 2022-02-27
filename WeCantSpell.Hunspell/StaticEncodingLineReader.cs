@@ -40,9 +40,9 @@ public sealed class StaticEncodingLineReader : IHunspellLineReader, IDisposable
         return await reader.ReadLinesAsync().ConfigureAwait(false);
     }
 
-    public string ReadLine() => _reader.ReadLine();
+    public string? ReadLine() => _reader.ReadLine();
 
-    public Task<string> ReadLineAsync() => _reader.ReadLineAsync();
+    public Task<string?> ReadLineAsync() => _reader.ReadLineAsync();
 
     public void Dispose()
     {

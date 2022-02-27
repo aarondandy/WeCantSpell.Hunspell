@@ -17,7 +17,7 @@ public sealed class StringValueLineReader : IHunspellLineReader
 
     public Encoding CurrentEncoding => Encoding.Unicode;
 
-    public string ReadLine()
+    public string? ReadLine()
     {
         if (_content is null || _position >= _content.Length)
         {
@@ -35,5 +35,5 @@ public sealed class StringValueLineReader : IHunspellLineReader
         return result;
     }
 
-    public Task<string> ReadLineAsync() => Task.FromResult(ReadLine());
+    public Task<string?> ReadLineAsync() => Task.FromResult(ReadLine());
 }

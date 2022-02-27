@@ -44,6 +44,8 @@ public sealed class DynamicEncodingLineReader : IHunspellLineReader, IDisposable
     public DynamicEncodingLineReader(Stream stream, Encoding initialEncoding)
     {
         _stream = stream ?? throw new ArgumentNullException(nameof(stream));
+        _decoder = null!;
+        CurrentEncoding = null!;
         ChangeEncoding(initialEncoding ?? throw new ArgumentNullException(nameof(initialEncoding)));
     }
 
@@ -138,7 +140,7 @@ public sealed class DynamicEncodingLineReader : IHunspellLineReader, IDisposable
 
         for (var i = 0; i < _charBufferUsedSize; i++)
         {
-            var charValue = _charBuffer[i];
+            var charValue = _charBuffer![i];
             if (charValue != '\r' && charValue != '\n')
             {
                 firstNonLineBreakCharacter = i;
@@ -148,7 +150,7 @@ public sealed class DynamicEncodingLineReader : IHunspellLineReader, IDisposable
 
         for (var i = _charBufferUsedSize - 1; i >= 0; i--)
         {
-            var charValue = _charBuffer[i];
+            var charValue = _charBuffer![i];
             if (charValue != '\r' && charValue != '\n')
             {
                 lastNonLineBreakCharacter = i;
@@ -241,7 +243,7 @@ public sealed class DynamicEncodingLineReader : IHunspellLineReader, IDisposable
             chars.Length,
             false,
             out _,
-            out int charsProduced,
+            out var charsProduced,
             out _);
 
         return charsProduced;
@@ -253,9 +255,9 @@ public sealed class DynamicEncodingLineReader : IHunspellLineReader, IDisposable
     private async Task<bool> ReadPreambleAsync() =>
         HandlePreambleBytes(await ReadBytesAsync(MaxPreambleLengthInBytes).ConfigureAwait(false));
 
-    private bool HandlePreambleBytes(byte[] possiblePreambleBytes)
+    private bool HandlePreambleBytes(byte[]? possiblePreambleBytes)
     {
-        if (possiblePreambleBytes is null || possiblePreambleBytes.Length == 0)
+        if (possiblePreambleBytes is not { Length: > 0 })
         {
             return false;
         }
@@ -264,7 +266,7 @@ public sealed class DynamicEncodingLineReader : IHunspellLineReader, IDisposable
         foreach (var candidateEncoding in PreambleEncodings)
         {
             var encodingPreamble = candidateEncoding.GetPreamble();
-            if (encodingPreamble is null || encodingPreamble.Length == 0)
+            if (encodingPreamble is not { Length: > 0 })
             {
                 continue;
             }
@@ -297,7 +299,7 @@ public sealed class DynamicEncodingLineReader : IHunspellLineReader, IDisposable
         return HandleReadByteIncrement();
     }
 
-    private byte[] ReadBytes(int count)
+    private byte[]? ReadBytes(int count)
     {
         var result = new byte[count];
         var resultOffset = 0;
@@ -327,7 +329,7 @@ public sealed class DynamicEncodingLineReader : IHunspellLineReader, IDisposable
         return HandleReadByteIncrement();
     }
 
-    private async Task<byte[]> ReadBytesAsync(int count)
+    private async Task<byte[]?> ReadBytesAsync(int count)
     {
         var result = new byte[count];
         var resultOffset = 0;
@@ -348,7 +350,7 @@ public sealed class DynamicEncodingLineReader : IHunspellLineReader, IDisposable
 
     private int HandleReadByteIncrement()
     {
-        var result = _buffer[_bufferIndex];
+        var result = _buffer![_bufferIndex];
         if (1 >= _byteBufferUsedSize - _bufferIndex)
         {
             _bufferIndex = _byteBufferUsedSize;
@@ -366,14 +368,14 @@ public sealed class DynamicEncodingLineReader : IHunspellLineReader, IDisposable
         var bytesLeftInBuffer = _byteBufferUsedSize - _bufferIndex;
         if (bytesNeeded >= bytesLeftInBuffer)
         {
-            Buffer.BlockCopy(_buffer, _bufferIndex, result, resultOffset, bytesLeftInBuffer);
+            Buffer.BlockCopy(_buffer!, _bufferIndex, result, resultOffset, bytesLeftInBuffer);
             _bufferIndex = _byteBufferUsedSize;
             resultOffset += bytesLeftInBuffer;
             bytesNeeded -= bytesLeftInBuffer;
         }
         else
         {
-            Buffer.BlockCopy(_buffer, _bufferIndex, result, resultOffset, bytesNeeded);
+            Buffer.BlockCopy(_buffer!, _bufferIndex, result, resultOffset, bytesNeeded);
             _bufferIndex += bytesNeeded;
             resultOffset += bytesNeeded;
             bytesNeeded = 0;
@@ -473,9 +475,14 @@ public sealed class DynamicEncodingLineReader : IHunspellLineReader, IDisposable
         ChangeEncoding(newEncoding);
     }
 
-    private void ChangeEncoding(Encoding newEncoding)
+    private void ChangeEncoding(Encoding? newEncoding)
     {
-        if (CurrentEncoding is not null && (newEncoding is null || ReferenceEquals(newEncoding, CurrentEncoding) || CurrentEncoding.Equals(newEncoding)))
+        if (newEncoding is null)
+        {
+            return;
+        }
+
+        if (CurrentEncoding is not null && (ReferenceEquals(newEncoding, CurrentEncoding) || CurrentEncoding.Equals(newEncoding)))
         {
             return;
         }
