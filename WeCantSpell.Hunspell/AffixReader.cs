@@ -589,7 +589,7 @@ public sealed class AffixReader
 
     private bool TryParseAliasF(ReadOnlySpan<char> parameterText, ImmutableArray<FlagSet>.Builder entries)
     {
-        entries.Add(Builder.Dedup(FlagSet.Create(ParseFlagsInOrder(parameterText))));
+        entries.Add(Builder.Dedup(ParseFlagSet(parameterText)));
         return true;
     }
 
@@ -747,7 +747,7 @@ public sealed class AffixReader
                 }
                 else
                 {
-                    contClass = Builder.Dedup(FlagSet.Create(ParseFlagsInOrder(affixInput.AsSpan(affixSlashIndex + 1))));
+                    contClass = Builder.Dedup(ParseFlagSet(affixInput.AsSpan(affixSlashIndex + 1)));
                 }
             }
             else
@@ -1099,34 +1099,36 @@ public sealed class AffixReader
     private ReadOnlySpan<char> ReDecodeConvertedStringAsUtf8(ReadOnlySpan<char> decoded) =>
         HunspellTextFunctions.ReDecodeConvertedStringAsUtf8(decoded, Builder.Encoding ?? Reader.CurrentEncoding);
 
-    private FlagValue[] ParseFlagsInOrder(ReadOnlySpan<char> text)
+    private FlagValue[] ParseFlagsInOrder(ReadOnlySpan<char> text) => Builder.FlagMode switch
     {
-        var flagMode = Builder.FlagMode;
-        return flagMode == FlagMode.Uni
-            ? FlagValue.ParseFlagsInOrder(ReDecodeConvertedStringAsUtf8(text), FlagMode.Char)
-            : FlagValue.ParseFlagsInOrder(text, flagMode);
-    }
+        FlagMode.Char => FlagValue.ParseAsChars(text),
+        FlagMode.Uni => FlagValue.ParseAsChars(ReDecodeConvertedStringAsUtf8(text)),
+        FlagMode.Long => FlagValue.ParseAsLongs(text),
+        FlagMode.Num => FlagValue.ParseAsNumbers(text),
+        _ => throw new NotSupportedException()
+    };
 
-    private bool TryParseFlag(ReadOnlySpan<char> text, out FlagValue value)
+    private FlagSet ParseFlagSet(ReadOnlySpan<char> text) => Builder.FlagMode switch
     {
-        var flagMode = Builder.FlagMode;
-        return flagMode == FlagMode.Uni
-            ? FlagValue.TryParseFlag(ReDecodeConvertedStringAsUtf8(text), FlagMode.Char, out value)
-            : FlagValue.TryParseFlag(text, flagMode, out value);
-    }
+        FlagMode.Char => FlagSet.ParseAsChars(text),
+        FlagMode.Uni => FlagSet.ParseAsChars(ReDecodeConvertedStringAsUtf8(text)),
+        FlagMode.Long => FlagSet.ParseAsLongs(text),
+        FlagMode.Num => FlagSet.ParseAsNumbers(text),
+        _ => throw new NotSupportedException()
+    };
+
+    private bool TryParseFlag(ReadOnlySpan<char> text, out FlagValue value) => Builder.FlagMode switch
+    {
+        FlagMode.Char => FlagValue.TryParseAsChar(text, out value),
+        FlagMode.Uni => FlagValue.TryParseAsChar(ReDecodeConvertedStringAsUtf8(text), out value),
+        FlagMode.Long => FlagValue.TryParseAsLong(text, out value),
+        FlagMode.Num => FlagValue.TryParseAsNumber(text, out value),
+        _ => throw new NotSupportedException()
+    };
 
     private FlagValue ParseFlagOrDefault(ReadOnlySpan<char> text)
     {
-        FlagValue result;
-        if (Builder.FlagMode == FlagMode.Uni)
-        {
-            FlagValue.TryParseFlag(ReDecodeConvertedStringAsUtf8(text), FlagMode.Char, out result);
-        }
-        else
-        {
-            FlagValue.TryParseFlag(text, Builder.FlagMode, out result);
-        }
-
+        TryParseFlag(text, out var result);
         return result;
     }
 

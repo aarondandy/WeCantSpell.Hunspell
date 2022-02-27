@@ -87,4 +87,52 @@ static class CollectionsEx
 
     public static ImmutableArray<T> ToImmutable<T>(this ImmutableArray<T>.Builder builder, bool allowDestructive) =>
         allowDestructive && builder.Capacity == builder.Count ? builder.MoveToImmutable() : builder.ToImmutable();
+
+    public static int BinarySearch<T>(this ImmutableArray<T>.Builder builder, T value) where T : IComparable<T>
+    {
+        var low = 0;
+        var high = builder.Count - 1;
+
+        while (low <= high)
+        {
+            var mid = (low + high) / 2;
+
+            switch (builder[mid].CompareTo(value))
+            {
+                case 0: return mid;
+                case < 0:
+                    low = mid + 1;
+                    break;
+                default:
+                    high = mid - 1;
+                    break;
+            }
+        }
+
+        return ~low;
+    }
+
+    public static int BinarySearch<TValue>(this KeyValuePair<string, TValue>[] array, ReadOnlySpan<char> value, StringComparison comparison)
+    {
+        var low = 0;
+        var high = array.Length - 1;
+
+        while (low <= high)
+        {
+            var mid = (low + high) / 2;
+
+            switch (array[mid].Key.AsSpan().CompareTo(value, comparison))
+            {
+                case 0: return mid;
+                case < 0:
+                    low = mid + 1;
+                    break;
+                default:
+                    high = mid - 1;
+                    break;
+            }
+        }
+
+        return ~low;
+    }
 }

@@ -220,13 +220,9 @@ public sealed class WordListReader
                     return false;
                 }
             }
-            else if (Affix.FlagMode == FlagMode.Uni)
-            {
-                flags = Builder.Dedup(FlagValue.ParseFlags(HunspellTextFunctions.ReDecodeConvertedStringAsUtf8(parsed.Flags, Affix.Encoding), FlagMode.Char));
-            }
             else
             {
-                flags = Builder.Dedup(FlagValue.ParseFlags(parsed.Flags, Affix.FlagMode));
+                flags = Builder.Dedup(ParseFlagSet(parsed.Flags));
             }
         }
         else
@@ -236,6 +232,15 @@ public sealed class WordListReader
 
         return AddWord(parsed.Word.ToString(), flags, parsed.Morphs);
     }
+
+    private FlagSet ParseFlagSet(ReadOnlySpan<char> text) => Affix.FlagMode switch
+    {
+        FlagMode.Char => FlagSet.ParseAsChars(text),
+        FlagMode.Uni => FlagSet.ParseAsChars(HunspellTextFunctions.ReDecodeConvertedStringAsUtf8(text, Affix.Encoding)),
+        FlagMode.Long => FlagSet.ParseAsLongs(text),
+        FlagMode.Num => FlagSet.ParseAsNumbers(text),
+        _ => throw new NotSupportedException()
+    };
 
     private bool AttemptToProcessInitializationLine(string line)
     {

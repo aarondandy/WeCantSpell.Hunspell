@@ -22,51 +22,71 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     {
         if (values is null) throw new ArgumentNullException(nameof(values));
 
-        var hashSet = new HashSet<FlagValue>();
-        var builder = ImmutableArray.CreateBuilder<FlagValue>();
-
-        foreach (var value in values)
-        {
-            if (hashSet.Add(value))
-            {
-                builder.Add(value);
-            }
-        }
-
-        builder.Sort();
-
-        return new(builder.ToImmutable(allowDestructive: true));
-    }
-
-    [Obsolete]
-    internal static FlagSet Create(FlagValue[] values)
-    {
-        if (values is null) throw new ArgumentNullException(nameof(values));
-
-        var builder = ImmutableArray.CreateBuilder<FlagValue>(values.Length);
+        var builder = values is ICollection collection ? new Builder(collection.Count) : new Builder();
         builder.AddRange(values);
-        return CreateDestructuve(builder);
+        return builder.Create(allowDestructive: true);
     }
 
-    internal static FlagSet CreateDestructuve(ImmutableArray<FlagValue>.Builder builder)
+    internal static FlagSet ParseAsChars(ReadOnlySpan<char> text)
     {
-        var hashSet = new HashSet<FlagValue>();
-
-        var i = 0;
-        while (i < builder.Count)
+        if (text.IsEmpty)
         {
-            if (hashSet.Add(builder[i]))
-            {
-                i++;
-            }
-            else
-            {
-                builder.RemoveAt(i);
-            }
+            return Empty;
         }
 
-        builder.Sort();
-        return new(builder.ToImmutable(allowDestructive: true));
+        var builder = new Builder(text.Length);
+
+        foreach (var @char in text)
+        {
+            builder.Add(new FlagValue(@char));
+        }
+
+        return builder.Create(allowDestructive: true);
+    }
+
+    internal static FlagSet ParseAsLongs(ReadOnlySpan<char> text)
+    {
+        if (text.IsEmpty)
+        {
+            return Empty;
+        }
+
+        var lastIndex = text.Length - 1;
+        var builder = new Builder((text.Length + 1) / 2);
+
+        for (var i = 0; i < lastIndex; i += 2)
+        {
+            builder.Add(FlagValue.CreateAsLong(text[i], text[i + 1]));
+        }
+
+        if (lastIndex % 2 == 0)
+        {
+            builder.Add(new FlagValue(text[lastIndex]));
+        }
+
+        return builder.Create(allowDestructive: true);
+    }
+
+    internal static FlagSet ParseAsNumbers(ReadOnlySpan<char> text)
+    {
+        if (text.IsEmpty)
+        {
+            return Empty;
+        }
+
+        var flags = new Builder();
+
+        text.SplitOnComma((part, _) =>
+        {
+            if (FlagValue.TryParseAsNumber(part, out var value))
+            {
+                flags.Add(value);
+            }
+
+            return true;
+        });
+
+        return flags.Create(allowDestructive: true);
     }
 
     private static char CalculateMask(ImmutableArray<FlagValue> values)
@@ -242,5 +262,67 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
         public bool Equals(FlagSet x, FlagSet y) => x._values.SequenceEqual(y._values);
         public int GetHashCode(FlagSet obj) => ((IStructuralEquatable)obj._values).GetHashCode(EqualityComparer<FlagValue>.Default);
+    }
+
+    public class Builder
+    {
+        public Builder()
+        {
+            _builder = ImmutableArray.CreateBuilder<FlagValue>();
+        }
+
+        public Builder(int capacity)
+        {
+            _builder = ImmutableArray.CreateBuilder<FlagValue>(capacity);
+        }
+
+        internal Builder(ImmutableArray<FlagValue>.Builder builder)
+        {
+            _builder = builder;
+        }
+
+        private readonly ImmutableArray<FlagValue>.Builder _builder;
+
+        public void Add(FlagValue value)
+        {
+            var valueIndex = _builder.BinarySearch(value);
+            if (valueIndex < 0)
+            {
+                valueIndex = ~valueIndex; // locate the best insertion point
+
+                if (valueIndex >= _builder.Count)
+                {
+                    _builder.Add(value);
+                }
+                else
+                {
+                    _builder.Insert(valueIndex, value);
+                }
+            }
+        }
+
+        public void AddRange(IEnumerable<FlagValue> values)
+        {
+            if (values is null) throw new ArgumentNullException(nameof(values));
+
+            foreach (var value in values)
+            {
+                Add(value);
+            }
+        }
+
+        public void AddRange(FlagSet values)
+        {
+            // TODO: use the sorted nature of the data to improve performance for binary search and insert
+
+            foreach (var value in values)
+            {
+                Add(value);
+            }
+        }
+
+        public FlagSet Create() => new(_builder.ToImmutable());
+
+        internal FlagSet Create(bool allowDestructive) => new(_builder.ToImmutable(allowDestructive: allowDestructive));
     }
 }
