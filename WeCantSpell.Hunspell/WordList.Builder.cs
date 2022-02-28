@@ -10,23 +10,13 @@ public partial class WordList
 {
     public sealed class Builder
     {
-        public Builder() : this(null, null, null)
+        public Builder() : this(new AffixConfig.Builder().MoveToImmutable())
         {
         }
 
-        public Builder(AffixConfig affix) : this(affix, null, null)
-        {
-        }
-
-        internal Builder(AffixConfig affix, Deduper<FlagSet> flagSetDeduper, Deduper<MorphSet> morphSet)
+        public Builder(AffixConfig affix)
         {
             Affix = affix;
-            FlagSetDeduper = flagSetDeduper ?? new Deduper<FlagSet>(FlagSet.Comparer.Instance);
-            FlagSetDeduper.Add(FlagSet.Empty);
-            MorphSetDeduper = morphSet ?? new Deduper<MorphSet>(MorphSet.Comparer.Instance);
-            MorphSetDeduper.Add(MorphSet.Empty);
-            WordEntryDetailDeduper = new Deduper<WordEntryDetail>(EqualityComparer<WordEntryDetail>.Default);
-            WordEntryDetailDeduper.Add(WordEntryDetail.Default);
         }
 
         private Dictionary<string, List<WordEntryDetail>> EntryDetailsByRoot;
@@ -37,12 +27,6 @@ public partial class WordList
         /// Spelling replacement suggestions based on phonetics.
         /// </summary>
         public ImmutableArray<SingleReplacement>.Builder PhoneticReplacements { get; } = ImmutableArray.CreateBuilder<SingleReplacement>();
-
-        internal readonly Deduper<FlagSet> FlagSetDeduper;
-
-        internal readonly Deduper<MorphSet> MorphSetDeduper;
-
-        internal readonly Deduper<WordEntryDetail> WordEntryDetailDeduper;
 
         public void Add(string word, WordEntryDetail detail)
         {
@@ -70,17 +54,15 @@ public partial class WordList
 
         private WordList ToImmutable(bool destructive)
         {
-            var affix = Affix ?? new AffixConfig.Builder().MoveToImmutable();
-
-            var result = new WordList(affix);
-            result.NGramRestrictedFlags = Dedup(FlagSet.Create(new[]
+            var result = new WordList(Affix);
+            result.NGramRestrictedFlags = FlagSet.Create(new[]
             {
-                affix.ForbiddenWord,
-                affix.NoSuggest,
-                affix.NoNgramSuggest,
-                affix.OnlyInCompound,
+                Affix.ForbiddenWord,
+                Affix.NoSuggest,
+                Affix.NoNgramSuggest,
+                Affix.OnlyInCompound,
                 SpecialFlags.OnlyUpcaseFlag
-            }));
+            });
 
             if (EntryDetailsByRoot is null)
             {
@@ -100,7 +82,7 @@ public partial class WordList
                 }
             }
 
-            result.AllReplacements = affix.Replacements;
+            result.AllReplacements = Affix.Replacements;
             if (PhoneticReplacements is { Count: > 0 })
             {
                 // store ph: field of a morphological description in reptable
@@ -154,14 +136,5 @@ public partial class WordList
                 // PERF: because we add more entries than we are told about, we add a bit more to the expected size
                 : new Dictionary<string, List<WordEntryDetail>>((expectedSize / 100) + expectedSize);
         }
-
-        public FlagSet Dedup(FlagSet value) => FlagSetDeduper.GetEqualOrAdd(value);
-
-        public MorphSet Dedup(MorphSet value) => MorphSetDeduper.GetEqualOrAdd(value);
-
-        public WordEntryDetail Dedup(WordEntryDetail value) =>
-            value is null
-            ? value
-            : WordEntryDetailDeduper.GetEqualOrAdd(value);
     }
 }

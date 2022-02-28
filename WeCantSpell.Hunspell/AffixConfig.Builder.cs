@@ -14,13 +14,6 @@ public partial class AffixConfig
     {
         public Builder()
         {
-            FlagSetDeduper = new Deduper<FlagSet>(FlagSet.Comparer.Instance);
-            FlagSetDeduper.Add(FlagSet.Empty);
-            MorphSetDeduper = new Deduper<MorphSet>(MorphSet.Comparer.Instance);
-            MorphSetDeduper.Add(MorphSet.Empty);
-            _characterConditionGroupDeduper = new Deduper<CharacterConditionGroup>(CharacterConditionGroup.Comparer.Instance);
-            _characterConditionGroupDeduper.Add(CharacterConditionGroup.Empty);
-            _characterConditionGroupDeduper.Add(CharacterConditionGroup.AllowAnySingleCharacter);
             _stringDeduper = new Deduper<string>(StringComparer.Ordinal);
             _stringDeduper.Add(string.Empty);
         }
@@ -345,12 +338,6 @@ public partial class AffixConfig
         /// </remarks>
         public AffixConfig MoveToImmutable() => ToImmutable(destructive: true);
 
-        internal Deduper<FlagSet> FlagSetDeduper { get; }
-
-        internal Deduper<MorphSet> MorphSetDeduper { get; }
-
-        private readonly Deduper<CharacterConditionGroup> _characterConditionGroupDeduper;
-
         private readonly Deduper<string> _stringDeduper;
 
         private AffixConfig ToImmutable(bool destructive)
@@ -455,8 +442,6 @@ public partial class AffixConfig
             Options |= options;
         }
 
-        internal FlagSet Dedup(FlagSet values) => FlagSetDeduper.GetEqualOrAdd(values);
-
         internal string Dedup(ReadOnlySpan<char> value) => _stringDeduper.GetEqualOrAdd(value.ToString());
 
         internal string Dedup(string value)
@@ -508,10 +493,6 @@ public partial class AffixConfig
         {
             return builder.ToImmutable(destructive);
         }
-
-        internal MorphSet Dedup(MorphSet value) => MorphSetDeduper.GetEqualOrAdd(value);
-
-        public CharacterConditionGroup Dedup(CharacterConditionGroup value) => _characterConditionGroupDeduper.GetEqualOrAdd(value);
 
         public void LogWarning(string warning)
         {

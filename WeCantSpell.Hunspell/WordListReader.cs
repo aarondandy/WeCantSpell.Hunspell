@@ -45,7 +45,7 @@ public sealed class WordListReader
 
         var affixBuilder = new AffixConfig.Builder();
         var affix = await AffixReader.ReadFileAsync(affixFilePath, affixBuilder).ConfigureAwait(false);
-        var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper);
+        var wordListBuilder = new WordList.Builder(affix);
         return await ReadFileAsync(dictionaryFilePath, affix, wordListBuilder);
     }
 
@@ -65,7 +65,7 @@ public sealed class WordListReader
 
         var affixBuilder = new AffixConfig.Builder();
         var affix = await AffixReader.ReadAsync(affixStream, affixBuilder).ConfigureAwait(false);
-        var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper);
+        var wordListBuilder = new WordList.Builder(affix);
         return await ReadAsync(dictionaryStream, affix, wordListBuilder);
     }
 
@@ -109,7 +109,7 @@ public sealed class WordListReader
 
         var affixBuilder = new AffixConfig.Builder();
         var affix = AffixReader.ReadFile(affixFilePath, affixBuilder);
-        var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper);
+        var wordListBuilder = new WordList.Builder(affix);
         return ReadFile(dictionaryFilePath, affix, wordListBuilder);
     }
 
@@ -129,7 +129,7 @@ public sealed class WordListReader
 
         var affixBuilder = new AffixConfig.Builder();
         var affix = AffixReader.Read(affixStream, affixBuilder);
-        var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper);
+        var wordListBuilder = new WordList.Builder(affix);
         return Read(dictionaryStream, affix, wordListBuilder);
     }
 
@@ -221,7 +221,7 @@ public sealed class WordListReader
             }
             else
             {
-                flags = Builder.Dedup(ParseFlagSet(parsed.Flags));
+                flags = ParseFlagSet(parsed.Flags);
             }
         }
         else
@@ -409,7 +409,7 @@ public sealed class WordListReader
                 var existingEntry = details[i];
                 if (existingEntry.ContainsFlag(SpecialFlags.OnlyUpcaseFlag))
                 {
-                    details[i] = Builder.Dedup(new WordEntryDetail(flags, existingEntry.Morphs, existingEntry.Options));
+                    details[i] = new WordEntryDetail(flags, existingEntry.Morphs, existingEntry.Options);
                     return false;
                 }
             }
@@ -422,11 +422,10 @@ public sealed class WordListReader
         if (!upperCaseHomonym)
         {
             details.Add(
-                Builder.Dedup(
-                    new WordEntryDetail(
-                        flags,
-                        Builder.Dedup(new MorphSet(morphs)),
-                        options)));
+                new WordEntryDetail(
+                    flags,
+                    new MorphSet(morphs),
+                    options));
         }
 
         return false;
@@ -448,7 +447,7 @@ public sealed class WordListReader
             !flags.Contains(Affix.ForbiddenWord)
         )
         {
-            flags = Builder.Dedup(flags.Union(SpecialFlags.OnlyUpcaseFlag));
+            flags = flags.Union(SpecialFlags.OnlyUpcaseFlag);
             word = HunspellTextFunctions.MakeTitleCase(word, Affix.Culture);
             return AddWord(word, flags, morphs, true, CapitalizationType.Init);
         }

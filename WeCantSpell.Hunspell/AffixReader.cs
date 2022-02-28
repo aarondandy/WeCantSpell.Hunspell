@@ -634,7 +634,7 @@ public sealed class AffixReader
 
     private bool TryParseAliasF(ReadOnlySpan<char> parameterText, ImmutableArray<FlagSet>.Builder entries)
     {
-        entries.Add(Builder.Dedup(ParseFlagSet(parameterText)));
+        entries.Add(ParseFlagSet(parameterText));
         return true;
     }
 
@@ -654,7 +654,7 @@ public sealed class AffixReader
             }
         }
 
-        entries.Add(Builder.Dedup(new MorphSet(Builder.DedupIntoImmutableArray(parts, true))));
+        entries.Add(new MorphSet(Builder.DedupIntoImmutableArray(parts, true)));
 
         return true;
     }
@@ -794,7 +794,7 @@ public sealed class AffixReader
                 }
                 else
                 {
-                    contClass = Builder.Dedup(ParseFlagSet(affixInput.AsSpan(affixSlashIndex + 1)));
+                    contClass = ParseFlagSet(affixInput.AsSpan(affixSlashIndex + 1));
                 }
             }
             else
@@ -871,7 +871,7 @@ public sealed class AffixReader
                         morphAffixText = morphAffixText.GetReversed();
                     }
 
-                    morph = Builder.Dedup(new MorphSet(Builder.DedupIntoImmutableArray(morphAffixText.SplitOnTabOrSpace(), true)));
+                    morph = new MorphSet(Builder.DedupIntoImmutableArray(morphAffixText.SplitOnTabOrSpace(), true));
                 }
             }
             else
@@ -889,7 +889,7 @@ public sealed class AffixReader
             affixGroup.Entries.Add(CreateEntry<TEntry>(
                 Builder.Dedup(strip),
                 Builder.Dedup(StringBuilderPool.GetStringAndReturn(affixText)),
-                Builder.Dedup(conditions),
+                conditions,
                 morph,
                 contClass));
 
