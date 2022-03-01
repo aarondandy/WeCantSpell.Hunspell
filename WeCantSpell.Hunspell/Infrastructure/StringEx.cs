@@ -39,8 +39,7 @@ static class StringEx
             return @this;
         }
 
-        using var mo = MemoryPool<char>.Shared.Rent(@this.Length);
-        var buffer = mo.Memory.Span.Slice(0, @this.Length);
+        var buffer = new char[@this.Length];
         var lastIndex = @this.Length - 1;
         for (var i = 0; i < buffer.Length; i++)
         {
