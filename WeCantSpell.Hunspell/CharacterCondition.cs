@@ -18,6 +18,29 @@ public readonly struct CharacterCondition : IEquatable<CharacterCondition>
 
     public static bool operator !=(CharacterCondition left, CharacterCondition right) => !(left == right);
 
+    public static CharacterConditionGroup Parse(ReadOnlySpan<char> text)
+    {
+        if (text.IsEmpty)
+        {
+            return CharacterConditionGroup.Empty;
+        }
+
+        var match = ConditionParsingRegex.Match(text.ToString());
+        if (!match.Success || match.Groups.Count < 2)
+        {
+            return CharacterConditionGroup.Empty;
+        }
+
+        var captures = match.Groups[1].Captures;
+        var conditions = ImmutableArray.CreateBuilder<CharacterCondition>(captures.Count);
+        foreach (Capture capture in captures)
+        {
+            conditions.Add(ParseSingle(capture.Value.AsSpan()));
+        }
+
+        return new(conditions.ToImmutable(true));
+    }
+
     public static CharacterConditionGroup Parse(string text)
     {
         if (string.IsNullOrEmpty(text))

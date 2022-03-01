@@ -20,6 +20,7 @@ public sealed class WordListReader
     {
         Builder = builder ?? new WordList.Builder(affix);
         Affix = affix;
+        FlagParser = new FlagParser(Affix.FlagMode, Affix.Encoding);
     }
 
     private bool _hasInitialized;
@@ -27,6 +28,8 @@ public sealed class WordListReader
     private WordList.Builder Builder { get; }
 
     private AffixConfig Affix { get; }
+
+    private FlagParser FlagParser { get; }
 
     private TextInfo TextInfo => Affix.Culture.TextInfo;
 
@@ -221,7 +224,7 @@ public sealed class WordListReader
             }
             else
             {
-                flags = ParseFlagSet(parsed.Flags);
+                flags = FlagParser.ParseFlagSet(parsed.Flags);
             }
         }
         else
@@ -231,15 +234,6 @@ public sealed class WordListReader
 
         return AddWord(parsed.Word.ToString(), flags, parsed.Morphs);
     }
-
-    private FlagSet ParseFlagSet(ReadOnlySpan<char> text) => Affix.FlagMode switch
-    {
-        FlagMode.Char => FlagSet.ParseAsChars(text),
-        FlagMode.Uni => FlagSet.ParseAsChars(HunspellTextFunctions.ReDecodeConvertedStringAsUtf8(text, Affix.Encoding)),
-        FlagMode.Long => FlagSet.ParseAsLongs(text),
-        FlagMode.Num => FlagSet.ParseAsNumbers(text),
-        _ => throw new NotSupportedException()
-    };
 
     private bool AttemptToProcessInitializationLine(string line)
     {
@@ -514,7 +508,7 @@ public sealed class WordListReader
 
             if (!word.IsEmpty)
             {
-                var morphGroup = endOfWordAndFlagsPosition >= 0 && endOfWordAndFlagsPosition != line.Length
+                var morphGroup = endOfWordAndFlagsPosition >= 0 && endOfWordAndFlagsPosition < line.Length
                     ? MorphPartRegex.Match(line, endOfWordAndFlagsPosition).Groups["morphs"]
                     : null;
 
@@ -537,7 +531,7 @@ public sealed class WordListReader
                     return checkLocation;
                 }
 
-                index = index + 1;
+                index++;
             }
 
             return -1;

@@ -86,6 +86,25 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
         return true;
     }
 
+    public bool IsOnlyPossibleMatch(ReadOnlySpan<char> text)
+    {
+        if (text.IsEmpty || _items.Length != text.Length)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < text.Length; i++)
+        {
+            var condition = _items[i];
+            if (!condition.PermitsSingleCharacter || condition.Characters[0] != text[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public bool IsOnlyPossibleMatch(string text)
     {
         if (string.IsNullOrEmpty(text) || _items.Length != text.Length)

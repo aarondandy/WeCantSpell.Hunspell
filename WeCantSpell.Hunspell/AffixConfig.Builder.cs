@@ -28,7 +28,7 @@ public partial class AffixConfig
         /// The flag type.
         /// </summary>
         /// <seealso cref="AffixConfig.FlagMode"/>
-        public FlagMode FlagMode { get; set; } = FlagMode.Char;
+        public FlagParsingMode FlagMode { get; set; } = FlagParsingMode.Char;
 
         /// <summary>
         /// A string of text representing a keyboard layout.

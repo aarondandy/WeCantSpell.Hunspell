@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Diagnostics;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
@@ -14,6 +15,40 @@ static class StringEx
     public static string[] SplitOnTabOrSpace(this string @this) => @this.Split(SpaceOrTab, StringSplitOptions.RemoveEmptyEntries);
 
     public static bool IsTabOrSpace(this char c) => c is ' ' or '\t';
+
+    public static int IndexOfTabOrSpace(this ReadOnlySpan<char> span) => span.IndexOfAny(' ', '\t');
+
+    public static int IndexOfTabOrSpace(this ReadOnlySpan<char> span, int startIndex)
+    {
+        Debug.Assert(startIndex >= 0);
+        Debug.Assert(startIndex < span.Length);
+
+        var i = span.Slice(startIndex).IndexOfTabOrSpace();
+        if (i >= 0)
+        {
+            i += startIndex;
+        }
+
+        return i;
+    }
+
+    public static ReadOnlySpan<char> GetReversed(this ReadOnlySpan<char> @this)
+    {
+        if (@this is not { Length: > 1 })
+        {
+            return @this;
+        }
+
+        using var mo = MemoryPool<char>.Shared.Rent(@this.Length);
+        var buffer = mo.Memory.Span.Slice(0, @this.Length);
+        var lastIndex = @this.Length - 1;
+        for (var i = 0; i < buffer.Length; i++)
+        {
+            buffer[i] = @this[lastIndex - i];
+        }
+
+        return buffer;
+    }
 
     public static string GetReversed(this string @this)
     {

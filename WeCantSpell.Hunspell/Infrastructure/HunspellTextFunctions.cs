@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Buffers;
 using System.Globalization;
-using System.Runtime.InteropServices;
-using System.Text;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
@@ -221,38 +218,6 @@ static class HunspellTextFunctions
         var builder = StringBuilderPool.Get(cultureInfo.TextInfo.ToLower(s));
         builder[0] = cultureInfo.TextInfo.ToUpper(s[0]);
         return StringBuilderPool.GetStringAndReturn(builder);
-    }
-
-    public static ReadOnlySpan<char> ReDecodeConvertedStringAsUtf8(ReadOnlySpan<char> decoded, Encoding encoding)
-    {
-        if (Encoding.UTF8.Equals(encoding))
-        {
-            return decoded;
-        }
-
-#if NO_ENCODING_SPANS
-
-        byte[] encodedBytes;
-        int encodedBytesCount;
-
-        unsafe
-        {
-            fixed (char* decodedPointer = &MemoryMarshal.GetReference(decoded))
-            {
-                encodedBytes = new byte[Encoding.UTF8.GetByteCount(decodedPointer, decoded.Length)];
-                fixed (byte* encodedBytesPointer = &encodedBytes[0])
-                {
-                    encodedBytesCount = encoding.GetBytes(decodedPointer, decoded.Length, encodedBytesPointer, encodedBytes.Length);
-                }
-            }
-        }
-
-        return Encoding.UTF8.GetString(encodedBytes, 0, encodedBytesCount).AsSpan();
-#else
-        var buffer = new ArrayBufferWriter<byte>();
-        _ = encoding.GetBytes(decoded, buffer);
-        return Encoding.UTF8.GetString(buffer.WrittenSpan).AsSpan();
-#endif
     }
 
     public static CapitalizationType GetCapitalizationType(string word, TextInfo textInfo) =>

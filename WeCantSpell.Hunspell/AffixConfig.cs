@@ -30,7 +30,7 @@ public sealed partial class AffixConfig
     /// the `num' sets the decimal number flag type. Decimal flags numbered from 1 to
     /// 65000, and in flag fields are separated by comma.
     /// </remarks>
-    public FlagMode FlagMode { get; private set; }
+    public FlagParsingMode FlagMode { get; private set; }
 
     /// <summary>
     /// Various affix options.

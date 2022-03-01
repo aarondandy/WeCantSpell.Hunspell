@@ -944,7 +944,7 @@ public class AffixReaderTests
 
             var actual = await AffixReader.ReadFileAsync(filePath);
 
-            actual.FlagMode.Should().Be(FlagMode.Char);
+            actual.FlagMode.Should().Be(FlagParsingMode.Char);
             actual.Suffixes.Should().HaveCount(3);
             actual.Suffixes.Skip(1).First().AFlag.Should().Be('1');
             actual.Prefixes.Should().HaveCount(1);
@@ -957,7 +957,7 @@ public class AffixReaderTests
 
             var actual = await AffixReader.ReadFileAsync(filePath);
 
-            actual.FlagMode.Should().Be(FlagMode.Long);
+            actual.FlagMode.Should().Be(FlagParsingMode.Long);
             actual.Suffixes.Should().HaveCount(3);
             actual.Suffixes.Skip(1).First().AFlag.Should().Be('g' << 8 | '?');
             actual.Prefixes.Should().HaveCount(1);
@@ -989,7 +989,7 @@ public class AffixReaderTests
 
             var actual = await AffixReader.ReadFileAsync(filePath);
 
-            actual.FlagMode.Should().Be(FlagMode.Uni);
+            actual.FlagMode.Should().Be(FlagParsingMode.Uni);
             actual.Suffixes.Should().HaveCount(3);
             actual.Suffixes.First().Entries.Should().HaveCount(1);
             actual.Suffixes.Skip(1).First().AFlag.Should().Be('Ö');
@@ -1678,7 +1678,7 @@ public class AffixReaderTests
 
             var actual = await AffixReader.ReadFileAsync(filePath);
 
-            actual.FlagMode.Should().Be(FlagMode.Num);
+            actual.FlagMode.Should().Be(FlagParsingMode.Num);
         }
 
         public static IEnumerable<object[]> can_read_file_without_exception_args =>
@@ -1982,15 +1982,15 @@ public class AffixReaderTests
         }
 
         [Theory]
-        [InlineData("LONG", FlagMode.Long)]
-        [InlineData("CHAR", FlagMode.Char)]
-        [InlineData("NUM", FlagMode.Num)]
-        [InlineData("NUMBER", FlagMode.Num)]
-        [InlineData("UTF", FlagMode.Uni)]
-        [InlineData("UNI", FlagMode.Uni)]
-        [InlineData("UNICODE", FlagMode.Uni)]
-        [InlineData("UTF-8", FlagMode.Uni)]
-        public async Task can_read_flag_mode(string given, FlagMode expected)
+        [InlineData("LONG", FlagParsingMode.Long)]
+        [InlineData("CHAR", FlagParsingMode.Char)]
+        [InlineData("NUM", FlagParsingMode.Num)]
+        [InlineData("NUMBER", FlagParsingMode.Num)]
+        [InlineData("UTF", FlagParsingMode.Uni)]
+        [InlineData("UNI", FlagParsingMode.Uni)]
+        [InlineData("UNICODE", FlagParsingMode.Uni)]
+        [InlineData("UTF-8", FlagParsingMode.Uni)]
+        public async Task can_read_flag_mode(string given, FlagParsingMode expected)
         {
             var textFileContents = "FLAG " + given;
 
