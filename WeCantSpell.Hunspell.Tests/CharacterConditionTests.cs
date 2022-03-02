@@ -6,26 +6,38 @@ namespace WeCantSpell.Hunspell.Tests;
 
 public class CharacterConditionTests
 {
-    public class Parse : CharacterConditionTests
+    public class ParseGroup : CharacterConditionTests
     {
         [Fact]
         public void empty_string_produces_no_conditions()
         {
             var text = string.Empty;
 
-            var actual = CharacterCondition.Parse(text);
+            var actual = CharacterConditionGroup.Parse(text);
 
             actual.Should().BeEmpty();
         }
 
         [Fact]
-        public void invalid_condition_creates_empty_result()
+        public void open_condition_group_creates_empty_group()
+        {
+            var text = "[";
+
+            var actual = CharacterConditionGroup.Parse(text);
+
+            actual[0].Characters.Should().BeEmpty();
+            actual[0].Restricted.Should().BeFalse();
+        }
+
+        [Fact]
+        public void invalid_condition_creates_best_effort_parse_result()
         {
             var text = "[x";
 
-            var actual = CharacterCondition.Parse(text);
+            var actual = CharacterConditionGroup.Parse(text);
 
-            actual.Should().BeEmpty();
+            actual[0].Characters.Should().BeEquivalentTo(new[] { 'x' });
+            actual[0].Restricted.Should().BeFalse();
         }
 
         [Fact]
@@ -33,7 +45,7 @@ public class CharacterConditionTests
         {
             var text = "q";
 
-            var actual = CharacterCondition.Parse(text);
+            var actual = CharacterConditionGroup.Parse(text);
 
             actual.Should().HaveCount(1);
             actual[0].Characters.Should().BeEquivalentTo(new[] { 'q' });
@@ -45,7 +57,7 @@ public class CharacterConditionTests
         {
             var text = ".";
 
-            var actual = CharacterCondition.Parse(text);
+            var actual = CharacterConditionGroup.Parse(text);
 
             actual.Should().HaveCount(1);
             actual[0].Characters.Should().BeEmpty();
@@ -57,7 +69,7 @@ public class CharacterConditionTests
         {
             var text = "[]";
 
-            var actual = CharacterCondition.Parse(text);
+            var actual = CharacterConditionGroup.Parse(text);
 
             actual.Should().HaveCount(1);
             actual[0].Characters.Should().BeEmpty();
@@ -69,7 +81,7 @@ public class CharacterConditionTests
         {
             var text = "[b]";
 
-            var actual = CharacterCondition.Parse(text);
+            var actual = CharacterConditionGroup.Parse(text);
 
             actual.Should().HaveCount(1);
             actual[0].Characters.Should().BeEquivalentTo(new[] { 'b' });
@@ -81,7 +93,7 @@ public class CharacterConditionTests
         {
             var text = "[qwerty]";
 
-            var actual = CharacterCondition.Parse(text);
+            var actual = CharacterConditionGroup.Parse(text);
 
             actual.Should().HaveCount(1);
             actual[0].Characters.Should().BeEquivalentTo("qwerty".ToCharArray());
@@ -93,7 +105,7 @@ public class CharacterConditionTests
         {
             var text = "[^]";
 
-            var actual = CharacterCondition.Parse(text);
+            var actual = CharacterConditionGroup.Parse(text);
 
             actual.Should().HaveCount(1);
             actual[0].Characters.Should().BeEmpty();
@@ -105,7 +117,7 @@ public class CharacterConditionTests
         {
             var text = "[^t]";
 
-            var actual = CharacterCondition.Parse(text);
+            var actual = CharacterConditionGroup.Parse(text);
 
             actual.Should().HaveCount(1);
             actual[0].Characters.Should().BeEquivalentTo(new[] { 't' });
@@ -117,7 +129,7 @@ public class CharacterConditionTests
         {
             var text = "[^qwerty]";
 
-            var actual = CharacterCondition.Parse(text);
+            var actual = CharacterConditionGroup.Parse(text);
 
             actual.Should().HaveCount(1);
             actual[0].Characters.Should().BeEquivalentTo("qwerty".ToCharArray());
@@ -129,7 +141,7 @@ public class CharacterConditionTests
         {
             var text = "[^^]";
 
-            var actual = CharacterCondition.Parse(text);
+            var actual = CharacterConditionGroup.Parse(text);
 
             actual.Should().HaveCount(1);
             actual[0].Characters.Should().BeEquivalentTo(new[] { '^' });
@@ -141,7 +153,7 @@ public class CharacterConditionTests
         {
             var text = "[qwerty][asdf]";
 
-            var actual = CharacterCondition.Parse(text);
+            var actual = CharacterConditionGroup.Parse(text);
 
             actual.Should().HaveCount(2);
             actual[0].Characters.Should().BeEquivalentTo("qwerty".ToCharArray());
@@ -155,7 +167,7 @@ public class CharacterConditionTests
         {
             var text = "[^qwerty][^asdf]";
 
-            var actual = CharacterCondition.Parse(text);
+            var actual = CharacterConditionGroup.Parse(text);
 
             actual.Should().HaveCount(2);
             actual[0].Characters.Should().BeEquivalentTo("qwerty".ToCharArray());
@@ -169,7 +181,7 @@ public class CharacterConditionTests
         {
             var text = "[qwerty][^asdf]";
 
-            var actual = CharacterCondition.Parse(text);
+            var actual = CharacterConditionGroup.Parse(text);
 
             actual.Should().HaveCount(2);
             actual[0].Characters.Should().BeEquivalentTo("qwerty".ToCharArray());
@@ -183,7 +195,7 @@ public class CharacterConditionTests
         {
             var text = "[^aeiou]y";
 
-            var actual = CharacterCondition.Parse(text);
+            var actual = CharacterConditionGroup.Parse(text);
 
             actual.Should().HaveCount(2);
             actual[0].Characters.Should().BeEquivalentTo("aeiou".ToCharArray());

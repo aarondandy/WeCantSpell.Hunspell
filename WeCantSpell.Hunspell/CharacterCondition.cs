@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Immutable;
-using System.Text.RegularExpressions;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -8,88 +6,11 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct CharacterCondition : IEquatable<CharacterCondition>
 {
-    private static Regex ConditionParsingRegex = new Regex(
-        @"^(\[[^\]]*\]|\.|[^\[\]\.])*$",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
     public static readonly CharacterCondition AllowAny = new(CharacterSet.Empty, true);
 
     public static bool operator ==(CharacterCondition left, CharacterCondition right) => left.Equals(right);
 
     public static bool operator !=(CharacterCondition left, CharacterCondition right) => !(left == right);
-
-    public static CharacterConditionGroup Parse(ReadOnlySpan<char> text)
-    {
-        if (text.IsEmpty)
-        {
-            return CharacterConditionGroup.Empty;
-        }
-
-        var match = ConditionParsingRegex.Match(text.ToString());
-        if (!match.Success || match.Groups.Count < 2)
-        {
-            return CharacterConditionGroup.Empty;
-        }
-
-        var captures = match.Groups[1].Captures;
-        var conditions = ImmutableArray.CreateBuilder<CharacterCondition>(captures.Count);
-        foreach (Capture capture in captures)
-        {
-            conditions.Add(ParseSingle(capture.Value.AsSpan()));
-        }
-
-        return new(conditions.ToImmutable(true));
-    }
-
-    public static CharacterConditionGroup Parse(string text)
-    {
-        if (string.IsNullOrEmpty(text))
-        {
-            return CharacterConditionGroup.Empty;
-        }
-
-        var match = ConditionParsingRegex.Match(text);
-        if (!match.Success || match.Groups.Count < 2)
-        {
-            return CharacterConditionGroup.Empty;
-        }
-
-        var captures = match.Groups[1].Captures;
-        var conditions = ImmutableArray.CreateBuilder<CharacterCondition>(captures.Count);
-        foreach (Capture capture in captures)
-        {
-            conditions.Add(ParseSingle(capture.Value.AsSpan()));
-        }
-
-        return new(conditions.ToImmutable(true));
-    }
-
-    private static CharacterCondition ParseSingle(ReadOnlySpan<char> text)
-    {
-        if (text.IsEmpty || text.Length == 0)
-        {
-            return AllowAny;
-        }
-        if (text.Length == 1)
-        {
-            var singleChar = text[0];
-            if (singleChar == '.')
-            {
-                return AllowAny;
-            }
-
-            return new(CharacterSet.Create(singleChar), false);
-        }
-
-        if (!text.StartsWith('[') || !text.EndsWith(']'))
-        {
-            throw new InvalidOperationException();
-        }
-
-        var restricted = text[1] == '^';
-        text = restricted ? text.Slice(2, text.Length - 3) : text.Slice(1, text.Length - 2);
-        return new(CharacterSet.Create(text), restricted);
-    }
 
     public CharacterCondition(CharacterSet characters, bool restricted)
     {

@@ -824,7 +824,7 @@ public sealed partial class AffixReader
             conditionText = ReverseCondition(conditionText).AsSpan();
         }
 
-        var conditions = CharacterCondition.Parse(conditionText);
+        var conditions = CharacterConditionGroup.Parse(conditionText);
         if (strip.Length != 0 && !conditions.AllowsAnySingleCharacter)
         {
             bool isRedundant;
