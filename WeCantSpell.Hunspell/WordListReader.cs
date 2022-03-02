@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -12,10 +13,6 @@ namespace WeCantSpell.Hunspell;
 
 public sealed class WordListReader
 {
-    private static readonly Regex InitialLineRegex = new Regex(
-        @"^\s*(\d+)\s*(?:[#].*)?$",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
     private WordListReader(WordList.Builder? builder, AffixConfig affix)
     {
         Builder = builder ?? new WordList.Builder(affix);
@@ -182,9 +179,7 @@ public sealed class WordListReader
 
     private bool ParseLine(string line)
     {
-#if DEBUG
-        if (line is null) throw new ArgumentNullException(nameof(line));
-#endif
+        Debug.Assert(line is not null);
 
         if (line.Length == 0)
         {
@@ -193,7 +188,7 @@ public sealed class WordListReader
 
         if (!_hasInitialized)
         {
-            if (AttemptToProcessInitializationLine(line))
+            if (AttemptToProcessInitializationLine(line.AsSpan()))
             {
                 return true;
             }
@@ -235,19 +230,27 @@ public sealed class WordListReader
         return AddWord(parsed.Word.ToString(), flags, parsed.Morphs);
     }
 
-    private bool AttemptToProcessInitializationLine(string line)
+    private bool AttemptToProcessInitializationLine(ReadOnlySpan<char> text)
     {
         _hasInitialized = true;
 
-        var initLineMatch = InitialLineRegex.Match(line);
-        if (initLineMatch.Success)
-        {
-            if (IntEx.TryParseInvariant(initLineMatch.Groups[1].Value, out int expectedSize))
-            {
-                Builder.InitializeEntriesByRoot(expectedSize);
+        // read through any leading spaces
+        int i;
+        for (i = 0; i < text.Length && char.IsWhiteSpace(text[i]); i++) ;
+        text = text.Slice(i);
 
-                return true;
-            }
+        // find the possible value
+        for (i = 0; i < text.Length && !char.IsWhiteSpace(text[i]); i++) ;
+        if (i < text.Length)
+        {
+            text = text.Slice(0, i);
+        }
+
+        if (!text.IsEmpty && IntEx.TryParseInvariant(text, out var expectedSize))
+        {
+            Builder.InitializeEntriesByRoot(expectedSize);
+
+            return true;
         }
 
         return false;
