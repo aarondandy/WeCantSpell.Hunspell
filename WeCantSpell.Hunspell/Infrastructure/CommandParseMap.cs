@@ -8,7 +8,7 @@ readonly struct CommandParseMap<TCommand> where TCommand : struct
     internal CommandParseMap(KeyValuePair<string, TCommand>[] values)
     {
         _map = values;
-        Array.Sort(_map, (a, b) => string.Compare(a.Key, b.Key, StringComparison.OrdinalIgnoreCase));
+        Array.Sort(_map, static (a, b) => string.Compare(a.Key, b.Key, StringComparison.OrdinalIgnoreCase));
     }
 
     private readonly KeyValuePair<string, TCommand>[] _map;

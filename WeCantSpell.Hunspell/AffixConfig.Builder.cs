@@ -14,8 +14,7 @@ public partial class AffixConfig
     {
         public Builder()
         {
-            _stringDeduper = new Deduper<string>(StringComparer.Ordinal);
-            _stringDeduper.Add(string.Empty);
+            _stringDuplicateRemover = new StringDuplicateRemover(StringComparer.Ordinal);
         }
 
         /// <summary>
@@ -338,7 +337,7 @@ public partial class AffixConfig
         /// </remarks>
         public AffixConfig MoveToImmutable() => ToImmutable(destructive: true);
 
-        private readonly Deduper<string> _stringDeduper;
+        private readonly StringDuplicateRemover _stringDuplicateRemover;
 
         private AffixConfig ToImmutable(bool destructive)
         {
@@ -430,6 +429,11 @@ public partial class AffixConfig
 
             config.Warnings = Warnings.ToImmutable();
 
+            if (destructive)
+            {
+                _stringDuplicateRemover.Reset();
+            }
+
             return config;
         }
 
@@ -442,14 +446,14 @@ public partial class AffixConfig
             Options |= options;
         }
 
-        internal string Dedup(ReadOnlySpan<char> value) => _stringDeduper.GetEqualOrAdd(value.ToString());
+        internal string Dedup(ReadOnlySpan<char> value) => _stringDuplicateRemover.GetEqualOrAdd(value);
 
         internal string Dedup(string value)
         {
 #if DEBUG
             if (value is null) throw new ArgumentNullException(nameof(value));
 #endif
-            return _stringDeduper.GetEqualOrAdd(value);
+            return _stringDuplicateRemover.GetEqualOrAdd(value);
         }
 
         internal string[] DedupInPlace(string[] values)
@@ -463,7 +467,7 @@ public partial class AffixConfig
                 ref var value = ref values[i];
                 if (value is not null)
                 {
-                    value = _stringDeduper.GetEqualOrAdd(value);
+                    value = _stringDuplicateRemover.GetEqualOrAdd(value);
                 }
             }
 

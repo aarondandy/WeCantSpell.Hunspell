@@ -43,5 +43,5 @@ sealed class WordEntry : IEquatable<WordEntry>
 
     public override bool Equals(object? obj) => obj is WordEntry entry && Equals(entry);
 
-    public override int GetHashCode() => HashCode.Combine(Word.GetHashCode(), Detail);
+    public override int GetHashCode() => HashCode.Combine(Word, Detail);
 }
