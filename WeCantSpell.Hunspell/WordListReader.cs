@@ -88,7 +88,7 @@ public sealed class WordListReader
         string? line;
         while ((line = await dictionaryReader.ReadLineAsync().ConfigureAwait(false)) != null)
         {
-            readerInstance.ParseLine(line);
+            readerInstance.ParseLine(line.AsSpan());
         }
 
         return readerInstance.Builder.MoveToImmutable();
@@ -152,7 +152,7 @@ public sealed class WordListReader
         string? line;
         while ((line = dictionaryReader.ReadLine()) is not null)
         {
-            readerInstance.ParseLine(line);
+            readerInstance.ParseLine(line.AsSpan());
         }
 
         return readerInstance.Builder.MoveToImmutable();
@@ -177,10 +177,8 @@ public sealed class WordListReader
         return Path.ChangeExtension(dictionaryFilePath, "aff");
     }
 
-    private bool ParseLine(string line)
+    private bool ParseLine(ReadOnlySpan<char> line)
     {
-        Debug.Assert(line is not null);
-
         if (line.Length == 0)
         {
             return true;
@@ -188,7 +186,7 @@ public sealed class WordListReader
 
         if (!_hasInitialized)
         {
-            if (AttemptToProcessInitializationLine(line.AsSpan()))
+            if (AttemptToProcessInitializationLine(line))
             {
                 return true;
             }
@@ -465,104 +463,101 @@ public sealed class WordListReader
         public readonly ReadOnlySpan<char> Flags;
         public readonly ImmutableArray<string> Morphs;
 
-        private static readonly Regex MorphPartRegex = new Regex(
-            @"\G([\t ]+(?<morphs>[^\t ]+))*[\t ]*$",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture);
-
-        public static ParsedWordLine Parse(string line)
+        public static ParsedWordLine Parse(ReadOnlySpan<char> line)
         {
-#if DEBUG
-            if (line == null) throw new ArgumentNullException(nameof(line));
-#endif
+            int i;
 
-            int firstNonDelimiterPosition = 0;
-            for (; firstNonDelimiterPosition < line.Length && line[firstNonDelimiterPosition].IsTabOrSpace(); ++firstNonDelimiterPosition) ;
-            if (firstNonDelimiterPosition >= line.Length)
+            // read past any leading tabs or spaces
+            for (i = 0; i < line.Length && line[i].IsTabOrSpace(); ++i) ;
+            if (i > 0)
+            {
+                line = line.Slice(i);
+            }
+            if (line.IsEmpty)
             {
                 return default;
             }
 
-            var endOfWordAndFlagsPosition = FindIndexOfFirstMorphByColonChar(line, firstNonDelimiterPosition);
-            if (endOfWordAndFlagsPosition <= firstNonDelimiterPosition)
+            // Try to locate the end of the word part of a line, taking morphs into consideration
+            var endOfWordAndFlagsPosition = findIndexOfFirstMorphByColonCharAndSpacingHints(line);
+            if (endOfWordAndFlagsPosition <= 0)
             {
-                endOfWordAndFlagsPosition = line.IndexOf('\t', firstNonDelimiterPosition);
+                endOfWordAndFlagsPosition = line.IndexOf('\t');
                 if (endOfWordAndFlagsPosition < 0)
                 {
                     endOfWordAndFlagsPosition = line.Length;
                 }
             }
 
-            for(; endOfWordAndFlagsPosition > firstNonDelimiterPosition && line[endOfWordAndFlagsPosition - 1].IsTabOrSpace(); --endOfWordAndFlagsPosition) ;
+            for(; endOfWordAndFlagsPosition > 0 && line[endOfWordAndFlagsPosition - 1].IsTabOrSpace(); --endOfWordAndFlagsPosition) ;
 
-            var flagsDelimiterPosition = IndexOfFlagsDelimiter(line, firstNonDelimiterPosition, endOfWordAndFlagsPosition);
+            var wordPart = line.Slice(0, endOfWordAndFlagsPosition);
+            var morphPart = line.Slice(endOfWordAndFlagsPosition);
 
-            ReadOnlySpan<char> word;
             ReadOnlySpan<char> flagsPart;
-            if (flagsDelimiterPosition < 0)
+            var flagsDelimiterPosition = indexOfFlagsDelimiter(wordPart);
+            if (flagsDelimiterPosition >= 0)
             {
-                word = line.AsSpan(firstNonDelimiterPosition, endOfWordAndFlagsPosition - firstNonDelimiterPosition);
-                flagsPart = ReadOnlySpan<char>.Empty;
+                flagsPart = wordPart.Slice(flagsDelimiterPosition + 1);
+                wordPart = wordPart.Slice(0, flagsDelimiterPosition);
             }
             else
             {
-                word = line.AsSpan(firstNonDelimiterPosition, flagsDelimiterPosition - firstNonDelimiterPosition);
-                flagsPart = line.AsSpan(flagsDelimiterPosition + 1, endOfWordAndFlagsPosition - flagsDelimiterPosition - 1);
+                flagsPart = ReadOnlySpan<char>.Empty;
             }
 
-            if (!word.IsEmpty)
+            if (wordPart.IsEmpty)
             {
-                var morphGroup = endOfWordAndFlagsPosition >= 0 && endOfWordAndFlagsPosition < line.Length
-                    ? MorphPartRegex.Match(line, endOfWordAndFlagsPosition).Groups["morphs"]
-                    : null;
-
-                return new ParsedWordLine(
-                    word: word.Replace(@"\/", @"/"),
-                    flags: flagsPart,
-                    morphs: morphGroup is { Success: true } ? GetCapturesAsTest(morphGroup.Captures) : ImmutableArray<string>.Empty);
+                return default;
             }
 
-            return default;
-        }
-
-        private static int FindIndexOfFirstMorphByColonChar(string text, int index)
-        {
-            while ((index = text.IndexOf(':', index)) >= 0)
+            var morphs = ImmutableArray<string>.Empty;
+            if (!morphPart.IsEmpty)
             {
-                var checkLocation = index - 3;
-                if (checkLocation >= 0 && text[checkLocation].IsTabOrSpace())
+                var morphsBuilder = ImmutableArray.CreateBuilder<string>();
+                foreach (var morph in morphPart.SplitOnTabOrSpace())
                 {
-                    return checkLocation;
+                    morphsBuilder.Add(morph.ToString());
                 }
 
-                index++;
+                morphs = morphsBuilder.ToImmutable(allowDestructive: true);
             }
 
-            return -1;
-        }
+            return new ParsedWordLine(
+                word: wordPart.Replace(@"\/", @"/"),
+                flags: flagsPart,
+                morphs: morphs);
 
-        private static ImmutableArray<string> GetCapturesAsTest(CaptureCollection collection)
-        {
-            var builder = ImmutableArray.CreateBuilder<string>(collection.Count);
-            foreach (Capture capture in collection)
+            static int findIndexOfFirstMorphByColonCharAndSpacingHints(ReadOnlySpan<char> text)
             {
-                builder.Add(capture.Value);
-            }
-
-            return builder.ToImmutable(allowDestructive: true);
-        }
-
-        private static int IndexOfFlagsDelimiter(string text, int startIndex, int boundaryIndex)
-        {
-            // NOTE: the first character is ignored as a single slash should be treated as a word
-            for (var i = startIndex + 1; i < boundaryIndex; i++)
-            {
-                if (text[i] == '/' && text[i - 1] != '\\')
+                var index = 0;
+                while ((index = text.IndexOf(':', index)) >= 0)
                 {
-                    return i;
+                    var checkLocation = index - 3;
+                    if (checkLocation >= 0 && text[checkLocation].IsTabOrSpace())
+                    {
+                        return checkLocation;
+                    }
+
+                    index++;
                 }
+
+                return -1;
             }
 
-            return -1;
+            static int indexOfFlagsDelimiter(ReadOnlySpan<char> text)
+            {
+                // NOTE: the first character is ignored as a single slash should be treated as a word
+                for (var i = 1; i < text.Length; i++)
+                {
+                    if (text[i] == '/' && text[i - 1] != '\\')
+                    {
+                        return i;
+                    }
+                }
+
+                return -1;
+            }
         }
     }
 }
