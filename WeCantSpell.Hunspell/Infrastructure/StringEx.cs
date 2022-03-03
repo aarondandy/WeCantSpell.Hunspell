@@ -20,8 +20,9 @@ static class StringEx
 
     public static int IndexOfTabOrSpace(this ReadOnlySpan<char> span, int startIndex)
     {
-        Debug.Assert(startIndex >= 0);
-        Debug.Assert(startIndex < span.Length);
+#if DEBUG
+        if (startIndex < 0 || startIndex >= span.Length) throw new ArgumentOutOfRangeException(nameof(startIndex));
+#endif
 
         var i = span.Slice(startIndex).IndexOfTabOrSpace();
         if (i >= 0)

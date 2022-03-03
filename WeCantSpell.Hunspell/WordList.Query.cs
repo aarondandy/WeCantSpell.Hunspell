@@ -1467,7 +1467,7 @@ public partial class WordList
                 // if all conditions are met then check if resulting
                 // root word in the dictionary
 
-                if (peEntry.TestCondition(tmpword))
+                if (peEntry.TestCondition(tmpword.AsSpan()))
                 {
                     // prefix matched but no root word was found
                     // if CrossProduct is allowed, try again but now
@@ -1873,7 +1873,7 @@ public partial class WordList
                 // if all conditions are met then check if resulting
                 // root word in the dictionary
 
-                if (entry.TestCondition(tmpword))
+                if (entry.TestCondition(tmpword.AsSpan()))
                 {
                     foreach (var detail in LookupDetails(tmpword))
                     {
@@ -1961,7 +1961,7 @@ public partial class WordList
 
                 // if all conditions are met then check if resulting
                 // root word in the dictionary
-                if (entry.Conditions.IsEndingMatch(tmpstring))
+                if (entry.Conditions.IsEndingMatch(tmpstring.AsSpan()))
                 {
                     var aFlag = affix.AFlag;
                     foreach (var heDetail in LookupDetails(tmpstring))
@@ -2053,11 +2053,11 @@ public partial class WordList
                 // tested
 
                 // if all conditions are met then recall suffix_check
-                if (entry.TestCondition(tmpword))
+                if (entry.TestCondition(tmpword.AsSpan()))
                 {
                     var he = ppfx is not null && entry.ContainsContClass(ppfx.AFlag)
                         // handle conditional suffix
-                        ? SuffixCheck(tmpword, AffixEntryOptions.None, default, se.AFlag, needflag, CompoundOptions.Not)
+                        ? SuffixCheck(tmpword, AffixEntryOptions.None, null, se.AFlag, needflag, CompoundOptions.Not)
                         : SuffixCheck(tmpword, optflags, ppfx, se.AFlag, needflag, CompoundOptions.Not);
 
                     if (he is not null)

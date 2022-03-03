@@ -752,7 +752,7 @@ public sealed partial class AffixReader
         }
 
         var group3 = affixParser.ParseNextArgument();
-        if (group3.IsEmpty && group2.Length == 1 && group2.StartsWith('.'))
+        if (group3.IsEmpty && group2.Equals(".", StringComparison.Ordinal))
         {
             // In some special cases it seems as if the group 2 is blank but groups 1 and 3 have values in them.
             // I think this is a way to make a blank affix value.
@@ -825,24 +825,11 @@ public sealed partial class AffixReader
         }
 
         var conditions = CharacterConditionGroup.Parse(conditionText);
-        if (strip.Length != 0 && !conditions.AllowsAnySingleCharacter)
+        if (!strip.IsEmpty && !conditions.MatchesAnySingleCharacter)
         {
-            bool isRedundant;
-            if (typeof(TEntry) == typeof(PrefixEntry))
+            if (conditions.IsOnlyPossibleMatch(strip))
             {
-                isRedundant = conditions.IsOnlyPossibleMatch(strip);
-            }
-            else if (typeof(TEntry) == typeof(SuffixEntry))
-            {
-                isRedundant = conditions.IsOnlyPossibleMatch(strip);
-            }
-            else
-            {
-                throw new NotSupportedException();
-            }
-
-            if (isRedundant)
-            {
+                // determine if the condition is redundant
                 conditions = CharacterConditionGroup.AllowAnySingleCharacter;
             }
         }

@@ -59,7 +59,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
                     {
                         span = span.Slice(1);
                     }
-                    conditions.Add(new(CharacterSet.Create(span), restricted: restricted));
+                    conditions.Add(CharacterCondition.CreateCharSet(span, restricted: restricted));
 
                     break;
 
@@ -68,12 +68,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
                     span = stopIndex < 0 ? text : text.Slice(0, stopIndex);
                     text = text.Slice(span.Length);
 
-                    // TODO: long runs of sequence characters could be used to optimize match checking and the number of array references
-
-                    foreach (var c in span)
-                    {
-                        conditions.Add(new(CharacterSet.Create(c), false));
-                    }
+                    conditions.Add(CharacterCondition.CreateSequence(span));
 
                     break;
             }
@@ -83,12 +78,16 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
         return new(conditions.ToImmutable(allowDestructive: true));
     }
 
-    internal CharacterConditionGroup(ImmutableArray<CharacterCondition> items)
+    public CharacterConditionGroup(ImmutableArray<CharacterCondition> items)
     {
 #if DEBUG
         if (items.IsDefault) throw new ArgumentOutOfRangeException(nameof(items));
 #endif
         _items = items;
+    }
+
+    public CharacterConditionGroup(CharacterCondition item) : this(ImmutableArray.Create(item))
+    {
     }
 
     private readonly ImmutableArray<CharacterCondition> _items;
@@ -102,12 +101,9 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
     IEnumerator<CharacterCondition> IEnumerable<CharacterCondition>.GetEnumerator() => ((IEnumerable<CharacterCondition>)_items).GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_items).GetEnumerator();
 
-    public bool AllowsAnySingleCharacter => _items.Length == 1 && _items[0].AllowsAny;
+    public bool MatchesAnySingleCharacter => HasItems && _items.Length == 1 && _items[0].MatchesAnySingleCharacter;
 
-    public string GetEncoded()
-    {
-        return string.Concat(_items.Select(c => c.GetEncoded()));
-    }
+    public string GetEncoded() => string.Concat(_items.Select(c => c.GetEncoded()));
 
     public override string ToString() => GetEncoded();
 
@@ -116,19 +112,21 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
     /// </summary>
     /// <param name="text">The text to check.</param>
     /// <returns>True when the start of the <paramref name="text"/> is matched by the conditions.</returns>
-    public bool IsStartingMatch(string text)
+    public bool IsStartingMatch(ReadOnlySpan<char> text)
     {
-        if (string.IsNullOrEmpty(text) || _items.Length > text.Length)
+        if (IsEmpty)
         {
             return false;
         }
 
-        for (var i = 0; i < _items.Length; i++)
+        foreach (var condition in _items)
         {
-            if (!_items[i].IsMatch(text[i]))
+            if (!condition.FullyMatchesFromStart(text, out var matchLength))
             {
                 return false;
             }
+
+            text = text.Slice(matchLength);
         }
 
         return true;
@@ -139,19 +137,21 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
     /// </summary>
     /// <param name="text">The text to check.</param>
     /// <returns>True when the end of the <paramref name="text"/> is matched by the conditions.</returns>
-    public bool IsEndingMatch(string text)
+    public bool IsEndingMatch(ReadOnlySpan<char> text)
     {
-        if (_items.Length > text.Length)
+        if (IsEmpty)
         {
             return false;
         }
 
-        for (int conditionIndex = _items.Length - 1, textIndex = text.Length - 1; conditionIndex >= 0; conditionIndex--, textIndex--)
+        for (var conditionIndex = _items.Length - 1; conditionIndex >= 0; conditionIndex--)
         {
-            if (!_items[conditionIndex].IsMatch(text[textIndex]))
+            if (!_items[conditionIndex].FullyMatchesFromEnd(text, out var matchLength))
             {
                 return false;
             }
+
+            text = text.Slice(0, text.Length - matchLength);
         }
 
         return true;
@@ -159,40 +159,17 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
 
     public bool IsOnlyPossibleMatch(ReadOnlySpan<char> text)
     {
-        if (text.IsEmpty || _items.Length != text.Length)
+        foreach (var condition in _items)
         {
-            return false;
-        }
-
-        for (var i = 0; i < text.Length; i++)
-        {
-            var condition = _items[i];
-            if (!condition.PermitsSingleCharacter || condition.Characters[0] != text[i])
+            if (!condition.IsOnlyPossibleMatch(text, out var matchLength))
             {
                 return false;
             }
+
+            text = text.Slice(matchLength);
         }
 
-        return true;
-    }
-
-    public bool IsOnlyPossibleMatch(string text)
-    {
-        if (string.IsNullOrEmpty(text) || _items.Length != text.Length)
-        {
-            return false;
-        }
-
-        for (var i = 0; i < text.Length; i++)
-        {
-            var condition = _items[i];
-            if (!condition.PermitsSingleCharacter || condition.Characters[0] != text[i])
-            {
-                return false;
-            }
-        }
-
-        return true;
+        return text.IsEmpty;
     }
 
     public sealed class Comparer : IEqualityComparer<CharacterConditionGroup>

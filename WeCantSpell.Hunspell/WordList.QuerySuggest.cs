@@ -2142,9 +2142,7 @@ public partial class WordList
                         )
                     )
                     &&
-                    word.Length >= entry.Conditions.Count
-                    &&
-                    entry.TestCondition(word)
+                    entry.TestCondition(word.AsSpan())
                     &&
                     (
                         entry.Strip.Length == 0
@@ -2175,9 +2173,7 @@ public partial class WordList
                         )
                     )
                     &&
-                    word.Length >= entry.Conditions.Count
-                    &&
-                    entry.TestCondition(word)
+                    entry.TestCondition(word.AsSpan())
                     &&
                     (
                         entry.Strip.Length == 0

@@ -1,68 +1,198 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
-public readonly struct CharacterCondition : IEquatable<CharacterCondition>
+public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<CharacterCondition>
 {
-    public static readonly CharacterCondition AllowAny = new(CharacterSet.Empty, true);
+    public static readonly CharacterCondition AllowAny = new(ImmutableArray<char>.Empty, ModeKind.RestrictChars);
 
     public static bool operator ==(CharacterCondition left, CharacterCondition right) => left.Equals(right);
 
     public static bool operator !=(CharacterCondition left, CharacterCondition right) => !(left == right);
 
-    public CharacterCondition(CharacterSet characters, bool restricted)
+    public static CharacterCondition CreateCharSet(ReadOnlySpan<char> chars, bool restricted)
+    {
+        var builder = ImmutableArray.CreateBuilder<char>(chars.Length);
+
+        foreach (var c in chars)
+        {
+            builder.Add(c);
+        }
+
+        builder.Sort();
+
+        return new(builder.ToImmutable(allowDestructive: true), restricted ? ModeKind.RestrictChars : ModeKind.PermitChars);
+    }
+
+    public static CharacterCondition CreateSequence(char c)
+    {
+        return new(ImmutableArray.Create(c), ModeKind.MatchSequence);
+    }
+
+    public static CharacterCondition CreateSequence(ReadOnlySpan<char> chars)
+    {
+        var builder = ImmutableArray.CreateBuilder<char>(chars.Length);
+
+        foreach (var c in chars)
+        {
+            builder.Add(c);
+        }
+
+        return new(builder.ToImmutable(allowDestructive: true), ModeKind.MatchSequence);
+    }
+
+    private CharacterCondition(ImmutableArray<char> characters, ModeKind mode)
     {
         Characters = characters;
-        Restricted = restricted;
+        Mode = mode;
     }
 
-    public CharacterSet Characters { get; }
+    public ImmutableArray<char> Characters { get; }
 
-    /// <summary>
-    /// Indicates that the <see cref="Characters"/> are restricted when <c>true</c>.
-    /// </summary>
-    public bool Restricted { get; }
+    public ModeKind Mode { get; }
 
-    public bool IsMatch(char c) => Characters.Contains(c) ^ Restricted;
+    public int Count => Characters.Length;
 
-    public bool AllowsAny => Restricted && Characters is not { Count: > 0 };
+    public bool IsEmpty => Characters.IsDefaultOrEmpty;
 
-    public bool PermitsSingleCharacter => !Restricted && Characters is { Count: 1 };
+    public bool HasItems => !IsEmpty;
 
-    public string GetEncoded()
+    public char this[int index] => Characters[index];
+
+    public ImmutableArray<char>.Enumerator GetEnumerator() => Characters.GetEnumerator();
+
+    IEnumerator<char> IEnumerable<char>.GetEnumerator() => ((IEnumerable<char>)Characters).GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)Characters).GetEnumerator();
+
+    public bool Contains(char c)
     {
-        if (AllowsAny)
+        if (!HasItems)
         {
-            return ".";
+            return false;
         }
 
-        if (PermitsSingleCharacter)
+        if (Characters.Length <= 8 || Mode == ModeKind.MatchSequence)
         {
-            return Characters[0].ToString();
+            return Characters.Contains(c);
         }
 
-        var result = Restricted ? "[^" : "[";
-        if (Characters is { Count: > 0 })
-        {
-            result += Characters.GetCharactersAsString() + "]";
-        }
-        else
-        {
-            result += "]";
-        }
-
-        return result;
+        return Characters.BinarySearch(c) >= 0;
     }
+
+    public bool MatchesAnySingleCharacter => Mode == ModeKind.RestrictChars && IsEmpty;
+
+    public string GetEncoded() => Mode switch
+    {
+        ModeKind.MatchSequence => Characters.AsSpan().ToString(),
+        ModeKind.RestrictChars when Characters.Length == 0 => ".",
+        ModeKind.RestrictChars => $"[^{Characters.AsSpan().ToString()}]",
+        ModeKind.PermitChars => $"[{Characters.AsSpan().ToString()}]",
+        _ => throw new NotSupportedException(),
+    };
 
     public override string ToString() => GetEncoded();
 
-    public bool Equals(CharacterCondition other) =>
-        Restricted == other.Restricted
-        && CharacterSet.Comparer.Instance.Equals(Characters, other.Characters);
+    public bool Equals(CharacterCondition other) => Mode == other.Mode && Characters.SequenceEqual(other.Characters);
 
     public override bool Equals(object? obj) => obj is CharacterCondition cc && Equals(cc);
 
-    public override int GetHashCode() => HashCode.Combine(CharacterSet.Comparer.Instance.GetHashCode(Characters), Restricted);
+    public override int GetHashCode() => HashCode.Combine(Characters.Length, Mode);
+
+    internal bool FullyMatchesFromStart(ReadOnlySpan<char> text, out int matchLength)
+    {
+        matchLength = 1;
+
+        if (text.IsEmpty)
+        {
+            return false;
+        }
+
+        switch (Mode)
+        {
+            case ModeKind.PermitChars:
+                return Contains(text[0]);
+            case ModeKind.RestrictChars:
+                return !Contains(text[0]);
+            case ModeKind.MatchSequence:
+                if (HasItems && text.StartsWith(Characters.AsSpan()))
+                {
+                    matchLength = Characters.Length;
+                    return true;
+                }
+
+                break;
+        }
+
+        return false;
+    }
+
+    internal bool FullyMatchesFromEnd(ReadOnlySpan<char> text, out int matchLength)
+    {
+        matchLength = 1;
+
+        if (text.IsEmpty)
+        {
+            return false;
+        }
+
+        switch (Mode)
+        {
+            case ModeKind.PermitChars:
+                return Contains(text[text.Length - 1]);
+            case ModeKind.RestrictChars:
+                return !Contains(text[text.Length - 1]);
+            case ModeKind.MatchSequence:
+                if (HasItems && text.EndsWith(Characters.AsSpan()))
+                {
+                    matchLength = Characters.Length;
+                    return true;
+                }
+
+                break;
+        }
+
+        return false;
+    }
+
+    internal bool IsOnlyPossibleMatch(ReadOnlySpan<char> text, out int matchLength)
+    {
+        matchLength = 1;
+
+        if (text.IsEmpty)
+        {
+            return false;
+        }
+
+        switch (Mode)
+        {
+            case ModeKind.RestrictChars:
+                return false;
+            case ModeKind.PermitChars:
+                return HasItems && Characters.Length == 1 && text.StartsWith(Characters[0]);
+            case ModeKind.MatchSequence:
+                if (HasItems && text.Length >= Characters.Length && text.StartsWith(Characters.AsSpan()))
+                {
+                    matchLength = Characters.Length;
+                    return true;
+                }
+
+                break;
+        }
+
+        return false;
+    }
+
+    public enum ModeKind : byte
+    {
+        PermitChars,
+        RestrictChars,
+        MatchSequence
+    }
 }

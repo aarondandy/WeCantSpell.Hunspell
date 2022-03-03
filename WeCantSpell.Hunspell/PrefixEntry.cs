@@ -1,4 +1,6 @@
-﻿namespace WeCantSpell.Hunspell;
+﻿using System;
+
+namespace WeCantSpell.Hunspell;
 
 public sealed class PrefixEntry : AffixEntry
 {
@@ -14,5 +16,5 @@ public sealed class PrefixEntry : AffixEntry
 
     public sealed override string Key => Append;
 
-    internal bool TestCondition(string word) => Conditions.IsStartingMatch(word);
+    internal bool TestCondition(ReadOnlySpan<char> word) => Conditions.IsStartingMatch(word);
 }
