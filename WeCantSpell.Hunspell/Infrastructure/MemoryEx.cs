@@ -147,7 +147,7 @@ static class MemoryEx
         var builder = StringBuilderPool.Get(@this.Length - 1);
         builder.Append(@this.Slice(0, removeIndex));
 
-        for (var i = removeIndex; i < @this.Length; i++)
+        for (var i = removeIndex + 1; i < @this.Length; i++)
         {
             ref readonly var c = ref @this[i];
             if (value != c)
