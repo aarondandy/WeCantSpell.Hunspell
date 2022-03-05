@@ -169,7 +169,7 @@ public sealed partial class AffixReader
     {
         if (filePath is null) throw new ArgumentNullException(nameof(filePath));
 
-        using var stream = FileStreamEx.OpenAsyncReadFileStream(filePath);
+        using var stream = StreamEx.OpenAsyncReadFileStream(filePath);
         return await ReadAsync(stream, builder).ConfigureAwait(false);
     }
 
@@ -185,7 +185,7 @@ public sealed partial class AffixReader
     {
         if (filePath is null) throw new ArgumentNullException(nameof(filePath));
 
-        using var stream = FileStreamEx.OpenReadFileStream(filePath);
+        using var stream = StreamEx.OpenReadFileStream(filePath);
         return Read(stream, builder);
     }
 

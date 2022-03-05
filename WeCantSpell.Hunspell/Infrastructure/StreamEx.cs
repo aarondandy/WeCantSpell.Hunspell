@@ -1,8 +1,9 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
-static class FileStreamEx
+static class StreamEx
 {
     private const int DefaultBufferSize = 4096;
 

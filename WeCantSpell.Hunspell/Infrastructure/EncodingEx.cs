@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
@@ -45,4 +46,26 @@ static class EncodingEx
 
         return null;
     }
+
+#if NO_SPAN_DECODE
+    public static void Convert(this Decoder decoder, ReadOnlySpan<byte> bytes, Span<char> chars, bool flush, out int bytesUsed, out int charsUsed, out bool completed)
+    {
+        unsafe
+        {
+            fixed (byte* bytesPointer = &MemoryMarshal.GetReference(bytes))
+            fixed (char* charsPointer = &MemoryMarshal.GetReference(chars))
+            {
+                decoder.Convert(
+                    bytesPointer,
+                    bytes.Length,
+                    charsPointer,
+                    chars.Length,
+                    flush: false,
+                    out bytesUsed,
+                    out charsUsed,
+                    out completed);
+            }
+        }
+    }
+#endif
 }

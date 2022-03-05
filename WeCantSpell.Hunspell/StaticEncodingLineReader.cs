@@ -9,8 +9,18 @@ using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
+[Obsolete]
 public sealed class StaticEncodingLineReader : IHunspellLineReader, IDisposable
 {
+    public static List<string> ReadLines(string filePath, Encoding encoding)
+    {
+        if (filePath == null) throw new ArgumentNullException(nameof(filePath));
+
+        using var stream = StreamEx.OpenReadFileStream(filePath);
+        using var reader = new StaticEncodingLineReader(stream, encoding);
+        return reader.ReadLines().ToList();
+    }
+
     public StaticEncodingLineReader(Stream stream, Encoding encoding)
     {
         _stream = stream ?? throw new ArgumentNullException(nameof(stream));
@@ -21,24 +31,6 @@ public sealed class StaticEncodingLineReader : IHunspellLineReader, IDisposable
     private readonly StreamReader _reader;
 
     public Encoding CurrentEncoding => _reader.CurrentEncoding;
-
-    public static List<string> ReadLines(string filePath, Encoding encoding)
-    {
-        if (filePath == null) throw new ArgumentNullException(nameof(filePath));
-
-        using var stream = FileStreamEx.OpenReadFileStream(filePath);
-        using var reader = new StaticEncodingLineReader(stream, encoding);
-        return reader.ReadLines().ToList();
-    }
-
-    public static async Task<IEnumerable<string>> ReadLinesAsync(string filePath, Encoding encoding)
-    {
-        if (filePath == null) throw new ArgumentNullException(nameof(filePath));
-
-        using var stream = FileStreamEx.OpenAsyncReadFileStream(filePath);
-        using var reader = new StaticEncodingLineReader(stream, encoding);
-        return await reader.ReadLinesAsync().ConfigureAwait(false);
-    }
 
     public string? ReadLine() => _reader.ReadLine();
 

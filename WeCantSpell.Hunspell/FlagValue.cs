@@ -160,14 +160,13 @@ public readonly struct FlagValue :
 
     public bool Equals(char other) => other == _value;
 
-    public override bool Equals(object? obj) =>
-        obj switch
-        {
-            FlagValue value => Equals(value),
-            int value => Equals(value),
-            char value => Equals(value),
-            _ => false,
-        };
+    public override bool Equals(object? obj) => obj switch
+    {
+        FlagValue value => Equals(value),
+        int value => Equals(value),
+        char value => Equals(value),
+        _ => false,
+    };
 
     public override int GetHashCode() => _value.GetHashCode();
 

@@ -8,6 +8,7 @@ namespace WeCantSpell.Hunspell;
 /// <summary>
 /// Defines operations to read affix or dictionary lines from a stream sequentially.
 /// </summary>
+[Obsolete("Direct usage of specific implementations is probably better")]
 public interface IHunspellLineReader
 {
     /// <summary>

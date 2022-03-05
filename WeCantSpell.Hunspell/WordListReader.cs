@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -54,7 +52,7 @@ public sealed class WordListReader
         if (dictionaryFilePath is null) throw new ArgumentNullException(nameof(dictionaryFilePath));
         if (affix is null) throw new ArgumentNullException(nameof(affix));
 
-        using var stream = FileStreamEx.OpenAsyncReadFileStream(dictionaryFilePath);
+        using var stream = StreamEx.OpenAsyncReadFileStream(dictionaryFilePath);
         return await ReadAsync(stream, affix, builder).ConfigureAwait(false);
     }
 
@@ -74,8 +72,15 @@ public sealed class WordListReader
         if (dictionaryStream is null) throw new ArgumentNullException(nameof(dictionaryStream));
         if (affix is null) throw new ArgumentNullException(nameof(affix));
 
-        using var reader = new StaticEncodingLineReader(dictionaryStream, affix.Encoding);
-        return await ReadAsync(reader, affix, builder).ConfigureAwait(false);
+        var readerInstance = new WordListReader(builder, affix);
+
+        var lineReader = LineReader.Create(dictionaryStream, affix.Encoding);
+        while (lineReader.MoveNext())
+        {
+            readerInstance.ParseLine(lineReader.Current.Span);
+        }
+
+        return readerInstance.Builder.MoveToImmutable();
     }
 
     public static async Task<WordList> ReadAsync(IHunspellLineReader dictionaryReader, AffixConfig affix, WordList.Builder? builder = null)
@@ -118,7 +123,7 @@ public sealed class WordListReader
         if (dictionaryFilePath is null) throw new ArgumentNullException(nameof(dictionaryFilePath));
         if (affix is null) throw new ArgumentNullException(nameof(affix));
 
-        using var stream = FileStreamEx.OpenReadFileStream(dictionaryFilePath);
+        using var stream = StreamEx.OpenReadFileStream(dictionaryFilePath);
         return Read(stream, affix, builder);
     }
 
@@ -138,8 +143,15 @@ public sealed class WordListReader
         if (dictionaryStream is null) throw new ArgumentNullException(nameof(affix));
         if (affix is null) throw new ArgumentNullException(nameof(affix));
 
-        using var reader = new StaticEncodingLineReader(dictionaryStream, affix.Encoding);
-        return Read(reader, affix, builder);
+        var readerInstance = new WordListReader(builder, affix);
+
+        var lineReader = LineReader.Create(dictionaryStream, affix.Encoding);
+        while (lineReader.MoveNext())
+        {
+            readerInstance.ParseLine(lineReader.Current.Span);
+        }
+
+        return readerInstance.Builder.MoveToImmutable();
     }
 
     public static WordList Read(IHunspellLineReader dictionaryReader, AffixConfig affix, WordList.Builder? builder = null)

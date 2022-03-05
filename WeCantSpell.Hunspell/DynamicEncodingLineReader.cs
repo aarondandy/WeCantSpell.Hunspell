@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -9,6 +8,7 @@ using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
+[Obsolete]
 public sealed class DynamicEncodingLineReader : IHunspellLineReader, IDisposable
 {
     static DynamicEncodingLineReader()
@@ -65,24 +65,6 @@ public sealed class DynamicEncodingLineReader : IHunspellLineReader, IDisposable
     private readonly byte[] _singleDecoderByteArray = new byte[1];
 
     public Encoding CurrentEncoding { get; private set; }
-
-    public static List<string> ReadLines(string filePath, Encoding defaultEncoding)
-    {
-        if (filePath is null) throw new ArgumentNullException(nameof(filePath));
-
-        using var stream = FileStreamEx.OpenReadFileStream(filePath);
-        using var reader = new DynamicEncodingLineReader(stream, defaultEncoding ?? Encoding.UTF8);
-        return reader.ReadLines().ToList();
-    }
-
-    public static async Task<IEnumerable<string>> ReadLinesAsync(string filePath, Encoding defaultEncoding)
-    {
-        if (filePath is null) throw new ArgumentNullException(nameof(filePath));
-
-        using var stream = FileStreamEx.OpenAsyncReadFileStream(filePath);
-        using var reader = new DynamicEncodingLineReader(stream, defaultEncoding ?? Encoding.UTF8);
-        return await reader.ReadLinesAsync().ConfigureAwait(false);
-    }
 
     public string? ReadLine()
     {
