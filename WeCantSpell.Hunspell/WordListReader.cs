@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -69,13 +70,15 @@ public sealed class WordListReader
 
     public static async Task<WordList> ReadAsync(Stream dictionaryStream, AffixConfig affix, WordList.Builder? builder = null)
     {
+        var ct = CancellationToken.None; // TODO
+
         if (dictionaryStream is null) throw new ArgumentNullException(nameof(dictionaryStream));
         if (affix is null) throw new ArgumentNullException(nameof(affix));
 
         var readerInstance = new WordListReader(builder, affix);
 
         var lineReader = LineReader.Create(dictionaryStream, affix.Encoding);
-        while (lineReader.MoveNext())
+        while (await lineReader.MoveNextAsync(ct))
         {
             readerInstance.ParseLine(lineReader.Current.Span);
         }

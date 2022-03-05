@@ -2,12 +2,14 @@
 using System.Buffers;
 using System.IO;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
-internal struct LineReader
+internal class LineReader
 {
     public static LineReader Create(Stream stream, Encoding encoding) => new LineReader(stream, encoding);
 
@@ -31,31 +33,30 @@ internal struct LineReader
 
     public bool MoveNext()
     {
+        var lineBreakPosition = PrepareForNextLine();
+        return SetCurrentForNextLine(lineBreakPosition);
+    }
+
+    public async Task<bool> MoveNextAsync(CancellationToken ct)
+    {
+        var lineBreakPosition = await PrepareForNextLineAsync(ct);
+        return SetCurrentForNextLine(lineBreakPosition);
+    }
+
+    public void Dispose()
+    {
         _splitBufferMemoryRental?.Dispose();
-
-        SequencePosition? lineBreakPosition = null;
-        do
+        _splitBufferMemoryRental = null;
+        while (_head is not null)
         {
-            if (_currentSequence.IsEmpty)
-            {
-                if (!LoadMoreBytesIntoTextSequences())
-                {
-                    break;
-                }
-            }
-
-            lineBreakPosition = _currentSequence.PositionOf('\n');
-            if (lineBreakPosition.HasValue)
-            {
-                break;
-            }
-            else if (!LoadMoreBytesIntoTextSequences())
-            {
-                break;
-            }
+            _head.Dispose();
+            _head = (DecodedTextSegment?)_head.Next;
         }
-        while (true);
+    }
 
+    private bool SetCurrentForNextLine(SequencePosition? lineBreakPosition)
+    {
+        _splitBufferMemoryRental?.Dispose();
         ReadOnlySequence<char> lineSequence;
         if (lineBreakPosition.HasValue)
         {
@@ -105,15 +106,69 @@ internal struct LineReader
         return true;
     }
 
-    public void Dispose()
+    private SequencePosition? PrepareForNextLine()
     {
-        _splitBufferMemoryRental?.Dispose();
-        _splitBufferMemoryRental = null;
-        while (_head is not null)
+        var lineBreakPosition = _currentSequence.PositionOf('\n');
+        if (lineBreakPosition.HasValue)
         {
-            _head.Dispose();
-            _head = (DecodedTextSegment?)_head.Next;
+            return lineBreakPosition;
         }
+
+        do
+        {
+            if (! LoadMoreBytesIntoTextSequences())
+            {
+                break;
+            }
+
+            lineBreakPosition = _currentSequence.PositionOf('\n');
+            if (lineBreakPosition.HasValue)
+            {
+                break;
+            }
+        }
+        while (true);
+
+        return lineBreakPosition;
+    }
+
+#if NO_VALUETASK
+    private Task<SequencePosition?> PrepareForNextLineAsync(CancellationToken ct)
+    {
+        var quickPosition = _currentSequence.PositionOf('\n');
+        return quickPosition.HasValue
+            ? Task.FromResult(quickPosition)
+            : PrepareForNextLineWithSearchAsync(ct);
+    }
+#else
+    private ValueTask<SequencePosition?> PrepareForNextLineAsync(CancellationToken ct)
+    {
+        var quickPosition = _currentSequence.PositionOf('\n');
+        return quickPosition.HasValue
+            ? ValueTask.FromResult(quickPosition)
+            : new ValueTask<SequencePosition?>(PrepareForNextLineWithSearchAsync(ct));
+    }
+#endif
+
+    private async Task<SequencePosition?> PrepareForNextLineWithSearchAsync(CancellationToken ct)
+    {
+        SequencePosition? lineBreakPosition = null;
+        do
+        {
+            if (!await LoadMoreBytesIntoTextSequencesAsync(ct))
+            {
+                break;
+            }
+
+            lineBreakPosition = _currentSequence.PositionOf('\n');
+            if (lineBreakPosition.HasValue)
+            {
+                break;
+            }
+        }
+        while (true);
+
+        return lineBreakPosition;
     }
 
     private bool LoadMoreBytesIntoTextSequences()
@@ -124,14 +179,44 @@ internal struct LineReader
             return false;
         }
 
-        var fileBytes = _fileReadByteBuffer.AsSpan(0, fileBytesRead);
+        DecodeIntoSequences(_fileReadByteBuffer.AsSpan(0, fileBytesRead));
 
+        return true;
+    }
+
+    private async Task<bool> LoadMoreBytesIntoTextSequencesAsync(CancellationToken ct)
+    {
+        var fileBytesRead = await _stream.ReadAsync(_fileReadByteBuffer, 0, _fileReadByteBuffer.Length, ct);
+        if (fileBytesRead == 0)
+        {
+            return false;
+        }
+
+        DecodeIntoSequences(_fileReadByteBuffer, fileBytesRead);
+
+        return true;
+    }
+
+    private void DecodeIntoSequences(byte[] fileReadByteBuffer, int fileBytesRead)
+    {
+        DecodeIntoSequences(fileReadByteBuffer.AsSpan(0, fileBytesRead));
+    }
+
+    private void DecodeIntoSequences(ReadOnlySpan<byte> fileBytes)
+    {
         while (!fileBytes.IsEmpty)
         {
             var textBufferRental = MemoryPool<char>.Shared.Rent(fileBytes.Length * 2);
             var textBuffer = textBufferRental.Memory;
 
             _decoder.Convert(fileBytes, textBuffer.Span, flush: false, out var bytesConsumed, out var charsProduced, out _);
+
+#if DEBUG
+            if (bytesConsumed == 0)
+            {
+                throw new InvalidOperationException();
+            }
+#endif
 
             fileBytes = fileBytes.Slice(bytesConsumed);
 
@@ -152,11 +237,6 @@ internal struct LineReader
             {
                 _tail = _tail!.Append(textBufferRental, textBuffer);
             }
-
-            if (bytesConsumed == 0)
-            {
-                throw new InvalidOperationException();
-            }
         }
 
         if (_head is null)
@@ -167,8 +247,6 @@ internal struct LineReader
         {
             _currentSequence = new ReadOnlySequence<char>(_head, 0, _tail!, _tail!.Memory.Length);
         }
-
-        return true;
     }
 
     private sealed class DecodedTextSegment : ReadOnlySequenceSegment<char>, IDisposable
