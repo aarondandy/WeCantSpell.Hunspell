@@ -77,29 +77,18 @@ public sealed class WordListReader
 
         var readerInstance = new WordListReader(builder, affix);
 
-        var lineReader = LineReader.Create(dictionaryStream, affix.Encoding);
-        while (await lineReader.MoveNextAsync(ct))
-        {
-            readerInstance.ParseLine(lineReader.Current.Span);
-        }
+        await performRead().ConfigureAwait(false);
 
         return readerInstance.Builder.MoveToImmutable();
-    }
 
-    public static async Task<WordList> ReadAsync(IHunspellLineReader dictionaryReader, AffixConfig affix, WordList.Builder? builder = null)
-    {
-        if (dictionaryReader is null) throw new ArgumentNullException(nameof(dictionaryReader));
-        if (affix is null) throw new ArgumentNullException(nameof(affix));
-
-        var readerInstance = new WordListReader(builder, affix);
-
-        string? line;
-        while ((line = await dictionaryReader.ReadLineAsync().ConfigureAwait(false)) != null)
+        async Task performRead()
         {
-            readerInstance.ParseLine(line.AsSpan());
+            using var lineReader = LineReader.Create(dictionaryStream, affix.Encoding);
+            while (await lineReader.MoveNextAsync(ct))
+            {
+                readerInstance.ParseLine(lineReader.Current.Span);
+            }
         }
-
-        return readerInstance.Builder.MoveToImmutable();
     }
 
     public static WordList ReadFile(string dictionaryFilePath)
@@ -148,26 +137,10 @@ public sealed class WordListReader
 
         var readerInstance = new WordListReader(builder, affix);
 
-        var lineReader = LineReader.Create(dictionaryStream, affix.Encoding);
+        using var lineReader = LineReader.Create(dictionaryStream, affix.Encoding);
         while (lineReader.MoveNext())
         {
             readerInstance.ParseLine(lineReader.Current.Span);
-        }
-
-        return readerInstance.Builder.MoveToImmutable();
-    }
-
-    public static WordList Read(IHunspellLineReader dictionaryReader, AffixConfig affix, WordList.Builder? builder = null)
-    {
-        if (dictionaryReader is null) throw new ArgumentNullException(nameof(dictionaryReader));
-        if (affix is null) throw new ArgumentNullException(nameof(affix));
-
-        var readerInstance = new WordListReader(builder, affix);
-
-        string? line;
-        while ((line = dictionaryReader.ReadLine()) is not null)
-        {
-            readerInstance.ParseLine(line.AsSpan());
         }
 
         return readerInstance.Builder.MoveToImmutable();

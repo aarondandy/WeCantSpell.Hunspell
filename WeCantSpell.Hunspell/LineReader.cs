@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -9,7 +10,7 @@ using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
-internal class LineReader
+internal class LineReader : IDisposable
 {
     private static readonly Encoding[] PreambleEncodings;
     private static readonly int MaxPreambleLengthInBytes = 4;
@@ -56,8 +57,8 @@ internal class LineReader
     private bool _hasReadPreambles = false;
     private DecodedTextSegment? _head = null;
     private DecodedTextSegment? _tail = null;
-    private ReadOnlySequence<char> _currentSequence = new ReadOnlySequence<char>(ReadOnlyMemory<char>.Empty);
-    private IMemoryOwner<char>? _splitBufferMemoryRental = null;
+    private ReadOnlySequence<char> _currentSequence = new(ReadOnlyMemory<char>.Empty);
+    private List<IDisposable> _recycleBin = new();
 
     public ReadOnlyMemory<char> Current { get; private set; } = ReadOnlyMemory<char>.Empty;
 
@@ -67,16 +68,40 @@ internal class LineReader
         return SetCurrentForNextLine(lineBreakPosition);
     }
 
+
+
+#if NO_VALUETASK
     public async Task<bool> MoveNextAsync(CancellationToken ct)
     {
-        var lineBreakPosition = await PrepareForNextLineAsync(ct);
-        return SetCurrentForNextLine(lineBreakPosition);
+        var position = _currentSequence.PositionOf('\n');
+        position ??= await PrepareForNextLineWithSearchAsync(ct);
+        return SetCurrentForNextLine(position);
     }
+#else
+    public Task<bool> MoveNextAsync(CancellationToken ct)
+    {
+        var position = _currentSequence.PositionOf('\n');
+        if (position.HasValue)
+        {
+            return Task.FromResult(SetCurrentForNextLine(position));
+        }
+        else
+        {
+            return readForNextLine();
+        }
+
+        async Task<bool> readForNextLine()
+        {
+            var position = await PrepareForNextLineWithSearchAsync(ct);
+            return SetCurrentForNextLine(position);
+        }
+    }
+#endif
 
     public void Dispose()
     {
-        _splitBufferMemoryRental?.Dispose();
-        _splitBufferMemoryRental = null;
+        _recycleBin.ForEach(static b => b.Dispose());
+        _recycleBin.Clear();
         while (_head is not null)
         {
             _head.Dispose();
@@ -86,7 +111,9 @@ internal class LineReader
 
     private bool SetCurrentForNextLine(SequencePosition? lineBreakPosition)
     {
-        _splitBufferMemoryRental?.Dispose();
+        _recycleBin.ForEach(static b => b.Dispose());
+        _recycleBin.Clear();
+
         ReadOnlySequence<char> lineSequence;
         if (lineBreakPosition.HasValue)
         {
@@ -108,10 +135,11 @@ internal class LineReader
         }
         else
         {
-            _splitBufferMemoryRental = MemoryPool<char>.Shared.Rent((int)lineSequence.Length);
-            var _splitBufferMemory = _splitBufferMemoryRental.Memory.Slice(0, (int)lineSequence.Length);
-            lineSequence.CopyTo(_splitBufferMemoryRental.Memory.Span);
-            Current = _splitBufferMemory;
+            var splitBufferMemoryRental = MemoryPool<char>.Shared.Rent((int)lineSequence.Length);
+            _recycleBin.Add(splitBufferMemoryRental);
+            var splitBufferMemory = splitBufferMemoryRental.Memory.Slice(0, (int)lineSequence.Length);
+            lineSequence.CopyTo(splitBufferMemoryRental.Memory.Span);
+            Current = splitBufferMemory;
         }
 
         if (Current.EndsWith('\r'))
@@ -127,11 +155,11 @@ internal class LineReader
 
         while (_head is not null && _head != nextHead)
         {
-            _head.Dispose();
+            _recycleBin.Add(_head);
             _head = (DecodedTextSegment?)_head.Next;
         }
 
-        _head = _head?.CloneAt(_currentSequence.Start.GetInteger());
+        //_head = _head?.CloneAt(_currentSequence.Start.GetInteger());
 
         return true;
     }
@@ -151,6 +179,11 @@ internal class LineReader
                 break;
             }
 
+            if (_currentSequence.IsEmpty)
+            {
+                ;
+            }
+
             lineBreakPosition = _currentSequence.PositionOf('\n');
             if (lineBreakPosition.HasValue)
             {
@@ -162,24 +195,6 @@ internal class LineReader
         return lineBreakPosition;
     }
 
-#if NO_VALUETASK
-    private Task<SequencePosition?> PrepareForNextLineAsync(CancellationToken ct)
-    {
-        var quickPosition = _currentSequence.PositionOf('\n');
-        return quickPosition.HasValue
-            ? Task.FromResult(quickPosition)
-            : PrepareForNextLineWithSearchAsync(ct);
-    }
-#else
-    private ValueTask<SequencePosition?> PrepareForNextLineAsync(CancellationToken ct)
-    {
-        var quickPosition = _currentSequence.PositionOf('\n');
-        return quickPosition.HasValue
-            ? ValueTask.FromResult(quickPosition)
-            : new ValueTask<SequencePosition?>(PrepareForNextLineWithSearchAsync(ct));
-    }
-#endif
-
     private async Task<SequencePosition?> PrepareForNextLineWithSearchAsync(CancellationToken ct)
     {
         SequencePosition? lineBreakPosition = null;
@@ -190,7 +205,15 @@ internal class LineReader
                 break;
             }
 
-            lineBreakPosition = _currentSequence.PositionOf('\n');
+            try
+            {
+                lineBreakPosition = _currentSequence.PositionOf('\n');
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+
             if (lineBreakPosition.HasValue)
             {
                 break;
@@ -280,7 +303,7 @@ internal class LineReader
         }
         else
         {
-            _currentSequence = new ReadOnlySequence<char>(_head, 0, _tail!, _tail!.Memory.Length);
+            _currentSequence = new ReadOnlySequence<char>(_head, _currentSequence.Start.GetInteger(), _tail!, _tail!.Memory.Length);
         }
     }
 
