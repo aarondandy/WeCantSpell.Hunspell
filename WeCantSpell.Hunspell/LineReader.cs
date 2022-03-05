@@ -11,19 +11,49 @@ namespace WeCantSpell.Hunspell;
 
 internal class LineReader
 {
+    private static readonly Encoding[] PreambleEncodings;
+    private static readonly int MaxPreambleLengthInBytes = 4;
+
+    static LineReader()
+    {
+        // NOTE: the order of these encodings must be preserved
+        PreambleEncodings =
+            new Encoding[]
+            {
+                new UnicodeEncoding(true, true)
+                ,new UnicodeEncoding(false, true)
+                ,new UTF32Encoding(false, true)
+                ,Encoding.UTF8
+                ,new UTF32Encoding(true, true)
+            };
+
+        MaxPreambleLengthInBytes = 4;
+        foreach (var e in PreambleEncodings)
+        {
+            var length = e.GetPreamble().Length;
+            if (length > MaxPreambleLengthInBytes)
+            {
+                MaxPreambleLengthInBytes = length;
+            }
+        }
+    }
+
     public static LineReader Create(Stream stream, Encoding encoding) => new LineReader(stream, encoding);
 
     private LineReader(Stream stream, Encoding encoding)
     {
         _stream = stream;
+        _encoding = encoding;
         _decoder = encoding.GetDecoder();
         _fileReadByteBuffer = new byte[4096]; // TODO: would it be better to rent from the memory pool for this?
     }
 
     private readonly Stream _stream;
-    private readonly Decoder _decoder;
     private readonly byte[] _fileReadByteBuffer;
 
+    private Encoding _encoding;
+    private Decoder _decoder;
+    private bool _hasReadPreambles = false;
     private DecodedTextSegment? _head = null;
     private DecodedTextSegment? _tail = null;
     private ReadOnlySequence<char> _currentSequence = new ReadOnlySequence<char>(ReadOnlyMemory<char>.Empty);
@@ -204,6 +234,11 @@ internal class LineReader
 
     private void DecodeIntoSequences(ReadOnlySpan<byte> fileBytes)
     {
+        if (!_hasReadPreambles)
+        {
+            ReadPreamble(ref fileBytes);
+        }
+
         while (!fileBytes.IsEmpty)
         {
             var textBufferRental = MemoryPool<char>.Shared.Rent(fileBytes.Length * 2);
@@ -247,6 +282,48 @@ internal class LineReader
         {
             _currentSequence = new ReadOnlySequence<char>(_head, 0, _tail!, _tail!.Memory.Length);
         }
+    }
+
+    private void ReadPreamble(ref ReadOnlySpan<byte> fileBytes)
+    {
+        if (fileBytes.IsEmpty)
+        {
+            return;
+        }
+
+        _hasReadPreambles = true;
+
+        foreach (var candidateEncoding in PreambleEncodings)
+        {
+            var encodingPreamble = candidateEncoding.GetPreamble();
+            if (encodingPreamble is not { Length: > 0 })
+            {
+                continue;
+            }
+
+            if (fileBytes.StartsWith(encodingPreamble.AsSpan()))
+            {
+                fileBytes = fileBytes.Slice(encodingPreamble.Length);
+                ChangeEncoding(candidateEncoding);
+                return;
+            }
+        }
+    }
+
+    private void ChangeEncoding(Encoding? newEncoding)
+    {
+        if (newEncoding is null)
+        {
+            return;
+        }
+
+        if (_encoding is not null && (ReferenceEquals(newEncoding, _encoding) || _encoding.Equals(newEncoding)))
+        {
+            return;
+        }
+
+        _encoding = newEncoding;
+        _decoder = newEncoding.GetDecoder();
     }
 
     private sealed class DecodedTextSegment : ReadOnlySequenceSegment<char>, IDisposable
