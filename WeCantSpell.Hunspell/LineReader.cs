@@ -14,6 +14,7 @@ internal sealed class LineReader : IDisposable
 {
     private const char CharacterCr = '\r';
     private const char CharacterLf = '\n';
+    private const int DefaultBufferSize = 4096 * 2;
     private static readonly Encoding[] PreambleEncodings;
 
     static LineReader()
@@ -37,14 +38,12 @@ internal sealed class LineReader : IDisposable
         _stream = stream;
         _encoding = encoding;
         _decoder = encoding.GetDecoder();
-        _reusableFileReadBuffer = new byte[4096];
-        _charBufferSize = _reusableFileReadBuffer.Length;
+        _reusableFileReadBuffer = new byte[DefaultBufferSize];
         _buffers = new(2);
     }
 
     private readonly Stream _stream;
     private readonly byte[] _reusableFileReadBuffer;
-    private readonly int _charBufferSize;
     private readonly List<TextBufferLine> _buffers;
 
     private Encoding _encoding;
@@ -76,10 +75,9 @@ internal sealed class LineReader : IDisposable
 #if NO_VALUETASK
     public Task<bool> MoveNextAsync(CancellationToken ct)
     {
-        var lineTerminalPosition = ScanForwardToNextLineBreak();
-        if (lineTerminalPosition.HasValue)
+        if (ScanForwardToNextLineBreak() is { } lineTerminalPosition)
         {
-            return Task.FromResult(UpdateAfterRead(lineTerminalPosition.Value));
+            return Task.FromResult(UpdateAfterRead(lineTerminalPosition));
         }
         else
         {
@@ -89,19 +87,22 @@ internal sealed class LineReader : IDisposable
 #else
     public ValueTask<bool> MoveNextAsync(CancellationToken ct)
     {
-        var lineTerminalPosition = ScanForwardToNextLineBreak();
-        if (lineTerminalPosition.HasValue)
+        if (ScanForwardToNextLineBreak() is { } lineTerminalPosition)
         {
-            return ValueTask.FromResult(UpdateAfterRead(lineTerminalPosition.Value));
+            return ValueTask.FromResult(UpdateAfterRead(lineTerminalPosition));
         }
         else
         {
-            return new ValueTask<bool>(MoveNextAsyncWithReads(ct));
+            return MoveNextAsyncWithReads(ct);
         }
     }
 #endif
 
+#if NO_VALUETASK
     private async Task<bool> MoveNextAsyncWithReads(CancellationToken ct)
+#else
+    private async ValueTask<bool> MoveNextAsyncWithReads(CancellationToken ct)
+#endif
     {
         BufferPosition? lineTerminalPosition = null;
         do
@@ -126,7 +127,11 @@ internal sealed class LineReader : IDisposable
             return false;
         }
 
-        _tempJoinBuffer?.Dispose();
+        if (_tempJoinBuffer is not null)
+        {
+            _tempJoinBuffer.Dispose();
+            _tempJoinBuffer = null;
+        }
 
         TextBufferLine buffer;
         if (_position.BufferIndex == lineTerminalPosition.BufferIndex)
@@ -170,23 +175,25 @@ internal sealed class LineReader : IDisposable
         }
 
         _tempJoinBuffer = MemoryPool<char>.Shared.Rent(requiredBufferSize);
-        var tempBuffer = _tempJoinBuffer.Memory.Slice(0, requiredBufferSize);
+
+        var joinBufferMemory = _tempJoinBuffer.Memory.Slice(0, requiredBufferSize);
+        var joinWriteSpan = joinBufferMemory.Span;
 
         var buffer = _buffers[_position.BufferIndex];
-        buffer.Memory.Slice(_position.SubIndex).CopyTo(tempBuffer);
-        var writeOffset = buffer.Length - _position.SubIndex;
+        buffer.ReadSpan.Slice(_position.SubIndex).CopyTo(joinWriteSpan);
+        joinWriteSpan = joinWriteSpan.Slice(buffer.Length - _position.SubIndex);
 
         for (var i = _position.BufferIndex + 1; i < lineTerminalPosition.BufferIndex; i++)
         {
             buffer = _buffers[i];
-            buffer.Memory.CopyTo(tempBuffer.Slice(writeOffset));
-            writeOffset += buffer.Length;
+            buffer.ReadSpan.CopyTo(joinWriteSpan);
+            joinWriteSpan = joinWriteSpan.Slice(buffer.Length);
         }
 
         buffer = _buffers[lineTerminalPosition.BufferIndex];
-        buffer.Memory.Slice(0, lineTerminalPosition.SubIndex).CopyTo(tempBuffer.Slice(writeOffset));
+        buffer.ReadSpan.Slice(0, lineTerminalPosition.SubIndex).CopyTo(joinWriteSpan);
 
-        Current = tempBuffer;
+        Current = joinBufferMemory;
 
         return buffer;
     }
@@ -324,7 +331,7 @@ internal sealed class LineReader : IDisposable
         }
         else
         {
-            buffer = new(_charBufferSize);
+            buffer = new(DefaultBufferSize);
         }
 
         return buffer;
@@ -378,15 +385,16 @@ internal sealed class LineReader : IDisposable
         public TextBufferLine(int rawBufferSize)
         {
             Raw = new char[rawBufferSize];
-            Memory = ReadOnlyMemory<char>.Empty;
         }
 
         public char[] Raw;
-        public ReadOnlyMemory<char> Memory;
+        public ReadOnlyMemory<char> Memory = ReadOnlyMemory<char>.Empty;
 
         public int Length => Memory.Length;
 
         public Span<char> WriteSpan => Raw.AsSpan();
+
+        public ReadOnlySpan<char> ReadSpan => Memory.Span;
 
         public int FindLineBreak() => Memory.Span.IndexOf(CharacterLf);
 
