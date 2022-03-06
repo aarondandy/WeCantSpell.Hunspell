@@ -48,8 +48,8 @@ public partial class WordList
             }
 
             var resultType = SpellCheckResultType.None;
-            string root = null;
-            WordEntry rv = null;
+            string? root = null;
+            WordEntry? rv = null;
 
             if (capType == CapitalizationType.Huh || capType == CapitalizationType.HuhInit || capType == CapitalizationType.None)
             {
@@ -199,7 +199,7 @@ public partial class WordList
             return new SpellCheckResult(root, resultType, false);
         }
 
-        private WordEntry? CheckDetailsAllCap(int abbv, ref string scw, ref SpellCheckResultType resultType, out string root)
+        private WordEntry? CheckDetailsAllCap(int abbv, ref string scw, ref SpellCheckResultType resultType, out string? root)
         {
             resultType |= SpellCheckResultType.OrigCap;
             var rv = CheckWord(scw, ref resultType, out root);
@@ -270,7 +270,7 @@ public partial class WordList
             return rv;
         }
 
-        private WordEntry? CheckDetailsInitCap(int abbv, CapitalizationType capType, ref string scw, ref SpellCheckResultType resultType, out string root)
+        private WordEntry? CheckDetailsInitCap(int abbv, CapitalizationType capType, ref string scw, ref SpellCheckResultType resultType, out string? root)
         {
             var u8buffer = HunspellTextFunctions.MakeAllSmall(scw, TextInfo);
             scw = HunspellTextFunctions.MakeInitCap(u8buffer, TextInfo);

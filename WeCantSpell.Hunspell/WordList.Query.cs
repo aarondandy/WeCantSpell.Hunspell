@@ -381,13 +381,13 @@ public partial class WordList
             return null;
         }
 
-        private WordEntry? HomonymWordSearch(ReadOnlySpan<char> homonymWord, IncrementalWordList words, FlagValue condition2, bool scpdIsZero)
+        private WordEntry? HomonymWordSearch(ReadOnlySpan<char> homonymWord, IncrementalWordList? words, FlagValue condition2, bool scpdIsZero)
         {
             var homonymWordString = homonymWord.ToString();
             return HomonymWordSearchDetail(homonymWordString, words, condition2, scpdIsZero)?.ToEntry(homonymWordString);
         }
 
-        private WordEntryDetail? HomonymWordSearchDetail(string homonymWord, IncrementalWordList words, FlagValue condition2, bool scpdIsZero)
+        private WordEntryDetail? HomonymWordSearchDetail(string homonymWord, IncrementalWordList? words, FlagValue condition2, bool scpdIsZero)
         {
             foreach (var homonymCandidate in LookupDetails(homonymWord))
             {
@@ -425,7 +425,6 @@ public partial class WordList
         {
             int oldnumsyllable, oldnumsyllable2, oldwordnum, oldwordnum2;
             WordEntry? rv;
-            WordEntry rvFirst;
             var ch = '\0';
             var simplifiedTripple = false;
             var scpd = 0;
@@ -857,7 +856,7 @@ public partial class WordList
                             }
 
                             // NEXT WORD(S)
-                            rvFirst = rv;
+                            WordEntry rvFirst = rv!; // firstWordCompoundAcceptable ensures that rv is not null
 
                             if (i < st.BufferLength)
                             {
@@ -1675,7 +1674,7 @@ public partial class WordList
             foreach (var sptr in Affix.Suffixes.GetMatchingAffixes(word, Affix.ContClasses))
             {
                 rv = CheckTwoSfx(sptr, word, sfxopts, pfx, needflag);
-                if (rv is not null)
+                if (rv is not null && Suffix is not null)
                 {
                     SetSuffixFlag(Suffix.AFlag);
                     var entry = sptr.Entry;
@@ -1909,7 +1908,7 @@ public partial class WordList
             return null;
         }
 
-        private WordEntry? CheckWordSuffix(Affix<SuffixEntry> affix, string word, AffixEntryOptions optFlags, Affix<PrefixEntry> pfx, FlagValue cclass, FlagValue needFlag, FlagValue badFlag)
+        private WordEntry? CheckWordSuffix(Affix<SuffixEntry> affix, string word, AffixEntryOptions optFlags, Affix<PrefixEntry>? pfx, FlagValue cclass, FlagValue needFlag, FlagValue badFlag)
         {
             // if this suffix is being cross checked with a prefix
             // but it does not support cross products skip it

@@ -61,12 +61,12 @@ public partial class WordList
             }
 
             // input conversion
-            if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out string tempString))
+            if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out var tempString))
             {
                 tempString = word;
             }
 
-            var scw = CleanWord2(tempString, out CapitalizationType capType, out int abbv);
+            var scw = CleanWord2(tempString, out var capType, out var abbv);
             if (string.IsNullOrEmpty(scw))
             {
                 return slst;
@@ -87,7 +87,7 @@ public partial class WordList
             if (capType == CapitalizationType.None && Affix.ForceUpperCase.HasValue)
             {
                 var info = SpellCheckResultType.OrigCap;
-                if (CheckWord(scw, ref info, out tempString) is not null)
+                if (CheckWord(scw, ref info, out _) is not null)
                 {
                     slst.Add(HunspellTextFunctions.MakeInitCap(scw, textInfo));
                     return slst;
@@ -352,7 +352,7 @@ public partial class WordList
                             var info = SpellCheckResultType.None;
                             if (Affix.ForbiddenWord.HasValue)
                             {
-                                CheckWord(wspace, ref info, out var _);
+                                CheckWord(wspace, ref info, out _);
                             }
                             if (!EnumEx.HasFlag(info, SpellCheckResultType.Forbidden))
                             {
@@ -1005,7 +1005,7 @@ public partial class WordList
             return MapRelated(word, ref candidate, 0, wlst, cpdSuggest, OperationTimeLimiter.Create(TimeLimitMs, MinTimer));
         }
 
-        private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest, OperationTimeLimiter timer)
+        private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest, OperationTimeLimiter? timer)
         {
             if (wn >= word.Length)
             {
@@ -1202,34 +1202,34 @@ public partial class WordList
 
             foreach (var replacement in WordList.AllReplacements)
             {
-                if (string.IsNullOrEmpty(replacement.Pattern))
+                if (replacement.Pattern is not { Length: > 0 } replacementPattern)
                 {
                     continue;
                 }
 
                 // search every occurence of the pattern in the word
                 for (
-                    var r = word.IndexOf(replacement.Pattern, StringComparison.Ordinal)
+                    var r = word.IndexOf(replacementPattern, StringComparison.Ordinal)
                     ;
                     r >= 0
                     ; 
-                    r = word.IndexOf(replacement.Pattern, r + 1, StringComparison.Ordinal) // search for the next letter
+                    r = word.IndexOf(replacementPattern, r + 1, StringComparison.Ordinal) // search for the next letter
                 )
                 {
                     var type = (r == 0) ? ReplacementValueType.Ini : ReplacementValueType.Med;
-                    if (r + replacement.Pattern.Length == word.Length)
+                    if (r + replacementPattern.Length == word.Length)
                     {
                         type |= ReplacementValueType.Fin;
                     }
 
-                    while (type != ReplacementValueType.Med && string.IsNullOrEmpty(replacement[type]))
+                    while (type != ReplacementValueType.Med && replacement[type] is not { Length: > 0 })
                     {
                         type = (type == ReplacementValueType.Fin && r != 0) ? ReplacementValueType.Med : type - 1;
                     }
 
-                    if (!string.IsNullOrEmpty(replacement[type]))
+                    if (replacement[type] is { Length: > 0 } replacementValue)
                     {
-                        var candidate = StringEx.ConcatString(word, 0, r, replacement[type], word, r + replacement.Pattern.Length);
+                        var candidate = StringEx.ConcatString(word, 0, r, replacementValue, word, r + replacementPattern.Length);
 
                         TestSug(wlst, candidate, cpdSuggest);
 
@@ -1770,7 +1770,7 @@ public partial class WordList
             }
         }
 
-        private int ExpandRootWord(GuessWord[] wlst, WordEntry entry, string bad, string phon)
+        private int ExpandRootWord(GuessWord[] wlst, WordEntry entry, string bad, string? phon)
         {
             var nh = 0;
             // first add root word to list
@@ -2748,7 +2748,7 @@ public partial class WordList
                 Score = -100 * i;
             }
 
-            public string Guess;
+            public string? Guess;
 
             public string? GuessOrig;
 
@@ -2763,7 +2763,7 @@ public partial class WordList
 
         private struct GuessWord
         {
-            public string Word;
+            public string? Word;
 
             public string? Orig;
 
