@@ -54,7 +54,7 @@ internal sealed class LineReader : IDisposable
 
     public ReadOnlyMemory<char> Current { get; private set; } = ReadOnlyMemory<char>.Empty;
 
-    public bool MoveNext()
+    public bool ReadNext()
     {
         var lineTerminalPosition = ScanForwardToNextLineBreak();
 
@@ -73,7 +73,7 @@ internal sealed class LineReader : IDisposable
     }
 
 #if NO_VALUETASK
-    public Task<bool> MoveNextAsync(CancellationToken ct)
+    public Task<bool> ReadNextAsync(CancellationToken ct)
     {
         if (ScanForwardToNextLineBreak() is { } lineTerminalPosition)
         {
@@ -81,11 +81,11 @@ internal sealed class LineReader : IDisposable
         }
         else
         {
-            return MoveNextAsyncWithReads(ct);
+            return ReadNextAsyncWithReads(ct);
         }
     }
 #else
-    public ValueTask<bool> MoveNextAsync(CancellationToken ct)
+    public ValueTask<bool> ReadNextAsync(CancellationToken ct)
     {
         if (ScanForwardToNextLineBreak() is { } lineTerminalPosition)
         {
@@ -93,15 +93,15 @@ internal sealed class LineReader : IDisposable
         }
         else
         {
-            return MoveNextAsyncWithReads(ct);
+            return ReadNextAsyncWithReads(ct);
         }
     }
 #endif
 
 #if NO_VALUETASK
-    private async Task<bool> MoveNextAsyncWithReads(CancellationToken ct)
+    private async Task<bool> ReadNextAsyncWithReads(CancellationToken ct)
 #else
-    private async ValueTask<bool> MoveNextAsyncWithReads(CancellationToken ct)
+    private async ValueTask<bool> ReadNextAsyncWithReads(CancellationToken ct)
 #endif
     {
         BufferPosition? lineTerminalPosition = null;
@@ -136,10 +136,12 @@ internal sealed class LineReader : IDisposable
         TextBufferLine buffer;
         if (_position.BufferIndex == lineTerminalPosition.BufferIndex)
         {
-            if (_position.SubIndex >= lineTerminalPosition.SubIndex)
+#if DEBUG
+            if (_position.SubIndex > lineTerminalPosition.SubIndex)
             {
-                return false;
+                throw new InvalidOperationException();
             }
+#endif
 
             buffer = _buffers[_position.BufferIndex];
             Current = buffer.Memory.Slice(_position.SubIndex, lineTerminalPosition.SubIndex - _position.SubIndex);
@@ -167,9 +169,9 @@ internal sealed class LineReader : IDisposable
 
     private TextBufferLine UpdateAfterReadWithJoinInternal(BufferPosition lineTerminalPosition)
     {
-        var requiredBufferSize = _buffers[_position.BufferIndex].Length - _position.SubIndex;
-        requiredBufferSize += lineTerminalPosition.SubIndex;
-        for (var i = _position.BufferIndex + 1; i < lineTerminalPosition.BufferIndex; i++)
+        int i;
+        var requiredBufferSize = _buffers[_position.BufferIndex].Length - _position.SubIndex + lineTerminalPosition.SubIndex;
+        for (i = _position.BufferIndex + 1; i < lineTerminalPosition.BufferIndex; i++)
         {
             requiredBufferSize += _buffers[i].Length;
         }
@@ -183,7 +185,7 @@ internal sealed class LineReader : IDisposable
         buffer.ReadSpan.Slice(_position.SubIndex).CopyTo(joinWriteSpan);
         joinWriteSpan = joinWriteSpan.Slice(buffer.Length - _position.SubIndex);
 
-        for (var i = _position.BufferIndex + 1; i < lineTerminalPosition.BufferIndex; i++)
+        for (i = _position.BufferIndex + 1; i < lineTerminalPosition.BufferIndex; i++)
         {
             buffer = _buffers[i];
             buffer.ReadSpan.CopyTo(joinWriteSpan);

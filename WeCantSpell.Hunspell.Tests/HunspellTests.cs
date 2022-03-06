@@ -250,9 +250,9 @@ public class HunspellTests
         [Fact]
         public void untested_suggestion_files_should_not_be_found()
         {
-            var untestedSets = GetSuggestionTestFileSets();
+            var untestedSets = GetSuggestionTestFileSets().Where(s => s.WrongLines.Count != s.SuggestionLines.Count);
 
-            untestedSets.Should().NotContain(s => s.WrongLines.Count != s.SuggestionLines.Count);
+            untestedSets.Should().BeEmpty();
         }
 
         private static readonly HashSet<string> ExcludedSuggestionFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -347,7 +347,7 @@ public class HunspellTests
 
     protected static IEnumerable<string> ExtractLinesFromWordFile(string filePath, Encoding encoding, bool allowBlankLines = false)
     {
-        var results = StaticEncodingLineReader.ReadLines(filePath, encoding)
+        var results = File.ReadAllLines(filePath, encoding)
             .Where(line => line != null)
             .Select(line => line.Trim(SpaceOrTab));
 

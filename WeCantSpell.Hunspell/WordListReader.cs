@@ -84,7 +84,7 @@ public sealed class WordListReader
         async Task performRead()
         {
             using var lineReader = LineReader.Create(dictionaryStream, affix.Encoding);
-            while (await lineReader.MoveNextAsync(ct))
+            while (await lineReader.ReadNextAsync(ct))
             {
                 readerInstance.ParseLine(lineReader.Current.Span);
             }
@@ -138,7 +138,7 @@ public sealed class WordListReader
         var readerInstance = new WordListReader(builder, affix);
 
         using var lineReader = LineReader.Create(dictionaryStream, affix.Encoding);
-        while (lineReader.MoveNext())
+        while (lineReader.ReadNext())
         {
             readerInstance.ParseLine(lineReader.Current.Span);
         }
