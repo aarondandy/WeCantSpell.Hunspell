@@ -437,13 +437,29 @@ internal sealed class LineReader : IDisposable
                     oldCharacters = oldCharacters.Slice(_position.SubIndex);
                 }
 
+#if NO_ENCODING_SPANS
                 var restoredBytes = oldEncoding.GetBytes(oldCharacters.ToArray());
                 var newCharacters = newEncoding.GetChars(restoredBytes);
+#else
+                var restoredBytesRaw = new byte[_reusableFileReadBuffer.Length];
+                var restoredBytesCount = oldEncoding.GetBytes(oldCharacters.Span, restoredBytesRaw.AsSpan());
+                var restoredBytes = restoredBytesRaw.AsSpan(0, restoredBytesCount);
 
+                var newCharacters = new char[newEncoding.GetCharCount(restoredBytes)];
+                var newCharactersCount = newEncoding.GetChars(restoredBytes, newCharacters.AsSpan());
+
+#if DEBUG
+                if (newCharactersCount != newCharacters.Length)
+                {
+                    throw new InvalidOperationException();
+                }
+#endif
+#endif
                 _buffers[bufferIndex] = new TextBufferLine(newCharacters)
                 {
                     PreventRecycle = true
                 };
+
             }
 
             _position.SubIndex = 0;

@@ -30,6 +30,10 @@
     <PackageReleaseNotes>@(ReleaseNoteLines, '%0a')</PackageReleaseNotes>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="WeCantSpell.Hunspell.Tests"/>
+  </ItemGroup>
+
   <PropertyGroup>
     <MinVerSkip Condition="'$(Configuration)' == 'Debug'">true</MinVerSkip>
   </PropertyGroup>
