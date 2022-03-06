@@ -30,12 +30,12 @@ public partial class WordList
             }
 
             // input conversion
-            if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out string convertedWord))
+            if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out var convertedWord))
             {
                 convertedWord = word;
             }
 
-            var scw = CleanWord2(convertedWord, out CapitalizationType capType, out int abbv);
+            var scw = CleanWord2(convertedWord, out var capType, out var abbv);
             if (string.IsNullOrEmpty(scw))
             {
                 return new SpellCheckResult(false);

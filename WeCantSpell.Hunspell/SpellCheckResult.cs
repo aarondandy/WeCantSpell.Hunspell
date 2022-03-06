@@ -9,9 +9,9 @@ public struct SpellCheckResult
         Correct = correct;
     }
 
-    public SpellCheckResult(string root, SpellCheckResultType info, bool correct)
+    public SpellCheckResult(string? root, SpellCheckResultType info, bool correct)
     {
-        Root = root;
+        Root = root ?? string.Empty;
         Info = info;
         Correct = correct;
     }

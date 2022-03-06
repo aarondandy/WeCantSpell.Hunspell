@@ -86,7 +86,7 @@ public class HunspellTests
         [Theory, MemberData(nameof(can_find_good_words_in_dictionary_args))]
         public async Task can_find_good_words_in_dictionary(string dictionaryFilePath, string word)
         {
-            if (dictionaryFilePath.EndsWith("base_utf.dic") && word.Contains("İ"))
+            if (dictionaryFilePath.EndsWith("base_utf.dic") && word.Contains('İ'))
             {
                 // NOTE: These tests are bypassed because capitalization only works when the language is turkish and the UTF8 dic has no language applied
                 return;
@@ -255,7 +255,7 @@ public class HunspellTests
             untestedSets.Should().BeEmpty();
         }
 
-        private static readonly HashSet<string> ExcludedSuggestionFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        private static readonly HashSet<string> ExcludedSuggestionFiles = new(StringComparer.OrdinalIgnoreCase)
         {
             "nosuggest",
             "onlyincompound",

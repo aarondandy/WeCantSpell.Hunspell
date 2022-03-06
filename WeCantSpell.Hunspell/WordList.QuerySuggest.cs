@@ -447,7 +447,7 @@ public partial class WordList
             {
                 for (var j = 0; j < slst.Count; j++)
                 {
-                    if (Affix.OutputConversions.TryConvert(slst[j], out string wspace))
+                    if (Affix.OutputConversions.TryConvert(slst[j], out var wspace))
                     {
                         slst[j] = wspace;
                     }
@@ -1414,42 +1414,42 @@ public partial class WordList
                         field = null;
                     }
 
-                    int nw = ExpandRootWord(glst, rp, word, field);
+                    var nw = ExpandRootWord(glst, rp, word, field);
 
                     for (var k = 0; k < nw; k++)
                     {
                         ref var guessWordK = ref glst[k];
-                        sc = NGram(word.Length, word, guessWordK.Word, NGramOptions.AnyMismatch | NGramOptions.Lowering)
-                            + LeftCommonSubstring(word, guessWordK.Word);
 
-                        if (sc > thresh)
+                        if (guessWordK.Word is { Length: > 0 })
                         {
-                            ref var guessNGramLp = ref guesses[lp];
-                            if (sc > guessNGramLp.Score)
+                            sc = NGram(word.Length, word, guessWordK.Word, NGramOptions.AnyMismatch | NGramOptions.Lowering)
+                                + LeftCommonSubstring(word, guessWordK.Word);
+
+                            if (sc > thresh)
                             {
-                                guessNGramLp.Score = sc;
-                                guessNGramLp.Guess = guessWordK.Word;
-                                guessNGramLp.GuessOrig = guessWordK.Orig;
-                                lval = sc;
-                                for (var j = 0; j < guesses.Length; j++)
+                                ref var guessNGramLp = ref guesses[lp];
+                                if (sc > guessNGramLp.Score)
                                 {
-                                    ref var guessNGramJ = ref guesses[j];
-                                    if (guessNGramJ.Score < lval)
+                                    guessNGramLp.Score = sc;
+                                    guessNGramLp.Guess = guessWordK.Word;
+                                    guessNGramLp.GuessOrig = guessWordK.Orig;
+                                    lval = sc;
+                                    for (var j = 0; j < guesses.Length; j++)
                                     {
-                                        lp = j;
-                                        lval = guessNGramJ.Score;
+                                        ref var guessNGramJ = ref guesses[j];
+                                        if (guessNGramJ.Score < lval)
+                                        {
+                                            lp = j;
+                                            lval = guessNGramJ.Score;
+                                        }
                                     }
+
+                                    continue;
                                 }
                             }
-                            else
-                            {
-                                guessWordK.ClearWordAndOrig();
-                            }
                         }
-                        else
-                        {
-                            guessWordK.ClearWordAndOrig();
-                        }
+
+                        guessWordK.ClearWordAndOrig();
                     }
                 }
             }
@@ -1695,7 +1695,7 @@ public partial class WordList
 
         private static int LcsLen(string s, string s2)
         {
-            Lcs(s, s2, out int i, out int n, out LongestCommonSubsequenceType[] result);
+            Lcs(s, s2, out var i, out var n, out var result);
 
             if (result is null)
             {
@@ -1893,8 +1893,7 @@ public partial class WordList
                                 )
                             )
                             {
-                                var newword = Add(cptr, wlst[j].Word);
-                                if (newword.Length != 0)
+                                if (Add(cptr, wlst[j].Word ?? string.Empty) is { Length: > 0 } newword)
                                 {
                                     if (nh < wlst.Length)
                                     {
@@ -2240,7 +2239,7 @@ public partial class WordList
             }
 
             var minIndex = Math.Min(s1.Length, s2.Length);
-            int index = 1;
+            var index = 1;
 
             for ( ; index < minIndex && s1[index] == s2[index]; index++) ;
 
@@ -2301,7 +2300,7 @@ public partial class WordList
 
         private static int NGramWeightedSearch(int n, ReadOnlySpan<char> s1, ReadOnlySpan<char> t)
         {
-            int nscore = NGramWeightedSearch_Iteration1(s1, t);
+            var nscore = NGramWeightedSearch_Iteration1(s1, t);
             for (var nGramLength = 2; nGramLength <= n; nGramLength++)
             {
                 nscore += NGramWeightedSearch_IterationN(nGramLength, s1, t);
@@ -2364,8 +2363,8 @@ public partial class WordList
 
         private static int NGramNonWeightedSearch(int n, ReadOnlySpan<char> s1, ReadOnlySpan<char> t)
         {
-            int ns = NGramNonWeightedSearch_Iteration1(s1, t);
-            int nscore = ns;
+            var ns = NGramNonWeightedSearch_Iteration1(s1, t);
+            var nscore = ns;
             for (var nGramLength = 2; nGramLength <= n && ns >= 2; ++nGramLength)
             {
                 ns = NGramNonWeightedSearch_IterationN(nGramLength, s1, t);
@@ -2730,9 +2729,9 @@ public partial class WordList
                 ScorePhone = Score;
             }
 
-            public WordEntry Root;
+            public WordEntry? Root;
 
-            public string RootPhon;
+            public string? RootPhon;
 
             public int Score;
 

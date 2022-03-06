@@ -81,7 +81,7 @@ public sealed partial class WordList
 
     private FlagSet NGramRestrictedFlags { get; set; }
 
-    private NGramAllowedEntries GetNGramAllowedDetails(Func<string, bool> rootKeyFilter) => new NGramAllowedEntries(this, rootKeyFilter);
+    private NGramAllowedEntries GetNGramAllowedDetails(Func<string, bool> rootKeyFilter) => new(this, rootKeyFilter);
 
     private Dictionary<string, WordEntryDetail[]> NGramRestrictedDetails { get; set; }
 
