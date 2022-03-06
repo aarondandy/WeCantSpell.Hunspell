@@ -10,10 +10,11 @@ using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
-internal class LineReader : IDisposable
+internal sealed class LineReader : IDisposable
 {
+    private const char CharacterCr = '\r';
+    private const char CharacterLf = '\n';
     private static readonly Encoding[] PreambleEncodings;
-    private static readonly int MaxPreambleLengthInBytes = 4;
 
     static LineReader()
     {
@@ -21,22 +22,12 @@ internal class LineReader : IDisposable
         PreambleEncodings =
             new Encoding[]
             {
-                new UnicodeEncoding(true, true)
-                ,new UnicodeEncoding(false, true)
-                ,new UTF32Encoding(false, true)
-                ,Encoding.UTF8
-                ,new UTF32Encoding(true, true)
+                new UnicodeEncoding(true, true),
+                new UnicodeEncoding(false, true),
+                new UTF32Encoding(false, true),
+                Encoding.UTF8,
+                new UTF32Encoding(true, true)
             };
-
-        MaxPreambleLengthInBytes = 4;
-        foreach (var e in PreambleEncodings)
-        {
-            var length = e.GetPreamble().Length;
-            if (length > MaxPreambleLengthInBytes)
-            {
-                MaxPreambleLengthInBytes = length;
-            }
-        }
     }
 
     public static LineReader Create(Stream stream, Encoding encoding) => new LineReader(stream, encoding);
@@ -46,228 +37,255 @@ internal class LineReader : IDisposable
         _stream = stream;
         _encoding = encoding;
         _decoder = encoding.GetDecoder();
-        _fileReadByteBuffer = new byte[4096]; // TODO: would it be better to rent from the memory pool for this?
+        _reusableFileReadBuffer = new byte[4096];
+        _charBufferSize = _reusableFileReadBuffer.Length;
+        _buffers = new(2);
     }
 
     private readonly Stream _stream;
-    private readonly byte[] _fileReadByteBuffer;
+    private readonly byte[] _reusableFileReadBuffer;
+    private readonly int _charBufferSize;
+    private readonly List<TextBufferLine> _buffers;
 
     private Encoding _encoding;
     private Decoder _decoder;
-    private bool _hasReadPreambles = false;
-    private DecodedTextSegment? _head = null;
-    private DecodedTextSegment? _tail = null;
-    private ReadOnlySequence<char> _currentSequence = new(ReadOnlyMemory<char>.Empty);
-    private List<IDisposable> _recycleBin = new();
+    private bool _hasReadPreamble = false;
+    private BufferPosition _position = default;
+    private IMemoryOwner<char>? _tempJoinBuffer = null;
 
     public ReadOnlyMemory<char> Current { get; private set; } = ReadOnlyMemory<char>.Empty;
 
     public bool MoveNext()
     {
-        var lineBreakPosition = PrepareForNextLine();
-        return SetCurrentForNextLine(lineBreakPosition);
+        var lineTerminalPosition = ScanForwardToNextLineBreak();
+
+        while (!lineTerminalPosition.HasValue)
+        {
+            var newBufferLines = ReadNewTextBufferLines();
+            if (newBufferLines == 0)
+            {
+                break;
+            }
+
+            lineTerminalPosition = ScanForwardToNextLineBreak(_buffers.Count - newBufferLines, 0);
+        }
+
+        return UpdateAfterRead(lineTerminalPosition ?? GetTerminalBufferPosition());
     }
-
-
 
 #if NO_VALUETASK
-    public async Task<bool> MoveNextAsync(CancellationToken ct)
-    {
-        var position = _currentSequence.PositionOf('\n');
-        position ??= await PrepareForNextLineWithSearchAsync(ct);
-        return SetCurrentForNextLine(position);
-    }
-#else
     public Task<bool> MoveNextAsync(CancellationToken ct)
     {
-        var position = _currentSequence.PositionOf('\n');
-        if (position.HasValue)
+        var lineTerminalPosition = ScanForwardToNextLineBreak();
+        if (lineTerminalPosition.HasValue)
         {
-            return Task.FromResult(SetCurrentForNextLine(position));
+            return Task.FromResult(UpdateAfterRead(lineTerminalPosition.Value));
         }
         else
         {
-            return readForNextLine();
+            return MoveNextAsyncWithReads(ct);
         }
-
-        async Task<bool> readForNextLine()
+    }
+#else
+    public ValueTask<bool> MoveNextAsync(CancellationToken ct)
+    {
+        var lineTerminalPosition = ScanForwardToNextLineBreak();
+        if (lineTerminalPosition.HasValue)
         {
-            var position = await PrepareForNextLineWithSearchAsync(ct);
-            return SetCurrentForNextLine(position);
+            return ValueTask.FromResult(UpdateAfterRead(lineTerminalPosition.Value));
+        }
+        else
+        {
+            return new ValueTask<bool>(MoveNextAsyncWithReads(ct));
         }
     }
 #endif
 
-    public void Dispose()
+    private async Task<bool> MoveNextAsyncWithReads(CancellationToken ct)
     {
-        _recycleBin.ForEach(static b => b.Dispose());
-        _recycleBin.Clear();
-        while (_head is not null)
+        BufferPosition? lineTerminalPosition = null;
+        do
         {
-            _head.Dispose();
-            _head = (DecodedTextSegment?)_head.Next;
+            var newBufferLines = await ReadNewTextBufferLinesAsync(ct);
+            if (newBufferLines == 0)
+            {
+                break;
+            }
+
+            lineTerminalPosition = ScanForwardToNextLineBreak(_buffers.Count - newBufferLines, 0);
         }
+        while (!lineTerminalPosition.HasValue);
+
+        return UpdateAfterRead(lineTerminalPosition ?? GetTerminalBufferPosition());
     }
 
-    private bool SetCurrentForNextLine(SequencePosition? lineBreakPosition)
+    private bool UpdateAfterRead(BufferPosition lineTerminalPosition)
     {
-        _recycleBin.ForEach(static b => b.Dispose());
-        _recycleBin.Clear();
-
-        ReadOnlySequence<char> lineSequence;
-        if (lineBreakPosition.HasValue)
+        if (_position.BufferIndex >= _buffers.Count)
         {
-            lineSequence = _currentSequence.Slice(0, lineBreakPosition.Value);
+            return false;
         }
-        else
+
+        _tempJoinBuffer?.Dispose();
+
+        TextBufferLine buffer;
+        if (_position.BufferIndex == lineTerminalPosition.BufferIndex)
         {
-            if (_currentSequence.IsEmpty)
+            if (_position.SubIndex >= lineTerminalPosition.SubIndex)
             {
                 return false;
             }
 
-            lineSequence = _currentSequence;
-        }
-
-        if (lineSequence.IsSingleSegment)
-        {
-            Current = lineSequence.First;
+            buffer = _buffers[_position.BufferIndex];
+            Current = buffer.Memory.Slice(_position.SubIndex, lineTerminalPosition.SubIndex - _position.SubIndex);
         }
         else
         {
-            var splitBufferMemoryRental = MemoryPool<char>.Shared.Rent((int)lineSequence.Length);
-            _recycleBin.Add(splitBufferMemoryRental);
-            var splitBufferMemory = splitBufferMemoryRental.Memory.Slice(0, (int)lineSequence.Length);
-            lineSequence.CopyTo(splitBufferMemoryRental.Memory.Span);
-            Current = splitBufferMemory;
+            buffer = UpdateAfterReadWithJoinInternal(lineTerminalPosition);
         }
 
-        if (Current.EndsWith('\r'))
+        if (Current.EndsWith(CharacterCr))
         {
             Current = Current.Slice(0, Current.Length - 1);
         }
 
-        _currentSequence = lineSequence.Length < _currentSequence.Length
-            ? _currentSequence.Slice(lineSequence.Length + 1)
-            : new ReadOnlySequence<char>(ReadOnlyMemory<char>.Empty);
-
-        var nextHead = _currentSequence.Start.GetObject() as DecodedTextSegment;
-
-        while (_head is not null && _head != nextHead)
+        _position = lineTerminalPosition;
+        _position.SubIndex++;
+        if (_position.SubIndex >= buffer.Length)
         {
-            _recycleBin.Add(_head);
-            _head = (DecodedTextSegment?)_head.Next;
+            _position.BufferIndex++;
+            _position.SubIndex = 0;
         }
-
-        //_head = _head?.CloneAt(_currentSequence.Start.GetInteger());
 
         return true;
     }
 
-    private SequencePosition? PrepareForNextLine()
+    private TextBufferLine UpdateAfterReadWithJoinInternal(BufferPosition lineTerminalPosition)
     {
-        var lineBreakPosition = _currentSequence.PositionOf('\n');
-        if (lineBreakPosition.HasValue)
+        var requiredBufferSize = _buffers[_position.BufferIndex].Length - _position.SubIndex;
+        requiredBufferSize += lineTerminalPosition.SubIndex;
+        for (var i = _position.BufferIndex + 1; i < lineTerminalPosition.BufferIndex; i++)
         {
-            return lineBreakPosition;
+            requiredBufferSize += _buffers[i].Length;
         }
 
-        do
+        _tempJoinBuffer = MemoryPool<char>.Shared.Rent(requiredBufferSize);
+        var tempBuffer = _tempJoinBuffer.Memory.Slice(0, requiredBufferSize);
+
+        var buffer = _buffers[_position.BufferIndex];
+        buffer.Memory.Slice(_position.SubIndex).CopyTo(tempBuffer);
+        var writeOffset = buffer.Length - _position.SubIndex;
+
+        for (var i = _position.BufferIndex + 1; i < lineTerminalPosition.BufferIndex; i++)
         {
-            if (! LoadMoreBytesIntoTextSequences())
-            {
-                break;
-            }
-
-            if (_currentSequence.IsEmpty)
-            {
-                ;
-            }
-
-            lineBreakPosition = _currentSequence.PositionOf('\n');
-            if (lineBreakPosition.HasValue)
-            {
-                break;
-            }
+            buffer = _buffers[i];
+            buffer.Memory.CopyTo(tempBuffer.Slice(writeOffset));
+            writeOffset += buffer.Length;
         }
-        while (true);
 
-        return lineBreakPosition;
+        buffer = _buffers[lineTerminalPosition.BufferIndex];
+        buffer.Memory.Slice(0, lineTerminalPosition.SubIndex).CopyTo(tempBuffer.Slice(writeOffset));
+
+        Current = tempBuffer;
+
+        return buffer;
     }
 
-    private async Task<SequencePosition?> PrepareForNextLineWithSearchAsync(CancellationToken ct)
+    private BufferPosition GetTerminalBufferPosition()
     {
-        SequencePosition? lineBreakPosition = null;
-        do
-        {
-            if (!await LoadMoreBytesIntoTextSequencesAsync(ct))
-            {
-                break;
-            }
-
-            try
-            {
-                lineBreakPosition = _currentSequence.PositionOf('\n');
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-
-            if (lineBreakPosition.HasValue)
-            {
-                break;
-            }
-        }
-        while (true);
-
-        return lineBreakPosition;
+        var lastBufferIndex = _buffers.Count - 1;
+        return new(lastBufferIndex, lastBufferIndex >= 0 ? _buffers[lastBufferIndex].Memory.Length : 0);
     }
 
-    private bool LoadMoreBytesIntoTextSequences()
+    private BufferPosition? ScanForwardToNextLineBreak() => ScanForwardToNextLineBreak(_position.BufferIndex, _position.SubIndex);
+
+    private BufferPosition? ScanForwardToNextLineBreak(int bufferIndex, int subIndex)
     {
-        var fileBytesRead = _stream.Read(_fileReadByteBuffer, 0, _fileReadByteBuffer.Length);
+        for (; bufferIndex < _buffers.Count; bufferIndex++)
+        {
+            subIndex = _buffers[bufferIndex].FindLineBreak(subIndex);
+
+            if (subIndex >= 0)
+            {
+                return new(bufferIndex, subIndex);
+            }
+
+            subIndex = 0;
+        }
+
+        return null;
+    }
+
+#if NO_STREAM_SYSMEM
+    private int ReadNewTextBufferLines()
+    {
+        var fileBytesRead = _stream.Read(_reusableFileReadBuffer, 0, _reusableFileReadBuffer.Length);
         if (fileBytesRead == 0)
         {
-            return false;
+            return 0;
         }
 
-        DecodeIntoSequences(_fileReadByteBuffer.AsSpan(0, fileBytesRead));
-
-        return true;
+        return DecodeIntoBufferLines(_reusableFileReadBuffer.AsSpan(0, fileBytesRead));
     }
-
-    private async Task<bool> LoadMoreBytesIntoTextSequencesAsync(CancellationToken ct)
+#else
+    private int ReadNewTextBufferLines()
     {
-        var fileBytesRead = await _stream.ReadAsync(_fileReadByteBuffer, 0, _fileReadByteBuffer.Length, ct);
+        var fileReadBuffer = _reusableFileReadBuffer.AsSpan();
+        var fileBytesRead = _stream.Read(fileReadBuffer);
         if (fileBytesRead == 0)
         {
-            return false;
+            return 0;
         }
 
-        DecodeIntoSequences(_fileReadByteBuffer, fileBytesRead);
-
-        return true;
+        return DecodeIntoBufferLines(fileReadBuffer.Slice(0, fileBytesRead));
     }
+#endif
 
-    private void DecodeIntoSequences(byte[] fileReadByteBuffer, int fileBytesRead)
+#if NO_VALUETASK || NO_STREAM_SYSMEM
+    private async Task<int> ReadNewTextBufferLinesAsync(CancellationToken ct)
     {
-        DecodeIntoSequences(fileReadByteBuffer.AsSpan(0, fileBytesRead));
-    }
-
-    private void DecodeIntoSequences(ReadOnlySpan<byte> fileBytes)
-    {
-        if (!_hasReadPreambles)
+        var fileBytesRead = await _stream.ReadAsync(_reusableFileReadBuffer, 0, _reusableFileReadBuffer.Length, ct);
+        if (fileBytesRead == 0)
         {
-            ReadPreamble(ref fileBytes);
+            return 0;
         }
 
-        while (!fileBytes.IsEmpty)
+        return DecodeIntoBufferLines(_reusableFileReadBuffer.AsSpan(0, fileBytesRead));
+    }
+#else
+    private async ValueTask<int> ReadNewTextBufferLinesAsync(CancellationToken ct)
+    {
+        var fileReadBuffer = _reusableFileReadBuffer.AsMemory();
+        var fileBytesRead = await _stream.ReadAsync(fileReadBuffer, ct);
+        if (fileBytesRead == 0)
         {
-            var textBufferRental = MemoryPool<char>.Shared.Rent(fileBytes.Length * 2);
-            var textBuffer = textBufferRental.Memory;
+            return 0;
+        }
 
-            _decoder.Convert(fileBytes, textBuffer.Span, flush: false, out var bytesConsumed, out var charsProduced, out _);
+        return DecodeIntoBufferLines(fileReadBuffer.Span.Slice(0, fileBytesRead));
+    }
+#endif
+
+    private int DecodeIntoBufferLines(ReadOnlySpan<byte> fileReadByteBuffer)
+    {
+        int linesAdded = 0;
+
+        if (!_hasReadPreamble)
+        {
+            ReadPreamble(ref fileReadByteBuffer);
+        }
+
+        while (!fileReadByteBuffer.IsEmpty)
+        {
+            var textBuffer = AllocateBufferForNewWrites();
+
+            _decoder.Convert(
+                fileReadByteBuffer,
+                textBuffer.WriteSpan,
+                flush: false,
+                out var bytesConsumed,
+                out var charsProduced,
+                out _);
 
 #if DEBUG
             if (bytesConsumed == 0)
@@ -276,59 +294,58 @@ internal class LineReader : IDisposable
             }
 #endif
 
-            fileBytes = fileBytes.Slice(bytesConsumed);
+            fileReadByteBuffer = fileReadByteBuffer.Slice(bytesConsumed);
 
             if (charsProduced == 0)
             {
-                textBufferRental.Dispose();
                 continue;
             }
 
-            textBuffer = textBuffer.Slice(0, charsProduced);
+            textBuffer.PrepareMemoryForUse(charsProduced);
 
-            if (_head is null)
-            {
-                _head = new DecodedTextSegment(textBufferRental, textBuffer);
-                _tail = _head;
-            }
-            else
-            {
-                _tail = _tail!.Append(textBufferRental, textBuffer);
-            }
+            _buffers.Add(textBuffer);
+            linesAdded++;
         }
 
-        if (_head is null)
+        return linesAdded;
+    }
+
+    private TextBufferLine AllocateBufferForNewWrites()
+    {
+        TextBufferLine buffer;
+        if (_position.BufferIndex > 1)
         {
-            _currentSequence = new ReadOnlySequence<char>(ReadOnlyMemory<char>.Empty);
+            buffer = _buffers[0];
+
+            _buffers.RemoveAt(0);
+            buffer.ResetMemory();
+
+            _position.BufferIndex--;
         }
         else
         {
-            _currentSequence = new ReadOnlySequence<char>(_head, _currentSequence.Start.GetInteger(), _tail!, _tail!.Memory.Length);
+            buffer = new(_charBufferSize);
         }
+
+        return buffer;
     }
 
     private void ReadPreamble(ref ReadOnlySpan<byte> fileBytes)
     {
-        if (fileBytes.IsEmpty)
+        if (!fileBytes.IsEmpty)
         {
-            return;
-        }
+            _hasReadPreamble = true;
 
-        _hasReadPreambles = true;
-
-        foreach (var candidateEncoding in PreambleEncodings)
-        {
-            var encodingPreamble = candidateEncoding.GetPreamble();
-            if (encodingPreamble is not { Length: > 0 })
+            foreach (var candidateEncoding in PreambleEncodings)
             {
-                continue;
-            }
-
-            if (fileBytes.StartsWith(encodingPreamble.AsSpan()))
-            {
-                fileBytes = fileBytes.Slice(encodingPreamble.Length);
-                ChangeEncoding(candidateEncoding);
-                return;
+                if (
+                    candidateEncoding.GetPreamble() is { Length: > 0 } encodingPreamble
+                    && fileBytes.StartsWith(encodingPreamble.AsSpan())
+                )
+                {
+                    ChangeEncoding(candidateEncoding);
+                    fileBytes = fileBytes.Slice(encodingPreamble.Length);
+                }
             }
         }
     }
@@ -347,39 +364,60 @@ internal class LineReader : IDisposable
 
         _encoding = newEncoding;
         _decoder = newEncoding.GetDecoder();
+
+        // TODO: redecode buffered text if needed
     }
 
-    private sealed class DecodedTextSegment : ReadOnlySequenceSegment<char>, IDisposable
+    public void Dispose()
     {
-        public DecodedTextSegment(IMemoryOwner<char> rentedBuffer, ReadOnlyMemory<char> memory)
+        _tempJoinBuffer?.Dispose();
+    }
+
+    private struct TextBufferLine
+    {
+        public TextBufferLine(int rawBufferSize)
         {
-            _rentedBuffer = rentedBuffer;
-            Memory = memory;
+            Raw = new char[rawBufferSize];
+            Memory = ReadOnlyMemory<char>.Empty;
         }
 
-        IMemoryOwner<char> _rentedBuffer;
+        public char[] Raw;
+        public ReadOnlyMemory<char> Memory;
 
-        public DecodedTextSegment Append(IMemoryOwner<char> rentedBuffer, ReadOnlyMemory<char> memory)
+        public int Length => Memory.Length;
+
+        public Span<char> WriteSpan => Raw.AsSpan();
+
+        public int FindLineBreak() => Memory.Span.IndexOf(CharacterLf);
+
+        public int FindLineBreak(int startIndex) => Memory.Span.IndexOf(CharacterLf, startIndex);
+
+        public void PrepareMemoryForUse(int valueSize)
         {
-            var next = new DecodedTextSegment(rentedBuffer, memory)
-            {
-                RunningIndex = RunningIndex + Memory.Length
-            };
-            Next = next;
-            return next;
+            Memory = Raw.AsMemory(0, valueSize);
         }
 
-        public DecodedTextSegment CloneAt(int position)
+        public void ResetMemory()
         {
-            return new DecodedTextSegment(_rentedBuffer, Memory.Slice(position))
-            {
-                RunningIndex = RunningIndex + position
-            };
+            Memory = ReadOnlyMemory<char>.Empty;
+        }
+    }
+
+    private struct BufferPosition
+    {
+        public BufferPosition(int bufferIndex, int subIndex)
+        {
+            BufferIndex = bufferIndex;
+            SubIndex = subIndex;
         }
 
-        public void Dispose()
+        public int BufferIndex;
+        public int SubIndex;
+
+        public void Deconstruct(out int bufferIndex, out int subIndex)
         {
-            _rentedBuffer.Dispose();
+            bufferIndex = BufferIndex;
+            subIndex = SubIndex;
         }
     }
 }

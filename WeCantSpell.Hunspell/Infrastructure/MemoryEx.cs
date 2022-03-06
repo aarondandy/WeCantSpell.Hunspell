@@ -4,7 +4,7 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class MemoryEx
 {
-    public static int IndexOf(this ReadOnlySpan<char> @this, char value, int startIndex)
+    public static int IndexOf<T>(this ReadOnlySpan<T> @this, T value, int startIndex) where T:IEquatable<T>
     {
         var result = @this.Slice(startIndex).IndexOf(value);
         if (result >= 0)
