@@ -323,7 +323,7 @@ public partial class AffixConfig
         /// </summary>
         /// <returns>A constructed affix config.</returns>
         /// <seealso cref="AffixConfig"/>
-        public AffixConfig ToImmutable() => ToImmutable(destructive: false);
+        public AffixConfig ToImmutable() => ToImmutable(allowDestructive: false);
 
         /// <summary>
         /// Constructs a <see cref="AffixConfig"/> based on the values set in the builder
@@ -335,11 +335,11 @@ public partial class AffixConfig
         /// This method can leave the builder in an invalid state
         /// but provides better performance for file reads.
         /// </remarks>
-        public AffixConfig MoveToImmutable() => ToImmutable(destructive: true);
+        public AffixConfig MoveToImmutable() => ToImmutable(allowDestructive: true);
 
         private readonly StringDuplicateRemover _stringDuplicateRemover;
 
-        private AffixConfig ToImmutable(bool destructive)
+        public AffixConfig ToImmutable(bool allowDestructive)
         {
             var culture = CultureInfo.InvariantCulture;
             var comparer = StringComparer.InvariantCulture;
@@ -399,7 +399,7 @@ public partial class AffixConfig
                 Version = Version is null ? null : Dedup(Version)
             };
 
-            if (destructive)
+            if (allowDestructive)
             {
                 config.InputConversions = MultiReplacementTable.TakeDictionary(InputConversions);
                 InputConversions = null;
@@ -412,14 +412,14 @@ public partial class AffixConfig
                 config.OutputConversions = MultiReplacementTable.Create(OutputConversions);
             }
 
-            config.AliasF = AliasF.ToImmutable(destructive);
-            config.AliasM = AliasM.ToImmutable(destructive);
-            config.BreakPoints = new(BreakPoints.ToImmutable(destructive));
-            config.Replacements = new(Replacements.ToImmutable(destructive));
-            config.CompoundRules = new(CompoundRules.ToImmutable(destructive));
-            config.CompoundPatterns = new(CompoundPatterns.ToImmutable(destructive));
-            config.RelatedCharacterMap = new(RelatedCharacterMap.ToImmutable(destructive));
-            config.Phone = new(Phone.ToImmutable(destructive));
+            config.AliasF = AliasF.ToImmutable(allowDestructive);
+            config.AliasM = AliasM.ToImmutable(allowDestructive);
+            config.BreakPoints = new(BreakPoints.ToImmutable(allowDestructive));
+            config.Replacements = new(Replacements.ToImmutable(allowDestructive));
+            config.CompoundRules = new(CompoundRules.ToImmutable(allowDestructive));
+            config.CompoundPatterns = new(CompoundPatterns.ToImmutable(allowDestructive));
+            config.RelatedCharacterMap = new(RelatedCharacterMap.ToImmutable(allowDestructive));
+            config.Phone = new(Phone.ToImmutable(allowDestructive));
 
             config.Prefixes = PrefixCollection.Create(Prefixes);
 
@@ -429,7 +429,7 @@ public partial class AffixConfig
 
             config.Warnings = Warnings.ToImmutable();
 
-            if (destructive)
+            if (allowDestructive)
             {
                 _stringDuplicateRemover.Reset();
             }

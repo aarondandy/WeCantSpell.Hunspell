@@ -83,7 +83,7 @@ public sealed class WordListReader
 
         async Task performRead()
         {
-            using var lineReader = LineReader.Create(dictionaryStream, affix.Encoding);
+            using var lineReader = new LineReader(dictionaryStream, affix.Encoding);
             while (await lineReader.ReadNextAsync(ct))
             {
                 readerInstance.ParseLine(lineReader.Current.Span);
@@ -137,7 +137,7 @@ public sealed class WordListReader
 
         var readerInstance = new WordListReader(builder, affix);
 
-        using var lineReader = LineReader.Create(dictionaryStream, affix.Encoding);
+        using var lineReader = new LineReader(dictionaryStream, affix.Encoding);
         while (lineReader.ReadNext())
         {
             readerInstance.ParseLine(lineReader.Current.Span);
@@ -154,7 +154,7 @@ public sealed class WordListReader
         if (!string.IsNullOrEmpty(directoryName))
         {
             var locatedAffFile = Directory.GetFiles(directoryName, Path.GetFileNameWithoutExtension(dictionaryFilePath) + ".*", SearchOption.TopDirectoryOnly)
-                .FirstOrDefault(affFilePath => ".AFF".Equals(Path.GetExtension(affFilePath), System.StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefault(affFilePath => ".AFF".Equals(Path.GetExtension(affFilePath), StringComparison.OrdinalIgnoreCase));
 
             if (locatedAffFile is not null)
             {

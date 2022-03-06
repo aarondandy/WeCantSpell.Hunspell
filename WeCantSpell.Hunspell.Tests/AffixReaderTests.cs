@@ -1722,7 +1722,7 @@ public class AffixReaderTests
         [InlineData("-")]
         [InlineData("en-XX")]
         [InlineData("en-")]
-        public async Task can_read_all_languages(string langCode)
+        public void can_read_all_languages(string langCode)
         {
             var textFileContents = $"LANG {langCode}";
             var expectedCulture = langCode;
@@ -1732,7 +1732,7 @@ public class AffixReaderTests
             }
             expectedCulture = expectedCulture.Replace('_', '-');
 
-            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+            var actual = AffixReader.ReadFromString(textFileContents);
 
             actual.Language.Should().Be(langCode);
             actual.Culture.Should().NotBeNull();
@@ -1748,12 +1748,12 @@ public class AffixReaderTests
         }
 
         [Fact]
-        public async Task reading_empty_lang_code_leave_language_unset_and_culture_invariant()
+        public void reading_empty_lang_code_leave_language_unset_and_culture_invariant()
         {
             var langCode = string.Empty;
             var textFileContents = $"LANG {langCode}";
 
-            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+            var actual = AffixReader.ReadFromString(textFileContents);
 
             actual.Language.Should().BeNullOrEmpty();
             actual.Culture.Should().Be(System.Globalization.CultureInfo.InvariantCulture);
@@ -1762,11 +1762,11 @@ public class AffixReaderTests
         [Theory]
         [InlineData("klmc")]
         [InlineData("ःािीॉॊोौॎॏॕॖॗ‌‍")]
-        public async Task can_read_syllablenum(string parameters)
+        public void can_read_syllablenum(string parameters)
         {
             var textFileContents = "SYLLABLENUM " + parameters;
 
-            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+            var actual = AffixReader.ReadFromString(textFileContents);
 
             actual.CompoundSyllableNum.Should().Be(parameters);
         }
@@ -1775,11 +1775,11 @@ public class AffixReaderTests
         [InlineData("0", 0)]
         [InlineData("5", 5)]
         [InlineData("words", null)]
-        public async Task can_read_compoundwordmax(string parameters, int? expected)
+        public void can_read_compoundwordmax(string parameters, int? expected)
         {
             var textFileContents = "COMPOUNDWORDMAX " + parameters;
 
-            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+            var actual = AffixReader.ReadFromString(textFileContents);
 
             actual.CompoundWordMax.Should().Be(expected);
         }
@@ -1790,11 +1790,11 @@ public class AffixReaderTests
         [InlineData("1", 1)]
         [InlineData("2", 2)]
         [InlineData("words", 3)]
-        public async Task can_read_compoundmin(string parameters, int expected)
+        public void can_read_compoundmin(string parameters, int expected)
         {
             var textFileContents = "COMPOUNDMIN " + parameters;
 
-            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+            var actual = AffixReader.ReadFromString(textFileContents);
 
             actual.CompoundMin.Should().Be(expected);
         }
@@ -1804,7 +1804,7 @@ public class AffixReaderTests
         [InlineData("Z", 'Z')]
         [InlineData("AB", 'A' << 8 | 'B')]
         [InlineData("y", 'y')]
-        public async Task can_read_compoundroot(string parameters, int expected)
+        public void can_read_compoundroot(string parameters, int expected)
         {
             var textFileContents = string.Empty;
             if (parameters.Length > 1)
@@ -1813,7 +1813,7 @@ public class AffixReaderTests
             }
             textFileContents += "COMPOUNDROOT " + parameters;
 
-            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+            var actual = AffixReader.ReadFromString(textFileContents);
 
             actual.CompoundRoot.Should().Be(expected);
         }
@@ -1823,13 +1823,13 @@ public class AffixReaderTests
         [InlineData("1 abc", 1, "abc")]
         [InlineData("1", 1, "AEIOUaeiou")]
         [InlineData("abc", 0, "")]
-        public async Task can_read_compoundsyllable(string parameters, int expectedNumber, string expectedLettersText)
+        public void can_read_compoundsyllable(string parameters, int expectedNumber, string expectedLettersText)
         {
             var textFileContents = "COMPOUNDSYLLABLE " + parameters;
             var expectedLetters = expectedLettersText.ToCharArray();
             Array.Sort(expectedLetters);
 
-            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+            var actual = AffixReader.ReadFromString(textFileContents);
 
             actual.CompoundMaxSyllable.Should().Be(expectedNumber);
             actual.CompoundVowels.Should().BeEquivalentTo(expectedLetters);
@@ -1838,11 +1838,11 @@ public class AffixReaderTests
         [Theory]
         [InlineData("A", 'A')]
         [InlineData("=", '=')]
-        public async Task can_read_nosuggest(string parameters, int expectedFlag)
+        public void can_read_nosuggest(string parameters, int expectedFlag)
         {
             var textFileContents = "NOSUGGEST " + parameters;
 
-            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+            var actual = AffixReader.ReadFromString(textFileContents);
 
             actual.NoSuggest.Should().Be(expectedFlag);
         }
@@ -1850,11 +1850,11 @@ public class AffixReaderTests
         [Theory]
         [InlineData("A", 'A')]
         [InlineData("=", '=')]
-        public async Task can_read_nongramsuggest(string parameters, int expectedFlag)
+        public void can_read_nongramsuggest(string parameters, int expectedFlag)
         {
             var textFileContents = "NONGRAMSUGGEST " + parameters;
 
-            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+            var actual = AffixReader.ReadFromString(textFileContents);
 
             actual.NoNgramSuggest.Should().Be(expectedFlag);
         }
@@ -1862,11 +1862,11 @@ public class AffixReaderTests
         [Theory]
         [InlineData("A", 'A')]
         [InlineData(")", ')')]
-        public async Task can_read_lemma_present(string parameters, int expectedFlag)
+        public void can_read_lemma_present(string parameters, int expectedFlag)
         {
             var textFileContents = "LEMMA_PRESENT " + parameters;
 
-            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+            var actual = AffixReader.ReadFromString(textFileContents);
 
             actual.LemmaPresent.Should().Be(expectedFlag);
         }
@@ -1874,11 +1874,11 @@ public class AffixReaderTests
         [Theory]
         [InlineData("Magyar 1.6", "Magyar 1.6")]
         [InlineData("", null)]
-        public async Task can_read_version(string parameters, string expected)
+        public void can_read_version(string parameters, string expected)
         {
             var textFileContents = "VERSION " + parameters;
 
-            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+            var actual = AffixReader.ReadFromString(textFileContents);
 
             actual.Version.Should().Be(expected);
         }
@@ -1887,11 +1887,11 @@ public class AffixReaderTests
         [InlineData("1", 1)]
         [InlineData("0", 0)]
         [InlineData("", null)]
-        public async Task can_read_maxdiff(string parameters, int? expected)
+        public void can_read_maxdiff(string parameters, int? expected)
         {
             var textFileContents = "MAXDIFF " + parameters;
 
-            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+            var actual = AffixReader.ReadFromString(textFileContents);
 
             actual.MaxDifferency.Should().Be(expected);
         }
@@ -1900,11 +1900,11 @@ public class AffixReaderTests
         [InlineData("1", 1)]
         [InlineData("0", 0)]
         [InlineData("", 3)]
-        public async Task can_read_maxcpdsugs(string parameters, int expected)
+        public void can_read_maxcpdsugs(string parameters, int expected)
         {
             var textFileContents = "MAXCPDSUGS " + parameters;
 
-            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+            var actual = AffixReader.ReadFromString(textFileContents);
 
             actual.MaxCompoundSuggestions.Should().Be(expected);
         }
@@ -1912,71 +1912,71 @@ public class AffixReaderTests
         [Theory]
         [InlineData("A", 'A')]
         [InlineData("&", '&')]
-        public async Task can_read_substandard(string parameters, int expectedFlag)
+        public void can_read_substandard(string parameters, int expectedFlag)
         {
             var textFileContents = "SUBSTANDARD " + parameters;
 
-            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+            var actual = AffixReader.ReadFromString(textFileContents);
 
             actual.SubStandard.Should().Be(expectedFlag);
         }
 
         [Fact]
-        public async Task can_read_compoundmoresuffixes()
+        public void can_read_compoundmoresuffixes()
         {
             var textFileContents = "COMPOUNDMORESUFFIXES";
 
-            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+            var actual = AffixReader.ReadFromString(textFileContents);
 
             actual.CompoundMoreSuffixes.Should().BeTrue();
         }
 
         [Fact]
-        public async Task can_read_checknum()
+        public void can_read_checknum()
         {
             var textFileContents = "CHECKNUM";
 
-            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+            var actual = AffixReader.ReadFromString(textFileContents);
 
             actual.CheckNum.Should().BeTrue();
         }
 
         [Fact]
-        public async Task can_read_onlymaxdiff()
+        public void can_read_onlymaxdiff()
         {
             var textFileContents = "ONLYMAXDIFF";
 
-            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+            var actual = AffixReader.ReadFromString(textFileContents);
 
             actual.OnlyMaxDiff.Should().BeTrue();
         }
 
         [Fact]
-        public async Task can_read_sugswithdots()
+        public void can_read_sugswithdots()
         {
             var textFileContents = "SUGSWITHDOTS";
 
-            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+            var actual = AffixReader.ReadFromString(textFileContents);
 
             actual.SuggestWithDots.Should().BeTrue();
         }
 
         [Fact]
-        public async Task can_read_forbidwarn()
+        public void can_read_forbidwarn()
         {
             var textFileContents = "FORBIDWARN";
 
-            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+            var actual = AffixReader.ReadFromString(textFileContents);
 
             actual.ForbidWarn.Should().BeTrue();
         }
 
         [Fact]
-        public async Task can_read_unknown_command()
+        public void can_read_unknown_command()
         {
             var textFileContents = "UNKNOWN arguments";
 
-            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+            var actual = AffixReader.ReadFromString(textFileContents);
 
             actual.Should().NotBeNull();
         }
@@ -1990,11 +1990,11 @@ public class AffixReaderTests
         [InlineData("UNI", FlagParsingMode.Uni)]
         [InlineData("UNICODE", FlagParsingMode.Uni)]
         [InlineData("UTF-8", FlagParsingMode.Uni)]
-        public async Task can_read_flag_mode(string given, FlagParsingMode expected)
+        public void can_read_flag_mode(string given, FlagParsingMode expected)
         {
             var textFileContents = "FLAG " + given;
 
-            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+            var actual = AffixReader.ReadFromString(textFileContents);
 
             actual.FlagMode.Should().Be(expected);
         }
@@ -2004,7 +2004,7 @@ public class AffixReaderTests
         [InlineData("^abc", "d_e_f", "abc", "d e f", ReplacementValueType.Ini)]
         [InlineData("a_b_c$", "d_e_f", "a b c", "d e f", ReplacementValueType.Fin)]
         [InlineData("^a_b_c$", "d_e_f", "a b c", "d e f", ReplacementValueType.Isol)]
-        public async Task can_read_all_rep_types(string pattern, string outText, string expectedPattern, string expectedOutString, ReplacementValueType expectedType)
+        public void can_read_all_rep_types(string pattern, string outText, string expectedPattern, string expectedOutString, ReplacementValueType expectedType)
         {
             var textFileContents = $"REP {pattern} {outText}";
             string expectedMed = null;
@@ -2028,7 +2028,7 @@ public class AffixReaderTests
                     break;
             }
 
-            var actual = await AffixReader.ReadAsync(new StringValueLineReader(textFileContents));
+            var actual = AffixReader.ReadFromString(textFileContents);
 
             actual.Replacements.Should().HaveCount(1);
             var rep = actual.Replacements.Single();

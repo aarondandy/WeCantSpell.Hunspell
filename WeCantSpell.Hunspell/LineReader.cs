@@ -31,13 +31,12 @@ internal sealed class LineReader : IDisposable
             };
     }
 
-    public static LineReader Create(Stream stream, Encoding encoding) => new LineReader(stream, encoding);
-
-    private LineReader(Stream stream, Encoding encoding)
+    internal LineReader(Stream stream, Encoding encoding, bool allowEncodingChanges = false)
     {
         _stream = stream;
         _encoding = encoding;
         _decoder = encoding.GetDecoder();
+        _allowEncodingChanges = allowEncodingChanges;
         _reusableFileReadBuffer = new byte[DefaultBufferSize];
         _buffers = new(2);
     }
@@ -46,6 +45,7 @@ internal sealed class LineReader : IDisposable
     private readonly byte[] _reusableFileReadBuffer;
     private readonly List<TextBufferLine> _buffers;
 
+    private bool _allowEncodingChanges;
     private Encoding _encoding;
     private Decoder _decoder;
     private bool _hasReadPreamble = false;
@@ -162,6 +162,51 @@ internal sealed class LineReader : IDisposable
         {
             _position.BufferIndex++;
             _position.SubIndex = 0;
+        }
+
+        if (_allowEncodingChanges)
+        {
+            tryHandleSetCommand(Current.Span);
+
+            bool tryHandleSetCommand(ReadOnlySpan<char> span)
+            {
+                var startIndex = 0;
+                for (; startIndex < span.Length && span[startIndex].IsTabOrSpace(); startIndex++) ;
+
+                if (startIndex > 0)
+                {
+                    span = span.Slice(startIndex);
+                }
+
+                if (!isSetCommand(span))
+                {
+                    return false;
+                }
+
+                for (startIndex = 4; startIndex < span.Length && span[startIndex].IsTabOrSpace(); startIndex++) ;
+
+                var endIndex = span.Length - 1;
+                for (; endIndex > startIndex && span[endIndex].IsTabOrSpace(); endIndex--) ;
+
+                span = span.Slice(startIndex, endIndex - startIndex + 1);
+
+                if (span.IsEmpty)
+                {
+                    return false;
+                }
+
+                ChangeEncoding(span);
+
+                _allowEncodingChanges = false; // Only expect one encoding switch per file
+                return true;
+            }
+
+            static bool isSetCommand(ReadOnlySpan<char> span) =>
+                span.Length >= 5
+                && span[0] is 'S' or 's'
+                && span[1] is 'E' or 'e'
+                && span[2] is 'T' or 't'
+                && span[3].IsTabOrSpace();
         }
 
         return true;
@@ -322,21 +367,22 @@ internal sealed class LineReader : IDisposable
     private TextBufferLine AllocateBufferForNewWrites()
     {
         TextBufferLine buffer;
-        if (_position.BufferIndex > 1)
+
+        while (_position.BufferIndex > 0 && _buffers.Count > 0)
         {
             buffer = _buffers[0];
 
             _buffers.RemoveAt(0);
-            buffer.ResetMemory();
-
             _position.BufferIndex--;
-        }
-        else
-        {
-            buffer = new(DefaultBufferSize);
+
+            if (!buffer.PreventRecycle)
+            {
+                buffer.ResetMemory();
+                return buffer;
+            }
         }
 
-        return buffer;
+        return new(DefaultBufferSize);
     }
 
     private void ReadPreamble(ref ReadOnlySpan<byte> fileBytes)
@@ -359,22 +405,49 @@ internal sealed class LineReader : IDisposable
         }
     }
 
-    private void ChangeEncoding(Encoding? newEncoding)
+    private void ChangeEncoding(ReadOnlySpan<char> encodingName)
     {
-        if (newEncoding is null)
+        if (EncodingEx.GetEncodingByName(encodingName) is { } newEncoding)
         {
-            return;
+            ChangeEncoding(newEncoding);
         }
+    }
 
+    private void ChangeEncoding(Encoding newEncoding)
+    {
         if (_encoding is not null && (ReferenceEquals(newEncoding, _encoding) || _encoding.Equals(newEncoding)))
         {
             return;
         }
 
+        var oldEncoding = _encoding ?? Encoding.UTF8;
+
         _encoding = newEncoding;
         _decoder = newEncoding.GetDecoder();
 
-        // TODO: redecode buffered text if needed
+        if (_position.BufferIndex < _buffers.Count)
+        {
+            // The characters that were loaded after the encoding change need to be re-decoded
+            for (var bufferIndex = _position.BufferIndex; bufferIndex < _buffers.Count; bufferIndex++)
+            {
+                var oldCharacters = _buffers[bufferIndex].Memory;
+
+                if (_position.BufferIndex == bufferIndex)
+                {
+                    oldCharacters = oldCharacters.Slice(_position.SubIndex);
+                }
+
+                var restoredBytes = oldEncoding.GetBytes(oldCharacters.ToArray());
+                var newCharacters = newEncoding.GetChars(restoredBytes);
+
+                _buffers[bufferIndex] = new TextBufferLine(newCharacters)
+                {
+                    PreventRecycle = true
+                };
+            }
+
+            _position.SubIndex = 0;
+        }
     }
 
     public void Dispose()
@@ -389,8 +462,15 @@ internal sealed class LineReader : IDisposable
             Raw = new char[rawBufferSize];
         }
 
+        public TextBufferLine(char[] raw)
+        {
+            Raw = raw;
+            Memory = raw.AsMemory();
+        }
+
         public char[] Raw;
         public ReadOnlyMemory<char> Memory = ReadOnlyMemory<char>.Empty;
+        public bool PreventRecycle = false;
 
         public int Length => Memory.Length;
 

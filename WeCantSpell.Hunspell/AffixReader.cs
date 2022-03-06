@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -91,80 +92,18 @@ public sealed partial class AffixReader
         });
     }
 
-    public AffixReader(AffixConfig.Builder builder, IHunspellLineReader reader)
+    public AffixReader(AffixConfig.Builder builder)
     {
         Builder = builder ?? new AffixConfig.Builder();
-        Reader = reader;
         _flagParser = new(Builder.FlagMode, Builder.Encoding);
     }
 
     private AffixConfig.Builder Builder;
 
-    private IHunspellLineReader Reader;
-
     private EntryListType Initialized = EntryListType.None;
 
     private FlagParser _flagParser;
 
-    public static async Task<AffixConfig> ReadAsync(IHunspellLineReader reader, AffixConfig.Builder? builder = null)
-    {
-        if (reader is null) throw new ArgumentNullException(nameof(reader));
-
-        var readerInstance = new AffixReader(builder ?? new(), reader);
-
-        await readerInstance.ReadAsync().ConfigureAwait(false);
-
-        return readerInstance.Builder.MoveToImmutable();
-    }
-
-    private async Task ReadToEndAsync()
-    {
-        string? line;
-        while ((line = await Reader.ReadLineAsync().ConfigureAwait(false)) != null)
-        {
-            ParseLine(line);
-        }
-    }
-
-    private async Task ReadAsync()
-    {
-        await ReadToEndAsync().ConfigureAwait(false);
-        AddDefaultBreakTableIfEmpty();
-    }
-
-    public static AffixConfig Read(IHunspellLineReader reader, AffixConfig.Builder? builder = null)
-    {
-        if (reader is null) throw new ArgumentNullException(nameof(reader));
-
-        var readerInstance = new AffixReader(builder ?? new(), reader);
-
-        readerInstance.Read();
-
-        return readerInstance.Builder.MoveToImmutable();
-    }
-
-    private void ReadToEnd()
-    {
-        string? line;
-        while ((line = Reader.ReadLine()) != null)
-        {
-            ParseLine(line);
-        }
-    }
-
-    private void Read()
-    {
-        ReadToEnd();
-        AddDefaultBreakTableIfEmpty();
-    }
-
-    public static async Task<AffixConfig> ReadAsync(Stream stream, AffixConfig.Builder? builder = null)
-    {
-        if (stream is null) throw new ArgumentNullException(nameof(stream));
-
-        using var reader = new DynamicEncodingLineReader(stream, DefaultEncoding);
-        return await ReadAsync(reader, builder).ConfigureAwait(false);
-    }
     public static async Task<AffixConfig> ReadFileAsync(string filePath, AffixConfig.Builder? builder = null)
     {
         if (filePath is null) throw new ArgumentNullException(nameof(filePath));
@@ -173,12 +112,24 @@ public sealed partial class AffixReader
         return await ReadAsync(stream, builder).ConfigureAwait(false);
     }
 
-    public static AffixConfig Read(Stream stream, AffixConfig.Builder? builder = null)
+    public static async Task<AffixConfig> ReadAsync(Stream stream, AffixConfig.Builder? builder = null)
     {
+        var ct = CancellationToken.None;
+
         if (stream is null) throw new ArgumentNullException(nameof(stream));
 
-        using var reader = new DynamicEncodingLineReader(stream, DefaultEncoding);
-        return Read(reader, builder);
+        bool ownsBuilder = builder is null;
+        builder ??= new();
+
+        var readerInstance = new AffixReader(builder);
+
+        using var lineReader = new LineReader(stream, builder.Encoding, allowEncodingChanges: true);
+        while (await lineReader.ReadNextAsync(ct))
+        {
+            readerInstance.ParseLine(lineReader.Current.Span);
+        }
+
+        return readerInstance.Builder.ToImmutable(allowDestructive: ownsBuilder);
     }
 
     public static AffixConfig ReadFile(string filePath, AffixConfig.Builder? builder = null)
@@ -189,7 +140,43 @@ public sealed partial class AffixReader
         return Read(stream, builder);
     }
 
-    private bool ParseLine(string line)
+    public static AffixConfig ReadFromString(string contents, AffixConfig.Builder? builder = null)
+    {
+        bool ownsBuilder = builder is null;
+        builder ??= new();
+
+        var readerInstance = new AffixReader(builder);
+
+        using var reader = new StringReader(contents);
+
+        string? line;
+        while ((line = reader.ReadLine()) is not null)
+        {
+            readerInstance.ParseLine(line.AsSpan());
+        }
+
+        return readerInstance.Builder.ToImmutable(allowDestructive: ownsBuilder);
+    }
+
+    public static AffixConfig Read(Stream stream, AffixConfig.Builder? builder = null)
+    {
+        if (stream is null) throw new ArgumentNullException(nameof(stream));
+
+        bool ownsBuilder = builder is null;
+        builder ??= new();
+
+        var readerInstance = new AffixReader(builder);
+
+        using var lineReader = new LineReader(stream, builder.Encoding, allowEncodingChanges: true);
+        while (lineReader.ReadNext())
+        {
+            readerInstance.ParseLine(lineReader.Current.Span);
+        }
+
+        return readerInstance.Builder.ToImmutable(allowDestructive: ownsBuilder);
+    }
+
+    private bool ParseLine(ReadOnlySpan<char> line)
     {
         // read through the initial ^[ \t]*
         var commandStartIndex = 0;
@@ -212,13 +199,13 @@ public sealed partial class AffixReader
         var parameterStartIndex = commandEndIndex;
         for (; parameterStartIndex <= lineEndIndex && line[parameterStartIndex].IsTabOrSpace(); parameterStartIndex++) ;
 
-        var command = line.AsSpan(commandStartIndex, commandEndIndex - commandStartIndex);
+        var command = line.Slice(commandStartIndex, commandEndIndex - commandStartIndex);
 
         if (parameterStartIndex <= lineEndIndex)
         {
             if (TryHandleParameterizedCommand(
                 command,
-                line.AsSpan(parameterStartIndex, lineEndIndex - parameterStartIndex + 1)))
+                line.Slice(parameterStartIndex, lineEndIndex - parameterStartIndex + 1)))
             {
                 return true;
             }
@@ -229,7 +216,7 @@ public sealed partial class AffixReader
             return true;
         }
 
-        LogWarning("Failed to parse line: " + line);
+        LogWarning("Failed to parse line: " + line.ToString());
         return false;
 
         static bool isCommentPrefix(char c) => c is '#' or '/';
