@@ -96,10 +96,9 @@ public sealed partial class WordList
 #if DEBUG
         if (rootWord is null) throw new ArgumentNullException(nameof(rootWord));
 #endif
-        var details = FindEntryDetailsByRootWord(rootWord);
-        return details.Length == 0
-            ? null
-            : new WordEntry(rootWord, details[0]);
+        return EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length > 0
+            ? new WordEntry(rootWord, details[0])
+            : null;
     }
 
     internal WordEntryDetail[] FindEntryDetailsByRootWord(string rootWord)
@@ -107,9 +106,9 @@ public sealed partial class WordList
 #if DEBUG
         if (rootWord is null) throw new ArgumentNullException(nameof(rootWord));
 #endif
-        return (rootWord is null || !EntriesByRoot.TryGetValue(rootWord, out var details))
-            ? Array.Empty<WordEntryDetail>()
-            : details;
+        return EntriesByRoot.TryGetValue(rootWord, out var details)
+            ? details
+            : Array.Empty<WordEntryDetail>();
     }
 
     internal WordEntryDetail? FindFirstEntryDetailByRootWord(string rootWord)

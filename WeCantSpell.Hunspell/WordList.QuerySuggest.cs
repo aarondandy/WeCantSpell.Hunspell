@@ -24,15 +24,15 @@ public partial class WordList
 
         private const int TimeLimitCompoundSuggestMs = 1000 / 10;
 
-        /// <summary>
-        /// Used to abort long running compound check calls.
-        /// </summary>
-        private OperationTimeLimiter CompoundSuggestTimeLimiter;
-
         public QuerySuggest(WordList wordList)
             : base(wordList)
         {
         }
+
+        /// <summary>
+        /// Used to abort long running compound check calls.
+        /// </summary>
+        private OperationTimeLimiter? CompoundSuggestTimeLimiter;
 
         private List<string> SuggestNested(string word) => new QuerySuggest(WordList).Suggest(word);
 
@@ -1055,7 +1055,7 @@ public partial class WordList
             return wlst.Count;
         }
 
-        private void TestSug(List<string> wlst, string candidate, bool cpdSuggest, OperationTimeLimiter timer = null)
+        private void TestSug(List<string> wlst, string candidate, bool cpdSuggest, OperationTimeLimiter? timer = null)
         {
             if (
                 wlst.Count < MaxSuggestions
@@ -1069,7 +1069,7 @@ public partial class WordList
             }
         }
 
-        private void TestSug(List<string> wlst, ReadOnlySpan<char> candidate, bool cpdSuggest, OperationTimeLimiter timer = null)
+        private void TestSug(List<string> wlst, ReadOnlySpan<char> candidate, bool cpdSuggest, OperationTimeLimiter? timer = null)
         {
             if (wlst.Count < MaxSuggestions)
             {
@@ -1082,7 +1082,7 @@ public partial class WordList
             }
         }
 
-        private int CheckWord(ReadOnlySpan<char> word, bool cpdSuggest, OperationTimeLimiter timer = null) =>
+        private int CheckWord(ReadOnlySpan<char> word, bool cpdSuggest, OperationTimeLimiter? timer = null) =>
             CheckWord(word.ToString(), cpdSuggest, timer);
 
         /// <summary>
@@ -1094,7 +1094,7 @@ public partial class WordList
         /// return value 2 and 3 marks compounding with hyphen (-)
         /// `3' marks roots without suffix
         /// </remarks>
-        private int CheckWord(string word, bool cpdSuggest, OperationTimeLimiter timer = null)
+        private int CheckWord(string word, bool cpdSuggest, OperationTimeLimiter? timer = null)
         {
 #if DEBUG
             if (word is null) throw new ArgumentNullException(nameof(word));
@@ -1105,7 +1105,7 @@ public partial class WordList
                 return 0;
             }
 
-            WordEntry rv;
+            WordEntry? rv;
             if (cpdSuggest)
             {
                 if (Affix.HasCompound)
@@ -2750,7 +2750,7 @@ public partial class WordList
 
             public string Guess;
 
-            public string GuessOrig;
+            public string? GuessOrig;
 
             public int Score;
 
@@ -2765,7 +2765,7 @@ public partial class WordList
         {
             public string Word;
 
-            public string Orig;
+            public string? Orig;
 
             public bool Allow;
 

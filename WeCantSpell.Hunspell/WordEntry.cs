@@ -6,9 +6,9 @@ namespace WeCantSpell.Hunspell;
 
 sealed class WordEntry : IEquatable<WordEntry>
 {
-    public static bool operator ==(WordEntry a, WordEntry b) => a is null ? b is null : a.Equals(b);
+    public static bool operator ==(WordEntry? a, WordEntry? b) => a is null ? b is null : a.Equals(b);
 
-    public static bool operator !=(WordEntry a, WordEntry b) => !(a == b);
+    public static bool operator !=(WordEntry? a, WordEntry? b) => !(a == b);
 
     public WordEntry(string word, FlagSet flags, MorphSet morphs, WordEntryOptions options)
         : this(word, new WordEntryDetail(flags, morphs, options)) { }

@@ -199,7 +199,7 @@ public partial class WordList
             return new SpellCheckResult(root, resultType, false);
         }
 
-        private WordEntry CheckDetailsAllCap(int abbv, ref string scw, ref SpellCheckResultType resultType, out string root)
+        private WordEntry? CheckDetailsAllCap(int abbv, ref string scw, ref SpellCheckResultType resultType, out string root)
         {
             resultType |= SpellCheckResultType.OrigCap;
             var rv = CheckWord(scw, ref resultType, out root);
@@ -270,7 +270,7 @@ public partial class WordList
             return rv;
         }
 
-        private WordEntry CheckDetailsInitCap(int abbv, CapitalizationType capType, ref string scw, ref SpellCheckResultType resultType, out string root)
+        private WordEntry? CheckDetailsInitCap(int abbv, CapitalizationType capType, ref string scw, ref SpellCheckResultType resultType, out string root)
         {
             var u8buffer = HunspellTextFunctions.MakeAllSmall(scw, TextInfo);
             scw = HunspellTextFunctions.MakeInitCap(u8buffer, TextInfo);
@@ -360,13 +360,13 @@ public partial class WordList
         /// <summary>
         /// Recursive search for right ss - sharp s permutations
         /// </summary>
-        private WordEntry SpellSharps(ref string @base, ref SpellCheckResultType info, out string root) =>
+        private WordEntry? SpellSharps(ref string @base, ref SpellCheckResultType info, out string? root) =>
             SpellSharps(ref @base, 0, 0, 0, ref info, out root);
 
         /// <summary>
         /// Recursive search for right ss - sharp s permutations
         /// </summary>
-        private WordEntry SpellSharps(ref string @base, int nPos, int n, int repNum, ref SpellCheckResultType info, out string root)
+        private WordEntry? SpellSharps(ref string @base, int nPos, int n, int repNum, ref SpellCheckResultType info, out string? root)
         {
             var pos = @base.IndexOf("ss", nPos, StringComparison.Ordinal);
             if (pos >= 0 && n < MaxSharps)
