@@ -1,5 +1,7 @@
 ﻿using System;
 
+using WeCantSpell.Hunspell.Infrastructure;
+
 namespace WeCantSpell.Hunspell;
 
 public class WordEntryDetail : IEquatable<WordEntryDetail>
@@ -33,7 +35,7 @@ public class WordEntryDetail : IEquatable<WordEntryDetail>
 
     public bool ContainsAnyFlags(FlagValue a, FlagValue b, FlagValue c, FlagValue d) => Flags.ContainsAny(a, b, c, d);
 
-    public bool Equals(WordEntryDetail other)
+    public bool Equals(WordEntryDetail? other)
     {
         if (other is null)
         {
@@ -50,10 +52,9 @@ public class WordEntryDetail : IEquatable<WordEntryDetail>
             && other.Morphs.Equals(Morphs);
     }
 
-    public override bool Equals(object obj) => Equals(obj as WordEntryDetail);
+    public override bool Equals(object? obj) => Equals(obj as WordEntryDetail);
 
-    public override int GetHashCode() =>
-        unchecked(Flags.GetHashCode() ^ Morphs.GetHashCode() ^ Options.GetHashCode());
+    public override int GetHashCode() => HashCode.Combine(Options, Flags, Morphs);
 
     internal WordEntry ToEntry(string word) => new(word, this);
 }

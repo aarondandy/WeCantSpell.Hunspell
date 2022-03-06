@@ -31,14 +31,16 @@ public sealed partial class WordList
     public static async Task<WordList> CreateFromFilesAsync(string dictionaryFilePath, string affixFilePath) =>
         await WordListReader.ReadFileAsync(dictionaryFilePath, affixFilePath).ConfigureAwait(false);
 
-    public static WordList CreateFromWords(IEnumerable<string> words) =>
-        CreateFromWords(words, affix: null);
+    public static WordList CreateFromWords(IEnumerable<string> words) => CreateFromWords(
+        words ?? throw new ArgumentNullException(nameof(words)),
+        new AffixConfig.Builder().MoveToImmutable());
 
     public static WordList CreateFromWords(IEnumerable<string> words, AffixConfig affix)
     {
-        words ??= Enumerable.Empty<string>();
+        if (words is null) throw new ArgumentNullException(nameof(words));
+        if (affix is null) throw new ArgumentNullException(nameof(affix));
 
-        var wordListBuilder = new Builder(affix ?? new AffixConfig.Builder().MoveToImmutable());
+        var wordListBuilder = new Builder(affix);
 
         wordListBuilder.InitializeEntriesByRoot((words as ICollection<string>)?.Count ?? 0);
 
@@ -52,9 +54,12 @@ public sealed partial class WordList
         return wordListBuilder.MoveToImmutable();
     }
 
-    private WordList(AffixConfig affix)
+    private WordList(AffixConfig affix, FlagSet nGramRestrictedFlags)
     {
         Affix = affix;
+        NGramRestrictedFlags = nGramRestrictedFlags;
+        EntriesByRoot = new();
+        NGramRestrictedDetails = new();
     }
 
     public AffixConfig Affix { get; private set; }
@@ -86,7 +91,7 @@ public sealed partial class WordList
 
     public IEnumerable<string> Suggest(string word) => new QuerySuggest(this).Suggest(word);
 
-    internal WordEntry FindFirstEntryByRootWord(string rootWord)
+    internal WordEntry? FindFirstEntryByRootWord(string rootWord)
     {
 #if DEBUG
         if (rootWord is null) throw new ArgumentNullException(nameof(rootWord));
@@ -102,18 +107,18 @@ public sealed partial class WordList
 #if DEBUG
         if (rootWord is null) throw new ArgumentNullException(nameof(rootWord));
 #endif
-        return (rootWord is null || !EntriesByRoot.TryGetValue(rootWord, out WordEntryDetail[] details))
+        return (rootWord is null || !EntriesByRoot.TryGetValue(rootWord, out var details))
             ? Array.Empty<WordEntryDetail>()
             : details;
     }
 
-    internal WordEntryDetail FindFirstEntryDetailByRootWord(string rootWord)
+    internal WordEntryDetail? FindFirstEntryDetailByRootWord(string rootWord)
     {
 #if DEBUG
         if (rootWord is null) throw new ArgumentNullException(nameof(rootWord));
 #endif
 
-        return EntriesByRoot.TryGetValue(rootWord, out WordEntryDetail[] details) && details.Length != 0
+        return EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length != 0
             ? details[0]
             : null;
     }
@@ -169,11 +174,11 @@ public sealed partial class WordList
 
                     if (_requiresNGramFiltering)
                     {
-                        if (_nGramRestrictedDetails.TryGetValue(rootPair.Key.ToString(), out WordEntryDetail[] restrictedDetails))
+                        if (_nGramRestrictedDetails.TryGetValue(rootPair.Key.ToString(), out var restrictedDetails))
                         {
                             if (restrictedDetails.Length != 0)
                             {
-                                WordEntryDetail[] filteredValues = rootPair.Value;
+                                var filteredValues = rootPair.Value;
                                 if (restrictedDetails.Length == rootPair.Value.Length)
                                 {
                                     continue;
@@ -183,7 +188,7 @@ public sealed partial class WordList
                                     filteredValues = filteredValues.Where(d => !restrictedDetails.Contains(d)).ToArray();
                                 }
 
-                                rootPair = new KeyValuePair<string, WordEntryDetail[]>(rootPair.Key, filteredValues);
+                                rootPair = new(rootPair.Key, filteredValues);
                             }
                         }
                     }

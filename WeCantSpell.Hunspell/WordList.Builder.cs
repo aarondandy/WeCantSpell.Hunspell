@@ -17,6 +17,7 @@ public partial class WordList
         public Builder(AffixConfig affix)
         {
             Affix = affix;
+            EntryDetailsByRoot = new();
         }
 
         private Dictionary<string, List<WordEntryDetail>> EntryDetailsByRoot;
@@ -37,9 +38,9 @@ public partial class WordList
 
         internal List<WordEntryDetail> GetOrCreateDetailList(string word)
         {
-            if (!EntryDetailsByRoot.TryGetValue(word, out List<WordEntryDetail> details))
+            if (!EntryDetailsByRoot.TryGetValue(word, out var details))
             {
-                details = new List<WordEntryDetail>(2);
+                details = new List<WordEntryDetail>(2); // TODO: maybe 1 is a better starting capacity
                 EntryDetailsByRoot.Add(word, details);
             }
 
@@ -54,32 +55,24 @@ public partial class WordList
 
         private WordList ToImmutable(bool destructive)
         {
-            var result = new WordList(Affix);
-            result.NGramRestrictedFlags = FlagSet.Create(new[]
+            var result = new WordList(Affix, FlagSet.Create(new[]
             {
                 Affix.ForbiddenWord,
                 Affix.NoSuggest,
                 Affix.NoNgramSuggest,
                 Affix.OnlyInCompound,
                 SpecialFlags.OnlyUpcaseFlag
-            });
+            }));
 
-            if (EntryDetailsByRoot is null)
+#if NO_HASHSET_CAPACITY
+            result.EntriesByRoot = new(EntryDetailsByRoot.Count);
+#else
+            result.EntriesByRoot.Clear();
+            result.EntriesByRoot.EnsureCapacity(EntryDetailsByRoot.Count);
+#endif
+            foreach (var pair in EntryDetailsByRoot)
             {
-                result.EntriesByRoot = new Dictionary<string, WordEntryDetail[]>();
-            }
-            else
-            {
-                result.EntriesByRoot = new Dictionary<string, WordEntryDetail[]>(EntryDetailsByRoot.Count);
-                foreach (var pair in EntryDetailsByRoot)
-                {
-                    result.EntriesByRoot.Add(pair.Key, pair.Value.ToArray());
-                }
-
-                if (destructive)
-                {
-                    EntryDetailsByRoot = null;
-                }
+                result.EntriesByRoot.Add(pair.Key, pair.Value.ToArray());
             }
 
             result.AllReplacements = Affix.Replacements;
@@ -100,8 +93,6 @@ public partial class WordList
                     result.AllReplacements = new(PhoneticReplacements.Concat(result.AllReplacements).ToImmutableArray());
                 }
             }
-
-            result.NGramRestrictedDetails = new Dictionary<string, WordEntryDetail[]>();
 
             var details = new List<WordEntryDetail>();
             foreach (var rootSet in result.EntriesByRoot)
@@ -126,15 +117,17 @@ public partial class WordList
 
         public void InitializeEntriesByRoot(int expectedSize)
         {
-            if (EntryDetailsByRoot != null)
-            {
-                return;
-            }
+            // PERF: because we add more entries than we are told about, we add a bit more to the expected size
+            var expectedCapacity = (expectedSize / 100) + expectedSize;
 
-            EntryDetailsByRoot = expectedSize <= 0
-                ? new Dictionary<string, List<WordEntryDetail>>()
-                // PERF: because we add more entries than we are told about, we add a bit more to the expected size
-                : new Dictionary<string, List<WordEntryDetail>>((expectedSize / 100) + expectedSize);
+#if NO_HASHSET_CAPACITY
+            if (EntryDetailsByRoot.Count == 0)
+            {
+                EntryDetailsByRoot = new Dictionary<string, List<WordEntryDetail>>((expectedSize / 100) + expectedSize);
+            }
+#else
+            EntryDetailsByRoot.EnsureCapacity(expectedCapacity);
+#endif
         }
     }
 }

@@ -4,7 +4,7 @@ public struct SpellCheckResult
 {
     public SpellCheckResult(bool correct)
     {
-        Root = null;
+        Root = string.Empty;
         Info = SpellCheckResultType.None;
         Correct = correct;
     }

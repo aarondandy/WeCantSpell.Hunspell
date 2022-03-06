@@ -1070,7 +1070,7 @@ public class WordListReaderTests
     public class ReadFile : WordListReaderTests
     {
         [Fact]
-        public async Task can_read_english_dic()
+        public void can_read_english_dic()
         {
             var filePath = @"files/English (American).dic";
 
