@@ -285,7 +285,7 @@ public sealed class WordListReader
             morphs = morphBuilder.ToImmutable(allowDestructive: true);
         }
 
-        using (var morphPhonEnumerator = morphs.Where(m => m != null && m.StartsWith(MorphologicalTags.Phon)).GetEnumerator())
+        using (var morphPhonEnumerator = morphs.Where(m => m is not null && m.StartsWith(MorphologicalTags.Phon)).GetEnumerator())
         {
             if (morphPhonEnumerator.MoveNext())
             {

@@ -148,8 +148,8 @@ public sealed partial class WordList
                 _coreEnumerator = entriesByRoot.GetEnumerator();
                 _entriesByRoot = entriesByRoot;
                 _nGramRestrictedDetails = nGramRestrictedDetails;
+                _requiresNGramFiltering = nGramRestrictedDetails is { Count: > 0 };
                 _rootKeyFilter = rootKeyFilter;
-                _requiresNGramFiltering = nGramRestrictedDetails != null && nGramRestrictedDetails.Count != 0;
             }
 
             Dictionary<string, WordEntryDetail[]>.Enumerator _coreEnumerator;

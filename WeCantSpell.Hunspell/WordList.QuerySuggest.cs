@@ -72,7 +72,7 @@ public partial class WordList
                 return slst;
             }
 
-            if (GlobalTimeLimiter == null)
+            if (GlobalTimeLimiter is null)
             {
                 GlobalTimeLimiter = OperationTimeLimiter.Create(TimeLimitGlobalMs);
             }
@@ -87,7 +87,7 @@ public partial class WordList
             if (capType == CapitalizationType.None && Affix.ForceUpperCase.HasValue)
             {
                 var info = SpellCheckResultType.OrigCap;
-                if (CheckWord(scw, ref info, out tempString) != null)
+                if (CheckWord(scw, ref info, out tempString) is not null)
                 {
                     slst.Add(HunspellTextFunctions.MakeInitCap(scw, textInfo));
                     return slst;
@@ -1037,7 +1037,7 @@ public partial class WordList
                             candidate = candidatePrefix + otherMapEntryValue;
                             MapRelated(word, ref candidate, wn + mapEntryValue.Length, wlst, cpdSuggest, timer);
 
-                            if (timer != null && timer.QueryCounter == 0)
+                            if (timer is not null && timer.QueryCounter == 0)
                             {
                                 return wlst.Count;
                             }
@@ -1137,7 +1137,7 @@ public partial class WordList
                 }
 
                 var rvIndex = 0;
-                while (rvDetail != null)
+                while (rvDetail is not null)
                 {
                     if (rvDetail.ContainsAnyFlags(Affix.NeedAffix, SpecialFlags.OnlyUpcaseFlag, Affix.OnlyInCompound))
                     {
@@ -1406,7 +1406,7 @@ public partial class WordList
             for (var i = 0; i < roots.Length; i++)
             {
                 var rp = roots[i].Root;
-                if (rp != null)
+                if (rp is not null)
                 {
                     var field = string.Empty;
                     if (!EnumEx.HasFlag(rp.Detail.Options, WordEntryOptions.Phon) || !QuerySuggest.CopyField(ref field, rp.Detail.Morphs, MorphologicalTags.Phon))
@@ -1479,7 +1479,7 @@ public partial class WordList
             for (var i = 0; i < guesses.Length; i++)
             {
                 var guess = guesses[i];
-                if (guess.Guess != null)
+                if (guess.Guess is not null)
                 {
                     // lowering guess[i]
                     var gl = HunspellTextFunctions.MakeAllSmall(guess.Guess, textInfo);
@@ -1524,7 +1524,7 @@ public partial class WordList
                 for (var i = 0; i < roots.Length; i++)
                 {
                     var root = roots[i];
-                    if (root.RootPhon != null)
+                    if (root.RootPhon is not null)
                     {
                         // lowering rootphon[i]
                         var gl = HunspellTextFunctions.MakeAllSmall(root.RootPhon, textInfo);
@@ -1787,7 +1787,7 @@ public partial class WordList
                 nh++;
 
                 // add special phonetic version
-                if (phon != null && nh < wlst.Length)
+                if (phon is not null && nh < wlst.Length)
                 {
                     wlst[nh].Word = phon;
                     if (wlst[nh].Word is null)
@@ -1839,7 +1839,7 @@ public partial class WordList
                                     nh++;
 
                                     // add special phonetic version
-                                    if (phon != null && nh < wlst.Length)
+                                    if (phon is not null && nh < wlst.Length)
                                     {
                                         wlst[nh].Word = phon + key.GetReversed();
                                         if (wlst[nh].Word is null)

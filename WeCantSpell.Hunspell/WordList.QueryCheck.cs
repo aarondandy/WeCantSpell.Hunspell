@@ -69,7 +69,7 @@ public partial class WordList
                 rv = CheckDetailsAllCap(abbv, ref scw, ref resultType, out root);
             }
 
-            if (capType == CapitalizationType.Init || (capType == CapitalizationType.All && rv == null))
+            if (capType == CapitalizationType.Init || (capType == CapitalizationType.All && rv is null))
             {
                 rv = CheckDetailsInitCap(abbv, capType, ref scw, ref resultType, out root);
             }

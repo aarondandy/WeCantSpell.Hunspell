@@ -160,7 +160,7 @@ public partial class WordList
         private bool HasSpecialInitCap(SpellCheckResultType info, WordEntryDetail he) =>
             EnumEx.HasFlag(info, SpellCheckResultType.InitCap) && he.ContainsFlag(SpecialFlags.OnlyUpcaseFlag);
 
-        protected WordEntry CheckWord(string word, ref SpellCheckResultType info, out string root)
+        protected WordEntry? CheckWord(string word, ref SpellCheckResultType info, out string root)
         {
             root = null;
 
@@ -294,7 +294,7 @@ public partial class WordList
             return he;
         }
 
-        private WordEntryDetail CompoundCheckWordSearch_OnlyCpdRule(
+        private WordEntryDetail? CompoundCheckWordSearch_OnlyCpdRule(
             WordEntryDetail[] searchEntryDetails,
             FlagValue scpdPatternEntryCondition,
             ref IncrementalWordList words,
@@ -540,7 +540,7 @@ public partial class WordList
 
                                 // forbid dictionary stems with COMPOUNDFORBIDFLAG in
                                 // compound words, overriding the effect of COMPOUNDPERMITFLAG
-                                if (rvDetail != null && rvDetail.ContainsFlag(Affix.CompoundForbidFlag) && !huMovRule)
+                                if (rvDetail is not null && rvDetail.ContainsFlag(Affix.CompoundForbidFlag) && !huMovRule)
                                 {
                                     continue;
                                 }
@@ -568,7 +568,7 @@ public partial class WordList
                                     }
                                     else
                                     {
-                                        if (words == null)
+                                        if (words is null)
                                         {
                                             rvDetail = CompoundCheckWordSearch_NormalNoWordList(
                                                 searchEntryDetails,
@@ -1072,7 +1072,7 @@ public partial class WordList
 
                                     // - affix syllable num.
                                     // XXX only second suffix (inflections, not derivations)
-                                    if (SuffixAppend != null)
+                                    if (SuffixAppend is not null)
                                     {
                                         numSyllable -= GetSyllable(SuffixAppend.AsSpan().Reversed());
                                     }
@@ -1219,15 +1219,11 @@ public partial class WordList
 
                                             if (Affix.ForbiddenWord.HasValue)
                                             {
-                                                var rv2 = LookupFirst(word);
-
-                                                if (rv2 == null)
-                                                {
-                                                    rv2 = AffixCheck(word.AsSpan(0, len), default, CompoundOptions.Not);
-                                                }
+                                                var rv2 = LookupFirst(word)
+                                                    ?? AffixCheck(word.AsSpan(0, len), default, CompoundOptions.Not);
 
                                                 if (
-                                                    rv2 != null
+                                                    rv2 is not null
                                                     && rv2.ContainsFlag(Affix.ForbiddenWord)
                                                     && rv2.Word.AsSpan().EqualsLimited(st.GetTerminatedSpan(), i + rv.Word.Length)
                                                 )
@@ -1593,7 +1589,7 @@ public partial class WordList
                     (
                         inCompoundIsNotEnd
                         ||
-                        pfx != null
+                        pfx is not null
                         ||
                         !sptrEntry.ContainsContClass(Affix.OnlyInCompound)
                     )
@@ -1796,14 +1792,13 @@ public partial class WordList
             foreach (var replacementEntry in WordList.AllReplacements)
             {
                 // use only available mid patterns
-                if (!string.IsNullOrEmpty(replacementEntry.Med))
+                if (replacementEntry.Med is { Length: > 0 } replacement)
                 {
                     var rIndex = wordSlice.IndexOf(replacementEntry.Pattern.AsSpan());
                     if (rIndex >= 0)
                     {
                         var word = wordSlice.ToString();
                         var lenp = replacementEntry.Pattern.Length;
-                        var replacement = replacementEntry.Med;
 
                         // search every occurence of the pattern in the word
                         do

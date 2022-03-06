@@ -63,20 +63,18 @@ public class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacemen
 
             for (var i = 0; i < text.Length; i++)
             {
-                var replacementEntry = FindLargestMatchingConversion(text.AsSpan(i));
-                if (replacementEntry != null)
+                if (
+                    FindLargestMatchingConversion(text.AsSpan(i)) is { } replacementEntry
+                    && replacementEntry.ExtractReplacementText(text.Length - i, i == 0) is { Length: > 0 } replacementText)
                 {
-                    var replacementText = replacementEntry.ExtractReplacementText(text.Length - i, i == 0);
-                    if (!string.IsNullOrEmpty(replacementText))
-                    {
-                        convertedBuilder.Append(replacementText);
-                        i += replacementEntry.Pattern.Length - 1;
-                        appliedConversion = true;
-                        continue;
-                    }
+                    convertedBuilder.Append(replacementText);
+                    i += replacementEntry.Pattern.Length - 1;
+                    appliedConversion = true;
                 }
-
-                convertedBuilder.Append(text[i]);
+                else
+                {
+                    convertedBuilder.Append(text[i]);
+                }
             }
 
             converted = StringBuilderPool.GetStringAndReturn(convertedBuilder);

@@ -347,9 +347,7 @@ public class HunspellTests
 
     protected static IEnumerable<string> ExtractLinesFromWordFile(string filePath, Encoding encoding, bool allowBlankLines = false)
     {
-        var results = File.ReadAllLines(filePath, encoding)
-            .Where(line => line != null)
-            .Select(line => line.Trim(SpaceOrTab));
+        var results = File.ReadAllLines(filePath, encoding).Select(line => line.Trim(SpaceOrTab));
 
         if (!allowBlankLines)
         {
