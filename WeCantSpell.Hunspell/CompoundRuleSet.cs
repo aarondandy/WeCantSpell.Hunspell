@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
+using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -9,26 +9,27 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
 {
-    public static CompoundRuleSet Empty { get; } = new(ImmutableArray<CompoundRule>.Empty);
+    public static CompoundRuleSet Empty { get; } = new(Array.Empty<CompoundRule>());
 
-    internal CompoundRuleSet(ImmutableArray<CompoundRule> rules)
+    public static CompoundRuleSet Create(IEnumerable<CompoundRule> rules) =>
+        new((rules ?? throw new ArgumentNullException(nameof(rules))).ToArray());
+
+    internal CompoundRuleSet(CompoundRule[] rules)
     {
 #if DEBUG
-        if (rules.IsDefault) throw new ArgumentOutOfRangeException(nameof(rules));
+        if (rules is null) throw new ArgumentNullException(nameof(rules));
 #endif
         _rules = rules;
     }
 
-    private readonly ImmutableArray<CompoundRule> _rules;
+    private readonly CompoundRule[] _rules;
 
     public int Count => _rules.Length;
-    public bool IsEmpty => _rules.IsDefaultOrEmpty;
-    public bool HasItems => !IsEmpty;
+    public bool IsEmpty => !HasItems;
+    public bool HasItems => _rules is { Length: > 0 };
     public CompoundRule this[int index] => _rules[index];
-
-    public ImmutableArray<CompoundRule>.Enumerator GetEnumerator() => _rules.GetEnumerator();
-    IEnumerator<CompoundRule> IEnumerable<CompoundRule>.GetEnumerator() => ((IEnumerable<CompoundRule>)_rules).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_rules).GetEnumerator();
+    public IEnumerator<CompoundRule> GetEnumerator() => ((IEnumerable<CompoundRule>)_rules).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => _rules.GetEnumerator();
 
     internal bool EntryContainsRuleFlags(WordEntryDetail details)
     {

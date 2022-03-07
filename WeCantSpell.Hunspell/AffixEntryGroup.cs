@@ -75,7 +75,8 @@ public sealed class AffixEntryGroup<TEntry> where TEntry : AffixEntry
 
         public bool HasEntries => Entries.Count > 0;
 
-        public AffixEntryGroup<TEntry> ToImmutable(bool destructive) => new(AFlag, Options, Entries.ToImmutable(destructive));
+        public AffixEntryGroup<TEntry> ToImmutable(bool allowDestructive) =>
+            new(AFlag, Options, Entries.ToImmutable(allowDestructive: allowDestructive));
 
         public void Add(TEntry entry)
         {

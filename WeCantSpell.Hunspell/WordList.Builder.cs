@@ -27,7 +27,7 @@ public partial class WordList
         /// <summary>
         /// Spelling replacement suggestions based on phonetics.
         /// </summary>
-        public ImmutableArray<SingleReplacement>.Builder PhoneticReplacements { get; } = ImmutableArray.CreateBuilder<SingleReplacement>();
+        public List<SingleReplacement> PhoneticReplacements { get; } = new();
 
         public void Add(string word, WordEntryDetail detail)
         {
@@ -81,16 +81,16 @@ public partial class WordList
                 // store ph: field of a morphological description in reptable
                 if (result.AllReplacements.IsEmpty)
                 {
-                    result.AllReplacements = new(PhoneticReplacements.ToImmutable(destructive));
+                    result.AllReplacements = new(PhoneticReplacements.ToArray());
                 }
                 else if (destructive)
                 {
                     PhoneticReplacements.AddRange(result.AllReplacements);
-                    result.AllReplacements = new(PhoneticReplacements.ToImmutable(destructive));
+                    result.AllReplacements = new(PhoneticReplacements.ToArray());
                 }
                 else
                 {
-                    result.AllReplacements = new(PhoneticReplacements.Concat(result.AllReplacements).ToImmutableArray());
+                    result.AllReplacements = SingleReplacementSet.Create(PhoneticReplacements.Concat(result.AllReplacements));
                 }
             }
 

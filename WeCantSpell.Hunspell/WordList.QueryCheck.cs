@@ -99,7 +99,7 @@ public partial class WordList
                 }
 
                 // check boundary patterns (^begin and end$)
-                foreach (var breakEntry in Affix.BreakPoints)
+                foreach (var breakEntry in Affix.BreakPoints.Entries)
                 {
                     if (breakEntry.Length == 1 || breakEntry.Length > scw.Length)
                     {
@@ -130,7 +130,7 @@ public partial class WordList
                 }
 
                 // other patterns
-                foreach (var breakEntry in Affix.BreakPoints)
+                foreach (var breakEntry in Affix.BreakPoints.Entries)
                 {
                     var found = scw.IndexOf(breakEntry, StringComparison.Ordinal);
                     var remainingLength = scw.Length - breakEntry.Length;
@@ -167,7 +167,7 @@ public partial class WordList
                 }
 
                 // other patterns (break at first break point)
-                foreach (var breakEntry in Affix.BreakPoints)
+                foreach (var breakEntry in Affix.BreakPoints.Entries)
                 {
                     var found = scw.IndexOf(breakEntry, StringComparison.Ordinal);
                     var remainingLength = scw.Length - breakEntry.Length;

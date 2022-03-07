@@ -1024,15 +1024,15 @@ public partial class WordList
             }
 
             var inMap = false;
-            foreach (var mapEntry in Affix.RelatedCharacterMap)
+            foreach (var mapEntry in Affix.RelatedCharacterMap.Entries)
             {
-                foreach (var mapEntryValue in mapEntry)
+                foreach (var mapEntryValue in mapEntry.Items)
                 {
                     if (word.AsSpan(wn).StartsWith(mapEntryValue.AsSpan()))
                     {
                         inMap = true;
                         var candidatePrefix = candidate;
-                        foreach (var otherMapEntryValue in mapEntry)
+                        foreach (var otherMapEntryValue in mapEntry.Items)
                         {
                             candidate = candidatePrefix + otherMapEntryValue;
                             MapRelated(word, ref candidate, wn + mapEntryValue.Length, wlst, cpdSuggest, timer);
@@ -1200,7 +1200,7 @@ public partial class WordList
                 return wlst.Count;
             }
 
-            foreach (var replacement in WordList.AllReplacements)
+            foreach (var replacement in WordList.AllReplacements.Replacements)
             {
                 if (replacement.Pattern is not { Length: > 0 } replacementPattern)
                 {

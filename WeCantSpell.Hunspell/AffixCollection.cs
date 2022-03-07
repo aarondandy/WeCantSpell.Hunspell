@@ -17,8 +17,8 @@ public abstract class AffixCollection<TEntry> :
     {
         var affixesByFlag = new Dictionary<FlagValue, AffixEntryGroup<TEntry>>(builders.Count);
         var groupBuildersByKeyAndFlag = new Dictionary<char, Dictionary<FlagValue, AffixEntryGroup<TEntry>.Builder>>();
-        var affixesWithEmptyKeys = ImmutableArray.CreateBuilder<AffixEntryGroup<TEntry>>();
-        var affixesWithDots = ImmutableArray.CreateBuilder<AffixEntryGroup<TEntry>>();
+        var affixesWithEmptyKeys = new List<AffixEntryGroup<TEntry>>();
+        var affixesWithDots = new List<AffixEntryGroup<TEntry>>();
         var contClasses = new FlagSet.Builder();
 
         foreach (var group in builders.Select(static builder => builder.ToImmutable(false))) // TODO: refactor this to allow for destructive ToImmutable
@@ -74,15 +74,19 @@ public abstract class AffixCollection<TEntry> :
         var affixesByKey = new Dictionary<char, AffixEntryGroupCollection<TEntry>>(groupBuildersByKeyAndFlag.Count);
         foreach (var keyedBuilder in groupBuildersByKeyAndFlag)
         {
-            var indexedAffixGroupBuilder = ImmutableArray.CreateBuilder<AffixEntryGroup<TEntry>>(keyedBuilder.Value.Count);
-            indexedAffixGroupBuilder.AddRange(keyedBuilder.Value.Values.Select(b => b.ToImmutable(true)));
-            affixesByKey.Add(keyedBuilder.Key, new(indexedAffixGroupBuilder.ToImmutable(true)));
+            var indexedAffixEntryGroups = new AffixEntryGroup<TEntry>[keyedBuilder.Value.Count];
+            var writeIndex = 0;
+            foreach (var b in keyedBuilder.Value.Values)
+            {
+                indexedAffixEntryGroups[writeIndex++] = b.ToImmutable(allowDestructive: true);
+            }
+            affixesByKey.Add(keyedBuilder.Key, new(indexedAffixEntryGroups));
         }
 
         result.AffixesByFlag = affixesByFlag;
         result.AffixesByIndexedByKey = affixesByKey;
-        result.AffixesWithDots = new(affixesWithDots.ToImmutable(true));
-        result.AffixesWithEmptyKeys = new(affixesWithEmptyKeys.ToImmutable(true));
+        result.AffixesWithDots = new(affixesWithDots.ToArray());
+        result.AffixesWithEmptyKeys = new(affixesWithEmptyKeys.ToArray());
         result.ContClasses = contClasses.Create(allowDestructive: true);
     }
 
@@ -164,7 +168,7 @@ public sealed class SuffixCollection : AffixCollection<SuffixEntry>
 
         static IEnumerable<Affix<SuffixEntry>> getGroupAffixes(string word, AffixEntryGroupCollection<SuffixEntry> indexedGroups)
         {
-            foreach (var group in indexedGroups)
+            foreach (var group in indexedGroups.Groups)
             {
                 foreach (var entry in group.Entries)
                 {
@@ -201,7 +205,7 @@ public sealed class SuffixCollection : AffixCollection<SuffixEntry>
 
         static IEnumerable<Affix<SuffixEntry>> getFilteredGroupAffixes(string word, AffixEntryGroupCollection<SuffixEntry> indexedGroups, FlagSet groupFlagFilter)
         {
-            foreach (var group in indexedGroups)
+            foreach (var group in indexedGroups.Groups)
             {
                 if (groupFlagFilter.Contains(group.AFlag))
                 {
@@ -259,7 +263,7 @@ public sealed class PrefixCollection : AffixCollection<PrefixEntry>
 
         static IEnumerable<Affix<PrefixEntry>> getGroupAffixes(string word, AffixEntryGroupCollection<PrefixEntry> indexedGroups)
         {
-            foreach (var group in indexedGroups)
+            foreach (var group in indexedGroups.Groups)
             {
                 foreach (var entry in group.Entries)
                 {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
+using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -9,27 +9,28 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct PatternSet : IReadOnlyList<PatternEntry>
 {
-    public static PatternSet Empty { get; } = new(ImmutableArray<PatternEntry>.Empty);
+    public static PatternSet Empty { get; } = new(Array.Empty<PatternEntry>());
 
-    internal PatternSet(ImmutableArray<PatternEntry> patterns)
+    public static PatternSet Create(IEnumerable<PatternEntry> entries) =>
+        new((entries ?? throw new ArgumentNullException(nameof(entries))).ToArray());
+
+    internal PatternSet(PatternEntry[] patterns)
     {
 #if DEBUG
-        if (patterns.IsDefault) throw new ArgumentOutOfRangeException(nameof(patterns));
+        if (patterns is null) throw new ArgumentNullException(nameof(patterns));
 #endif
 
         _patterns = patterns;
     }
 
-    private readonly ImmutableArray<PatternEntry> _patterns;
+    private readonly PatternEntry[] _patterns;
 
     public int Count => _patterns.Length;
-    public bool IsEmpty => _patterns.IsDefaultOrEmpty;
-    public bool HasItems => !IsEmpty;
+    public bool IsEmpty => !HasItems;
+    public bool HasItems => _patterns is { Length: > 0 };
     public PatternEntry this[int index] => _patterns[index];
-
-    public ImmutableArray<PatternEntry>.Enumerator GetEnumerator() => _patterns.GetEnumerator();
-    IEnumerator<PatternEntry> IEnumerable<PatternEntry>.GetEnumerator() => ((IEnumerable<PatternEntry>)_patterns).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_patterns).GetEnumerator();
+    public IEnumerator<PatternEntry> GetEnumerator() => ((IEnumerable<PatternEntry>)_patterns).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => _patterns.GetEnumerator();
 
     /// <summary>
     /// Forbid compoundings when there are special patterns at word bound.

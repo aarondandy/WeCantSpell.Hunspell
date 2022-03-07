@@ -1,30 +1,31 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
+using System.Linq;
 
 namespace WeCantSpell.Hunspell;
 
 public readonly struct MapEntry : IReadOnlyList<string>
 {
-    public static MapEntry Empty { get; } = new(ImmutableArray<string>.Empty);
+    public static MapEntry Empty { get; } = new(Array.Empty<string>());
 
-    internal MapEntry(ImmutableArray<string> items)
+    public static MapEntry Create(IEnumerable<string> items) =>
+        new((items ?? throw new ArgumentNullException(nameof(items))).ToArray());
+
+    internal MapEntry(string[] items)
     {
 #if DEBUG
-        if (items.IsDefault) throw new ArgumentOutOfRangeException(nameof(items));
+        if (items is null) throw new ArgumentNullException(nameof(items));
 #endif
-        _items = items;
+        Items = items;
     }
 
-    private readonly ImmutableArray<string> _items;
+    internal string[] Items { get; }
 
-    public int Count => _items.Length;
-    public bool IsEmpty => _items.IsDefaultOrEmpty;
-    public bool HasItems => !IsEmpty;
-    public string this[int index] => _items[index];
-
-    public ImmutableArray<string>.Enumerator GetEnumerator() => _items.GetEnumerator();
-    IEnumerator<string> IEnumerable<string>.GetEnumerator() => ((IEnumerable<string>)_items).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_items).GetEnumerator();
+    public int Count => Items.Length;
+    public bool IsEmpty => !HasItems;
+    public bool HasItems => Items is { Length: > 0 };
+    public string this[int index] => Items[index];
+    public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)Items).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => Items.GetEnumerator();
 }

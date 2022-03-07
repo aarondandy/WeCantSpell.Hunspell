@@ -1,32 +1,34 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
+using System.Linq;
 
 namespace WeCantSpell.Hunspell;
 
 public readonly struct BreakSet : IReadOnlyList<string>
 {
-    public static BreakSet Empty { get; } = new(ImmutableArray<string>.Empty);
+    public static BreakSet Empty { get; } = new(Array.Empty<string>());
 
-    internal BreakSet(ImmutableArray<string> items)
+    public static BreakSet Create(IEnumerable<string> entries) =>
+        new((entries ?? throw new ArgumentNullException(nameof(entries))).ToArray());
+
+    internal BreakSet(string[] entries)
     {
 #if DEBUG
-        if (items.IsDefault) throw new ArgumentOutOfRangeException(nameof(items));
+        if (entries is null) throw new ArgumentNullException(nameof(entries));
 #endif
-        _items = items;
+        Entries = entries;
     }
 
-    private readonly ImmutableArray<string> _items;
+    internal string[] Entries { get; }
 
-    public int Count => _items.Length;
-    public bool IsEmpty => _items.IsDefaultOrEmpty;
-    public bool HasItems => !IsEmpty;
-    public string this[int index] => _items[index];
+    public int Count => Entries.Length;
+    public bool IsEmpty => !HasItems;
+    public bool HasItems => Entries is { Length: > 0 };
+    public string this[int index] => Entries[index];
 
-    public ImmutableArray<string>.Enumerator GetEnumerator() => _items.GetEnumerator();
-    IEnumerator<string> IEnumerable<string>.GetEnumerator() => ((IEnumerable<string>)_items).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_items).GetEnumerator();
+    public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)Entries).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => Entries.GetEnumerator();
 
     /// <summary>
     /// Calculate break points for recursion limit.
@@ -35,9 +37,9 @@ public readonly struct BreakSet : IReadOnlyList<string>
     {
         int nbr = 0;
 
-        if (!string.IsNullOrEmpty(scw))
+        if (scw is { Length: > 0 })
         {
-            foreach (var breakEntry in _items)
+            foreach (var breakEntry in Entries)
             {
                 int pos = 0;
                 while ((pos = scw.IndexOf(breakEntry, pos, StringComparison.Ordinal)) >= 0)

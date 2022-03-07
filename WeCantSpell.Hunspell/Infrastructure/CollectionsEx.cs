@@ -7,6 +7,7 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class CollectionsEx
 {
+    public static bool Contains<T>(this T[] values, T value) => Array.IndexOf(values, value) >= 0;
 
 #if NO_DICTIONARY_GETVALUE
 

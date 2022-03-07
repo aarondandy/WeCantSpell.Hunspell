@@ -1,31 +1,32 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
+using System.Linq;
 
 namespace WeCantSpell.Hunspell;
 
 public readonly struct CompoundRule : IReadOnlyList<FlagValue>
 {
-    public static CompoundRule Empty { get; } = new(ImmutableArray<FlagValue>.Empty);
+    public static CompoundRule Empty { get; } = new(Array.Empty<FlagValue>());
 
-    internal CompoundRule(ImmutableArray<FlagValue> items)
+    public static CompoundRule Create(IEnumerable<FlagValue> values) =>
+        new((values ?? throw new ArgumentNullException(nameof(values))).ToArray());
+
+    internal CompoundRule(FlagValue[] items)
     {
 #if DEBUG
-        if (items.IsDefault) throw new ArgumentOutOfRangeException(nameof(items));
+        if (items is null) throw new ArgumentNullException(nameof(items));
 #endif
         _values = items;
     }
 
-    private readonly ImmutableArray<FlagValue> _values;
+    private readonly FlagValue[] _values;
 
     public int Count => _values.Length;
-    public bool IsEmpty => _values.IsDefaultOrEmpty;
-    public bool HasItems => !IsEmpty;
+    public bool IsEmpty => !HasItems;
+    public bool HasItems => _values is { Length: > 0 };
     public FlagValue this[int index] => _values[index];
-
-    public ImmutableArray<FlagValue>.Enumerator GetEnumerator() => _values.GetEnumerator();
-    IEnumerator<FlagValue> IEnumerable<FlagValue>.GetEnumerator() => ((IEnumerable<FlagValue>)_values).GetEnumerator();
+    public IEnumerator<FlagValue> GetEnumerator() => ((IEnumerable<FlagValue>)_values).GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_values).GetEnumerator();
 
     internal bool IsWildcard(int index) => (char)_values[index] is '*' or '?';

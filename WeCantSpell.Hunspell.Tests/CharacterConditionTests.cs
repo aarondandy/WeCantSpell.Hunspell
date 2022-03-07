@@ -244,7 +244,7 @@ public class CharacterConditionTests
         [InlineData('오', 'ي', false)]
         public void single_character_allows_exactly_that_character(char allowedLetter, char givenLetter, bool expected)
         {
-            var condition = new CharacterConditionGroup(CharacterCondition.CreateSequence(allowedLetter));
+            var condition = CharacterConditionGroup.Create(CharacterCondition.CreateSequence(allowedLetter));
 
             var actual = condition.IsStartingMatch(givenLetter.ToString().AsSpan());
 
@@ -263,7 +263,7 @@ public class CharacterConditionTests
         [InlineData("xyz", 'z', true)]
         public void range_allows_only_specified_characters(string range, char givenLetter, bool expected)
         {
-            var condition = new CharacterConditionGroup(CharacterCondition.CreateCharSet(range.AsSpan(), false));
+            var condition = CharacterConditionGroup.Create(CharacterCondition.CreateCharSet(range.AsSpan(), false));
 
             var actual = condition.IsStartingMatch(givenLetter.ToString().AsSpan());
 
@@ -282,7 +282,7 @@ public class CharacterConditionTests
         [InlineData("xyz", 'z', false)]
         public void range_resricts_specified_characters(string range, char givenLetter, bool expected)
         {
-            var condition = new CharacterConditionGroup(CharacterCondition.CreateCharSet(range.AsSpan(), true));
+            var condition = CharacterConditionGroup.Create(CharacterCondition.CreateCharSet(range.AsSpan(), true));
 
             var actual = condition.IsStartingMatch(givenLetter.ToString().AsSpan());
 

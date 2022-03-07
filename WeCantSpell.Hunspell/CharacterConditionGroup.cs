@@ -10,9 +10,13 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterCondition>
 {
-    public static readonly CharacterConditionGroup Empty = new(ImmutableArray<CharacterCondition>.Empty);
+    public static readonly CharacterConditionGroup Empty = new(Array.Empty<CharacterCondition>());
 
-    public static readonly CharacterConditionGroup AllowAnySingleCharacter = new(ImmutableArray.Create(CharacterCondition.AllowAny));
+    public static readonly CharacterConditionGroup AllowAnySingleCharacter = Create(CharacterCondition.AllowAny);
+
+    public static CharacterConditionGroup Create(CharacterCondition condition) => new(new[] { condition });
+    public static CharacterConditionGroup Create(IEnumerable<CharacterCondition> conditions) =>
+        new((conditions ?? throw new ArgumentNullException(nameof(conditions))).ToArray());
 
     public static CharacterConditionGroup Parse(string text)
     {
@@ -29,7 +33,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
         }
 
         ReadOnlySpan<char> span;
-        var conditions = ImmutableArray.CreateBuilder<CharacterCondition>();
+        var conditions = new List<CharacterCondition>();
 
         do
         {
@@ -75,31 +79,25 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
         }
         while (!text.IsEmpty);
 
-        return new(conditions.ToImmutable(allowDestructive: true));
+        return Create(conditions);
     }
 
-    public CharacterConditionGroup(ImmutableArray<CharacterCondition> items)
+    internal CharacterConditionGroup(CharacterCondition[] items)
     {
 #if DEBUG
-        if (items.IsDefault) throw new ArgumentOutOfRangeException(nameof(items));
+        if (items is null) throw new ArgumentNullException(nameof(items));
 #endif
         _items = items;
     }
 
-    public CharacterConditionGroup(CharacterCondition item) : this(ImmutableArray.Create(item))
-    {
-    }
-
-    private readonly ImmutableArray<CharacterCondition> _items;
+    private readonly CharacterCondition[] _items;
 
     public int Count => _items.Length;
-    public bool IsEmpty => _items.IsDefaultOrEmpty;
-    public bool HasItems => !IsEmpty;
+    public bool IsEmpty => !HasItems;
+    public bool HasItems => _items is { Length: > 0 };
     public CharacterCondition this[int index] => _items[index];
-
-    public ImmutableArray<CharacterCondition>.Enumerator GetEnumerator() => _items.GetEnumerator();
-    IEnumerator<CharacterCondition> IEnumerable<CharacterCondition>.GetEnumerator() => ((IEnumerable<CharacterCondition>)_items).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_items).GetEnumerator();
+    public IEnumerator<CharacterCondition> GetEnumerator() => ((IEnumerable<CharacterCondition>)_items).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => _items.GetEnumerator();
 
     public bool MatchesAnySingleCharacter => HasItems && _items.Length == 1 && _items[0].MatchesAnySingleCharacter;
 

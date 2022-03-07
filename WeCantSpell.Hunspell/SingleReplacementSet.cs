@@ -1,30 +1,31 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
+using System.Linq;
 
 namespace WeCantSpell.Hunspell;
 
 public readonly struct SingleReplacementSet : IReadOnlyList<SingleReplacement>
 {
-    public static SingleReplacementSet Empty { get; } = new(ImmutableArray<SingleReplacement>.Empty);
+    public static SingleReplacementSet Empty { get; } = new(Array.Empty<SingleReplacement>());
 
-    internal SingleReplacementSet(ImmutableArray<SingleReplacement> replacements)
+    public static SingleReplacementSet Create(IEnumerable<SingleReplacement> replacements) =>
+        new((replacements ?? throw new ArgumentNullException(nameof(replacements))).ToArray());
+
+    internal SingleReplacementSet(SingleReplacement[] replacements)
     {
 #if DEBUG
-        if (replacements.IsDefault) throw new ArgumentOutOfRangeException(nameof(replacements));
+        if (replacements is null) throw new ArgumentNullException(nameof(replacements));
 #endif
-        _replacements = replacements;
+        Replacements = replacements;
     }
 
-    private readonly ImmutableArray<SingleReplacement> _replacements;
+    internal SingleReplacement[] Replacements { get; }
 
-    public int Count => _replacements.Length;
-    public bool IsEmpty => _replacements.IsDefaultOrEmpty;
-    public bool HasItems => !IsEmpty;
-    public SingleReplacement this[int index] => _replacements[index];
-
-    public ImmutableArray<SingleReplacement>.Enumerator GetEnumerator() => _replacements.GetEnumerator();
-    IEnumerator<SingleReplacement> IEnumerable<SingleReplacement>.GetEnumerator() => ((IEnumerable<SingleReplacement>)_replacements).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_replacements).GetEnumerator();
+    public int Count => Replacements.Length;
+    public bool IsEmpty => !HasItems;
+    public bool HasItems => Replacements is { Length: > 0 };
+    public SingleReplacement this[int index] => Replacements[index];
+    public IEnumerator<SingleReplacement> GetEnumerator() => ((IEnumerable<SingleReplacement>)Replacements).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => Replacements.GetEnumerator();
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.IO;
@@ -242,7 +243,7 @@ public sealed class WordListReader
         return false;
     }
 
-    private bool AddWord(string word, FlagSet flags, ImmutableArray<string> morphs)
+    private bool AddWord(string word, FlagSet flags, string[] morphs)
     {
         if (Affix.IgnoredChars.HasItems)
         {
@@ -264,12 +265,12 @@ public sealed class WordListReader
             || AddWordCapitalized(word, flags, morphs, capType);
     }
 
-    private ImmutableArray<string> AddWord_HandleMorph(ImmutableArray<string> morphs, string word, CapitalizationType capType, ref WordEntryOptions options)
+    private string[] AddWord_HandleMorph(string[] morphs, string word, CapitalizationType capType, ref WordEntryOptions options)
     {
         if (Affix.IsAliasM)
         {
             options |= WordEntryOptions.AliasM;
-            var morphBuilder = ImmutableArray.CreateBuilder<string>();
+            var morphBuilder = new List<string>();
             foreach (var originalValue in morphs)
             {
                 if (IntEx.TryParseInvariant(originalValue, out var morphNumber) && Affix.TryGetAliasM(morphNumber, out var aliasedMorph))
@@ -282,10 +283,10 @@ public sealed class WordListReader
                 }
             }
 
-            morphs = morphBuilder.ToImmutable(allowDestructive: true);
+            morphs = morphBuilder.ToArray();
         }
 
-        using (var morphPhonEnumerator = morphs.Where(m => m is not null && m.StartsWith(MorphologicalTags.Phon)).GetEnumerator())
+        using (var morphPhonEnumerator = morphs.Where(static m => m is not null && m.StartsWith(MorphologicalTags.Phon)).GetEnumerator())
         {
             if (morphPhonEnumerator.MoveNext())
             {
@@ -373,7 +374,7 @@ public sealed class WordListReader
         return morphs;
     }
 
-    private bool AddWord(string word, FlagSet flags, ImmutableArray<string> morphs, bool onlyUpperCase, CapitalizationType capType)
+    private bool AddWord(string word, FlagSet flags, string[] morphs, bool onlyUpperCase, CapitalizationType capType)
     {
         // store the description string or its pointer
         var options = capType == CapitalizationType.Init ? WordEntryOptions.InitCap : WordEntryOptions.None;
@@ -414,7 +415,7 @@ public sealed class WordListReader
         return false;
     }
 
-    private bool AddWordCapitalized(string word, FlagSet flags, ImmutableArray<string> morphs, CapitalizationType capType)
+    private bool AddWordCapitalized(string word, FlagSet flags, string[] morphs, CapitalizationType capType)
     {
         // add inner capitalized forms to handle the following allcap forms:
         // Mixed caps: OpenOffice.org -> OPENOFFICE.ORG
@@ -440,7 +441,7 @@ public sealed class WordListReader
 
     private readonly ref struct ParsedWordLine
     {
-        private ParsedWordLine(ReadOnlySpan<char> word, ReadOnlySpan<char> flags, ImmutableArray<string> morphs)
+        private ParsedWordLine(ReadOnlySpan<char> word, ReadOnlySpan<char> flags, string[] morphs)
         {
             Word = word;
             Flags = flags;
@@ -449,7 +450,7 @@ public sealed class WordListReader
 
         public readonly ReadOnlySpan<char> Word;
         public readonly ReadOnlySpan<char> Flags;
-        public readonly ImmutableArray<string> Morphs;
+        public readonly string[] Morphs;
 
         public static ParsedWordLine Parse(ReadOnlySpan<char> line)
         {
@@ -499,16 +500,16 @@ public sealed class WordListReader
                 return default;
             }
 
-            var morphs = ImmutableArray<string>.Empty;
+            var morphs = Array.Empty<string>();
             if (!morphPart.IsEmpty)
             {
-                var morphsBuilder = ImmutableArray.CreateBuilder<string>();
+                var morphsBuilder = new List<string>();
                 foreach (var morph in morphPart.SplitOnTabOrSpace())
                 {
                     morphsBuilder.Add(morph.ToString());
                 }
 
-                morphs = morphsBuilder.ToImmutable(allowDestructive: true);
+                morphs = morphsBuilder.ToArray();
             }
 
             return new ParsedWordLine(

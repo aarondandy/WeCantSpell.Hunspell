@@ -395,8 +395,8 @@ public sealed partial class AffixReader
         }
     }
 
-    private delegate bool EntryParserForArray<T>(ReadOnlySpan<char> parameterText, ImmutableArray<T>.Builder entries);
-    private bool TryParseStandardListItem<T>(EntryListType entryListType, ReadOnlySpan<char> parameterText, ImmutableArray<T>.Builder entries, EntryParserForArray<T> parse)
+    private delegate bool EntryParserForList<T>(ReadOnlySpan<char> parameterText, List<T> entries);
+    private bool TryParseStandardListItem<T>(EntryListType entryListType, ReadOnlySpan<char> parameterText, List<T> entries, EntryParserForList<T> parse)
     {
         if (!IsInitialized(entryListType))
         {
@@ -405,6 +405,40 @@ public sealed partial class AffixReader
             if (IntEx.TryParseInvariant(parameterText, out var expectedSize) && expectedSize >= 0)
             {
                 entries.Capacity = expectedSize;
+                return true;
+            }
+        }
+
+        return parse(parameterText, entries);
+    }
+
+    private delegate bool EntryParserForImmutableArray<T>(ReadOnlySpan<char> parameterText, ImmutableArray<T>.Builder entries);
+    private bool TryParseStandardListItem<T>(EntryListType entryListType, ReadOnlySpan<char> parameterText, ImmutableArray<T>.Builder entries, EntryParserForImmutableArray<T> parse)
+    {
+        if (!IsInitialized(entryListType))
+        {
+            SetInitialized(entryListType);
+
+            if (IntEx.TryParseInvariant(parameterText, out var expectedSize) && expectedSize >= 0)
+            {
+                entries.Capacity = expectedSize;
+                return true;
+            }
+        }
+
+        return parse(parameterText, entries);
+    }
+
+    private delegate bool EntryParserForArray<T>(ReadOnlySpan<char> parameterText, ArrayBuilder<T> entries);
+    private bool TryParseStandardListItem<T>(EntryListType entryListType, ReadOnlySpan<char> parameterText, ArrayBuilder<T> entries, EntryParserForArray<T> parse)
+    {
+        if (!IsInitialized(entryListType))
+        {
+            SetInitialized(entryListType);
+
+            if (IntEx.TryParseInvariant(parameterText, out var expectedSize) && expectedSize >= 0)
+            {
+                entries.GrowToCapacity(expectedSize);
                 return true;
             }
         }
@@ -478,7 +512,7 @@ public sealed partial class AffixReader
         }
     }
 
-    private bool TryParsePhone(ReadOnlySpan<char> parameterText, ImmutableArray<PhoneticEntry>.Builder entries)
+    private bool TryParsePhone(ReadOnlySpan<char> parameterText, ArrayBuilder<PhoneticEntry> entries)
     {
         var rule = ReadOnlySpan<char>.Empty;
         var replace = ReadOnlySpan<char>.Empty;
@@ -516,9 +550,9 @@ public sealed partial class AffixReader
         return true;
     }
 
-    private bool TryParseMapEntry(ReadOnlySpan<char> parameterText, ImmutableArray<MapEntry>.Builder entries)
+    private bool TryParseMapEntry(ReadOnlySpan<char> parameterText, ArrayBuilder<MapEntry> entries)
     {
-        var valuesBuilder = ImmutableArray.CreateBuilder<string>(parameterText.Length / 2);
+        var valuesBuilder = new List<string>(parameterText.Length / 2);
 
         for (var k = 0; k < parameterText.Length; k++)
         {
@@ -534,7 +568,7 @@ public sealed partial class AffixReader
             valuesBuilder.Add(parameterText.Slice(chb, che - chb).ToString());
         }
 
-        entries.Add(new MapEntry(_builder.DedupIntoImmutableArray(valuesBuilder, destructive: true)));
+        entries.Add(new MapEntry(_builder.DedupIntoArray(valuesBuilder)));
 
         return true;
     }
@@ -612,7 +646,7 @@ public sealed partial class AffixReader
         return true;
     }
 
-    private bool TryParseBreak(ReadOnlySpan<char> parameterText, ImmutableArray<string>.Builder entries)
+    private bool TryParseBreak(ReadOnlySpan<char> parameterText, ArrayBuilder<string> entries)
     {
         entries.Add(_builder.Dedup(parameterText));
         return true;
@@ -631,7 +665,7 @@ public sealed partial class AffixReader
             parameterText = parameterText.Reversed();
         }
 
-        var parts = ImmutableArray.CreateBuilder<string>();
+        var parts = new List<string>();
         foreach (var part in parameterText.SplitOnTabOrSpace())
         {
             if (!part.IsEmpty)
@@ -640,17 +674,17 @@ public sealed partial class AffixReader
             }
         }
 
-        entries.Add(new MorphSet(_builder.DedupIntoImmutableArray(parts, true)));
+        entries.Add(MorphSet.Create(parts));
 
         return true;
     }
 
-    private bool TryParseCompoundRuleIntoList(ReadOnlySpan<char> parameterText, ImmutableArray<CompoundRule>.Builder entries)
+    private bool TryParseCompoundRuleIntoList(ReadOnlySpan<char> parameterText, ArrayBuilder<CompoundRule> entries)
     {
-        var entryBuilder = ImmutableArray.CreateBuilder<FlagValue>();
-
+        FlagValue[] values;
         if (parameterText.Contains('('))
         {
+            var entryBuilder = new List<FlagValue>();
             for (var index = 0; index < parameterText.Length; index++)
             {
                 var indexBegin = index;
@@ -672,13 +706,15 @@ public sealed partial class AffixReader
                     entryBuilder.AddRange(_flagParser.ParseFlagsInOrder(parameterText.Slice(indexBegin, indexEnd - indexBegin)));
                 }
             }
+
+            values = entryBuilder.ToArray();
         }
         else
         {
-            entryBuilder.AddRange(_flagParser.ParseFlagsInOrder(parameterText));
+            values = _flagParser.ParseFlagsInOrder(parameterText);
         }
 
-        entries.Add(new(entryBuilder.ToImmutable(allowDestructive: true)));
+        entries.Add(new(values));
         return true;
     }
 
@@ -847,13 +883,13 @@ public sealed partial class AffixReader
                     morphAffixText = morphAffixText.GetReversed();
                 }
 
-                var morphSetBuilder = ImmutableArray.CreateBuilder<string>();
+                var morphSetBuilder = new List<string>();
                 foreach (var morphValue in morphAffixText.SplitOnTabOrSpace())
                 {
                     morphSetBuilder.Add(_builder.Dedup(morphValue));
                 }
 
-                morph = new MorphSet(morphSetBuilder.ToImmutable(allowDestructive: true));
+                morph = MorphSet.Create(morphSetBuilder);
             }
         }
         else
@@ -967,7 +1003,7 @@ public sealed partial class AffixReader
         return StringBuilderPool.GetStringAndReturn(chars);
     }
 
-    private bool TryParseReplacements(ReadOnlySpan<char> parameterText, ImmutableArray<SingleReplacement>.Builder entries)
+    private bool TryParseReplacements(ReadOnlySpan<char> parameterText, ArrayBuilder<SingleReplacement> entries)
     {
         var pattern = ReadOnlySpan<char>.Empty;
         var outString = ReadOnlySpan<char>.Empty;
@@ -1031,7 +1067,7 @@ public sealed partial class AffixReader
         FailCondition2 = -3
     }
 
-    private bool TryParseCheckCompoundPatternIntoCompoundPatterns(ReadOnlySpan<char> parameterText, ImmutableArray<PatternEntry>.Builder entries)
+    private bool TryParseCheckCompoundPatternIntoCompoundPatterns(ReadOnlySpan<char> parameterText, ArrayBuilder<PatternEntry> entries)
     {
         int slashIndex;
         var pattern1 = ReadOnlySpan<char>.Empty;

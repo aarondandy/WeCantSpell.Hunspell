@@ -207,7 +207,7 @@ public partial class AffixConfig
         /// Specifies modifications to try first.
         /// </summary>
         /// <seealso cref="AffixConfig.Replacements"/>
-        public ImmutableArray<SingleReplacement>.Builder Replacements { get; } = ImmutableArray.CreateBuilder<SingleReplacement>();
+        public ArrayBuilder<SingleReplacement> Replacements { get; } = new();
 
         /// <summary>
         /// Suffixes attached to root words to make other words.
@@ -237,20 +237,20 @@ public partial class AffixConfig
         /// Defines custom compound patterns with a regex-like syntax.
         /// </summary>
         /// <seealso cref="AffixConfig.CompoundRules"/>
-        public ImmutableArray<CompoundRule>.Builder CompoundRules { get; } = ImmutableArray.CreateBuilder<CompoundRule>();
+        public ArrayBuilder<CompoundRule> CompoundRules { get; } = new();
 
         /// <summary>
         /// Forbid compounding, if the first word in the compound ends with endchars, and
         /// next word begins with beginchars and(optionally) they have the requested flags.
         /// </summary>
         /// <seealso cref="AffixConfig.CompoundPatterns"/>
-        public ImmutableArray<PatternEntry>.Builder CompoundPatterns { get; } = ImmutableArray.CreateBuilder<PatternEntry>();
+        public ArrayBuilder<PatternEntry> CompoundPatterns { get; } = new();
 
         /// <summary>
         /// Defines new break points for breaking words and checking word parts separately.
         /// </summary>
         /// <seealso cref="AffixConfig.BreakPoints"/>
-        public ImmutableArray<string>.Builder BreakPoints { get; } = ImmutableArray.CreateBuilder<string>();
+        public ArrayBuilder<string> BreakPoints { get; } = new();
 
         /// <summary>
         /// Input conversion entries.
@@ -268,13 +268,13 @@ public partial class AffixConfig
         /// Mappings between related characters.
         /// </summary>
         /// <seealso cref="AffixConfig.RelatedCharacterMap"/>
-        public ImmutableArray<MapEntry>.Builder RelatedCharacterMap { get; } = ImmutableArray.CreateBuilder<MapEntry>();
+        public ArrayBuilder<MapEntry> RelatedCharacterMap { get; } = new();
 
         /// <summary>
         /// Phonetic transcription entries.
         /// </summary>
         /// <seealso cref="AffixConfig.Phone"/>
-        public ImmutableArray<PhoneticEntry>.Builder Phone { get; } = ImmutableArray.CreateBuilder<PhoneticEntry>();
+        public ArrayBuilder<PhoneticEntry> Phone { get; } = new();
 
         /// <summary>
         /// Maximum syllable number, that may be in a
@@ -414,12 +414,12 @@ public partial class AffixConfig
 
             config.AliasF = AliasF.ToImmutable(allowDestructive);
             config.AliasM = AliasM.ToImmutable(allowDestructive);
-            config.BreakPoints = new(BreakPoints.ToImmutable(allowDestructive));
-            config.Replacements = new(Replacements.ToImmutable(allowDestructive));
-            config.CompoundRules = new(CompoundRules.ToImmutable(allowDestructive));
-            config.CompoundPatterns = new(CompoundPatterns.ToImmutable(allowDestructive));
-            config.RelatedCharacterMap = new(RelatedCharacterMap.ToImmutable(allowDestructive));
-            config.Phone = new(Phone.ToImmutable(allowDestructive));
+            config.BreakPoints = new(BreakPoints.MakeOrExtractArray(allowDestructive));
+            config.Replacements = new(Replacements.MakeOrExtractArray(allowDestructive));
+            config.CompoundRules = new(CompoundRules.MakeOrExtractArray(allowDestructive));
+            config.CompoundPatterns = new(CompoundPatterns.MakeOrExtractArray(allowDestructive));
+            config.RelatedCharacterMap = new(RelatedCharacterMap.MakeOrExtractArray(allowDestructive));
+            config.Phone = new(Phone.MakeOrExtractArray(allowDestructive));
 
             config.Prefixes = PrefixCollection.Create(Prefixes);
 
@@ -486,16 +486,6 @@ public partial class AffixConfig
             }
 
             return DedupInPlace(values.ToArray());
-        }
-
-        internal ImmutableArray<string> DedupIntoImmutableArray(string[] values, bool destructive)
-        {
-            return values.ToImmutableArray();
-        }
-
-        internal ImmutableArray<string> DedupIntoImmutableArray(ImmutableArray<string>.Builder builder, bool destructive)
-        {
-            return builder.ToImmutable(destructive);
         }
 
         public void LogWarning(string warning)

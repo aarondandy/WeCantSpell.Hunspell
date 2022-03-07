@@ -177,4 +177,20 @@ public readonly struct FlagValue :
     public int CompareTo(char other) => _value.CompareTo(other);
 
     public override string ToString() => ((int)_value).ToString(CultureInfo.InvariantCulture);
+
+    public sealed class Comparer : IComparer<FlagValue>, IEqualityComparer<FlagValue>
+    {
+        public static Comparer Instance { get; } = new();
+
+        private Comparer()
+        {
+
+        }
+
+        public int Compare(FlagValue x, FlagValue y) => x.CompareTo(y);
+
+        public bool Equals(FlagValue x, FlagValue y) => x.Equals(y);
+
+        public int GetHashCode(FlagValue obj) => obj.GetHashCode();
+    }
 }

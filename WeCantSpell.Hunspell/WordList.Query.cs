@@ -1350,7 +1350,7 @@ public partial class WordList
             }
 
             // first handle the special case of 0 length prefixes
-            foreach (var peGroup in Affix.Prefixes.AffixesWithEmptyKeys)
+            foreach (var peGroup in Affix.Prefixes.AffixesWithEmptyKeys.Groups)
             {
                 foreach (var pe in peGroup.Entries)
                 {
@@ -1404,7 +1404,7 @@ public partial class WordList
             WordEntry? rv;
 
             // first handle the special case of 0 length prefixes
-            foreach (var peGroup in Affix.Prefixes.AffixesWithEmptyKeys)
+            foreach (var peGroup in Affix.Prefixes.AffixesWithEmptyKeys.Groups)
             {
                 foreach (var pe in peGroup.ToAffixes())
                 {
@@ -1511,7 +1511,7 @@ public partial class WordList
             }
 
             // first handle the special case of 0 length suffixes
-            foreach (var seGroup in Affix.Suffixes.AffixesWithEmptyKeys)
+            foreach (var seGroup in Affix.Suffixes.AffixesWithEmptyKeys.Groups)
             {
                 foreach (var se in seGroup.Entries)
                 {
@@ -1788,7 +1788,7 @@ public partial class WordList
                 return false;
             }
 
-            foreach (var replacementEntry in WordList.AllReplacements)
+            foreach (var replacementEntry in WordList.AllReplacements.Replacements)
             {
                 // use only available mid patterns
                 if (replacementEntry.Med is { Length: > 0 } replacement)

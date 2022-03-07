@@ -10,13 +10,13 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterSet>
 {
-    public static readonly CharacterSet Empty = new(ImmutableArray<char>.Empty, default);
+    public static readonly CharacterSet Empty = new(Array.Empty<char>(), default);
 
     public static bool operator ==(CharacterSet left, CharacterSet right) => left.Equals(right);
 
     public static bool operator !=(CharacterSet left, CharacterSet right) => !(left == right);
 
-    public static CharacterSet Create(char value) => new(ImmutableArray.Create(value), value);
+    public static CharacterSet Create(char value) => new(new[] { value }, value);
 
     public static CharacterSet Create(IEnumerable<char> values)
     {
@@ -46,23 +46,21 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
         return builder.Create(allowDestructive: true);
     }
 
-    private CharacterSet(ImmutableArray<char> values, char mask)
+    private CharacterSet(char[] values, char mask)
     {
         _mask = mask;
         _values = values;
     }
 
     private readonly char _mask;
-    private readonly ImmutableArray<char> _values;
+    private readonly char[] _values;
 
     public int Count => _values.Length;
-    public bool IsEmpty => _values.IsDefaultOrEmpty;
-    public bool HasItems => !IsEmpty;
+    public bool IsEmpty => !HasItems;
+    public bool HasItems => _values is { Length: > 0 };
     public char this[int index] => _values[index];
-
-    public ImmutableArray<char>.Enumerator GetEnumerator() => _values.GetEnumerator();
-    IEnumerator<char> IEnumerable<char>.GetEnumerator() => ((IEnumerable<char>)_values).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_values).GetEnumerator();
+    public IEnumerator<char> GetEnumerator() => ((IEnumerable<char>)_values).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => _values.GetEnumerator();
 
     public bool Contains(char value)
     {
@@ -80,7 +78,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
                     return _values.Contains(value);
                 }
 
-                return _values.BinarySearch(value) >= 0;
+                return Array.BinarySearch(_values, value) >= 0;
             }
         }
 
@@ -116,15 +114,15 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
     {
         public Builder()
         {
-            _builder = ImmutableArray.CreateBuilder<char>();
+            _builder = new();
         }
 
         public Builder(int capacity)
         {
-            _builder = ImmutableArray.CreateBuilder<char>(capacity);
+            _builder = new(capacity);
         }
 
-        private readonly ImmutableArray<char>.Builder _builder;
+        private readonly ArrayBuilder<char> _builder;
         private char _mask = default;
 
         public void AddRange(IEnumerable<char> values)
@@ -147,36 +145,29 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
         public void Add(char value)
         {
-            if (_builder.Count == 0)
+            _builder.AddAsSortedSet(value);
+            unchecked
             {
-                _builder.Add(value);
-                _mask = value;
-                return;
-            }
-
-            var valueIndex = _builder.BinarySearch(value);
-            if (valueIndex < 0)
-            {
-                valueIndex = ~valueIndex; // locate the best insertion point
-
-                if (valueIndex >= _builder.Count)
-                {
-                    _builder.Add(value);
-                }
-                else
-                {
-                    _builder.Insert(valueIndex, value);
-                }
-
-                unchecked
-                {
-                    _mask |= value;
-                }
+                _mask |= value;
             }
         }
 
         public CharacterSet Create() => Create(allowDestructive: false);
 
-        internal CharacterSet Create(bool allowDestructive) => new(_builder.ToImmutable(allowDestructive: allowDestructive), _mask);
+        internal CharacterSet Create(bool allowDestructive)
+        {
+            CharacterSet result;
+            if (allowDestructive)
+            {
+                result = new(_builder.Extract(), _mask);
+                _mask = default;
+            }
+            else
+            {
+                result = new(_builder.MakeArray(), _mask);
+            }
+
+            return result;
+        }
     }
 }
