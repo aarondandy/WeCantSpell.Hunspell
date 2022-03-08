@@ -22,6 +22,20 @@ public class ArrayBuilder<T>
 
     public int Count { get; private set; } = 0;
 
+    public T this[int index]
+    {
+        get => index >= 0 && index < Count ? _values[index] : throw new ArgumentOutOfRangeException(nameof(index));
+        set
+        {
+            if (index < 0 || index >= Count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            _values[index] = value;
+        }
+    }
+
     public void Add(T value)
     {
         if (Count >= _values.Length)
