@@ -27,22 +27,8 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         return builder.Create(allowDestructive: true);
     }
 
-    internal static FlagSet ParseAsChars(ReadOnlySpan<char> text)
-    {
-        if (text.IsEmpty)
-        {
-            return Empty;
-        }
-
-        var builder = new Builder(text.Length);
-
-        foreach (var @char in text)
-        {
-            builder.Add(new FlagValue(@char));
-        }
-
-        return builder.Create(allowDestructive: true);
-    }
+    internal static FlagSet ParseAsChars(ReadOnlySpan<char> text) =>
+        text.IsEmpty ? Empty : new Builder(text).Create(allowDestructive: true);
 
     internal static FlagSet ParseAsLongs(ReadOnlySpan<char> text)
     {
@@ -271,6 +257,26 @@ public IEnumerator<FlagValue> GetEnumerator() => ((IEnumerable<FlagValue>)Values
         public Builder(int capacity)
         {
             _builder = new(capacity);
+        }
+
+        public Builder(ReadOnlySpan<char> text)
+        {
+            _mask = default;
+
+            var values = new FlagValue[text.Length];
+            for (var i = 0; i < text.Length; i++)
+            {
+                ref readonly var c = ref text[i];
+                values[i] = (FlagValue)c;
+                unchecked
+                {
+                    _mask |= c;
+                }
+            }
+
+            Array.Sort(values);
+            CollectionsEx.RemoveSortedDuplicates(ref values);
+            _builder = new(values);
         }
 
         private readonly ArrayBuilder<FlagValue> _builder;

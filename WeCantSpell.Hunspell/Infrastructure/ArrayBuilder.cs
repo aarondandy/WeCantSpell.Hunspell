@@ -10,6 +10,12 @@ public class ArrayBuilder<T>
         _values = Array.Empty<T>();
     }
 
+    internal ArrayBuilder(T[] values)
+    {
+        _values = values;
+        Count = values.Length;
+    }
+
     public ArrayBuilder(int initialCapacity)
     {
 #if DEBUG
