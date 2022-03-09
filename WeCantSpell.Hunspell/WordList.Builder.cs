@@ -27,7 +27,7 @@ public partial class WordList
         /// <summary>
         /// Spelling replacement suggestions based on phonetics.
         /// </summary>
-        public List<SingleReplacement> PhoneticReplacements { get; } = new();
+        public ArrayBuilder<SingleReplacement> PhoneticReplacements { get; } = new();
 
         public void Add(string word, WordEntryDetail detail)
         {
@@ -95,23 +95,24 @@ public partial class WordList
                 // store ph: field of a morphological description in reptable
                 if (result.AllReplacements.IsEmpty)
                 {
-                    result.AllReplacements = new(PhoneticReplacements.ToArray());
+                    result.AllReplacements = new(PhoneticReplacements.MakeOrExtractArray(destructive));
                 }
                 else if (destructive)
                 {
-                    PhoneticReplacements.AddRange(result.AllReplacements);
-                    result.AllReplacements = new(PhoneticReplacements.ToArray());
+                    PhoneticReplacements.AddRange(result.AllReplacements.Replacements);
+                    result.AllReplacements = new(PhoneticReplacements.Extract());
                 }
                 else
                 {
-                    result.AllReplacements = SingleReplacementSet.Create(PhoneticReplacements.Concat(result.AllReplacements));
+                    result.AllReplacements = SingleReplacementSet.Create(PhoneticReplacements.MakeArray().Concat(result.AllReplacements));
                 }
             }
 
-            var details = new List<WordEntryDetail>();
+            var details = new ArrayBuilder<WordEntryDetail>();
             foreach (var rootSet in result.EntriesByRoot)
             {
                 details.Clear();
+                details.GrowToCapacity(1);
                 foreach (var entry in rootSet.Value)
                 {
                     if (result.NGramRestrictedFlags.ContainsAny(entry.Flags))
@@ -122,7 +123,7 @@ public partial class WordList
 
                 if (details.Count != 0)
                 {
-                    result.NGramRestrictedDetails.Add(rootSet.Key, details.ToArray());
+                    result.NGramRestrictedDetails.Add(rootSet.Key, details.Extract());
                 }
             }
 
