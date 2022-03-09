@@ -19,7 +19,7 @@ public abstract class AffixCollection<TEntry> :
         var groupBuildersByKeyAndFlag = new Dictionary<char, Dictionary<FlagValue, AffixEntryGroup<TEntry>.Builder>>();
         var affixesWithEmptyKeys = new List<AffixEntryGroup<TEntry>>();
         var affixesWithDots = new List<AffixEntryGroup<TEntry>>();
-        var contClasses = new FlagSet.Builder();
+        var contClassesBuilder = new FlagSet.Builder();
 
         foreach (var group in builders.Select(static builder => builder.ToImmutable(false))) // TODO: refactor this to allow for destructive ToImmutable
         {
@@ -30,7 +30,7 @@ public abstract class AffixCollection<TEntry> :
 
             foreach (var entry in group.Entries)
             {
-                contClasses.AddRange(entry.ContClass);
+                contClassesBuilder.AddRange(entry.ContClass);
 
                 if (string.IsNullOrEmpty(entry.Key))
                 {
@@ -87,7 +87,7 @@ public abstract class AffixCollection<TEntry> :
         result.AffixesByIndexedByKey = affixesByKey;
         result.AffixesWithDots = new(affixesWithDots.ToArray());
         result.AffixesWithEmptyKeys = new(affixesWithEmptyKeys.ToArray());
-        result.ContClasses = contClasses.Create(allowDestructive: true);
+        result.ContClasses = contClassesBuilder.MoveToFlagSet();
     }
 
     private protected AffixCollection()

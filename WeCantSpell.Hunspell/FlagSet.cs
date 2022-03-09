@@ -24,11 +24,38 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
         var builder = values is ICollection collection ? new Builder(collection.Count) : new Builder();
         builder.AddRange(values);
-        return builder.Create(allowDestructive: true);
+        return builder.MoveToFlagSet();
     }
 
-    internal static FlagSet ParseAsChars(ReadOnlySpan<char> text) =>
-        text.IsEmpty ? Empty : new Builder(text).Create(allowDestructive: true);
+    internal static FlagSet ParseAsChars(ReadOnlySpan<char> text)
+    {
+        if (text.IsEmpty)
+        {
+            return Empty;
+        }
+
+        if (text.Length == 1)
+        {
+            return new(new FlagValue[] { new FlagValue(text[0]) }, text[0]);
+        }
+
+        char mask = default;
+
+        var values = new FlagValue[text.Length];
+        for (var i = 0; i < text.Length; i++)
+        {
+            ref readonly var c = ref text[i];
+            values[i] = new FlagValue(c);
+            unchecked
+            {
+                mask |= c;
+            }
+        }
+
+        Array.Sort(values);
+        CollectionsEx.RemoveSortedDuplicates(ref values);
+        return new(values, mask);
+    }
 
     internal static FlagSet ParseAsLongs(ReadOnlySpan<char> text)
     {
@@ -50,7 +77,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             builder.Add(new FlagValue(text[lastIndex]));
         }
 
-        return builder.Create(allowDestructive: true);
+        return builder.MoveToFlagSet();
     }
 
     internal static FlagSet ParseAsNumbers(ReadOnlySpan<char> text)
@@ -70,7 +97,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             }
         }
 
-        return flags.Create(allowDestructive: true);
+        return flags.MoveToFlagSet();
     }
 
     private FlagSet(FlagValue[] values, char mask)
@@ -145,7 +172,7 @@ public IEnumerator<FlagValue> GetEnumerator() => ((IEnumerable<FlagValue>)Values
         var builder = new Builder();
         builder.AddRange(Values);
         builder.AddRange(other.Values);
-        return builder.Create(allowDestructive: true);
+        return builder.MoveToFlagSet();
     }
 
     public bool Contains(FlagValue value)
@@ -251,35 +278,15 @@ public IEnumerator<FlagValue> GetEnumerator() => ((IEnumerable<FlagValue>)Values
     {
         public Builder()
         {
-            _builder = new();
+            _builder = ArrayBuilder<FlagValue>.Pool.Get();
         }
 
         public Builder(int capacity)
         {
-            _builder = new(capacity);
+            _builder = ArrayBuilder<FlagValue>.Pool.Get(capacity);
         }
 
-        public Builder(ReadOnlySpan<char> text)
-        {
-            _mask = default;
-
-            var values = new FlagValue[text.Length];
-            for (var i = 0; i < text.Length; i++)
-            {
-                ref readonly var c = ref text[i];
-                values[i] = (FlagValue)c;
-                unchecked
-                {
-                    _mask |= c;
-                }
-            }
-
-            Array.Sort(values);
-            CollectionsEx.RemoveSortedDuplicates(ref values);
-            _builder = new(values);
-        }
-
-        private readonly ArrayBuilder<FlagValue> _builder;
+        private ArrayBuilder<FlagValue> _builder;
         private char _mask = default;
 
         public void AddRange(IEnumerable<FlagValue> values)
@@ -348,8 +355,13 @@ public IEnumerator<FlagValue> GetEnumerator() => ((IEnumerable<FlagValue>)Values
             }
         }
 
-        public FlagSet Create() => Create(allowDestructive: false);
+        public FlagSet Create() => new(_builder.MakeArray(), _mask);
 
-        internal FlagSet Create(bool allowDestructive) => new(_builder.MakeOrExtractArray(allowDestructive), _mask);
+        internal FlagSet MoveToFlagSet()
+        {
+            var result = new FlagSet(ArrayBuilder<FlagValue>.Pool.GetArrayAndReturn(_builder), _mask);
+            _builder = null!; // This should operate as a very crude dispose
+            return result;
+        }
     }
 }

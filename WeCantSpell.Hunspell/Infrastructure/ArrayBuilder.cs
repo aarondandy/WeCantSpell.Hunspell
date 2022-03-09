@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
@@ -27,6 +28,13 @@ public class ArrayBuilder<T>
     private T[] _values;
 
     public int Count { get; private set; } = 0;
+
+    public int Capacity => _values.Length;
+
+    public void Clear()
+    {
+        Count = 0;
+    }
 
     public T this[int index]
     {
@@ -166,18 +174,16 @@ public class ArrayBuilder<T>
 
     public T[] Extract()
     {
-        if (Count < _values.Length)
-        {
-            Array.Resize(ref _values, Count);
-        }
-
 #if DEBUG
         if (Count > _values.Length) throw new InvalidOperationException();
 #endif
 
-        Count = 0;
-        var result = _values;
-        _values = Array.Empty<T>();
+        var result = Count == _values.Length
+            ? Interlocked.Exchange(ref _values, Array.Empty<T>())
+            : MakeArray();
+
+        Clear();
+
         return result;
     }
 
@@ -188,4 +194,63 @@ public class ArrayBuilder<T>
     private int CalculateBestCapacity(int minCapacity) => Math.Max(CalculateNextCapacity(), minCapacity);
 
     private int CalculateNextCapacity() => Math.Max(_values.Length * 2, 4);
+
+    internal static class Pool
+    {
+        private const int MaxCapacity = 20;
+
+        private static ArrayBuilder<T>? Cache;
+
+        public static ArrayBuilder<T> Get()
+        {
+            if (Interlocked.Exchange(ref Cache, null) is { } taken)
+            {
+                taken.Clear();
+            }
+            else
+            {
+                taken = new();
+            }
+
+            return taken;
+        }
+
+        public static ArrayBuilder<T> Get(int capacity)
+        {
+#if DEBUG
+            if (capacity <= 0) throw new ArgumentOutOfRangeException(nameof(capacity));
+#endif
+
+            if (Interlocked.Exchange(ref Cache, null) is { } taken)
+            {
+                taken.Clear();
+                taken.GrowToCapacity(capacity);
+            }
+            else
+            {
+                taken = new(capacity);
+            }
+
+            return taken;
+        }
+
+        public static void Return(ArrayBuilder<T> builder)
+        {
+#if DEBUG
+            if (builder is null) throw new ArgumentNullException(nameof(builder));
+#endif
+
+            if (builder.Capacity > 0 && builder.Capacity <= MaxCapacity)
+            {
+                Volatile.Write(ref Cache, builder);
+            }
+        }
+
+        public static T[] GetArrayAndReturn(ArrayBuilder<T> builder)
+        {
+            var result = builder.MakeArray();
+            Return(builder);
+            return result;
+        }
+    }
 }
