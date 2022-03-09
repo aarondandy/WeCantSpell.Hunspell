@@ -535,11 +535,11 @@ public partial class WordList
                             var searchEntryDetails = LookupDetails(searchEntryWord);
                             if (searchEntryDetails.Length > 0)
                             {
-                                var rvDetail = searchEntryDetails[0];
+                                WordEntryDetail? rvDetail = searchEntryDetails[0];
 
                                 // forbid dictionary stems with COMPOUNDFORBIDFLAG in
                                 // compound words, overriding the effect of COMPOUNDPERMITFLAG
-                                if (rvDetail is not null && rvDetail.ContainsFlag(Affix.CompoundForbidFlag) && !huMovRule)
+                                if (!huMovRule && rvDetail.Value.ContainsFlag(Affix.CompoundForbidFlag))
                                 {
                                     continue;
                                 }

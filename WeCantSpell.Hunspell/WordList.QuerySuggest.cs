@@ -1116,7 +1116,7 @@ public partial class WordList
                     if (rv is not null)
                     {
                         var rvDetail = LookupFirstDetail(word);
-                        if (rvDetail is null || !rvDetail.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest))
+                        if (rvDetail is null || !rvDetail.Value.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest))
                         {
                             return 3; // XXX obsolote categorisation + only ICONV needs affix flag check?
                         }
@@ -1129,9 +1129,9 @@ public partial class WordList
             var rvDetails = LookupDetails(word); // get homonyms
             if (rvDetails.Length != 0)
             {
-                var rvDetail = rvDetails[0];
+                WordEntryDetail? rvDetail = rvDetails[0];
 
-                if (rvDetail.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest, Affix.SubStandard))
+                if (rvDetail.Value.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest, Affix.SubStandard))
                 {
                     return 0;
                 }
@@ -1139,7 +1139,7 @@ public partial class WordList
                 var rvIndex = 0;
                 while (rvDetail is not null)
                 {
-                    if (rvDetail.ContainsAnyFlags(Affix.NeedAffix, SpecialFlags.OnlyUpcaseFlag, Affix.OnlyInCompound))
+                    if (rvDetail.Value.ContainsAnyFlags(Affix.NeedAffix, SpecialFlags.OnlyUpcaseFlag, Affix.OnlyInCompound))
                     {
                         rvIndex++;
                         rvDetail = rvIndex < rvDetails.Length ? rvDetails[rvIndex] : null;
@@ -1150,7 +1150,7 @@ public partial class WordList
                     }
                 }
 
-                rv = rvDetail is null ? null : new WordEntry(word, rvDetail);
+                rv = rvDetail is null ? null : new WordEntry(word, rvDetail.Value);
             }
             else
             {
@@ -2110,7 +2110,7 @@ public partial class WordList
             if (word is null) throw new ArgumentNullException(nameof(word));
 #endif
             var rv = LookupFirstDetail(word);
-            if (rv is not null && rv.ContainsAnyFlags(Affix.NeedAffix, Affix.OnlyInCompound))
+            if (rv.HasValue && rv.Value.ContainsAnyFlags(Affix.NeedAffix, Affix.OnlyInCompound))
             {
                 rv = null;
             }
@@ -2121,7 +2121,7 @@ public partial class WordList
             }
 
             // check forbidden words
-            return rv is not null && rv.ContainsFlag(Affix.ForbiddenWord);
+            return rv.HasValue && rv.Value.ContainsFlag(Affix.ForbiddenWord);
         }
 
         /// <summary>

@@ -49,10 +49,7 @@ public class HunspellTests
             dictionaryBuilder.InitializeEntriesByRoot(1);
             dictionaryBuilder.Add(
                 dictionaryWord,
-                new WordEntryDetail(
-                    FlagSet.Empty,
-                    MorphSet.Empty,
-                    WordEntryOptions.None));
+                new WordEntryDetail());
 
             var dictionary = dictionaryBuilder.ToImmutable();
 

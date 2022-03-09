@@ -33,7 +33,7 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
 
     internal bool EntryContainsRuleFlags(WordEntryDetail details)
     {
-        if (details is not null && details.HasFlags)
+        if (details.HasFlags)
         {
             foreach(var rule in _rules)
             {

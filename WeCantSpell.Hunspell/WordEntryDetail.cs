@@ -4,13 +4,20 @@ using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
-public class WordEntryDetail : IEquatable<WordEntryDetail>
+public readonly struct WordEntryDetail : IEquatable<WordEntryDetail>
 {
-    public static bool operator ==(WordEntryDetail a, WordEntryDetail b) => a is null ? b is null : a.Equals(b);
+    public static bool operator ==(WordEntryDetail a, WordEntryDetail b) => a.Equals(b);
 
     public static bool operator !=(WordEntryDetail a, WordEntryDetail b) => !(a == b);
 
-    public static WordEntryDetail Default { get; } = new WordEntryDetail(FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None);
+    public static WordEntryDetail Default { get; } = new WordEntryDetail();
+
+    public WordEntryDetail()
+    {
+        Flags = FlagSet.Empty;
+        Morphs = MorphSet.Empty;
+        Options = WordEntryOptions.None;
+    }
 
     public WordEntryDetail(FlagSet flags, MorphSet morphs, WordEntryOptions options)
     {
@@ -35,24 +42,12 @@ public class WordEntryDetail : IEquatable<WordEntryDetail>
 
     public bool ContainsAnyFlags(FlagValue a, FlagValue b, FlagValue c, FlagValue d) => Flags.ContainsAny(a, b, c, d);
 
-    public bool Equals(WordEntryDetail? other)
-    {
-        if (other is null)
-        {
-            return false;
-        }
+    public bool Equals(WordEntryDetail other) =>
+        other.Options == Options
+        && other.Flags.Equals(Flags)
+        && other.Morphs.Equals(Morphs);
 
-        if (ReferenceEquals(this, other))
-        {
-            return true;
-        }
-
-        return other.Options == Options
-            && other.Flags.Equals(Flags)
-            && other.Morphs.Equals(Morphs);
-    }
-
-    public override bool Equals(object? obj) => Equals(obj as WordEntryDetail);
+    public override bool Equals(object? obj) => obj is WordEntryDetail entry && Equals(entry);
 
     public override int GetHashCode() => HashCode.Combine(Options, Flags, Morphs);
 

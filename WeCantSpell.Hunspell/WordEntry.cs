@@ -16,7 +16,7 @@ sealed class WordEntry : IEquatable<WordEntry>
     public WordEntry(string word, WordEntryDetail detail)
     {
         Word = word ?? string.Empty;
-        Detail = detail ?? WordEntryDetail.Default;
+        Detail = detail;
     }
 
     public string Word { get; }
