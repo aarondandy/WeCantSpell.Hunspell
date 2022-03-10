@@ -2,25 +2,25 @@
 
 public static class SpecialFlags
 {
-    public static readonly FlagValue DefaultFlags = new FlagValue(65510);
+    public static FlagValue DefaultFlags { get; } = new FlagValue(65510);
 
-    public static readonly FlagValue ForbiddenWord = new FlagValue(65510);
+    public static FlagValue ForbiddenWord { get; } = new FlagValue(65510);
 
-    public static readonly FlagValue OnlyUpcaseFlag = new FlagValue(65511);
+    public static FlagValue OnlyUpcaseFlag { get; } = new FlagValue(65511);
 
-    public static readonly FlagValue LetterF = new FlagValue('F');
+    public static FlagValue LetterF { get; } = new FlagValue('F');
 
-    public static readonly FlagValue LetterG = new FlagValue('G');
+    public static FlagValue LetterG { get; } = new FlagValue('G');
 
-    public static readonly FlagValue LetterH = new FlagValue('H');
+    public static FlagValue LetterH { get; } = new FlagValue('H');
 
-    public static readonly FlagValue LetterI = new FlagValue('I');
+    public static FlagValue LetterI { get; } = new FlagValue('I');
 
-    public static readonly FlagValue LetterJ = new FlagValue('J');
+    public static FlagValue LetterJ { get; } = new FlagValue('J');
 
-    public static readonly FlagValue LetterXLower = new FlagValue('x');
+    public static FlagValue LetterXLower { get; } = new FlagValue('x');
 
-    public static readonly FlagValue LetterCLower = new FlagValue('c');
+    public static FlagValue LetterCLower { get; } = new FlagValue('c');
 
-    public static readonly FlagValue LetterPercent = new FlagValue('%');
+    public static FlagValue LetterPercent { get; } = new FlagValue('%');
 }

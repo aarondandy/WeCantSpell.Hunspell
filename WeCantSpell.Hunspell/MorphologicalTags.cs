@@ -2,21 +2,22 @@
 
 public static class MorphologicalTags
 {
-    public static string Stem = "st:";
-    public static string AlloMorph = "al:";
-    public static string Pos = "po:";
-    public static string DeriPfx = "dp:";
-    public static string InflPfx = "ip:";
-    public static string TermPfx = "tp:";
-    public static string DeriSfx = "ds:";
-    public static string InflSfx = "is:";
-    public static string TermSfx = "ts:";
-    public static string SurfPfx = "sp:";
-    public static string Freq = "fr:";
-    public static string Phon = "ph:";
-    public static string Hyph = "hy:";
-    public static string Part = "pa:";
-    public static string Flag = "fl:";
-    public static string HashEntry = "_H:";
-    public static int TagLength = Stem.Length;
+    public static string Stem { get; } = "st:";
+    public static string AlloMorph { get; } = "al:";
+    public static string Pos { get; } = "po:";
+    public static string DeriPfx { get; } = "dp:";
+    public static string InflPfx { get; } = "ip:";
+    public static string TermPfx { get; } = "tp:";
+    public static string DeriSfx { get; } = "ds:";
+    public static string InflSfx { get; } = "is:";
+    public static string TermSfx { get; } = "ts:";
+    public static string SurfPfx { get; } = "sp:";
+    public static string Freq { get; } = "fr:";
+    public static string Phon { get; } = "ph:";
+    public static string Hyph { get; } = "hy:";
+    public static string Part { get; } = "pa:";
+    public static string Flag { get; } = "fl:";
+    public static string HashEntry { get; } = "_H:";
+
+    internal static readonly int TagLength = Stem.Length;
 }

@@ -31,7 +31,7 @@ internal sealed class LineReader : IDisposable
             };
     }
 
-    internal LineReader(Stream stream, Encoding encoding, bool allowEncodingChanges = false)
+    internal LineReader(Stream stream, Encoding encoding, bool allowEncodingChanges = false, bool ownsStream = false)
     {
         _stream = stream;
         _encoding = encoding;
@@ -39,12 +39,13 @@ internal sealed class LineReader : IDisposable
         _allowEncodingChanges = allowEncodingChanges;
         _reusableFileReadBuffer = new byte[DefaultBufferSize];
         _buffers = new(2);
+        _ownsStream = ownsStream;
     }
 
     private readonly Stream _stream;
     private readonly byte[] _reusableFileReadBuffer;
     private readonly List<TextBufferLine> _buffers;
-
+    private readonly bool _ownsStream;
     private bool _allowEncodingChanges;
     private Encoding _encoding;
     private Decoder _decoder;
@@ -166,9 +167,17 @@ internal sealed class LineReader : IDisposable
 
         if (_allowEncodingChanges)
         {
-            tryHandleSetCommand(Current.Span);
+            tryChangeEncoding();
+            void tryChangeEncoding()
+            {
+                if (readSetEncoding(Current.Span) is { IsEmpty: false } encodingSpan)
+                {
+                    ChangeEncoding(encodingSpan);
+                    _allowEncodingChanges = false; // Only expect one encoding switch per file
+                }
+            }
 
-            bool tryHandleSetCommand(ReadOnlySpan<char> span)
+            static ReadOnlySpan<char> readSetEncoding(ReadOnlySpan<char> span)
             {
                 var startIndex = 0;
                 for (; startIndex < span.Length && span[startIndex].IsTabOrSpace(); startIndex++) ;
@@ -178,35 +187,22 @@ internal sealed class LineReader : IDisposable
                     span = span.Slice(startIndex);
                 }
 
-                if (!isSetCommand(span))
+                if (span.Length >= 5
+                    && span[0] is 'S' or 's'
+                    && span[1] is 'E' or 'e'
+                    && span[2] is 'T' or 't'
+                    && span[3].IsTabOrSpace())
                 {
-                    return false;
+                    for (startIndex = 4; startIndex < span.Length && span[startIndex].IsTabOrSpace(); startIndex++) ;
+
+                    var endIndex = span.Length - 1;
+                    for (; endIndex > startIndex && span[endIndex].IsTabOrSpace(); endIndex--) ;
+
+                    return span.Slice(startIndex, endIndex - startIndex + 1);
                 }
 
-                for (startIndex = 4; startIndex < span.Length && span[startIndex].IsTabOrSpace(); startIndex++) ;
-
-                var endIndex = span.Length - 1;
-                for (; endIndex > startIndex && span[endIndex].IsTabOrSpace(); endIndex--) ;
-
-                span = span.Slice(startIndex, endIndex - startIndex + 1);
-
-                if (span.IsEmpty)
-                {
-                    return false;
-                }
-
-                ChangeEncoding(span);
-
-                _allowEncodingChanges = false; // Only expect one encoding switch per file
-                return true;
+                return ReadOnlySpan<char>.Empty;
             }
-
-            static bool isSetCommand(ReadOnlySpan<char> span) =>
-                span.Length >= 5
-                && span[0] is 'S' or 's'
-                && span[1] is 'E' or 'e'
-                && span[2] is 'T' or 't'
-                && span[3].IsTabOrSpace();
         }
 
         return true;
@@ -469,6 +465,11 @@ internal sealed class LineReader : IDisposable
     public void Dispose()
     {
         _tempJoinBuffer?.Dispose();
+
+        if (_ownsStream)
+        {
+            _stream.Dispose();
+        }
     }
 
     private struct TextBufferLine

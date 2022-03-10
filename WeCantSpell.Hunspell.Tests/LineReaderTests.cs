@@ -31,8 +31,7 @@ public class LineReaderTests
                 "MNO"
             };
 
-            using var readStream = new MemoryStream(data);
-            using var reader = new LineReader(readStream, Encoding.UTF8);
+            using var reader = new LineReader(new MemoryStream(data), Encoding.UTF8, ownsStream: true);
 
             var actual = new List<string>();
             while (reader.ReadNext())
@@ -62,8 +61,7 @@ public class LineReaderTests
                 "MNO"
             };
 
-            using var readStream = new MemoryStream(data);
-            using var reader = new LineReader(readStream, Encoding.UTF8);
+            using var reader = new LineReader(new MemoryStream(data), Encoding.UTF8, ownsStream: true);
 
             var actual = new List<string>();
             while (await reader.ReadNextAsync(CancellationToken.None))
