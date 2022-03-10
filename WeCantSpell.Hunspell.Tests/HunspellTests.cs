@@ -47,9 +47,7 @@ public class HunspellTests
             var expected = searchWord == dictionaryWord;
             var dictionaryBuilder = new WordList.Builder();
             dictionaryBuilder.InitializeEntriesByRoot(1);
-            dictionaryBuilder.Add(
-                dictionaryWord,
-                new WordEntryDetail());
+            dictionaryBuilder.Add(dictionaryWord, new WordEntryDetail());
 
             var dictionary = dictionaryBuilder.ToImmutable();
 

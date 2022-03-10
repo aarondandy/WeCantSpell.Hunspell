@@ -140,7 +140,7 @@ public partial class WordList
                 (Suffix is not null && Suffix.Entry.ContainsContClass(value))
             );
 
-        private bool ContainFlagsOrBlockSuggest(WordEntryDetail rv, int isSug, FlagValue a, FlagValue b) =>
+        private bool ContainFlagsOrBlockSuggest(in WordEntryDetail rv, int isSug, FlagValue a, FlagValue b) =>
             rv.HasFlags
             &&
             (
@@ -149,7 +149,7 @@ public partial class WordList
                 (isSug != 0 && rv.ContainsFlag(Affix.NoSuggest))
             );
 
-        private bool ContainFlagsOrBlockSuggest(WordEntryDetail rv, int isSug, FlagValue a, FlagValue b, FlagValue c) =>
+        private bool ContainFlagsOrBlockSuggest(in WordEntryDetail rv, int isSug, FlagValue a, FlagValue b, FlagValue c) =>
             rv.HasFlags
             &&
             (
@@ -294,7 +294,7 @@ public partial class WordList
 
             return he;
 
-            static bool hasSpecialInitCap(SpellCheckResultType info, WordEntryDetail he) =>
+            static bool hasSpecialInitCap(SpellCheckResultType info, in WordEntryDetail he) =>
                 EnumEx.HasFlag(info, SpellCheckResultType.InitCap) && he.ContainsFlag(SpecialFlags.OnlyUpcaseFlag);
         }
 
@@ -1696,10 +1696,12 @@ public partial class WordList
 
         protected WordEntryDetail? LookupFirstDetail(string word) => WordList.FindFirstEntryDetailByRootWord(word);
 
+        protected bool TryLookupFirstDetail(string word, out WordEntryDetail wordEntryDetail) => WordList.TryFindFirstEntryDetailByRootWord(word, out wordEntryDetail);
+
         /// <summary>
         /// Compound check patterns.
         /// </summary>
-        private bool DefCompoundCheck(IncrementalWordList words, WordEntryDetail rv, bool all)
+        private bool DefCompoundCheck(IncrementalWordList words, in WordEntryDetail rv, bool all)
         {
             // has the last word COMPOUNDRULE flag?
             if (Affix.CompoundRules.EntryContainsRuleFlags(rv))

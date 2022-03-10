@@ -35,13 +35,9 @@ sealed class IncrementalWordList
         }
         else
         {
-            appendWithLeadingBlanks();
-            void appendWithLeadingBlanks()
-            {
-                var filler = WNum - Words.Count;
-                Words.AddRange(Enumerable.Repeat<WordEntryDetail?>(null, Math.Max(filler, 0)));
-                Words.Add(value);
-            }
+            var filler = WNum - Words.Count;
+            Words.AddRange(Enumerable.Repeat<WordEntryDetail?>(null, Math.Max(filler, 0)));
+            Words.Add(value);
         }
     }
 

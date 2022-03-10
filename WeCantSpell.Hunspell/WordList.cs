@@ -44,11 +44,9 @@ public sealed partial class WordList
 
         wordListBuilder.InitializeEntriesByRoot((words as ICollection<string>)?.Count ?? 0);
 
-        var entryDetail = WordEntryDetail.Default;
-
         foreach (var word in words)
         {
-            wordListBuilder.Add(word, entryDetail);
+            wordListBuilder.Add(word, WordEntryDetail.Default);
         }
 
         return wordListBuilder.MoveToImmutable();
@@ -120,6 +118,22 @@ public sealed partial class WordList
         return EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length != 0
             ? details[0]
             : null;
+    }
+
+    internal bool TryFindFirstEntryDetailByRootWord(string rootWord, out WordEntryDetail entryDetail)
+    {
+#if DEBUG
+        if (rootWord is null) throw new ArgumentNullException(nameof(rootWord));
+#endif
+
+        if (EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length > 0)
+        {
+            entryDetail = details[0];
+            return true;
+        }
+
+        entryDetail = default;
+        return false;
     }
 
     private class NGramAllowedEntries : IEnumerable<KeyValuePair<string, WordEntryDetail[]>>

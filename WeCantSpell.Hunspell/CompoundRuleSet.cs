@@ -31,7 +31,7 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
     public IEnumerator<CompoundRule> GetEnumerator() => ((IEnumerable<CompoundRule>)_rules).GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => _rules.GetEnumerator();
 
-    internal bool EntryContainsRuleFlags(WordEntryDetail details)
+    internal bool EntryContainsRuleFlags(in WordEntryDetail details)
     {
         if (details.HasFlags)
         {

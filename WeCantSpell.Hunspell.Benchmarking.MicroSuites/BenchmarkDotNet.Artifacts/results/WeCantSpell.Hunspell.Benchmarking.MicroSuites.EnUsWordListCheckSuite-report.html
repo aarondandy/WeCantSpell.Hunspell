@@ -2,7 +2,7 @@
 <html lang='en'>
 <head>
 <meta charset='utf-8' />
-<title>WeCantSpell.Hunspell.Benchmarking.MicroSuites.EnUsWordListCheckSuite-20220308-230203</title>
+<title>WeCantSpell.Hunspell.Benchmarking.MicroSuites.EnUsWordListCheckSuite-20220309-202229</title>
 
 <style type="text/css">
 	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
@@ -17,7 +17,7 @@ BenchmarkDotNet=v0.13.1, OS=Windows 10.0.19043.1526 (21H1/May2021Update)
 AMD Ryzen 7 5800H with Radeon Graphics, 1 CPU, 16 logical and 8 physical cores
 .NET SDK=6.0.201
   [Host]     : .NET 6.0.3 (6.0.322.12309), X64 RyuJIT
-  Job-AAOPJL : .NET 6.0.3 (6.0.322.12309), X64 RyuJIT
+  Job-HBFRGN : .NET 6.0.3 (6.0.322.12309), X64 RyuJIT
 </code></pre>
 <pre><code>MinInvokeCount=1  IterationTime=250.0000 ms  MaxIterationCount=20  
 MaxWarmupIterationCount=5  MinIterationCount=1  MinWarmupIterationCount=1  
@@ -26,10 +26,10 @@ MaxWarmupIterationCount=5  MinIterationCount=1  MinWarmupIterationCount=1
 <table>
 <thead><tr><th>                  Method</th><th>Mean</th><th>Error</th><th>StdDev</th><th>Ratio</th><th>RatioSD</th>
 </tr>
-</thead><tbody><tr><td>&#39;Check an assortment of words&#39;</td><td>8,230.9 &mu;s</td><td>157.21 &mu;s</td><td>161.44 &mu;s</td><td>27.90</td><td>0.59</td>
-</tr><tr><td>&#39;Check root words&#39;</td><td>296.1 &mu;s</td><td>4.71 &mu;s</td><td>2.09 &mu;s</td><td>1.00</td><td>0.00</td>
-</tr><tr><td>&#39;Check correct words&#39;</td><td>853.9 &mu;s</td><td>18.87 &mu;s</td><td>20.98 &mu;s</td><td>2.93</td><td>0.10</td>
-</tr><tr><td>&#39;Check wrong words&#39;</td><td>7,217.6 &mu;s</td><td>97.15 &mu;s</td><td>25.23 &mu;s</td><td>24.37</td><td>0.28</td>
+</thead><tbody><tr><td>&#39;Check an assortment of words&#39;</td><td>7,760.4 &mu;s</td><td>125.23 &mu;s</td><td>32.52 &mu;s</td><td>27.67</td><td>0.27</td>
+</tr><tr><td>&#39;Check root words&#39;</td><td>280.6 &mu;s</td><td>4.97 &mu;s</td><td>1.77 &mu;s</td><td>1.00</td><td>0.00</td>
+</tr><tr><td>&#39;Check correct words&#39;</td><td>814.1 &mu;s</td><td>14.31 &mu;s</td><td>2.21 &mu;s</td><td>2.90</td><td>0.02</td>
+</tr><tr><td>&#39;Check wrong words&#39;</td><td>7,021.6 &mu;s</td><td>137.73 &mu;s</td><td>128.83 &mu;s</td><td>25.09</td><td>0.71</td>
 </tr></tbody></table>
 </body>
 </html>

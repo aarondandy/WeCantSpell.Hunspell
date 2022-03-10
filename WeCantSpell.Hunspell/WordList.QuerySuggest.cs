@@ -1115,8 +1115,7 @@ public partial class WordList
                     rv = CompoundCheck(word, 0, 0, 100, null, rwords, false, 1, ref info);
                     if (rv is not null)
                     {
-                        var rvDetail = LookupFirstDetail(word);
-                        if (rvDetail is null || !rvDetail.Value.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest))
+                        if (!TryLookupFirstDetail(word, out var rvDetail) || !rvDetail.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest))
                         {
                             return 3; // XXX obsolote categorisation + only ICONV needs affix flag check?
                         }
@@ -1126,31 +1125,43 @@ public partial class WordList
                 return 0;
             }
 
-            var rvDetails = LookupDetails(word); // get homonyms
-            if (rvDetails.Length != 0)
+            // get homonyms
+            if (LookupDetails(word) is { Length: > 0 } rvDetails)
             {
-                WordEntryDetail? rvDetail = rvDetails[0];
-
-                if (rvDetail.Value.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest, Affix.SubStandard))
+                if (rvDetails[0].ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest, Affix.SubStandard))
                 {
                     return 0;
                 }
 
-                var rvIndex = 0;
-                while (rvDetail is not null)
-                {
-                    if (rvDetail.Value.ContainsAnyFlags(Affix.NeedAffix, SpecialFlags.OnlyUpcaseFlag, Affix.OnlyInCompound))
-                    {
-                        rvIndex++;
-                        rvDetail = rvIndex < rvDetails.Length ? rvDetails[rvIndex] : null;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
+                rv = doThing(word, rvDetails, Affix);
 
-                rv = rvDetail is null ? null : new WordEntry(word, rvDetail.Value);
+                static WordEntry? doThing(string word, WordEntryDetail[] rvDetails, AffixConfig affix)
+                {
+#if DEBUG
+                    if (rvDetails.Length <= 0) throw new ArgumentOutOfRangeException(nameof(rvDetails));
+#endif
+
+                    WordEntryDetail rvDetail;
+                    var rvIndex = 0;
+                    do
+                    {
+                        rvDetail = rvDetails[rvIndex];
+                        if (!rvDetail.ContainsAnyFlags(affix.NeedAffix, SpecialFlags.OnlyUpcaseFlag, affix.OnlyInCompound))
+                        {
+                            break;
+                        }
+
+                        rvIndex++;
+                    }
+                    while (rvIndex < rvDetails.Length) ;
+
+                    if (rvIndex >= rvDetails.Length)
+                    {
+                        return null;
+                    }
+
+                    return new WordEntry(word, rvDetail);
+                }
             }
             else
             {

@@ -31,7 +31,7 @@ public readonly struct CompoundRule : IReadOnlyList<FlagValue>
 
     internal bool IsWildcard(int index) => (char)_values[index] is '*' or '?';
 
-    internal bool ContainsRuleFlagForEntry(WordEntryDetail details)
+    internal bool ContainsRuleFlagForEntry(in WordEntryDetail details)
     {
         foreach (var flag in _values)
         {

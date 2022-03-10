@@ -106,8 +106,8 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         Values = values;
     }
 
-    private readonly char _mask;
     internal FlagValue[] Values { get; }
+    private readonly char _mask;
 
     public int Count => Values.Length;
     public bool IsEmpty => !HasItems;

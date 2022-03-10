@@ -11,7 +11,9 @@ sealed class WordEntry : IEquatable<WordEntry>
     public static bool operator !=(WordEntry? a, WordEntry? b) => !(a == b);
 
     public WordEntry(string word, FlagSet flags, MorphSet morphs, WordEntryOptions options)
-        : this(word, new WordEntryDetail(flags, morphs, options)) { }
+        : this(word, new WordEntryDetail(flags, morphs, options))
+    {
+    }
 
     public WordEntry(string word, WordEntryDetail detail)
     {
