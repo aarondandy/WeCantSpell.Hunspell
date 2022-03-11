@@ -4,14 +4,14 @@ public struct SpellCheckResult
 {
     public SpellCheckResult(bool correct)
     {
-        Root = null;
+        Root = string.Empty;
         Info = SpellCheckResultType.None;
         Correct = correct;
     }
 
-    public SpellCheckResult(string root, SpellCheckResultType info, bool correct)
+    public SpellCheckResult(string? root, SpellCheckResultType info, bool correct)
     {
-        Root = root;
+        Root = root ?? string.Empty;
         Info = info;
         Correct = correct;
     }

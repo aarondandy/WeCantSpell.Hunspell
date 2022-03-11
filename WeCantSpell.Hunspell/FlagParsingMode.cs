@@ -3,7 +3,7 @@
 /// <summary>
 /// Indicates the method of encoding used for flag values.
 /// </summary>
-public enum FlagMode : byte
+public enum FlagParsingMode : byte
 {
     /// <summary>
     /// Ispell's one-character flags (erfg -> e r f g).

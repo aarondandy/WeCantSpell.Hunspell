@@ -1,49 +1,173 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
-public sealed class CharacterSet : ArrayWrapper<char>
+public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterSet>
 {
-    public static readonly CharacterSet Empty = new CharacterSet(Array.Empty<char>());
+    public static readonly CharacterSet Empty = new(Array.Empty<char>(), default);
 
-    public static readonly ArrayWrapperComparer<char, CharacterSet> DefaultComparer = new ArrayWrapperComparer<char, CharacterSet>();
+    public static bool operator ==(CharacterSet left, CharacterSet right) => left.Equals(right);
 
-    public static CharacterSet Create(string values) => values is null ? Empty : TakeArray(values.ToCharArray());
+    public static bool operator !=(CharacterSet left, CharacterSet right) => !(left == right);
 
-    public static CharacterSet Create(char value) => TakeArray(new[] { value });
+    public static CharacterSet Create(char value) => new(new[] { value }, value);
 
-    internal static CharacterSet Create(ReadOnlySpan<char> values) => TakeArray(values.ToArray());
-
-    internal static CharacterSet TakeArray(char[] values)
+    public static CharacterSet Create(IEnumerable<char> values)
     {
-#if DEBUG
         if (values is null) throw new ArgumentNullException(nameof(values));
-#endif
 
-        Array.Sort(values);
-        return new CharacterSet(values);
+        var builder = new Builder();
+        builder.AddRange(values);
+        return builder.Create(allowDestructive: true);
     }
 
-    private CharacterSet(char[] values) : base(values)
+    public static CharacterSet Create(string values)
     {
-        _mask = default;
-        for (var i = 0; i < values.Length; i++)
+        if (values is null) throw new ArgumentNullException(nameof(values));
+
+        return Create(values.AsSpan());
+    }
+
+    public static CharacterSet Create(ReadOnlySpan<char> values)
+    {
+        if (values.IsEmpty)
         {
-            unchecked
-            {
-                _mask |= values[i];
-            }
+            return Empty;
         }
+
+        var builder = new Builder(values.Length);
+        builder.AddRange(values);
+        return builder.Create(allowDestructive: true);
+    }
+
+    private CharacterSet(char[] values, char mask)
+    {
+        _mask = mask;
+        _values = values;
     }
 
     private readonly char _mask;
+    private readonly char[] _values;
 
-    public bool Contains(char value) =>
-        unchecked((value & _mask) != default)
-        &&
-        Array.BinarySearch(Items, value) >= 0;
+    public int Count => _values.Length;
+    public bool IsEmpty => !HasItems;
+    public bool HasItems => _values is { Length: > 0 };
+    public char this[int index] => _values[index];
+    public IEnumerator<char> GetEnumerator() => ((IEnumerable<char>)_values).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => _values.GetEnumerator();
 
-    public string GetCharactersAsString() => new string(Items);
+    public bool Contains(char value)
+    {
+        if (HasItems)
+        {
+            if (_values.Length == 1)
+            {
+                return _values[0] == value;
+            }
+
+            if (unchecked((value & _mask) != default))
+            {
+                if (_values.Length <= 8)
+                {
+                    return _values.Contains(value);
+                }
+
+                return Array.BinarySearch(_values, value) >= 0;
+            }
+        }
+
+        return false;
+    }
+
+    public string GetCharactersAsString()
+    {
+        var builder = StringBuilderPool.Get(_values.AsSpan());
+        return StringBuilderPool.GetStringAndReturn(builder);
+    }
+
+    public bool Equals(CharacterSet obj) => _values.SequenceEqual(obj._values);
+
+    public override bool Equals(object? obj) => obj is CharacterSet set && Equals(set);
+
+    public override int GetHashCode() => HashCode.Combine(Count, _mask);
+
+    public sealed class Comparer : IEqualityComparer<CharacterSet>
+    {
+        public static Comparer Instance { get; } = new();
+
+        private Comparer()
+        {
+        }
+
+        public bool Equals(CharacterSet x, CharacterSet y) => x._values.SequenceEqual(y._values);
+
+        public int GetHashCode(CharacterSet obj) => HashCode.Combine(obj.Count, obj._mask);
+    }
+
+    public sealed class Builder
+    {
+        public Builder()
+        {
+            _builder = new();
+        }
+
+        public Builder(int capacity)
+        {
+            _builder = new(capacity);
+        }
+
+        private readonly ArrayBuilder<char> _builder;
+        private char _mask = default;
+
+        public void AddRange(IEnumerable<char> values)
+        {
+            if (values is null) throw new ArgumentNullException(nameof(values));
+
+            foreach (var value in values)
+            {
+                Add(value);
+            }
+        }
+
+        public void AddRange(ReadOnlySpan<char> values)
+        {
+            foreach (var value in values)
+            {
+                Add(value);
+            }
+        }
+
+        public void Add(char value)
+        {
+            _builder.AddAsSortedSet(value);
+            unchecked
+            {
+                _mask |= value;
+            }
+        }
+
+        public CharacterSet Create() => Create(allowDestructive: false);
+
+        internal CharacterSet Create(bool allowDestructive)
+        {
+            CharacterSet result;
+            if (allowDestructive)
+            {
+                result = new(_builder.Extract(), _mask);
+                _mask = default;
+            }
+            else
+            {
+                result = new(_builder.MakeArray(), _mask);
+            }
+
+            return result;
+        }
+    }
 }

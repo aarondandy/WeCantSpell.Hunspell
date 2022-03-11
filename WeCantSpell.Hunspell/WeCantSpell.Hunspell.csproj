@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFrameworks>net6.0;netstandard2.0</TargetFrameworks>
     <LangVersion>10.0</LangVersion>
+    <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
@@ -29,12 +30,16 @@
     <PackageReleaseNotes>@(ReleaseNoteLines, '%0a')</PackageReleaseNotes>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="WeCantSpell.Hunspell.Tests"/>
+  </ItemGroup>
+
   <PropertyGroup>
     <MinVerSkip Condition="'$(Configuration)' == 'Debug'">true</MinVerSkip>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-    <DefineConstants>$(DefineConstants);NO_SB_SPANS;NO_SPAN_SEQUENCEEQUAL_COMPARER</DefineConstants>
+    <DefineConstants>$(DefineConstants);NO_SB_SPANS;NO_SPAN_SEQUENCEEQUAL_COMPARER;NO_HASHCODE;NO_HASHSET_TRYGET;NO_ENCODING_SPANS;NO_DICTIONARY_GETVALUE;NO_HASHSET_CAPACITY;NO_EXPOSED_NULLANNOTATIONS;NO_SPAN_DECODE;NO_VALUETASK;NO_STREAM_SYSMEM</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
@@ -48,12 +53,16 @@
     <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
   </PropertyGroup>
 
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <PackageReference Include="System.Memory" Version="4.5.4" />
+    <PackageReference Include="System.Collections.Immutable" Version="6.0.0" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="MinVer" Version="2.5.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="System.Memory" Version="4.5.4" />
   </ItemGroup>
 
   <ItemGroup>

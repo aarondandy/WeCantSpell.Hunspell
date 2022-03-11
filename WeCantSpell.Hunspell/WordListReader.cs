@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -12,14 +13,11 @@ namespace WeCantSpell.Hunspell;
 
 public sealed class WordListReader
 {
-    private static readonly Regex InitialLineRegex = new Regex(
-        @"^\s*(\d+)\s*(?:[#].*)?$",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
-    private WordListReader(WordList.Builder builder, AffixConfig affix)
+    private WordListReader(WordList.Builder? builder, AffixConfig affix)
     {
         Builder = builder ?? new WordList.Builder(affix);
         Affix = affix;
+        FlagParser = new FlagParser(Affix.FlagMode, Affix.Encoding);
     }
 
     private bool _hasInitialized;
@@ -28,34 +26,9 @@ public sealed class WordListReader
 
     private AffixConfig Affix { get; }
 
+    private FlagParser FlagParser { get; }
+
     private TextInfo TextInfo => Affix.Culture.TextInfo;
-
-    public static async Task<WordList> ReadAsync(Stream dictionaryStream, Stream affixStream)
-    {
-        if (dictionaryStream is null) throw new ArgumentNullException(nameof(dictionaryStream));
-        if (affixStream is null) throw new ArgumentNullException(nameof(affixStream));
-
-        var affixBuilder = new AffixConfig.Builder();
-        var affix = await AffixReader.ReadAsync(affixStream, affixBuilder).ConfigureAwait(false);
-        var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper);
-        return await ReadAsync(dictionaryStream, affix, wordListBuilder);
-    }
-
-    public static async Task<WordList> ReadAsync(IHunspellLineReader dictionaryReader, AffixConfig affix, WordList.Builder builder = null)
-    {
-        if (dictionaryReader is null) throw new ArgumentNullException(nameof(dictionaryReader));
-        if (affix is null) throw new ArgumentNullException(nameof(affix));
-
-        var readerInstance = new WordListReader(builder, affix);
-
-        string line;
-        while ((line = await dictionaryReader.ReadLineAsync().ConfigureAwait(false)) != null)
-        {
-            readerInstance.ParseLine(line);
-        }
-
-        return readerInstance.Builder.MoveToImmutable();
-    }
 
     public static async Task<WordList> ReadFileAsync(string dictionaryFilePath)
     {
@@ -72,53 +45,51 @@ public sealed class WordListReader
 
         var affixBuilder = new AffixConfig.Builder();
         var affix = await AffixReader.ReadFileAsync(affixFilePath, affixBuilder).ConfigureAwait(false);
-        var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper);
+        var wordListBuilder = new WordList.Builder(affix);
         return await ReadFileAsync(dictionaryFilePath, affix, wordListBuilder);
     }
 
-    public static async Task<WordList> ReadAsync(Stream dictionaryStream, AffixConfig affix, WordList.Builder builder = null)
-    {
-        if (dictionaryStream is null) throw new ArgumentNullException(nameof(dictionaryStream));
-        if (affix is null) throw new ArgumentNullException(nameof(affix));
-
-        using var reader = new StaticEncodingLineReader(dictionaryStream, affix.Encoding);
-        return await ReadAsync(reader, affix, builder).ConfigureAwait(false);
-    }
-
-    public static async Task<WordList> ReadFileAsync(string dictionaryFilePath, AffixConfig affix, WordList.Builder builder = null)
+    public static async Task<WordList> ReadFileAsync(string dictionaryFilePath, AffixConfig affix, WordList.Builder? builder = null)
     {
         if (dictionaryFilePath is null) throw new ArgumentNullException(nameof(dictionaryFilePath));
         if (affix is null) throw new ArgumentNullException(nameof(affix));
 
-        using var stream = FileStreamEx.OpenAsyncReadFileStream(dictionaryFilePath);
+        using var stream = StreamEx.OpenAsyncReadFileStream(dictionaryFilePath);
         return await ReadAsync(stream, affix, builder).ConfigureAwait(false);
     }
 
-    public static WordList Read(Stream dictionaryStream, Stream affixStream)
+    public static async Task<WordList> ReadAsync(Stream dictionaryStream, Stream affixStream)
     {
         if (dictionaryStream is null) throw new ArgumentNullException(nameof(dictionaryStream));
         if (affixStream is null) throw new ArgumentNullException(nameof(affixStream));
 
         var affixBuilder = new AffixConfig.Builder();
-        var affix = AffixReader.Read(affixStream, affixBuilder);
-        var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper);
-        return Read(dictionaryStream, affix, wordListBuilder);
+        var affix = await AffixReader.ReadAsync(affixStream, affixBuilder).ConfigureAwait(false);
+        var wordListBuilder = new WordList.Builder(affix);
+        return await ReadAsync(dictionaryStream, affix, wordListBuilder);
     }
 
-    public static WordList Read(IHunspellLineReader dictionaryReader, AffixConfig affix, WordList.Builder builder = null)
+    public static async Task<WordList> ReadAsync(Stream dictionaryStream, AffixConfig affix, WordList.Builder? builder = null)
     {
-        if (dictionaryReader is null) throw new ArgumentNullException(nameof(dictionaryReader));
+        var ct = CancellationToken.None; // TODO
+
+        if (dictionaryStream is null) throw new ArgumentNullException(nameof(dictionaryStream));
         if (affix is null) throw new ArgumentNullException(nameof(affix));
 
         var readerInstance = new WordListReader(builder, affix);
 
-        string line;
-        while ((line = dictionaryReader.ReadLine()) != null)
-        {
-            readerInstance.ParseLine(line);
-        }
+        await performRead().ConfigureAwait(false);
 
         return readerInstance.Builder.MoveToImmutable();
+
+        async Task performRead()
+        {
+            using var lineReader = new LineReader(dictionaryStream, affix.Encoding);
+            while (await lineReader.ReadNextAsync(ct))
+            {
+                readerInstance.ParseLine(lineReader.Current.Span);
+            }
+        }
     }
 
     public static WordList ReadFile(string dictionaryFilePath)
@@ -136,8 +107,44 @@ public sealed class WordListReader
 
         var affixBuilder = new AffixConfig.Builder();
         var affix = AffixReader.ReadFile(affixFilePath, affixBuilder);
-        var wordListBuilder = new WordList.Builder(affix, affixBuilder.FlagSetDeduper, affixBuilder.MorphSetDeduper);
+        var wordListBuilder = new WordList.Builder(affix);
         return ReadFile(dictionaryFilePath, affix, wordListBuilder);
+    }
+
+    public static WordList ReadFile(string dictionaryFilePath, AffixConfig affix, WordList.Builder? builder = null)
+    {
+        if (dictionaryFilePath is null) throw new ArgumentNullException(nameof(dictionaryFilePath));
+        if (affix is null) throw new ArgumentNullException(nameof(affix));
+
+        using var stream = StreamEx.OpenReadFileStream(dictionaryFilePath);
+        return Read(stream, affix, builder);
+    }
+
+    public static WordList Read(Stream dictionaryStream, Stream affixStream)
+    {
+        if (dictionaryStream is null) throw new ArgumentNullException(nameof(dictionaryStream));
+        if (affixStream is null) throw new ArgumentNullException(nameof(affixStream));
+
+        var affixBuilder = new AffixConfig.Builder();
+        var affix = AffixReader.Read(affixStream, affixBuilder);
+        var wordListBuilder = new WordList.Builder(affix);
+        return Read(dictionaryStream, affix, wordListBuilder);
+    }
+
+    public static WordList Read(Stream dictionaryStream, AffixConfig affix, WordList.Builder? builder = null)
+    {
+        if (dictionaryStream is null) throw new ArgumentNullException(nameof(affix));
+        if (affix is null) throw new ArgumentNullException(nameof(affix));
+
+        var readerInstance = new WordListReader(builder, affix);
+
+        using var lineReader = new LineReader(dictionaryStream, affix.Encoding);
+        while (lineReader.ReadNext())
+        {
+            readerInstance.ParseLine(lineReader.Current.Span);
+        }
+
+        return readerInstance.Builder.MoveToImmutable();
     }
 
     private static string FindAffixFilePath(string dictionaryFilePath)
@@ -148,7 +155,7 @@ public sealed class WordListReader
         if (!string.IsNullOrEmpty(directoryName))
         {
             var locatedAffFile = Directory.GetFiles(directoryName, Path.GetFileNameWithoutExtension(dictionaryFilePath) + ".*", SearchOption.TopDirectoryOnly)
-                .FirstOrDefault(affFilePath => ".AFF".Equals(Path.GetExtension(affFilePath), System.StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefault(affFilePath => ".AFF".Equals(Path.GetExtension(affFilePath), StringComparison.OrdinalIgnoreCase));
 
             if (locatedAffFile is not null)
             {
@@ -159,30 +166,8 @@ public sealed class WordListReader
         return Path.ChangeExtension(dictionaryFilePath, "aff");
     }
 
-    public static WordList Read(Stream dictionaryStream, AffixConfig affix, WordList.Builder builder = null)
+    private bool ParseLine(ReadOnlySpan<char> line)
     {
-        if (dictionaryStream is null) throw new ArgumentNullException(nameof(affix));
-        if (affix is null) throw new ArgumentNullException(nameof(affix));
-
-        using var reader = new StaticEncodingLineReader(dictionaryStream, affix.Encoding);
-        return Read(reader, affix, builder);
-    }
-
-    public static WordList ReadFile(string dictionaryFilePath, AffixConfig affix, WordList.Builder builder = null)
-    {
-        if (dictionaryFilePath is null) throw new ArgumentNullException(nameof(dictionaryFilePath));
-        if (affix is null) throw new ArgumentNullException(nameof(affix));
-
-        using var stream = FileStreamEx.OpenReadFileStream(dictionaryFilePath);
-        return Read(stream, affix, builder);
-    }
-
-    private bool ParseLine(string line)
-    {
-#if DEBUG
-        if (line is null) throw new ArgumentNullException(nameof(line));
-#endif
-
         if (line.Length == 0)
         {
             return true;
@@ -209,7 +194,7 @@ public sealed class WordListReader
         {
             if (Affix.IsAliasF)
             {
-                if (IntEx.TryParseInvariant(parsed.Flags, out int flagAliasNumber) && Affix.TryGetAliasF(flagAliasNumber, out FlagSet aliasedFlags))
+                if (IntEx.TryParseInvariant(parsed.Flags, out var flagAliasNumber) && Affix.TryGetAliasF(flagAliasNumber, out var aliasedFlags))
                 {
                     flags = aliasedFlags;
                 }
@@ -219,13 +204,9 @@ public sealed class WordListReader
                     return false;
                 }
             }
-            else if (Affix.FlagMode == FlagMode.Uni)
-            {
-                flags = Builder.Dedup(FlagValue.ParseFlags(HunspellTextFunctions.ReDecodeConvertedStringAsUtf8(parsed.Flags, Affix.Encoding), FlagMode.Char));
-            }
             else
             {
-                flags = Builder.Dedup(FlagValue.ParseFlags(parsed.Flags, Affix.FlagMode));
+                flags = FlagParser.ParseFlagSet(parsed.Flags);
             }
         }
         else
@@ -233,26 +214,30 @@ public sealed class WordListReader
             flags = FlagSet.Empty;
         }
 
-        var morphValues = (parsed.Morphs != null && parsed.Morphs.Length != 0)
-            ? parsed.Morphs
-            : Array.Empty<string>();
-
-        return AddWord(parsed.Word.ToString(), flags, morphValues);
+        return AddWord(parsed.Word.ToString(), flags, parsed.Morphs);
     }
 
-    private bool AttemptToProcessInitializationLine(string line)
+    private bool AttemptToProcessInitializationLine(ReadOnlySpan<char> text)
     {
         _hasInitialized = true;
 
-        var initLineMatch = InitialLineRegex.Match(line);
-        if (initLineMatch.Success)
-        {
-            if (IntEx.TryParseInvariant(initLineMatch.Groups[1].Value, out int expectedSize))
-            {
-                Builder.InitializeEntriesByRoot(expectedSize);
+        // read through any leading spaces
+        int i;
+        for (i = 0; i < text.Length && char.IsWhiteSpace(text[i]); i++) ;
+        text = text.Slice(i);
 
-                return true;
-            }
+        // find the possible value
+        for (i = 0; i < text.Length && !char.IsWhiteSpace(text[i]); i++) ;
+        if (i < text.Length)
+        {
+            text = text.Slice(0, i);
+        }
+
+        if (!text.IsEmpty && IntEx.TryParseInvariant(text, out var expectedSize))
+        {
+            Builder.InitializeEntriesByRoot(expectedSize);
+
+            return true;
         }
 
         return false;
@@ -271,7 +256,7 @@ public sealed class WordListReader
 
             if (morphs.Length != 0 && !Affix.IsAliasM)
             {
-                morphs = MorphSet.CreateReversed(morphs);
+                morphs = MorphSet.CreateReversedStrings(morphs);
             }
         }
 
@@ -288,7 +273,7 @@ public sealed class WordListReader
             var morphBuilder = new List<string>();
             foreach (var originalValue in morphs)
             {
-                if (IntEx.TryParseInvariant(originalValue, out int morphNumber) && Affix.TryGetAliasM(morphNumber, out MorphSet aliasedMorph))
+                if (IntEx.TryParseInvariant(originalValue, out var morphNumber) && Affix.TryGetAliasM(morphNumber, out var aliasedMorph))
                 {
                     morphBuilder.AddRange(aliasedMorph);
                 }
@@ -301,17 +286,14 @@ public sealed class WordListReader
             morphs = morphBuilder.ToArray();
         }
 
-        using (var morphPhonEnumerator = morphs.Where(m => m != null && m.StartsWith(MorphologicalTags.Phon)).GetEnumerator())
+        using (var morphPhonEnumerator = morphs.Where(static m => m is not null && m.StartsWith(MorphologicalTags.Phon)).GetEnumerator())
         {
             if (morphPhonEnumerator.MoveNext())
             {
                 options |= WordEntryOptions.Phon;
+
                 // store ph: fields (pronounciation, misspellings, old orthography etc.)
                 // of a morphological description in reptable to use in REP replacements.
-                if (Builder.PhoneticReplacements == null)
-                {
-                    Builder.PhoneticReplacements = new List<SingleReplacement>();
-                }
 
                 do
                 {
@@ -411,7 +393,7 @@ public sealed class WordListReader
                 var existingEntry = details[i];
                 if (existingEntry.ContainsFlag(SpecialFlags.OnlyUpcaseFlag))
                 {
-                    details[i] = Builder.Dedup(new WordEntryDetail(flags, existingEntry.Morphs, existingEntry.Options));
+                    details[i] = new WordEntryDetail(flags, existingEntry.Morphs, existingEntry.Options);
                     return false;
                 }
             }
@@ -424,11 +406,10 @@ public sealed class WordListReader
         if (!upperCaseHomonym)
         {
             details.Add(
-                Builder.Dedup(
-                    new WordEntryDetail(
-                        flags,
-                        Builder.Dedup(MorphSet.TakeArray(morphs)),
-                        options)));
+                new WordEntryDetail(
+                    flags,
+                    new MorphSet(morphs),
+                    options));
         }
 
         return false;
@@ -450,7 +431,7 @@ public sealed class WordListReader
             !flags.Contains(Affix.ForbiddenWord)
         )
         {
-            flags = Builder.Dedup(FlagSet.Union(flags, SpecialFlags.OnlyUpcaseFlag));
+            flags = flags.Union(SpecialFlags.OnlyUpcaseFlag);
             word = HunspellTextFunctions.MakeTitleCase(word, Affix.Culture);
             return AddWord(word, flags, morphs, true, CapitalizationType.Init);
         }
@@ -460,10 +441,6 @@ public sealed class WordListReader
 
     private readonly ref struct ParsedWordLine
     {
-        public readonly ReadOnlySpan<char> Word;
-        public readonly ReadOnlySpan<char> Flags;
-        public readonly string[] Morphs;
-
         private ParsedWordLine(ReadOnlySpan<char> word, ReadOnlySpan<char> flags, string[] morphs)
         {
             Word = word;
@@ -471,104 +448,105 @@ public sealed class WordListReader
             Morphs = morphs;
         }
 
-        private static readonly Regex MorphPartRegex = new Regex(
-            @"\G([\t ]+(?<morphs>[^\t ]+))*[\t ]*$",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture);
+        public readonly ReadOnlySpan<char> Word;
+        public readonly ReadOnlySpan<char> Flags;
+        public readonly string[] Morphs;
 
-        public static ParsedWordLine Parse(string line)
+        public static ParsedWordLine Parse(ReadOnlySpan<char> line)
         {
-#if DEBUG
-            if (line == null) throw new ArgumentNullException(nameof(line));
-#endif
+            int i;
 
-            int firstNonDelimiterPosition = 0;
-            for (; firstNonDelimiterPosition < line.Length && line[firstNonDelimiterPosition].IsTabOrSpace(); ++firstNonDelimiterPosition) ;
-            if (firstNonDelimiterPosition >= line.Length)
+            // read past any leading tabs or spaces
+            for (i = 0; i < line.Length && line[i].IsTabOrSpace(); ++i) ;
+            if (i > 0)
+            {
+                line = line.Slice(i);
+            }
+            if (line.IsEmpty)
             {
                 return default;
             }
 
-            var endOfWordAndFlagsPosition = FindIndexOfFirstMorphByColonChar(line, firstNonDelimiterPosition);
-            if (endOfWordAndFlagsPosition <= firstNonDelimiterPosition)
+            // Try to locate the end of the word part of a line, taking morphs into consideration
+            var endOfWordAndFlagsPosition = findIndexOfFirstMorphByColonCharAndSpacingHints(line);
+            if (endOfWordAndFlagsPosition <= 0)
             {
-                endOfWordAndFlagsPosition = line.IndexOf('\t', firstNonDelimiterPosition);
+                endOfWordAndFlagsPosition = line.IndexOf('\t');
                 if (endOfWordAndFlagsPosition < 0)
                 {
                     endOfWordAndFlagsPosition = line.Length;
                 }
             }
 
-            for(; endOfWordAndFlagsPosition > firstNonDelimiterPosition && line[endOfWordAndFlagsPosition - 1].IsTabOrSpace(); --endOfWordAndFlagsPosition) ;
+            for(; endOfWordAndFlagsPosition > 0 && line[endOfWordAndFlagsPosition - 1].IsTabOrSpace(); --endOfWordAndFlagsPosition) ;
 
-            var flagsDelimiterPosition = IndexOfFlagsDelimiter(line, firstNonDelimiterPosition, endOfWordAndFlagsPosition);
+            var wordPart = line.Slice(0, endOfWordAndFlagsPosition);
+            var morphPart = line.Slice(endOfWordAndFlagsPosition);
 
-            ReadOnlySpan<char> word;
             ReadOnlySpan<char> flagsPart;
-            if (flagsDelimiterPosition < 0)
+            var flagsDelimiterPosition = indexOfFlagsDelimiter(wordPart);
+            if (flagsDelimiterPosition >= 0)
             {
-                word = line.AsSpan(firstNonDelimiterPosition, endOfWordAndFlagsPosition - firstNonDelimiterPosition);
-                flagsPart = ReadOnlySpan<char>.Empty;
+                flagsPart = wordPart.Slice(flagsDelimiterPosition + 1);
+                wordPart = wordPart.Slice(0, flagsDelimiterPosition);
             }
             else
             {
-                word = line.AsSpan(firstNonDelimiterPosition, flagsDelimiterPosition - firstNonDelimiterPosition);
-                flagsPart = line.AsSpan(flagsDelimiterPosition + 1, endOfWordAndFlagsPosition - flagsDelimiterPosition - 1);
+                flagsPart = ReadOnlySpan<char>.Empty;
             }
 
-            if (!word.IsEmpty)
+            if (wordPart.IsEmpty)
             {
-                var morphGroup = endOfWordAndFlagsPosition >= 0 && endOfWordAndFlagsPosition != line.Length
-                    ? MorphPartRegex.Match(line, endOfWordAndFlagsPosition).Groups["morphs"]
-                    : null;
-
-                return new ParsedWordLine(
-                    word: word.Replace(@"\/", @"/"),
-                    flags: flagsPart,
-                    morphs: morphGroup != null && morphGroup.Success ? GetCapturesAsTest(morphGroup.Captures) : null);
+                return default;
             }
 
-            return default;
-        }
-
-        private static int FindIndexOfFirstMorphByColonChar(string text, int index)
-        {
-            while ((index = text.IndexOf(':', index)) >= 0)
+            var morphs = Array.Empty<string>();
+            if (!morphPart.IsEmpty)
             {
-                var checkLocation = index - 3;
-                if (checkLocation >= 0 && text[checkLocation].IsTabOrSpace())
+                var morphsBuilder = new List<string>();
+                foreach (var morph in morphPart.SplitOnTabOrSpace())
                 {
-                    return checkLocation;
+                    morphsBuilder.Add(morph.ToString());
                 }
 
-                index = index + 1;
+                morphs = morphsBuilder.ToArray();
             }
 
-            return -1;
-        }
+            return new ParsedWordLine(
+                word: wordPart.Replace(@"\/", @"/"),
+                flags: flagsPart,
+                morphs: morphs);
 
-        private static string[] GetCapturesAsTest(CaptureCollection collection)
-        {
-            var results = new string[collection.Count];
-            for (var i = 0; i < collection.Count; i++)
+            static int findIndexOfFirstMorphByColonCharAndSpacingHints(ReadOnlySpan<char> text)
             {
-                results[i] = collection[i].Value;
-            }
-
-            return results;
-        }
-
-        private static int IndexOfFlagsDelimiter(string text, int startIndex, int boundaryIndex)
-        {
-            // NOTE: the first character is ignored as a single slash should be treated as a word
-            for (var i = startIndex + 1; i < boundaryIndex; i++)
-            {
-                if (text[i] == '/' && text[i - 1] != '\\')
+                var index = 0;
+                while ((index = text.IndexOf(':', index)) >= 0)
                 {
-                    return i;
+                    var checkLocation = index - 3;
+                    if (checkLocation >= 0 && text[checkLocation].IsTabOrSpace())
+                    {
+                        return checkLocation;
+                    }
+
+                    index++;
                 }
+
+                return -1;
             }
 
-            return -1;
+            static int indexOfFlagsDelimiter(ReadOnlySpan<char> text)
+            {
+                // NOTE: the first character is ignored as a single slash should be treated as a word
+                for (var i = 1; i < text.Length; i++)
+                {
+                    if (text[i] == '/' && text[i - 1] != '\\')
+                    {
+                        return i;
+                    }
+                }
+
+                return -1;
+            }
         }
     }
 }

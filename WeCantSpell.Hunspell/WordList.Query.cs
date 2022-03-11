@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -9,13 +10,6 @@ public partial class WordList
 {
     private abstract class Query
     {
-        protected Query(WordList wordList)
-        {
-            WordList = wordList;
-            Affix = wordList.Affix;
-            TextInfo = Affix.Culture.TextInfo;
-        }
-
         protected const string DefaultXmlToken = "<?xml?>";
 
         protected const int MaxSharps = 5;
@@ -42,20 +36,27 @@ public partial class WordList
 
         protected const int TimeLimitGlobalMs = 1000 / 4;
 
+        protected Query(WordList wordList)
+        {
+            WordList = wordList;
+            Affix = wordList.Affix;
+            TextInfo = Affix.Culture.TextInfo;
+        }
+
         public WordList WordList { get; }
 
         public AffixConfig Affix { get; }
 
         public TextInfo TextInfo { get; }
 
-        private PrefixEntry Prefix { get; set; }
+        private PrefixEntry? Prefix { get; set; }
 
         /// <summary>
         /// Previous prefix for counting syllables of the prefix.
         /// </summary>
-        private string PrefixAppend { get; set; }
+        private string? PrefixAppend { get; set; }
 
-        private Affix<SuffixEntry> Suffix { get; set; }
+        private Affix<SuffixEntry>? Suffix { get; set; }
 
         private FlagValue SuffixFlag { get; set; }
 
@@ -67,14 +68,14 @@ public partial class WordList
         /// <summary>
         /// Previous suffix for counting syllables of the suffix.
         /// </summary>
-        private string SuffixAppend { get; set; }
+        private string? SuffixAppend { get; set; }
 
         /// <summary>
         /// Used to abort long running compound check calls.
         /// </summary>
-        private OperationTimeLimiter CompoundCheckTimeLimiter;
+        private OperationTimeLimiter? CompoundCheckTimeLimiter;
 
-        protected OperationTimeLimiter GlobalTimeLimiter;
+        protected OperationTimeLimiter? GlobalTimeLimiter;
 
         private void ClearPrefix()
         {
@@ -139,7 +140,7 @@ public partial class WordList
                 (Suffix is not null && Suffix.Entry.ContainsContClass(value))
             );
 
-        private bool ContainFlagsOrBlockSuggest(WordEntryDetail rv, int isSug, FlagValue a, FlagValue b) =>
+        private bool ContainFlagsOrBlockSuggest(in WordEntryDetail rv, int isSug, FlagValue a, FlagValue b) =>
             rv.HasFlags
             &&
             (
@@ -148,7 +149,7 @@ public partial class WordList
                 (isSug != 0 && rv.ContainsFlag(Affix.NoSuggest))
             );
 
-        private bool ContainFlagsOrBlockSuggest(WordEntryDetail rv, int isSug, FlagValue a, FlagValue b, FlagValue c) =>
+        private bool ContainFlagsOrBlockSuggest(in WordEntryDetail rv, int isSug, FlagValue a, FlagValue b, FlagValue c) =>
             rv.HasFlags
             &&
             (
@@ -157,10 +158,10 @@ public partial class WordList
                 (isSug != 0 && rv.ContainsFlag(Affix.NoSuggest))
             );
 
-        private bool HasSpecialInitCap(SpellCheckResultType info, WordEntryDetail he) =>
-            EnumEx.HasFlag(info, SpellCheckResultType.InitCap) && he.ContainsFlag(SpecialFlags.OnlyUpcaseFlag);
-
-        protected WordEntry CheckWord(string word, ref SpellCheckResultType info, out string root)
+        protected WordEntry? CheckWord(
+            string word,
+            ref SpellCheckResultType info,
+            out string? root)
         {
             root = null;
 
@@ -212,7 +213,7 @@ public partial class WordList
                     (
                         heDetails.ContainsAnyFlags(Affix.NeedAffix, Affix.OnlyInCompound)
                         ||
-                        HasSpecialInitCap(info, heDetails)
+                        hasSpecialInitCap(info, heDetails)
                     )
                 )
                 {
@@ -245,7 +246,7 @@ public partial class WordList
                 (
                     he.ContainsFlag(Affix.OnlyInCompound)
                     ||
-                    HasSpecialInitCap(info, he.Detail)
+                    hasSpecialInitCap(info, he.Detail)
                 )
             )
             {
@@ -292,12 +293,15 @@ public partial class WordList
             }
 
             return he;
+
+            static bool hasSpecialInitCap(SpellCheckResultType info, in WordEntryDetail he) =>
+                EnumEx.HasFlag(info, SpellCheckResultType.InitCap) && he.ContainsFlag(SpecialFlags.OnlyUpcaseFlag);
         }
 
-        private WordEntryDetail CompoundCheckWordSearch_OnlyCpdRule(
+        private WordEntryDetail? CompoundCheckWordSearch_OnlyCpdRule(
             WordEntryDetail[] searchEntryDetails,
             FlagValue scpdPatternEntryCondition,
-            ref IncrementalWordList words,
+            ref IncrementalWordList? words,
             IncrementalWordList rwords)
         {
             foreach (var searchEntryDetail in searchEntryDetails)
@@ -307,21 +311,18 @@ public partial class WordList
                     // NOTE: do not reorder DefCompoundCheck calls or other conditions due to side effects
 
                     bool defCpdCheck;
-                    if (words is null)
+                    if (words is not null)
                     {
-                        if (rwords is not null && DefCompoundCheck(rwords, searchEntryDetail, false))
-                        {
-                            words = rwords;
-                            defCpdCheck = true;
-                        }
-                        else
-                        {
-                            defCpdCheck = false;
-                        }
+                        defCpdCheck = DefCompoundCheck(words, searchEntryDetail, false);
+                    }
+                    else if (DefCompoundCheck(rwords, searchEntryDetail, false))
+                    {
+                        words = rwords;
+                        defCpdCheck = true;
                     }
                     else
                     {
-                        defCpdCheck = DefCompoundCheck(words, searchEntryDetail, false);
+                        defCpdCheck = false;
                     }
 
                     // NOTE: do not reorder DefCompoundCheck calls or other conditions due to side effects
@@ -336,7 +337,7 @@ public partial class WordList
             return null;
         }
 
-        private WordEntryDetail CompoundCheckWordSearch_NormalNoWordList(
+        private WordEntryDetail? CompoundCheckWordSearch_NormalNoWordList(
             WordEntryDetail[] searchEntryDetails,
             FlagValue scpdPatternEntryCondition,
             FlagValue compoundPart)
@@ -356,7 +357,7 @@ public partial class WordList
             return null;
         }
 
-        private WordEntryDetail CompoundCheckWordSearch_NormalWithExistingWordList(
+        private WordEntryDetail? CompoundCheckWordSearch_NormalWithExistingWordList(
             WordEntryDetail[] searchEntryDetails,
             FlagValue scpdPatternEntryCondition)
         {
@@ -377,13 +378,13 @@ public partial class WordList
             return null;
         }
 
-        private WordEntry HomonymWordSearch(ReadOnlySpan<char> homonymWord, IncrementalWordList words, FlagValue condition2, bool scpdIsZero)
+        private WordEntry? HomonymWordSearch(ReadOnlySpan<char> homonymWord, IncrementalWordList? words, FlagValue condition2, bool scpdIsZero)
         {
             var homonymWordString = homonymWord.ToString();
             return HomonymWordSearchDetail(homonymWordString, words, condition2, scpdIsZero)?.ToEntry(homonymWordString);
         }
 
-        private WordEntryDetail HomonymWordSearchDetail(string homonymWord, IncrementalWordList words, FlagValue condition2, bool scpdIsZero)
+        private WordEntryDetail? HomonymWordSearchDetail(string homonymWord, IncrementalWordList? words, FlagValue condition2, bool scpdIsZero)
         {
             foreach (var homonymCandidate in LookupDetails(homonymWord))
             {
@@ -417,11 +418,10 @@ public partial class WordList
             return null;
         }
 
-        protected WordEntry CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
+        protected WordEntry? CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
         {
             int oldnumsyllable, oldnumsyllable2, oldwordnum, oldwordnum2;
-            WordEntry rv;
-            WordEntry rvFirst;
+            WordEntry? rv;
             var ch = '\0';
             var simplifiedTripple = false;
             var scpd = 0;
@@ -471,7 +471,6 @@ public partial class WordList
                             return null;
                         }
 
-                        PatternEntry scpdPatternEntry;
                         FlagValue scpdPatternEntryCondition;
                         FlagValue scpdPatternEntryCondition2;
                         if (scpd > 0)
@@ -482,10 +481,8 @@ public partial class WordList
                             {
                                 break; // break simplified checkcompoundpattern loop
                             }
-                            else
-                            {
-                                scpdPatternEntry = Affix.CompoundPatterns[scpd - 1];
-                            }
+
+                            var scpdPatternEntry = Affix.CompoundPatterns[scpd - 1];
 
                             st.WriteChars(scpdPatternEntry.Pattern, i);
 
@@ -508,7 +505,6 @@ public partial class WordList
                         }
                         else
                         {
-                            scpdPatternEntry = null;
                             scpdPatternEntryCondition = default;
                             scpdPatternEntryCondition2 = default;
                         }
@@ -536,11 +532,11 @@ public partial class WordList
                             var searchEntryDetails = LookupDetails(searchEntryWord);
                             if (searchEntryDetails.Length > 0)
                             {
-                                var rvDetail = searchEntryDetails[0];
+                                WordEntryDetail? rvDetail = searchEntryDetails[0];
 
                                 // forbid dictionary stems with COMPOUNDFORBIDFLAG in
                                 // compound words, overriding the effect of COMPOUNDPERMITFLAG
-                                if (rvDetail != null && rvDetail.ContainsFlag(Affix.CompoundForbidFlag) && !huMovRule)
+                                if (!huMovRule && rvDetail.Value.ContainsFlag(Affix.CompoundForbidFlag))
                                 {
                                     continue;
                                 }
@@ -549,7 +545,7 @@ public partial class WordList
                                 {
                                     if (onlycpdrule)
                                     {
-                                        if (!Affix.CompoundRules.IsEmpty && (wordNum == 0 || words is not null))
+                                        if (Affix.CompoundRules.HasItems && (wordNum == 0 || words is not null))
                                         {
                                             rvDetail = CompoundCheckWordSearch_OnlyCpdRule(
                                                 searchEntryDetails,
@@ -568,7 +564,7 @@ public partial class WordList
                                     }
                                     else
                                     {
-                                        if (words == null)
+                                        if (words is null)
                                         {
                                             rvDetail = CompoundCheckWordSearch_NormalNoWordList(
                                                 searchEntryDetails,
@@ -758,7 +754,7 @@ public partial class WordList
                                 (
                                     checkedPrefix
                                     ||
-                                    (words is not null && words.CheckIfCurrentIsNotNull())
+                                    (words?.CheckIfCurrentIsNotNull()).GetValueOrDefault()
                                     ||
                                     rv.ContainsFlag(Affix.CompoundFlag)
                                     ||
@@ -857,7 +853,7 @@ public partial class WordList
                             }
 
                             // NEXT WORD(S)
-                            rvFirst = rv;
+                            WordEntry rvFirst = rv!; // firstWordCompoundAcceptable ensures that rv is not null
 
                             if (i < st.BufferLength)
                             {
@@ -891,7 +887,7 @@ public partial class WordList
                                     {
                                         rv = null;
                                     }
-                                    else if (words is not null && words.CheckIfNextIsNotNull())
+                                    else if ((words?.CheckIfNextIsNotNull()).GetValueOrDefault())
                                     {
                                         st.Destroy();
                                         return rvFirst;
@@ -1072,7 +1068,7 @@ public partial class WordList
 
                                     // - affix syllable num.
                                     // XXX only second suffix (inflections, not derivations)
-                                    if (SuffixAppend != null)
+                                    if (SuffixAppend is not null)
                                     {
                                         numSyllable -= GetSyllable(SuffixAppend.AsSpan().Reversed());
                                     }
@@ -1219,15 +1215,11 @@ public partial class WordList
 
                                             if (Affix.ForbiddenWord.HasValue)
                                             {
-                                                var rv2 = LookupFirst(word);
-
-                                                if (rv2 == null)
-                                                {
-                                                    rv2 = AffixCheck(word.AsSpan(0, len), default, CompoundOptions.Not);
-                                                }
+                                                var rv2 = LookupFirst(word)
+                                                    ?? AffixCheck(word.AsSpan(0, len), default, CompoundOptions.Not);
 
                                                 if (
-                                                    rv2 != null
+                                                    rv2 is not null
                                                     && rv2.ContainsFlag(Affix.ForbiddenWord)
                                                     && rv2.Word.AsSpan().EqualsLimited(st.GetTerminatedSpan(), i + rv.Word.Length)
                                                 )
@@ -1300,13 +1292,13 @@ public partial class WordList
         /// <summary>
         /// Check if word with affixes is correctly spelled.
         /// </summary>
-        private WordEntry AffixCheck(ReadOnlySpan<char> word, FlagValue needFlag, CompoundOptions inCompound) =>
+        private WordEntry? AffixCheck(ReadOnlySpan<char> word, FlagValue needFlag, CompoundOptions inCompound) =>
             AffixCheck(word.ToString(), needFlag, inCompound);
 
         /// <summary>
         /// Check if word with affixes is correctly spelled.
         /// </summary>
-        private WordEntry AffixCheck(string word, FlagValue needFlag, CompoundOptions inCompound)
+        private WordEntry? AffixCheck(string word, FlagValue needFlag, CompoundOptions inCompound)
         {
 #if DEBUG
             if (word is null) throw new ArgumentNullException(nameof(word));
@@ -1316,7 +1308,7 @@ public partial class WordList
             if (rv is null)
             {
                 // if still not found check all suffixes
-                rv = SuffixCheck(word, 0, default, default, needFlag, inCompound);
+                rv = SuffixCheck(word, 0, null, default, needFlag, inCompound);
 
                 if (Affix.ContClasses.HasItems)
                 {
@@ -1341,11 +1333,11 @@ public partial class WordList
         /// <summary>
         /// Check word for prefixes
         /// </summary>
-        protected WordEntry PrefixCheck(string word, CompoundOptions inCompound, FlagValue needFlag)
+        protected WordEntry? PrefixCheck(string word, CompoundOptions inCompound, FlagValue needFlag)
         {
             ClearPrefix();
             ClearAllAppendAndExtra();
-            WordEntry rv;
+            WordEntry? rv;
 
             var isEndCompound = inCompound == CompoundOptions.End;
             if (isEndCompound && Affix.CompoundPermitFlag.IsZero)
@@ -1355,7 +1347,7 @@ public partial class WordList
             }
 
             // first handle the special case of 0 length prefixes
-            foreach (var peGroup in Affix.Prefixes.AffixesWithEmptyKeys)
+            foreach (var peGroup in Affix.Prefixes.AffixesWithEmptyKeys.Groups)
             {
                 foreach (var pe in peGroup.Entries)
                 {
@@ -1368,7 +1360,7 @@ public partial class WordList
                     )
                     {
                         // check prefix
-                        rv = CheckWordPrefix(new Affix<PrefixEntry>(pe, peGroup), word, inCompound, needFlag);
+                        rv = CheckWordPrefix(peGroup.CreateAffix(pe), word, inCompound, needFlag);
                         if (rv is not null)
                         {
                             SetPrefix(pe);
@@ -1402,16 +1394,16 @@ public partial class WordList
             return null;
         }
 
-        protected WordEntry PrefixCheckTwoSfx(string word, CompoundOptions inCompound, FlagValue needFlag)
+        protected WordEntry? PrefixCheckTwoSfx(string word, CompoundOptions inCompound, FlagValue needFlag)
         {
             ClearPrefix();
             ClearSuffixAppendAndExtra();
-            WordEntry rv;
+            WordEntry? rv;
 
             // first handle the special case of 0 length prefixes
-            foreach (var peGroup in Affix.Prefixes.AffixesWithEmptyKeys)
+            foreach (var peGroup in Affix.Prefixes.AffixesWithEmptyKeys.Groups)
             {
-                foreach (var pe in peGroup.CreateAffixes())
+                foreach (var pe in peGroup.ToAffixes())
                 {
                     rv = CheckTwoSfx(pe, word, inCompound, needFlag);
                     if (rv is not null)
@@ -1438,7 +1430,7 @@ public partial class WordList
         /// <summary>
         /// Check if this prefix entry matches.
         /// </summary>
-        private WordEntry CheckTwoSfx(Affix<PrefixEntry> pe, string word, CompoundOptions inCompound, FlagValue needFlag)
+        private WordEntry? CheckTwoSfx(Affix<PrefixEntry> pe, string word, CompoundOptions inCompound, FlagValue needFlag)
         {
             // on entry prefix is 0 length or already matches the beginning of the word.
             // So if the remaining root word has positive length
@@ -1467,7 +1459,7 @@ public partial class WordList
                 // if all conditions are met then check if resulting
                 // root word in the dictionary
 
-                if (peEntry.TestCondition(tmpword))
+                if (peEntry.TestCondition(tmpword.AsSpan()))
                 {
                     // prefix matched but no root word was found
                     // if CrossProduct is allowed, try again but now
@@ -1488,9 +1480,9 @@ public partial class WordList
             return null;
         }
 
-        protected WordEntry SuffixCheck(string word, AffixEntryOptions sfxOpts, Affix<PrefixEntry> pfx, FlagValue cclass, FlagValue needFlag, CompoundOptions inCompound)
+        protected WordEntry? SuffixCheck(string word, AffixEntryOptions sfxOpts, Affix<PrefixEntry>? pfx, FlagValue cclass, FlagValue needFlag, CompoundOptions inCompound)
         {
-            WordEntry rv;
+            WordEntry? rv;
 
             if (!Affix.Suffixes.HasAffixes)
             {
@@ -1516,7 +1508,7 @@ public partial class WordList
             }
 
             // first handle the special case of 0 length suffixes
-            foreach (var seGroup in Affix.Suffixes.AffixesWithEmptyKeys)
+            foreach (var seGroup in Affix.Suffixes.AffixesWithEmptyKeys.Groups)
             {
                 foreach (var se in seGroup.Entries)
                 {
@@ -1552,7 +1544,7 @@ public partial class WordList
                         )
                     )
                     {
-                        var affix = new Affix<SuffixEntry>(se, seGroup);
+                        var affix = seGroup.CreateAffix(se);
                         rv = CheckWordSuffix(affix, word, sfxOpts, pfx, cclass, needFlag, checkWordCclassFlag);
                         if (rv is not null)
                         {
@@ -1593,7 +1585,7 @@ public partial class WordList
                     (
                         inCompoundIsNotEnd
                         ||
-                        pfx != null
+                        pfx is not null
                         ||
                         !sptrEntry.ContainsContClass(Affix.OnlyInCompound)
                     )
@@ -1650,17 +1642,17 @@ public partial class WordList
         /// <summary>
         /// Check word for two-level suffixes.
         /// </summary>
-        protected WordEntry SuffixCheckTwoSfx(string word, AffixEntryOptions sfxopts, Affix<PrefixEntry> pfx, FlagValue needflag)
+        protected WordEntry? SuffixCheckTwoSfx(string word, AffixEntryOptions sfxopts, Affix<PrefixEntry>? pfx, FlagValue needflag)
         {
 #if DEBUG
             if (word is null) throw new ArgumentNullException(nameof(word));
 #endif
-            WordEntry rv;
+            WordEntry? rv;
 
             // first handle the special case of 0 length suffixes
             foreach (var seGroup in Affix.Suffixes.GetAffixesWithEmptyKeysAndFlag(Affix.ContClasses))
             {
-                foreach (var se in seGroup.CreateAffixes())
+                foreach (var se in seGroup.ToAffixes())
                 {
                     rv = CheckTwoSfx(se, word, sfxopts, pfx, needflag);
                     if (rv is not null)
@@ -1679,7 +1671,7 @@ public partial class WordList
             foreach (var sptr in Affix.Suffixes.GetMatchingAffixes(word, Affix.ContClasses))
             {
                 rv = CheckTwoSfx(sptr, word, sfxopts, pfx, needflag);
-                if (rv is not null)
+                if (rv is not null && Suffix is not null)
                 {
                     SetSuffixFlag(Suffix.AFlag);
                     var entry = sptr.Entry;
@@ -1695,16 +1687,18 @@ public partial class WordList
             return null;
         }
 
-        protected WordEntry LookupFirst(string word) => WordList.FindFirstEntryByRootWord(word);
+        protected WordEntry? LookupFirst(string word) => WordList.FindFirstEntryByRootWord(word);
 
         protected WordEntryDetail[] LookupDetails(string word) => WordList.FindEntryDetailsByRootWord(word);
 
-        protected WordEntryDetail LookupFirstDetail(string word) => WordList.FindFirstEntryDetailByRootWord(word);
+        protected WordEntryDetail? LookupFirstDetail(string word) => WordList.FindFirstEntryDetailByRootWord(word);
+
+        protected bool TryLookupFirstDetail(string word, out WordEntryDetail wordEntryDetail) => WordList.TryFindFirstEntryDetailByRootWord(word, out wordEntryDetail);
 
         /// <summary>
         /// Compound check patterns.
         /// </summary>
-        private bool DefCompoundCheck(IncrementalWordList words, WordEntryDetail rv, bool all)
+        private bool DefCompoundCheck(IncrementalWordList words, in WordEntryDetail rv, bool all)
         {
             // has the last word COMPOUNDRULE flag?
             if (Affix.CompoundRules.EntryContainsRuleFlags(rv))
@@ -1793,17 +1787,16 @@ public partial class WordList
                 return false;
             }
 
-            foreach (var replacementEntry in WordList.AllReplacements)
+            foreach (var replacementEntry in WordList.AllReplacements.Replacements)
             {
                 // use only available mid patterns
-                if (!string.IsNullOrEmpty(replacementEntry.Med))
+                if (replacementEntry.Med is { Length: > 0 } replacement)
                 {
                     var rIndex = wordSlice.IndexOf(replacementEntry.Pattern.AsSpan());
                     if (rIndex >= 0)
                     {
                         var word = wordSlice.ToString();
                         var lenp = replacementEntry.Pattern.Length;
-                        var replacement = replacementEntry.Med;
 
                         // search every occurence of the pattern in the word
                         do
@@ -1848,7 +1841,7 @@ public partial class WordList
             return false;
         }
 
-        private WordEntry CheckWordPrefix(Affix<PrefixEntry> affix, string word, CompoundOptions inCompound, FlagValue needFlag)
+        private WordEntry? CheckWordPrefix(Affix<PrefixEntry> affix, string word, CompoundOptions inCompound, FlagValue needFlag)
         {
             // on entry prefix is 0 length or already matches the beginning of the word.
             // So if the remaining root word has positive length
@@ -1873,7 +1866,7 @@ public partial class WordList
                 // if all conditions are met then check if resulting
                 // root word in the dictionary
 
-                if (entry.TestCondition(tmpword))
+                if (entry.TestCondition(tmpword.AsSpan()))
                 {
                     foreach (var detail in LookupDetails(tmpword))
                     {
@@ -1914,7 +1907,7 @@ public partial class WordList
             return null;
         }
 
-        private WordEntry CheckWordSuffix(Affix<SuffixEntry> affix, string word, AffixEntryOptions optFlags, Affix<PrefixEntry> pfx, FlagValue cclass, FlagValue needFlag, FlagValue badFlag)
+        private WordEntry? CheckWordSuffix(Affix<SuffixEntry> affix, string word, AffixEntryOptions optFlags, Affix<PrefixEntry>? pfx, FlagValue cclass, FlagValue needFlag, FlagValue badFlag)
         {
             // if this suffix is being cross checked with a prefix
             // but it does not support cross products skip it
@@ -1961,7 +1954,7 @@ public partial class WordList
 
                 // if all conditions are met then check if resulting
                 // root word in the dictionary
-                if (entry.Conditions.IsEndingMatch(tmpstring))
+                if (entry.Conditions.IsEndingMatch(tmpstring.AsSpan()))
                 {
                     var aFlag = affix.AFlag;
                     foreach (var heDetail in LookupDetails(tmpstring))
@@ -2014,7 +2007,7 @@ public partial class WordList
         /// <summary>
         /// See if two-level suffix is present in the word.
         /// </summary>
-        private WordEntry CheckTwoSfx(Affix<SuffixEntry> se, string word, AffixEntryOptions optflags, Affix<PrefixEntry> ppfx, FlagValue needflag)
+        private WordEntry? CheckTwoSfx(Affix<SuffixEntry> se, string word, AffixEntryOptions optflags, Affix<PrefixEntry>? ppfx, FlagValue needflag)
         {
             // if this suffix is being cross checked with a prefix
             // but it does not support cross products skip it
@@ -2053,11 +2046,11 @@ public partial class WordList
                 // tested
 
                 // if all conditions are met then recall suffix_check
-                if (entry.TestCondition(tmpword))
+                if (entry.TestCondition(tmpword.AsSpan()))
                 {
                     var he = ppfx is not null && entry.ContainsContClass(ppfx.AFlag)
                         // handle conditional suffix
-                        ? SuffixCheck(tmpword, AffixEntryOptions.None, default, se.AFlag, needflag, CompoundOptions.Not)
+                        ? SuffixCheck(tmpword, AffixEntryOptions.None, null, se.AFlag, needflag, CompoundOptions.Not)
                         : SuffixCheck(tmpword, optflags, ppfx, se.AFlag, needflag, CompoundOptions.Not);
 
                     if (he is not null)

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -11,28 +13,7 @@ namespace WeCantSpell.Hunspell;
 /// <typeparam name="TEntry">The specific entry type.</typeparam>
 public sealed class AffixEntryGroup<TEntry> where TEntry : AffixEntry
 {
-    public sealed class Builder
-    {
-        /// <summary>
-        /// All of the entries that make up this group.
-        /// </summary>
-        public List<TEntry> Entries { get; set; }
-
-        /// <summary>
-        /// ID used to represent the affix group.
-        /// </summary>
-        public FlagValue AFlag { get; set; }
-
-        /// <summary>
-        /// Options for this affix group.
-        /// </summary>
-        public AffixEntryOptions Options { get; set; }
-
-        public AffixEntryGroup<TEntry> ToGroup() =>
-            new AffixEntryGroup<TEntry>(AFlag, Options, AffixEntryCollection<TEntry>.Create(Entries));
-    }
-
-    public AffixEntryGroup(FlagValue aFlag, AffixEntryOptions options, AffixEntryCollection<TEntry> entries)
+    private AffixEntryGroup(FlagValue aFlag, AffixEntryOptions options, ImmutableArray<TEntry> entries)
     {
         Entries = entries;
         AFlag = aFlag;
@@ -42,7 +23,7 @@ public sealed class AffixEntryGroup<TEntry> where TEntry : AffixEntry
     /// <summary>
     /// All of the entries that make up this group.
     /// </summary>
-    public AffixEntryCollection<TEntry> Entries { get; }
+    public ImmutableArray<TEntry> Entries { get; }
 
     /// <summary>
     /// ID used to represent the affix group.
@@ -60,7 +41,46 @@ public sealed class AffixEntryGroup<TEntry> where TEntry : AffixEntry
     /// <seealso cref="AffixEntryOptions"/>
     public bool AllowCross => EnumEx.HasFlag(Options, AffixEntryOptions.CrossProduct);
 
-    internal Affix<TEntry>[] CreateAffixes() => Array.ConvertAll(Entries.Items, ProduceFromEntry);
+    internal IEnumerable<Affix<TEntry>> ToAffixes() => Entries.Select(CreateAffix);
 
-    private Affix<TEntry> ProduceFromEntry(TEntry entry) => new(entry, this);
+    internal Affix<TEntry> CreateAffix(TEntry entry) => new(entry, AFlag, Options);
+
+    public sealed class Builder
+    {
+        public Builder(FlagValue aFlag, AffixEntryOptions options) : this(aFlag, options, ImmutableArray.CreateBuilder<TEntry>())
+        {
+        }
+
+        public Builder(FlagValue aFlag, AffixEntryOptions options, ImmutableArray<TEntry>.Builder entries)
+        {
+            AFlag = aFlag;
+            Options = options;
+            Entries = entries ?? throw new ArgumentNullException(nameof(entries));
+        }
+
+        /// <summary>
+        /// All of the entries that make up this group.
+        /// </summary>
+        public ImmutableArray<TEntry>.Builder Entries { get; }
+
+        /// <summary>
+        /// ID used to represent the affix group.
+        /// </summary>
+        public FlagValue AFlag { get; set; }
+
+        /// <summary>
+        /// Options for this affix group.
+        /// </summary>
+        public AffixEntryOptions Options { get; set; }
+
+        public bool HasEntries => Entries.Count > 0;
+
+        public AffixEntryGroup<TEntry> ToImmutable(bool allowDestructive) =>
+            new(AFlag, Options, Entries.ToImmutable(allowDestructive: allowDestructive));
+
+        public void Add(TEntry entry)
+        {
+            Entries.Add(entry);
+        }
+    }
 }

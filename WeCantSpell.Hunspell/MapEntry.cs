@@ -1,20 +1,31 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
-public sealed class MapEntry : ArrayWrapper<string>
+public readonly struct MapEntry : IReadOnlyList<string>
 {
-    public static readonly MapEntry Empty = TakeArray(Array.Empty<string>());
+    public static MapEntry Empty { get; } = new(Array.Empty<string>());
 
-    public static MapEntry Create(IEnumerable<string> values) => values is null ? Empty : TakeArray(values.ToArray());
+    public static MapEntry Create(IEnumerable<string> items) =>
+        new((items ?? throw new ArgumentNullException(nameof(items))).ToArray());
 
-    internal static MapEntry TakeArray(string[] values) => values is null ? Empty : new MapEntry(values);
-
-    private MapEntry(string[] values) : base(values)
+    internal MapEntry(string[] items)
     {
+#if DEBUG
+        if (items is null) throw new ArgumentNullException(nameof(items));
+#endif
+        Items = items;
     }
+
+    internal string[] Items { get; }
+
+    public int Count => Items.Length;
+    public bool IsEmpty => !HasItems;
+    public bool HasItems => Items is { Length: > 0 };
+    public string this[int index] => Items[index];
+    public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)Items).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => Items.GetEnumerator();
 }

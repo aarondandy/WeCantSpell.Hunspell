@@ -30,12 +30,12 @@ public partial class WordList
             }
 
             // input conversion
-            if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out string convertedWord))
+            if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out var convertedWord))
             {
                 convertedWord = word;
             }
 
-            var scw = CleanWord2(convertedWord, out CapitalizationType capType, out int abbv);
+            var scw = CleanWord2(convertedWord, out var capType, out var abbv);
             if (string.IsNullOrEmpty(scw))
             {
                 return new SpellCheckResult(false);
@@ -48,8 +48,8 @@ public partial class WordList
             }
 
             var resultType = SpellCheckResultType.None;
-            string root = null;
-            WordEntry rv = null;
+            string? root = null;
+            WordEntry? rv = null;
 
             if (capType == CapitalizationType.Huh || capType == CapitalizationType.HuhInit || capType == CapitalizationType.None)
             {
@@ -69,7 +69,7 @@ public partial class WordList
                 rv = CheckDetailsAllCap(abbv, ref scw, ref resultType, out root);
             }
 
-            if (capType == CapitalizationType.Init || (capType == CapitalizationType.All && rv == null))
+            if (capType == CapitalizationType.Init || (capType == CapitalizationType.All && rv is null))
             {
                 rv = CheckDetailsInitCap(abbv, capType, ref scw, ref resultType, out root);
             }
@@ -99,7 +99,7 @@ public partial class WordList
                 }
 
                 // check boundary patterns (^begin and end$)
-                foreach (var breakEntry in Affix.BreakPoints)
+                foreach (var breakEntry in Affix.BreakPoints.Entries)
                 {
                     if (breakEntry.Length == 1 || breakEntry.Length > scw.Length)
                     {
@@ -130,7 +130,7 @@ public partial class WordList
                 }
 
                 // other patterns
-                foreach (var breakEntry in Affix.BreakPoints)
+                foreach (var breakEntry in Affix.BreakPoints.Entries)
                 {
                     var found = scw.IndexOf(breakEntry, StringComparison.Ordinal);
                     var remainingLength = scw.Length - breakEntry.Length;
@@ -167,7 +167,7 @@ public partial class WordList
                 }
 
                 // other patterns (break at first break point)
-                foreach (var breakEntry in Affix.BreakPoints)
+                foreach (var breakEntry in Affix.BreakPoints.Entries)
                 {
                     var found = scw.IndexOf(breakEntry, StringComparison.Ordinal);
                     var remainingLength = scw.Length - breakEntry.Length;
@@ -199,7 +199,7 @@ public partial class WordList
             return new SpellCheckResult(root, resultType, false);
         }
 
-        private WordEntry CheckDetailsAllCap(int abbv, ref string scw, ref SpellCheckResultType resultType, out string root)
+        private WordEntry? CheckDetailsAllCap(int abbv, ref string scw, ref SpellCheckResultType resultType, out string? root)
         {
             resultType |= SpellCheckResultType.OrigCap;
             var rv = CheckWord(scw, ref resultType, out root);
@@ -270,7 +270,7 @@ public partial class WordList
             return rv;
         }
 
-        private WordEntry CheckDetailsInitCap(int abbv, CapitalizationType capType, ref string scw, ref SpellCheckResultType resultType, out string root)
+        private WordEntry? CheckDetailsInitCap(int abbv, CapitalizationType capType, ref string scw, ref SpellCheckResultType resultType, out string? root)
         {
             var u8buffer = HunspellTextFunctions.MakeAllSmall(scw, TextInfo);
             scw = HunspellTextFunctions.MakeInitCap(u8buffer, TextInfo);
@@ -360,13 +360,13 @@ public partial class WordList
         /// <summary>
         /// Recursive search for right ss - sharp s permutations
         /// </summary>
-        private WordEntry SpellSharps(ref string @base, ref SpellCheckResultType info, out string root) =>
+        private WordEntry? SpellSharps(ref string @base, ref SpellCheckResultType info, out string? root) =>
             SpellSharps(ref @base, 0, 0, 0, ref info, out root);
 
         /// <summary>
         /// Recursive search for right ss - sharp s permutations
         /// </summary>
-        private WordEntry SpellSharps(ref string @base, int nPos, int n, int repNum, ref SpellCheckResultType info, out string root)
+        private WordEntry? SpellSharps(ref string @base, int nPos, int n, int repNum, ref SpellCheckResultType info, out string? root)
         {
             var pos = @base.IndexOf("ss", nPos, StringComparison.Ordinal);
             if (pos >= 0 && n < MaxSharps)

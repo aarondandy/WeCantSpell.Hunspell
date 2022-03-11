@@ -1,4 +1,6 @@
-﻿using WeCantSpell.Hunspell.Infrastructure;
+﻿using System;
+
+using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
@@ -17,5 +19,5 @@ public sealed class SuffixEntry : AffixEntry
 
     public sealed override string Key { get; }
 
-    internal bool TestCondition(string word) => Conditions.IsEndingMatch(word);
+    internal bool TestCondition(ReadOnlySpan<char> word) => Conditions.IsEndingMatch(word);
 }

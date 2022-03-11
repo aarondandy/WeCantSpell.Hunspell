@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Diagnostics;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
@@ -7,50 +8,64 @@ static class StringEx
 {
     private static readonly char[] SpaceOrTab = { ' ', '\t' };
 
-    public static bool StartsWith(this string @this, char character)
+    public static bool StartsWith(this string @this, char character) => @this.Length != 0 && @this[0] == character;
+
+    public static bool EndsWith(this string @this, char character) => @this.Length > 0 && @this[@this.Length - 1] == character;
+
+    public static string[] SplitOnTabOrSpace(this string @this) => @this.Split(SpaceOrTab, StringSplitOptions.RemoveEmptyEntries);
+
+    public static bool IsTabOrSpace(this char c) => c is ' ' or '\t';
+
+    public static int IndexOfTabOrSpace(this ReadOnlySpan<char> span) => span.IndexOfAny(' ', '\t');
+
+    public static int IndexOfTabOrSpace(this ReadOnlySpan<char> span, int startIndex)
     {
 #if DEBUG
-        if (@this is null) throw new ArgumentNullException(nameof(@this));
+        if (startIndex < 0 || startIndex >= span.Length) throw new ArgumentOutOfRangeException(nameof(startIndex));
 #endif
-        return @this.Length != 0 && @this[0] == character;
+
+        var i = span.Slice(startIndex).IndexOfTabOrSpace();
+        if (i >= 0)
+        {
+            i += startIndex;
+        }
+
+        return i;
     }
 
-    public static bool EndsWith(this string @this, char character)
+    public static ReadOnlySpan<char> GetReversed(this ReadOnlySpan<char> @this)
     {
-#if DEBUG
-        if (@this is null) throw new ArgumentNullException(nameof(@this));
-#endif
-        return @this.Length != 0 && @this[@this.Length - 1] == character;
-    }
-
-    public static string[] SplitOnTabOrSpace(this string @this)
-    {
-#if DEBUG
-        if (@this is null) throw new ArgumentNullException(nameof(@this));
-#endif
-        return @this.Split(SpaceOrTab, StringSplitOptions.RemoveEmptyEntries);
-    }
-
-    public static bool IsTabOrSpace(this char c) => c == ' ' || c == '\t';
-
-    public static string GetReversed(this string @this)
-    {
-        if (@this is null || @this.Length <= 1)
+        if (@this is not { Length: > 1 })
         {
             return @this;
         }
 
-        using (var mo = MemoryPool<char>.Shared.Rent(@this.Length))
+        var buffer = new char[@this.Length];
+        var lastIndex = @this.Length - 1;
+        for (var i = 0; i < buffer.Length; i++)
         {
-            var buffer = mo.Memory.Span.Slice(0, @this.Length);
-            var lastIndex = @this.Length - 1;
-            for (var i = 0; i < buffer.Length; i++)
-            {
-                buffer[i] = @this[lastIndex - i];
-            }
-            
-            return buffer.ToString();
+            buffer[i] = @this[lastIndex - i];
         }
+
+        return buffer;
+    }
+
+    public static string GetReversed(this string @this)
+    {
+        if (@this is not { Length: > 1 })
+        {
+            return @this;
+        }
+
+        using var mo = MemoryPool<char>.Shared.Rent(@this.Length);
+        var buffer = mo.Memory.Span.Slice(0, @this.Length);
+        var lastIndex = @this.Length - 1;
+        for (var i = 0; i < buffer.Length; i++)
+        {
+            buffer[i] = @this[lastIndex - i];
+        }
+
+        return buffer.ToString();
     }
 
     public static bool Contains(this string @this, char value) => @this.IndexOf(value) >= 0;
@@ -102,13 +117,11 @@ static class StringEx
 
     public static string ConcatString(this string @this, ReadOnlySpan<char> value)
     {
-#if DEBUG
-        if (@this is null) throw new ArgumentNullException(nameof(@this));
-#endif
         if (@this.Length == 0)
         {
             return value.ToString();
         }
+
         if (value.IsEmpty)
         {
             return @this;
@@ -125,7 +138,6 @@ static class StringEx
     public static string WithoutIndex(this string @this, int index)
     {
 #if DEBUG
-        if (@this is null) throw new ArgumentNullException(nameof(@this));
         if (index < 0) throw new ArgumentOutOfRangeException(nameof(index));
         if (index >= @this.Length) throw new ArgumentOutOfRangeException(nameof(index));
 #endif
@@ -134,6 +146,7 @@ static class StringEx
         {
             return @this.Substring(1);
         }
+
         var lastIndex = @this.Length - 1;
         if (index == lastIndex)
         {

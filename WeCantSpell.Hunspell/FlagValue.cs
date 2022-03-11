@@ -16,13 +16,13 @@ public readonly struct FlagValue :
 {
     private const char ZeroValue = '\0';
 
-    public static implicit operator int(FlagValue flag) => flag._value;
-
-    public static implicit operator FlagValue(int value) => new(value);
-
     public static implicit operator char(FlagValue flag) => flag._value;
 
-    public static implicit operator FlagValue(char value) => new(value);
+    public static explicit operator FlagValue(char value) => new(value);
+
+    public static implicit operator int(FlagValue flag) => flag._value;
+
+    public static explicit operator FlagValue(int value) => new(value);
 
     public static bool operator !=(FlagValue a, FlagValue b) => a._value != b._value;
 
@@ -36,12 +36,9 @@ public readonly struct FlagValue :
 
     public static bool operator <(FlagValue a, FlagValue b) => a._value < b._value;
 
-    internal static FlagValue Create(char high, char low) => new(unchecked((char)((high << 8) | low)));
+    internal static FlagValue CreateAsLong(char high, char low) => new(unchecked((char)((high << 8) | low)));
 
-    public static bool TryParseFlag(string text, FlagMode mode, out FlagValue value) =>
-        TryParseFlag(text.AsSpan(), mode, out value);
-
-    internal static bool TryParseFlag(ReadOnlySpan<char> text, FlagMode mode, out FlagValue value)
+    internal static bool TryParseAsChar(ReadOnlySpan<char> text, out FlagValue value)
     {
         if (text.IsEmpty)
         {
@@ -49,26 +46,25 @@ public readonly struct FlagValue :
             return false;
         }
 
-        switch (mode)
-        {
-            case FlagMode.Char:
-                value = new FlagValue(text[0]);
-                return true;
-            case FlagMode.Long:
-                var a = text[0];
-                value = text.Length >= 2
-                    ? Create(a, text[1])
-                    : new FlagValue(a);
-                return true;
-            case FlagMode.Num:
-                return TryParseNumberFlag(text, out value);
-            case FlagMode.Uni:
-            default:
-                throw new NotSupportedException();
-        }
+        value = new FlagValue(text[0]);
+        return true;
     }
 
-    private static bool TryParseNumberFlag(ReadOnlySpan<char> text, out FlagValue value)
+    internal static bool TryParseAsLong(ReadOnlySpan<char> text, out FlagValue value)
+    {
+        if (text.IsEmpty)
+        {
+            value = default;
+            return false;
+        }
+
+        value = text.Length >= 2
+            ? CreateAsLong(text[0], text[1])
+            : new FlagValue(text[0]);
+        return true;
+    }
+
+    internal static bool TryParseAsNumber(ReadOnlySpan<char> text, out FlagValue value)
     {
         if (!text.IsEmpty && IntEx.TryParseInvariant(text, out var integerValue) && integerValue >= char.MinValue && integerValue <= char.MaxValue)
         {
@@ -80,21 +76,24 @@ public readonly struct FlagValue :
         return false;
     }
 
-    internal static FlagValue[] ParseFlagsInOrder(ReadOnlySpan<char> text, FlagMode mode) =>
-        mode switch
+    internal static FlagValue[] ParseAsChars(ReadOnlySpan<char> text)
+    {
+        if (text.IsEmpty)
         {
-            FlagMode.Char => text.IsEmpty ? Array.Empty<FlagValue>() : ConvertCharsToFlagsInOrder(text),
-            FlagMode.Long => ParseLongFlagsInOrder(text),
-            FlagMode.Num => ParseNumberFlagsInOrder(text).ToArray(),
-            _ => throw new NotSupportedException(),
-        };
+            return Array.Empty<FlagValue>();
+        }
 
-    public static FlagSet ParseFlags(string text, FlagMode mode) => ParseFlags(text.AsSpan(), mode);
+        var values = new FlagValue[text.Length];
 
-    internal static FlagSet ParseFlags(ReadOnlySpan<char> text, FlagMode mode) =>
-        FlagSet.TakeArray(ParseFlagsInOrder(text, mode));
+        for (var i = 0; i < values.Length; i++)
+        {
+            values[i] = new FlagValue(text[i]);
+        }
 
-    private static FlagValue[] ParseLongFlagsInOrder(ReadOnlySpan<char> text)
+        return values;
+    }
+
+    internal static FlagValue[] ParseAsLongs(ReadOnlySpan<char> text)
     {
         if (text.IsEmpty)
         {
@@ -106,7 +105,7 @@ public readonly struct FlagValue :
         var lastIndex = text.Length - 1;
         for (var i = 0; i < lastIndex; i += 2, flagWriteIndex++)
         {
-            flags[flagWriteIndex] = Create(text[i], text[i + 1]);
+            flags[flagWriteIndex] = CreateAsLong(text[i], text[i + 1]);
         }
 
         if (flagWriteIndex < flags.Length)
@@ -117,35 +116,24 @@ public readonly struct FlagValue :
         return flags;
     }
 
-    private static List<FlagValue> ParseNumberFlagsInOrder(ReadOnlySpan<char> text)
+    internal static FlagValue[] ParseAsNumbers(ReadOnlySpan<char> text)
     {
+        if (text.IsEmpty)
+        {
+            return Array.Empty<FlagValue>();
+        }
+
         var flags = new List<FlagValue>();
 
-        if (!text.IsEmpty)
+        foreach (var part in text.SplitOnComma(StringSplitOptions.RemoveEmptyEntries))
         {
-            text.SplitOnComma((part, _) =>
+            if (TryParseAsNumber(part, out var value))
             {
-                if (TryParseNumberFlag(part, out var value))
-                {
-                    flags.Add(value);
-                }
-
-                return true;
-            });
+                flags.Add(value);
+            }
         }
 
-        return flags;
-    }
-
-    private static FlagValue[] ConvertCharsToFlagsInOrder(ReadOnlySpan<char> text)
-    {
-        var values = new FlagValue[text.Length];
-        for (var i = 0; i < values.Length; i++)
-        {
-            values[i] = new FlagValue(text[i]);
-        }
-
-        return values;
+        return flags.ToArray();
     }
 
     public FlagValue(char value)
@@ -172,14 +160,13 @@ public readonly struct FlagValue :
 
     public bool Equals(char other) => other == _value;
 
-    public override bool Equals(object obj) =>
-        obj switch
-        {
-            FlagValue value => Equals(value),
-            int value => Equals(value),
-            char value => Equals(value),
-            _ => false,
-        };
+    public override bool Equals(object? obj) => obj switch
+    {
+        FlagValue value => Equals(value),
+        int value => Equals(value),
+        char value => Equals(value),
+        _ => false,
+    };
 
     public override int GetHashCode() => _value.GetHashCode();
 
@@ -190,4 +177,20 @@ public readonly struct FlagValue :
     public int CompareTo(char other) => _value.CompareTo(other);
 
     public override string ToString() => ((int)_value).ToString(CultureInfo.InvariantCulture);
+
+    public sealed class Comparer : IComparer<FlagValue>, IEqualityComparer<FlagValue>
+    {
+        public static Comparer Instance { get; } = new();
+
+        private Comparer()
+        {
+
+        }
+
+        public int Compare(FlagValue x, FlagValue y) => x.CompareTo(y);
+
+        public bool Equals(FlagValue x, FlagValue y) => x.Equals(y);
+
+        public int GetHashCode(FlagValue obj) => obj.GetHashCode();
+    }
 }

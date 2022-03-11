@@ -107,9 +107,9 @@ public abstract class AffixEntry
     {
         Strip = strip ?? string.Empty;
         Append = affixText ?? string.Empty;
-        Conditions = conditions ?? CharacterConditionGroup.Empty;
-        MorphCode = morph ?? MorphSet.Empty;
-        ContClass = contClass ?? FlagSet.Empty;
+        Conditions = conditions;
+        MorphCode = morph;
+        ContClass = contClass;
     }
 
     /// <summary>

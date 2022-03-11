@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -11,10 +12,10 @@ public class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacemen
 {
     public static readonly MultiReplacementTable Empty = TakeDictionary(new Dictionary<string, MultiReplacementEntry>(0));
 
-    public static MultiReplacementTable Create(IEnumerable<KeyValuePair<string, MultiReplacementEntry>> replacements) =>
+    public static MultiReplacementTable Create(IEnumerable<KeyValuePair<string, MultiReplacementEntry>>? replacements) =>
         replacements is null ? Empty : TakeDictionary(replacements.ToDictionary(s => s.Key, s => s.Value));
 
-    internal static MultiReplacementTable TakeDictionary(Dictionary<string, MultiReplacementEntry> replacements) =>
+    internal static MultiReplacementTable TakeDictionary(Dictionary<string, MultiReplacementEntry>? replacements) =>
         replacements is null ? Empty : new MultiReplacementTable(replacements);
 
     private MultiReplacementTable(Dictionary<string, MultiReplacementEntry> replacements)
@@ -36,7 +37,13 @@ public class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacemen
 
     public bool ContainsKey(string key) => _replacements.ContainsKey(key);
 
-    public bool TryGetValue(string key, out MultiReplacementEntry value) => _replacements.TryGetValue(key, out value);
+    public bool TryGetValue(
+        string key,
+#if !NO_EXPOSED_NULLANNOTATIONS
+        [MaybeNullWhen(false)]
+#endif
+        out MultiReplacementEntry value
+    ) => _replacements.TryGetValue(key, out value);
 
     internal bool TryConvert(string text, out string converted)
     {
@@ -56,20 +63,18 @@ public class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacemen
 
             for (var i = 0; i < text.Length; i++)
             {
-                var replacementEntry = FindLargestMatchingConversion(text.AsSpan(i));
-                if (replacementEntry != null)
+                if (
+                    FindLargestMatchingConversion(text.AsSpan(i)) is { } replacementEntry
+                    && replacementEntry.ExtractReplacementText(text.Length - i, i == 0) is { Length: > 0 } replacementText)
                 {
-                    var replacementText = replacementEntry.ExtractReplacementText(text.Length - i, i == 0);
-                    if (!string.IsNullOrEmpty(replacementText))
-                    {
-                        convertedBuilder.Append(replacementText);
-                        i += replacementEntry.Pattern.Length - 1;
-                        appliedConversion = true;
-                        continue;
-                    }
+                    convertedBuilder.Append(replacementText);
+                    i += replacementEntry.Pattern.Length - 1;
+                    appliedConversion = true;
                 }
-
-                convertedBuilder.Append(text[i]);
+                else
+                {
+                    convertedBuilder.Append(text[i]);
+                }
             }
 
             converted = StringBuilderPool.GetStringAndReturn(convertedBuilder);
@@ -84,7 +89,7 @@ public class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacemen
     /// <param name="text">The text to find a matching input conversion for.</param>
     /// <returns>The best matching input conversion.</returns>
     /// <seealso cref="MultiReplacementEntry"/>
-    internal MultiReplacementEntry FindLargestMatchingConversion(ReadOnlySpan<char> text)
+    internal MultiReplacementEntry? FindLargestMatchingConversion(ReadOnlySpan<char> text)
     {
         for (var searchLength = text.Length; searchLength > 0; searchLength--)
         {

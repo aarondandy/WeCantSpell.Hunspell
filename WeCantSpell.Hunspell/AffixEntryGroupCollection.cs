@@ -1,20 +1,31 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
-public sealed class AffixEntryGroupCollection<TEntry> : ArrayWrapper<AffixEntryGroup<TEntry>> where TEntry : AffixEntry
+public readonly struct AffixEntryGroupCollection<TEntry> : IReadOnlyList<AffixEntryGroup<TEntry>> where TEntry : AffixEntry
 {
-    public static readonly AffixEntryGroupCollection<TEntry> Empty = TakeArray(Array.Empty<AffixEntryGroup<TEntry>>());
+    public static AffixEntryGroupCollection<TEntry> Empty { get; } = new(Array.Empty<AffixEntryGroup<TEntry>>());
 
-    private AffixEntryGroupCollection(AffixEntryGroup<TEntry>[] entries) : base(entries)
+    public static AffixEntryGroupCollection<TEntry> Create(IEnumerable<AffixEntryGroup<TEntry>> groups) =>
+        new((groups ?? throw new ArgumentNullException(nameof(groups))).ToArray());
+
+    internal AffixEntryGroupCollection(AffixEntryGroup<TEntry>[] groups)
     {
+#if DEBUG
+        if (groups is null) throw new ArgumentNullException(nameof(groups));
+#endif
+        Groups = groups;
     }
 
-    internal static AffixEntryGroupCollection<TEntry> TakeArray(AffixEntryGroup<TEntry>[] entries) => entries is null ? Empty : new AffixEntryGroupCollection<TEntry>(entries);
+    internal AffixEntryGroup<TEntry>[] Groups { get; }
 
-    public static AffixEntryGroupCollection<TEntry> Create(IEnumerable<AffixEntryGroup<TEntry>> entries) => entries is null ? Empty : TakeArray(entries.ToArray());
+    public int Count => Groups.Length;
+    public bool IsEmpty => !HasItems;
+    public bool HasItems => Groups is { Length: > 0 };
+    public AffixEntryGroup<TEntry> this[int index] => Groups[index];
+    public IEnumerator<AffixEntryGroup<TEntry>> GetEnumerator() => ((IEnumerable<AffixEntryGroup<TEntry>>)Groups).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => Groups.GetEnumerator();
 }

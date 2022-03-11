@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using FluentAssertions;
@@ -10,14 +11,14 @@ using Xunit;
 
 namespace WeCantSpell.Hunspell.Tests;
 
-public class DynamicEncodingLineReaderTests
+public class LineReaderTests
 {
     public class ReadLinesTests
     {
         [Fact]
         public void can_read_lines_with_mixed_line_endings()
         {
-            var data = "ABC\r\nDEF\n\rGHI\rJKL\nMNO"
+            var data = "ABC\r\nDEF\r\nGHI\nJKL\nMNO"
                 .ToCharArray()
                 .Select(c => (byte)c)
                 .ToArray();
@@ -30,12 +31,13 @@ public class DynamicEncodingLineReaderTests
                 "MNO"
             };
 
-            using var readStream = new MemoryStream(data);
-            using var reader = new DynamicEncodingLineReader(readStream, Encoding.UTF8);
+            using var reader = new LineReader(new MemoryStream(data), Encoding.UTF8, ownsStream: true);
 
-            var actual = reader.ReadLines()
-                .Where(line => !string.IsNullOrEmpty(line))
-                .ToList();
+            var actual = new List<string>();
+            while (reader.ReadNext())
+            {
+                actual.Add(reader.Current.ToString());
+            }
 
             actual.Should().BeEquivalentTo(expected);
         }
@@ -46,7 +48,7 @@ public class DynamicEncodingLineReaderTests
         [Fact]
         public async Task can_read_lines_with_mixed_line_endings()
         {
-            var data = "ABC\r\nDEF\n\rGHI\rJKL\nMNO"
+            var data = "ABC\r\nDEF\r\nGHI\nJKL\nMNO"
                 .ToCharArray()
                 .Select(c => (byte)c)
                 .ToArray();
@@ -59,12 +61,13 @@ public class DynamicEncodingLineReaderTests
                 "MNO"
             };
 
-            using var readStream = new MemoryStream(data);
-            using var reader = new DynamicEncodingLineReader(readStream, Encoding.UTF8);
+            using var reader = new LineReader(new MemoryStream(data), Encoding.UTF8, ownsStream: true);
 
-            var actual = (await reader.ReadLinesAsync())
-                .Where(line => !string.IsNullOrEmpty(line))
-                .ToList();
+            var actual = new List<string>();
+            while (await reader.ReadNextAsync(CancellationToken.None))
+            {
+                actual.Add(reader.Current.ToString());
+            }
 
             actual.Should().BeEquivalentTo(expected);
         }

@@ -47,12 +47,7 @@ public class HunspellTests
             var expected = searchWord == dictionaryWord;
             var dictionaryBuilder = new WordList.Builder();
             dictionaryBuilder.InitializeEntriesByRoot(1);
-            dictionaryBuilder.Add(
-                dictionaryWord,
-                new WordEntryDetail(
-                    FlagSet.Empty,
-                    MorphSet.Empty,
-                    WordEntryOptions.None));
+            dictionaryBuilder.Add(dictionaryWord, new WordEntryDetail());
 
             var dictionary = dictionaryBuilder.ToImmutable();
 
@@ -86,7 +81,7 @@ public class HunspellTests
         [Theory, MemberData(nameof(can_find_good_words_in_dictionary_args))]
         public async Task can_find_good_words_in_dictionary(string dictionaryFilePath, string word)
         {
-            if (dictionaryFilePath.EndsWith("base_utf.dic") && word.Contains("İ"))
+            if (dictionaryFilePath.EndsWith("base_utf.dic") && word.Contains('İ'))
             {
                 // NOTE: These tests are bypassed because capitalization only works when the language is turkish and the UTF8 dic has no language applied
                 return;
@@ -250,12 +245,12 @@ public class HunspellTests
         [Fact]
         public void untested_suggestion_files_should_not_be_found()
         {
-            var untestedSets = GetSuggestionTestFileSets();
+            var untestedSets = GetSuggestionTestFileSets().Where(s => s.WrongLines.Count != s.SuggestionLines.Count);
 
-            untestedSets.Should().NotContain(s => s.WrongLines.Count != s.SuggestionLines.Count);
+            untestedSets.Should().BeEmpty();
         }
 
-        private static readonly HashSet<string> ExcludedSuggestionFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        private static readonly HashSet<string> ExcludedSuggestionFiles = new(StringComparer.OrdinalIgnoreCase)
         {
             "nosuggest",
             "onlyincompound",
@@ -347,9 +342,7 @@ public class HunspellTests
 
     protected static IEnumerable<string> ExtractLinesFromWordFile(string filePath, Encoding encoding, bool allowBlankLines = false)
     {
-        var results = StaticEncodingLineReader.ReadLines(filePath, encoding)
-            .Where(line => line != null)
-            .Select(line => line.Trim(SpaceOrTab));
+        var results = File.ReadAllLines(filePath, encoding).Select(line => line.Trim(SpaceOrTab));
 
         if (!allowBlankLines)
         {
