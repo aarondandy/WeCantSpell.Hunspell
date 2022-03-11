@@ -161,41 +161,42 @@ static class MemoryEx
         return StringBuilderPool.GetStringAndReturn(builder);
     }
 
-    public static string ReplaceIntoString(this ReadOnlySpan<char> @this, char oldChar, char newChar)
+    public static string ReplaceIntoString(this ReadOnlySpan<char> text, char oldChar, char newChar)
     {
-        if (@this.IsEmpty)
+        if (text.IsEmpty)
         {
             return string.Empty;
         }
 
-        var replaceIndex = @this.IndexOf(oldChar);
-        if (replaceIndex < 0)
+        var replaceIndex = text.IndexOf(oldChar);
+        return replaceIndex < 0
+            ? text.ToString()
+            : buildReplaced(replaceIndex, text, oldChar, newChar);
+
+        static string buildReplaced(int replaceIndex, ReadOnlySpan<char> text, char oldChar, char newChar)
         {
-            return @this.ToString();
+            var builder = StringBuilderPool.Get(text);
+            builder.Replace(oldChar, newChar, replaceIndex, builder.Length - replaceIndex);
+            return StringBuilderPool.GetStringAndReturn(builder);
         }
-
-        var builder = StringBuilderPool.Get(@this);
-
-        do
-        {
-            builder[replaceIndex] = newChar;
-        }
-        while ((replaceIndex = builder.IndexOf(oldChar, replaceIndex + 1)) >= 0);
-
-        return StringBuilderPool.GetStringAndReturn(builder);
     }
 
-    public static ReadOnlySpan<char> Replace(this ReadOnlySpan<char> @this, string oldText, string newText)
+    public static ReadOnlySpan<char> Replace(this ReadOnlySpan<char> text, string oldText, string newText)
     {
-        var replaceIndex = @this.IndexOf(oldText.AsSpan());
-        if (replaceIndex < 0)
+        if (text.IsEmpty)
         {
-            return @this;
+            return ReadOnlySpan<char>.Empty;
         }
 
-        // TODO: use replaceIndex to optimize
+        var replaceIndex = text.IndexOf(oldText.AsSpan());
+        return replaceIndex < 0 ? text : buildReplaced(replaceIndex, text, oldText, newText);
 
-        return @this.ToString().Replace(oldText, newText).AsSpan();
+        static ReadOnlySpan<char> buildReplaced(int replaceIndex, ReadOnlySpan<char> text, string oldText, string newText)
+        {
+            var builder = StringBuilderPool.Get(text);
+            builder.Replace(oldText, newText, replaceIndex, builder.Length - replaceIndex);
+            return StringBuilderPool.GetStringAndReturn(builder).AsSpan();
+        }
     }
 
     public static ReadOnlySpan<char> Reversed(this ReadOnlySpan<char> @this)
