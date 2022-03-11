@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Threading;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -69,13 +70,6 @@ public partial class WordList
         /// Previous suffix for counting syllables of the suffix.
         /// </summary>
         private string? SuffixAppend { get; set; }
-
-        /// <summary>
-        /// Used to abort long running compound check calls.
-        /// </summary>
-        private OperationTimeLimiter? CompoundCheckTimeLimiter;
-
-        protected OperationTimeLimiter? GlobalTimeLimiter;
 
         private void ClearPrefix()
         {
@@ -420,6 +414,12 @@ public partial class WordList
 
         protected WordEntry? CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
         {
+            using var cts = new CancellationTokenSource(TimeLimitCompoundCheckMs);
+            return CompoundCheck(word, wordNum, numSyllable, maxwordnum, words, rwords, huMovRule, isSug, ref info, cts.Token);
+        }
+
+        protected WordEntry? CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info, CancellationToken cancellationToken)
+        {
             int oldnumsyllable, oldnumsyllable2, oldwordnum, oldwordnum2;
             WordEntry? rv;
             var ch = '\0';
@@ -434,15 +434,6 @@ public partial class WordList
 
             var oldwords = words;
             var len = word.Length;
-
-            if (wordNum <= 0)
-            {
-                CompoundCheckTimeLimiter ??= OperationTimeLimiter.Create(TimeLimitCompoundCheckMs);
-            }
-            else if ((CompoundCheckTimeLimiter?.QueryForExpiration()).GetValueOrDefault())
-            {
-                CompoundCheckTimeLimiter = null;
-            }
 
             var cmin = Affix.CompoundMin;
             var cmax = word.Length - cmin + 1;
@@ -466,7 +457,7 @@ public partial class WordList
 
                     do // simplified checkcompoundpattern loop
                     {
-                        if (CompoundCheckTimeLimiter is null)
+                        if (cancellationToken.IsCancellationRequested)
                         {
                             return null;
                         }
@@ -1156,7 +1147,7 @@ public partial class WordList
                                 // perhaps second word is a compound word (recursive call)
                                 if (wordNum < maxwordnum)
                                 {
-                                    rv = CompoundCheck(st.GetTerminatedSpan().Slice(i).ToString(), wordNum + 1, numSyllable, maxwordnum, words?.CreateIncremented(), rwords.CreateIncremented(), false, isSug, ref info);
+                                    rv = CompoundCheck(st.GetTerminatedSpan().Slice(i).ToString(), wordNum + 1, numSyllable, maxwordnum, words?.CreateIncremented(), rwords.CreateIncremented(), false, isSug, ref info, cancellationToken);
 
                                     if (
                                         rv is not null

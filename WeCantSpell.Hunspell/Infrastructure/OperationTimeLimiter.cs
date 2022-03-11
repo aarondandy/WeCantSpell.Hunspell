@@ -2,16 +2,11 @@
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
+[Obsolete("Use a cancellation token instead")]
 class OperationTimeLimiter
 {
     public static OperationTimeLimiter Create(int timeLimitInMs, int queriesToTriggerCheck) =>
-        new OperationTimeLimiter(
-            Environment.TickCount,
-            queriesToTriggerCheck,
-            timeLimitInMs);
-
-    public static OperationTimeLimiter Create(int timeLimitInMs) =>
-        Create(timeLimitInMs, 0);
+        new(Environment.TickCount, queriesToTriggerCheck, timeLimitInMs);
 
     private OperationTimeLimiter(
         long operationStartTime,
