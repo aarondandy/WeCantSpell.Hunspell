@@ -15,10 +15,17 @@ public partial class WordList
         /// <summary>
         /// Timelimit: max ~1/4 sec (process time on Linux) for a time consuming function.
         /// </summary>
-        private const int TimeLimitMs = 1000 >> 2;
+        private static readonly TimeSpan TimeLimit = TimeSpan.FromMilliseconds(250);
 
+        /// <summary>
+        /// This is the number of checks to be performed before considering time based cancellation.
+        /// </summary>
+        /// <remarks>
+        /// I think the purpose of this is to ensure a minimum number of results in slower environments.
+        /// </remarks>
         private const int MinTimer = 100;
 
+        [Obsolete("I'm not sure what this is for.")]
         private const int MaxPlusTimer = 100;
 
         private const int MaxCharDistance = 4;
@@ -701,39 +708,43 @@ public partial class WordList
         /// </summary>
         private int BadChar(List<string> wlst, string word, bool cpdSuggest)
         {
-            if (Affix.TryString is not { Length: > 0 } tryString)
+            if (Affix.TryString is { Length: > 0 } tryString)
             {
-                return wlst.Count;
-            }
-
-            var candidate = StringBuilderPool.Get(word);
-
-            var timer = OperationTimeLimiter.Create(TimeLimitMs, MinTimer);
-
-            // swap out each char one by one and try all the tryme
-            // chars in its place to see if that makes a good word
-            for (var j = 0; j < tryString.Length; j++)
-            {
-                for (var i = candidate.Length - 1; i >= 0; i--)
+                impl();
+                void impl()
                 {
-                    var tmpc = candidate[i];
-                    if (tryString[j] == tmpc)
+                    using var timer = new OperationLimiter(TimeLimit, MinTimer);
+
+                    var candidate = StringBuilderPool.Get(word);
+
+                    // swap out each char one by one and try all the tryme
+                    // chars in its place to see if that makes a good word
+                    for (var j = 0; j < tryString.Length; j++)
                     {
-                        continue;
+                        for (var i = candidate.Length - 1; i >= 0; i--)
+                        {
+                            var tmpc = candidate[i];
+                            if (tryString[j] == tmpc)
+                            {
+                                continue;
+                            }
+
+                            candidate[i] = tryString[j];
+                            TestSug(wlst, candidate.ToString(), cpdSuggest, timer);
+                            candidate[i] = tmpc;
+
+                            if (timer.QueryForCountCancellation())
+                            {
+                                return;
+                            }
+                        }
                     }
 
-                    candidate[i] = tryString[j];
-                    TestSug(wlst, candidate.ToString(), cpdSuggest, timer);
-                    candidate[i] = tmpc;
+                    StringBuilderPool.Return(candidate);
 
-                    if (timer.QueryCounter == 0)
-                    {
-                        return wlst.Count;
-                    }
+                    return;
                 }
             }
-
-            StringBuilderPool.Return(candidate);
 
             return wlst.Count;
         }
@@ -799,30 +810,32 @@ public partial class WordList
         /// </summary>
         private int ForgotChar(List<string> wlst, string word, bool cpdSuggest)
         {
-            if (string.IsNullOrEmpty(Affix.TryString))
+            if (Affix.TryString is { Length: > 0 })
             {
-                return wlst.Count;
-            }
-
-            var candidate = StringBuilderPool.Get(word, word.Length + 1);
-
-            var timer = OperationTimeLimiter.Create(TimeLimitMs, MinTimer);
-
-            // try inserting a tryme character before every letter (and the null terminator)
-            foreach (var tryChar in Affix.TryString)
-            {
-                for (var index = candidate.Length; index >= 0; index--)
+                impl();
+                void impl()
                 {
-                    TestSug(wlst, candidate.ToStringWithInsert(index, tryChar), cpdSuggest, timer);
+                    using var timer = new OperationLimiter(TimeLimit, MinTimer);
 
-                    if (timer.QueryCounter == 0)
+                    var candidate = StringBuilderPool.Get(word, word.Length + 1);
+
+                    // try inserting a tryme character before every letter (and the null terminator)
+                    foreach (var tryChar in Affix.TryString)
                     {
-                        return wlst.Count;
+                        for (var index = candidate.Length; index >= 0; index--)
+                        {
+                            TestSug(wlst, candidate.ToStringWithInsert(index, tryChar), cpdSuggest, timer);
+
+                            if (timer.QueryForCountCancellation())
+                            {
+                                return;
+                            }
+                        }
                     }
+
+                    StringBuilderPool.Return(candidate);
                 }
             }
-
-            StringBuilderPool.Return(candidate);
 
             return wlst.Count;
         }
@@ -990,10 +1003,16 @@ public partial class WordList
             }
 
             var candidate = string.Empty;
-            return MapRelated(word, ref candidate, 0, wlst, cpdSuggest, OperationTimeLimiter.Create(TimeLimitMs, MinTimer));
+            return MapRelated(word, ref candidate, wn: 0, wlst, cpdSuggest);
         }
 
-        private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest, OperationTimeLimiter timer)
+        private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest)
+        {
+            using var timer = new OperationLimiter(TimeLimit, MinTimer);
+            return MapRelated(word, ref candidate, wn, wlst, cpdSuggest, timer);
+        }
+
+        private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest, OperationLimiter timer)
         {
             if (wn >= word.Length)
             {
@@ -1025,7 +1044,7 @@ public partial class WordList
                             candidate = candidatePrefix + otherMapEntryValue;
                             MapRelated(word, ref candidate, wn + mapEntryValue.Length, wlst, cpdSuggest, timer);
 
-                            if (timer.QueryCounter == 0)
+                            if (timer.QueryForCountCancellation())
                             {
                                 return wlst.Count;
                             }
@@ -1043,7 +1062,21 @@ public partial class WordList
             return wlst.Count;
         }
 
-        private void TestSug(List<string> wlst, string candidate, bool cpdSuggest, OperationTimeLimiter? timer = null)
+        private void TestSug(List<string> wlst, string candidate, bool cpdSuggest)
+        {
+            if (
+                wlst.Count < MaxSuggestions
+                &&
+                !wlst.Contains(candidate)
+                &&
+                CheckWord(candidate, cpdSuggest) != 0
+            )
+            {
+                wlst.Add(candidate);
+            }
+        }
+
+        private void TestSug(List<string> wlst, string candidate, bool cpdSuggest, OperationLimiter timer)
         {
             if (
                 wlst.Count < MaxSuggestions
@@ -1057,12 +1090,12 @@ public partial class WordList
             }
         }
 
-        private void TestSug(List<string> wlst, ReadOnlySpan<char> candidate, bool cpdSuggest, OperationTimeLimiter? timer = null)
+        private void TestSug(List<string> wlst, ReadOnlySpan<char> candidate, bool cpdSuggest)
         {
             if (wlst.Count < MaxSuggestions)
             {
                 var candidateWord = candidate.ToString();
-                if (!wlst.Contains(candidateWord) && CheckWord(candidateWord, cpdSuggest, timer) != 0)
+                if (!wlst.Contains(candidateWord) && CheckWord(candidateWord, cpdSuggest) != 0)
                 {
                     wlst.Add(candidateWord);
                     return;
@@ -1070,8 +1103,18 @@ public partial class WordList
             }
         }
 
-        private int CheckWord(ReadOnlySpan<char> word, bool cpdSuggest, OperationTimeLimiter? timer = null) =>
-            CheckWord(word.ToString(), cpdSuggest, timer);
+        private int CheckWord(ReadOnlySpan<char> word, bool cpdSuggest) =>
+            CheckWord(word.ToString(), cpdSuggest);
+
+        private int CheckWord(string word, bool cpdSuggest, OperationLimiter timer)
+        {
+            if (timer.QueryForCountCancellation())
+            {
+                return 0;
+            }
+
+            return CheckWord(word, cpdSuggest);
+        }
 
         /// <summary>
         /// See if a candidate suggestion is spelled correctly
@@ -1082,16 +1125,11 @@ public partial class WordList
         /// return value 2 and 3 marks compounding with hyphen (-)
         /// `3' marks roots without suffix
         /// </remarks>
-        private int CheckWord(string word, bool cpdSuggest, OperationTimeLimiter? timer = null)
+        private int CheckWord(string word, bool cpdSuggest)
         {
 #if DEBUG
             if (word is null) throw new ArgumentNullException(nameof(word));
 #endif
-
-            if (timer is not null && timer.QueryForExpiration())
-            {
-                return 0;
-            }
 
             WordEntry? rv;
             if (cpdSuggest)
@@ -1121,9 +1159,9 @@ public partial class WordList
                     return 0;
                 }
 
-                rv = doThing(word, rvDetails, Affix);
+                rv = findDetailForEntry(word, rvDetails, Affix);
 
-                static WordEntry? doThing(string word, WordEntryDetail[] rvDetails, AffixConfig affix)
+                static WordEntry? findDetailForEntry(string word, WordEntryDetail[] rvDetails, AffixConfig affix)
                 {
 #if DEBUG
                     if (rvDetails.Length <= 0) throw new ArgumentOutOfRangeException(nameof(rvDetails));
