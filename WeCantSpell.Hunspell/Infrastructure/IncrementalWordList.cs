@@ -6,22 +6,21 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 
 sealed class IncrementalWordList
 {
-    public IncrementalWordList() : this(new List<WordEntryDetail?>(), 0)
+    public IncrementalWordList() : this(new(), 0)
     {
     }
 
     public IncrementalWordList(List<WordEntryDetail?> words, int wNum)
     {
 #if DEBUG
-        if (WNum < 0) throw new ArgumentOutOfRangeException(nameof(wNum));
+        if (wNum < 0) throw new ArgumentOutOfRangeException(nameof(wNum));
 #endif
         Words = words;
         WNum = wNum;
     }
 
-    public List<WordEntryDetail?> Words { get; }
-
-    public int WNum { get; }
+    internal readonly List<WordEntryDetail?> Words;
+    internal readonly int WNum;
 
     public void SetCurrent(WordEntryDetail value)
     {
@@ -35,9 +34,7 @@ sealed class IncrementalWordList
         }
         else
         {
-            var filler = WNum - Words.Count;
-            Words.AddRange(Enumerable.Repeat<WordEntryDetail?>(null, Math.Max(filler, 0)));
-            Words.Add(value);
+            Words.AddRange(Enumerable.Repeat<WordEntryDetail?>(null, Math.Max(WNum - Words.Count, 0)).Append(value));
         }
     }
 

@@ -311,21 +311,18 @@ public partial class WordList
                     // NOTE: do not reorder DefCompoundCheck calls or other conditions due to side effects
 
                     bool defCpdCheck;
-                    if (words is null)
+                    if (words is not null)
                     {
-                        if (rwords is not null && DefCompoundCheck(rwords, searchEntryDetail, false))
-                        {
-                            words = rwords;
-                            defCpdCheck = true;
-                        }
-                        else
-                        {
-                            defCpdCheck = false;
-                        }
+                        defCpdCheck = DefCompoundCheck(words, searchEntryDetail, false);
+                    }
+                    else if (DefCompoundCheck(rwords, searchEntryDetail, false))
+                    {
+                        words = rwords;
+                        defCpdCheck = true;
                     }
                     else
                     {
-                        defCpdCheck = DefCompoundCheck(words, searchEntryDetail, false);
+                        defCpdCheck = false;
                     }
 
                     // NOTE: do not reorder DefCompoundCheck calls or other conditions due to side effects
@@ -757,7 +754,7 @@ public partial class WordList
                                 (
                                     checkedPrefix
                                     ||
-                                    (words is not null && words.CheckIfCurrentIsNotNull())
+                                    (words?.CheckIfCurrentIsNotNull()).GetValueOrDefault()
                                     ||
                                     rv.ContainsFlag(Affix.CompoundFlag)
                                     ||
@@ -890,7 +887,7 @@ public partial class WordList
                                     {
                                         rv = null;
                                     }
-                                    else if (words is not null && words.CheckIfNextIsNotNull())
+                                    else if ((words?.CheckIfNextIsNotNull()).GetValueOrDefault())
                                     {
                                         st.Destroy();
                                         return rvFirst;
