@@ -34,7 +34,7 @@ public class OptionsTests
     [Fact]
     public async Task can_limit_slow_suggestions_with_cancellation_token()
     {
-        var word = "awared";
+        var word = "co-incided";
         var wordList = await LoadEnUsAsync();
         var options = new QueryOptions
         {
