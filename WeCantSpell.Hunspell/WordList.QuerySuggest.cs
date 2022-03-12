@@ -1082,7 +1082,6 @@ public partial class WordList
                 if (!wlst.Contains(candidateWord) && CheckWord(candidateWord, cpdSuggest) != 0)
                 {
                     wlst.Add(candidateWord);
-                    return;
                 }
             }
         }
