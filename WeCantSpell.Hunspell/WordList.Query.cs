@@ -403,7 +403,7 @@ public partial class WordList
 
         protected WordEntry? CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
         {
-            var opLimiter = new OperationTimedLimiter(Options.TimeLimitCompoundCheck);
+            var opLimiter = new OperationTimedLimiter(Options.TimeLimitCompoundCheck, Options.CancellationToken);
             return CompoundCheck(word, wordNum, numSyllable, maxwordnum, words, rwords, huMovRule, isSug, ref info, opLimiter);
         }
 

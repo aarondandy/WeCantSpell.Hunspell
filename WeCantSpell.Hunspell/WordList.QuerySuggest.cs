@@ -58,7 +58,7 @@ public partial class WordList
                 return slst;
             }
 
-            var opLimiter = new OperationTimedLimiter(Options.TimeLimitSuggestGlobal);
+            var opLimiter = new OperationTimedLimiter(Options.TimeLimitSuggestGlobal, Options.CancellationToken);
 
             var textInfo = TextInfo;
 
@@ -472,7 +472,7 @@ public partial class WordList
                 word = word.GetReversed();
             }
 
-            var opLimiter = new OperationTimedLimiter(Options.TimeLimitCompoundSuggest);
+            var opLimiter = new OperationTimedLimiter(Options.TimeLimitCompoundSuggest, Options.CancellationToken);
 
             do
             {
@@ -697,7 +697,7 @@ public partial class WordList
                 impl();
                 void impl()
                 {
-                    var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer);
+                    var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, Options.CancellationToken);
 
                     var candidate = StringBuilderPool.Get(word);
 
@@ -799,7 +799,7 @@ public partial class WordList
                 impl();
                 void impl()
                 {
-                    var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer);
+                    var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, Options.CancellationToken);
 
                     var candidate = StringBuilderPool.Get(word, word.Length + 1);
 
@@ -992,7 +992,7 @@ public partial class WordList
 
         private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest)
         {
-            var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer);
+            var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, Options.CancellationToken);
             return MapRelated(word, ref candidate, wn, wlst, cpdSuggest, timer);
         }
 
