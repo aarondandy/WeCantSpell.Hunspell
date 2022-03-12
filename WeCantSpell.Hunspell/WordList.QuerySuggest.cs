@@ -76,7 +76,6 @@ public partial class WordList
             }
 
             using var cts = new CancellationTokenSource(TimeLimitGlobalMs);
-            var globalToken = cts.Token;
 
             var textInfo = TextInfo;
 
@@ -98,7 +97,7 @@ public partial class WordList
             {
                 good |= Suggest(slst, scw, ref onlyCompoundSuggest);
 
-                if (globalToken.IsCancellationRequested)
+                if (cts.IsCancellationRequested)
                 {
                     return slst;
                 }
@@ -108,7 +107,7 @@ public partial class WordList
                     var wspace = scw + ".";
                     good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
-                    if (globalToken.IsCancellationRequested)
+                    if (cts.IsCancellationRequested)
                     {
                         return slst;
                     }
@@ -119,14 +118,14 @@ public partial class WordList
                 capWords = true;
                 good |= Suggest(slst, scw, ref onlyCompoundSuggest);
 
-                if (globalToken.IsCancellationRequested)
+                if (cts.IsCancellationRequested)
                 {
                     return slst;
                 }
 
                 good |= Suggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), ref onlyCompoundSuggest);
 
-                if (globalToken.IsCancellationRequested)
+                if (cts.IsCancellationRequested)
                 {
                     return slst;
                 }
@@ -137,7 +136,7 @@ public partial class WordList
 
                 good |= Suggest(slst, scw, ref onlyCompoundSuggest);
 
-                if (globalToken.IsCancellationRequested)
+                if (cts.IsCancellationRequested)
                 {
                     return slst;
                 }
@@ -158,7 +157,7 @@ public partial class WordList
                     // TheOpenOffice.org -> The OpenOffice.org
                     good |= Suggest(slst, HunspellTextFunctions.MakeInitSmall(scw, textInfo), ref onlyCompoundSuggest);
 
-                    if (globalToken.IsCancellationRequested)
+                    if (cts.IsCancellationRequested)
                     {
                         return slst;
                     }
@@ -173,7 +172,7 @@ public partial class WordList
                 var prevns = slst.Count;
                 good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
-                if (globalToken.IsCancellationRequested)
+                if (cts.IsCancellationRequested)
                 {
                     return slst;
                 }
@@ -188,7 +187,7 @@ public partial class WordList
 
                     good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
-                    if (globalToken.IsCancellationRequested)
+                    if (cts.IsCancellationRequested)
                     {
                         return slst;
                     }
@@ -222,7 +221,7 @@ public partial class WordList
                 var wspace = HunspellTextFunctions.MakeAllSmall(scw, textInfo);
                 good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
-                if (globalToken.IsCancellationRequested)
+                if (cts.IsCancellationRequested)
                 {
                     return slst;
                 }
@@ -235,7 +234,7 @@ public partial class WordList
                 wspace = HunspellTextFunctions.MakeInitCap(wspace, textInfo);
                 good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
-                if (globalToken.IsCancellationRequested)
+                if (cts.IsCancellationRequested)
                 {
                     return slst;
                 }
@@ -300,7 +299,7 @@ public partial class WordList
                     }
                 }
 
-                if (globalToken.IsCancellationRequested)
+                if (cts.IsCancellationRequested)
                 {
                     return slst;
                 }
@@ -490,9 +489,11 @@ public partial class WordList
                 word = word.GetReversed();
             }
 
+            using var cts = new CancellationTokenSource();
+
             do
             {
-                using var cts = new CancellationTokenSource(TimeLimitCompoundSuggestMs);
+                cts.CancelAfter(TimeLimitCompoundSuggestMs);
 
                 // limit compound suggestion
                 if (cpdSuggest)

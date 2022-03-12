@@ -1,6 +1,6 @@
 ﻿# WeCantSpell.Hunspell.Benchmarking.LongRunning.DictionaryFileLoadPerfSpec+BenchmarkSync
 __Ensure that dictionary files can be loaded quickly.__
-_3/12/2022 2:04:47 AM_
+_3/12/2022 2:46:33 AM_
 ### System Info
 ```ini
 NBench=NBench, Version=2.0.1.0, Culture=neutral, PublicKeyToken=null
@@ -23,52 +23,52 @@ Tracing=False
 ### Totals
 |          Metric |           Units |             Max |         Average |             Min |          StdDev |
 |---------------- |---------------- |---------------- |---------------- |---------------- |---------------- |
-|TotalBytesAllocated |           bytes |   99,484,664.00 |   99,484,664.00 |   99,484,664.00 |            0.00 |
+|TotalBytesAllocated |           bytes |  103,617,232.00 |  103,617,232.00 |  103,617,232.00 |            0.00 |
 |TotalCollections [Gen0] |     collections |          328.00 |          328.00 |          328.00 |            0.00 |
-|TotalCollections [Gen1] |     collections |          166.00 |          166.00 |          166.00 |            0.00 |
+|TotalCollections [Gen1] |     collections |          165.00 |          165.00 |          165.00 |            0.00 |
 |TotalCollections [Gen2] |     collections |           25.00 |           25.00 |           25.00 |            0.00 |
-|    Elapsed Time |              ms |       11,629.00 |       11,629.00 |       11,629.00 |            0.00 |
+|    Elapsed Time |              ms |       11,580.00 |       11,580.00 |       11,580.00 |            0.00 |
 |[Counter] DictionaryFilesLoaded |      operations |           59.00 |           59.00 |           59.00 |            0.00 |
 
 ### Per-second Totals
 |          Metric |       Units / s |         Max / s |     Average / s |         Min / s |      StdDev / s |
 |---------------- |---------------- |---------------- |---------------- |---------------- |---------------- |
-|TotalBytesAllocated |           bytes |    8,554,752.84 |    8,554,752.84 |    8,554,752.84 |            0.00 |
-|TotalCollections [Gen0] |     collections |           28.20 |           28.20 |           28.20 |            0.00 |
-|TotalCollections [Gen1] |     collections |           14.27 |           14.27 |           14.27 |            0.00 |
-|TotalCollections [Gen2] |     collections |            2.15 |            2.15 |            2.15 |            0.00 |
-|    Elapsed Time |              ms |          999.99 |          999.99 |          999.99 |            0.00 |
-|[Counter] DictionaryFilesLoaded |      operations |            5.07 |            5.07 |            5.07 |            0.00 |
+|TotalBytesAllocated |           bytes |    8,947,588.05 |    8,947,588.05 |    8,947,588.05 |            0.00 |
+|TotalCollections [Gen0] |     collections |           28.32 |           28.32 |           28.32 |            0.00 |
+|TotalCollections [Gen1] |     collections |           14.25 |           14.25 |           14.25 |            0.00 |
+|TotalCollections [Gen2] |     collections |            2.16 |            2.16 |            2.16 |            0.00 |
+|    Elapsed Time |              ms |          999.96 |          999.96 |          999.96 |            0.00 |
+|[Counter] DictionaryFilesLoaded |      operations |            5.09 |            5.09 |            5.09 |            0.00 |
 
 ### Raw Data
 #### TotalBytesAllocated
 |           Run # |           bytes |       bytes / s |      ns / bytes |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |   99,484,664.00 |    8,554,752.84 |          116.89 |
+|               1 |  103,617,232.00 |    8,947,588.05 |          111.76 |
 
 #### TotalCollections [Gen0]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |          328.00 |           28.20 |   35,454,782.62 |
+|               1 |          328.00 |           28.32 |   35,306,296.34 |
 
 #### TotalCollections [Gen1]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |          166.00 |           14.27 |   70,055,233.13 |
+|               1 |          165.00 |           14.25 |   70,184,637.58 |
 
 #### TotalCollections [Gen2]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |           25.00 |            2.15 |  465,166,748.00 |
+|               1 |           25.00 |            2.16 |  463,218,608.00 |
 
 #### Elapsed Time
 |           Run # |              ms |          ms / s |         ns / ms |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |       11,629.00 |          999.99 |    1,000,014.51 |
+|               1 |       11,580.00 |          999.96 |    1,000,040.17 |
 
 #### [Counter] DictionaryFilesLoaded
 |           Run # |      operations |  operations / s | ns / operations |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |           59.00 |            5.07 |  197,104,554.24 |
+|               1 |           59.00 |            5.09 |  196,279,071.19 |
 
 

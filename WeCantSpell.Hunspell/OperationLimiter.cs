@@ -3,7 +3,7 @@ using System.Threading;
 
 namespace WeCantSpell.Hunspell;
 
-class OperationLimiter : IDisposable
+sealed class OperationLimiter : IDisposable
 {
     public OperationLimiter(TimeSpan timeLimit, int countLimit)
     {
@@ -12,32 +12,27 @@ class OperationLimiter : IDisposable
 #endif
 
         _cts = new CancellationTokenSource(timeLimit);
-        Token = _cts.Token;
-        CountLimit = countLimit;
-        Counter = CountLimit;
+        _counter = countLimit;
     }
 
-    private readonly CancellationTokenSource? _cts;
-
-    public CancellationToken Token { get; }
-    public int CountLimit { get; }
-    public int Counter { get; private set; }
+    private readonly CancellationTokenSource _cts;
+    private int _counter;
 
     public bool QueryForCountCancellation()
     {
-        if (Counter > 0)
+        if (_counter > 0)
         {
-            Counter--;
+            _counter--;
             return false;
         }
         else
         {
-            return Token.IsCancellationRequested;
+            return _cts.IsCancellationRequested;
         }
     }
 
     public void Dispose()
     {
-        _cts?.Dispose();
+        _cts.Dispose();
     }
 }

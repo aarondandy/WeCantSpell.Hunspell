@@ -22,11 +22,16 @@ public class CheckTest
             checkWords.AddRange(line.Split(lineSplitChars, StringSplitOptions.RemoveEmptyEntries));
         }
 
-        Console.WriteLine($"Checking {checkWords.Count} words");
+        const int numLoops = 100;
 
-        foreach (var word in checkWords)
+        Console.WriteLine($"Checking {checkWords.Count} words {numLoops} times");
+
+        for (var i = 0; i < numLoops; i++)
         {
-            _ = wordList.CheckDetails(word);
+            foreach (var word in checkWords)
+            {
+                _ = wordList.CheckDetails(word);
+            }
         }
     }
 }
