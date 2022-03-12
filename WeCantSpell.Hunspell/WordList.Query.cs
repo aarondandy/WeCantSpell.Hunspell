@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Threading;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -414,11 +412,11 @@ public partial class WordList
 
         protected WordEntry? CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
         {
-            using var cts = new CancellationTokenSource(TimeLimitCompoundCheckMs);
-            return CompoundCheck(word, wordNum, numSyllable, maxwordnum, words, rwords, huMovRule, isSug, ref info, cts.Token);
+            var opLimiter = new OperationTimedLimiter(TimeLimitCompoundCheckMs);
+            return CompoundCheck(word, wordNum, numSyllable, maxwordnum, words, rwords, huMovRule, isSug, ref info, opLimiter);
         }
 
-        protected WordEntry? CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info, CancellationToken cancellationToken)
+        protected WordEntry? CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info, OperationTimedLimiter opLimiter)
         {
             int oldnumsyllable, oldnumsyllable2, oldwordnum, oldwordnum2;
             WordEntry? rv;
@@ -457,7 +455,7 @@ public partial class WordList
 
                     do // simplified checkcompoundpattern loop
                     {
-                        if (cancellationToken.IsCancellationRequested)
+                        if (opLimiter.QueryForCancellation())
                         {
                             return null;
                         }
@@ -1147,7 +1145,7 @@ public partial class WordList
                                 // perhaps second word is a compound word (recursive call)
                                 if (wordNum < maxwordnum)
                                 {
-                                    rv = CompoundCheck(st.GetTerminatedSpan().Slice(i).ToString(), wordNum + 1, numSyllable, maxwordnum, words?.CreateIncremented(), rwords.CreateIncremented(), false, isSug, ref info, cancellationToken);
+                                    rv = CompoundCheck(st.GetTerminatedSpan().Slice(i).ToString(), wordNum + 1, numSyllable, maxwordnum, words?.CreateIncremented(), rwords.CreateIncremented(), false, isSug, ref info, opLimiter);
 
                                     if (
                                         rv is not null

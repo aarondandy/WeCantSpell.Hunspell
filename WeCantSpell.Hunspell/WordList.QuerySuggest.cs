@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -75,7 +74,7 @@ public partial class WordList
                 return slst;
             }
 
-            using var cts = new CancellationTokenSource(TimeLimitGlobalMs);
+            var opLimiter = new OperationTimedLimiter(TimeLimitGlobalMs);
 
             var textInfo = TextInfo;
 
@@ -97,7 +96,7 @@ public partial class WordList
             {
                 good |= Suggest(slst, scw, ref onlyCompoundSuggest);
 
-                if (cts.IsCancellationRequested)
+                if (opLimiter.QueryForCancellation())
                 {
                     return slst;
                 }
@@ -107,7 +106,7 @@ public partial class WordList
                     var wspace = scw + ".";
                     good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
-                    if (cts.IsCancellationRequested)
+                    if (opLimiter.QueryForCancellation())
                     {
                         return slst;
                     }
@@ -118,14 +117,14 @@ public partial class WordList
                 capWords = true;
                 good |= Suggest(slst, scw, ref onlyCompoundSuggest);
 
-                if (cts.IsCancellationRequested)
+                if (opLimiter.QueryForCancellation())
                 {
                     return slst;
                 }
 
                 good |= Suggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), ref onlyCompoundSuggest);
 
-                if (cts.IsCancellationRequested)
+                if (opLimiter.QueryForCancellation())
                 {
                     return slst;
                 }
@@ -136,7 +135,7 @@ public partial class WordList
 
                 good |= Suggest(slst, scw, ref onlyCompoundSuggest);
 
-                if (cts.IsCancellationRequested)
+                if (opLimiter.QueryForCancellation())
                 {
                     return slst;
                 }
@@ -157,7 +156,7 @@ public partial class WordList
                     // TheOpenOffice.org -> The OpenOffice.org
                     good |= Suggest(slst, HunspellTextFunctions.MakeInitSmall(scw, textInfo), ref onlyCompoundSuggest);
 
-                    if (cts.IsCancellationRequested)
+                    if (opLimiter.QueryForCancellation())
                     {
                         return slst;
                     }
@@ -172,7 +171,7 @@ public partial class WordList
                 var prevns = slst.Count;
                 good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
-                if (cts.IsCancellationRequested)
+                if (opLimiter.QueryForCancellation())
                 {
                     return slst;
                 }
@@ -187,7 +186,7 @@ public partial class WordList
 
                     good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
-                    if (cts.IsCancellationRequested)
+                    if (opLimiter.QueryForCancellation())
                     {
                         return slst;
                     }
@@ -221,7 +220,7 @@ public partial class WordList
                 var wspace = HunspellTextFunctions.MakeAllSmall(scw, textInfo);
                 good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
-                if (cts.IsCancellationRequested)
+                if (opLimiter.QueryForCancellation())
                 {
                     return slst;
                 }
@@ -234,7 +233,7 @@ public partial class WordList
                 wspace = HunspellTextFunctions.MakeInitCap(wspace, textInfo);
                 good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
-                if (cts.IsCancellationRequested)
+                if (opLimiter.QueryForCancellation())
                 {
                     return slst;
                 }
@@ -299,7 +298,7 @@ public partial class WordList
                     }
                 }
 
-                if (cts.IsCancellationRequested)
+                if (opLimiter.QueryForCancellation())
                 {
                     return slst;
                 }
@@ -489,11 +488,11 @@ public partial class WordList
                 word = word.GetReversed();
             }
 
-            using var cts = new CancellationTokenSource();
+            var opLimiter = new OperationTimedLimiter(TimeLimitCompoundSuggestMs);
 
             do
             {
-                cts.CancelAfter(TimeLimitCompoundSuggestMs);
+                opLimiter.Reset();
 
                 // limit compound suggestion
                 if (cpdSuggest)
@@ -525,7 +524,7 @@ public partial class WordList
                     }
                 }
 
-                if (cts.IsCancellationRequested)
+                if (opLimiter.QueryForCancellation())
                 {
                     return goodSuggestion;
                 }
@@ -536,7 +535,7 @@ public partial class WordList
                     MapChars(slst, word, cpdSuggest);
                 }
 
-                if (cts.IsCancellationRequested)
+                if (opLimiter.QueryForCancellation())
                 {
                     return goodSuggestion;
                 }
@@ -553,7 +552,7 @@ public partial class WordList
                     SwapChar(slst, word, cpdSuggest);
                 }
 
-                if (cts.IsCancellationRequested)
+                if (opLimiter.QueryForCancellation())
                 {
                     return goodSuggestion;
                 }
@@ -564,7 +563,7 @@ public partial class WordList
                     LongSwapChar(slst, word, cpdSuggest);
                 }
 
-                if (cts.IsCancellationRequested)
+                if (opLimiter.QueryForCancellation())
                 {
                     return goodSuggestion;
                 }
@@ -575,7 +574,7 @@ public partial class WordList
                     BadCharKey(slst, word, cpdSuggest);
                 }
 
-                if (cts.IsCancellationRequested)
+                if (opLimiter.QueryForCancellation())
                 {
                     return goodSuggestion;
                 }
@@ -586,7 +585,7 @@ public partial class WordList
                     ExtraChar(slst, word, cpdSuggest);
                 }
 
-                if (cts.IsCancellationRequested)
+                if (opLimiter.QueryForCancellation())
                 {
                     return goodSuggestion;
                 }
@@ -597,7 +596,7 @@ public partial class WordList
                     ForgotChar(slst, word, cpdSuggest);
                 }
 
-                if (cts.IsCancellationRequested)
+                if (opLimiter.QueryForCancellation())
                 {
                     return goodSuggestion;
                 }
@@ -608,7 +607,7 @@ public partial class WordList
                     MoveChar(slst, word, cpdSuggest);
                 }
 
-                if (cts.IsCancellationRequested)
+                if (opLimiter.QueryForCancellation())
                 {
                     return goodSuggestion;
                 }
@@ -619,7 +618,7 @@ public partial class WordList
                     BadChar(slst, word, cpdSuggest);
                 }
 
-                if (cts.IsCancellationRequested)
+                if (opLimiter.QueryForCancellation())
                 {
                     return goodSuggestion;
                 }
@@ -630,7 +629,7 @@ public partial class WordList
                     DoubleTwoChars(slst, word, cpdSuggest);
                 }
 
-                if (cts.IsCancellationRequested)
+                if (opLimiter.QueryForCancellation())
                 {
                     return goodSuggestion;
                 }
@@ -645,7 +644,7 @@ public partial class WordList
                     goodSuggestion = TwoWords(slst, word, cpdSuggest, goodSuggestion);
                 }
 
-                if (cts.IsCancellationRequested)
+                if (opLimiter.QueryForCancellation())
                 {
                     return goodSuggestion;
                 }
@@ -714,7 +713,7 @@ public partial class WordList
                 impl();
                 void impl()
                 {
-                    using var timer = new OperationLimiter(TimeLimit, MinTimer);
+                    var timer = new OperationTimedCountLimiter(TimeLimit, MinTimer);
 
                     var candidate = StringBuilderPool.Get(word);
 
@@ -734,7 +733,7 @@ public partial class WordList
                             TestSug(wlst, candidate.ToString(), cpdSuggest, timer);
                             candidate[i] = tmpc;
 
-                            if (timer.QueryForCountCancellation())
+                            if (timer.QueryForCancellation())
                             {
                                 return;
                             }
@@ -816,7 +815,7 @@ public partial class WordList
                 impl();
                 void impl()
                 {
-                    using var timer = new OperationLimiter(TimeLimit, MinTimer);
+                    var timer = new OperationTimedCountLimiter(TimeLimit, MinTimer);
 
                     var candidate = StringBuilderPool.Get(word, word.Length + 1);
 
@@ -827,7 +826,7 @@ public partial class WordList
                         {
                             TestSug(wlst, candidate.ToStringWithInsert(index, tryChar), cpdSuggest, timer);
 
-                            if (timer.QueryForCountCancellation())
+                            if (timer.QueryForCancellation())
                             {
                                 return;
                             }
@@ -1009,11 +1008,11 @@ public partial class WordList
 
         private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest)
         {
-            using var timer = new OperationLimiter(TimeLimit, MinTimer);
+            var timer = new OperationTimedCountLimiter(TimeLimit, MinTimer);
             return MapRelated(word, ref candidate, wn, wlst, cpdSuggest, timer);
         }
 
-        private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest, OperationLimiter timer)
+        private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest, OperationTimedCountLimiter timer)
         {
             if (wn >= word.Length)
             {
@@ -1045,7 +1044,7 @@ public partial class WordList
                             candidate = candidatePrefix + otherMapEntryValue;
                             MapRelated(word, ref candidate, wn + mapEntryValue.Length, wlst, cpdSuggest, timer);
 
-                            if (timer.QueryForCountCancellation())
+                            if (timer.QueryForCancellation())
                             {
                                 return wlst.Count;
                             }
@@ -1077,7 +1076,7 @@ public partial class WordList
             }
         }
 
-        private void TestSug(List<string> wlst, string candidate, bool cpdSuggest, OperationLimiter timer)
+        private void TestSug(List<string> wlst, string candidate, bool cpdSuggest, OperationTimedCountLimiter timer)
         {
             if (
                 wlst.Count < MaxSuggestions
@@ -1107,9 +1106,9 @@ public partial class WordList
         private int CheckWord(ReadOnlySpan<char> word, bool cpdSuggest) =>
             CheckWord(word.ToString(), cpdSuggest);
 
-        private int CheckWord(string word, bool cpdSuggest, OperationLimiter timer)
+        private int CheckWord(string word, bool cpdSuggest, OperationTimedCountLimiter timer)
         {
-            if (timer.QueryForCountCancellation())
+            if (timer.QueryForCancellation())
             {
                 return 0;
             }
