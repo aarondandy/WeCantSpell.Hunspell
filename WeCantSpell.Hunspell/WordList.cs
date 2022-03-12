@@ -13,6 +13,7 @@ namespace WeCantSpell.Hunspell;
 public sealed partial class WordList
 {
     internal const int MaxWordLen = 100;
+    internal const int MaxWordUtf8Len = MaxWordLen * 3;
 
     public static WordList CreateFromStreams(Stream dictionaryStream, Stream affixStream) =>
         WordListReader.Read(dictionaryStream, affixStream);
@@ -85,11 +86,17 @@ public sealed partial class WordList
 
     private Dictionary<string, WordEntryDetail[]> NGramRestrictedDetails { get; set; }
 
-    public bool Check(string word) => new QueryCheck(this).Check(word);
+    public bool Check(string word) => Check(word, options: null);
 
-    public SpellCheckResult CheckDetails(string word) => new QueryCheck(this).CheckDetails(word);
+    public bool Check(string word, QueryOptions? options) => new QueryCheck(this, options).Check(word);
 
-    public IEnumerable<string> Suggest(string word) => new QuerySuggest(this).Suggest(word);
+    public SpellCheckResult CheckDetails(string word) => CheckDetails(word, options: null);
+
+    public SpellCheckResult CheckDetails(string word, QueryOptions? options) => new QueryCheck(this, options).CheckDetails(word);
+
+    public IEnumerable<string> Suggest(string word) => Suggest(word, options: null);
+
+    public IEnumerable<string> Suggest(string word, QueryOptions? options) => new QuerySuggest(this, options).Suggest(word);
 
     internal WordEntry? FindFirstEntryByRootWord(string rootWord)
     {

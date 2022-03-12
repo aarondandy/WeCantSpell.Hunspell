@@ -11,34 +11,18 @@ public partial class WordList
 {
     private sealed class QuerySuggest : Query
     {
-        /// <summary>
-        /// Timelimit: max ~1/4 sec (process time on Linux) for a time consuming function.
-        /// </summary>
-        private static readonly TimeSpan TimeLimit = TimeSpan.FromMilliseconds(250);
-
-        /// <summary>
-        /// This is the number of checks to be performed before considering time based cancellation.
-        /// </summary>
-        /// <remarks>
-        /// I think the purpose of this is to ensure a minimum number of results in slower environments.
-        /// </remarks>
-        private const int MinTimer = 100;
-
         [Obsolete("I'm not sure what this is for.")]
         private const int MaxPlusTimer = 100;
 
-        private const int MaxCharDistance = 4;
-
-        private const int TimeLimitCompoundSuggestMs = 1000 / 10;
-
-        public QuerySuggest(WordList wordList)
-            : base(wordList)
+        public QuerySuggest(WordList wordList, QueryOptions? options) : base(wordList, options)
         {
         }
 
-        private List<string> SuggestNested(string word) => new QuerySuggest(WordList).Suggest(word);
+        private int MaxCharDistance => Options.MaxCharDistance;
 
-        private bool Check(string word) => new QueryCheck(WordList).Check(word);
+        private List<string> SuggestNested(string word) => new QuerySuggest(WordList, Options).Suggest(word);
+
+        private bool Check(string word) => new QueryCheck(WordList, Options).Check(word);
 
         public List<string> Suggest(string word)
         {
@@ -74,7 +58,7 @@ public partial class WordList
                 return slst;
             }
 
-            var opLimiter = new OperationTimedLimiter(TimeLimitGlobalMs);
+            var opLimiter = new OperationTimedLimiter(Options.TimeLimitSuggestGlobal);
 
             var textInfo = TextInfo;
 
@@ -488,13 +472,13 @@ public partial class WordList
                 word = word.GetReversed();
             }
 
-            var opLimiter = new OperationTimedLimiter(TimeLimitCompoundSuggestMs);
+            var opLimiter = new OperationTimedLimiter(Options.TimeLimitCompoundSuggest);
 
             do
             {
+                // limit compound suggestion
                 opLimiter.Reset();
 
-                // limit compound suggestion
                 if (cpdSuggest)
                 {
                     oldSug = slst.Count;
@@ -659,7 +643,7 @@ public partial class WordList
             return goodSuggestion;
         }
 
-        private SpellCheckResult CheckDetails(string word) => new QueryCheck(WordList).CheckDetails(word);
+        private SpellCheckResult CheckDetails(string word) => new QueryCheck(WordList, Options).CheckDetails(word);
 
         /// <summary>
         /// perhaps we doubled two characters (pattern aba -> ababa, for example vacation -> vacacation)
@@ -713,7 +697,7 @@ public partial class WordList
                 impl();
                 void impl()
                 {
-                    var timer = new OperationTimedCountLimiter(TimeLimit, MinTimer);
+                    var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer);
 
                     var candidate = StringBuilderPool.Get(word);
 
@@ -815,7 +799,7 @@ public partial class WordList
                 impl();
                 void impl()
                 {
-                    var timer = new OperationTimedCountLimiter(TimeLimit, MinTimer);
+                    var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer);
 
                     var candidate = StringBuilderPool.Get(word, word.Length + 1);
 
@@ -1008,7 +992,7 @@ public partial class WordList
 
         private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest)
         {
-            var timer = new OperationTimedCountLimiter(TimeLimit, MinTimer);
+            var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer);
             return MapRelated(word, ref candidate, wn, wlst, cpdSuggest, timer);
         }
 

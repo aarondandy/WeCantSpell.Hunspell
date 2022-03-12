@@ -9,13 +9,13 @@ public partial class WordList
 {
     private sealed class QueryCheck : Query
     {
-        public QueryCheck(WordList wordList) : base(wordList)
+        public QueryCheck(WordList wordList, QueryOptions? options) : base(wordList, options)
         {
         }
 
         public bool Check(string word) => CheckDetails(word).Correct;
 
-        private bool CheckNested(string word) => new QueryCheck(WordList).Check(word);
+        private bool CheckNested(string word) => new QueryCheck(WordList, Options).Check(word);
 
         public SpellCheckResult CheckDetails(string word)
         {

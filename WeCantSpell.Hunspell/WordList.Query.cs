@@ -10,41 +10,24 @@ public partial class WordList
     private abstract class Query
     {
         protected const string DefaultXmlToken = "<?xml?>";
-
-        protected const int MaxSharps = 5;
-
-        protected const int MaxWordUtf8Len = MaxWordLen * 3;
-
-        protected const int MaxCompoundSuggestions = 3;
-
-        protected const int MaxSuggestions = 15;
-
-        protected const int MaxRoots = 100;
-
-        protected const int MaxWords = 100;
-
-        protected const int MaxGuess = 200;
-
-        protected const int MaxPhonSugs = 2;
-
         protected const int MaxPhoneTLen = 256;
-
         protected const int MaxPhoneTUtf8Len = MaxPhoneTLen * 4;
 
-        protected const int TimeLimitCompoundCheckMs = 1000 / 20;
+        protected static QueryOptions DefaultOptions { get; } = new();
 
-        protected const int TimeLimitGlobalMs = 1000 / 4;
-
-        protected Query(WordList wordList)
+        protected Query(WordList wordList, QueryOptions? options)
         {
             WordList = wordList;
             Affix = wordList.Affix;
             TextInfo = Affix.Culture.TextInfo;
+            Options = options ?? DefaultOptions;
         }
 
         public WordList WordList { get; }
 
         public AffixConfig Affix { get; }
+
+        public QueryOptions Options { get; }
 
         public TextInfo TextInfo { get; }
 
@@ -68,6 +51,14 @@ public partial class WordList
         /// Previous suffix for counting syllables of the suffix.
         /// </summary>
         private string? SuffixAppend { get; set; }
+
+        protected int MaxSharps => Options.MaxSharps;
+        protected int MaxCompoundSuggestions => Options.MaxCompoundSuggestions;
+        protected int MaxSuggestions => Options.MaxSuggestions;
+        protected int MaxRoots => Options.MaxRoots;
+        protected int MaxWords => Options.MaxWords;
+        protected int MaxGuess => Options.MaxGuess;
+        protected int MaxPhonSugs => Options.MaxPhoneticSuggestions;
 
         private void ClearPrefix()
         {
@@ -412,7 +403,7 @@ public partial class WordList
 
         protected WordEntry? CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
         {
-            var opLimiter = new OperationTimedLimiter(TimeLimitCompoundCheckMs);
+            var opLimiter = new OperationTimedLimiter(Options.TimeLimitCompoundCheck);
             return CompoundCheck(word, wordNum, numSyllable, maxwordnum, words, rwords, huMovRule, isSug, ref info, opLimiter);
         }
 
