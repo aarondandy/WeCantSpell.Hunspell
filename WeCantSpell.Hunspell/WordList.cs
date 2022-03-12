@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -22,18 +23,19 @@ public sealed partial class WordList
     public static WordList CreateFromFiles(string dictionaryFilePath, string affixFilePath) =>
         WordListReader.ReadFile(dictionaryFilePath, affixFilePath);
 
-    public static async Task<WordList> CreateFromStreamsAsync(Stream dictionaryStream, Stream affixStream) =>
-        await WordListReader.ReadAsync(dictionaryStream, affixStream).ConfigureAwait(false);
+    public static Task<WordList> CreateFromStreamsAsync(Stream dictionaryStream, Stream affixStream, CancellationToken cancellationToken = default) =>
+        WordListReader.ReadAsync(dictionaryStream, affixStream, cancellationToken);
 
-    public static async Task<WordList> CreateFromFilesAsync(string dictionaryFilePath) =>
-        await WordListReader.ReadFileAsync(dictionaryFilePath).ConfigureAwait(false);
+    public static Task<WordList> CreateFromFilesAsync(string dictionaryFilePath, CancellationToken cancellationToken = default) =>
+        WordListReader.ReadFileAsync(dictionaryFilePath, cancellationToken);
 
-    public static async Task<WordList> CreateFromFilesAsync(string dictionaryFilePath, string affixFilePath) =>
-        await WordListReader.ReadFileAsync(dictionaryFilePath, affixFilePath).ConfigureAwait(false);
+    public static Task<WordList> CreateFromFilesAsync(string dictionaryFilePath, string affixFilePath, CancellationToken cancellationToken = default) =>
+        WordListReader.ReadFileAsync(dictionaryFilePath, affixFilePath, cancellationToken);
 
-    public static WordList CreateFromWords(IEnumerable<string> words) => CreateFromWords(
-        words ?? throw new ArgumentNullException(nameof(words)),
-        new AffixConfig.Builder().MoveToImmutable());
+    public static WordList CreateFromWords(IEnumerable<string> words) =>
+        CreateFromWords(
+            words ?? throw new ArgumentNullException(nameof(words)),
+            new AffixConfig.Builder().MoveToImmutable());
 
     public static WordList CreateFromWords(IEnumerable<string> words, AffixConfig affix)
     {
