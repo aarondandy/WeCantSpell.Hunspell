@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -11,41 +10,24 @@ public partial class WordList
     private abstract class Query
     {
         protected const string DefaultXmlToken = "<?xml?>";
-
-        protected const int MaxSharps = 5;
-
-        protected const int MaxWordUtf8Len = MaxWordLen * 3;
-
-        protected const int MaxCompoundSuggestions = 3;
-
-        protected const int MaxSuggestions = 15;
-
-        protected const int MaxRoots = 100;
-
-        protected const int MaxWords = 100;
-
-        protected const int MaxGuess = 200;
-
-        protected const int MaxPhonSugs = 2;
-
         protected const int MaxPhoneTLen = 256;
-
         protected const int MaxPhoneTUtf8Len = MaxPhoneTLen * 4;
 
-        protected const int TimeLimitCompoundCheckMs = 1000 / 20;
+        protected static QueryOptions DefaultOptions { get; } = new();
 
-        protected const int TimeLimitGlobalMs = 1000 / 4;
-
-        protected Query(WordList wordList)
+        protected Query(WordList wordList, QueryOptions? options)
         {
             WordList = wordList;
             Affix = wordList.Affix;
             TextInfo = Affix.Culture.TextInfo;
+            Options = options ?? DefaultOptions;
         }
 
         public WordList WordList { get; }
 
         public AffixConfig Affix { get; }
+
+        public QueryOptions Options { get; }
 
         public TextInfo TextInfo { get; }
 
@@ -70,12 +52,13 @@ public partial class WordList
         /// </summary>
         private string? SuffixAppend { get; set; }
 
-        /// <summary>
-        /// Used to abort long running compound check calls.
-        /// </summary>
-        private OperationTimeLimiter? CompoundCheckTimeLimiter;
-
-        protected OperationTimeLimiter? GlobalTimeLimiter;
+        protected int MaxSharps => Options.MaxSharps;
+        protected int MaxCompoundSuggestions => Options.MaxCompoundSuggestions;
+        protected int MaxSuggestions => Options.MaxSuggestions;
+        protected int MaxRoots => Options.MaxRoots;
+        protected int MaxWords => Options.MaxWords;
+        protected int MaxGuess => Options.MaxGuess;
+        protected int MaxPhonSugs => Options.MaxPhoneticSuggestions;
 
         private void ClearPrefix()
         {
@@ -420,6 +403,12 @@ public partial class WordList
 
         protected WordEntry? CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
         {
+            var opLimiter = new OperationTimedLimiter(Options.TimeLimitCompoundCheck, Options.CancellationToken);
+            return CompoundCheck(word, wordNum, numSyllable, maxwordnum, words, rwords, huMovRule, isSug, ref info, opLimiter);
+        }
+
+        protected WordEntry? CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info, OperationTimedLimiter opLimiter)
+        {
             int oldnumsyllable, oldnumsyllable2, oldwordnum, oldwordnum2;
             WordEntry? rv;
             var ch = '\0';
@@ -434,15 +423,6 @@ public partial class WordList
 
             var oldwords = words;
             var len = word.Length;
-
-            if (wordNum <= 0)
-            {
-                CompoundCheckTimeLimiter ??= OperationTimeLimiter.Create(TimeLimitCompoundCheckMs);
-            }
-            else if ((CompoundCheckTimeLimiter?.QueryForExpiration()).GetValueOrDefault())
-            {
-                CompoundCheckTimeLimiter = null;
-            }
 
             var cmin = Affix.CompoundMin;
             var cmax = word.Length - cmin + 1;
@@ -466,7 +446,7 @@ public partial class WordList
 
                     do // simplified checkcompoundpattern loop
                     {
-                        if (CompoundCheckTimeLimiter is null)
+                        if (opLimiter.QueryForCancellation())
                         {
                             return null;
                         }
@@ -1156,7 +1136,7 @@ public partial class WordList
                                 // perhaps second word is a compound word (recursive call)
                                 if (wordNum < maxwordnum)
                                 {
-                                    rv = CompoundCheck(st.GetTerminatedSpan().Slice(i).ToString(), wordNum + 1, numSyllable, maxwordnum, words?.CreateIncremented(), rwords.CreateIncremented(), false, isSug, ref info);
+                                    rv = CompoundCheck(st.GetTerminatedSpan().Slice(i).ToString(), wordNum + 1, numSyllable, maxwordnum, words?.CreateIncremented(), rwords.CreateIncremented(), false, isSug, ref info, opLimiter);
 
                                     if (
                                         rv is not null

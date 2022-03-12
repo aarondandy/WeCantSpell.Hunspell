@@ -318,7 +318,7 @@ internal sealed class LineReader : IDisposable
 
     private int DecodeIntoBufferLines(ReadOnlySpan<byte> fileReadByteBuffer)
     {
-        int linesAdded = 0;
+        var linesAdded = 0;
 
         if (!_hasReadPreamble)
         {

@@ -11,32 +11,18 @@ public partial class WordList
 {
     private sealed class QuerySuggest : Query
     {
-        /// <summary>
-        /// Timelimit: max ~1/4 sec (process time on Linux) for a time consuming function.
-        /// </summary>
-        private const int TimeLimitMs = 1000 >> 2;
-
-        private const int MinTimer = 100;
-
+        [Obsolete("I'm not sure what this is for.")]
         private const int MaxPlusTimer = 100;
 
-        private const int MaxCharDistance = 4;
-
-        private const int TimeLimitCompoundSuggestMs = 1000 / 10;
-
-        public QuerySuggest(WordList wordList)
-            : base(wordList)
+        public QuerySuggest(WordList wordList, QueryOptions? options) : base(wordList, options)
         {
         }
 
-        /// <summary>
-        /// Used to abort long running compound check calls.
-        /// </summary>
-        private OperationTimeLimiter? CompoundSuggestTimeLimiter;
+        private int MaxCharDistance => Options.MaxCharDistance;
 
-        private List<string> SuggestNested(string word) => new QuerySuggest(WordList).Suggest(word);
+        private List<string> SuggestNested(string word) => new QuerySuggest(WordList, Options).Suggest(word);
 
-        private bool Check(string word) => new QueryCheck(WordList).Check(word);
+        private bool Check(string word) => new QueryCheck(WordList, Options).Check(word);
 
         public List<string> Suggest(string word)
         {
@@ -72,14 +58,7 @@ public partial class WordList
                 return slst;
             }
 
-            if (GlobalTimeLimiter is null)
-            {
-                GlobalTimeLimiter = OperationTimeLimiter.Create(TimeLimitGlobalMs);
-            }
-            else
-            {
-                GlobalTimeLimiter.Reset();
-            }
+            var opLimiter = new OperationTimedLimiter(Options.TimeLimitSuggestGlobal, Options.CancellationToken);
 
             var textInfo = TextInfo;
 
@@ -101,7 +80,7 @@ public partial class WordList
             {
                 good |= Suggest(slst, scw, ref onlyCompoundSuggest);
 
-                if (GlobalTimeLimiter.QueryForExpiration())
+                if (opLimiter.QueryForCancellation())
                 {
                     return slst;
                 }
@@ -111,7 +90,7 @@ public partial class WordList
                     var wspace = scw + ".";
                     good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
-                    if (GlobalTimeLimiter.QueryForExpiration())
+                    if (opLimiter.QueryForCancellation())
                     {
                         return slst;
                     }
@@ -122,14 +101,14 @@ public partial class WordList
                 capWords = true;
                 good |= Suggest(slst, scw, ref onlyCompoundSuggest);
 
-                if (GlobalTimeLimiter.QueryForExpiration())
+                if (opLimiter.QueryForCancellation())
                 {
                     return slst;
                 }
 
                 good |= Suggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), ref onlyCompoundSuggest);
 
-                if (GlobalTimeLimiter.QueryForExpiration())
+                if (opLimiter.QueryForCancellation())
                 {
                     return slst;
                 }
@@ -140,7 +119,7 @@ public partial class WordList
 
                 good |= Suggest(slst, scw, ref onlyCompoundSuggest);
 
-                if (GlobalTimeLimiter.QueryForExpiration())
+                if (opLimiter.QueryForCancellation())
                 {
                     return slst;
                 }
@@ -161,7 +140,7 @@ public partial class WordList
                     // TheOpenOffice.org -> The OpenOffice.org
                     good |= Suggest(slst, HunspellTextFunctions.MakeInitSmall(scw, textInfo), ref onlyCompoundSuggest);
 
-                    if (GlobalTimeLimiter.QueryForExpiration())
+                    if (opLimiter.QueryForCancellation())
                     {
                         return slst;
                     }
@@ -176,7 +155,7 @@ public partial class WordList
                 var prevns = slst.Count;
                 good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
-                if (GlobalTimeLimiter.QueryForExpiration())
+                if (opLimiter.QueryForCancellation())
                 {
                     return slst;
                 }
@@ -191,7 +170,7 @@ public partial class WordList
 
                     good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
-                    if (GlobalTimeLimiter.QueryForExpiration())
+                    if (opLimiter.QueryForCancellation())
                     {
                         return slst;
                     }
@@ -225,7 +204,7 @@ public partial class WordList
                 var wspace = HunspellTextFunctions.MakeAllSmall(scw, textInfo);
                 good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
-                if (GlobalTimeLimiter.QueryForExpiration())
+                if (opLimiter.QueryForCancellation())
                 {
                     return slst;
                 }
@@ -238,7 +217,7 @@ public partial class WordList
                 wspace = HunspellTextFunctions.MakeInitCap(wspace, textInfo);
                 good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
-                if (GlobalTimeLimiter.QueryForExpiration())
+                if (opLimiter.QueryForCancellation())
                 {
                     return slst;
                 }
@@ -303,7 +282,7 @@ public partial class WordList
                     }
                 }
 
-                if (GlobalTimeLimiter.QueryForExpiration())
+                if (opLimiter.QueryForCancellation())
                 {
                     return slst;
                 }
@@ -493,13 +472,13 @@ public partial class WordList
                 word = word.GetReversed();
             }
 
-            CompoundSuggestTimeLimiter ??= OperationTimeLimiter.Create(TimeLimitCompoundSuggestMs);
+            var opLimiter = new OperationTimedLimiter(Options.TimeLimitCompoundSuggest, Options.CancellationToken);
 
             do
             {
-                CompoundSuggestTimeLimiter.Reset();
-
                 // limit compound suggestion
+                opLimiter.Reset();
+
                 if (cpdSuggest)
                 {
                     oldSug = slst.Count;
@@ -529,7 +508,7 @@ public partial class WordList
                     }
                 }
 
-                if (CompoundSuggestTimeLimiter.QueryForExpiration())
+                if (opLimiter.QueryForCancellation())
                 {
                     return goodSuggestion;
                 }
@@ -540,7 +519,7 @@ public partial class WordList
                     MapChars(slst, word, cpdSuggest);
                 }
 
-                if (CompoundSuggestTimeLimiter.QueryForExpiration())
+                if (opLimiter.QueryForCancellation())
                 {
                     return goodSuggestion;
                 }
@@ -557,7 +536,7 @@ public partial class WordList
                     SwapChar(slst, word, cpdSuggest);
                 }
 
-                if (CompoundSuggestTimeLimiter.QueryForExpiration())
+                if (opLimiter.QueryForCancellation())
                 {
                     return goodSuggestion;
                 }
@@ -568,7 +547,7 @@ public partial class WordList
                     LongSwapChar(slst, word, cpdSuggest);
                 }
 
-                if (CompoundSuggestTimeLimiter.QueryForExpiration())
+                if (opLimiter.QueryForCancellation())
                 {
                     return goodSuggestion;
                 }
@@ -579,7 +558,7 @@ public partial class WordList
                     BadCharKey(slst, word, cpdSuggest);
                 }
 
-                if (CompoundSuggestTimeLimiter.QueryForExpiration())
+                if (opLimiter.QueryForCancellation())
                 {
                     return goodSuggestion;
                 }
@@ -590,7 +569,7 @@ public partial class WordList
                     ExtraChar(slst, word, cpdSuggest);
                 }
 
-                if (CompoundSuggestTimeLimiter.QueryForExpiration())
+                if (opLimiter.QueryForCancellation())
                 {
                     return goodSuggestion;
                 }
@@ -601,7 +580,7 @@ public partial class WordList
                     ForgotChar(slst, word, cpdSuggest);
                 }
 
-                if (CompoundSuggestTimeLimiter.QueryForExpiration())
+                if (opLimiter.QueryForCancellation())
                 {
                     return goodSuggestion;
                 }
@@ -612,7 +591,7 @@ public partial class WordList
                     MoveChar(slst, word, cpdSuggest);
                 }
 
-                if (CompoundSuggestTimeLimiter.QueryForExpiration())
+                if (opLimiter.QueryForCancellation())
                 {
                     return goodSuggestion;
                 }
@@ -623,7 +602,7 @@ public partial class WordList
                     BadChar(slst, word, cpdSuggest);
                 }
 
-                if (CompoundSuggestTimeLimiter.QueryForExpiration())
+                if (opLimiter.QueryForCancellation())
                 {
                     return goodSuggestion;
                 }
@@ -634,7 +613,7 @@ public partial class WordList
                     DoubleTwoChars(slst, word, cpdSuggest);
                 }
 
-                if (CompoundSuggestTimeLimiter.QueryForExpiration())
+                if (opLimiter.QueryForCancellation())
                 {
                     return goodSuggestion;
                 }
@@ -649,7 +628,7 @@ public partial class WordList
                     goodSuggestion = TwoWords(slst, word, cpdSuggest, goodSuggestion);
                 }
 
-                if (CompoundSuggestTimeLimiter.QueryForExpiration())
+                if (opLimiter.QueryForCancellation())
                 {
                     return goodSuggestion;
                 }
@@ -664,7 +643,7 @@ public partial class WordList
             return goodSuggestion;
         }
 
-        private SpellCheckResult CheckDetails(string word) => new QueryCheck(WordList).CheckDetails(word);
+        private SpellCheckResult CheckDetails(string word) => new QueryCheck(WordList, Options).CheckDetails(word);
 
         /// <summary>
         /// perhaps we doubled two characters (pattern aba -> ababa, for example vacation -> vacacation)
@@ -713,39 +692,43 @@ public partial class WordList
         /// </summary>
         private int BadChar(List<string> wlst, string word, bool cpdSuggest)
         {
-            if (Affix.TryString is not { Length: > 0 } tryString)
+            if (Affix.TryString is { Length: > 0 } tryString)
             {
-                return wlst.Count;
-            }
-
-            var candidate = StringBuilderPool.Get(word);
-
-            var timer = OperationTimeLimiter.Create(TimeLimitMs, MinTimer);
-
-            // swap out each char one by one and try all the tryme
-            // chars in its place to see if that makes a good word
-            for (var j = 0; j < tryString.Length; j++)
-            {
-                for (var i = candidate.Length - 1; i >= 0; i--)
+                impl();
+                void impl()
                 {
-                    var tmpc = candidate[i];
-                    if (tryString[j] == tmpc)
+                    var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, Options.CancellationToken);
+
+                    var candidate = StringBuilderPool.Get(word);
+
+                    // swap out each char one by one and try all the tryme
+                    // chars in its place to see if that makes a good word
+                    for (var j = 0; j < tryString.Length; j++)
                     {
-                        continue;
+                        for (var i = candidate.Length - 1; i >= 0; i--)
+                        {
+                            var tmpc = candidate[i];
+                            if (tryString[j] == tmpc)
+                            {
+                                continue;
+                            }
+
+                            candidate[i] = tryString[j];
+                            TestSug(wlst, candidate.ToString(), cpdSuggest, timer);
+                            candidate[i] = tmpc;
+
+                            if (timer.QueryForCancellation())
+                            {
+                                return;
+                            }
+                        }
                     }
 
-                    candidate[i] = tryString[j];
-                    TestSug(wlst, candidate.ToString(), cpdSuggest, timer);
-                    candidate[i] = tmpc;
+                    StringBuilderPool.Return(candidate);
 
-                    if (timer.QueryCounter == 0)
-                    {
-                        return wlst.Count;
-                    }
+                    return;
                 }
             }
-
-            StringBuilderPool.Return(candidate);
 
             return wlst.Count;
         }
@@ -811,30 +794,32 @@ public partial class WordList
         /// </summary>
         private int ForgotChar(List<string> wlst, string word, bool cpdSuggest)
         {
-            if (string.IsNullOrEmpty(Affix.TryString))
+            if (Affix.TryString is { Length: > 0 })
             {
-                return wlst.Count;
-            }
-
-            var candidate = StringBuilderPool.Get(word, word.Length + 1);
-
-            var timer = OperationTimeLimiter.Create(TimeLimitMs, MinTimer);
-
-            // try inserting a tryme character before every letter (and the null terminator)
-            foreach (var tryChar in Affix.TryString)
-            {
-                for (var index = candidate.Length; index >= 0; index--)
+                impl();
+                void impl()
                 {
-                    TestSug(wlst, candidate.ToStringWithInsert(index, tryChar), cpdSuggest, timer);
+                    var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, Options.CancellationToken);
 
-                    if (timer.QueryCounter == 0)
+                    var candidate = StringBuilderPool.Get(word, word.Length + 1);
+
+                    // try inserting a tryme character before every letter (and the null terminator)
+                    foreach (var tryChar in Affix.TryString)
                     {
-                        return wlst.Count;
+                        for (var index = candidate.Length; index >= 0; index--)
+                        {
+                            TestSug(wlst, candidate.ToStringWithInsert(index, tryChar), cpdSuggest, timer);
+
+                            if (timer.QueryForCancellation())
+                            {
+                                return;
+                            }
+                        }
                     }
+
+                    StringBuilderPool.Return(candidate);
                 }
             }
-
-            StringBuilderPool.Return(candidate);
 
             return wlst.Count;
         }
@@ -1002,10 +987,16 @@ public partial class WordList
             }
 
             var candidate = string.Empty;
-            return MapRelated(word, ref candidate, 0, wlst, cpdSuggest, OperationTimeLimiter.Create(TimeLimitMs, MinTimer));
+            return MapRelated(word, ref candidate, wn: 0, wlst, cpdSuggest);
         }
 
-        private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest, OperationTimeLimiter? timer)
+        private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest)
+        {
+            var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, Options.CancellationToken);
+            return MapRelated(word, ref candidate, wn, wlst, cpdSuggest, timer);
+        }
+
+        private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest, OperationTimedCountLimiter timer)
         {
             if (wn >= word.Length)
             {
@@ -1037,7 +1028,7 @@ public partial class WordList
                             candidate = candidatePrefix + otherMapEntryValue;
                             MapRelated(word, ref candidate, wn + mapEntryValue.Length, wlst, cpdSuggest, timer);
 
-                            if (timer is not null && timer.QueryCounter == 0)
+                            if (timer.QueryForCancellation())
                             {
                                 return wlst.Count;
                             }
@@ -1055,7 +1046,21 @@ public partial class WordList
             return wlst.Count;
         }
 
-        private void TestSug(List<string> wlst, string candidate, bool cpdSuggest, OperationTimeLimiter? timer = null)
+        private void TestSug(List<string> wlst, string candidate, bool cpdSuggest)
+        {
+            if (
+                wlst.Count < MaxSuggestions
+                &&
+                !wlst.Contains(candidate)
+                &&
+                CheckWord(candidate, cpdSuggest) != 0
+            )
+            {
+                wlst.Add(candidate);
+            }
+        }
+
+        private void TestSug(List<string> wlst, string candidate, bool cpdSuggest, OperationTimedCountLimiter timer)
         {
             if (
                 wlst.Count < MaxSuggestions
@@ -1069,21 +1074,30 @@ public partial class WordList
             }
         }
 
-        private void TestSug(List<string> wlst, ReadOnlySpan<char> candidate, bool cpdSuggest, OperationTimeLimiter? timer = null)
+        private void TestSug(List<string> wlst, ReadOnlySpan<char> candidate, bool cpdSuggest)
         {
             if (wlst.Count < MaxSuggestions)
             {
                 var candidateWord = candidate.ToString();
-                if (!wlst.Contains(candidateWord) && CheckWord(candidateWord, cpdSuggest, timer) != 0)
+                if (!wlst.Contains(candidateWord) && CheckWord(candidateWord, cpdSuggest) != 0)
                 {
                     wlst.Add(candidateWord);
-                    return;
                 }
             }
         }
 
-        private int CheckWord(ReadOnlySpan<char> word, bool cpdSuggest, OperationTimeLimiter? timer = null) =>
-            CheckWord(word.ToString(), cpdSuggest, timer);
+        private int CheckWord(ReadOnlySpan<char> word, bool cpdSuggest) =>
+            CheckWord(word.ToString(), cpdSuggest);
+
+        private int CheckWord(string word, bool cpdSuggest, OperationTimedCountLimiter timer)
+        {
+            if (timer.QueryForCancellation())
+            {
+                return 0;
+            }
+
+            return CheckWord(word, cpdSuggest);
+        }
 
         /// <summary>
         /// See if a candidate suggestion is spelled correctly
@@ -1094,16 +1108,11 @@ public partial class WordList
         /// return value 2 and 3 marks compounding with hyphen (-)
         /// `3' marks roots without suffix
         /// </remarks>
-        private int CheckWord(string word, bool cpdSuggest, OperationTimeLimiter? timer = null)
+        private int CheckWord(string word, bool cpdSuggest)
         {
 #if DEBUG
             if (word is null) throw new ArgumentNullException(nameof(word));
 #endif
-
-            if (timer is not null && timer.QueryForExpiration())
-            {
-                return 0;
-            }
 
             WordEntry? rv;
             if (cpdSuggest)
@@ -1133,9 +1142,9 @@ public partial class WordList
                     return 0;
                 }
 
-                rv = doThing(word, rvDetails, Affix);
+                rv = findDetailForEntry(word, rvDetails, Affix);
 
-                static WordEntry? doThing(string word, WordEntryDetail[] rvDetails, AffixConfig affix)
+                static WordEntry? findDetailForEntry(string word, WordEntryDetail[] rvDetails, AffixConfig affix)
                 {
 #if DEBUG
                     if (rvDetails.Length <= 0) throw new ArgumentOutOfRangeException(nameof(rvDetails));

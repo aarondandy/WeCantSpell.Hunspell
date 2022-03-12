@@ -111,32 +111,46 @@ public sealed partial class AffixReader
 
     private Encoding Encoding => _builder.Encoding ?? DefaultEncoding;
 
-    public static async Task<AffixConfig> ReadFileAsync(string filePath, AffixConfig.Builder? builder = null)
+    public static Task<AffixConfig> ReadFileAsync(string filePath, CancellationToken cancellationToken = default) =>
+        ReadFileAsync(filePath, builder: null, cancellationToken);
+
+    public static async Task<AffixConfig> ReadFileAsync(string filePath, AffixConfig.Builder? builder, CancellationToken cancellationToken = default)
     {
         if (filePath is null) throw new ArgumentNullException(nameof(filePath));
 
         using var stream = StreamEx.OpenAsyncReadFileStream(filePath);
-        return await ReadAsync(stream, builder).ConfigureAwait(false);
+        return await ReadAsync(stream, builder, cancellationToken).ConfigureAwait(false);
     }
 
-    public static async Task<AffixConfig> ReadAsync(Stream stream, AffixConfig.Builder? builder = null)
-    {
-        var ct = CancellationToken.None;
+    public static Task<AffixConfig> ReadAsync(Stream stream, CancellationToken cancellationToken = default) =>
+        ReadAsync(stream, builder: null, cancellationToken);
 
+    public static async Task<AffixConfig> ReadAsync(Stream stream, AffixConfig.Builder? builder, CancellationToken cancellationToken = default)
+    {
         if (stream is null) throw new ArgumentNullException(nameof(stream));
 
+        return await ReadInternalAsync(stream, builder, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task<AffixConfig> ReadInternalAsync(Stream stream, AffixConfig.Builder? builder, CancellationToken cancellationToken)
+    {
         var readerInstance = new AffixReader(builder);
 
-        using var lineReader = new LineReader(stream, readerInstance.Encoding, allowEncodingChanges: true);
-        while (await lineReader.ReadNextAsync(ct))
+        using (var lineReader = new LineReader(stream, readerInstance.Encoding, allowEncodingChanges: true))
         {
-            readerInstance.ParseLine(lineReader.Current.Span);
+            while (await lineReader.ReadNextAsync(cancellationToken))
+            {
+                readerInstance.ParseLine(lineReader.Current.Span);
+            }
         }
 
         return readerInstance.BuildConfig(allowDestructive: true);
     }
 
-    public static AffixConfig ReadFile(string filePath, AffixConfig.Builder? builder = null)
+    public static AffixConfig ReadFile(string filePath) =>
+        ReadFile(filePath, builder: null);
+
+    public static AffixConfig ReadFile(string filePath, AffixConfig.Builder? builder)
     {
         if (filePath is null) throw new ArgumentNullException(nameof(filePath));
 
@@ -144,7 +158,10 @@ public sealed partial class AffixReader
         return Read(stream, builder);
     }
 
-    public static AffixConfig ReadFromString(string contents, AffixConfig.Builder? builder = null)
+    public static AffixConfig ReadFromString(string contents) =>
+        ReadFromString(contents, builder: null);
+
+    public static AffixConfig ReadFromString(string contents, AffixConfig.Builder? builder)
     {
         var readerInstance = new AffixReader(builder);
 
@@ -159,7 +176,10 @@ public sealed partial class AffixReader
         return readerInstance.BuildConfig(allowDestructive: true);
     }
 
-    public static AffixConfig Read(Stream stream, AffixConfig.Builder? builder = null)
+    public static AffixConfig Read(Stream stream) =>
+        Read(stream, builder: null);
+
+    public static AffixConfig Read(Stream stream, AffixConfig.Builder? builder)
     {
         if (stream is null) throw new ArgumentNullException(nameof(stream));
 

@@ -47,13 +47,11 @@ public partial class WordList
             return details;
         }
 
-        public WordList ToImmutable() =>
-            ToImmutable(destructive: false);
+        public WordList ToImmutable() => ToImmutable(allowDestructive: false);
 
-        public WordList MoveToImmutable() =>
-            ToImmutable(destructive: true);
+        public WordList MoveToImmutable() => ToImmutable(allowDestructive: true);
 
-        private WordList ToImmutable(bool destructive)
+        public WordList ToImmutable(bool allowDestructive)
         {
             var result = new WordList(Affix, FlagSet.Create(new[]
             {
@@ -71,7 +69,7 @@ public partial class WordList
             result.EntriesByRoot.EnsureCapacity(EntryDetailsByRoot.Count);
 #endif
 
-            if (destructive)
+            if (allowDestructive)
             {
                 foreach (var pair in EntryDetailsByRoot)
                 {
@@ -95,9 +93,9 @@ public partial class WordList
                 // store ph: field of a morphological description in reptable
                 if (result.AllReplacements.IsEmpty)
                 {
-                    result.AllReplacements = new(PhoneticReplacements.MakeOrExtractArray(destructive));
+                    result.AllReplacements = new(PhoneticReplacements.MakeOrExtractArray(allowDestructive));
                 }
-                else if (destructive)
+                else if (allowDestructive)
                 {
                     PhoneticReplacements.AddRange(result.AllReplacements.Replacements);
                     result.AllReplacements = new(PhoneticReplacements.Extract());

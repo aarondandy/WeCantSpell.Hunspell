@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -12,6 +13,7 @@ namespace WeCantSpell.Hunspell;
 public sealed partial class WordList
 {
     internal const int MaxWordLen = 100;
+    internal const int MaxWordUtf8Len = MaxWordLen * 3;
 
     public static WordList CreateFromStreams(Stream dictionaryStream, Stream affixStream) =>
         WordListReader.Read(dictionaryStream, affixStream);
@@ -22,18 +24,19 @@ public sealed partial class WordList
     public static WordList CreateFromFiles(string dictionaryFilePath, string affixFilePath) =>
         WordListReader.ReadFile(dictionaryFilePath, affixFilePath);
 
-    public static async Task<WordList> CreateFromStreamsAsync(Stream dictionaryStream, Stream affixStream) =>
-        await WordListReader.ReadAsync(dictionaryStream, affixStream).ConfigureAwait(false);
+    public static Task<WordList> CreateFromStreamsAsync(Stream dictionaryStream, Stream affixStream, CancellationToken cancellationToken = default) =>
+        WordListReader.ReadAsync(dictionaryStream, affixStream, cancellationToken);
 
-    public static async Task<WordList> CreateFromFilesAsync(string dictionaryFilePath) =>
-        await WordListReader.ReadFileAsync(dictionaryFilePath).ConfigureAwait(false);
+    public static Task<WordList> CreateFromFilesAsync(string dictionaryFilePath, CancellationToken cancellationToken = default) =>
+        WordListReader.ReadFileAsync(dictionaryFilePath, cancellationToken);
 
-    public static async Task<WordList> CreateFromFilesAsync(string dictionaryFilePath, string affixFilePath) =>
-        await WordListReader.ReadFileAsync(dictionaryFilePath, affixFilePath).ConfigureAwait(false);
+    public static Task<WordList> CreateFromFilesAsync(string dictionaryFilePath, string affixFilePath, CancellationToken cancellationToken = default) =>
+        WordListReader.ReadFileAsync(dictionaryFilePath, affixFilePath, cancellationToken);
 
-    public static WordList CreateFromWords(IEnumerable<string> words) => CreateFromWords(
-        words ?? throw new ArgumentNullException(nameof(words)),
-        new AffixConfig.Builder().MoveToImmutable());
+    public static WordList CreateFromWords(IEnumerable<string> words) =>
+        CreateFromWords(
+            words ?? throw new ArgumentNullException(nameof(words)),
+            new AffixConfig.Builder().MoveToImmutable());
 
     public static WordList CreateFromWords(IEnumerable<string> words, AffixConfig affix)
     {
@@ -83,11 +86,17 @@ public sealed partial class WordList
 
     private Dictionary<string, WordEntryDetail[]> NGramRestrictedDetails { get; set; }
 
-    public bool Check(string word) => new QueryCheck(this).Check(word);
+    public bool Check(string word) => Check(word, options: null);
 
-    public SpellCheckResult CheckDetails(string word) => new QueryCheck(this).CheckDetails(word);
+    public bool Check(string word, QueryOptions? options) => new QueryCheck(this, options).Check(word);
 
-    public IEnumerable<string> Suggest(string word) => new QuerySuggest(this).Suggest(word);
+    public SpellCheckResult CheckDetails(string word) => CheckDetails(word, options: null);
+
+    public SpellCheckResult CheckDetails(string word, QueryOptions? options) => new QueryCheck(this, options).CheckDetails(word);
+
+    public IEnumerable<string> Suggest(string word) => Suggest(word, options: null);
+
+    public IEnumerable<string> Suggest(string word, QueryOptions? options) => new QuerySuggest(this, options).Suggest(word);
 
     internal WordEntry? FindFirstEntryByRootWord(string rootWord)
     {
