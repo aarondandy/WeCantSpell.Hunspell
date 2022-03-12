@@ -17,6 +17,11 @@
       "commandName": "Project",
       "commandLineArgs": "suggest --dic-file \"../samples/English (American).dic\" --word-file \"../hunspell-origin/tests/suggestiontest/List_of_common_misspellings.txt\"",
       "workingDirectory": "./"
+    },
+    "Check en-US": {
+      "commandName": "Project",
+      "commandLineArgs": "check --dic-file \"../samples/English (American).dic\" --word-file \"../hunspell-origin/tests/suggestiontest/List_of_common_misspellings.txt\"",
+      "workingDirectory": "./"
     }
   }
 }

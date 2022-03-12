@@ -1,8 +1,7 @@
 ﻿using System.Text;
 
 namespace WeCantSpell.Hunspell.TestHarness;
-
-public class SuggestTest
+public class CheckTest
 {
     public static void Run(string dicFilePath, string wordFilePath)
     {
@@ -23,18 +22,11 @@ public class SuggestTest
             checkWords.AddRange(line.Split(lineSplitChars, StringSplitOptions.RemoveEmptyEntries));
         }
 
-        const int wordLimit = 2000;
-
-        if (checkWords.Count > wordLimit)
-        {
-            checkWords.RemoveRange(wordLimit, checkWords.Count - wordLimit);
-        }
-
-        Console.WriteLine($"Suggesting for {checkWords.Count} words");
+        Console.WriteLine($"Checking {checkWords.Count} words");
 
         foreach (var word in checkWords)
         {
-            _ = wordList.Suggest(word);
+            _ = wordList.CheckDetails(word);
         }
     }
 }
