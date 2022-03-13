@@ -2407,36 +2407,32 @@ public partial class WordList
 
         private static int FindLongestSubstringMatch(ReadOnlySpan<char> needle, ReadOnlySpan<char> haystack)
         {
+#if DEBUG
+            if (needle.IsEmpty) throw new ArgumentOutOfRangeException(nameof(needle));
+#endif
+
             // This brute force algorithm leans heavily on the performance benefits of IndexOf.
             // As an optimization, break out when a better result is not possible.
 
             var best = 0;
-
-            int searchIndex;
-            while ((searchIndex = haystack.IndexOf(needle[0])) >= 0)
+            var searchIndex = haystack.IndexOf(needle[0]);
+            while (searchIndex >= 0)
             {
                 haystack = haystack.Slice(searchIndex);
 
-                var longestPossibleMatch = Math.Min(haystack.Length, needle.Length);
-                if (best >= longestPossibleMatch)
-                {
-                    break;
-                }
-
-                searchIndex = 1;
-                for (; searchIndex < longestPossibleMatch && needle[searchIndex] == haystack[searchIndex]; searchIndex++) ;
+                for (searchIndex = best + 1; searchIndex < haystack.Length && searchIndex < needle.Length && needle[searchIndex] == haystack[searchIndex]; searchIndex++) ;
 
                 if (searchIndex > best)
                 {
                     best = searchIndex;
 
-                    if (best == needle.Length)
+                    if (best >= needle.Length)
                     {
                         break;
                     }
                 }
 
-                haystack = haystack.Slice(1);
+                searchIndex = haystack.IndexOf(needle.Slice(0, best + 1), 1);
             }
 
             return best;

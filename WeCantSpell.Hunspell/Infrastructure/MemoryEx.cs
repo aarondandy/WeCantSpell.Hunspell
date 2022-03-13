@@ -7,12 +7,13 @@ static class MemoryEx
     public static int IndexOf<T>(this ReadOnlySpan<T> @this, T value, int startIndex) where T:IEquatable<T>
     {
         var result = @this.Slice(startIndex).IndexOf(value);
-        if (result >= 0)
-        {
-            result += startIndex;
-        }
+        return result >= 0 ? result + startIndex : result;
+    }
 
-        return result;
+    public static int IndexOf<T>(this ReadOnlySpan<T> @this, ReadOnlySpan<T> value, int startIndex) where T : IEquatable<T>
+    {
+        var result = @this.Slice(startIndex).IndexOf(value);
+        return result >= 0 ? result + startIndex : result;
     }
 
     public static int IndexOfAny(this ReadOnlySpan<char> @this, CharacterSet chars)
