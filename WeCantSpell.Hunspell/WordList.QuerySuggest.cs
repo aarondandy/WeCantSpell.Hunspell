@@ -2381,44 +2381,71 @@ public partial class WordList
             return ns;
         }
 
-        private static int NGramNonWeightedSearch(int n, ReadOnlySpan<char> s1, ReadOnlySpan<char> t)
+        /// <summary>Calculates a score based on substring matching.</summary>
+        /// <param name="n">The maximum size of substrings to generate.</param>
+        /// <param name="s1">The text to generate substrings from.</param>
+        /// <param name="s2">The text to search.</param>
+        /// <returns>The score.</returns>
+        /// <remarks>
+        /// This algorithm calculates a score which is the number of all substrings in <paramref name="s1"/> that have a
+        /// length between 1 and <paramref name="n"/>, that are also found in <paramref name="s2"/>.
+        ///
+        /// To use an example, and invocation of (2, "nano", "banana") would produce 7 subrstrings to check and 5 would be found,
+        /// resulting in a score of 5. The produced set of subrstrings would be: "n", "na", "a", "an", "n", "no", and "o".
+        /// Note that in this example, the substring "n" from <paramref name="s1"/> is checked against <paramref name="s2"/> twice and counted twice.
+        /// </remarks>
+        private static int NGramNonWeightedSearch(int n, ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
         {
-            var ns = NGramNonWeightedSearch_Iteration1(s1, t);
-            var nscore = ns;
-            for (var nGramLength = 2; nGramLength <= n && ns >= 2; ++nGramLength)
+#if DEBUG
+            if (s1.IsEmpty) throw new ArgumentOutOfRangeException(nameof(s1));
+            if (s2.IsEmpty) throw new ArgumentOutOfRangeException(nameof(s2));
+#endif
+
+            var nscore = 0;
+
+            for (var searchIndex = 0; searchIndex < s1.Length; searchIndex++)
             {
-                ns = NGramNonWeightedSearch_IterationN(nGramLength, s1, t);
-                nscore += ns;
+                nscore += findLongestMatch(s1.Slice(searchIndex, Math.Min(s1.Length - searchIndex, n)), s2);
             }
 
             return nscore;
-        }
 
-        private static int NGramNonWeightedSearch_Iteration1(ReadOnlySpan<char> s1, ReadOnlySpan<char> t)
-        {
-            var ns = 0;
-            for (var i = 0; i < s1.Length; ++i)
+            static int findLongestMatch(ReadOnlySpan<char> needle, ReadOnlySpan<char> haystack)
             {
-                if (t.Contains(s1[i]))
-                {
-                    ++ns;
-                }
-            }
-            return ns;
-        }
+                // This brute force algorithm leans heavily on the performance benefits of IndexOf.
+                // As an optimization, break out when a better result is not possible.
 
-        private static int NGramNonWeightedSearch_IterationN(int nGramLength, ReadOnlySpan<char> s1, ReadOnlySpan<char> t)
-        {
-            var ns = 0;
-            var maxIndex = s1.Length - nGramLength;
-            for (var i = 0; i <= maxIndex; ++i)
-            {
-                if (t.Contains(s1.Slice(i, nGramLength)))
+                var best = 0;
+
+                int searchIndex;
+                while ((searchIndex = haystack.IndexOf(needle[0])) >= 0)
                 {
-                    ++ns;
+                    haystack = haystack.Slice(searchIndex);
+
+                    var longestPossibleMatch = Math.Min(haystack.Length, needle.Length);
+                    if (best >= longestPossibleMatch)
+                    {
+                        break;
+                    }
+
+                    searchIndex = 1;
+                    for (; searchIndex < longestPossibleMatch && needle[searchIndex] == haystack[searchIndex]; searchIndex++) ;
+
+                    if (searchIndex > best)
+                    {
+                        best = searchIndex;
+
+                        if (best == needle.Length)
+                        {
+                            break;
+                        }
+                    }
+
+                    haystack = haystack.Slice(1);
                 }
+
+                return best;
             }
-            return ns;
         }
 
         /// <summary>
