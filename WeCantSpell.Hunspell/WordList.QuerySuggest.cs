@@ -1330,7 +1330,7 @@ public partial class WordList
                     // - in the case of German, where not only proper
                     //   nouns are capitalized, or
                     // - the capitalized word has special pronunciation
-                    if (isNonGermanLowercase && EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.InitCap) && !hasPhoneEntries && !EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.Phon))
+                    if (isNonGermanLowercase && !hasPhoneEntries && EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.InitCap) && !EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.Phon))
                     {
                         continue;
                     }
@@ -1340,7 +1340,7 @@ public partial class WordList
 
                     // check special pronunciation
                     var f = string.Empty;
-                    if (EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.Phon) && QuerySuggest.CopyField(ref f, hpDetail.Morphs, MorphologicalTags.Phon))
+                    if (EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.Phon) && CopyField(ref f, hpDetail.Morphs, MorphologicalTags.Phon))
                     {
                         var sc2 = NGram(3, word, f, NGramOptions.LongerWorse | NGramOptions.Lowering)
                             + LeftCommonSubstring(word, f);
