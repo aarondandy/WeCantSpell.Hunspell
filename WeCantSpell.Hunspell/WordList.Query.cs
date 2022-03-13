@@ -7,20 +7,25 @@ namespace WeCantSpell.Hunspell;
 
 public partial class WordList
 {
-    private abstract class Query
+    private struct Query
     {
-        protected const string DefaultXmlToken = "<?xml?>";
-        protected const int MaxPhoneTLen = 256;
-        protected const int MaxPhoneTUtf8Len = MaxPhoneTLen * 4;
+        internal const string DefaultXmlToken = "<?xml?>";
 
-        protected static QueryOptions DefaultOptions { get; } = new();
+        private static QueryOptions DefaultOptions { get; } = new();
 
-        protected Query(WordList wordList, QueryOptions? options)
+        internal Query(WordList wordList, QueryOptions? options)
         {
             WordList = wordList;
             Affix = wordList.Affix;
             TextInfo = Affix.Culture.TextInfo;
             Options = options ?? DefaultOptions;
+
+            Prefix = null;
+            PrefixAppend = null;
+            Suffix = null;
+            SuffixFlag = default;
+            SuffixExtra = false;
+            SuffixAppend = null;
         }
 
         public WordList WordList { get; }
@@ -51,14 +56,6 @@ public partial class WordList
         /// Previous suffix for counting syllables of the suffix.
         /// </summary>
         private string? SuffixAppend { get; set; }
-
-        protected int MaxSharps => Options.MaxSharps;
-        protected int MaxCompoundSuggestions => Options.MaxCompoundSuggestions;
-        protected int MaxSuggestions => Options.MaxSuggestions;
-        protected int MaxRoots => Options.MaxRoots;
-        protected int MaxWords => Options.MaxWords;
-        protected int MaxGuess => Options.MaxGuess;
-        protected int MaxPhonSugs => Options.MaxPhoneticSuggestions;
 
         private void ClearPrefix()
         {
@@ -141,7 +138,7 @@ public partial class WordList
                 (isSug != 0 && rv.ContainsFlag(Affix.NoSuggest))
             );
 
-        protected WordEntry? CheckWord(
+        public WordEntry? CheckWord(
             string word,
             ref SpellCheckResultType info,
             out string? root)
@@ -401,13 +398,13 @@ public partial class WordList
             return null;
         }
 
-        protected WordEntry? CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
+        public WordEntry? CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
         {
             var opLimiter = new OperationTimedLimiter(Options.TimeLimitCompoundCheck, Options.CancellationToken);
             return CompoundCheck(word, wordNum, numSyllable, maxwordnum, words, rwords, huMovRule, isSug, ref info, opLimiter);
         }
 
-        protected WordEntry? CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info, OperationTimedLimiter opLimiter)
+        public WordEntry? CompoundCheck(string word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info, OperationTimedLimiter opLimiter)
         {
             int oldnumsyllable, oldnumsyllable2, oldwordnum, oldwordnum2;
             WordEntry? rv;
@@ -419,8 +416,6 @@ public partial class WordList
             var oldcmax = 0;
             var oldlen = 0;
             var checkedSimplifiedTriple = false;
-            var affixed = false;
-
             var oldwords = words;
             var len = word.Length;
 
@@ -504,8 +499,7 @@ public partial class WordList
 
                         // FIRST WORD
 
-                        affixed = true;
-
+                        var affixed = true;
                         {
                             var searchEntryWord = st.ToString();
 
@@ -1313,7 +1307,7 @@ public partial class WordList
         /// <summary>
         /// Check word for prefixes
         /// </summary>
-        protected WordEntry? PrefixCheck(string word, CompoundOptions inCompound, FlagValue needFlag)
+        public WordEntry? PrefixCheck(string word, CompoundOptions inCompound, FlagValue needFlag)
         {
             ClearPrefix();
             ClearAllAppendAndExtra();
@@ -1374,7 +1368,7 @@ public partial class WordList
             return null;
         }
 
-        protected WordEntry? PrefixCheckTwoSfx(string word, CompoundOptions inCompound, FlagValue needFlag)
+        public WordEntry? PrefixCheckTwoSfx(string word, CompoundOptions inCompound, FlagValue needFlag)
         {
             ClearPrefix();
             ClearSuffixAppendAndExtra();
@@ -1460,7 +1454,7 @@ public partial class WordList
             return null;
         }
 
-        protected WordEntry? SuffixCheck(string word, AffixEntryOptions sfxOpts, Affix<PrefixEntry>? pfx, FlagValue cclass, FlagValue needFlag, CompoundOptions inCompound)
+        public WordEntry? SuffixCheck(string word, AffixEntryOptions sfxOpts, Affix<PrefixEntry>? pfx, FlagValue cclass, FlagValue needFlag, CompoundOptions inCompound)
         {
             WordEntry? rv;
 
@@ -1622,7 +1616,7 @@ public partial class WordList
         /// <summary>
         /// Check word for two-level suffixes.
         /// </summary>
-        protected WordEntry? SuffixCheckTwoSfx(string word, AffixEntryOptions sfxopts, Affix<PrefixEntry>? pfx, FlagValue needflag)
+        public WordEntry? SuffixCheckTwoSfx(string word, AffixEntryOptions sfxopts, Affix<PrefixEntry>? pfx, FlagValue needflag)
         {
 #if DEBUG
             if (word is null) throw new ArgumentNullException(nameof(word));
@@ -1667,13 +1661,9 @@ public partial class WordList
             return null;
         }
 
-        protected WordEntry? LookupFirst(string word) => WordList.FindFirstEntryByRootWord(word);
+        private WordEntry? LookupFirst(string word) => WordList.FindFirstEntryByRootWord(word);
 
-        protected WordEntryDetail[] LookupDetails(string word) => WordList.FindEntryDetailsByRootWord(word);
-
-        protected WordEntryDetail? LookupFirstDetail(string word) => WordList.FindFirstEntryDetailByRootWord(word);
-
-        protected bool TryLookupFirstDetail(string word, out WordEntryDetail wordEntryDetail) => WordList.TryFindFirstEntryDetailByRootWord(word, out wordEntryDetail);
+        public WordEntryDetail[] LookupDetails(string word) => WordList.FindEntryDetailsByRootWord(word);
 
         /// <summary>
         /// Compound check patterns.
@@ -2061,7 +2051,7 @@ public partial class WordList
         /// set the capitalization type (<paramref name="capType"/>) and
         /// return the length of the "cleaned" (and UTF-8 encoded) word
         /// </remarks>
-        protected string CleanWord2(string src, out CapitalizationType capType, out int abbv)
+        public string CleanWord2(string src, out CapitalizationType capType, out int abbv)
         {
             if (Affix.IgnoredChars.HasItems)
             {
@@ -2086,13 +2076,13 @@ public partial class WordList
             capType = HunspellTextFunctions.GetCapitalizationType(dest, TextInfo);
             return dest;
         }
+    }
 
-        protected enum CompoundOptions : byte
-        {
-            Not = 0,
-            Begin = 1,
-            End = 2,
-            Other = 3
-        }
+    private enum CompoundOptions : byte
+    {
+        Not = 0,
+        Begin = 1,
+        End = 2,
+        Other = 3
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -7,11 +8,20 @@ namespace WeCantSpell.Hunspell;
 
 public partial class WordList
 {
-    private sealed class QueryCheck : Query
+    private struct QueryCheck
     {
-        public QueryCheck(WordList wordList, QueryOptions? options) : base(wordList, options)
+        public QueryCheck(WordList wordList, QueryOptions? options)
         {
+            _query = new(wordList, options);
         }
+
+        private readonly Query _query;
+
+        public WordList WordList => _query.WordList;
+        public AffixConfig Affix => _query.Affix;
+        public TextInfo TextInfo => _query.TextInfo;
+        public QueryOptions Options => _query.Options;
+        public int MaxSharps => Options.MaxSharps;
 
         public bool Check(string word) => CheckDetails(word).Correct;
 
@@ -23,7 +33,7 @@ public partial class WordList
             {
                 return new SpellCheckResult(false);
             }
-            if (word == DefaultXmlToken)
+            if (word == Query.DefaultXmlToken)
             {
                 // Hunspell supports XML input of the simplified API (see manual)
                 return new SpellCheckResult(true);
@@ -35,7 +45,7 @@ public partial class WordList
                 convertedWord = word;
             }
 
-            var scw = CleanWord2(convertedWord, out var capType, out var abbv);
+            var scw = _query.CleanWord2(convertedWord, out var capType, out var abbv);
             if (string.IsNullOrEmpty(scw))
             {
                 return new SpellCheckResult(false);
@@ -58,10 +68,10 @@ public partial class WordList
                     resultType |= SpellCheckResultType.OrigCap;
                 }
 
-                rv = CheckWord(scw, ref resultType, out root);
+                rv = _query.CheckWord(scw, ref resultType, out root);
                 if (abbv != 0 && rv is null)
                 {
-                    rv = CheckWord(scw + ".", ref resultType, out root);
+                    rv = _query.CheckWord(scw + ".", ref resultType, out root);
                 }
             }
             else if (capType == CapitalizationType.All)
@@ -202,7 +212,7 @@ public partial class WordList
         private WordEntry? CheckDetailsAllCap(int abbv, ref string scw, ref SpellCheckResultType resultType, out string? root)
         {
             resultType |= SpellCheckResultType.OrigCap;
-            var rv = CheckWord(scw, ref resultType, out root);
+            var rv = _query.CheckWord(scw, ref resultType, out root);
             if (rv is not null)
             {
                 return rv;
@@ -210,7 +220,7 @@ public partial class WordList
 
             if (abbv != 0)
             {
-                rv = CheckWord(scw + ".", ref resultType, out root);
+                rv = _query.CheckWord(scw + ".", ref resultType, out root);
                 if (rv is not null)
                 {
                     return rv;
@@ -229,14 +239,14 @@ public partial class WordList
                 if (apos < scw.Length - 1)
                 {
                     scw = StringEx.ConcatString(scw, 0, apos + 1, HunspellTextFunctions.MakeInitCap(scw.AsSpan(apos + 1), textInfo));
-                    rv = CheckWord(scw, ref resultType, out root);
+                    rv = _query.CheckWord(scw, ref resultType, out root);
                     if (rv is not null)
                     {
                         return rv;
                     }
 
                     scw = HunspellTextFunctions.MakeInitCap(scw, textInfo);
-                    rv = CheckWord(scw, ref resultType, out root);
+                    rv = _query.CheckWord(scw, ref resultType, out root);
                     if (rv is not null)
                     {
                         return rv;
@@ -281,7 +291,7 @@ public partial class WordList
                 resultType |= SpellCheckResultType.InitCap;
             }
 
-            var rv = CheckWord(scw, ref resultType, out root);
+            var rv = _query.CheckWord(scw, ref resultType, out root);
 
             if (capType == CapitalizationType.Init)
             {
@@ -308,12 +318,12 @@ public partial class WordList
                 return rv;
             }
 
-            rv = CheckWord(u8buffer, ref resultType, out root);
+            rv = _query.CheckWord(u8buffer, ref resultType, out root);
 
             if (abbv != 0 && rv is null)
             {
                 u8buffer += ".";
-                rv = CheckWord(u8buffer, ref resultType, out root);
+                rv = _query.CheckWord(u8buffer, ref resultType, out root);
                 if (rv is null)
                 {
                     u8buffer = scw + ".";
@@ -322,7 +332,7 @@ public partial class WordList
                         resultType |= SpellCheckResultType.InitCap;
                     }
 
-                    rv = CheckWord(u8buffer, ref resultType, out root);
+                    rv = _query.CheckWord(u8buffer, ref resultType, out root);
 
                     if (capType == CapitalizationType.Init)
                     {
@@ -396,7 +406,7 @@ public partial class WordList
             }
             else if (repNum > 0)
             {
-                return CheckWord(@base, ref info, out root);
+                return _query.CheckWord(@base, ref info, out root);
             }
 
             root = null;
