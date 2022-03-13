@@ -1310,15 +1310,12 @@ public partial class WordList
                 : string.Empty;
             var isNonGermanLowercase = !Affix.IsGerman && capType == CapitalizationType.None;
 
-            var minAllowedLength = Math.Max(word.Length - 4, 0);
-            var maxAllowedLength = word.Length + 4;
-
-            foreach (var hpSet in WordList.GetNGramAllowedDetails(key =>
-            {
+            foreach (var hpSet in WordList.GetNGramAllowedDetailsByKeyLength(
                 // skip it, if the word length different by 5 or
                 // more characters (to avoid strange suggestions)
-                return key.Length >= minAllowedLength && key.Length <= maxAllowedLength;
-            }))
+                minKeyLength: Math.Max(word.Length - 4, 0),
+                maxKeyLength: word.Length + 4)
+            )
             {
                 var wordKeyLengthDifference = Math.Abs(word.Length - hpSet.Key.Length);
 
@@ -2282,7 +2279,7 @@ public partial class WordList
         /// </summary>
         private int NGram(int n, string s1, string s2, NGramOptions opt)
         {
-            if (s2.Length == 0)
+            if (s1.Length == 0 || s2.Length == 0)
             {
                 return 0;
             }

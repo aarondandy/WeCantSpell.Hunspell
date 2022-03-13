@@ -114,8 +114,7 @@ public abstract class AffixCollection<TEntry> :
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    internal IEnumerable<AffixEntryGroup<TEntry>> GetByFlags(FlagSet flags) =>
-        flags.AsEnumerable().Select(flag => AffixesByFlag.GetValueOrDefault(flag)).WhereNotNull();
+    internal GetByFlagsEnumerator GetByFlags(FlagSet flags) => new(flags, AffixesByFlag);
 
     internal IEnumerable<AffixEntryGroup<TEntry>> GetAffixesWithEmptyKeysAndFlag(FlagSet flags) =>
         AffixesWithEmptyKeys.AsEnumerable().Where(g => flags.Contains(g.AFlag));
@@ -125,6 +124,40 @@ public abstract class AffixCollection<TEntry> :
             group.Entries
                 .Where(entry => predicate(entry.Key, word))
                 .Select(group.CreateAffix));
+
+    internal struct GetByFlagsEnumerator
+    {
+        public GetByFlagsEnumerator(FlagSet flags, Dictionary<FlagValue, AffixEntryGroup<TEntry>> affixesByFlag)
+        {
+            _flags = flags;
+            _affixesByFlag = affixesByFlag;
+            _flagsIndex = -1;
+            Current = AffixEntryGroup<TEntry>.Invalid;
+        }
+
+        private readonly FlagSet _flags;
+        private readonly Dictionary<FlagValue, AffixEntryGroup<TEntry>> _affixesByFlag;
+        private int _flagsIndex;
+
+        public AffixEntryGroup<TEntry> Current { get; private set; }
+
+        public GetByFlagsEnumerator GetEnumerator() => this;
+
+        public bool MoveNext()
+        {
+            while (_flagsIndex + 1 < _flags.Count)
+            {
+                if (_affixesByFlag.GetValueOrDefault(_flags.Values[++_flagsIndex]) is { } result)
+                {
+                    Current = result;
+                    return true;
+                }
+            }
+
+            Current = AffixEntryGroup<TEntry>.Invalid;
+            return false;
+        }
+    }
 }
 
 public sealed class SuffixCollection : AffixCollection<SuffixEntry>

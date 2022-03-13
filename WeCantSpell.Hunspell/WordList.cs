@@ -82,7 +82,7 @@ public sealed partial class WordList
 
     private FlagSet NGramRestrictedFlags { get; set; }
 
-    private NGramAllowedEntries GetNGramAllowedDetails(Func<string, bool> rootKeyFilter) => new(this, rootKeyFilter);
+    private NGramAllowedEntriesEnumerator GetNGramAllowedDetailsByKeyLength(int minKeyLength, int maxKeyLength) => new(this, minKeyLength: minKeyLength, maxKeyLength: maxKeyLength);
 
     private Dictionary<string, WordEntryDetail[]> NGramRestrictedDetails { get; set; }
 
@@ -145,84 +145,78 @@ public sealed partial class WordList
         return false;
     }
 
-    private class NGramAllowedEntries : IEnumerable<KeyValuePair<string, WordEntryDetail[]>>
+    private struct NGramAllowedEntriesEnumerator
     {
-        public NGramAllowedEntries(WordList wordList, Func<string, bool> rootKeyFilter)
+        public NGramAllowedEntriesEnumerator(WordList wordList, int minKeyLength, int maxKeyLength)
         {
-            _wordList = wordList;
-            _rootKeyFilter = rootKeyFilter;
+#if DEBUG
+            if (minKeyLength > maxKeyLength) throw new ArgumentOutOfRangeException(nameof(maxKeyLength));
+#endif
+
+            _coreEnumerator = wordList.EntriesByRoot.GetEnumerator();
+            _nGramRestrictedDetails = wordList.NGramRestrictedDetails;
+            _requiresNGramFiltering = _nGramRestrictedDetails is { Count: > 0 };
+            _minKeyLength = minKeyLength;
+            _maxKeyLength = maxKeyLength;
+            Current = default;
         }
 
-        private readonly WordList _wordList;
+        private Dictionary<string, WordEntryDetail[]>.Enumerator _coreEnumerator;
+        private readonly Dictionary<string, WordEntryDetail[]> _nGramRestrictedDetails;
+        private readonly int _minKeyLength;
+        private readonly int _maxKeyLength;
+        private readonly bool _requiresNGramFiltering;
 
-        private readonly Func<string, bool> _rootKeyFilter;
+        public KeyValuePair<string, WordEntryDetail[]> Current { get; private set; }
 
-        public Enumerator GetEnumerator() => new Enumerator(_wordList.EntriesByRoot, _wordList.NGramRestrictedDetails, _rootKeyFilter);
+        public NGramAllowedEntriesEnumerator GetEnumerator() => this;
 
-        IEnumerator<KeyValuePair<string, WordEntryDetail[]>> IEnumerable<KeyValuePair<string, WordEntryDetail[]>>.GetEnumerator() => GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-        public class Enumerator : IEnumerator<KeyValuePair<string, WordEntryDetail[]>>
+        public bool MoveNext()
         {
-            public Enumerator(Dictionary<string, WordEntryDetail[]> entriesByRoot, Dictionary<string, WordEntryDetail[]> nGramRestrictedDetails, Func<string, bool> rootKeyFilter)
+            while (_coreEnumerator.MoveNext())
             {
-                _coreEnumerator = entriesByRoot.GetEnumerator();
-                _nGramRestrictedDetails = nGramRestrictedDetails;
-                _requiresNGramFiltering = nGramRestrictedDetails is { Count: > 0 };
-                _rootKeyFilter = rootKeyFilter;
-            }
-
-            private Dictionary<string, WordEntryDetail[]>.Enumerator _coreEnumerator;
-            private readonly Dictionary<string, WordEntryDetail[]> _nGramRestrictedDetails;
-            private readonly Func<string, bool> _rootKeyFilter;
-            private readonly bool _requiresNGramFiltering;
-
-            public KeyValuePair<string, WordEntryDetail[]> Current { get; private set; }
-
-            object IEnumerator.Current => Current;
-
-            public bool MoveNext()
-            {
-                while (_coreEnumerator.MoveNext())
+                var rootKey = _coreEnumerator.Current.Key;
+                if (rootKey.Length >= _minKeyLength && rootKey.Length <= _maxKeyLength)
                 {
-                    var rootPair = _coreEnumerator.Current;
-                    if (_rootKeyFilter(rootPair.Key))
+                    var rootValue = _coreEnumerator.Current.Value;
+
+                    if (
+                        _requiresNGramFiltering
+                        && _nGramRestrictedDetails.TryGetValue(rootKey, out var restrictedDetails)
+                        && restrictedDetails.Length != 0
+                    )
                     {
-                        if (
-                            _requiresNGramFiltering
-                            && _nGramRestrictedDetails.TryGetValue(rootPair.Key, out var restrictedDetails)
-                            && restrictedDetails.Length != 0
-                        )
+                        if (restrictedDetails.Length == rootValue.Length)
                         {
-                            if (restrictedDetails.Length == rootPair.Value.Length)
+                            continue;
+                        }
+                        else
+                        {
+                            rootValue = filterNonMatching(rootValue, restrictedDetails);
+                            static WordEntryDetail[] filterNonMatching(WordEntryDetail[] source, WordEntryDetail[] check)
                             {
-                                continue;
-                            }
-                            else
-                            {
-                                rootPair = new(rootPair.Key, Array.FindAll(rootPair.Value, d => !restrictedDetails.Contains(d)));
+                                var builder = new ArrayBuilder<WordEntryDetail>(source.Length);
+                                foreach (var item in source)
+                                {
+                                    if (!check.Contains(item))
+                                    {
+                                        builder.Add(item);
+                                    }
+                                }
+
+                                return builder.Extract();
                             }
                         }
-
-                        Current = rootPair;
-                        return true;
                     }
+
+                    Current = new(rootKey, rootValue);
+                    return true;
                 }
-
-                Current = default;
-                return false;
             }
 
-            public void Reset()
-            {
-                ((IEnumerator)_coreEnumerator).Reset();
-            }
-
-            public void Dispose()
-            {
-                _coreEnumerator.Dispose();
-            }
+            _coreEnumerator.Dispose();
+            Current = default;
+            return false;
         }
     }
 }

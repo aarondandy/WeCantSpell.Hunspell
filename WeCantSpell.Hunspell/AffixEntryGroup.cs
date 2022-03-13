@@ -13,6 +13,8 @@ namespace WeCantSpell.Hunspell;
 /// <typeparam name="TEntry">The specific entry type.</typeparam>
 public sealed class AffixEntryGroup<TEntry> where TEntry : AffixEntry
 {
+    internal static AffixEntryGroup<TEntry> Invalid { get; } = new(default, AffixEntryOptions.None, ImmutableArray<TEntry>.Empty);
+
     private AffixEntryGroup(FlagValue aFlag, AffixEntryOptions options, ImmutableArray<TEntry> entries)
     {
         Entries = entries;
