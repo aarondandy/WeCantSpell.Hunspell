@@ -168,17 +168,15 @@ public sealed partial class WordList
             public Enumerator(Dictionary<string, WordEntryDetail[]> entriesByRoot, Dictionary<string, WordEntryDetail[]> nGramRestrictedDetails, Func<string, bool> rootKeyFilter)
             {
                 _coreEnumerator = entriesByRoot.GetEnumerator();
-                _entriesByRoot = entriesByRoot;
                 _nGramRestrictedDetails = nGramRestrictedDetails;
                 _requiresNGramFiltering = nGramRestrictedDetails is { Count: > 0 };
                 _rootKeyFilter = rootKeyFilter;
             }
 
-            Dictionary<string, WordEntryDetail[]>.Enumerator _coreEnumerator;
-            readonly Dictionary<string, WordEntryDetail[]> _entriesByRoot;
-            readonly Dictionary<string, WordEntryDetail[]> _nGramRestrictedDetails;
-            readonly Func<string, bool> _rootKeyFilter;
-            readonly bool _requiresNGramFiltering;
+            private Dictionary<string, WordEntryDetail[]>.Enumerator _coreEnumerator;
+            private readonly Dictionary<string, WordEntryDetail[]> _nGramRestrictedDetails;
+            private readonly Func<string, bool> _rootKeyFilter;
+            private readonly bool _requiresNGramFiltering;
 
             public KeyValuePair<string, WordEntryDetail[]> Current { get; private set; }
 
@@ -189,34 +187,27 @@ public sealed partial class WordList
                 while (_coreEnumerator.MoveNext())
                 {
                     var rootPair = _coreEnumerator.Current;
-                    if (!_rootKeyFilter(rootPair.Key))
+                    if (_rootKeyFilter(rootPair.Key))
                     {
-                        continue;
-                    }
-
-                    if (_requiresNGramFiltering)
-                    {
-                        if (_nGramRestrictedDetails.TryGetValue(rootPair.Key.ToString(), out var restrictedDetails))
+                        if (
+                            _requiresNGramFiltering
+                            && _nGramRestrictedDetails.TryGetValue(rootPair.Key, out var restrictedDetails)
+                            && restrictedDetails.Length != 0
+                        )
                         {
-                            if (restrictedDetails.Length != 0)
+                            if (restrictedDetails.Length == rootPair.Value.Length)
                             {
-                                var filteredValues = rootPair.Value;
-                                if (restrictedDetails.Length == rootPair.Value.Length)
-                                {
-                                    continue;
-                                }
-                                else
-                                {
-                                    filteredValues = filteredValues.Where(d => !restrictedDetails.Contains(d)).ToArray();
-                                }
-
-                                rootPair = new(rootPair.Key, filteredValues);
+                                continue;
+                            }
+                            else
+                            {
+                                rootPair = new(rootPair.Key, Array.FindAll(rootPair.Value, d => !restrictedDetails.Contains(d)));
                             }
                         }
-                    }
 
-                    Current = rootPair;
-                    return true;
+                        Current = rootPair;
+                        return true;
+                    }
                 }
 
                 Current = default;

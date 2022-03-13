@@ -1330,7 +1330,7 @@ public partial class WordList
                     // - in the case of German, where not only proper
                     //   nouns are capitalized, or
                     // - the capitalized word has special pronunciation
-                    if (isNonGermanLowercase && EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.InitCap) && !hasPhoneEntries && !EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.Phon))
+                    if (isNonGermanLowercase && !hasPhoneEntries && EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.InitCap) && !EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.Phon))
                     {
                         continue;
                     }
@@ -1340,7 +1340,7 @@ public partial class WordList
 
                     // check special pronunciation
                     var f = string.Empty;
-                    if (EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.Phon) && QuerySuggest.CopyField(ref f, hpDetail.Morphs, MorphologicalTags.Phon))
+                    if (EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.Phon) && CopyField(ref f, hpDetail.Morphs, MorphologicalTags.Phon))
                     {
                         var sc2 = NGram(3, word, f, NGramOptions.LongerWorse | NGramOptions.Lowering)
                             + LeftCommonSubstring(word, f);
@@ -2318,107 +2318,124 @@ public partial class WordList
             return nscore;
         }
 
+        /// <summary>Calculates a weighted score based on substring matching.</summary>
+        /// <param name="n">The maximum size of substrings to generate.</param>
+        /// <param name="s1">The text to generate substrings from.</param>
+        /// <param name="t">The text to search.</param>
+        /// <returns>The score.</returns>
+        /// <remarks>
+        /// This algorithm calculates a score which is based on all substrings in <paramref name="s1"/> that have a
+        /// length between 1 and <paramref name="n"/>, that are also found in <paramref name="t"/>. The score is
+        /// calculated as the number of substrings found minus the number of substrings that are not found. Also,
+        /// for the substrings that are aligned to the beginning of s1 or the end of s1 the penalty for them not
+        /// being found is doubled.
+        ///
+        /// To use an example, and invocation of (2, "nano", "banana") would produce 7 subrstrings to check and 5 would be found,
+        /// resulting in a score of 1. The produced set of subrstrings would be: "n", "na", "a", "an", "n", "no", and "o".
+        /// The reason the score is 1 instead of 3 is because the last two substrings deduct double from the score because they are
+        /// aligned to the end of s1.
+        /// Also note that in this example, the substring "n" from <paramref name="s1"/> is checked against <paramref name="t"/>
+        /// twice and counted twice.
+        /// </remarks>
         private static int NGramWeightedSearch(int n, ReadOnlySpan<char> s1, ReadOnlySpan<char> t)
         {
-            var nscore = NGramWeightedSearch_Iteration1(s1, t);
-            for (var nGramLength = 2; nGramLength <= n; nGramLength++)
+#if DEBUG
+            if (s1.IsEmpty) throw new ArgumentOutOfRangeException(nameof(s1));
+            if (t.IsEmpty) throw new ArgumentOutOfRangeException(nameof(t));
+#endif
+
+            // all substrings are left aligned for this first iteration so anything not matching needs to be double counted
+            var needle = s1.Limit(n);
+            var matchLength = FindLongestSubstringMatch(needle, t);
+            var nscore = matchLength - ((needle.Length - matchLength) * 2);
+
+            while (true)
             {
-                nscore += NGramWeightedSearch_IterationN(nGramLength, s1, t);
+                s1 = s1.Slice(1);
+
+                if (s1.IsEmpty)
+                {
+                    break;
+                }
+
+                needle = s1.Limit(n);
+                matchLength = FindLongestSubstringMatch(needle, t);
+
+                nscore += matchLength - (needle.Length - matchLength);
+
+                if (needle.Length == s1.Length && needle.Length > matchLength)
+                {
+                    // in this case only the largest substring can be aligned to the end of s1 for double counting
+                    nscore--;
+                }
             }
 
             return nscore;
         }
 
-        private static int NGramWeightedSearch_Iteration1(ReadOnlySpan<char> s1, ReadOnlySpan<char> t)
+        /// <summary>Calculates a non-weighted score based on substring matching.</summary>
+        /// <param name="n">The maximum size of substrings to generate.</param>
+        /// <param name="s1">The text to generate substrings from.</param>
+        /// <param name="s2">The text to search.</param>
+        /// <returns>The score.</returns>
+        /// <remarks>
+        /// This algorithm calculates a score which is the number of all substrings in <paramref name="s1"/> that have a
+        /// length between 1 and <paramref name="n"/>, that are also found in <paramref name="s2"/>.
+        ///
+        /// To use an example, and invocation of (2, "nano", "banana") would produce 7 subrstrings to check and 5 would be found,
+        /// resulting in a score of 5. The produced set of subrstrings would be: "n", "na", "a", "an", "n", "no", and "o".
+        /// Note that in this example, the substring "n" from <paramref name="s1"/> is checked against <paramref name="s2"/> twice and counted twice.
+        /// </remarks>
+        private static int NGramNonWeightedSearch(int n, ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
         {
-            var ns = 0;
-            var maxSearchIndex = s1.Length - 1;
-            for (var i = 0; i <= maxSearchIndex; ++i)
+#if DEBUG
+            if (s1.IsEmpty) throw new ArgumentOutOfRangeException(nameof(s1));
+            if (s2.IsEmpty) throw new ArgumentOutOfRangeException(nameof(s2));
+#endif
+
+            var nscore = 0;
+
+            do
             {
-                if (t.Contains(s1[i]))
-                {
-                    ++ns;
-                }
-                else
-                {
-                    if (i == 0 || i == maxSearchIndex)
-                    {
-                        ns -= 2;
-                    }
-                    else
-                    {
-                        --ns;
-                    }
-                }
+                nscore += FindLongestSubstringMatch(s1.Limit(n), s2);
+                s1 = s1.Slice(1);
             }
-
-            return ns;
-        }
-
-        private static int NGramWeightedSearch_IterationN(int nGramLength, ReadOnlySpan<char> s1, ReadOnlySpan<char> t)
-        {
-            var ns = 0;
-            var maxSearchIndex = s1.Length - nGramLength;
-            for (var i = 0; i <= maxSearchIndex; ++i)
-            {
-                if (t.Contains(s1.Slice(i, nGramLength)))
-                {
-                    ++ns;
-                }
-                else
-                {
-                    if (i == 0 || i == maxSearchIndex)
-                    {
-                        ns -= 2;
-                    }
-                    else
-                    {
-                        --ns;
-                    }
-                }
-            }
-
-            return ns;
-        }
-
-        private static int NGramNonWeightedSearch(int n, ReadOnlySpan<char> s1, ReadOnlySpan<char> t)
-        {
-            var ns = NGramNonWeightedSearch_Iteration1(s1, t);
-            var nscore = ns;
-            for (var nGramLength = 2; nGramLength <= n && ns >= 2; ++nGramLength)
-            {
-                ns = NGramNonWeightedSearch_IterationN(nGramLength, s1, t);
-                nscore += ns;
-            }
+            while (!s1.IsEmpty);
 
             return nscore;
         }
 
-        private static int NGramNonWeightedSearch_Iteration1(ReadOnlySpan<char> s1, ReadOnlySpan<char> t)
+        private static int FindLongestSubstringMatch(ReadOnlySpan<char> needle, ReadOnlySpan<char> haystack)
         {
-            var ns = 0;
-            for (var i = 0; i < s1.Length; ++i)
-            {
-                if (t.Contains(s1[i]))
-                {
-                    ++ns;
-                }
-            }
-            return ns;
-        }
+#if DEBUG
+            if (needle.IsEmpty) throw new ArgumentOutOfRangeException(nameof(needle));
+#endif
 
-        private static int NGramNonWeightedSearch_IterationN(int nGramLength, ReadOnlySpan<char> s1, ReadOnlySpan<char> t)
-        {
-            var ns = 0;
-            var maxIndex = s1.Length - nGramLength;
-            for (var i = 0; i <= maxIndex; ++i)
+            // This brute force algorithm leans heavily on the performance benefits of IndexOf.
+            // As an optimization, break out when a better result is not possible.
+
+            var best = 0;
+            var searchIndex = haystack.IndexOf(needle[0]);
+            while (searchIndex >= 0)
             {
-                if (t.Contains(s1.Slice(i, nGramLength)))
+                haystack = haystack.Slice(searchIndex);
+
+                for (searchIndex = best + 1; searchIndex < haystack.Length && searchIndex < needle.Length && needle[searchIndex] == haystack[searchIndex]; searchIndex++) ;
+
+                if (searchIndex > best)
                 {
-                    ++ns;
+                    best = searchIndex;
+
+                    if (best >= needle.Length)
+                    {
+                        break;
+                    }
                 }
+
+                searchIndex = haystack.IndexOf(needle.Slice(0, best + 1), 1);
             }
-            return ns;
+
+            return best;
         }
 
         /// <summary>
