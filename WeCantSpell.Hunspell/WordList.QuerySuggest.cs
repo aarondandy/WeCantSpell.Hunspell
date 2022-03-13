@@ -2318,70 +2318,62 @@ public partial class WordList
             return nscore;
         }
 
+        /// <summary>Calculates a weighted score based on substring matching.</summary>
+        /// <param name="n">The maximum size of substrings to generate.</param>
+        /// <param name="s1">The text to generate substrings from.</param>
+        /// <param name="t">The text to search.</param>
+        /// <returns>The score.</returns>
+        /// <remarks>
+        /// This algorithm calculates a score which is based on all substrings in <paramref name="s1"/> that have a
+        /// length between 1 and <paramref name="n"/>, that are also found in <paramref name="t"/>. The score is
+        /// calculated as the number of substrings found minus the number of substrings that are not found. Also,
+        /// for the substrings that are aligned to the beginning of s1 or the end of s1 the penalty for them not
+        /// being found is doubled.
+        ///
+        /// To use an example, and invocation of (2, "nano", "banana") would produce 7 subrstrings to check and 5 would be found,
+        /// resulting in a score of 1. The produced set of subrstrings would be: "n", "na", "a", "an", "n", "no", and "o".
+        /// The reason the score is 1 instead of 3 is because the last two substrings deduct double from the score because they are
+        /// aligned to the end of s1.
+        /// Also note that in this example, the substring "n" from <paramref name="s1"/> is checked against <paramref name="t"/>
+        /// twice and counted twice.
+        /// </remarks>
         private static int NGramWeightedSearch(int n, ReadOnlySpan<char> s1, ReadOnlySpan<char> t)
         {
-            var nscore = NGramWeightedSearch_Iteration1(s1, t);
-            for (var nGramLength = 2; nGramLength <= n; nGramLength++)
+#if DEBUG
+            if (s1.IsEmpty) throw new ArgumentOutOfRangeException(nameof(s1));
+            if (t.IsEmpty) throw new ArgumentOutOfRangeException(nameof(t));
+#endif
+
+            // all substrings are left aligned for this first iteration so anything not matching needs to be double counted
+            var needle = s1.Limit(n);
+            var matchLength = FindLongestSubstringMatch(needle, t);
+            var nscore = matchLength - ((needle.Length - matchLength) * 2);
+
+            while (true)
             {
-                nscore += NGramWeightedSearch_IterationN(nGramLength, s1, t);
+                s1 = s1.Slice(1);
+
+                if (s1.IsEmpty)
+                {
+                    break;
+                }
+
+                needle = s1.Limit(n);
+                matchLength = FindLongestSubstringMatch(needle, t);
+
+                nscore += matchLength - (needle.Length - matchLength);
+
+                if (needle.Length == s1.Length && needle.Length > matchLength)
+                {
+                    // in this case only the largest substring can be aligned to the end of s1 for double counting
+                    nscore--;
+                }
             }
 
             return nscore;
         }
 
-        private static int NGramWeightedSearch_Iteration1(ReadOnlySpan<char> s1, ReadOnlySpan<char> t)
-        {
-            var ns = 0;
-            var maxSearchIndex = s1.Length - 1;
-            for (var i = 0; i <= maxSearchIndex; ++i)
-            {
-                if (t.Contains(s1[i]))
-                {
-                    ++ns;
-                }
-                else
-                {
-                    if (i == 0 || i == maxSearchIndex)
-                    {
-                        ns -= 2;
-                    }
-                    else
-                    {
-                        --ns;
-                    }
-                }
-            }
-
-            return ns;
-        }
-
-        private static int NGramWeightedSearch_IterationN(int nGramLength, ReadOnlySpan<char> s1, ReadOnlySpan<char> t)
-        {
-            var ns = 0;
-            var maxSearchIndex = s1.Length - nGramLength;
-            for (var i = 0; i <= maxSearchIndex; ++i)
-            {
-                if (t.Contains(s1.Slice(i, nGramLength)))
-                {
-                    ++ns;
-                }
-                else
-                {
-                    if (i == 0 || i == maxSearchIndex)
-                    {
-                        ns -= 2;
-                    }
-                    else
-                    {
-                        --ns;
-                    }
-                }
-            }
-
-            return ns;
-        }
-
-        /// <summary>Calculates a score based on substring matching.</summary>
+        /// <summary>Calculates a non-weighted score based on substring matching.</summary>
         /// <param name="n">The maximum size of substrings to generate.</param>
         /// <param name="s1">The text to generate substrings from.</param>
         /// <param name="s2">The text to search.</param>
@@ -2403,49 +2395,51 @@ public partial class WordList
 
             var nscore = 0;
 
-            for (var searchIndex = 0; searchIndex < s1.Length; searchIndex++)
+            do
             {
-                nscore += findLongestMatch(s1.Slice(searchIndex, Math.Min(s1.Length - searchIndex, n)), s2);
+                nscore += FindLongestSubstringMatch(s1.Limit(n), s2);
+                s1 = s1.Slice(1);
             }
+            while (!s1.IsEmpty);
 
             return nscore;
+        }
 
-            static int findLongestMatch(ReadOnlySpan<char> needle, ReadOnlySpan<char> haystack)
+        private static int FindLongestSubstringMatch(ReadOnlySpan<char> needle, ReadOnlySpan<char> haystack)
+        {
+            // This brute force algorithm leans heavily on the performance benefits of IndexOf.
+            // As an optimization, break out when a better result is not possible.
+
+            var best = 0;
+
+            int searchIndex;
+            while ((searchIndex = haystack.IndexOf(needle[0])) >= 0)
             {
-                // This brute force algorithm leans heavily on the performance benefits of IndexOf.
-                // As an optimization, break out when a better result is not possible.
+                haystack = haystack.Slice(searchIndex);
 
-                var best = 0;
-
-                int searchIndex;
-                while ((searchIndex = haystack.IndexOf(needle[0])) >= 0)
+                var longestPossibleMatch = Math.Min(haystack.Length, needle.Length);
+                if (best >= longestPossibleMatch)
                 {
-                    haystack = haystack.Slice(searchIndex);
+                    break;
+                }
 
-                    var longestPossibleMatch = Math.Min(haystack.Length, needle.Length);
-                    if (best >= longestPossibleMatch)
+                searchIndex = 1;
+                for (; searchIndex < longestPossibleMatch && needle[searchIndex] == haystack[searchIndex]; searchIndex++) ;
+
+                if (searchIndex > best)
+                {
+                    best = searchIndex;
+
+                    if (best == needle.Length)
                     {
                         break;
                     }
-
-                    searchIndex = 1;
-                    for (; searchIndex < longestPossibleMatch && needle[searchIndex] == haystack[searchIndex]; searchIndex++) ;
-
-                    if (searchIndex > best)
-                    {
-                        best = searchIndex;
-
-                        if (best == needle.Length)
-                        {
-                            break;
-                        }
-                    }
-
-                    haystack = haystack.Slice(1);
                 }
 
-                return best;
+                haystack = haystack.Slice(1);
             }
+
+            return best;
         }
 
         /// <summary>
