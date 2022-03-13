@@ -117,11 +117,10 @@ public abstract class AffixCollection<TEntry> :
     internal GetByFlagsEnumerator GetByFlags(FlagSet flags) => new(flags, AffixesByFlag);
 
     internal IEnumerable<AffixEntryGroup<TEntry>> GetAffixesWithEmptyKeysAndFlag(FlagSet flags) =>
-        AffixesWithEmptyKeys.AsEnumerable().Where(g => flags.Contains(g.AFlag));
+        AffixesWithEmptyKeys.Where(g => flags.Contains(g.AFlag));
 
     internal IEnumerable<Affix<TEntry>> GetMatchingWithDotAffixes(string word, Func<string, string, bool> predicate) =>
-        AffixesWithDots.SelectMany(group =>
-            group.Entries
+        AffixesWithDots.SelectMany(group => group.Entries
                 .Where(entry => predicate(entry.Key, word))
                 .Select(group.CreateAffix));
 
@@ -145,9 +144,9 @@ public abstract class AffixCollection<TEntry> :
 
         public bool MoveNext()
         {
-            while (_flagsIndex + 1 < _flags.Count)
+            while (++_flagsIndex < _flags.Count)
             {
-                if (_affixesByFlag.GetValueOrDefault(_flags.Values[++_flagsIndex]) is { } result)
+                if (_affixesByFlag.GetValueOrDefault(_flags.Values[_flagsIndex]) is { } result)
                 {
                     Current = result;
                     return true;
