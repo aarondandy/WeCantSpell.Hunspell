@@ -1,106 +1,125 @@
 ﻿using System;
+using System.Buffers;
+using System.Threading;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
-ref struct SimulatedCString
+struct SimulatedCString
 {
     public SimulatedCString(string text)
     {
-        _buffer = text.ToCharArray();
-        _cachedString = null;
-        _cachedSpan = _buffer.AsSpan();
-        _cacheRequiresRefresh = true;
+        _rawBuffer = ArrayPool<char>.Shared.Rent(text.Length);
+        text.AsSpan().CopyTo(_rawBuffer.AsSpan(0, text.Length));
+        _bufferLength = text.Length;
+        _terminatedLength = null;
     }
 
-    private char[] _buffer;
-    private string? _cachedString;
-    private Span<char> _cachedSpan;
-    private bool _cacheRequiresRefresh;
+    private char[] _rawBuffer;
+    private int? _terminatedLength;
+    private int _bufferLength;
+
+    public ReadOnlySpan<char> BufferSpan => _rawBuffer.AsSpan(0, _bufferLength);
+
+    public ReadOnlySpan<char> TerminatedSpan => _rawBuffer.AsSpan(0, _terminatedLength ??= BufferSpan.FindNullTerminatedLength());
 
     public char this[int index]
     {
-        get => index < 0 || index >= _buffer.Length ? '\0' : _buffer[index];
+        get
+        {
+            return index >= 0 && index < _bufferLength ? _rawBuffer[index] : '\0';
+        }
         set
         {
-            ResetCache();
-            _buffer[index] = value;
+#if DEBUG
+            if (index < 0 || index >= _bufferLength) throw new ArgumentOutOfRangeException(nameof(index));
+#endif
+            _rawBuffer[index] = value;
+
+            if (value == '\0')
+            {
+                if (index < _terminatedLength)
+                {
+                    _terminatedLength = index;
+                }
+            }
+            else if (index == _terminatedLength)
+            {
+                _terminatedLength = null;
+            }
         }
     }
 
-    public int BufferLength => _buffer.Length;
-
-    public void WriteChars(string text, int destinationIndex)
+    public char Exchange(int index, char value)
     {
-        ResetCache();
-
-        var neededLength = text.Length + destinationIndex;
-        if (_buffer.Length < neededLength)
+        if (index < 0 || index >= _bufferLength)
         {
-            Array.Resize(ref _buffer, neededLength);
+            return '\0';
         }
 
-        text.CopyTo(0, _buffer, destinationIndex, text.Length);
+        var result = _rawBuffer[index];
+        this[index] = value;
+        return result;
     }
 
     public void WriteChars(ReadOnlySpan<char> text, int destinationIndex)
     {
-        ResetCache();
+        EnsureBufferCapacity(text.Length + destinationIndex);
 
-        var neededLength = text.Length + destinationIndex;
-        if (_buffer.Length < neededLength)
-        {
-            Array.Resize(ref _buffer, neededLength);
-        }
+        text.CopyTo(_rawBuffer.AsSpan(destinationIndex));
 
-        text.CopyTo(_buffer.AsSpan(destinationIndex));
+        _terminatedLength = null;
     }
 
-    public void Assign(string text)
+    public void Assign(ReadOnlySpan<char> text)
     {
 #if DEBUG
-        if (text is null) throw new ArgumentNullException(nameof(text));
-        if (text.Length > _buffer.Length) throw new ArgumentOutOfRangeException(nameof(text));
+        if (text.Length > _bufferLength) throw new ArgumentOutOfRangeException(nameof(text));
 #endif
-        ResetCache();
+        var buffer = _rawBuffer.AsSpan(0, _bufferLength);
 
-        text.CopyTo(0, _buffer, 0, text.Length);
+        text.CopyTo(buffer);
 
-        if (text.Length < _buffer.Length)
+        if (text.Length < _bufferLength)
         {
-            Array.Clear(_buffer, text.Length, _buffer.Length - text.Length);
+            buffer.Slice(text.Length).Clear();
         }
+
+        _terminatedLength = null;
     }
 
     public void Destroy()
     {
-        ResetCache();
-    }
-
-    public override string ToString()
-    {
-        return _cachedString ??= GetTerminatedSpan().ToString();
-    }
-
-    public Span<char> GetTerminatedSpan()
-    {
-        if (_cacheRequiresRefresh)
+        var oldBuffer = Interlocked.Exchange(ref _rawBuffer, Array.Empty<char>());
+        if (oldBuffer.Length > 0)
         {
-            _cacheRequiresRefresh = false;
-            _cachedSpan = _buffer.AsSpan(0, FindTerminatedLength());
+            ArrayPool<char>.Shared.Return(oldBuffer);
         }
-
-        return _cachedSpan;
     }
 
-    private void ResetCache()
+    public override string ToString() => TerminatedSpan.ToString();
+
+    private void EnsureBufferCapacity(int neededLength)
     {
-        _cacheRequiresRefresh = true;
-        _cachedString = null;
+        if (_bufferLength < neededLength)
+        {
+            if (_rawBuffer.Length < neededLength)
+            {
+                RebuildRawBuffer(neededLength);
+            }
+
+            _bufferLength = neededLength;
+        }
     }
 
-    private int FindTerminatedLength()
+    private void RebuildRawBuffer(int neededLength)
     {
-        var length = Array.IndexOf(_buffer, '\0');
-        return length < 0 ? _buffer.Length : length;
+        var newRawBuffer = ArrayPool<char>.Shared.Rent(neededLength);
+        var newBuffer = newRawBuffer.AsSpan(0, neededLength);
+        var oldRawBuffer = _rawBuffer;
+
+        oldRawBuffer.AsSpan(0, _bufferLength).CopyTo(newBuffer);
+        _rawBuffer = newRawBuffer;
+
+        ArrayPool<char>.Shared.Return(oldRawBuffer);
     }
 }

@@ -246,4 +246,28 @@ static class MemoryEx
     }
 
     public static string ConcatString(this ReadOnlySpan<char> @this, char value) => @this.ConcatString(value.ToString());
+
+    public static int FindNullTerminatedLength(this Span<char> @this)
+    {
+        var index = @this.IndexOf('\0');
+        return index < 0 ? @this.Length : index;
+    }
+
+    public static int FindNullTerminatedLength(this ReadOnlySpan<char> @this)
+    {
+        var index = @this.IndexOf('\0');
+        return index < 0 ? @this.Length : index;
+    }
+
+    public static int FindNullTerminatedLength(this Span<char> @this, int startIndex)
+    {
+        var index = @this.Slice(startIndex).IndexOf('\0');
+        return index < 0 ? @this.Length : startIndex + index;
+    }
+
+    public static int FindNullTerminatedLength(this ReadOnlySpan<char> @this, int startIndex)
+    {
+        var index = @this.Slice(startIndex).IndexOf('\0');
+        return index < 0 ? @this.Length : startIndex + index;
+    }
 }

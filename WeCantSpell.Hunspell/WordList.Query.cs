@@ -459,12 +459,12 @@ public partial class WordList
 
                             var scpdPatternEntry = Affix.CompoundPatterns[scpd - 1];
 
-                            st.WriteChars(scpdPatternEntry.Pattern, i);
+                            st.WriteChars(scpdPatternEntry.Pattern.AsSpan(), i);
 
                             soldi = i;
                             i += scpdPatternEntry.Pattern.Length;
 
-                            st.WriteChars(scpdPatternEntry.Pattern2, i);
+                            st.WriteChars(scpdPatternEntry.Pattern2.AsSpan(), i);
 
                             st.WriteChars(word.AsSpan(soldi + scpdPatternEntry.Pattern3.Length), i + scpdPatternEntry.Pattern2.Length);
 
@@ -484,15 +484,7 @@ public partial class WordList
                             scpdPatternEntryCondition2 = default;
                         }
 
-                        if (i < st.BufferLength)
-                        {
-                            ch = st[i];
-                            st[i] = '\0';
-                        }
-                        else
-                        {
-                            ch = default;
-                        }
+                        ch = st.Exchange(i, '\0');
 
                         ClearSuffix();
                         ClearPrefix();
@@ -672,10 +664,7 @@ public partial class WordList
                             if (ContainFlagsOrBlockSuggest(rv.Detail, isSug, Affix.ForbiddenWord, Affix.NeedAffix, SpecialFlags.OnlyUpcaseFlag))
                             {
                                 // else check forbiddenwords and needaffix
-                                if (i < st.BufferLength)
-                                {
-                                    st[i] = ch;
-                                }
+                                st[i] = ch;
 
                                 break;
                             }
@@ -806,7 +795,7 @@ public partial class WordList
                             if (Affix.IsHungarian)
                             {
                                 // calculate syllable number of the word
-                                numSyllable += GetSyllable(st.GetTerminatedSpan().Slice(0, i));
+                                numSyllable += GetSyllable(st.TerminatedSpan.Slice(0, i));
 
                                 // - affix syllable num.
                                 // XXX only second suffix (inflections, not derivations)
@@ -829,10 +818,7 @@ public partial class WordList
                             // NEXT WORD(S)
                             WordEntry rvFirst = rv!; // firstWordCompoundAcceptable ensures that rv is not null
 
-                            if (i < st.BufferLength)
-                            {
-                                st[i] = ch;
-                            }
+                            st[i] = ch;
 
                             do
                             {
@@ -852,7 +838,7 @@ public partial class WordList
                                     }
                                 }
 
-                                rv = HomonymWordSearch(st.GetTerminatedSpan().Slice(i), words, scpdPatternEntryCondition2, scpd == 0);
+                                rv = HomonymWordSearch(st.TerminatedSpan.Slice(i), words, scpdPatternEntryCondition2, scpd == 0);
 
                                 if (rv is not null)
                                 {
@@ -1130,7 +1116,7 @@ public partial class WordList
                                 // perhaps second word is a compound word (recursive call)
                                 if (wordNum < maxwordnum)
                                 {
-                                    rv = CompoundCheck(st.GetTerminatedSpan().Slice(i).ToString(), wordNum + 1, numSyllable, maxwordnum, words?.CreateIncremented(), rwords.CreateIncremented(), false, isSug, ref info, opLimiter);
+                                    rv = CompoundCheck(st.TerminatedSpan.Slice(i).ToString(), wordNum + 1, numSyllable, maxwordnum, words?.CreateIncremented(), rwords.CreateIncremented(), false, isSug, ref info, opLimiter);
 
                                     if (
                                         rv is not null
@@ -1170,19 +1156,12 @@ public partial class WordList
                                         // check first part
                                         if (word.AsSpan(i).StartsWith(rv.Word.AsSpan()))
                                         {
-                                            var r = st[i + rv.Word.Length];
-                                            if (i + rv.Word.Length < st.BufferLength)
-                                            {
-                                                st[i + rv.Word.Length] = '\0';
-                                            }
+                                            var r = st.Exchange(i + rv.Word.Length, '\0');
 
-                                            var stString = st.GetTerminatedSpan();
+                                            var stString = st.TerminatedSpan;
                                             if ((Affix.CheckCompoundRep && CompoundReplacementCheck(stString)) || CompoundWordPairCheck(stString))
                                             {
-                                                if (i + rv.Word.Length < st.BufferLength)
-                                                {
-                                                    st[i + rv.Word.Length] = r;
-                                                }
+                                                st[i + rv.Word.Length] = r;
 
                                                 continue;
                                             }
@@ -1195,7 +1174,7 @@ public partial class WordList
                                                 if (
                                                     rv2 is not null
                                                     && rv2.ContainsFlag(Affix.ForbiddenWord)
-                                                    && rv2.Word.AsSpan().EqualsLimited(st.GetTerminatedSpan(), i + rv.Word.Length)
+                                                    && rv2.Word.AsSpan().EqualsLimited(st.TerminatedSpan, i + rv.Word.Length)
                                                 )
                                                 {
                                                     st.Destroy();
@@ -1203,10 +1182,7 @@ public partial class WordList
                                                 }
                                             }
 
-                                            if (i + rv.Word.Length < st.BufferLength)
-                                            {
-                                                st[i + rv.Word.Length] = r;
-                                            }
+                                            st[i + rv.Word.Length] = r;
                                         }
                                     }
 
@@ -1245,15 +1221,12 @@ public partial class WordList
                     if (soldi != 0)
                     {
                         i = soldi;
-                        st.Assign(word);
+                        st.Assign(word.AsSpan());
                         soldi = 0;
                     }
                     else
                     {
-                        if (i < st.BufferLength)
-                        {
-                            st[i] = ch;
-                        }
+                        st[i] = ch;
                     }
                 }
                 while (Affix.CompoundRules.HasItems && oldwordnum == 0 && IntEx.InversePostfixIncrement(ref onlycpdrule));
