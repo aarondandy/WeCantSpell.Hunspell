@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Buffers;
-using System.Threading;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
@@ -8,19 +6,19 @@ struct SimulatedCString
 {
     public SimulatedCString(string text)
     {
-        _rawBuffer = ArrayPool<char>.Shared.Rent(text.Length);
-        text.AsSpan().CopyTo(_rawBuffer.AsSpan(0, text.Length));
+        _rawBuffer = new char[text.Length + 3]; // 3 extra characters seems to be enough to prevent most reallocations
+        text.CopyTo(0, _rawBuffer, 0, text.Length);
         _bufferLength = text.Length;
-        _terminatedLength = null;
+        _terminatedLengthCache = null;
     }
 
     private char[] _rawBuffer;
-    private int? _terminatedLength;
+    private int? _terminatedLengthCache;
     private int _bufferLength;
 
     public ReadOnlySpan<char> BufferSpan => _rawBuffer.AsSpan(0, _bufferLength);
 
-    public ReadOnlySpan<char> TerminatedSpan => _rawBuffer.AsSpan(0, _terminatedLength ??= BufferSpan.FindNullTerminatedLength());
+    public ReadOnlySpan<char> TerminatedSpan => _rawBuffer.AsSpan(0, _terminatedLengthCache ??= BufferSpan.FindNullTerminatedLength());
 
     public char this[int index]
     {
@@ -37,14 +35,14 @@ struct SimulatedCString
 
             if (value == '\0')
             {
-                if (index < _terminatedLength)
+                if (index < _terminatedLengthCache)
                 {
-                    _terminatedLength = index;
+                    _terminatedLengthCache = index;
                 }
             }
-            else if (index == _terminatedLength)
+            else if (index == _terminatedLengthCache)
             {
-                _terminatedLength = null;
+                _terminatedLengthCache = null;
             }
         }
     }
@@ -67,7 +65,7 @@ struct SimulatedCString
 
         text.CopyTo(_rawBuffer.AsSpan(destinationIndex));
 
-        _terminatedLength = null;
+        _terminatedLengthCache = null;
     }
 
     public void Assign(ReadOnlySpan<char> text)
@@ -84,16 +82,13 @@ struct SimulatedCString
             buffer.Slice(text.Length).Clear();
         }
 
-        _terminatedLength = null;
+        _terminatedLengthCache = null;
     }
 
+    [System.Diagnostics.Conditional("DEBUG")]
     public void Destroy()
     {
-        var oldBuffer = Interlocked.Exchange(ref _rawBuffer, Array.Empty<char>());
-        if (oldBuffer.Length > 0)
-        {
-            ArrayPool<char>.Shared.Return(oldBuffer);
-        }
+        // I want to keep this method here in case a future implementation can make use of it.
     }
 
     public override string ToString() => TerminatedSpan.ToString();
@@ -104,22 +99,10 @@ struct SimulatedCString
         {
             if (_rawBuffer.Length < neededLength)
             {
-                RebuildRawBuffer(neededLength);
+                Array.Resize(ref _rawBuffer, neededLength);
             }
 
             _bufferLength = neededLength;
         }
-    }
-
-    private void RebuildRawBuffer(int neededLength)
-    {
-        var newRawBuffer = ArrayPool<char>.Shared.Rent(neededLength);
-        var newBuffer = newRawBuffer.AsSpan(0, neededLength);
-        var oldRawBuffer = _rawBuffer;
-
-        oldRawBuffer.AsSpan(0, _bufferLength).CopyTo(newBuffer);
-        _rawBuffer = newRawBuffer;
-
-        ArrayPool<char>.Shared.Return(oldRawBuffer);
     }
 }
