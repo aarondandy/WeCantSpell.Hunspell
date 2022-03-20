@@ -55,9 +55,9 @@ public class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacemen
 
     public bool HasReplacements => _replacements.Count > 0;
 
-    public IEnumerable<string> Keys => _replacements.Keys.Select(key => key.ToString());
+    public IEnumerable<string> Keys => _replacements.Keys;
 
-    public IEnumerable<MultiReplacementEntry> Values => _replacements.Select(entry => entry.Value);
+    public IEnumerable<MultiReplacementEntry> Values => _replacements.Values;
 
     public bool ContainsKey(string key) => _replacements.ContainsKey(key);
 
@@ -126,9 +126,7 @@ public class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacemen
         return null;
     }
 
-    public IEnumerator<KeyValuePair<string, MultiReplacementEntry>> GetEnumerator() => _replacements
-        .Select(entry => new KeyValuePair<string, MultiReplacementEntry>(entry.Key.ToString(), entry.Value))
-        .GetEnumerator();
+    public IEnumerator<KeyValuePair<string, MultiReplacementEntry>> GetEnumerator() => _replacements.AsEnumerable().GetEnumerator();
 
-    IEnumerator IEnumerable.GetEnumerator() => _replacements.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

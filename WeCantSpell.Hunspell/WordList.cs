@@ -67,7 +67,7 @@ public sealed partial class WordList
 
     public SingleReplacementSet AllReplacements { get; private set; }
 
-    public IEnumerable<string> RootWords => EntriesByRoot.Keys.Select(w => w.ToString());
+    public IEnumerable<string> RootWords => EntriesByRoot.Keys;
 
     public bool HasEntries => EntriesByRoot.Count > 0;
 
@@ -162,7 +162,7 @@ public sealed partial class WordList
             Current = default;
         }
 
-        private IEnumerator<KeyValuePair<ReadOnlyMemory<char>, WordEntryDetail[]>> _coreEnumerator;
+        private TextDictionary<WordEntryDetail[]>.Enumerator _coreEnumerator;
         private readonly TextDictionary<WordEntryDetail[]> _nGramRestrictedDetails;
         private readonly int _minKeyLength;
         private readonly int _maxKeyLength;
@@ -211,12 +211,11 @@ public sealed partial class WordList
                         }
                     }
 
-                    Current = new(rootKey.ToString(), rootValue);
+                    Current = new(rootKey, rootValue);
                     return true;
                 }
             }
 
-            _coreEnumerator.Dispose();
             Current = default;
             return false;
         }

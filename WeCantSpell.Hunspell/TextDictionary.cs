@@ -2,13 +2,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
-sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<ReadOnlyMemory<char>, TValue>>
+sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 {
     const int MinimumCapacity = 3;
 
@@ -26,15 +25,15 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<ReadOnlyMemory<ch
     {
     }
 
-    public TextDictionary(int capacity)
+    public TextDictionary(int desiredCapacity)
     {
-        if (capacity < MinimumCapacity)
+        if (desiredCapacity < MinimumCapacity)
         {
-            capacity = MinimumCapacity;
+            desiredCapacity = MinimumCapacity;
         }
 
-        _entries = new Entry[capacity];
-        _cellarStartIndex = CalculateCellarStartIndex(capacity);
+        _entries = new Entry[CalculateBestTableSize(desiredCapacity)];
+        _cellarStartIndex = CalculateCellarStartIndex(_entries.Length);
         _leftoverCursor = _cellarStartIndex;
         Count = 0;
     }
@@ -45,9 +44,19 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<ReadOnlyMemory<ch
 
     public int Count { get; private set; }
 
-    public IEnumerable<ReadOnlyMemory<char>> Keys => _entries
-        .Where(e => !e.IsBlank)
-        .Select(e => e.Key);
+    public IEnumerable<string> Keys => FilledEntries.Select(static e => e.Key);
+
+    public IEnumerable<TValue> Values => FilledEntries.Select(static e => e.Value);
+
+    private IEnumerable<Entry> FilledEntries => _entries.Where(static e => !e.IsBlank);
+
+    public Enumerator GetEnumerator() => new(this);
+
+    IEnumerator<KeyValuePair<string, TValue>> IEnumerable<KeyValuePair<string, TValue>>.GetEnumerator() => FilledEntries
+        .Select(static e => new KeyValuePair<string, TValue>(e.Key, e.Value))
+        .GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => this.AsEnumerable().GetEnumerator();
 
     public bool ContainsKey(string key) => ContainsKey(key.AsSpan());
 
@@ -61,42 +70,36 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<ReadOnlyMemory<ch
 
     public bool TryGetValue(ReadOnlySpan<char> key, out TValue value)
     {
-        var hash = CalculateHash(key);
+        var hash = TextDictionary<TValue>.CalculateHash(key);
 
         ref var bucket = ref _entries[hash % _cellarStartIndex];
+        if (bucket.IsBlank)
+        {
+            value = default!;
+            return false;
+        }
+
         while (true)
         {
-            if (bucket.HashCode == hash && CheckKeysEqual(bucket.Key.Span, key))
+            if (bucket.HashCode == hash && TextDictionary<TValue>.CheckKeysEqual(bucket.Key.AsSpan(), key))
             {
                 value = bucket.Value;
                 return true;
             }
 
-            if (bucket.Next <= 0)
+            if (bucket.Next < 0)
             {
                 value = default!;
                 return false;
             }
 
-            bucket = ref _entries[bucket.Next - 1];
+            bucket = ref _entries[bucket.Next];
         }
     }
 
-    public IEnumerator<KeyValuePair<ReadOnlyMemory<char>, TValue>> GetEnumerator() => _entries
-        .Where(e => !e.IsBlank)
-        .Select(e => new KeyValuePair<ReadOnlyMemory<char>, TValue>(e.Key, e.Value))
-        .GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
     public void Add(string key, TValue value)
     {
-        Add(key.AsMemory(), value);
-    }
-
-    public void Add(ReadOnlyMemory<char> key, TValue value)
-    {
-        var hash = CalculateHash(key);
+        var hash = TextDictionary<TValue>.CalculateHash(key);
 
         ref var bucket = ref _entries[hash % _cellarStartIndex];
         if (bucket.IsBlank)
@@ -114,17 +117,17 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<ReadOnlyMemory<ch
         // search through the chain to ensure there are no collisions
         while (true)
         {
-            if (bucket.HashCode == hash && CheckKeysEqual(bucket.Key.Span, key.Span))
+            if (bucket.HashCode == hash && TextDictionary<TValue>.CheckKeysEqual(bucket.Key.AsSpan(), key.AsSpan()))
             {
                 throw new InvalidOperationException("Duplicate key");
             }
 
-            if (bucket.Next <= 0)
+            if (bucket.Next < 0)
             {
                 break;
             }
 
-            bucket = ref _entries[bucket.Next - 1];
+            bucket = ref _entries[bucket.Next];
         }
 
         if (_leftoverCursor >= _cellarStartIndex)
@@ -134,7 +137,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<ReadOnlyMemory<ch
             _leftoverCursor = FindEmptyBucketIndex(_entries, _leftoverCursor);
             if (_leftoverCursor < _entries.Length)
             {
-                bucket.Next = _leftoverCursor + 1;
+                bucket.Next = _leftoverCursor;
 
                 bucket = ref _entries[_leftoverCursor];
                 bucket.HashCode = hash;
@@ -180,7 +183,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<ReadOnlyMemory<ch
             }
         }
 
-        bucket.Next = _leftoverCursor + 1;
+        bucket.Next = _leftoverCursor;
 
         bucket = ref _entries[_leftoverCursor];
         bucket.HashCode = hash;
@@ -248,7 +251,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<ReadOnlyMemory<ch
                 }
             }
 
-            bucket.Next = newLeftoverCursor + 1;
+            bucket.Next = newLeftoverCursor;
 
             bucket = ref newEntries[newLeftoverCursor];
             bucket.HashCode = entry.HashCode;
@@ -264,25 +267,25 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<ReadOnlyMemory<ch
         _leftoverCursor = newLeftoverCursor >= newCellarStartIndex ? newLeftoverCursor : newEntries.Length;
     }
 
-    private uint CalculateHash(ReadOnlyMemory<char> key) => CalculateHash(key.Span);
+    private static uint CalculateHash(string key) => TextDictionary<TValue>.CalculateHash(key.AsSpan());
 
-    private uint CalculateHash(ReadOnlySpan<char> key) =>
+    private static uint CalculateHash(ReadOnlySpan<char> key) =>
 #if NO_SPAN_HASHCODE
         unchecked((uint)StringEx.GetHashCode(key));
 #else
         unchecked((uint)string.GetHashCode(key));
 #endif
 
-    private bool CheckKeysEqual(ReadOnlySpan<char> a, ReadOnlySpan<char> b)
+    private static bool CheckKeysEqual(ReadOnlySpan<char> a, ReadOnlySpan<char> b)
     {
         return a.Equals(b, StringComparison.Ordinal);
     }
 
     private static ref Entry FindEndOfChain(Entry[] entries, ref Entry entry)
     {
-        while (entry.Next > 0)
+        while (entry.Next >= 0)
         {
-            entry = ref entries[entry.Next - 1];
+            entry = ref entries[entry.Next];
         }
 
         return ref entry;
@@ -300,9 +303,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<ReadOnlyMemory<ch
         return startIndex;
     }
 
-    private static int CalculateCellarStartIndex(int capacity) =>
-        // The ratio 0.86 has been found to be a good one, I guess
-        (capacity * 86) / 100;
+    private static int CalculateCellarStartIndex(int capacity) => (capacity * 86) / 100;
 
     private static int CalculateBestTableSize(int requiredSize)
     {
@@ -317,15 +318,45 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<ReadOnlyMemory<ch
         return requiredSize;
     }
 
+    public struct Enumerator
+    {
+        internal Enumerator(TextDictionary<TValue> dictionary)
+        {
+            _entries = dictionary._entries;
+            _position = -1;
+            Current = default;
+        }
+
+        private readonly Entry[] _entries;
+        private int _position;
+
+        public KeyValuePair<string, TValue> Current { get; private set; }
+
+        public bool MoveNext()
+        {
+            while (++_position < _entries.Length)
+            {
+                ref var entry = ref _entries[_position];
+                if (entry.IsBlank)
+                {
+                    continue;
+                }
+
+                Current = new(entry.Key, entry.Value);
+                return true;
+            }
+
+            return false;
+        }
+    }
+
     private struct Entry
     {
         public uint HashCode;
-        public int Next; // 0 is for uninitialized, -1 is for explicit terminal, > 0 for the next 1-based index
-        public ReadOnlyMemory<char> Key;
+        public int Next; // -1 is for explicit terminal, >= 0 for the next 0-based index
+        public string Key;
         public TValue Value;
 
-        public bool IsBlank =>
-            // The idea with this logic is that the condition for a blank entry and a default (cleared) entry should be the same
-            HashCode == default && Next == default;
+        public bool IsBlank => Key is null;
     }
 }
