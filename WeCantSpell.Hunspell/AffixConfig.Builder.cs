@@ -399,18 +399,8 @@ public partial class AffixConfig
                 Version = Version is null ? null : Dedup(Version)
             };
 
-            if (allowDestructive)
-            {
-                config.InputConversions = MultiReplacementTable.TakeDictionary(InputConversions);
-                InputConversions = null;
-                config.OutputConversions = MultiReplacementTable.TakeDictionary(OutputConversions);
-                OutputConversions = null;
-            }
-            else
-            {
-                config.InputConversions = MultiReplacementTable.Create(InputConversions);
-                config.OutputConversions = MultiReplacementTable.Create(OutputConversions);
-            }
+            config.InputConversions = MultiReplacementTable.Create(InputConversions);
+            config.OutputConversions = MultiReplacementTable.Create(OutputConversions);
 
             config.AliasF = AliasF.ToImmutable(allowDestructive);
             config.AliasM = AliasM.ToImmutable(allowDestructive);
