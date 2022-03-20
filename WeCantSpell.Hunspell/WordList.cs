@@ -60,7 +60,6 @@ public sealed partial class WordList
         Affix = affix;
         NGramRestrictedFlags = nGramRestrictedFlags;
         EntriesByRoot = new();
-        EntriesByRoot2 = new();
         NGramRestrictedDetails = new();
     }
 
@@ -68,9 +67,9 @@ public sealed partial class WordList
 
     public SingleReplacementSet AllReplacements { get; private set; }
 
-    public IEnumerable<string> RootWords => EntriesByRoot.Keys;
+    public IEnumerable<string> RootWords => EntriesByRoot.Keys.Select(w => w.ToString());
 
-    public bool HasEntries => EntriesByRoot.Count != 0;
+    public bool HasEntries => EntriesByRoot.Count > 0;
 
     public bool ContainsEntriesForRootWord(string rootWord) => rootWord is not null && EntriesByRoot.ContainsKey(rootWord);
 
@@ -79,14 +78,13 @@ public sealed partial class WordList
             ? FindEntryDetailsByRootWord(rootWord).ToArray()
             : Array.Empty<WordEntryDetail>();
 
-    private Dictionary<string, WordEntryDetail[]> EntriesByRoot { get; set; }
-    private TextDictionary<WordEntryDetail[]> EntriesByRoot2 { get; set; }
+    private TextDictionary<WordEntryDetail[]> EntriesByRoot { get; set; }
 
     private FlagSet NGramRestrictedFlags { get; set; }
 
     private NGramAllowedEntriesEnumerator GetNGramAllowedDetailsByKeyLength(int minKeyLength, int maxKeyLength) => new(this, minKeyLength: minKeyLength, maxKeyLength: maxKeyLength);
 
-    private Dictionary<string, WordEntryDetail[]> NGramRestrictedDetails { get; set; }
+    private TextDictionary<WordEntryDetail[]> NGramRestrictedDetails { get; set; }
 
     public bool Check(string word) => Check(word, options: null);
 
@@ -115,6 +113,7 @@ public sealed partial class WordList
 #if DEBUG
         if (rootWord is null) throw new ArgumentNullException(nameof(rootWord));
 #endif
+
         return EntriesByRoot.TryGetValue(rootWord, out var details)
             ? details
             : Array.Empty<WordEntryDetail>();
@@ -163,8 +162,8 @@ public sealed partial class WordList
             Current = default;
         }
 
-        private Dictionary<string, WordEntryDetail[]>.Enumerator _coreEnumerator;
-        private readonly Dictionary<string, WordEntryDetail[]> _nGramRestrictedDetails;
+        private IEnumerator<KeyValuePair<ReadOnlyMemory<char>, WordEntryDetail[]>> _coreEnumerator;
+        private readonly TextDictionary<WordEntryDetail[]> _nGramRestrictedDetails;
         private readonly int _minKeyLength;
         private readonly int _maxKeyLength;
         private readonly bool _requiresNGramFiltering;
@@ -178,6 +177,7 @@ public sealed partial class WordList
             while (_coreEnumerator.MoveNext())
             {
                 var rootKey = _coreEnumerator.Current.Key;
+
                 if (rootKey.Length >= _minKeyLength && rootKey.Length <= _maxKeyLength)
                 {
                     var rootValue = _coreEnumerator.Current.Value;
@@ -211,7 +211,7 @@ public sealed partial class WordList
                         }
                     }
 
-                    Current = new(rootKey, rootValue);
+                    Current = new(rootKey.ToString(), rootValue);
                     return true;
                 }
             }

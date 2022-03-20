@@ -62,18 +62,14 @@ public partial class WordList
                 SpecialFlags.OnlyUpcaseFlag
             }));
 
-#if NO_HASHSET_CAPACITY
-            result.EntriesByRoot = new(EntryDetailsByRoot.Count);
-#else
-            result.EntriesByRoot.Clear();
-            result.EntriesByRoot.EnsureCapacity(EntryDetailsByRoot.Count);
-#endif
+            result.EntriesByRoot = new TextDictionary<WordEntryDetail[]>(EntryDetailsByRoot.Count);
 
             if (allowDestructive)
             {
                 foreach (var pair in EntryDetailsByRoot)
                 {
-                    result.EntriesByRoot.Add(pair.Key, pair.Value.Extract());
+                    var value = pair.Value.Extract();
+                    result.EntriesByRoot.Add(pair.Key, value);
                 }
 
                 EntryDetailsByRoot.Clear();
@@ -82,14 +78,9 @@ public partial class WordList
             {
                 foreach (var pair in EntryDetailsByRoot)
                 {
-                    result.EntriesByRoot.Add(pair.Key, pair.Value.MakeArray());
+                    var value = pair.Value.MakeArray();
+                    result.EntriesByRoot.Add(pair.Key, value);
                 }
-            }
-
-            result.EntriesByRoot2 = new TextDictionary<WordEntryDetail[]>();
-            foreach (var pair in result.EntriesByRoot)
-            {
-                result.EntriesByRoot2.Add(pair.Key, pair.Value);
             }
 
             result.AllReplacements = Affix.Replacements;
@@ -141,7 +132,7 @@ public partial class WordList
 #if NO_HASHSET_CAPACITY
             if (EntryDetailsByRoot.Count == 0)
             {
-                EntryDetailsByRoot = new((expectedSize / 100) + expectedSize);
+                EntryDetailsByRoot = new(expectedCapacity);
             }
 #else
             EntryDetailsByRoot.EnsureCapacity(expectedCapacity);

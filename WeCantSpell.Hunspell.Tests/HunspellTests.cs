@@ -194,16 +194,24 @@ public class HunspellTests
             actual.Should().BeEquivalentTo(expectedSuggestions);
         }
 
-        [Theory]
-        [InlineData("files/phone.dic", "Brasillian", new[] { "Brasilia", "Xxxxxxxxxx", "Brilliant", "Brazilian", "Brassily", "Brilliance" })]
-        public async Task words_offer_at_least_suggestions_in_any_order(string dictionaryFilePath, string word, string[] expectedSuggestions)
+        [Fact]
+        public async Task can_find_most_phone_suggestions()
         {
+            var dictionaryFilePath = "files/phone.dic";
+            var word = "Brasillian";
+            var minimumExpectedSuggestions = new[] { "Brasilia", "Xxxxxxxxxx", "Brilliant", "Brazilian", "Brassily", "Brilliance" };
+
             var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
 
-            var actual = dictionary.Suggest(word);
+            var actual = dictionary.Suggest(word, new QueryOptions
+            {
+                // Due to different internal dictionary orderings, the expected suggestions may not all appear unless we bring back more results
+                MaxPhoneticSuggestions = 5,
+                MaxSuggestions = 10
+            });
 
             actual.Should().NotBeNullOrEmpty();
-            actual.Should().Contain(expectedSuggestions);
+            actual.Should().Contain(minimumExpectedSuggestions);
         }
 
         public static IEnumerable<object[]> can_find_correct_best_suggestion_args()

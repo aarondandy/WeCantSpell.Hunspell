@@ -10,41 +10,70 @@ namespace WeCantSpell.Hunspell;
 
 sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<ReadOnlyMemory<char>, TValue>>
 {
-    public TextDictionary() : this(5)
+    const int MinimumCapacity = 5;
+
+    public TextDictionary() : this(MinimumCapacity)
     {
     }
 
     public TextDictionary(int capacity)
     {
+        if (capacity < MinimumCapacity)
+        {
+            capacity = MinimumCapacity;
+        }
+
         _entries = new Entry[capacity];
         _cellarStartIndex = CalculateCellarStartIndex(capacity);
         _leftoverCursor = _cellarStartIndex;
+        Count = 0;
     }
 
     private Entry[] _entries;
     private int _cellarStartIndex;
     private int _leftoverCursor;
 
-    public int Count => throw new NotImplementedException();
+    public int Count { get; private set; }
 
-    public IEnumerable<ReadOnlyMemory<char>> Keys => throw new NotImplementedException();
+    public IEnumerable<ReadOnlyMemory<char>> Keys => _entries
+        .Where(e => !e.IsBlank)
+        .Select(e => e.Key);
 
     public bool ContainsKey(string key) => ContainsKey(key.AsSpan());
 
-    public bool ContainsKey(ReadOnlySpan<char> key)
-    {
-        return TryGetValue(key, out _);
-    }
+    public bool ContainsKey(ReadOnlyMemory<char> key) => ContainsKey(key.Span);
+
+    public bool ContainsKey(ReadOnlySpan<char> key) => TryGetValue(key, out _);
 
     public bool TryGetValue(string key, out TValue value) => TryGetValue(key.AsSpan(), out value);
 
+    public bool TryGetValue(ReadOnlyMemory<char> key, out TValue value) => TryGetValue(key.Span, out value);
+
     public bool TryGetValue(ReadOnlySpan<char> key, out TValue value)
     {
-        throw new NotImplementedException();
+        var hash = CalculateHash(key);
+
+        ref var bucket = ref _entries[hash % _cellarStartIndex];
+        while (true)
+        {
+            if (bucket.HashCode == hash && CheckKeysEqual(bucket.Key.Span, key))
+            {
+                value = bucket.Value;
+                return true;
+            }
+
+            if (bucket.Next <= 0)
+            {
+                value = default!;
+                return false;
+            }
+
+            bucket = ref _entries[bucket.Next - 1];
+        }
     }
 
     public IEnumerator<KeyValuePair<ReadOnlyMemory<char>, TValue>> GetEnumerator() => _entries
-        .Where(e => e.IsBlank)
+        .Where(e => !e.IsBlank)
         .Select(e => new KeyValuePair<ReadOnlyMemory<char>, TValue>(e.Key, e.Value))
         .GetEnumerator();
 
@@ -66,9 +95,13 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<ReadOnlyMemory<ch
             bucket.Next = -1;
             bucket.Key = key;
             bucket.Value = value;
+
+            Count++;
+
             return;
         }
 
+        // search through the chain to ensure there are no collisions
         while (true)
         {
             if (bucket.HashCode == hash && CheckKeysEqual(bucket.Key.Span, key.Span))
@@ -86,7 +119,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<ReadOnlyMemory<ch
 
         if (_leftoverCursor >= _cellarStartIndex)
         {
-            // When doing an add, collisions should go into the cellar. If it is full, this will cause a rebuild
+            // When doing an add, collisions should go into the cellar. If it is full, this will require a rebuild
 
             _leftoverCursor = FindEmptyBucketIndex(_entries, _leftoverCursor);
             if (_leftoverCursor < _entries.Length)
@@ -99,13 +132,14 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<ReadOnlyMemory<ch
                 bucket.Key = key;
                 bucket.Value = value;
 
+                Count++;
                 _leftoverCursor++;
 
                 return;
             }
         }
 
-        Rebuild(_entries.Length * 2);
+        Rebuild(Count * 2);
 
         bucket = ref _entries[hash % _cellarStartIndex];
 
@@ -115,10 +149,13 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<ReadOnlyMemory<ch
             bucket.Next = -1;
             bucket.Key = key;
             bucket.Value = value;
+
+            Count++;
+
             return;
         }
 
-        FindEndOfChain(_entries, ref bucket);
+        bucket = ref FindEndOfChain(_entries, ref bucket);
 
         _leftoverCursor = FindEmptyBucketIndex(_entries, _leftoverCursor);
         if (_leftoverCursor >= _entries.Length)
@@ -141,6 +178,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<ReadOnlyMemory<ch
         bucket.Key = key;
         bucket.Value = value;
 
+        Count++;
         _leftoverCursor++;
     }
 
@@ -216,11 +254,13 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<ReadOnlyMemory<ch
         _leftoverCursor = newLeftoverCursor >= newCellarStartIndex ? newLeftoverCursor : newEntries.Length;
     }
 
-    private uint CalculateHash(ReadOnlyMemory<char> key) =>
+    private uint CalculateHash(ReadOnlyMemory<char> key) => CalculateHash(key.Span);
+
+    private uint CalculateHash(ReadOnlySpan<char> key) =>
 #if NO_SPAN_HASHCODE
-        unchecked((uint)StringEx.GetHashCode(key.Span));
+        unchecked((uint)StringEx.GetHashCode(key));
 #else
-        unchecked((uint)string.GetHashCode(key.Span));
+        unchecked((uint)string.GetHashCode(key));
 #endif
 
     private bool CheckKeysEqual(ReadOnlySpan<char> a, ReadOnlySpan<char> b)
