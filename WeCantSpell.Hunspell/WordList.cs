@@ -60,6 +60,7 @@ public sealed partial class WordList
         Affix = affix;
         NGramRestrictedFlags = nGramRestrictedFlags;
         EntriesByRoot = new();
+        EntriesByRoot2 = new();
         NGramRestrictedDetails = new();
     }
 
@@ -79,6 +80,7 @@ public sealed partial class WordList
             : Array.Empty<WordEntryDetail>();
 
     private Dictionary<string, WordEntryDetail[]> EntriesByRoot { get; set; }
+    private TextDictionary<WordEntryDetail[]> EntriesByRoot2 { get; set; }
 
     private FlagSet NGramRestrictedFlags { get; set; }
 

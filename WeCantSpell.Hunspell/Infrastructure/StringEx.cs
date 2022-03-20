@@ -158,4 +158,16 @@ static class StringEx
         builder.Append(@this, index + 1, lastIndex - index);
         return StringBuilderPool.GetStringAndReturn(builder);
     }
+
+    public static int GetHashCode(ReadOnlySpan<char> value)
+    {
+        int hash = 5381;
+        while (!value.IsEmpty)
+        {
+            hash = unchecked(((hash << 5) + hash) ^ value[0].GetHashCode());
+            value = value.Slice(1);
+        }
+
+        return hash;
+    }
 }

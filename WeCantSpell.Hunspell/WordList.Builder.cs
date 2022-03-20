@@ -86,6 +86,11 @@ public partial class WordList
                 }
             }
 
+            result.EntriesByRoot2 = new TextDictionary<WordEntryDetail[]>();
+            foreach (var pair in result.EntriesByRoot)
+            {
+                result.EntriesByRoot2.Add(pair.Key, pair.Value);
+            }
 
             result.AllReplacements = Affix.Replacements;
             if (PhoneticReplacements is { Count: > 0 })
