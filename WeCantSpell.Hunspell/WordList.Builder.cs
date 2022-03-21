@@ -67,8 +67,7 @@ public partial class WordList
             {
                 foreach (var pair in EntryDetailsByRoot)
                 {
-                    var value = pair.Value.Extract();
-                    result.EntriesByRoot.Add(pair.Key, value);
+                    result.EntriesByRoot.Add(pair.Key, pair.Value.Extract());
                 }
 
                 EntryDetailsByRoot.Clear();
@@ -77,8 +76,7 @@ public partial class WordList
             {
                 foreach (var pair in EntryDetailsByRoot)
                 {
-                    var value = pair.Value.MakeArray();
-                    result.EntriesByRoot.Add(pair.Key, value);
+                    result.EntriesByRoot.Add(pair.Key, pair.Value.MakeArray());
                 }
             }
 

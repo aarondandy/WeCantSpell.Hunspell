@@ -162,10 +162,9 @@ static class StringEx
     public static int GetHashCode(ReadOnlySpan<char> value)
     {
         int hash = 5381;
-        while (!value.IsEmpty)
+        for (var i = 0; i < value.Length; i++)
         {
-            hash = unchecked(((hash << 5) + hash) ^ value[0].GetHashCode());
-            value = value.Slice(1);
+            hash = unchecked(((hash << 5) + hash) ^ value[i].GetHashCode());
         }
 
         return hash;
