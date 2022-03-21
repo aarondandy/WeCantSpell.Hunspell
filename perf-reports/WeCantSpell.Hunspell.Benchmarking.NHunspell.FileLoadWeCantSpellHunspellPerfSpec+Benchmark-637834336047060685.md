@@ -1,6 +1,6 @@
 ﻿# WeCantSpell.Hunspell.Benchmarking.NHunspell.FileLoadWeCantSpellHunspellPerfSpec+Benchmark
 __How fast can this project load files?__
-_03/21/2022 03:21:20_
+_03/21/2022 04:26:44_
 ### System Info
 ```ini
 NBench=NBench, Version=2.0.1.0, Culture=neutral, PublicKeyToken=null
@@ -23,58 +23,58 @@ Tracing=False
 ### Totals
 |          Metric |           Units |             Max |         Average |             Min |          StdDev |
 |---------------- |---------------- |---------------- |---------------- |---------------- |---------------- |
-|TotalBytesAllocated |           bytes |  107,048,216.00 |  106,908,996.00 |  106,769,776.00 |      196,886.81 |
-|TotalCollections [Gen0] |     collections |          484.00 |          483.50 |          483.00 |            0.71 |
-|TotalCollections [Gen1] |     collections |          186.00 |          185.50 |          185.00 |            0.71 |
-|TotalCollections [Gen2] |     collections |           42.00 |           41.50 |           41.00 |            0.71 |
-|    Elapsed Time |              ms |       17,076.00 |       17,008.50 |       16,941.00 |           95.46 |
+|TotalBytesAllocated |           bytes |  124,196,520.00 |  123,885,480.00 |  123,574,440.00 |      439,876.99 |
+|TotalCollections [Gen0] |     collections |          482.00 |          480.00 |          478.00 |            2.83 |
+|TotalCollections [Gen1] |     collections |          183.00 |          180.50 |          178.00 |            3.54 |
+|TotalCollections [Gen2] |     collections |           41.00 |           39.50 |           38.00 |            2.12 |
+|    Elapsed Time |              ms |       17,877.00 |       17,782.00 |       17,687.00 |          134.35 |
 |[Counter] FilePairsLoaded |      operations |           59.00 |           59.00 |           59.00 |            0.00 |
 
 ### Per-second Totals
 |          Metric |       Units / s |         Max / s |     Average / s |         Min / s |      StdDev / s |
 |---------------- |---------------- |---------------- |---------------- |---------------- |---------------- |
-|TotalBytesAllocated |           bytes |    6,318,913.67 |    6,285,822.46 |    6,252,731.24 |       46,798.04 |
-|TotalCollections [Gen0] |     collections |           28.51 |           28.43 |           28.34 |            0.12 |
-|TotalCollections [Gen1] |     collections |           10.92 |           10.91 |           10.89 |            0.02 |
-|TotalCollections [Gen2] |     collections |            2.46 |            2.44 |            2.42 |            0.03 |
-|    Elapsed Time |              ms |        1,000.02 |        1,000.01 |        1,000.00 |            0.01 |
-|[Counter] FilePairsLoaded |      operations |            3.48 |            3.47 |            3.46 |            0.02 |
+|TotalBytesAllocated |           bytes |    7,021,927.35 |    6,967,241.85 |    6,912,556.36 |       77,336.97 |
+|TotalCollections [Gen0] |     collections |           27.25 |           27.00 |           26.74 |            0.36 |
+|TotalCollections [Gen1] |     collections |           10.35 |           10.15 |            9.96 |            0.28 |
+|TotalCollections [Gen2] |     collections |            2.32 |            2.22 |            2.13 |            0.14 |
+|    Elapsed Time |              ms |        1,000.01 |        1,000.01 |        1,000.00 |            0.01 |
+|[Counter] FilePairsLoaded |      operations |            3.34 |            3.32 |            3.30 |            0.03 |
 
 ### Raw Data
 #### TotalBytesAllocated
 |           Run # |           bytes |       bytes / s |      ns / bytes |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |  106,769,776.00 |    6,252,731.24 |          159.93 |
-|               2 |  107,048,216.00 |    6,318,913.67 |          158.26 |
+|               1 |  124,196,520.00 |    7,021,927.35 |          142.41 |
+|               2 |  123,574,440.00 |    6,912,556.36 |          144.66 |
 
 #### TotalCollections [Gen0]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |          484.00 |           28.34 |   35,280,376.24 |
-|               2 |          483.00 |           28.51 |   35,074,370.19 |
+|               1 |          482.00 |           27.25 |   36,694,929.46 |
+|               2 |          478.00 |           26.74 |   37,399,179.08 |
 
 #### TotalCollections [Gen1]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |          186.00 |           10.89 |   91,804,850.00 |
-|               2 |          185.00 |           10.92 |   91,572,544.86 |
+|               1 |          183.00 |           10.35 |   96,650,032.79 |
+|               2 |          178.00 |            9.96 |  100,431,503.37 |
 
 #### TotalCollections [Gen2]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |           42.00 |            2.46 |  406,564,335.71 |
-|               2 |           41.00 |            2.42 |  413,193,190.24 |
+|               1 |           41.00 |            2.32 |  431,389,170.73 |
+|               2 |           38.00 |            2.13 |  470,442,305.26 |
 
 #### Elapsed Time
 |           Run # |              ms |          ms / s |         ns / ms |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |       17,076.00 |        1,000.02 |      999,982.55 |
-|               2 |       16,941.00 |        1,000.00 |      999,995.32 |
+|               1 |       17,687.00 |        1,000.00 |      999,997.51 |
+|               2 |       17,877.00 |        1,000.01 |      999,989.24 |
 
 #### [Counter] FilePairsLoaded
 |           Run # |      operations |  operations / s | ns / operations |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |           59.00 |            3.46 |  289,418,679.66 |
-|               2 |           59.00 |            3.48 |  287,134,250.85 |
+|               1 |           59.00 |            3.34 |  299,778,915.25 |
+|               2 |           59.00 |            3.30 |  302,996,738.98 |
 
 

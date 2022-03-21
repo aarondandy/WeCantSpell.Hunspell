@@ -61,23 +61,14 @@ public partial class WordList
                 SpecialFlags.OnlyUpcaseFlag
             }));
 
-            result.EntriesByRoot = new TextDictionary<WordEntryDetail[]>(EntryDetailsByRoot.Count);
-
             if (allowDestructive)
             {
-                foreach (var pair in EntryDetailsByRoot)
-                {
-                    result.EntriesByRoot.Add(pair.Key, pair.Value.Extract());
-                }
-
+                result.EntriesByRoot = TextDictionary<WordEntryDetail[]>.MapFromDictionary(EntryDetailsByRoot, static v => v.Extract());
                 EntryDetailsByRoot.Clear();
             }
             else
             {
-                foreach (var pair in EntryDetailsByRoot)
-                {
-                    result.EntriesByRoot.Add(pair.Key, pair.Value.MakeArray());
-                }
+                result.EntriesByRoot = TextDictionary<WordEntryDetail[]>.MapFromDictionary(EntryDetailsByRoot, static v => v.MakeArray());
             }
 
             result.AllReplacements = Affix.Replacements;

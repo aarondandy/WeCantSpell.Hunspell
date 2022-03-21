@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -10,7 +11,7 @@ namespace WeCantSpell.Hunspell;
 sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 {
     // These prime values are taken from the framework internals, so I'm sure there are good reasons to use them
-    private static readonly int[] PrimeSizes = new[]
+    private static readonly uint[] PrimeSizes = new uint[]
     {
         3, 7, 11, 17, 23, 29, 37, 47, 59, 71, 89, 107, 131, 163, 197, 239, 293, 353, 431, 521, 631, 761, 919,
         1103, 1327, 1597, 1931, 2333, 2801, 3371, 4049, 4861, 5839, 7013, 8419, 10103, 12143, 14591,
@@ -18,6 +19,50 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         187751, 225307, 270371, 324449, 389357, 467237, 560689, 672827, 807403, 968897, 1162687, 1395263,
         1674319, 2009191, 2411033, 2893249, 3471899, 4166287, 4999559, 5999471, 7199369
     };
+
+    public static TextDictionary<TValue> MapFromDictionary2<TSourceValue>(IReadOnlyDictionary<string, TSourceValue> source, Func<TSourceValue, TValue> valueSelector)
+    {
+        var result = new TextDictionary<TValue>(source.Count);
+        foreach (var entry in source)
+        {
+            result.Add(entry.Key, valueSelector(entry.Value));
+        }
+
+        return result;
+    }
+
+    public static TextDictionary<TValue> MapFromDictionary<TSourceValue>(IReadOnlyDictionary<string, TSourceValue> source, Func<TSourceValue, TValue> valueSelector)
+    {
+        var result = new TextDictionary<TValue>(source.Count);
+        var entries = result._entries;
+        var cellarStartIndex = result._cellarStartIndex;
+        var leftovers = new List<(uint hash, string key, TValue value)> ();
+
+        foreach (var entry in source)
+        {
+            var key = entry.Key;
+            var hash = CalculateHash(key);
+            var value = valueSelector(entry.Value);
+
+            ref var bucket = ref entries[hash % cellarStartIndex];
+            if (bucket.IsBlank)
+            {
+                bucket.Set(hash, key, value);
+            }
+            else
+            {
+                leftovers.Add((hash, key, value));
+            }
+        }
+
+        foreach (var entry in leftovers)
+        {
+            result.ForceAppendCollisionEntry(entry.hash, entry.key, entry.value);
+        }
+
+        result.Count = source.Count;
+        return result;
+    }
 
     public TextDictionary() : this(0)
     {
@@ -37,7 +82,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
     }
 
     private Entry[] _entries;
-    private int _cellarStartIndex;
+    private uint _cellarStartIndex;
     private int _collisionIndex;
 
     public int Count { get; private set; }
@@ -70,7 +115,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
     {
         var hash = TextDictionary<TValue>.CalculateHash(key);
 
-        ref var entry = ref _entries[hash % (uint)_cellarStartIndex];
+        ref var entry = ref _entries[hash % _cellarStartIndex];
 
         if (entry.IsOccupied)
         {
@@ -99,10 +144,10 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
     {
         var hash = TextDictionary<TValue>.CalculateHash(key);
 
-        ref var bucket = ref _entries[hash % (uint)_cellarStartIndex];
-        if (bucket.IsBlank)
+        ref var entry = ref _entries[hash % _cellarStartIndex];
+        if (entry.IsBlank)
         {
-            bucket.Set(hash, key, value);
+            entry.Set(hash, key, value);
 
             Count++;
 
@@ -112,29 +157,29 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         // search through the chain to ensure there are no collisions
         while (true)
         {
-            if (bucket.HashCode == hash && TextDictionary<TValue>.CheckKeysEqual(bucket.Key.AsSpan(), key.AsSpan()))
+            if (entry.HashCode == hash && TextDictionary<TValue>.CheckKeysEqual(entry.Key.AsSpan(), key.AsSpan()))
             {
                 throw new InvalidOperationException("Duplicate key");
             }
 
-            if (bucket.Next < 0)
+            if (entry.Next < 0)
             {
                 break;
             }
 
-            bucket = ref _entries[bucket.Next];
+            entry = ref _entries[entry.Next];
         }
 
         if (Count < _entries.Length)
         {
-            _collisionIndex = FindNextCollisionLocation(_entries, _collisionIndex);
+            _collisionIndex = FindNextCollisionStorageLocation(_entries, _collisionIndex);
 
             if (_collisionIndex >= 0)
             {
-                bucket.Next = _collisionIndex;
+                entry.Next = _collisionIndex;
 
-                bucket = ref _entries[_collisionIndex];
-                bucket.Set(hash, key, value);
+                entry = ref _entries[_collisionIndex];
+                entry.Set(hash, key, value);
 
                 Count++;
                 _collisionIndex--;
@@ -145,83 +190,75 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 
         Rebuild(_entries.Length * 2);
 
-        bucket = ref _entries[hash % (uint)_cellarStartIndex];
+        entry = ref _entries[hash % _cellarStartIndex];
 
-        if (bucket.IsBlank)
+        if (entry.IsBlank)
         {
-            bucket.Set(hash, key, value);
+            entry.Set(hash, key, value);
 
             Count++;
 
             return;
         }
 
-        bucket = ref FindEndOfChain(_entries, ref bucket);
-
-        _collisionIndex = FindNextCollisionLocation(_entries, _collisionIndex);
-        if (_collisionIndex < 0)
-        {
-            throw new NotSupportedException();
-        }
-
-        bucket.Next = _collisionIndex;
-
-        bucket = ref _entries[_collisionIndex];
-        bucket.Set(hash, key, value);
-
-        Count++;
-        _collisionIndex--;
+        ForceAppendCollisionEntry(ref entry, hash, key, value);
     }
 
     private void Rebuild(int desiredCapacity)
     {
         var newSize = Math.Max(desiredCapacity, Count);
         var oldEntries = _entries;
-        var newEntries = new Entry[newSize];
-        var newCellarStartIndex = CalculateBestCellarIndexForCapacity(newEntries.Length);
-        var newCollisionIndex = newEntries.Length - 1;
+        _entries = new Entry[newSize];
+        _cellarStartIndex = CalculateBestCellarIndexForCapacity(_entries.Length);
+        _collisionIndex = _entries.Length - 1;
 
-        var leftovers = new List<Entry>();
-        foreach (var entry in oldEntries)
+        var leftovers = new List<(uint hash, string key, TValue value)>();
+        foreach (var oldEntry in oldEntries)
         {
-            if (entry.IsBlank)
+            if (oldEntry.IsBlank)
             {
                 continue;
             }
 
-            ref var bucket = ref newEntries[entry.HashCode % (uint)newCellarStartIndex];
-            if (bucket.IsBlank)
+            ref var entry = ref _entries[oldEntry.HashCode % _cellarStartIndex];
+            if (entry.IsBlank)
             {
-                bucket.Set(entry.HashCode, entry.Key, entry.Value);
+                entry.Set(oldEntry.HashCode, oldEntry.Key, oldEntry.Value);
             }
             else
             {
-                leftovers.Add(entry);
+                leftovers.Add((oldEntry.HashCode, oldEntry.Key, oldEntry.Value));
             }
         }
 
-        foreach (var entry in leftovers)
+        foreach (var oldEntry in leftovers)
         {
-            ref var bucket = ref FindEndOfChain(newEntries, ref newEntries[entry.HashCode % (uint)newCellarStartIndex]);
+            ForceAppendCollisionEntry(oldEntry.hash, oldEntry.key, oldEntry.value);
+        }
+    }
 
-            newCollisionIndex = FindNextCollisionLocation(newEntries, newCollisionIndex);
+    private void ForceAppendCollisionEntry(uint hash, string key, TValue value)
+    {
+        ForceAppendCollisionEntry(ref _entries[hash % _cellarStartIndex], hash, key, value);
+    }
 
-            if (newCollisionIndex < 0)
-            {
-                throw new NotSupportedException();
-            }
+    private void ForceAppendCollisionEntry(ref Entry entry, uint hash, string key, TValue value)
+    {
+        entry = ref FindEndOfChain(_entries, ref entry);
 
-            bucket.Next = newCollisionIndex;
-
-            bucket = ref newEntries[newCollisionIndex];
-            bucket.Set(entry.HashCode, entry.Key, entry.Value);
-
-            newCollisionIndex--;
+        _collisionIndex = FindNextCollisionStorageLocation(_entries, _collisionIndex);
+        if (_collisionIndex < 0)
+        {
+            throw new NotSupportedException();
         }
 
-        _entries = newEntries;
-        _cellarStartIndex = newCellarStartIndex;
-        _collisionIndex = newCollisionIndex;
+        entry.Next = _collisionIndex;
+
+        entry = ref _entries[_collisionIndex];
+        entry.Set(hash, key, value);
+
+        Count++;
+        _collisionIndex--;
     }
 
     private static uint CalculateHash(string key) => CalculateHash(key.AsSpan());
@@ -248,13 +285,13 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         return ref entry;
     }
 
-    private static int FindNextCollisionLocation(Entry[] entries, int startIndex)
+    private static int FindNextCollisionStorageLocation(Entry[] entries, int startIndex)
     {
         for (; startIndex >= 0 && entries[startIndex].IsOccupied; startIndex--) ;
         return startIndex;
     }
 
-    private static int CalculateBestCellarIndexForCapacity(int capacity)
+    private static uint CalculateBestCellarIndexForCapacity(int capacity)
     {
         if (capacity <= 0)
         {
@@ -263,10 +300,10 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 
         if (capacity <= 3)
         {
-            return capacity;
+            return (uint)capacity;
         }
 
-        var ratioIndex = (int)(((long)capacity * 86) / 100);
+        var ratioIndex = (uint)(((long)capacity * 86) / 100);
 
         foreach (var prime in PrimeSizes)
         {
@@ -322,9 +359,17 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         public string Key;
         public TValue Value;
 
-        public bool IsBlank => Key is null;
+        public bool IsBlank
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => Key is null;
+        }
 
-        public bool IsOccupied => Key is not null;
+        public bool IsOccupied
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => Key is not null;
+        }
 
         public void Set(uint hashCode, string key, TValue value)
         {
