@@ -57,6 +57,7 @@ static class StringEx
             return @this;
         }
 
+        // TODO: consider using a pooled string builder instead
         using var mo = MemoryPool<char>.Shared.Rent(@this.Length);
         var buffer = mo.Memory.Span.Slice(0, @this.Length);
         var lastIndex = @this.Length - 1;
@@ -159,14 +160,22 @@ static class StringEx
         return StringBuilderPool.GetStringAndReturn(builder);
     }
 
-    public static int GetHashCode(ReadOnlySpan<char> value)
+#if NO_SPAN_HASHCODE
+public static int GetHashCode(ReadOnlySpan<char> value)
+{
+    int hash = 5381;
+    while (value.Length >= 2)
     {
-        int hash = 5381;
-        for (var i = 0; i < value.Length; i++)
-        {
-            hash = unchecked(((hash << 5) + hash) ^ value[i].GetHashCode());
-        }
-
-        return hash;
+        hash = unchecked((hash << 5) ^ ((value[1] << 16) + value[0]));
+        value = value.Slice(2);
     }
+
+    if (!value.IsEmpty)
+    {
+        hash = unchecked((hash << 5) ^ value[0]);
+    }
+
+    return hash;
+}
+#endif
 }

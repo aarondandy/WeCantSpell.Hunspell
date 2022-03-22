@@ -59,8 +59,8 @@ public sealed partial class WordList
     {
         Affix = affix;
         NGramRestrictedFlags = nGramRestrictedFlags;
-        EntriesByRoot = new();
-        NGramRestrictedDetails = new();
+        EntriesByRoot = new(0);
+        NGramRestrictedDetails = new(0);
     }
 
     public AffixConfig Affix { get; private set; }
