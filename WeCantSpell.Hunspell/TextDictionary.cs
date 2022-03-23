@@ -199,7 +199,10 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         var builder = new Builder(Math.Max(_entries.Length * 2, 1));
         foreach (var oldEntry in _entries)
         {
-            builder.Write(oldEntry.HashCode, oldEntry.Key, oldEntry.Value);
+            if (oldEntry.Key is not null)
+            {
+                builder.Write(oldEntry.HashCode, oldEntry.Key, oldEntry.Value);
+            }
         }
 
         builder.Write(hash, key, value);
