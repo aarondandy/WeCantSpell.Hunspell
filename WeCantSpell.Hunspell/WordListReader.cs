@@ -182,18 +182,18 @@ public sealed class WordListReader
         return Path.ChangeExtension(dictionaryFilePath, "aff");
     }
 
-    private bool ParseLine(ReadOnlySpan<char> line)
+    private void ParseLine(ReadOnlySpan<char> line)
     {
         if (line.Length == 0)
         {
-            return true;
+            return;
         }
 
         if (!_hasInitialized)
         {
             if (AttemptToProcessInitializationLine(line))
             {
-                return true;
+                return;
             }
 
             Builder.InitializeEntriesByRoot(-1);
@@ -202,7 +202,7 @@ public sealed class WordListReader
         var parsed = ParsedWordLine.Parse(line);
         if (parsed.Word.IsEmpty)
         {
-            return false;
+            return;
         }
 
         FlagSet flags;
@@ -217,7 +217,7 @@ public sealed class WordListReader
                 else
                 {
                     // TODO: warn
-                    return false;
+                    return;
                 }
             }
             else
@@ -230,7 +230,7 @@ public sealed class WordListReader
             flags = FlagSet.Empty;
         }
 
-        return AddWord(parsed.Word.ToString(), flags, parsed.Morphs);
+        AddWord(parsed.Word.ToString(), flags, parsed.Morphs);
     }
 
     private bool AttemptToProcessInitializationLine(ReadOnlySpan<char> text)
@@ -259,7 +259,7 @@ public sealed class WordListReader
         return false;
     }
 
-    private bool AddWord(string word, FlagSet flags, string[] morphs)
+    private void AddWord(string word, FlagSet flags, string[] morphs)
     {
         if (Affix.IgnoredChars.HasItems)
         {
@@ -277,8 +277,8 @@ public sealed class WordListReader
         }
 
         var capType = HunspellTextFunctions.GetCapitalizationType(word, TextInfo);
-        return AddWord(word, flags, morphs, false, capType)
-            || AddWordCapitalized(word, flags, morphs, capType);
+        AddWord(word, flags, morphs, false, capType);
+        AddWordCapitalized(word, flags, morphs, capType);
     }
 
     private string[] AddWord_HandleMorph(string[] morphs, string word, CapitalizationType capType, ref WordEntryOptions options)
@@ -390,7 +390,7 @@ public sealed class WordListReader
         return morphs;
     }
 
-    private bool AddWord(string word, FlagSet flags, string[] morphs, bool onlyUpperCase, CapitalizationType capType)
+    private void AddWord(string word, FlagSet flags, string[] morphs, bool onlyUpperCase, CapitalizationType capType)
     {
         // store the description string or its pointer
         var options = capType == CapitalizationType.Init ? WordEntryOptions.InitCap : WordEntryOptions.None;
@@ -401,8 +401,14 @@ public sealed class WordListReader
 
         var details = Builder.GetOrCreateDetailList(word);
 
-        var upperCaseHomonym = false;
-        if (!onlyUpperCase)
+        if (onlyUpperCase)
+        {
+            if (details.Count != 0)
+            {
+                return;
+            }
+        }
+        else
         {
             for (var i = 0; i < details.Count; i++)
             {
@@ -410,28 +416,19 @@ public sealed class WordListReader
                 if (existingEntry.ContainsFlag(SpecialFlags.OnlyUpcaseFlag))
                 {
                     details[i] = new WordEntryDetail(flags, existingEntry.Morphs, existingEntry.Options);
-                    return false;
+                    return;
                 }
             }
         }
-        else if (details.Count != 0)
-        {
-            upperCaseHomonym = true;
-        }
 
-        if (!upperCaseHomonym)
-        {
-            details.Add(
-                new WordEntryDetail(
-                    flags,
-                    new MorphSet(morphs),
-                    options));
-        }
-
-        return false;
+        details.Add(
+            new WordEntryDetail(
+                flags,
+                new MorphSet(morphs),
+                options));
     }
 
-    private bool AddWordCapitalized(string word, FlagSet flags, string[] morphs, CapitalizationType capType)
+    private void AddWordCapitalized(string word, FlagSet flags, string[] morphs, CapitalizationType capType)
     {
         // add inner capitalized forms to handle the following allcap forms:
         // Mixed caps: OpenOffice.org -> OPENOFFICE.ORG
@@ -449,10 +446,8 @@ public sealed class WordListReader
         {
             flags = flags.Union(SpecialFlags.OnlyUpcaseFlag);
             word = HunspellTextFunctions.MakeTitleCase(word, Affix.Culture);
-            return AddWord(word, flags, morphs, true, CapitalizationType.Init);
+            AddWord(word, flags, morphs, true, CapitalizationType.Init);
         }
-
-        return false;
     }
 
     private readonly ref struct ParsedWordLine

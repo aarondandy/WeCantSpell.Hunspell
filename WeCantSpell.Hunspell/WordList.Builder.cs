@@ -30,9 +30,7 @@ public partial class WordList
 
         public void Add(string word, WordEntryDetail detail)
         {
-            var details = GetOrCreateDetailList(word);
-
-            details.Add(detail);
+            GetOrCreateDetailList(word).Add(detail);
         }
 
         internal ArrayBuilder<WordEntryDetail> GetOrCreateDetailList(string word)
@@ -91,23 +89,23 @@ public partial class WordList
             }
 
             var details = new ArrayBuilder<WordEntryDetail>();
-            foreach (var rootSet in result.EntriesByRoot)
-            {
-                details.Clear();
-                details.GrowToCapacity(1);
-                foreach (var entry in rootSet.Value)
+                foreach (var rootSet in result.EntriesByRoot)
                 {
-                    if (result.NGramRestrictedFlags.ContainsAny(entry.Flags))
+                    details.Clear();
+                details.GrowToCapacity(1);
+                    foreach (var entry in rootSet.Value)
                     {
-                        details.Add(entry);
+                        if (result.NGramRestrictedFlags.ContainsAny(entry.Flags))
+                        {
+                            details.Add(entry);
+                        }
+                    }
+
+                    if (details.Count != 0)
+                    {
+                    result.NGramRestrictedDetails.Add(rootSet.Key, details.Extract());
                     }
                 }
-
-                if (details.Count != 0)
-                {
-                    result.NGramRestrictedDetails.Add(rootSet.Key, details.Extract());
-                }
-            }
 
             return result;
         }

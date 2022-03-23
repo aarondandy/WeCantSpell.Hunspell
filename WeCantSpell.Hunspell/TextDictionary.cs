@@ -134,26 +134,15 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 
     public void Add(string key, TValue value)
     {
-        if (!TryAddWithoutGrowing(key, value))
+        var hash = CalculateHash(key);
+        if (!TryAddWithoutGrowing(hash, key, value))
         {
-            RebuildWithMoreRoom();
-
-            if (!TryAddWithoutGrowing(key, value))
-            {
-                throwNoRoomForCollision();
-            }
+            RebuildAndInsert(hash, key, value);
         }
-
-#if !NO_EXPOSED_NULLANNOTATIONS
-        [System.Diagnostics.CodeAnalysis.DoesNotReturn]
-#endif
-        static void throwNoRoomForCollision() => throw new NotSupportedException();
     }
 
-    private bool TryAddWithoutGrowing(string key, TValue value)
+    private bool TryAddWithoutGrowing(uint hash, string key, TValue value)
     {
-        var hash = CalculateHash(key);
-
         ref var entry = ref _entries[hash % _cellarStartIndex];
 
         if (entry.Key is null)
@@ -205,44 +194,41 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         static void throwDuplicate() => throw new InvalidOperationException("Duplicate key");
     }
 
-    private void RebuildWithMoreRoom()
+    private void RebuildAndInsert(uint hash, string key, TValue value)
     {
         var builder = new Builder(Math.Max(_entries.Length * 2, 1));
         foreach (var oldEntry in _entries)
         {
-            builder.Write(oldEntry.Key, oldEntry.Value);
+            builder.Write(oldEntry.HashCode, oldEntry.Key, oldEntry.Value);
         }
+
+        builder.Write(hash, key, value);
 
         builder.Flush();
 
         _entries = builder.Entries;
         _cellarStartIndex = builder.CellarStartIndex;
         _collisionIndex = builder.CollisionIndex;
+        Count = builder.Count;
     }
 
 #if NO_SPAN_HASHCODE
-    private static uint CalculateHash(string key) => CalculateHash(key.AsSpan());
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static uint CalculateHash(string key) => unchecked((uint)StringEx.GetHashCode(key.AsSpan()));
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static uint CalculateHash(ReadOnlySpan<char> key) => unchecked((uint)StringEx.GetHashCode(key));
 #else
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static uint CalculateHash(string key) => unchecked((uint)key.GetHashCode());
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static uint CalculateHash(ReadOnlySpan<char> key) => unchecked((uint)string.GetHashCode(key));
 #endif
 
-    private static bool CheckKeysEqual(string a, ReadOnlySpan<char> b) =>
-        a.AsSpan().Equals(b, StringComparison.Ordinal);
+    private static bool CheckKeysEqual(string a, ReadOnlySpan<char> b) => a.AsSpan().Equals(b, StringComparison.Ordinal);
 
-    private static bool CheckKeysEqual(string a, string b) =>
-        a.Equals(b, StringComparison.Ordinal);
-
-    private static ref Entry FindEndOfChain(Entry[] entries, ref Entry entry)
-    {
-        while (entry.Next >= 0)
-        {
-            entry = ref entries[entry.Next];
-        }
-
-        return ref entry;
-    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool CheckKeysEqual(string a, string b) => a.Equals(b, StringComparison.Ordinal);
 
     private static uint CalculateBestCellarIndexForCapacity(int capacity)
     {
@@ -328,15 +314,20 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
             Count = 0;
         }
 
-        private readonly List<(uint hash, string key, TValue value)> _leftovers = new();
-        public readonly Entry[] Entries;
-        public readonly uint CellarStartIndex;
+        private List<(uint hash, string key, TValue value)> _leftovers = new();
+
+        public Entry[] Entries;
+        public uint CellarStartIndex;
         public int CollisionIndex;
         public int Count;
 
         public void Write(string key, TValue value)
         {
-            var hash = CalculateHash(key);
+            Write(CalculateHash(key), key, value);
+        }
+
+        public void Write(uint hash, string key, TValue value)
+        {
             ref var entry = ref Entries[hash % CellarStartIndex];
             if (entry.Key is null)
             {
@@ -364,7 +355,12 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 
         private void ForceAppendCollisionEntry(uint hash, string key, TValue value)
         {
-            ref var entry = ref FindEndOfChain(Entries, ref Entries[hash % CellarStartIndex]);
+            ref var entry = ref Entries[hash % CellarStartIndex];
+
+            while (entry.Next >= 0)
+            {
+                entry = ref Entries[entry.Next];
+            }
 
             for (; CollisionIndex >= 0 && Entries[CollisionIndex].Key is not null; CollisionIndex--) ;
 

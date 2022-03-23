@@ -161,21 +161,21 @@ static class StringEx
     }
 
 #if NO_SPAN_HASHCODE
-public static int GetHashCode(ReadOnlySpan<char> value)
-{
-    int hash = 5381;
-    while (value.Length >= 2)
+    public static int GetHashCode(ReadOnlySpan<char> value)
     {
-        hash = unchecked((hash << 5) ^ ((value[1] << 16) + value[0]));
-        value = value.Slice(2);
-    }
+        int hash = 5381;
+        while (value.Length >= 2)
+        {
+            hash = unchecked((hash << 5) ^ ((value[1] << 16) + value[0]));
+            value = value.Slice(2);
+        }
 
-    if (!value.IsEmpty)
-    {
-        hash = unchecked((hash << 5) ^ value[0]);
-    }
+        if (!value.IsEmpty)
+        {
+            hash = unchecked((hash << 5) ^ value[0]);
+        }
 
-    return hash;
-}
+        return hash;
+    }
 #endif
 }
