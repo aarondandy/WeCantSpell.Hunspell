@@ -204,9 +204,9 @@ public partial class WordList
                             removeFromIndexThenInsertAtFront(
                                 slst,
                                 j,
-                                StringEx.ConcatString(
-                                    toRemove, 0, spaceIndex + 1,
-                                    HunspellTextFunctions.MakeInitCap(toRemove.AsSpan(spaceIndex + 1), textInfo)));
+                                toRemove.AsSpan(0, spaceIndex + 1)
+                                    .ConcatString(
+                                        HunspellTextFunctions.MakeInitCap(toRemove.AsSpan(spaceIndex + 1), textInfo)));
 
                             static void removeFromIndexThenInsertAtFront(List<string> list, int removeIndex, string insertValue)
                             {
@@ -271,7 +271,7 @@ public partial class WordList
 
                         if (sitem[pos] != desiredChar)
                         {
-                            slst[j] = StringEx.ConcatString(sitem, 0, pos, desiredChar, sitem, pos + 1);
+                            slst[j] = StringEx.ConcatString(sitem.AsSpan(0, pos), desiredChar, sitem.AsSpan(pos + 1));
                         }
                     }
                 }
@@ -352,8 +352,8 @@ public partial class WordList
                         foreach (var j in nlst)
                         {
                             var wspace = last
-                                ? StringEx.ConcatString(scw, 0, prevPos, j)
-                                : StringEx.ConcatString(scw, 0, prevPos, j, '-', scw, dashPos + 1);
+                                ? scw.AsSpan(0, prevPos).ConcatString(j)
+                                : StringEx.ConcatString(scw.AsSpan(0, prevPos), j, '-', scw.AsSpan(dashPos + 1));
 
                             var info = SpellCheckResultType.None;
                             if (Affix.ForbiddenWord.HasValue)
@@ -467,9 +467,9 @@ public partial class WordList
 
         private bool Check(string word) => new QueryCheck(WordList, Options).Check(word);
 
-        private WordEntryDetail? LookupFirstDetail(string word) => WordList.FindFirstEntryDetailByRootWord(word);
-
-        private bool TryLookupFirstDetail(string word, out WordEntryDetail wordEntryDetail) => WordList.TryFindFirstEntryDetailByRootWord(word, out wordEntryDetail);
+        private WordEntryDetail? LookupFirstDetail(ReadOnlySpan<char> word) => WordList.FindFirstEntryDetailByRootWord(word);
+        
+        private bool TryLookupFirstDetail(ReadOnlySpan<char> word, out WordEntryDetail wordEntryDetail) => WordList.TryFindFirstEntryDetailByRootWord(word, out wordEntryDetail);
 
         /// <summary>
         /// Generate suggestions for a misspelled word
@@ -645,7 +645,7 @@ public partial class WordList
                 //if (!Affix.NoSplitSuggestions && slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                 if (!cpdSuggest || (!Affix.NoSplitSuggestions && slst.Count < sugLimit))
                 {
-                    goodSuggestion = TwoWords(slst, word, cpdSuggest, goodSuggestion);
+                    goodSuggestion = TwoWords(slst, word.AsSpan(), cpdSuggest, goodSuggestion);
                 }
 
                 if (opLimiter.QueryForCancellation())
@@ -1063,7 +1063,7 @@ public partial class WordList
                 &&
                 !wlst.Contains(candidate)
                 &&
-                CheckWord(candidate, cpdSuggest) != 0
+                CheckWord(candidate.AsSpan(), cpdSuggest) != 0
             )
             {
                 wlst.Add(candidate);
@@ -1089,17 +1089,24 @@ public partial class WordList
             if (wlst.Count < MaxSuggestions)
             {
                 var candidateWord = candidate.ToString();
-                if (!wlst.Contains(candidateWord) && CheckWord(candidateWord, cpdSuggest) != 0)
+                if (!wlst.Contains(candidateWord) && CheckWord(candidateWord.AsSpan(), cpdSuggest) != 0)
                 {
                     wlst.Add(candidateWord);
                 }
             }
         }
 
-        private int CheckWord(ReadOnlySpan<char> word, bool cpdSuggest) =>
-            CheckWord(word.ToString(), cpdSuggest);
-
         private int CheckWord(string word, bool cpdSuggest, OperationTimedCountLimiter timer)
+        {
+            if (timer.QueryForCancellation())
+            {
+                return 0;
+            }
+
+            return CheckWord(word.AsSpan(), cpdSuggest);
+        }
+
+        private int CheckWord(ReadOnlySpan<char> word, bool cpdSuggest, OperationTimedCountLimiter timer)
         {
             if (timer.QueryForCancellation())
             {
@@ -1118,12 +1125,8 @@ public partial class WordList
         /// return value 2 and 3 marks compounding with hyphen (-)
         /// `3' marks roots without suffix
         /// </remarks>
-        private int CheckWord(string word, bool cpdSuggest)
+        private int CheckWord(ReadOnlySpan<char> word, bool cpdSuggest)
         {
-#if DEBUG
-            if (word is null) throw new ArgumentNullException(nameof(word));
-#endif
-
             WordEntry? rv;
             if (cpdSuggest)
             {
@@ -1145,14 +1148,14 @@ public partial class WordList
             }
 
             // get homonyms
-            if (_query.LookupDetails(word) is { Length: > 0 } rvDetails)
+            if (_query.TryLookupDetails(word, out var wordString, out var rvDetails) && rvDetails is { Length: > 0 })
             {
                 if (rvDetails[0].ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest, Affix.SubStandard))
                 {
                     return 0;
                 }
 
-                rv = findDetailForEntry(word, rvDetails, Affix);
+                rv = findDetailForEntry(wordString, rvDetails, Affix);
 
                 static WordEntry? findDetailForEntry(string word, WordEntryDetail[] rvDetails, AffixConfig affix)
                 {
@@ -1259,7 +1262,7 @@ public partial class WordList
 
                     if (replacement[type] is { Length: > 0 } replacementValue)
                     {
-                        var candidate = StringEx.ConcatString(word, 0, r, replacementValue, word, r + replacementPattern.Length);
+                        var candidate = StringEx.ConcatString(word.AsSpan(0, r), replacementValue, word.AsSpan(r + replacementPattern.Length));
 
                         TestSug(wlst, candidate, cpdSuggest);
 
@@ -1618,7 +1621,7 @@ public partial class WordList
                                 ||
                                 (guess.GuessOrig is not null && guess.GuessOrig.Contains(wlst[j]))
                                 || // check forbidden words
-                                CheckWord(guess.Guess, false) == 0
+                                CheckWord(guess.Guess.AsSpan(), false) == 0
                             )
                             {
                                 unique = false;
@@ -1654,7 +1657,7 @@ public partial class WordList
                             if (
                                 root.RootPhon.Contains(wlst[j])
                                 || // check forbidden words
-                                CheckWord(root.RootPhon, false) == 0
+                                CheckWord(root.RootPhon.AsSpan(), false) == 0
                             )
                             {
                                 unique = false;
@@ -1977,7 +1980,7 @@ public partial class WordList
         /// Error if should have been two words.
         /// </summary>
         /// <returns>Trye if there is a dictionary word pair or there was already a good suggestion before calling.</returns>
-        private bool TwoWords(List<string> wlst, string word, bool cpdSuggest, bool good)
+        private bool TwoWords(List<string> wlst, ReadOnlySpan<char> word, bool cpdSuggest, bool good)
         {
             if (word.Length < 3)
             {
@@ -2008,7 +2011,7 @@ public partial class WordList
                 // alot -> a lot, alto, slot...
                 candidate[p] = ' ';
                 currentCandidateString = candidate.ToStringTerminated();
-                if (!cpdSuggest && CheckWord(currentCandidateString, cpdSuggest) != 0)
+                if (!cpdSuggest && CheckWord(currentCandidateString.AsSpan(), cpdSuggest) != 0)
                 {
                     // remove not word pair suggestions
                     if (!good)
@@ -2024,7 +2027,7 @@ public partial class WordList
                 {
                     candidate[p] = '-';
                     currentCandidateString = candidate.ToStringTerminated();
-                    if (!cpdSuggest && CheckWord(currentCandidateString, cpdSuggest) != 0)
+                    if (!cpdSuggest && CheckWord(currentCandidateString.AsSpan(), cpdSuggest) != 0)
                     {
                         // remove not word pair suggestions
                         if (!good)
@@ -2040,10 +2043,10 @@ public partial class WordList
                 {
                     candidate[p] = '\0';
 
-                    var c1 = CheckWord(candidate.ToStringTerminated(), cpdSuggest);
+                    var c1 = CheckWord(candidate.ToStringTerminated().AsSpan(), cpdSuggest);
                     if (c1 != 0)
                     {
-                        var c2 = CheckWord(candidate.ToStringTerminated(p + 1), cpdSuggest);
+                        var c2 = CheckWord(candidate.ToStringTerminated(p + 1).AsSpan(), cpdSuggest);
                         if (c2 != 0)
                         {
                             // spec. Hungarian code (need a better compound word support)
@@ -2131,11 +2134,8 @@ public partial class WordList
             return good;
         }
 
-        private bool CheckForbidden(string word)
+        private bool CheckForbidden(ReadOnlySpan<char> word)
         {
-#if DEBUG
-            if (word is null) throw new ArgumentNullException(nameof(word));
-#endif
             var rv = LookupFirstDetail(word);
             if (rv.HasValue && rv.Value.ContainsAnyFlags(Affix.NeedAffix, Affix.OnlyInCompound))
             {
@@ -2177,7 +2177,7 @@ public partial class WordList
                     )
                 )
                 // we have a match so add prefix
-                ? StringEx.ConcatString(entry.Append, word, entry.Strip.Length, word.Length - entry.Strip.Length)
+                ? StringEx.ConcatString(entry.Append, word.AsSpan(entry.Strip.Length))
                 : string.Empty;
         }
 
@@ -2208,7 +2208,7 @@ public partial class WordList
                     )
                 )
                 // we have a match so add suffix
-                ? StringEx.ConcatString(word, 0, word.Length - entry.Strip.Length, entry.Append)
+                ? word.AsSpan(0, word.Length - entry.Strip.Length).ConcatString(entry.Append)
                 : string.Empty;
         }
 

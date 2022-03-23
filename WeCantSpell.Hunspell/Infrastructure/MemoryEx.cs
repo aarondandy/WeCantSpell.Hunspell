@@ -225,28 +225,6 @@ static class MemoryEx
         return @this.Length > maxLength ? @this.Slice(0, maxLength) : @this;
     }
 
-    public static string ConcatString(this ReadOnlySpan<char> @this, string value)
-    {
-#if DEBUG
-        if (value is null) throw new ArgumentNullException(nameof(value));
-#endif
-        if (@this.IsEmpty)
-        {
-            return value;
-        }
-        if (value.Length == 0)
-        {
-            return @this.ToString();
-        }
-
-        var builder = StringBuilderPool.Get(@this.Length + value.Length);
-        builder.Append(@this);
-        builder.Append(value);
-        return StringBuilderPool.GetStringAndReturn(builder);
-    }
-
-    public static string ConcatString(this ReadOnlySpan<char> @this, char value) => @this.ConcatString(value.ToString());
-
     public static int FindNullTerminatedLength(this ReadOnlySpan<char> @this)
     {
         var index = @this.IndexOf('\0');

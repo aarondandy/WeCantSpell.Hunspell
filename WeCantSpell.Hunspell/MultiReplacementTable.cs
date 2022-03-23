@@ -117,7 +117,7 @@ public class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacemen
     {
         for (var searchLength = text.Length; searchLength > 0; searchLength--)
         {
-            if (_replacements.TryGetValue(text.Slice(0, searchLength).ToString(), out var entry))
+            if (_replacements.TryGetValue(text.Slice(0, searchLength), out var entry))
             {
                 return entry;
             }

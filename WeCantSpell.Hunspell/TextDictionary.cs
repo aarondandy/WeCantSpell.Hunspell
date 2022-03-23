@@ -132,6 +132,37 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         return false;
     }
 
+    public bool TryGetValue(ReadOnlySpan<char> key, out string actualKey, out TValue value)
+    {
+        var hash = CalculateHash(key);
+
+        ref var entry = ref _entries[hash % _cellarStartIndex];
+
+        if (entry.Key is not null)
+        {
+            while (true)
+            {
+                if (entry.HashCode == hash && CheckKeysEqual(entry.Key, key))
+                {
+                    actualKey = entry.Key;
+                    value = entry.Value;
+                    return true;
+                }
+
+                if (entry.Next < 0)
+                {
+                    break;
+                }
+
+                entry = ref _entries[entry.Next];
+            }
+        }
+
+        actualKey = null!;
+        value = default!;
+        return false;
+    }
+
     public void Add(string key, TValue value)
     {
         var hash = CalculateHash(key);

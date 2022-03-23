@@ -25,7 +25,7 @@ public sealed class PatternEntry
 
     public FlagValue Condition2 { get; }
 
-    internal bool Pattern3DoesNotMatch(string word, int offset) =>
+    internal bool Pattern3DoesNotMatch(ReadOnlySpan<char> word, int offset) =>
         Pattern3.Length == 0
-        || !word.AsSpan(offset).StartsWith(Pattern3.AsSpan()); 
+        || !word.Slice(offset).StartsWith(Pattern3.AsSpan()); 
 }

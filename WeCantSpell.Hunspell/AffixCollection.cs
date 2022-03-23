@@ -179,6 +179,10 @@ public sealed class SuffixCollection : AffixCollection<SuffixEntry>
     {
     }
 
+    internal IEnumerable<Affix<SuffixEntry>> GetMatchingAffixes(ReadOnlySpan<char> word) =>
+        GetMatchingAffixes(word.ToString());
+
+    [Obsolete]
     internal IEnumerable<Affix<SuffixEntry>> GetMatchingAffixes(string word)
     {
         var results = Enumerable.Empty<Affix<SuffixEntry>>();
@@ -213,6 +217,10 @@ public sealed class SuffixCollection : AffixCollection<SuffixEntry>
         }
     }
 
+    internal IEnumerable<Affix<SuffixEntry>> GetMatchingAffixes(ReadOnlySpan<char> word, FlagSet groupFlagFilter) =>
+        GetMatchingAffixes(word.ToString(), groupFlagFilter);
+
+    [Obsolete]
     internal IEnumerable<Affix<SuffixEntry>> GetMatchingAffixes(string word, FlagSet groupFlagFilter)
     {
         var results = Enumerable.Empty<Affix<SuffixEntry>>();
@@ -274,6 +282,9 @@ public sealed class PrefixCollection : AffixCollection<PrefixEntry>
     {
     }
 
+    internal IEnumerable<Affix<PrefixEntry>> GetMatchingAffixes(ReadOnlySpan<char> word) => GetMatchingAffixes(word.ToString());
+
+    [Obsolete]
     internal IEnumerable<Affix<PrefixEntry>> GetMatchingAffixes(string word)
     {
         var results = Enumerable.Empty<Affix<PrefixEntry>>();

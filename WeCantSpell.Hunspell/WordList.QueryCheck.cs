@@ -238,7 +238,7 @@ public partial class WordList
                 // conversion may result in string with different len than before MakeAllSmall2 so re-scan
                 if (apos < scw.Length - 1)
                 {
-                    scw = StringEx.ConcatString(scw, 0, apos + 1, HunspellTextFunctions.MakeInitCap(scw.AsSpan(apos + 1), textInfo));
+                    scw = scw.AsSpan(0, apos + 1).ConcatString(HunspellTextFunctions.MakeInitCap(scw.AsSpan(apos + 1), textInfo));
                     rv = _query.CheckWord(scw, ref resultType, out root);
                     if (rv is not null)
                     {

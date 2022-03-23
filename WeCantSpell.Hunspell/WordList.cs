@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -73,6 +72,8 @@ public sealed partial class WordList
 
     public bool ContainsEntriesForRootWord(string rootWord) => rootWord is not null && EntriesByRoot.ContainsKey(rootWord);
 
+    public bool ContainsEntriesForRootWord(ReadOnlySpan<char> rootWord) => EntriesByRoot.ContainsKey(rootWord);
+
     public WordEntryDetail[] this[string rootWord] =>
         rootWord is not null
             ? FindEntryDetailsByRootWord(rootWord).ToArray()
@@ -98,13 +99,10 @@ public sealed partial class WordList
 
     public IEnumerable<string> Suggest(string word, QueryOptions? options) => new QuerySuggest(this, options).Suggest(word);
 
-    internal WordEntry? FindFirstEntryByRootWord(string rootWord)
+    internal WordEntry? FindFirstEntryByRootWord(ReadOnlySpan<char> rootWord)
     {
-#if DEBUG
-        if (rootWord is null) throw new ArgumentNullException(nameof(rootWord));
-#endif
-        return EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length > 0
-            ? new WordEntry(rootWord, details[0])
+        return EntriesByRoot.TryGetValue(rootWord, out var key, out var details) && details.Length > 0
+            ? new WordEntry(key, details[0])
             : null;
     }
 
@@ -119,23 +117,22 @@ public sealed partial class WordList
             : Array.Empty<WordEntryDetail>();
     }
 
-    internal WordEntryDetail? FindFirstEntryDetailByRootWord(string rootWord)
+    internal WordEntryDetail[] FindEntryDetailsByRootWord(ReadOnlySpan<char> rootWord)
     {
-#if DEBUG
-        if (rootWord is null) throw new ArgumentNullException(nameof(rootWord));
-#endif
+        return EntriesByRoot.TryGetValue(rootWord, out var details)
+            ? details
+            : Array.Empty<WordEntryDetail>();
+    }
 
+    internal WordEntryDetail? FindFirstEntryDetailByRootWord(ReadOnlySpan<char> rootWord)
+    {
         return EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length != 0
             ? details[0]
             : null;
     }
 
-    internal bool TryFindFirstEntryDetailByRootWord(string rootWord, out WordEntryDetail entryDetail)
+    internal bool TryFindFirstEntryDetailByRootWord(ReadOnlySpan<char> rootWord, out WordEntryDetail entryDetail)
     {
-#if DEBUG
-        if (rootWord is null) throw new ArgumentNullException(nameof(rootWord));
-#endif
-
         if (EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length > 0)
         {
             entryDetail = details[0];

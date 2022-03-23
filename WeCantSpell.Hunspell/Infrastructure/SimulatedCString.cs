@@ -12,6 +12,16 @@ struct SimulatedCString
         _terminatedLengthCache = null;
     }
 
+    public SimulatedCString(ReadOnlySpan<char> text)
+    {
+        _rawBuffer = new char[text.Length + 3]; // 3 extra characters seems to be enough to prevent most reallocations
+
+        text.CopyTo(_rawBuffer.AsSpan());
+
+        _bufferLength = text.Length;
+        _terminatedLengthCache = null;
+    }
+
     private char[] _rawBuffer;
     private int? _terminatedLengthCache;
     private int _bufferLength;
