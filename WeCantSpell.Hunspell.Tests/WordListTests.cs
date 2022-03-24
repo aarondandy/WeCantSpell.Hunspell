@@ -53,5 +53,15 @@ public class WordListTests
             wordList.Check(given).Should().BeFalse();
             suggestions.Should().Contain(expected);
         }
+
+        [Fact]
+        public void wordlist_with_blank_word_entry_does_not_crash_suggest()
+        {
+            var wordList = WordList.CreateFromWords(new[] { "" });
+
+            var suggestions = wordList.Suggest("test");
+
+            suggestions.Should().BeEmpty();
+        }
     }
 }
