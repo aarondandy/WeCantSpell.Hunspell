@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 3.1.2 - 2022-03-23
+### Fixed
+- [Fixes a index out of range bug](https://github.com/aarondandy/WeCantSpell.Hunspell/issues/71)
+
 ## 3.1.1 - 2022-02-21
 ### Fixed
 - [Fixes a character classification bug](https://github.com/aarondandy/WeCantSpell.Hunspell/pull/54)
