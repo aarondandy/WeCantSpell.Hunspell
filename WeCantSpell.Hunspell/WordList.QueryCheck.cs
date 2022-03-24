@@ -51,7 +51,7 @@ public partial class WordList
                 return new SpellCheckResult(false);
             }
 
-            if (HunspellTextFunctions.IsNumericWord(word))
+            if (HunspellTextFunctions.IsNumericWord(word.AsSpan()))
             {
                 // allow numbers with dots, dashes and commas (but forbid double separators: "..", "--" etc.)
                 return new SpellCheckResult(true);
@@ -238,7 +238,7 @@ public partial class WordList
                 // conversion may result in string with different len than before MakeAllSmall2 so re-scan
                 if (apos < scw.Length - 1)
                 {
-                    scw = scw.AsSpan(0, apos + 1).ConcatString(HunspellTextFunctions.MakeInitCap(scw.AsSpan(apos + 1), textInfo));
+                    scw = StringEx.ConcatString(scw.AsSpan(0, apos + 1), HunspellTextFunctions.MakeInitCap(scw.AsSpan(apos + 1), textInfo));
                     rv = _query.CheckWord(scw, ref resultType, out root);
                     if (rv is not null)
                     {

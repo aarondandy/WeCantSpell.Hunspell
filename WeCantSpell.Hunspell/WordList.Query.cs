@@ -360,37 +360,35 @@ public partial class WordList
 
         private WordEntry? HomonymWordSearch(ReadOnlySpan<char> homonymWord, IncrementalWordList? words, FlagValue condition2, bool scpdIsZero)
         {
-            return HomonymWordSearchDetail(homonymWord, words, condition2, scpdIsZero)?.ToEntry(homonymWord.ToString());
-        }
-
-        private WordEntryDetail? HomonymWordSearchDetail(ReadOnlySpan<char> homonymWord, IncrementalWordList? words, FlagValue condition2, bool scpdIsZero)
-        {
-            foreach (var homonymCandidate in LookupDetails(homonymWord))
+            if (TryLookupDetails(homonymWord, out var homonymWordString, out var details) && details.Length > 0)
             {
-                if (
-                    !homonymCandidate.ContainsFlag(Affix.NeedAffix)
-                    &&
-                    (
-                        words is null
-                        ? (
-                            homonymCandidate.ContainsFlag(Affix.CompoundFlag)
-                            ||
-                            homonymCandidate.ContainsFlag(Affix.CompoundEnd)
-                        )
-                        : (
-                            Affix.CompoundRules.HasItems
-                            && DefCompoundCheck(words.CreateIncremented(), homonymCandidate, true)
-                        )
-                    )
-                    &&
-                    (
-                        scpdIsZero
-                        || !condition2.HasValue
-                        || homonymCandidate.ContainsFlag(condition2)
-                    )
-                )
+                foreach (var homonymCandidate in details)
                 {
-                    return homonymCandidate;
+                    if (
+                        !homonymCandidate.ContainsFlag(Affix.NeedAffix)
+                        &&
+                        (
+                            words is null
+                            ? (
+                                homonymCandidate.ContainsFlag(Affix.CompoundFlag)
+                                ||
+                                homonymCandidate.ContainsFlag(Affix.CompoundEnd)
+                            )
+                            : (
+                                Affix.CompoundRules.HasItems
+                                && DefCompoundCheck(words.CreateIncremented(), homonymCandidate, true)
+                            )
+                        )
+                        &&
+                        (
+                            scpdIsZero
+                            || !condition2.HasValue
+                            || homonymCandidate.ContainsFlag(condition2)
+                        )
+                    )
+                    {
+                        return homonymCandidate.ToEntry(homonymWordString);
+                    }
                 }
             }
 
@@ -566,14 +564,13 @@ public partial class WordList
 
                             if (Affix.CompoundFlag.HasValue)
                             {
-                                var stAffix = st.ToString();
-                                rv = PrefixCheck(stAffix.AsSpan(), movCompoundOptions, Affix.CompoundFlag);
+                                rv = PrefixCheck(st.TerminatedSpan, movCompoundOptions, Affix.CompoundFlag);
                                 if (rv is null)
                                 {
-                                    rv = SuffixCheck(stAffix.AsSpan(), 0, default, new FlagValue(), Affix.CompoundFlag, movCompoundOptions);
+                                    rv = SuffixCheck(st.TerminatedSpan, 0, default, new FlagValue(), Affix.CompoundFlag, movCompoundOptions);
                                     if (rv is null && Affix.CompoundMoreSuffixes)
                                     {
-                                        rv = SuffixCheckTwoSfx(stAffix.AsSpan(), 0, default, Affix.CompoundFlag);
+                                        rv = SuffixCheckTwoSfx(st.TerminatedSpan, 0, default, Affix.CompoundFlag);
                                     }
 
                                     if (
@@ -597,14 +594,13 @@ public partial class WordList
                             }
                             else if (wordNum == 0 && Affix.CompoundBegin.HasValue)
                             {
-                                var stAffix = st.ToString();
-                                rv = SuffixCheck(stAffix.AsSpan(), 0, default, default, Affix.CompoundBegin, movCompoundOptions);
+                                rv = SuffixCheck(st.TerminatedSpan, 0, default, default, Affix.CompoundBegin, movCompoundOptions);
 
                                 if(rv is null)
                                 {
                                     if(Affix.CompoundMoreSuffixes)
                                     {
-                                        rv = SuffixCheckTwoSfx(stAffix.AsSpan(), 0, default, Affix.CompoundBegin);
+                                        rv = SuffixCheckTwoSfx(st.TerminatedSpan, 0, default, Affix.CompoundBegin);
                                         if (rv is not null)
                                         {
                                             checkedPrefix = true;
@@ -613,7 +609,7 @@ public partial class WordList
 
                                     if (rv is null)
                                     {
-                                        rv = PrefixCheck(stAffix.AsSpan(), movCompoundOptions, Affix.CompoundBegin);
+                                        rv = PrefixCheck(st.TerminatedSpan, movCompoundOptions, Affix.CompoundBegin);
                                         if (rv is not null)
                                         {
                                             checkedPrefix = true;
@@ -627,13 +623,12 @@ public partial class WordList
                             }
                             else if (wordNum > 0 && Affix.CompoundMiddle.HasValue)
                             {
-                                var stAffix = st.ToString();
-                                rv = SuffixCheck(stAffix.AsSpan(), 0, default, default, Affix.CompoundMiddle, movCompoundOptions);
+                                rv = SuffixCheck(st.TerminatedSpan, 0, default, default, Affix.CompoundMiddle, movCompoundOptions);
                                 if (rv is null)
                                 {
                                     if (Affix.CompoundMoreSuffixes)
                                     {
-                                        rv = SuffixCheckTwoSfx(stAffix.AsSpan(), 0, default, Affix.CompoundMiddle);
+                                        rv = SuffixCheckTwoSfx(st.TerminatedSpan, 0, default, Affix.CompoundMiddle);
                                         if (rv is not null)
                                         {
                                             checkedPrefix = true;
@@ -642,7 +637,7 @@ public partial class WordList
 
                                     if (rv is null)
                                     {
-                                        rv = PrefixCheck(stAffix.AsSpan(), movCompoundOptions, Affix.CompoundMiddle);
+                                        rv = PrefixCheck(st.TerminatedSpan, movCompoundOptions, Affix.CompoundMiddle);
                                         if (rv is not null)
                                         {
                                             checkedPrefix = true;
@@ -775,7 +770,7 @@ public partial class WordList
                         }
                         else if (huMovRule && Affix.IsHungarian)
                         {
-                            rv = AffixCheck(st.ToString().AsSpan(), default, CompoundOptions.Not);
+                            rv = AffixCheck(st.TerminatedSpan, default, CompoundOptions.Not);
 
                             firstWordCompoundAcceptable =
                                 rv is not null

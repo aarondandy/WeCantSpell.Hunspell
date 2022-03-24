@@ -103,6 +103,24 @@ static class StringEx
         return StringBuilderPool.GetStringAndReturn(builder);
     }
 
+    public static string ConcatString(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value)
+    {
+        if (@this.IsEmpty)
+        {
+            return value.ToString();
+        }
+
+        if (value.IsEmpty)
+        {
+            return @this.ToString();
+        }
+
+        var builder = StringBuilderPool.Get(@this.Length + value.Length);
+        builder.Append(@this);
+        builder.Append(value);
+        return StringBuilderPool.GetStringAndReturn(builder);
+    }
+
     public static string ConcatString(this ReadOnlySpan<char> @this, string value)
     {
 #if DEBUG
@@ -112,6 +130,7 @@ static class StringEx
         {
             return value;
         }
+
         if (value.Length == 0)
         {
             return @this.ToString();
@@ -125,14 +144,14 @@ static class StringEx
 
     public static string ConcatString(this string @this, ReadOnlySpan<char> value)
     {
-        if (@this.Length == 0)
-        {
-            return value.ToString();
-        }
-
         if (value.IsEmpty)
         {
             return @this;
+        }
+
+        if (@this.Length == 0)
+        {
+            return value.ToString();
         }
 
         var builder = StringBuilderPool.Get(@this.Length + value.Length);

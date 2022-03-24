@@ -204,9 +204,9 @@ public partial class WordList
                             removeFromIndexThenInsertAtFront(
                                 slst,
                                 j,
-                                toRemove.AsSpan(0, spaceIndex + 1)
-                                    .ConcatString(
-                                        HunspellTextFunctions.MakeInitCap(toRemove.AsSpan(spaceIndex + 1), textInfo)));
+                                StringEx.ConcatString(
+                                    toRemove.AsSpan(0, spaceIndex + 1),
+                                    HunspellTextFunctions.MakeInitCap(toRemove.AsSpan(spaceIndex + 1), textInfo)));
 
                             static void removeFromIndexThenInsertAtFront(List<string> list, int removeIndex, string insertValue)
                             {
@@ -1088,10 +1088,9 @@ public partial class WordList
         {
             if (wlst.Count < MaxSuggestions)
             {
-                var candidateWord = candidate.ToString();
-                if (!wlst.Contains(candidateWord) && CheckWord(candidateWord.AsSpan(), cpdSuggest) != 0)
+                if (!wlst.Contains(candidate) && CheckWord(candidate, cpdSuggest) != 0)
                 {
-                    wlst.Add(candidateWord);
+                    wlst.Add(candidate.ToString());
                 }
             }
         }

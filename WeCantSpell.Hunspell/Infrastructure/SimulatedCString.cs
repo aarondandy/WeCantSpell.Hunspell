@@ -4,14 +4,6 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 
 struct SimulatedCString
 {
-    public SimulatedCString(string text)
-    {
-        _rawBuffer = new char[text.Length + 3]; // 3 extra characters seems to be enough to prevent most reallocations
-        text.CopyTo(0, _rawBuffer, 0, text.Length);
-        _bufferLength = text.Length;
-        _terminatedLengthCache = null;
-    }
-
     public SimulatedCString(ReadOnlySpan<char> text)
     {
         _rawBuffer = new char[text.Length + 3]; // 3 extra characters seems to be enough to prevent most reallocations
@@ -100,8 +92,6 @@ struct SimulatedCString
     {
         // I want to keep this method here in case a future implementation can make use of it.
     }
-
-    public override string ToString() => TerminatedSpan.ToString();
 
     private void EnsureBufferCapacity(int neededLength)
     {

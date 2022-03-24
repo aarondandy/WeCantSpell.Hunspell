@@ -152,7 +152,7 @@ static class MemoryEx
 
         for (var i = removeIndex + 1; i < @this.Length; i++)
         {
-            ref readonly var c = ref @this[i];
+            var c = @this[i];
             if (value != c)
             {
                 builder.Append(c);

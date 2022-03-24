@@ -167,4 +167,17 @@ static class CollectionsEx
 
         return removed;
     }
+
+    public static bool Contains(this List<string> list, ReadOnlySpan<char> value)
+    {
+        foreach (var item in list)
+        {
+            if (item is not null && value.Equals(item.AsSpan(), StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+        }
+        return false;
+    }
 }
