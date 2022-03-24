@@ -2238,9 +2238,14 @@ public partial class WordList
         /// </summary>
         private int LeftCommonSubstring(string s1, string s2)
         {
+            if (s1.Length == 0 || s2.Length == 0)
+            {
+                return 0;
+            }
+
             if (Affix.ComplexPrefixes)
             {
-                return LeftCommonSubstringComplex(s1, s2);
+                return leftCommonSubstringComplex(s1, s2);
             }
 
             if (s1[0] != s2[0] && s1[0] != TextInfo.ToLower(s2[0]))
@@ -2256,28 +2261,17 @@ public partial class WordList
             };
 
             return index;
-        }
 
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.NoInlining)]
-#endif
-        private static int LeftCommonSubstringComplex(string s1, string s2) =>
-            (
-                s1.Length != 0
-                &&
-                s2.Length != 0
-                &&
-                s1[s1.Length - 1] == s2[s2.Length - 1]
-            )
-            ? 1
-            : 0;
+            static int leftCommonSubstringComplex(string s1, string s2) =>
+                (s1[s1.Length - 1] == s2[s2.Length - 1]) ? 1 : 0;
+        }
 
         /// <summary>
         /// Generate an n-gram score comparing s1 and s2.
         /// </summary>
         private int NGram(int n, string s1, string s2, NGramOptions opt)
         {
-            if (s2.Length == 0)
+            if (s1.Length == 0 || s2.Length == 0)
             {
                 return 0;
             }
