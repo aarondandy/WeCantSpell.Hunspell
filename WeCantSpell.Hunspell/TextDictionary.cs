@@ -315,9 +315,11 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
             CellarStartIndex = CalculateBestCellarIndexForCapacity(Entries.Length);
             CollisionIndex = Entries.Length - 1;
             Count = 0;
+
+            _leftovers = new((int)(Entries.Length - CellarStartIndex));
         }
 
-        private List<(uint hash, string key, TValue value)> _leftovers = new();
+        private List<(uint hash, string key, TValue value)> _leftovers;
 
         public Entry[] Entries;
         public uint CellarStartIndex;
