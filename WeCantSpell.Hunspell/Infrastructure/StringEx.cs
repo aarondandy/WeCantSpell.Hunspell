@@ -4,8 +4,6 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class StringEx
 {
-    private static readonly char[] SpaceOrTab = { ' ', '\t' };
-
     public static bool StartsWith(this string @this, char character) => @this.Length != 0 && @this[0] == character;
 
     public static bool EndsWith(this string @this, char character) => @this.Length > 0 && @this[@this.Length - 1] == character;
@@ -142,6 +140,27 @@ static class StringEx
         return StringBuilderPool.GetStringAndReturn(builder);
     }
 
+    public static ReadOnlySpan<char> ConcatSpan(this ReadOnlySpan<char> @this, string value)
+    {
+#if DEBUG
+        if (value is null) throw new ArgumentNullException(nameof(value));
+#endif
+        if (@this.IsEmpty)
+        {
+            return value.AsSpan();
+        }
+
+        if (value.Length == 0)
+        {
+            return @this;
+        }
+
+        var builder = StringBuilderPool.Get(@this.Length + value.Length);
+        builder.Append(@this);
+        builder.Append(value);
+        return StringBuilderPool.GetStringAndReturn(builder).AsSpan();
+    }
+
     public static string ConcatString(this string @this, ReadOnlySpan<char> value)
     {
         if (value.IsEmpty)
@@ -158,6 +177,24 @@ static class StringEx
         builder.Append(@this);
         builder.Append(value);
         return StringBuilderPool.GetStringAndReturn(builder);
+    }
+
+    public static ReadOnlySpan<char> ConcatSpan(this string @this, ReadOnlySpan<char> value)
+    {
+        if (value.IsEmpty)
+        {
+            return @this.AsSpan();
+        }
+
+        if (@this.Length == 0)
+        {
+            return value;
+        }
+
+        var builder = StringBuilderPool.Get(@this.Length + value.Length);
+        builder.Append(@this);
+        builder.Append(value);
+        return StringBuilderPool.GetStringAndReturn(builder).AsSpan();
     }
 
     public static string WithoutIndex(this string @this, int index)

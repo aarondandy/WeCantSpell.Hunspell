@@ -2155,29 +2155,26 @@ public partial class WordList
         /// </summary>
         private string Add(PrefixEntry entry, string word)
         {
-            return
-                (
-                    (
-                        word.Length > entry.Strip.Length
-                        ||
-                        (
-                            word.Length == 0
-                            &&
-                            Affix.FullStrip
-                        )
-                    )
-                    &&
-                    entry.TestCondition(word.AsSpan())
-                    &&
-                    (
-                        entry.Strip.Length == 0
-                        ||
-                        word.StartsWith(entry.Strip, StringComparison.Ordinal)
-                    )
-                )
-                // we have a match so add prefix
-                ? StringEx.ConcatString(entry.Append, word.AsSpan(entry.Strip.Length))
-                : string.Empty;
+            if (word.Length > entry.Strip.Length || (word.Length == 0 && Affix.FullStrip))
+            {
+                var wordSpan = word.AsSpan();
+                if (entry.TestCondition(wordSpan))
+                {
+                    if (entry.Strip.Length == 0)
+                    {
+                        // we have a match so add prefix
+                        return string.Concat(entry.Append, word);
+                    }
+
+                    if (word.StartsWith(entry.Strip, StringComparison.Ordinal))
+                    {
+                        // we have a match so add prefix
+                        return StringEx.ConcatString(entry.Append, wordSpan.Slice(entry.Strip.Length));
+                    }
+                }
+            }
+
+            return string.Empty;
         }
 
         /// <summary>
@@ -2186,29 +2183,26 @@ public partial class WordList
         private string Add(SuffixEntry entry, string word)
         {
             // make sure all conditions match
-            return
-                (
-                    (
-                        word.Length > entry.Strip.Length
-                        ||
-                        (
-                            word.Length == 0
-                            &&
-                            Affix.FullStrip
-                        )
-                    )
-                    &&
-                    entry.TestCondition(word.AsSpan())
-                    &&
-                    (
-                        entry.Strip.Length == 0
-                        ||
-                        word.AsSpan(word.Length - entry.Strip.Length).Equals(entry.Strip.AsSpan(), StringComparison.Ordinal)
-                    )
-                )
-                // we have a match so add suffix
-                ? word.AsSpan(0, word.Length - entry.Strip.Length).ConcatString(entry.Append)
-                : string.Empty;
+            if (word.Length > entry.Strip.Length || (word.Length == 0 && Affix.FullStrip))
+            {
+                var wordSpan = word.AsSpan();
+                if (entry.TestCondition(wordSpan))
+                {
+                    if (entry.Strip.Length == 0)
+                    {
+                        // we have a match so add suffix
+                        return string.Concat(word, entry.Append);
+                    }
+
+                    if (wordSpan.Slice(wordSpan.Length - entry.Strip.Length).Equals(entry.Strip, StringComparison.Ordinal))
+                    {
+                        // we have a match so add suffix
+                        return wordSpan.Slice(0, wordSpan.Length - entry.Strip.Length).ConcatString(entry.Append);
+                    }
+                }
+            }
+
+            return string.Empty;
         }
 
         private static bool CopyField(ref string dest, MorphSet morphs, string var)

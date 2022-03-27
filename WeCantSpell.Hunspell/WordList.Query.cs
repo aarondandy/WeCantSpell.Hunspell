@@ -1381,7 +1381,7 @@ public partial class WordList
                 // generate new root word by removing prefix and adding
                 // back any characters that would have been stripped
 
-                var tmpword = StringEx.ConcatString(peEntry.Strip, word.Slice(peEntry.Append.Length));
+                var tmpword = StringEx.ConcatSpan(peEntry.Strip, word.Slice(peEntry.Append.Length));
 
                 // now make sure all of the conditions on characters
                 // are met.  Please see the appendix at the end of
@@ -1391,7 +1391,7 @@ public partial class WordList
                 // if all conditions are met then check if resulting
                 // root word in the dictionary
 
-                if (peEntry.TestCondition(tmpword.AsSpan()))
+                if (peEntry.TestCondition(tmpword))
                 {
                     // prefix matched but no root word was found
                     // if CrossProduct is allowed, try again but now
@@ -1400,7 +1400,7 @@ public partial class WordList
                     if (EnumEx.HasFlag(pe.Options, AffixEntryOptions.CrossProduct) && (inCompound != CompoundOptions.Begin))
                     {
                         // find hash entry of root word
-                        if (SuffixCheckTwoSfx(tmpword.AsSpan(), AffixEntryOptions.CrossProduct, pe, needFlag) is { } he)
+                        if (SuffixCheckTwoSfx(tmpword, AffixEntryOptions.CrossProduct, pe, needFlag) is { } he)
                         {
                             return he;
                         }
@@ -1784,7 +1784,7 @@ public partial class WordList
                 // generate new root word by removing prefix and adding
                 // back any characters that would have been stripped
 
-                var tmpword = StringEx.ConcatString(entry.Strip, word.Slice(entry.Append.Length));
+                var tmpword = StringEx.ConcatSpan(entry.Strip, word.Slice(entry.Append.Length));
 
                 // now make sure all of the conditions on characters
                 // are met.  Please see the appendix at the end of
@@ -1794,25 +1794,28 @@ public partial class WordList
                 // if all conditions are met then check if resulting
                 // root word in the dictionary
 
-                if (entry.TestCondition(tmpword.AsSpan()))
+                if (entry.TestCondition(tmpword))
                 {
-                    foreach (var detail in LookupDetails(tmpword))
+                    if (TryLookupDetails(tmpword, out var tmpwordString, out var details))
                     {
-                        if (
-                            detail.ContainsFlag(affix.AFlag)
-                            &&
-                            !entry.ContainsContClass(Affix.NeedAffix) // forbid single prefixes with needaffix flag
-                            &&
-                            (
-                                needFlag.IsZero
-                                ||
-                                detail.ContainsFlag(needFlag)
-                                ||
-                                entry.ContainsContClass(needFlag)
-                            )
-                        )
+                        foreach (var detail in details)
                         {
-                            return new WordEntry(tmpword, detail);
+                            if (
+                                detail.ContainsFlag(affix.AFlag)
+                                &&
+                                !entry.ContainsContClass(Affix.NeedAffix) // forbid single prefixes with needaffix flag
+                                &&
+                                (
+                                    needFlag.IsZero
+                                    ||
+                                    detail.ContainsFlag(needFlag)
+                                    ||
+                                    entry.ContainsContClass(needFlag)
+                                )
+                            )
+                            {
+                                return new WordEntry(tmpwordString, detail);
+                            }
                         }
                     }
 
@@ -1822,7 +1825,7 @@ public partial class WordList
 
                     if (EnumEx.HasFlag(affix.Options, AffixEntryOptions.CrossProduct))
                     {
-                        if (SuffixCheck(tmpword.AsSpan(), AffixEntryOptions.CrossProduct, affix, default, needFlag, inCompound) is { } he)
+                        if (SuffixCheck(tmpword, AffixEntryOptions.CrossProduct, affix, default, needFlag, inCompound) is { } he)
                         {
                             return he;
                         }
@@ -1872,7 +1875,7 @@ public partial class WordList
                 // back any characters that would have been stripped or
                 // or null terminating the shorter string
 
-                var tmpstring = word.Slice(0, tmpl).ConcatString(entry.Strip);
+                var tmpSpan = word.Slice(0, tmpl).ConcatSpan(entry.Strip);
 
                 // now make sure all of the conditions on characters
                 // are met.  Please see the appendix at the end of
@@ -1881,48 +1884,51 @@ public partial class WordList
 
                 // if all conditions are met then check if resulting
                 // root word in the dictionary
-                if (entry.Conditions.IsEndingMatch(tmpstring.AsSpan()))
+                if (entry.Conditions.IsEndingMatch(tmpSpan))
                 {
                     var aFlag = affix.AFlag;
-                    foreach (var heDetail in LookupDetails(tmpstring))
+                    if (TryLookupDetails(tmpSpan, out var tmpString, out var details))
                     {
-                        if (
-                            (
-                                heDetail.ContainsFlag(aFlag)
-                                ||
+                        foreach (var heDetail in details)
+                        {
+                            if (
                                 (
-                                    pfx is not null
-                                    &&
-                                    pfx.Entry.ContainsContClass(aFlag)
-                                )
-                            )
-                            &&
-                            (
-                                !optFlagsHasCrossProduct
-                                ||
-                                (
-                                    pfx is not null
-                                    &&
+                                    heDetail.ContainsFlag(aFlag)
+                                    ||
                                     (
-                                        heDetail.ContainsFlag(pfx.AFlag)
-                                        ||
-                                        entry.ContainsContClass(pfx.AFlag) // enabled by prefix
+                                        pfx is not null
+                                        &&
+                                        pfx.Entry.ContainsContClass(aFlag)
                                     )
                                 )
+                                &&
+                                (
+                                    !optFlagsHasCrossProduct
+                                    ||
+                                    (
+                                        pfx is not null
+                                        &&
+                                        (
+                                            heDetail.ContainsFlag(pfx.AFlag)
+                                            ||
+                                            entry.ContainsContClass(pfx.AFlag) // enabled by prefix
+                                        )
+                                    )
+                                )
+                                && // check only in compound homonyms (bad flags)
+                                !heDetail.ContainsFlag(badFlag)
+                                && // handle required flag
+                                (
+                                    needFlag.IsZero
+                                    ||
+                                    heDetail.ContainsFlag(needFlag)
+                                    ||
+                                    entry.ContainsContClass(needFlag)
+                                )
                             )
-                            && // check only in compound homonyms (bad flags)
-                            !heDetail.ContainsFlag(badFlag)
-                            && // handle required flag
-                            (
-                                needFlag.IsZero
-                                ||
-                                heDetail.ContainsFlag(needFlag)
-                                ||
-                                entry.ContainsContClass(needFlag)
-                            )
-                        )
-                        {
-                            return new WordEntry(tmpstring, heDetail);
+                            {
+                                return new WordEntry(tmpString, heDetail);
+                            }
                         }
                     }
                 }
@@ -1965,7 +1971,7 @@ public partial class WordList
                 // back any characters that would have been stripped or
                 // or null terminating the shorter string
 
-                var tmpword = word.Limit(tmpl).ConcatString(entry.Strip);
+                var tmpword = word.Slice(0, tmpl).ConcatSpan(entry.Strip);
 
                 // now make sure all of the conditions on characters
                 // are met.  Please see the appendix at the end of
@@ -1973,12 +1979,12 @@ public partial class WordList
                 // tested
 
                 // if all conditions are met then recall suffix_check
-                if (entry.TestCondition(tmpword.AsSpan()))
+                if (entry.TestCondition(tmpword))
                 {
                     var he = ppfx is not null && entry.ContainsContClass(ppfx.AFlag)
                         // handle conditional suffix
-                        ? SuffixCheck(tmpword.AsSpan(), AffixEntryOptions.None, null, se.AFlag, needflag, CompoundOptions.Not)
-                        : SuffixCheck(tmpword.AsSpan(), optflags, ppfx, se.AFlag, needflag, CompoundOptions.Not);
+                        ? SuffixCheck(tmpword, AffixEntryOptions.None, null, se.AFlag, needflag, CompoundOptions.Not)
+                        : SuffixCheck(tmpword, optflags, ppfx, se.AFlag, needflag, CompoundOptions.Not);
 
                     if (he is not null)
                     {
