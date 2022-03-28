@@ -14,7 +14,6 @@ public partial class AffixConfig
     {
         public Builder()
         {
-            _stringDuplicateRemover = new StringDuplicateRemover(StringComparer.Ordinal);
         }
 
         /// <summary>
@@ -256,13 +255,13 @@ public partial class AffixConfig
         /// Input conversion entries.
         /// </summary>
         /// <seealso cref="AffixConfig.InputConversions"/>
-        public Dictionary<string, MultiReplacementEntry>? InputConversions;
+        internal TextDictionary<MultiReplacementEntry>? InputConversions;
 
         /// <summary>
         /// Output conversion entries.
         /// </summary>
         /// <seealso cref="AffixConfig.OutputConversions"/>
-        public Dictionary<string, MultiReplacementEntry>? OutputConversions;
+        internal TextDictionary<MultiReplacementEntry>? OutputConversions;
 
         /// <summary>
         /// Mappings between related characters.
@@ -337,8 +336,6 @@ public partial class AffixConfig
         /// </remarks>
         public AffixConfig MoveToImmutable() => ToImmutable(allowDestructive: true);
 
-        private readonly StringDuplicateRemover _stringDuplicateRemover;
-
         public AffixConfig ToImmutable(bool allowDestructive)
         {
             var culture = CultureInfo.InvariantCulture;
@@ -354,9 +351,9 @@ public partial class AffixConfig
             {
                 Options = Options,
                 FlagMode = FlagMode,
-                KeyString = Dedup(KeyString ?? DefaultKeyString),
-                TryString = Dedup(TryString ?? string.Empty),
-                Language = Language is null ? null : Dedup(Language),
+                KeyString = KeyString ?? DefaultKeyString,
+                TryString = TryString ?? string.Empty,
+                Language = Language,
                 Culture = culture,
                 IsHungarian = string.Equals(culture.TwoLetterISOLanguageName, "HU", StringComparison.OrdinalIgnoreCase),
                 IsGerman = string.Equals(culture.TwoLetterISOLanguageName, "DE", StringComparison.OrdinalIgnoreCase),
@@ -396,11 +393,29 @@ public partial class AffixConfig
                 CompoundVowels = CompoundVowels,
                 WordChars = WordChars,
                 IgnoredChars = IgnoredChars,
-                Version = Version is null ? null : Dedup(Version)
+                Version = Version
             };
 
-            config.InputConversions = MultiReplacementTable.Create(InputConversions);
-            config.OutputConversions = MultiReplacementTable.Create(OutputConversions);
+            if (allowDestructive)
+            {
+                config.InputConversions = InputConversions is null
+                    ? MultiReplacementTable.Empty
+                    : MultiReplacementTable.TakeDictionary(InputConversions);
+                InputConversions = null;
+                config.OutputConversions = OutputConversions is null
+                    ? MultiReplacementTable.Empty
+                    : MultiReplacementTable.TakeDictionary(OutputConversions);
+                OutputConversions = null;
+            }
+            else
+            {
+                config.InputConversions = config.InputConversions = InputConversions is null
+                    ? MultiReplacementTable.Empty
+                    : MultiReplacementTable.Create(InputConversions);
+                config.OutputConversions = OutputConversions is null
+                    ? MultiReplacementTable.Empty
+                    : MultiReplacementTable.Create(OutputConversions);
+            }
 
             config.AliasF = AliasF.ToImmutable(allowDestructive);
             config.AliasM = AliasM.ToImmutable(allowDestructive);
@@ -419,11 +434,6 @@ public partial class AffixConfig
 
             config.Warnings = Warnings.ToImmutable();
 
-            if (allowDestructive)
-            {
-                _stringDuplicateRemover.Reset();
-            }
-
             return config;
         }
 
@@ -434,48 +444,6 @@ public partial class AffixConfig
         public void EnableOptions(AffixConfigOptions options)
         {
             Options |= options;
-        }
-
-        internal string Dedup(ReadOnlySpan<char> value) => _stringDuplicateRemover.GetEqualOrAdd(value);
-
-        internal string Dedup(string value)
-        {
-#if DEBUG
-            if (value is null) throw new ArgumentNullException(nameof(value));
-#endif
-            return _stringDuplicateRemover.GetEqualOrAdd(value);
-        }
-
-        internal string[] DedupInPlace(string[] values)
-        {
-#if DEBUG
-            if (values is null) throw new ArgumentNullException(nameof(values));
-#endif
-
-            for (var i = 0; i < values.Length; i++)
-            {
-                ref var value = ref values[i];
-                if (value is not null)
-                {
-                    value = _stringDuplicateRemover.GetEqualOrAdd(value);
-                }
-            }
-
-            return values;
-        }
-
-        internal string[] DedupIntoArray(List<string> values)
-        {
-#if DEBUG
-            if (values is null) throw new ArgumentNullException(nameof(values));
-#endif
-
-            if (values is not { Count: > 0 })
-            {
-                return Array.Empty<string>();
-            }
-
-            return DedupInPlace(values.ToArray());
         }
 
         public void LogWarning(string warning)

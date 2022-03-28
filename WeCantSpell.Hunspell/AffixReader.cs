@@ -277,10 +277,10 @@ public sealed partial class AffixReader
             case AffixReaderCommandKind.Flag:
                 return TrySetFlagMode(parameters);
             case AffixReaderCommandKind.KeyString:
-                _builder.KeyString = _builder.Dedup(parameters);
+                _builder.KeyString = parameters.ToString();
                 return true;
             case AffixReaderCommandKind.TryString:
-                _builder.TryString = _builder.Dedup(parameters);
+                _builder.TryString = parameters.ToString();
                 return true;
             case AffixReaderCommandKind.SetEncoding:
                 if (EncodingEx.GetEncodingByName(parameters) is not { } encoding)
@@ -293,11 +293,11 @@ public sealed partial class AffixReader
                 _flagParser.Encoding = encoding;
                 return true;
             case AffixReaderCommandKind.Language:
-                _builder.Language = _builder.Dedup(parameters);
+                _builder.Language = parameters.ToString();
                 _builder.Culture = GetCultureFromLanguage(_builder.Language);
                 return true;
             case AffixReaderCommandKind.CompoundSyllableNum:
-                _builder.CompoundSyllableNum = _builder.Dedup(parameters);
+                _builder.CompoundSyllableNum = parameters.ToString();
                 return true;
             case AffixReaderCommandKind.WordChars:
                 _builder.WordChars = CharacterSet.Create(parameters);
@@ -502,9 +502,9 @@ public sealed partial class AffixReader
         return false;
     }
 
-    private static CultureInfo GetCultureFromLanguage(string language)
+    private static CultureInfo GetCultureFromLanguage(string? language)
     {
-        if (string.IsNullOrEmpty(language))
+        if (language is not { Length: > 0 })
         {
             return CultureInfo.InvariantCulture;
         }
@@ -565,14 +565,14 @@ public sealed partial class AffixReader
             return false;
         }
 
-        entries.Add(new PhoneticEntry(_builder.Dedup(rule), _builder.Dedup(replace.Without('_'))));
+        entries.Add(new PhoneticEntry(rule.ToString(), replace.Without('_')));
 
         return true;
     }
 
     private bool TryParseMapEntry(ReadOnlySpan<char> parameterText, ArrayBuilder<MapEntry> entries)
     {
-        var valuesBuilder = new List<string>(parameterText.Length / 2);
+        var valuesBuilder = new ArrayBuilder<string>(parameterText.Length / 2);
 
         for (var k = 0; k < parameterText.Length; k++)
         {
@@ -588,12 +588,12 @@ public sealed partial class AffixReader
             valuesBuilder.Add(parameterText.Slice(chb, che - chb).ToString());
         }
 
-        entries.Add(new MapEntry(_builder.DedupIntoArray(valuesBuilder)));
+        entries.Add(new MapEntry(valuesBuilder.Extract()));
 
         return true;
     }
 
-    private bool TryParseConv(ReadOnlySpan<char> parameterText, EntryListType entryListType, ref Dictionary<string, MultiReplacementEntry>? entries)
+    private bool TryParseConv(ReadOnlySpan<char> parameterText, EntryListType entryListType, ref TextDictionary<MultiReplacementEntry>? entries)
     {
         if (!IsInitialized(entryListType))
         {
@@ -607,7 +607,7 @@ public sealed partial class AffixReader
             }
         }
 
-        entries ??= new();
+        entries ??= new(1);
 
         var pattern1 = ReadOnlySpan<char>.Empty;
         var pattern2 = ReadOnlySpan<char>.Empty;
@@ -652,23 +652,23 @@ public sealed partial class AffixReader
             pattern1 = pattern1.Slice(0, pattern1.Length - 1);
         }
 
-        var pattern1String = _builder.Dedup(pattern1.ReplaceIntoString('_', ' '));
+        pattern1 = pattern1.ReplaceIntoSpan('_', ' ');
 
         // find existing entry
-        if (!entries.TryGetValue(pattern1String, out var entry))
+        if (!entries.TryGetValue(pattern1, out var entry))
         {
             // make a new entry if none exists
-            entry = new MultiReplacementEntry(pattern1String);
-            entries[pattern1String] = entry;
+            entry = new MultiReplacementEntry(pattern1.ToString());
+            entries.Add(entry.Pattern, entry);
         }
 
-        entry.Set(type, _builder.Dedup(pattern2.ReplaceIntoString('_', ' ')));
+        entry.Set(type, pattern2.ReplaceIntoString('_', ' '));
         return true;
     }
 
     private bool TryParseBreak(ReadOnlySpan<char> parameterText, ArrayBuilder<string> entries)
     {
-        entries.Add(_builder.Dedup(parameterText));
+        entries.Add(parameterText.ToString());
         return true;
     }
 
@@ -690,7 +690,7 @@ public sealed partial class AffixReader
         {
             if (!part.IsEmpty)
             {
-                parts.Add(_builder.Dedup(part));
+                parts.Add(part.ToString());
             }
         }
 
@@ -906,7 +906,7 @@ public sealed partial class AffixReader
                 var morphSetBuilder = new List<string>();
                 foreach (var morphValue in morphAffixText.SplitOnTabOrSpace())
                 {
-                    morphSetBuilder.Add(_builder.Dedup(morphValue));
+                    morphSetBuilder.Add(morphValue.ToString());
                 }
 
                 morph = MorphSet.Create(morphSetBuilder);
@@ -925,8 +925,8 @@ public sealed partial class AffixReader
         }
 
         affixGroup.Entries.Add(CreateEntry<TEntry>(
-            _builder.Dedup(strip),
-            _builder.Dedup(affixText),
+            strip.ToString(),
+            affixText,
             conditions,
             morph,
             contClass));
@@ -1069,8 +1069,8 @@ public sealed partial class AffixReader
         }
 
         entries.Add(new SingleReplacement(
-            _builder.Dedup(pattern.ReplaceIntoString('_', ' ')),
-            _builder.Dedup(outString.ReplaceIntoString('_', ' ')),
+            pattern.ReplaceIntoString('_', ' '),
+            outString.ReplaceIntoString('_', ' '),
             type));
 
         return true;
@@ -1178,9 +1178,9 @@ public sealed partial class AffixReader
         }
 
         entries.Add(new PatternEntry(
-            _builder.Dedup(pattern1),
-            _builder.Dedup(pattern2),
-            _builder.Dedup(pattern3),
+            pattern1.ToString(),
+            pattern2.ToString(),
+            pattern3.ToString(),
             condition1,
             condition2));
 
