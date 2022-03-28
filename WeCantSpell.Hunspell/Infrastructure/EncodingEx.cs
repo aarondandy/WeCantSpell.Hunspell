@@ -14,7 +14,7 @@ static class EncodingEx
 
     private static Encoding? GetUtf8EncodingOrDefault(ReadOnlySpan<char> encodingName)
     {
-        if (!encodingName.IsEmpty && (encodingName.Equals("UTF8", StringComparison.OrdinalIgnoreCase) || encodingName.Equals("UTF-8", StringComparison.OrdinalIgnoreCase)))
+        if (!encodingName.IsEmpty && (encodingName.EqualsOrdinal("UTF8") || encodingName.EqualsOrdinal("UTF-8")))
         {
             return Encoding.UTF8;
         }
@@ -30,24 +30,24 @@ static class EncodingEx
         }
         catch (ArgumentException)
         {
-            return GetEncodingByAlternateNames(encodingName);
+            return getEncodingByAlternateNames(encodingName);
         }
-    }
 
-    private static Encoding? GetEncodingByAlternateNames(string encodingName)
-    {
-        var spaceIndex = encodingName.IndexOf(' ');
-        if (spaceIndex > 0)
+        static Encoding? getEncodingByAlternateNames(string encodingName)
         {
-            return GetEncodingByName(encodingName.AsSpan(0, spaceIndex));
-        }
+            var spaceIndex = encodingName.IndexOf(' ');
+            if (spaceIndex > 0)
+            {
+                return GetEncodingByName(encodingName.AsSpan(0, spaceIndex));
+            }
 
-        if (encodingName.Length >= 4 && encodingName.StartsWith("ISO") && encodingName[3] != '-')
-        {
-            return GetEncodingByName(encodingName.Insert(3, "-"));
-        }
+            if (encodingName.Length >= 4 && encodingName.StartsWith("ISO") && encodingName[3] != '-')
+            {
+                return GetEncodingByName(encodingName.Insert(3, "-"));
+            }
 
-        return null;
+            return null;
+        }
     }
 
 #if NO_SPAN_DECODE

@@ -27,6 +27,8 @@ public partial class WordList
 
         private bool CheckNested(string word) => new QueryCheck(WordList, Options).Check(word);
 
+        public SpellCheckResult CheckDetails(ReadOnlySpan<char> word) => CheckDetails(word.ToString());
+
         public SpellCheckResult CheckDetails(string word)
         {
             if (string.IsNullOrEmpty(word) || word.Length >= MaxWordUtf8Len || !WordList.HasEntries)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -795,7 +796,7 @@ public partial class WordList
                                 // XXX only second suffix (inflections, not derivations)
                                 if (SuffixAppend is not null)
                                 {
-                                    numSyllable -= GetSyllable(SuffixAppend.AsSpan().Reversed());
+                                    numSyllable -= GetSyllableReversed(SuffixAppend.AsSpan());
                                 }
                                 if (SuffixExtra)
                                 {
@@ -1024,7 +1025,7 @@ public partial class WordList
                                     // XXX only second suffix (inflections, not derivations)
                                     if (SuffixAppend is not null)
                                     {
-                                        numSyllable -= GetSyllable(SuffixAppend.AsSpan().Reversed());
+                                        numSyllable -= GetSyllableReversed(SuffixAppend.AsSpan());
                                     }
                                     if (SuffixExtra)
                                     {
@@ -1168,7 +1169,7 @@ public partial class WordList
                                                 if (
                                                     rv2 is not null
                                                     && rv2.ContainsFlag(Affix.ForbiddenWord)
-                                                    && rv2.Word.AsSpan().EqualsLimited(st.TerminatedSpan, i + rv.Word.Length)
+                                                    && equalsOrdinalLimited(rv2.Word.AsSpan(), st.TerminatedSpan, i + rv.Word.Length)
                                                 )
                                                 {
                                                     st.Destroy();
@@ -1228,6 +1229,9 @@ public partial class WordList
 
             st.Destroy();
             return null;
+
+            static bool equalsOrdinalLimited(ReadOnlySpan<char> a, ReadOnlySpan<char> b, int lengthLimit) =>
+                a.Limit(lengthLimit).EqualsOrdinal(b.Limit(lengthLimit));
         }
 
         /// <summary>
@@ -1687,19 +1691,28 @@ public partial class WordList
         private int GetSyllable(ReadOnlySpan<char> word)
         {
             var num = 0;
-            var vowels = Affix.CompoundVowels;
-            if (Affix.CompoundMaxSyllable != 0 && vowels.HasItems)
+            int index;
+            if (Affix.CompoundMaxSyllable != 0 && Affix.CompoundVowels.HasItems)
             {
-                for (var i = 0; i < word.Length; i++)
+                index = 0;
+                while ((index = Affix.CompoundVowels.FindIndexOfMatch(word, index)) >= 0)
                 {
-                    if (vowels.Contains(word[i]))
-                    {
-                        num++;
-                    }
+                    num++;
+                    index++;
                 }
             }
 
             return num;
+        }
+
+        /// <summary>
+        /// Calculate number of syllable for compound-checking.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int GetSyllableReversed(ReadOnlySpan<char> word)
+        {
+            // Because the code is effectively the same, forward and reverse searches can use the same algorithm
+            return GetSyllable(word);
         }
 
         /// <summary>
@@ -1708,9 +1721,9 @@ public partial class WordList
         /// <seealso cref="AffixConfig.CheckCompoundRep"/>
         /// <seealso cref="AffixConfig.Replacements"/>
         /// <seealso cref="WordList.AllReplacements"/>
-        private bool CompoundReplacementCheck(ReadOnlySpan<char> wordSlice)
+        private bool CompoundReplacementCheck(ReadOnlySpan<char> word)
         {
-            if (wordSlice.Length < 2 || WordList.AllReplacements.IsEmpty)
+            if (word.Length < 2 || WordList.AllReplacements.IsEmpty)
             {
                 return false;
             }
@@ -1720,23 +1733,16 @@ public partial class WordList
                 // use only available mid patterns
                 if (replacementEntry.Med is { Length: > 0 } replacement)
                 {
-                    var rIndex = wordSlice.IndexOf(replacementEntry.Pattern.AsSpan());
-                    if (rIndex >= 0)
+                    // search every occurence of the pattern in the word
+                    var rIndex = word.IndexOf(replacementEntry.Pattern.AsSpan());
+                    while (rIndex >= 0)
                     {
-                        var word = wordSlice;
-                        var lenp = replacementEntry.Pattern.Length;
-
-                        // search every occurence of the pattern in the word
-                        do
+                        if (CandidateCheck(word.ReplaceIntoString(rIndex, replacementEntry.Pattern.Length, replacement)))
                         {
-                            if (CandidateCheck(word.ReplaceIntoString(rIndex, lenp, replacement).AsSpan()))
-                            {
-                                return true;
-                            }
-
-                            rIndex = word.IndexOf(replacementEntry.Pattern.AsSpan(), rIndex + 1);
+                            return true;
                         }
-                        while (rIndex >= 0);
+
+                        rIndex = word.IndexOf(replacementEntry.Pattern.AsSpan(), rIndex + 1);
                     }
                 }
             }
@@ -1751,14 +1757,14 @@ public partial class WordList
                 return false;
             }
 
-            var candidate = new char[wordSlice.Length + 1];
-            wordSlice.CopyTo(candidate.AsSpan());
+            var candidate = (new char[wordSlice.Length + 1]).AsSpan();
+            candidate[0] = wordSlice[0];
 
             for (var i = 1; i < wordSlice.Length; i++)
             {
                 candidate[i] = ' ';
-                wordSlice.Slice(i).CopyTo(candidate.AsSpan(i + 1));
-                if (CandidateCheck(candidate.AsSpan()))
+                wordSlice.Slice(i).CopyTo(candidate.Slice(i + 1));
+                if (CandidateCheck(candidate))
                 {
                     return true;
                 }
@@ -1995,6 +2001,9 @@ public partial class WordList
 
             return null;
         }
+
+        private bool CandidateCheck(string word) =>
+            WordList.ContainsEntriesForRootWord(word) || AffixCheck(word.AsSpan(), default(FlagValue), CompoundOptions.Not) is not null;
 
         private bool CandidateCheck(ReadOnlySpan<char> word) =>
             WordList.ContainsEntriesForRootWord(word) || AffixCheck(word, default(FlagValue), CompoundOptions.Not) is not null;

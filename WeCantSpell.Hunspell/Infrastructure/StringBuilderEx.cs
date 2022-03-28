@@ -35,35 +35,7 @@ static class StringBuilderEx
         return @this.ToString(startIndex, terminatedIndex - startIndex);
     }
 
-    public static int IndexOf(this StringBuilder @this, char target, int startIndex)
-    {
-#if DEBUG
-        if (startIndex < 0) throw new ArgumentOutOfRangeException(nameof(startIndex));
-#endif
-
-        for (var i = startIndex; i < @this.Length; i++)
-        {
-            if (@this[i] == target)
-            {
-                return i;
-            }
-        }
-
-        return -1;
-    }
-
-    public static int IndexOfNullChar(this StringBuilder @this)
-    {
-        for (var i = 0; i < @this.Length; i++)
-        {
-            if (@this[i] == '\0')
-            {
-                return i;
-            }
-        }
-
-        return -1;
-    }
+    public static int IndexOfNullChar(this StringBuilder @this) => IndexOfNullChar(@this, 0);
 
     public static int IndexOfNullChar(this StringBuilder @this, int offset)
     {
@@ -109,51 +81,9 @@ static class StringBuilderEx
         }
     }
 
-    public static void Replace(this StringBuilder @this, int index, int removeCount, string replacement)
-    {
-        if (replacement.Length <= removeCount)
-        {
-            for (var i = 0; i < replacement.Length; i++)
-            {
-                @this[index + i] = replacement[i];
-            }
-
-            if (replacement.Length != removeCount)
-            {
-                @this.Remove(index + replacement.Length, removeCount - replacement.Length);
-            }
-        }
-        else
-        {
-            @this.Remove(index, removeCount);
-            @this.Insert(index, replacement);
-        }
-    }
-
     public static bool StartsWith(this StringBuilder builder, char c) => builder.Length > 0 && builder[0] == c;
 
     public static bool EndsWith(this StringBuilder builder, char c) => builder.Length > 0 && builder[builder.Length - 1] == c;
-
-    public static string ToStringWithInsert(this StringBuilder builder, int index, char value)
-    {
-#if DEBUG
-        if (index < 0 || index > builder.Length) throw new ArgumentOutOfRangeException(nameof(index));
-#endif
-
-        if (index == 0)
-        {
-            return value.ToString() + builder.ToString();
-        }
-
-        if (index == builder.Length)
-        {
-            return builder.ToString() + value.ToString();
-        }
-
-        return builder.ToString(0, index)
-            + value.ToString()
-            + builder.ToString(index, builder.Length - index);
-    }
 
 #if NO_SB_SPANS
     public static StringBuilder Append(this StringBuilder builder, ReadOnlySpan<char> value)

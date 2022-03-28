@@ -113,7 +113,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     public bool IsEmpty => !HasItems;
     public bool HasItems => Values is { Length: > 0 };
     public FlagValue this[int index] => Values[index];
-public IEnumerator<FlagValue> GetEnumerator() => ((IEnumerable<FlagValue>)Values).GetEnumerator();
+    public IEnumerator<FlagValue> GetEnumerator() => ((IEnumerable<FlagValue>)Values).GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => Values.GetEnumerator();
 
     public FlagSet Union(FlagValue value)

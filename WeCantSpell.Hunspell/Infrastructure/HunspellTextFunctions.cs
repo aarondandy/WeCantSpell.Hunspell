@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class HunspellTextFunctions
 {
-    public static bool IsReverseSubset(string s1, string s2) => IsReverseSubset(s1.AsSpan(), s2.AsSpan());
-
     public static bool IsReverseSubset(string s1, ReadOnlySpan<char> s2) => IsReverseSubset(s1.AsSpan(), s2);
 
     public static bool IsReverseSubset(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
@@ -27,8 +26,6 @@ static class HunspellTextFunctions
 
         return true;
     }
-
-    public static bool IsSubset(string s1, string s2) => IsSubset(s1.AsSpan(), s2.AsSpan());
 
     public static bool IsSubset(string s1, ReadOnlySpan<char> s2) => IsSubset(s1.AsSpan(), s2);
 
@@ -103,40 +100,8 @@ static class HunspellTextFunctions
     /// <returns><c>true</c> is a given character is an ASCII letter.</returns>
     public static bool MyIsAlpha(char ch) => ch >= 128 || char.IsLetter(ch);
 
-    public static string WithoutChars(this string @this, CharacterSet chars)
-    {
-        if (@this.Length == 0 || chars.IsEmpty)
-        {
-            return @this;
-        }
-
-        var thisSpan = @this.AsSpan();
-        var index = thisSpan.IndexOfAny(chars);
-        if (index < 0)
-        {
-            return @this;
-        }
-
-        var lastIndex = thisSpan.Length - 1;
-        if (index == lastIndex)
-        {
-            return @this.Substring(0, lastIndex);
-        }
-
-        var builder = StringBuilderPool.Get(lastIndex);
-        builder.Append(thisSpan.Slice(0, index));
-        index++;
-        for (; index < thisSpan.Length; index++)
-        {
-            var c = thisSpan[index];
-            if (!chars.Contains(c))
-            {
-                builder.Append(c);
-            }
-        }
-
-        return StringBuilderPool.GetStringAndReturn(builder);
-    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string WithoutChars(this string @this, CharacterSet chars) => chars.RemoveChars(@this);
 
     public static string MakeInitCap(string s, TextInfo textInfo)
     {
@@ -187,33 +152,31 @@ static class HunspellTextFunctions
 
     public static string MakeInitSmall(string s, TextInfo textInfo)
     {
-        if (s.Length == 0)
+        if (s.Length != 0)
         {
-            return s;
+            var actualFirstLetter = s[0];
+            var expectedFirstLetter = textInfo.ToLower(actualFirstLetter);
+            if (expectedFirstLetter != actualFirstLetter)
+            {
+                return ReplaceFirstLetter(expectedFirstLetter, s.AsSpan());
+            }
         }
 
-        var actualFirstLetter = s[0];
-        var expectedFirstLetter = textInfo.ToLower(actualFirstLetter);
-        if (expectedFirstLetter == actualFirstLetter)
-        {
-            return s;
-        }
-
-        return ReplaceFirstLetter(expectedFirstLetter, s.AsSpan());
+        return s;
     }
 
     public static string MakeAllCap(string s, TextInfo textInfo) => textInfo.ToUpper(s);
 
     public static string MakeTitleCase(string s, CultureInfo cultureInfo)
     {
-        if (s.Length == 0)
+        if (s.Length != 0)
         {
-            return s;
+            var builder = StringBuilderPool.Get(cultureInfo.TextInfo.ToLower(s));
+            builder[0] = cultureInfo.TextInfo.ToUpper(s[0]);
+            return StringBuilderPool.GetStringAndReturn(builder);
         }
 
-        var builder = StringBuilderPool.Get(cultureInfo.TextInfo.ToLower(s));
-        builder[0] = cultureInfo.TextInfo.ToUpper(s[0]);
-        return StringBuilderPool.GetStringAndReturn(builder);
+        return s;
     }
 
     public static CapitalizationType GetCapitalizationType(string word, TextInfo textInfo) =>
@@ -230,7 +193,7 @@ static class HunspellTextFunctions
         var firstIsUpper = false;
         var hasLower = false;
 
-        for (int i = 0; i < word.Length; i++)
+        for (var i = 0; i < word.Length; i++)
         {
             ref readonly var c = ref word[i];
 

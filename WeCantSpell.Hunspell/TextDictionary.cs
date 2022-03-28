@@ -29,6 +29,25 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         };
     }
 
+    internal static TextDictionary<TValue> MapFromPairs(KeyValuePair<string, TValue>[] source)
+    {
+        var builder = new Builder(source.Length);
+        foreach (var entry in source)
+        {
+            builder.Write(entry.Key, entry.Value);
+        }
+
+        builder.Flush();
+
+        return new TextDictionary<TValue>()
+        {
+            _entries = builder.Entries,
+            _cellarStartIndex = builder.CellarStartIndex,
+            _collisionIndex = builder.CollisionIndex,
+            Count = source.Length
+        };
+    }
+
     private TextDictionary()
     {
         _entries = Array.Empty<Entry>();

@@ -264,7 +264,7 @@ public partial class WordList
                     var pos = sitem.IndexOf('-');
                     if (pos >= 0)
                     {
-                        var info = CheckDetails(sitem.WithoutIndex(pos)).Info;
+                        var info = CheckDetails(sitem.Remove(pos, 1)).Info;
                         var desiredChar = EnumEx.HasFlag(info, SpellCheckResultType.Compound | SpellCheckResultType.Forbidden)
                             ? ' '
                             : '-';
@@ -586,7 +586,7 @@ public partial class WordList
                 // did we add a char that should not be there
                 if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                 {
-                    ExtraChar(slst, word, cpdSuggest);
+                    ExtraChar(slst, word.AsSpan(), cpdSuggest);
                 }
 
                 if (opLimiter.QueryForCancellation())
@@ -597,7 +597,7 @@ public partial class WordList
                 // did we forgot a char
                 if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                 {
-                    ForgotChar(slst, word, cpdSuggest);
+                    ForgotChar(slst, word.AsSpan(), cpdSuggest);
                 }
 
                 if (opLimiter.QueryForCancellation())
@@ -664,6 +664,8 @@ public partial class WordList
         }
 
         private SpellCheckResult CheckDetails(string word) => new QueryCheck(WordList, Options).CheckDetails(word);
+
+        private SpellCheckResult CheckDetails(ReadOnlySpan<char> word) => new QueryCheck(WordList, Options).CheckDetails(word);
 
         /// <summary>
         /// perhaps we doubled two characters (pattern aba -> ababa, for example vacation -> vacacation)
@@ -806,20 +808,33 @@ public partial class WordList
         /// <summary>
         /// Error is missing a letter it needs.
         /// </summary>
-        private int ForgotChar(List<string> wlst, string word, bool cpdSuggest)
+        private int ForgotChar(List<string> wlst, ReadOnlySpan<char> word, bool cpdSuggest)
         {
             if (Affix.TryString is { Length: > 0 })
             {
                 var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, Options.CancellationToken);
 
-                var candidate = StringBuilderPool.Get(word, word.Length + 1);
+                var candidate = new char[word.Length + 1].AsSpan();
 
                 // try inserting a tryme character before every letter (and the null terminator)
                 foreach (var tryChar in Affix.TryString)
                 {
-                    for (var index = candidate.Length; index >= 0; index--)
+                    word.CopyTo(candidate);
+                    candidate[word.Length] = tryChar;
+
+                    TestSug(wlst, candidate, cpdSuggest, timer);
+
+                    if (timer.QueryForCancellation())
                     {
-                        TestSug(wlst, candidate.ToStringWithInsert(index, tryChar), cpdSuggest, timer);
+                        return wlst.Count;
+                    }
+
+                    for (var index = word.Length; index >= 0; index--)
+                    {
+                        candidate[index] = tryChar;
+                        word.Slice(index).CopyTo(candidate.Slice(index + 1));
+
+                        TestSug(wlst, candidate, cpdSuggest, timer);
 
                         if (timer.QueryForCancellation())
                         {
@@ -827,8 +842,6 @@ public partial class WordList
                         }
                     }
                 }
-
-                StringBuilderPool.Return(candidate);
             }
 
             return wlst.Count;
@@ -837,16 +850,21 @@ public partial class WordList
         /// <summary>
         /// Error is word has an extra letter it does not need.
         /// </summary>
-        private int ExtraChar(List<string> wlst, string word, bool cpdSuggest)
+        private int ExtraChar(List<string> wlst, ReadOnlySpan<char> word, bool cpdSuggest)
         {
-            if (word.Length < 2)
+            if (word.Length >= 2)
             {
-                return wlst.Count;
-            }
+                var buffer = word.Slice(0, word.Length - 1).ToArray().AsSpan();
 
-            for (var index = word.Length - 1; index >= 0; index--)
-            {
-                TestSug(wlst, word.WithoutIndex(index), cpdSuggest);
+                TestSug(wlst, buffer, cpdSuggest);
+
+                for (var index = word.Length - 2; index > 0; index--)
+                {
+                    word.Slice(index + 1).CopyTo(buffer.Slice(index));
+                    TestSug(wlst, buffer, cpdSuggest);
+                }
+
+                TestSug(wlst, word.Slice(1), cpdSuggest);
             }
 
             return wlst.Count;
@@ -1056,20 +1074,6 @@ public partial class WordList
             return wlst.Count;
         }
 
-        private void TestSug(List<string> wlst, string candidate, bool cpdSuggest)
-        {
-            if (
-                wlst.Count < MaxSuggestions
-                &&
-                !wlst.Contains(candidate)
-                &&
-                CheckWord(candidate.AsSpan(), cpdSuggest) != 0
-            )
-            {
-                wlst.Add(candidate);
-            }
-        }
-
         private void TestSug(List<string> wlst, string candidate, bool cpdSuggest, OperationTimedCountLimiter timer)
         {
             if (
@@ -1084,14 +1088,45 @@ public partial class WordList
             }
         }
 
+        private void TestSug(List<string> wlst, ReadOnlySpan<char> candidate, bool cpdSuggest, OperationTimedCountLimiter timer)
+        {
+            if (
+                wlst.Count < MaxSuggestions
+                &&
+                !wlst.Contains(candidate)
+                &&
+                CheckWord(candidate, cpdSuggest, timer) != 0
+            )
+            {
+                wlst.Add(candidate.ToString());
+            }
+        }
+
+        private void TestSug(List<string> wlst, string candidate, bool cpdSuggest)
+        {
+            if (
+                wlst.Count < MaxSuggestions
+                &&
+                !wlst.Contains(candidate)
+                &&
+                CheckWord(candidate.AsSpan(), cpdSuggest) != 0
+            )
+            {
+                wlst.Add(candidate);
+            }
+        }
+
         private void TestSug(List<string> wlst, ReadOnlySpan<char> candidate, bool cpdSuggest)
         {
-            if (wlst.Count < MaxSuggestions)
+            if (
+                wlst.Count < MaxSuggestions
+                &&
+                !wlst.Contains(candidate)
+                &&
+                CheckWord(candidate, cpdSuggest) != 0
+            )
             {
-                if (!wlst.Contains(candidate) && CheckWord(candidate, cpdSuggest) != 0)
-                {
-                    wlst.Add(candidate.ToString());
-                }
+                wlst.Add(candidate.ToString());
             }
         }
 
@@ -2194,7 +2229,7 @@ public partial class WordList
                         return string.Concat(word, entry.Append);
                     }
 
-                    if (wordSpan.Slice(wordSpan.Length - entry.Strip.Length).Equals(entry.Strip, StringComparison.Ordinal))
+                    if (wordSpan.Slice(wordSpan.Length - entry.Strip.Length).EqualsOrdinal(entry.Strip))
                     {
                         // we have a match so add suffix
                         return wordSpan.Slice(0, wordSpan.Length - entry.Strip.Length).ConcatString(entry.Append);
@@ -2455,7 +2490,7 @@ public partial class WordList
                 return string.Empty;
             }
 
-            var word = StringBuilderPool.Get(inword.AsSpan(0, Math.Min(inword.Length, MaxPhoneTUtf8Len)));
+            var word = StringBuilderPool.Get(inword.AsSpan().Limit(MaxPhoneTUtf8Len));
             var target = StringBuilderPool.Get();
 
             // check word

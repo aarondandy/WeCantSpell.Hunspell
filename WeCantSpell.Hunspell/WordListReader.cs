@@ -230,7 +230,7 @@ public sealed class WordListReader
             flags = FlagSet.Empty;
         }
 
-        AddWord(parsed.Word.ToString(), flags, parsed.Morphs);
+        AddWord(parsed.Word.ReplaceIntoString(@"\/", @"/"), flags, parsed.Morphs);
     }
 
     private bool AttemptToProcessInitializationLine(ReadOnlySpan<char> text)
@@ -524,7 +524,7 @@ public sealed class WordListReader
             }
 
             return new ParsedWordLine(
-                word: wordPart.Replace(@"\/", @"/"),
+                word: wordPart,
                 flags: flagsPart,
                 morphs: morphs);
 
