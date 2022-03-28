@@ -162,44 +162,6 @@ static class MemoryEx
         return StringBuilderPool.GetStringAndReturn(builder);
     }
 
-    public static string ReplaceIntoString(this ReadOnlySpan<char> text, char oldChar, char newChar)
-    {
-        if (text.IsEmpty)
-        {
-            return string.Empty;
-        }
-
-        var replaceIndex = text.IndexOf(oldChar);
-        return replaceIndex < 0
-            ? text.ToString()
-            : buildReplaced(replaceIndex, text, oldChar, newChar);
-
-        static string buildReplaced(int replaceIndex, ReadOnlySpan<char> text, char oldChar, char newChar)
-        {
-            var builder = StringBuilderPool.Get(text);
-            builder.Replace(oldChar, newChar, replaceIndex, builder.Length - replaceIndex);
-            return StringBuilderPool.GetStringAndReturn(builder);
-        }
-    }
-
-    public static ReadOnlySpan<char> Replace(this ReadOnlySpan<char> text, string oldText, string newText)
-    {
-        if (text.IsEmpty)
-        {
-            return ReadOnlySpan<char>.Empty;
-        }
-
-        var replaceIndex = text.IndexOf(oldText.AsSpan());
-        return replaceIndex < 0 ? text : buildReplaced(replaceIndex, text, oldText, newText);
-
-        static ReadOnlySpan<char> buildReplaced(int replaceIndex, ReadOnlySpan<char> text, string oldText, string newText)
-        {
-            var builder = StringBuilderPool.Get(text);
-            builder.Replace(oldText, newText, replaceIndex, builder.Length - replaceIndex);
-            return StringBuilderPool.GetStringAndReturn(builder).AsSpan();
-        }
-    }
-
     public static ReadOnlySpan<char> Reversed(this ReadOnlySpan<char> @this)
     {
         if (@this.Length <= 1)
