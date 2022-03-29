@@ -27,6 +27,22 @@ static class StringEx
 
     public static int IndexOfTabOrSpace(this ReadOnlySpan<char> span) => span.IndexOfAny(' ', '\t');
 
+    public static int IndexOf(this ReadOnlySpan<char> @this, string value, int startIndex, StringComparison comparisonType)
+    {
+#if DEBUG
+        if (value is null) throw new ArgumentNullException(nameof(value));
+#endif
+
+        return @this.IndexOf(value.AsSpan(), startIndex, comparisonType);
+    }
+
+    public static int IndexOf(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value, int startIndex, StringComparison comparisonType)
+    {
+        var result = @this.IndexOf(value.Slice(startIndex), comparisonType);
+        return result < 0 ? result : result + startIndex;
+    }
+
+
 #if NO_STRING_CONTAINS
     public static bool Contains(this string @this, char value) => @this.IndexOf(value) >= 0;
 
@@ -105,10 +121,58 @@ static class StringEx
         return index < @this.Length ? @this[index] : '\0';
     }
 
+    public static char GetCharOrTerminator(this ReadOnlySpan<char> @this, int index)
+    {
+#if DEBUG
+        if (index < 0) throw new ArgumentOutOfRangeException(nameof(index));
+#endif
+        return index < @this.Length ? @this[index] : '\0';
+    }
+
+    public static char GetCharOrTerminator(this Span<char> @this, int index)
+    {
+#if DEBUG
+        if (index < 0) throw new ArgumentOutOfRangeException(nameof(index));
+#endif
+        return index < @this.Length ? @this[index] : '\0';
+    }
+
     public static int FindNullTerminatedLength(this ReadOnlySpan<char> @this)
     {
         var index = @this.IndexOf('\0');
         return index < 0 ? @this.Length : index;
+    }
+
+    public static string ToStringTerminated(this ReadOnlySpan<char> span, int startIndex)
+    {
+        return ToStringTerminated(span.Slice(startIndex));
+    }
+
+    public static string ToStringTerminated(this Span<char> span, int startIndex)
+    {
+        return ToStringTerminated(span.Slice(startIndex));
+    }
+
+    public static string ToStringTerminated(this ReadOnlySpan<char> span)
+    {
+        var terminatedIndex = span.IndexOf('\0');
+        if (terminatedIndex >= 0)
+        {
+            span = span.Slice(0, terminatedIndex);
+        }
+
+        return span.ToString();
+    }
+
+    public static string ToStringTerminated(this Span<char> span)
+    {
+        var terminatedIndex = span.IndexOf('\0');
+        if (terminatedIndex >= 0)
+        {
+            span = span.Slice(0, terminatedIndex);
+        }
+
+        return span.ToString();
     }
 
     public static string ConcatString(ReadOnlySpan<char> str0, string str1, char char2, ReadOnlySpan<char> str3)

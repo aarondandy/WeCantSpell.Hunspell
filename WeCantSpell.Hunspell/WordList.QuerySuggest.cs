@@ -38,37 +38,85 @@ public partial class WordList
 
         public List<string> Suggest(string word)
         {
-            var slst = new List<string>();
-
             if (!_query.WordList.HasEntries)
             {
-                return slst;
+                return new();
             }
-
-            var onlyCompoundSuggest = false;
 
             // process XML input of the simplified API (see manual)
             if (word.AsSpan().StartsWith(Query.DefaultXmlToken.AsSpan(0, Query.DefaultXmlToken.Length - 3)))
             {
-                return slst; // TODO: complete support for XML input
+                return new(); // TODO: complete support for XML input
             }
 
             if (word.Length >= MaxWordUtf8Len)
             {
-                return slst;
+                return new();
             }
 
             // input conversion
-            if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out var tempString))
+            CapitalizationType capType;
+            int abbv;
+            string scw;
+            if (Affix.InputConversions.HasReplacements && Affix.InputConversions.TryConvert(word, out var tempString))
             {
-                tempString = word;
+                scw = _query.CleanWord2(tempString, out capType, out abbv);
+            }
+            else
+            {
+                scw = _query.CleanWord2(word, out capType, out abbv);
             }
 
-            var scw = _query.CleanWord2(tempString, out var capType, out var abbv);
             if (string.IsNullOrEmpty(scw))
             {
-                return slst;
+                return new();
             }
+
+            return SuggestInternal(word.AsSpan(), scw, capType, abbv);
+        }
+
+        public List<string> Suggest(ReadOnlySpan<char> word)
+        {
+            if (!_query.WordList.HasEntries)
+            {
+                return new();
+            }
+
+            // process XML input of the simplified API (see manual)
+            if (word.StartsWith(Query.DefaultXmlToken.AsSpan(0, Query.DefaultXmlToken.Length - 3)))
+            {
+                return new(); // TODO: complete support for XML input
+            }
+
+            if (word.Length >= MaxWordUtf8Len)
+            {
+                return new();
+            }
+
+            // input conversion
+            CapitalizationType capType;
+            int abbv;
+            string scw;
+            if (Affix.InputConversions.HasReplacements && Affix.InputConversions.TryConvert(word, out var tempString))
+            {
+                scw = _query.CleanWord2(tempString, out capType, out abbv);
+            }
+            else
+            {
+                scw = _query.CleanWord2(word, out capType, out abbv);
+            }
+
+            if (string.IsNullOrEmpty(scw))
+            {
+                return new();
+            }
+
+            return SuggestInternal(word, scw, capType, abbv);
+        }
+
+        public List<string> SuggestInternal(ReadOnlySpan<char> word, string scw, CapitalizationType capType, int abbv)
+        {
+            var slst = new List<string>();
 
             var opLimiter = new OperationTimedLimiter(Options.TimeLimitSuggestGlobal, Options.CancellationToken);
 
@@ -85,6 +133,7 @@ public partial class WordList
                 }
             }
 
+            var onlyCompoundSuggest = false;
             var capWords = false;
             var good = false;
 
@@ -344,7 +393,7 @@ public partial class WordList
                         last = true;
                     }
 
-                    var chunk = scw.Substring(prevPos, dashPos - prevPos);
+                    var chunk = scw.AsSpan(prevPos, dashPos - prevPos);
                     if (!Check(chunk))
                     {
                         var nlst = SuggestNested(chunk);
@@ -405,7 +454,7 @@ public partial class WordList
             {
                 for (var j = 0; j < slst.Count; j++)
                 {
-                    slst[j] = slst[j].ConcatString(word.AsSpan(word.Length - abbv));
+                    slst[j] = slst[j].ConcatString(word.Slice(word.Length - abbv));
                 }
             }
 
@@ -465,7 +514,11 @@ public partial class WordList
 
         private List<string> SuggestNested(string word) => new QuerySuggest(WordList, Options).Suggest(word);
 
+        private List<string> SuggestNested(ReadOnlySpan<char> word) => new QuerySuggest(WordList, Options).Suggest(word);
+
         private bool Check(string word) => new QueryCheck(WordList, Options).Check(word);
+
+        private bool Check(ReadOnlySpan<char> word) => new QueryCheck(WordList, Options).Check(word);
 
         private WordEntryDetail? LookupFirstDetail(ReadOnlySpan<char> word) => WordList.FindFirstEntryDetailByRootWord(word);
         
@@ -553,7 +606,7 @@ public partial class WordList
                 // did we swap the order of chars by mistake
                 if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                 {
-                    SwapChar(slst, word, cpdSuggest);
+                    SwapChar(slst, word.AsSpan(), cpdSuggest);
                 }
 
                 if (opLimiter.QueryForCancellation())
@@ -564,7 +617,7 @@ public partial class WordList
                 // did we swap the order of non adjacent chars by mistake
                 if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                 {
-                    LongSwapChar(slst, word, cpdSuggest);
+                    LongSwapChar(slst, word.AsSpan(), cpdSuggest);
                 }
 
                 if (opLimiter.QueryForCancellation())
@@ -575,7 +628,7 @@ public partial class WordList
                 // did we just hit the wrong key in place of a good char (case and keyboard)
                 if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                 {
-                    BadCharKey(slst, word, cpdSuggest);
+                    BadCharKey(slst, word.AsSpan(), cpdSuggest);
                 }
 
                 if (opLimiter.QueryForCancellation())
@@ -608,7 +661,7 @@ public partial class WordList
                 // did we move a char
                 if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                 {
-                    MoveChar(slst, word, cpdSuggest);
+                    MoveChar(slst, word.AsSpan(), cpdSuggest);
                 }
 
                 if (opLimiter.QueryForCancellation())
@@ -619,7 +672,7 @@ public partial class WordList
                 // did we just hit the wrong key in place of a good char
                 if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                 {
-                    BadChar(slst, word, cpdSuggest);
+                    BadChar(slst, word.AsSpan(), cpdSuggest);
                 }
 
                 if (opLimiter.QueryForCancellation())
@@ -630,7 +683,7 @@ public partial class WordList
                 // did we double two characters
                 if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
                 {
-                    DoubleTwoChars(slst, word, cpdSuggest);
+                    DoubleTwoChars(slst, word.AsSpan(), cpdSuggest);
                 }
 
                 if (opLimiter.QueryForCancellation())
@@ -675,7 +728,7 @@ public partial class WordList
         /// The recognized pattern with regex back-references:
         /// "(.)(.)\1\2\1" or "..(.)(.)\1\2"
         /// </remarks>
-        private int DoubleTwoChars(List<string> wlst, string word, bool cpdSuggest)
+        private int DoubleTwoChars(List<string> wlst, ReadOnlySpan<char> word, bool cpdSuggest)
         {
             if (word.Length < 5)
             {
@@ -683,7 +736,7 @@ public partial class WordList
             }
 
             var state = 0;
-            var builder = StringBuilderPool.Get(word.Length);
+            var candidate = new char[word.Length - 2].AsSpan();
             for (var i = 2; i < word.Length; i++)
             {
                 if (word[i] == word[i - 2])
@@ -691,10 +744,10 @@ public partial class WordList
                     state++;
                     if (state == 3 || (state == 2 && i >= 4))
                     {
-                        builder.Clear();
-                        builder.Append(word, 0, i - 1);
-                        builder.Append(word, i + 1, word.Length - i - 1);
-                        TestSug(wlst, builder.ToString(), cpdSuggest);
+                        word.Slice(0, i - 1).CopyTo(candidate);
+                        word.Slice(i + 1).CopyTo(candidate.Slice(i - 1));
+
+                        TestSug(wlst, candidate, cpdSuggest);
                         state = 0;
                     }
                 }
@@ -704,21 +757,19 @@ public partial class WordList
                 }
             }
 
-            StringBuilderPool.Return(builder);
-
             return wlst.Count;
         }
 
         /// <summary>
         /// Error is wrong char in place of correct one.
         /// </summary>
-        private int BadChar(List<string> wlst, string word, bool cpdSuggest)
+        private int BadChar(List<string> wlst, ReadOnlySpan<char> word, bool cpdSuggest)
         {
             if (Affix.TryString is { Length: > 0 } tryString)
             {
                 var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, Options.CancellationToken);
 
-                var candidate = StringBuilderPool.Get(word);
+                var candidate = word.ToArray().AsSpan();
 
                 // swap out each char one by one and try all the tryme
                 // chars in its place to see if that makes a good word
@@ -733,7 +784,7 @@ public partial class WordList
                         }
 
                         candidate[i] = tryString[j];
-                        TestSug(wlst, candidate.ToString(), cpdSuggest, timer);
+                        TestSug(wlst, candidate, cpdSuggest, timer);
                         candidate[i] = tmpc;
 
                         if (timer.QueryForCancellation())
@@ -742,8 +793,6 @@ public partial class WordList
                         }
                     }
                 }
-
-                StringBuilderPool.Return(candidate);
             }
 
             return wlst.Count;
@@ -752,20 +801,19 @@ public partial class WordList
         /// <summary>
         /// Error is a letter was moved.
         /// </summary>
-        private int MoveChar(List<string> wlst, string word, bool cpdSuggest)
+        private int MoveChar(List<string> wlst, ReadOnlySpan<char> word, bool cpdSuggest)
         {
             if (word.Length < 2)
             {
                 return wlst.Count;
             }
 
-            var candidate = StringBuilderPool.Get(word.Length);
+            var candidate = word.ToArray().AsSpan();
 
             // try moving a char
             for (var p = 0; p < word.Length; p++)
             {
-                candidate.Clear();
-                candidate.Append(word);
+                word.CopyTo(candidate);
 
                 var qMax = Math.Min(MaxCharDistance + p + 1, candidate.Length);
                 for (var q = p + 1; q < qMax; q++)
@@ -777,14 +825,13 @@ public partial class WordList
                         continue; // omit swap char
                     }
 
-                    TestSug(wlst, candidate.ToString(), cpdSuggest);
+                    TestSug(wlst, candidate, cpdSuggest);
                 }
             }
 
             for (var p = word.Length - 1; p >= 0; p--)
             {
-                candidate.Clear();
-                candidate.Append(word);
+                word.CopyTo(candidate);
 
                 var qMin = Math.Max(p - MaxCharDistance, 0);
                 for (var q = p - 1; q >= qMin; q--)
@@ -796,11 +843,9 @@ public partial class WordList
                         continue;  // omit swap char
                     }
 
-                    TestSug(wlst, candidate.ToString(), cpdSuggest);
+                    TestSug(wlst, candidate, cpdSuggest);
                 }
             }
-
-            StringBuilderPool.Return(candidate);
 
             return wlst.Count;
         }
@@ -873,9 +918,9 @@ public partial class WordList
         /// <summary>
         /// error is wrong char in place of correct one (case and keyboard related version)
         /// </summary>
-        private int BadCharKey(List<string> wlst, string word, bool cpdSuggest)
+        private int BadCharKey(List<string> wlst, ReadOnlySpan<char> word, bool cpdSuggest)
         {
-            var candidate = StringBuilderPool.Get(word);
+            var candidate = word.ToArray().AsSpan();
             var keyString = Affix.KeyString;
 
             // swap out each char one by one and try uppercase and neighbor
@@ -887,7 +932,7 @@ public partial class WordList
                 candidate[i] = TextInfo.ToUpper(tmpc);
                 if (tmpc != candidate[i])
                 {
-                    TestSug(wlst, candidate.ToString(), cpdSuggest);
+                    TestSug(wlst, candidate, cpdSuggest);
                     candidate[i] = tmpc;
                 }
 
@@ -899,14 +944,14 @@ public partial class WordList
                     if (targetLoc >= 0 && keyString[targetLoc] != '|')
                     {
                         candidate[i] = keyString[targetLoc];
-                        TestSug(wlst, candidate.ToString(), cpdSuggest);
+                        TestSug(wlst, candidate, cpdSuggest);
                     }
 
                     targetLoc = loc + 1;
                     if (targetLoc < keyString.Length && keyString[targetLoc] != '|')
                     {
                         candidate[i] = keyString[targetLoc];
-                        TestSug(wlst, candidate.ToString(), cpdSuggest);
+                        TestSug(wlst, candidate, cpdSuggest);
                     }
 
                     loc = keyString.IndexOf(tmpc, targetLoc);
@@ -915,17 +960,15 @@ public partial class WordList
                 candidate[i] = tmpc;
             }
 
-            StringBuilderPool.Return(candidate);
-
             return wlst.Count;
         }
 
         /// <summary>
         /// Error is not adjacent letter were swapped.
         /// </summary>
-        private int LongSwapChar(List<string> wlst, string word, bool cpdSuggest)
+        private int LongSwapChar(List<string> wlst, ReadOnlySpan<char> word, bool cpdSuggest)
         {
-            var candidate = StringBuilderPool.Get(word, word.Length);
+            var candidate = word.ToArray().AsSpan();
             // try swapping not adjacent chars one by one
             for (var p = 0; p < candidate.Length; p++)
             {
@@ -940,14 +983,14 @@ public partial class WordList
                         var oldq = candidate[q];
                         candidate[p] = oldq;
                         candidate[q] = oldp;
-                        TestSug(wlst, candidate.ToString(), cpdSuggest);
+
+                        TestSug(wlst, candidate, cpdSuggest);
+
                         candidate[q] = oldq;
                         candidate[p] = oldp;
                     }
                 }
             }
-
-            StringBuilderPool.Return(candidate);
 
             return wlst.Count;
         }
@@ -955,14 +998,14 @@ public partial class WordList
         /// <summary>
         /// Error is adjacent letter were swapped.
         /// </summary>
-        private int SwapChar(List<string> wlst, string word, bool cpdSuggest)
+        private int SwapChar(List<string> wlst, ReadOnlySpan<char> word, bool cpdSuggest)
         {
             if (word.Length < 2)
             {
                 return wlst.Count;
             }
 
-            var candidate = StringBuilderPool.Get(word, word.Length);
+            var candidate = word.ToArray().AsSpan();
 
             // try swapping adjacent chars one by one
             var lastCandidateIndex = candidate.Length - 1;
@@ -972,7 +1015,7 @@ public partial class WordList
                 var c = candidate[i];
                 candidate[i] = candidate[nexti];
                 candidate[nexti] = c;
-                TestSug(wlst, candidate.ToString(), cpdSuggest);
+                TestSug(wlst, candidate, cpdSuggest);
                 candidate[nexti] = candidate[i];
                 candidate[i] = c;
             }
@@ -987,7 +1030,7 @@ public partial class WordList
                 candidate[candidate.Length - 2] = word[candidate.Length - 1];
                 candidate[candidate.Length - 1] = word[candidate.Length - 2];
 
-                TestSug(wlst, candidate.ToString(), cpdSuggest);
+                TestSug(wlst, candidate, cpdSuggest);
 
                 if (candidate.Length == 5)
                 {
@@ -995,11 +1038,9 @@ public partial class WordList
                     candidate[1] = word[2];
                     candidate[2] = word[1];
 
-                    TestSug(wlst, candidate.ToString(), cpdSuggest);
+                    TestSug(wlst, candidate, cpdSuggest);
                 }
             }
-
-            StringBuilderPool.Return(candidate);
 
             return wlst.Count;
         }
@@ -2023,9 +2064,10 @@ public partial class WordList
 
             var isHungarianAndNotForbidden = Affix.IsHungarian && !CheckForbidden(word);
 
-            var candidate = StringBuilderPool.Get(word.Length + 2);
-            candidate.Append('\0');
-            candidate.Append(word);
+            var candidate = new char[word.Length + 2].AsSpan();
+            candidate[0] = '\0';
+            candidate[candidate.Length - 1] = '\0';
+            word.CopyTo(candidate.Slice(1));
 
             // split the string into two pieces after every char
             // if both pieces are good words make them a suggestion
@@ -2162,8 +2204,6 @@ public partial class WordList
                     }
                 }
             }
-
-            StringBuilderPool.Return(candidate);
 
             return good;
         }
@@ -2490,7 +2530,7 @@ public partial class WordList
                 return string.Empty;
             }
 
-            var word = StringBuilderPool.Get(inword.AsSpan().Limit(MaxPhoneTUtf8Len));
+            var word = inword.AsSpan().Limit(MaxPhoneTUtf8Len).ToArray().AsSpan();
             var target = StringBuilderPool.Get();
 
             // check word
@@ -2714,7 +2754,7 @@ public partial class WordList
 
                             if (k > k0)
                             {
-                                StrMove(word, i + k0, word, i + k);
+                                StrMove(word, i + k0, i + k);
                             }
 
                             c = word[i];
@@ -2744,7 +2784,7 @@ public partial class WordList
                                     target.Append(c);
                                 }
 
-                                StrMove(word, 0, word, i + 1);
+                                StrMove(word, 0, i + 1);
                                 len = 0;
                                 z0 = true;
                             }
@@ -2768,21 +2808,19 @@ public partial class WordList
                 }
             }
 
-            StringBuilderPool.Return(word);
-
             return StringBuilderPool.GetStringAndReturn(target);
         }
 
-        private static void StrMove(StringBuilder dest, int destIndex, StringBuilder src, int srcOffset)
+        private static void StrMove(Span<char> span, int destIndex, int srcOffset)
         {
-            for (var srcIndex = srcOffset; srcIndex < src.Length && destIndex < dest.Length; srcIndex++, destIndex++)
+            for (var srcIndex = srcOffset; srcIndex < span.Length && destIndex < span.Length; srcIndex++, destIndex++)
             {
-                dest[destIndex] = src[srcIndex];
+                span[destIndex] = span[srcIndex];
             }
 
-            if (destIndex < dest.Length)
+            if (destIndex < span.Length)
             {
-                dest[destIndex] = '\0';
+                span[destIndex] = '\0';
             }
         }
 

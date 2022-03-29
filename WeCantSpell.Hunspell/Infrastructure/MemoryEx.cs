@@ -23,4 +23,9 @@ static class MemoryEx
 #endif
         return @this.Length > maxLength ? @this.Slice(0, maxLength) : @this;
     }
+
+    public static void Swap<T>(this Span<T> span, int a, int b)
+    {
+        (span[b], span[a]) = (span[a], span[b]);
+    }
 }

@@ -150,6 +150,38 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
         return StringBuilderPool.GetStringAndReturn(builder);
     }
 
+    public ReadOnlySpan<char> RemoveChars(ReadOnlySpan<char> text)
+    {
+        if (text.IsEmpty || IsEmpty)
+        {
+            return text;
+        }
+
+        var index = FindIndexOfMatch(text);
+        if (index < 0)
+        {
+            return text;
+        }
+
+        if (index == text.Length - 1)
+        {
+            return text.Slice(0, index);
+        }
+
+        var builder = StringBuilderPool.Get(text.Length - 1);
+
+        do
+        {
+            builder.Append(text.Slice(0, index));
+            text = text.Slice(index + 1);
+        }
+        while ((index = FindIndexOfMatch(text)) >= 0);
+
+        builder.Append(text);
+
+        return StringBuilderPool.GetStringAndReturn(builder).AsSpan();
+    }
+
     public override string ToString() => new(_values);
 
     public bool Equals(CharacterSet obj) => _values.SequenceEqual(obj._values);

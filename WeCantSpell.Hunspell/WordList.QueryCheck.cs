@@ -25,9 +25,11 @@ public partial class WordList
 
         public bool Check(string word) => CheckDetails(word).Correct;
 
+        public bool Check(ReadOnlySpan<char> word) => CheckDetails(word).Correct;
+
         private bool CheckNested(string word) => new QueryCheck(WordList, Options).Check(word);
 
-        public SpellCheckResult CheckDetails(ReadOnlySpan<char> word) => CheckDetails(word.ToString());
+        private bool CheckNested(ReadOnlySpan<char> word) => new QueryCheck(WordList, Options).Check(word);
 
         public SpellCheckResult CheckDetails(string word)
         {
@@ -35,22 +37,11 @@ public partial class WordList
             {
                 return new SpellCheckResult(false);
             }
+
             if (word == Query.DefaultXmlToken)
             {
                 // Hunspell supports XML input of the simplified API (see manual)
                 return new SpellCheckResult(true);
-            }
-
-            // input conversion
-            if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out var convertedWord))
-            {
-                convertedWord = word;
-            }
-
-            var scw = _query.CleanWord2(convertedWord, out var capType, out var abbv);
-            if (string.IsNullOrEmpty(scw))
-            {
-                return new SpellCheckResult(false);
             }
 
             if (HunspellTextFunctions.IsNumericWord(word.AsSpan()))
@@ -59,6 +50,69 @@ public partial class WordList
                 return new SpellCheckResult(true);
             }
 
+            // input conversion
+            CapitalizationType capType;
+            int abbv;
+            string scw;
+            if (Affix.InputConversions.HasReplacements && Affix.InputConversions.TryConvert(word, out var convertedWord))
+            {
+                scw = _query.CleanWord2(convertedWord, out capType, out abbv);
+            }
+            else
+            {
+                scw = _query.CleanWord2(word, out capType, out abbv);
+            }
+
+            if (string.IsNullOrEmpty(scw))
+            {
+                return new SpellCheckResult(false);
+            }
+
+            return CheckDetailsInternal(scw, capType, abbv);
+        }
+
+        public SpellCheckResult CheckDetails(ReadOnlySpan<char> word)
+        {
+            if (word.IsEmpty || word.Length >= MaxWordUtf8Len || !WordList.HasEntries)
+            {
+                return new SpellCheckResult(false);
+            }
+
+            if (word.EqualsOrdinal(Query.DefaultXmlToken))
+            {
+                // Hunspell supports XML input of the simplified API (see manual)
+                return new SpellCheckResult(true);
+            }
+
+            if (HunspellTextFunctions.IsNumericWord(word))
+            {
+                // allow numbers with dots, dashes and commas (but forbid double separators: "..", "--" etc.)
+                return new SpellCheckResult(true);
+            }
+
+            // input conversion
+            CapitalizationType capType;
+            int abbv;
+            string scw;
+            if (Affix.InputConversions.HasReplacements && Affix.InputConversions.TryConvert(word, out var convertedWord))
+            {
+                scw = _query.CleanWord2(convertedWord, out capType, out abbv);
+            }
+            else
+            {
+                scw = _query.CleanWord2(word, out capType, out abbv);
+            }
+
+            if (string.IsNullOrEmpty(scw))
+            {
+                return new SpellCheckResult(false);
+            }
+
+            return CheckDetailsInternal(scw, capType, abbv);
+        }
+
+        public SpellCheckResult CheckDetailsInternal(string scw, CapitalizationType capType, int abbv)
+        {
             var resultType = SpellCheckResultType.None;
             string? root = null;
             WordEntry? rv = null;
@@ -122,7 +176,7 @@ public partial class WordList
                     if (
                         breakEntry.StartsWith('^')
                         && scw.AsSpan().Limit(pLastIndex).EqualsOrdinal(breakEntry.AsSpan(1))
-                        && CheckNested(scw.Substring(pLastIndex))
+                        && CheckNested(scw.AsSpan(pLastIndex))
                     )
                     {
                         return new SpellCheckResult(root, resultType, true);
@@ -133,7 +187,7 @@ public partial class WordList
                         var wlLessBreakIndex = scw.Length - breakEntry.Length + 1;
                         if (
                             scw.AsSpan(wlLessBreakIndex).Limit(pLastIndex).EqualsOrdinal(breakEntry.AsSpan().Limit(pLastIndex))
-                            && CheckNested(scw.Substring(0, wlLessBreakIndex))
+                            && CheckNested(scw.AsSpan(0, wlLessBreakIndex))
                         )
                         {
                             return new SpellCheckResult(root, resultType, true);
@@ -156,13 +210,13 @@ public partial class WordList
                             found = found2;
                         }
 
-                        if (!CheckNested(scw.Substring(found + breakEntry.Length)))
+                        if (!CheckNested(scw.AsSpan(found + breakEntry.Length)))
                         {
                             continue;
                         }
 
                         // examine 2 sides of the break point
-                        if (CheckNested(scw.Substring(0, found)))
+                        if (CheckNested(scw.AsSpan(0, found)))
                         {
                             return new SpellCheckResult(root, resultType, true);
                         }
@@ -170,7 +224,7 @@ public partial class WordList
                         // LANG_hu: spec. dash rule
                         if (Affix.IsHungarian && "-".Equals(breakEntry, StringComparison.Ordinal))
                         {
-                            if (CheckNested(scw.Substring(0, found + 1)))
+                            if (CheckNested(scw.AsSpan(0, found + 1)))
                             {
                                 return new SpellCheckResult(root, resultType, true);
                             }
@@ -185,13 +239,13 @@ public partial class WordList
                     var remainingLength = scw.Length - breakEntry.Length;
                     if (found > 0 && found < remainingLength)
                     {
-                        if (!CheckNested(scw.Substring(found + breakEntry.Length)))
+                        if (!CheckNested(scw.AsSpan(found + breakEntry.Length)))
                         {
                             continue;
                         }
 
                         // examine 2 sides of the break point
-                        if (CheckNested(scw.Substring(0, found)))
+                        if (CheckNested(scw.AsSpan(0, found)))
                         {
                             return new SpellCheckResult(root, resultType, true);
                         }
@@ -199,7 +253,7 @@ public partial class WordList
                         // LANG_hu: spec. dash rule
                         if (Affix.IsHungarian && "-".Equals(breakEntry, StringComparison.Ordinal))
                         {
-                            if (CheckNested(scw.Substring(0, found + 1)))
+                            if (CheckNested(scw.AsSpan(0, found + 1)))
                             {
                                 return new SpellCheckResult(root, resultType, true);
                             }

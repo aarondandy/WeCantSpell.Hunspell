@@ -89,15 +89,27 @@ public sealed partial class WordList
 
     public bool Check(string word) => Check(word, options: null);
 
+    public bool Check(ReadOnlySpan<char> word) => Check(word, options: null);
+
     public bool Check(string word, QueryOptions? options) => new QueryCheck(this, options).Check(word);
+
+    public bool Check(ReadOnlySpan<char> word, QueryOptions? options) => new QueryCheck(this, options).Check(word);
 
     public SpellCheckResult CheckDetails(string word) => CheckDetails(word, options: null);
 
+    public SpellCheckResult CheckDetails(ReadOnlySpan<char> word) => CheckDetails(word, options: null);
+
     public SpellCheckResult CheckDetails(string word, QueryOptions? options) => new QueryCheck(this, options).CheckDetails(word);
+
+    public SpellCheckResult CheckDetails(ReadOnlySpan<char> word, QueryOptions? options) => new QueryCheck(this, options).CheckDetails(word);
 
     public IEnumerable<string> Suggest(string word) => Suggest(word, options: null);
 
+    public IEnumerable<string> Suggest(ReadOnlySpan<char> word) => Suggest(word, options: null);
+
     public IEnumerable<string> Suggest(string word, QueryOptions? options) => new QuerySuggest(this, options).Suggest(word);
+
+    public IEnumerable<string> Suggest(ReadOnlySpan<char> word, QueryOptions? options) => new QuerySuggest(this, options).Suggest(word);
 
     internal WordEntry? FindFirstEntryByRootWord(ReadOnlySpan<char> rootWord)
     {

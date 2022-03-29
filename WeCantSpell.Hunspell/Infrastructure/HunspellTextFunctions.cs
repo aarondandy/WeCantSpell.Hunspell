@@ -84,7 +84,24 @@ static class HunspellTextFunctions
         return count;
     }
 
+    public static int CountMatchingFromLeft(ReadOnlySpan<char> text, char character)
+    {
+        var count = 0;
+        for (; count < text.Length && text[count] == character; count++) ;
+
+        return count;
+    }
+
     public static int CountMatchingFromRight(string text, char character)
+    {
+        var lastIndex = text.Length - 1;
+        var searchIndex = lastIndex;
+        for (; searchIndex >= 0 && text[searchIndex] == character; searchIndex--) ;
+
+        return lastIndex - searchIndex;
+    }
+
+    public static int CountMatchingFromRight(ReadOnlySpan<char> text, char character)
     {
         var lastIndex = text.Length - 1;
         var searchIndex = lastIndex;
@@ -102,6 +119,9 @@ static class HunspellTextFunctions
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string WithoutChars(this string @this, CharacterSet chars) => chars.RemoveChars(@this);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ReadOnlySpan<char> WithoutChars(this ReadOnlySpan<char> @this, CharacterSet chars) => chars.RemoveChars(@this);
 
     public static string MakeInitCap(string s, TextInfo textInfo)
     {

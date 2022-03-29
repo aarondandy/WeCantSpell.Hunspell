@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
+using WeCantSpell.Hunspell.Infrastructure;
+
 namespace WeCantSpell.Hunspell;
 
 public readonly struct BreakSet : IReadOnlyList<string>
@@ -34,6 +36,29 @@ public readonly struct BreakSet : IReadOnlyList<string>
     /// Calculate break points for recursion limit.
     /// </summary>
     internal int FindRecursionLimit(string scw)
+    {
+        int nbr = 0;
+
+        if (scw is { Length: > 0 })
+        {
+            foreach (var breakEntry in Entries)
+            {
+                int pos = 0;
+                while ((pos = scw.IndexOf(breakEntry, pos, StringComparison.Ordinal)) >= 0)
+                {
+                    nbr++;
+                    pos += breakEntry.Length;
+                }
+            }
+        }
+
+        return nbr;
+    }
+
+    /// <summary>
+    /// Calculate break points for recursion limit.
+    /// </summary>
+    internal int FindRecursionLimit(ReadOnlySpan<char> scw)
     {
         int nbr = 0;
 

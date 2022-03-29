@@ -2048,6 +2048,32 @@ public partial class WordList
             capType = HunspellTextFunctions.GetCapitalizationType(dest, TextInfo);
             return dest;
         }
+
+        public string CleanWord2(ReadOnlySpan<char> src, out CapitalizationType capType, out int abbv)
+        {
+            if (Affix.IgnoredChars.HasItems)
+            {
+                src = src.WithoutChars(Affix.IgnoredChars);
+            }
+
+            // first skip over any leading blanks
+            var qIndex = HunspellTextFunctions.CountMatchingFromLeft(src, ' ');
+
+            // now strip off any trailing periods (recording their presence)
+            abbv = HunspellTextFunctions.CountMatchingFromRight(src, '.');
+
+            var nl = src.Length - qIndex - abbv;
+            if (nl <= 0)
+            {
+                // if no characters are left it can't be capitalized
+                capType = CapitalizationType.None;
+                return string.Empty;
+            }
+
+            var dest = qIndex == 0 && nl == src.Length ? src : src.Slice(qIndex, nl);
+            capType = HunspellTextFunctions.GetCapitalizationType(dest, TextInfo);
+            return dest.ToString();
+        }
     }
 
     private enum CompoundOptions : byte
