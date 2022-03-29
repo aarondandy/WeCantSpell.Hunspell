@@ -2,11 +2,14 @@
 
 namespace WeCantSpell.Hunspell;
 
-sealed class Affix<TEntry> where TEntry : AffixEntry
+readonly struct Affix<TEntry> where TEntry : AffixEntry
 {
     public Affix(TEntry entry, FlagValue aFlag, AffixEntryOptions options)
     {
-        Entry = entry ?? throw new ArgumentNullException(nameof(entry));
+#if DEBUG
+        if (entry is null) throw new ArgumentNullException(nameof(entry));
+#endif
+        Entry = entry;
         AFlag = aFlag;
         Options = options;
     }
