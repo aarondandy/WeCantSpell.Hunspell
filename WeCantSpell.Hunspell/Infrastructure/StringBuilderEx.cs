@@ -16,42 +16,6 @@ static class StringBuilderEx
         (@this[indexB], @this[indexA]) = (@this[indexA], @this[indexB]);
     }
 
-    public static string ToStringTerminated(this StringBuilder @this)
-    {
-        var terminatedIndex = @this.IndexOfNullChar();
-        return terminatedIndex >= 0
-            ? @this.ToString(0, terminatedIndex)
-            : @this.ToString();
-    }
-
-    public static string ToStringTerminated(this StringBuilder @this, int startIndex)
-    {
-        var terminatedIndex = @this.IndexOfNullChar(startIndex);
-        if (terminatedIndex < 0)
-        {
-            terminatedIndex = @this.Length;
-        }
-
-        return @this.ToString(startIndex, terminatedIndex - startIndex);
-    }
-
-    public static int IndexOfNullChar(this StringBuilder @this) => IndexOfNullChar(@this, 0);
-
-    public static int IndexOfNullChar(this StringBuilder @this, int offset)
-    {
-        for (; offset < @this.Length; offset++)
-        {
-            if (@this[offset] == '\0')
-            {
-                return offset;
-            }
-        }
-
-        return -1;
-    }
-
-    public static char GetCharOrTerminator(this StringBuilder @this, int index) => index < @this.Length ? @this[index] : '\0';
-
     public static void RemoveChars(this StringBuilder @this, CharacterSet chars)
     {
         var nextWriteLocation = 0;
@@ -80,8 +44,6 @@ static class StringBuilderEx
             }
         }
     }
-
-    public static bool StartsWith(this StringBuilder builder, char c) => builder.Length > 0 && builder[0] == c;
 
     public static bool EndsWith(this StringBuilder builder, char c) => builder.Length > 0 && builder[builder.Length - 1] == c;
 

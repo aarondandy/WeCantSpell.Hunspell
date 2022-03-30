@@ -121,14 +121,6 @@ static class StringEx
         return index < @this.Length ? @this[index] : '\0';
     }
 
-    public static char GetCharOrTerminator(this ReadOnlySpan<char> @this, int index)
-    {
-#if DEBUG
-        if (index < 0) throw new ArgumentOutOfRangeException(nameof(index));
-#endif
-        return index < @this.Length ? @this[index] : '\0';
-    }
-
     public static char GetCharOrTerminator(this Span<char> @this, int index)
     {
 #if DEBUG
@@ -143,25 +135,9 @@ static class StringEx
         return index < 0 ? @this.Length : index;
     }
 
-    public static string ToStringTerminated(this ReadOnlySpan<char> span, int startIndex)
-    {
-        return ToStringTerminated(span.Slice(startIndex));
-    }
-
     public static string ToStringTerminated(this Span<char> span, int startIndex)
     {
         return ToStringTerminated(span.Slice(startIndex));
-    }
-
-    public static string ToStringTerminated(this ReadOnlySpan<char> span)
-    {
-        var terminatedIndex = span.IndexOf('\0');
-        if (terminatedIndex >= 0)
-        {
-            span = span.Slice(0, terminatedIndex);
-        }
-
-        return span.ToString();
     }
 
     public static string ToStringTerminated(this Span<char> span)
