@@ -8,6 +8,9 @@ using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
+/// <remarks>
+/// This probably does not need to exist if https://github.com/dotnet/runtime/issues/27229 works out.
+/// </remarks>
 sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 {
     public static TextDictionary<TValue> MapFromDictionary<TSourceValue>(Dictionary<string, TSourceValue> source, Func<TSourceValue, TValue> valueSelector)
@@ -20,13 +23,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 
         builder.Flush();
 
-        return new TextDictionary<TValue>()
-        {
-            _entries = builder.Entries,
-            _cellarStartIndex = builder.CellarStartIndex,
-            _collisionIndex = builder.CollisionIndex,
-            Count = source.Count
-        };
+        return new TextDictionary<TValue>(in builder);
     }
 
     internal static TextDictionary<TValue> MapFromPairs(KeyValuePair<string, TValue>[] source)
@@ -39,21 +36,25 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 
         builder.Flush();
 
-        return new TextDictionary<TValue>()
-        {
-            _entries = builder.Entries,
-            _cellarStartIndex = builder.CellarStartIndex,
-            _collisionIndex = builder.CollisionIndex,
-            Count = source.Length
-        };
+        return new TextDictionary<TValue>(in builder);
     }
 
     private TextDictionary()
     {
         _entries = Array.Empty<Entry>();
         _cellarStartIndex = 0;
+        _fastmodMul = 0;
         _collisionIndex = 0;
         Count = 0;
+    }
+
+    private TextDictionary(in Builder builder)
+    {
+        _entries = builder.Entries;
+        _cellarStartIndex = builder.CellarStartIndex;
+        _fastmodMul = builder.FastmodMultiplier;
+        _collisionIndex = builder.CollisionIndex;
+        Count = builder.Count;
     }
 
     public TextDictionary(int desiredCapacity)
@@ -64,12 +65,13 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         }
 
         _entries = new Entry[desiredCapacity];
-        _cellarStartIndex = CalculateBestCellarIndexForCapacity(_entries.Length);
+        SetCellarStart(CalculateBestCellarIndexForCapacity(_entries.Length));
         _collisionIndex = _entries.Length - 1;
         Count = 0;
     }
 
     private Entry[] _entries;
+    private ulong _fastmodMul;
     private uint _cellarStartIndex;
     private int _collisionIndex;
 
@@ -97,7 +99,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
     {
         var hash = CalculateHash(key);
 
-        ref var entry = ref _entries[hash % _cellarStartIndex];
+        ref var entry = ref GetRefByHash(hash);
 
         if (entry.Key is not null)
         {
@@ -126,7 +128,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
     {
         var hash = CalculateHash(key);
 
-        ref var entry = ref _entries[hash % _cellarStartIndex];
+        ref var entry = ref GetRefByHash(hash);
 
         if (entry.Key is not null)
         {
@@ -155,7 +157,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
     {
         var hash = CalculateHash(key);
 
-        ref var entry = ref _entries[hash % _cellarStartIndex];
+        ref var entry = ref GetRefByHash(hash);
 
         if (entry.Key is not null)
         {
@@ -193,7 +195,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 
     private bool TryAddWithoutGrowing(uint hash, string key, TValue value)
     {
-        ref var entry = ref _entries[hash % _cellarStartIndex];
+        ref var entry = ref GetRefByHash(hash);
 
         if (entry.Key is null)
         {
@@ -261,9 +263,30 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 
         _entries = builder.Entries;
         _cellarStartIndex = builder.CellarStartIndex;
+        _fastmodMul = builder.FastmodMultiplier;
         _collisionIndex = builder.CollisionIndex;
         Count = builder.Count;
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private ref Entry GetRefByHash(uint hash) =>
+        ref _entries[GetIndexByHash(hash, _cellarStartIndex, _fastmodMul)];
+
+    private void SetCellarStart(uint cellarStartIndex)
+    {
+        _cellarStartIndex = cellarStartIndex;
+        _fastmodMul = CalculateFastmodMultiplier(cellarStartIndex);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static uint GetIndexByHash(uint hash, uint divisor, ulong multiplier) =>
+        // I barely understand this algorithm, but it's how the .NET dictionary works on 64-bit platforms. Sources:
+        // - https://lemire.me/blog/2019/02/08/faster-remainders-when-the-divisor-is-a-constant-beating-compilers-and-libdivide/
+        // - https://github.com/dotnet/runtime/pull/406
+        (uint)(((((multiplier * hash) >> 32) + 1) * divisor) >> 32);
+
+    private static ulong CalculateFastmodMultiplier(uint divisor) =>
+        divisor == 0 ? 0 : (ulong.MaxValue / divisor) + 1;
 
 #if NO_SPAN_HASHCODE
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -292,13 +315,14 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 
         if (capacity > 3)
         {
+            // this seems to be a good ratio to start with, based on something from wikipedia
             var index = (int)(((long)capacity * 86) / 100);
             if ((index & 1) == 0)
             {
                 index--;
             }
 
-            // gaps between primes don't see too large so this shouldn't have to go through too many iterations
+            // gaps between primes don't seem too large so this shouldn't have to go through too many iterations
             for (; index < capacity; index += 2)
             {
                 if (isOddPrime(index))
@@ -363,6 +387,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         {
             Entries = new Entry[capacity];
             CellarStartIndex = CalculateBestCellarIndexForCapacity(Entries.Length);
+            FastmodMultiplier = CalculateFastmodMultiplier(CellarStartIndex);
             CollisionIndex = Entries.Length - 1;
             Count = 0;
 
@@ -372,6 +397,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         private List<(uint hash, string key, TValue value)> _leftovers;
 
         public Entry[] Entries;
+        public ulong FastmodMultiplier;
         public uint CellarStartIndex;
         public int CollisionIndex;
         public int Count;
@@ -383,7 +409,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 
         public void Write(uint hash, string key, TValue value)
         {
-            ref var entry = ref Entries[hash % CellarStartIndex];
+            ref var entry = ref GetRefByHash(hash);
             if (entry.Key is null)
             {
                 entry.Set(hash, key, value);
@@ -410,7 +436,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 
         private void ForceAppendCollisionEntry(uint hash, string key, TValue value)
         {
-            ref var entry = ref Entries[hash % CellarStartIndex];
+            ref var entry = ref GetRefByHash(hash);
 
             while (entry.Next >= 0)
             {
@@ -436,6 +462,10 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 #endif
             static void throwNoRoomForCollision() => throw new NotSupportedException();
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private ref Entry GetRefByHash(uint hash) =>
+            ref Entries[GetIndexByHash(hash, CellarStartIndex, FastmodMultiplier)];
     }
 
     private struct Entry
