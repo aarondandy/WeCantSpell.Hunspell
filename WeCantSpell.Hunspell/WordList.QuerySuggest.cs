@@ -1590,7 +1590,7 @@ public partial class WordList
                     var gl = HunspellTextFunctions.MakeAllSmall(guess.Guess, textInfo);
                     var len = guess.Guess.Length;
 
-                    var lcsLength = LcsLen(word, gl);
+                    var lcsLength = LcsLen(word.AsSpan(), gl.AsSpan());
 
                     // same characters with different casing
                     if (word.Length == len && word.Length == lcsLength)
@@ -1636,7 +1636,7 @@ public partial class WordList
                         var len = root.RootPhon.Length;
 
                         // heuristic weigthing of ngram scores
-                        roots[i].ScorePhone += 2 * LcsLen(word, gl) - Math.Abs(word.Length - len)
+                        roots[i].ScorePhone += 2 * LcsLen(word.AsSpan(), gl.AsSpan()) - Math.Abs(word.Length - len)
                             // weight length of the left common substring
                             + LeftCommonSubstring(word, gl);
                     }
@@ -1798,80 +1798,107 @@ public partial class WordList
             return num;
         }
 
-        private static int LcsLen(string s, string s2)
-        {
-            Lcs(s, s2, out var i, out var n, out var result);
-
-            if (result is null)
-            {
-                return 0;
-            }
-
-            var j = n;
-            var len = 0;
-            while (i != 0 && j != 0)
-            {
-                if (result[(i * (n + 1)) + j] == LongestCommonSubsequenceType.UpLeft)
-                {
-                    len++;
-                    i--;
-                    j--;
-                }
-                else if (result[(i * (n + 1)) + j] == LongestCommonSubsequenceType.Up)
-                {
-                    i--;
-                }
-                else
-                {
-                    j--;
-                }
-            }
-
-            return len;
-        }
-
         /// <summary>
         /// Longest common subsequence.
         /// </summary>
-        private static void Lcs(string s, string s2, out int m, out int n, out LongestCommonSubsequenceType[] b)
+        private static int LcsLen(ReadOnlySpan<char> s, ReadOnlySpan<char> s2)
         {
-            m = s.Length;
-            n = s2.Length;
-            var nNext = n + 1;
-            var c = new LongestCommonSubsequenceType[(m + 1) * nNext]; // NOTE: arrays are already zero (Up);
-            b = new LongestCommonSubsequenceType[(m + 1) * nNext]; // NOTE: arrays are already zero (Up);
-
-            for (var i = 1; i <= m; i++)
+            var lcsLength = 0;
+            var matchCount = s.CountMatchesFromLeft(s2);
+            if (lcsLength > 0)
             {
-                var iPrev = i - 1;
-                for (var j = 1; j <= n; j++)
+                lcsLength = matchCount;
+                s = s.Slice(matchCount);
+                s2 = s2.Slice(matchCount);
+            }
+
+            if (s.Length > 1 || s2.Length > 1)
+            {
+                matchCount = s.CountMatchesFromRight(s2);
+                if (matchCount > 0)
                 {
-                    var inj = i * nNext + j;
-                    ref var cInj = ref c[inj];
-                    ref var bInj = ref b[inj];
+                    lcsLength += matchCount;
+                    s = s.Slice(0, s.Length - matchCount);
+                    s2 = s2.Slice(0, s2.Length - matchCount);
+                }
 
-                    var jPrev = j - 1;
-                    var iPrevXNNext = iPrev * nNext;
-                    if (((s[iPrev] == s2[jPrev])))
-                    {
-                        cInj = c[iPrevXNNext + jPrev] + 1;
-                        bInj = LongestCommonSubsequenceType.UpLeft;
-                        continue;
-                    }
+                if (s.Length > 1 || s2.Length > 1)
+                {
+                    lcsLength += lcsAlgorithm(s, s2);
+                }
+            }
 
-                    var cIPrevXNNext = c[iPrevXNNext + j];
-                    var cInjMinux1 = c[inj - 1];
-                    if (cIPrevXNNext >= cInjMinux1)
+            return lcsLength;
+
+            static int lcsAlgorithm(ReadOnlySpan<char> s, ReadOnlySpan<char> s2)
+            {
+                var result = lcsMatrixBuilder(s, s2);
+
+                var i = s.Length;
+                var j = s2.Length;
+                var nNext = s2.Length + 1;
+                var len = 0;
+                while (i > 0 && j > 0)
+                {
+                    switch (result[(i * nNext) + j])
                     {
-                        cInj = cIPrevXNNext;
-                        bInj = LongestCommonSubsequenceType.Up;
-                    }
-                    else
-                    {
-                        cInj = cInjMinux1;
-                        bInj = LongestCommonSubsequenceType.UpLeft;
+                        case LongestCommonSubsequenceType.UpLeft:
+                            len++;
+                            i--;
+                            j--;
+                            break;
+                        case LongestCommonSubsequenceType.Up:
+                            i--;
+                            break;
+                        default:
+                            j--;
+                            break;
                     }
                 }
+
+                return len;
+            }
+
+            static LongestCommonSubsequenceType[] lcsMatrixBuilder(ReadOnlySpan<char> s, ReadOnlySpan<char> s2)
+            {
+                var nNext = s2.Length + 1;
+                var c = new LongestCommonSubsequenceType[(s.Length + 1) * nNext]; // NOTE: arrays are already zero (Up);
+                var b = new LongestCommonSubsequenceType[(s.Length + 1) * nNext]; // NOTE: arrays are already zero (Up);
+
+                for (var i = 1; i <= s.Length; i++)
+                {
+                    var iPrev = i - 1;
+                    for (var j = 1; j <= s2.Length; j++)
+                    {
+                        var inj = (i * nNext) + j;
+                        ref var cInj = ref c[inj];
+                        ref var bInj = ref b[inj];
+
+                        var jPrev = j - 1;
+                        var iPrevXNNext = iPrev * nNext;
+                        if (s[iPrev] == s2[jPrev])
+                        {
+                            cInj = c[iPrevXNNext + jPrev] + 1;
+                            bInj = LongestCommonSubsequenceType.UpLeft;
+                            continue;
+                        }
+
+                        var cIPrevXNNext = c[iPrevXNNext + j];
+                        var cInjMinux1 = c[inj - 1];
+                        if (cIPrevXNNext >= cInjMinux1)
+                        {
+                            cInj = cIPrevXNNext;
+                            bInj = LongestCommonSubsequenceType.Up;
+                        }
+                        else
+                        {
+                            cInj = cInjMinux1;
+                            bInj = LongestCommonSubsequenceType.UpLeft;
+                        }
+                    }
+                }
+
+                return b;
             }
         }
 
@@ -2323,6 +2350,11 @@ public partial class WordList
         /// </summary>
         private int LeftCommonSubstring(string s1, string s2)
         {
+            if (s1.Length == 0 || s2.Length == 0)
+            {
+                return 0;
+            }
+
             if (Affix.ComplexPrefixes)
             {
                 return leftCommonSubstringComplex(s1, s2);
@@ -2341,15 +2373,7 @@ public partial class WordList
             return index;
 
             static int leftCommonSubstringComplex(string s1, string s2) =>
-                (
-                    s1.Length > 0
-                    &&
-                    s2.Length > 0
-                    &&
-                    s1[s1.Length - 1] == s2[s2.Length - 1]
-                )
-                ? 1
-                : 0;
+                (s1[s1.Length - 1] == s2[s2.Length - 1]) ? 1 : 0;
         }
 
         /// <summary>
