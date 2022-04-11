@@ -2253,7 +2253,7 @@ public partial class WordList
                 return false;
             }
 
-            var morph = morphs.Join(" ");
+            var morph = morphs.Join(' ');
 
             if (morph.Length == 0)
             {
@@ -2272,7 +2272,7 @@ public partial class WordList
             for (var i = begOffset; i < morph.Length; i++)
             {
                 var c = morph[i];
-                if (c == ' ' || c == '\t' || c == '\n')
+                if (c is ' ' or '\t' or '\n')
                 {
                     break;
                 }

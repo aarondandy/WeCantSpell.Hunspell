@@ -47,9 +47,16 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
     public string this[int index] => _morphs[index];
 
     public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)_morphs).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_morphs).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => _morphs.GetEnumerator();
 
     internal string Join(string seperator) => string.Join(seperator, _morphs);
+
+    internal string Join(char seperator) =>
+#if NO_CHAR_STRINGJOIN
+        StringEx.Join(seperator, _morphs);
+#else
+        string.Join(seperator, _morphs);
+#endif
 
     public bool Equals(MorphSet other) => other._morphs.SequenceEqual(_morphs, StringComparer.Ordinal);
 
