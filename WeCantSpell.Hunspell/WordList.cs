@@ -181,17 +181,17 @@ public sealed partial class WordList
             {
                 while (_coreEnumerator.MoveNext())
                 {
-                    var (rootKey, rootValue) = _coreEnumerator.Current;
+                    Current = _coreEnumerator.Current;
 
-                    if (_nGramRestrictedDetails.TryGetValue(rootKey, out var restrictedDetails) && restrictedDetails.Length != 0)
+                    if (_nGramRestrictedDetails.TryGetValue(Current.Key, out var restrictedDetails) && restrictedDetails.Length != 0)
                     {
-                        if (restrictedDetails.Length == rootValue.Length)
+                        if (restrictedDetails.Length == Current.Value.Length)
                         {
                             continue;
                         }
                         else
                         {
-                            rootValue = filterNonMatching(rootValue, restrictedDetails);
+                            Current = new (Current.Key, filterNonMatching(Current.Value, restrictedDetails));
                             static WordEntryDetail[] filterNonMatching(WordEntryDetail[] source, WordEntryDetail[] check)
                             {
                                 var builder = new ArrayBuilder<WordEntryDetail>(source.Length);
@@ -208,7 +208,6 @@ public sealed partial class WordList
                         }
                     }
 
-                    Current = new(rootKey, rootValue);
                     return true;
                 }
             }
