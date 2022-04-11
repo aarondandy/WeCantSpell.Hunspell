@@ -163,19 +163,13 @@ public sealed partial class WordList
             if (minKeyLength > maxKeyLength) throw new ArgumentOutOfRangeException(nameof(maxKeyLength));
 #endif
 
-            _coreEnumerator = wordList.EntriesByRoot.GetEnumerator();
-            _nGramRestrictedDetails = wordList.NGramRestrictedDetails;
-            _requiresNGramFiltering = _nGramRestrictedDetails is { Count: > 0 };
-            _minKeyLength = minKeyLength;
-            _maxKeyLength = maxKeyLength;
+            _coreEnumerator = new(wordList.EntriesByRoot, minKeyLength, maxKeyLength);
+            _nGramRestrictedDetails = wordList.NGramRestrictedDetails.Count > 0 ? wordList.NGramRestrictedDetails : null;
             Current = default;
         }
 
-        private TextDictionary<WordEntryDetail[]>.Enumerator _coreEnumerator;
-        private readonly TextDictionary<WordEntryDetail[]> _nGramRestrictedDetails;
-        private readonly int _minKeyLength;
-        private readonly int _maxKeyLength;
-        private readonly bool _requiresNGramFiltering;
+        private TextDictionary<WordEntryDetail[]>.KeyLengthEnumerator _coreEnumerator;
+        private TextDictionary<WordEntryDetail[]>? _nGramRestrictedDetails;
 
         public KeyValuePair<string, WordEntryDetail[]> Current { get; private set; }
 
@@ -183,27 +177,21 @@ public sealed partial class WordList
 
         public bool MoveNext()
         {
-            while (_coreEnumerator.MoveNext())
+            if (_nGramRestrictedDetails is not null)
             {
-                var rootKey = _coreEnumerator.Current.Key;
-
-                if (rootKey.Length >= _minKeyLength && rootKey.Length <= _maxKeyLength)
+                while (_coreEnumerator.MoveNext())
                 {
-                    var rootValue = _coreEnumerator.Current.Value;
+                    Current = _coreEnumerator.Current;
 
-                    if (
-                        _requiresNGramFiltering
-                        && _nGramRestrictedDetails.TryGetValue(rootKey, out var restrictedDetails)
-                        && restrictedDetails.Length != 0
-                    )
+                    if (_nGramRestrictedDetails.TryGetValue(Current.Key, out var restrictedDetails) && restrictedDetails.Length != 0)
                     {
-                        if (restrictedDetails.Length == rootValue.Length)
+                        if (restrictedDetails.Length == Current.Value.Length)
                         {
                             continue;
                         }
                         else
                         {
-                            rootValue = filterNonMatching(rootValue, restrictedDetails);
+                            Current = new (Current.Key, filterNonMatching(Current.Value, restrictedDetails));
                             static WordEntryDetail[] filterNonMatching(WordEntryDetail[] source, WordEntryDetail[] check)
                             {
                                 var builder = new ArrayBuilder<WordEntryDetail>(source.Length);
@@ -220,7 +208,14 @@ public sealed partial class WordList
                         }
                     }
 
-                    Current = new(rootKey, rootValue);
+                    return true;
+                }
+            }
+            else
+            {
+                if (_coreEnumerator.MoveNext())
+                {
+                    Current = _coreEnumerator.Current;
                     return true;
                 }
             }
