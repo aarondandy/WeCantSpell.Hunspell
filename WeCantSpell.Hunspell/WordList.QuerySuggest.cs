@@ -524,6 +524,23 @@ public partial class WordList
         
         private bool TryLookupFirstDetail(ReadOnlySpan<char> word, out WordEntryDetail wordEntryDetail) => WordList.TryFindFirstEntryDetailByRootWord(word, out wordEntryDetail);
 
+        private ref struct SuggestState
+        {
+            public List<string> SuggestionList;
+            public ReadOnlySpan<char> Word;
+            public string WordString;
+            public Span<char> CandidateBuffer;
+            public bool CpdSuggest;
+            public bool GoodSuggestion;
+
+            public Span<char> GetBufferForWord()
+            {
+                var result = CandidateBuffer.Slice(0, Word.Length);
+                Word.CopyTo(result);
+                return result;
+            }
+        }
+
         /// <summary>
         /// Generate suggestions for a misspelled word
         /// </summary>
@@ -536,8 +553,6 @@ public partial class WordList
             var noCompoundTwoWords = false;
             var nSugOrig = slst.Count;
             var oldSug = 0;
-            var cpdSuggest = false;
-            var goodSuggestion = false;
 
             // word reversing wrapper for complex prefixes
             if (Affix.ComplexPrefixes)
@@ -547,12 +562,22 @@ public partial class WordList
 
             var opLimiter = new OperationTimedLimiter(Options.TimeLimitCompoundSuggest, Options.CancellationToken);
 
+            var state = new SuggestState
+            {
+                SuggestionList = slst,
+                Word = word.AsSpan(),
+                WordString = word,
+                CandidateBuffer = new char[word.Length + 2].AsSpan(),
+                CpdSuggest = false,
+                GoodSuggestion = false
+            };
+
             do
             {
                 // limit compound suggestion
                 opLimiter.Reset();
 
-                if (cpdSuggest)
+                if (state.CpdSuggest)
                 {
                     oldSug = slst.Count;
                 }
@@ -563,132 +588,132 @@ public partial class WordList
                 if (slst.Count < MaxSuggestions)
                 {
                     var i = slst.Count;
-                    CapChars(slst, word, cpdSuggest);
+                    CapChars(slst, word, state.CpdSuggest);
                     if (slst.Count > i)
                     {
-                        goodSuggestion = true;
+                        state.GoodSuggestion = true;
                     }
                 }
 
                 // perhaps we made a typical fault of spelling
-                if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
+                if (slst.Count < MaxSuggestions && (!state.CpdSuggest || slst.Count < sugLimit))
                 {
                     var i = slst.Count;
-                    ReplChars(slst, word, cpdSuggest);
+                    ReplChars(slst, word, state.CpdSuggest);
                     if (slst.Count > i)
                     {
-                        goodSuggestion = true;
+                        state.GoodSuggestion = true;
                     }
                 }
 
                 if (opLimiter.QueryForCancellation())
                 {
-                    return goodSuggestion;
+                    goto timerExit;
                 }
 
                 // perhaps we made chose the wrong char from a related set
-                if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
+                if (slst.Count < MaxSuggestions && (!state.CpdSuggest || slst.Count < sugLimit))
                 {
-                    MapChars(slst, word, cpdSuggest);
+                    MapChars(slst, word, state.CpdSuggest);
                 }
 
                 if (opLimiter.QueryForCancellation())
                 {
-                    return goodSuggestion;
+                    goto timerExit;
                 }
 
                 // only suggest compound words when no other suggestion
-                if (!cpdSuggest && slst.Count > nSugOrig)
+                if (!state.CpdSuggest && slst.Count > nSugOrig)
                 {
                     noCompoundTwoWords = true;
                 }
 
                 // did we swap the order of chars by mistake
-                if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
+                if (slst.Count < MaxSuggestions && (!state.CpdSuggest || slst.Count < sugLimit))
                 {
-                    SwapChar(slst, word.AsSpan(), cpdSuggest);
+                    SwapChar(in state);
                 }
 
                 if (opLimiter.QueryForCancellation())
                 {
-                    return goodSuggestion;
+                    goto timerExit;
                 }
 
                 // did we swap the order of non adjacent chars by mistake
-                if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
+                if (slst.Count < MaxSuggestions && (!state.CpdSuggest || slst.Count < sugLimit))
                 {
-                    LongSwapChar(slst, word.AsSpan(), cpdSuggest);
+                    LongSwapChar(in state);
                 }
 
                 if (opLimiter.QueryForCancellation())
                 {
-                    return goodSuggestion;
+                    goto timerExit;
                 }
 
                 // did we just hit the wrong key in place of a good char (case and keyboard)
-                if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
+                if (slst.Count < MaxSuggestions && (!state.CpdSuggest || slst.Count < sugLimit))
                 {
-                    BadCharKey(slst, word.AsSpan(), cpdSuggest);
+                    BadCharKey(in state);
                 }
 
                 if (opLimiter.QueryForCancellation())
                 {
-                    return goodSuggestion;
+                    goto timerExit;
                 }
 
                 // did we add a char that should not be there
-                if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
+                if (slst.Count < MaxSuggestions && (!state.CpdSuggest || slst.Count < sugLimit))
                 {
-                    ExtraChar(slst, word.AsSpan(), cpdSuggest);
+                    ExtraChar(in state);
                 }
 
                 if (opLimiter.QueryForCancellation())
                 {
-                    return goodSuggestion;
+                    goto timerExit;
                 }
 
                 // did we forgot a char
-                if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
+                if (slst.Count < MaxSuggestions && (!state.CpdSuggest || slst.Count < sugLimit))
                 {
-                    ForgotChar(slst, word.AsSpan(), cpdSuggest);
+                    ForgotChar(in state);
                 }
 
                 if (opLimiter.QueryForCancellation())
                 {
-                    return goodSuggestion;
+                    goto timerExit;
                 }
 
                 // did we move a char
-                if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
+                if (slst.Count < MaxSuggestions && (!state.CpdSuggest || slst.Count < sugLimit))
                 {
-                    MoveChar(slst, word.AsSpan(), cpdSuggest);
+                    MoveChar(in state);
                 }
 
                 if (opLimiter.QueryForCancellation())
                 {
-                    return goodSuggestion;
+                    goto timerExit;
                 }
 
                 // did we just hit the wrong key in place of a good char
-                if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
+                if (slst.Count < MaxSuggestions && (!state.CpdSuggest || slst.Count < sugLimit))
                 {
-                    BadChar(slst, word.AsSpan(), cpdSuggest);
+                    BadChar(in state);
                 }
 
                 if (opLimiter.QueryForCancellation())
                 {
-                    return goodSuggestion;
+                    goto timerExit;
                 }
 
                 // did we double two characters
-                if (slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
+                if (slst.Count < MaxSuggestions && (!state.CpdSuggest || slst.Count < sugLimit))
                 {
-                    DoubleTwoChars(slst, word.AsSpan(), cpdSuggest);
+                    DoubleTwoChars(in state);
                 }
 
                 if (opLimiter.QueryForCancellation())
                 {
-                    return goodSuggestion;
+                    goto timerExit;
                 }
 
                 // perhaps we forgot to hit space and two words ran together
@@ -696,24 +721,25 @@ public partial class WordList
                 // we always suggest them, in despite of nosplitsugs, and
                 // drop compound word and other suggestions)
                 //if (!Affix.NoSplitSuggestions && slst.Count < MaxSuggestions && (!cpdSuggest || slst.Count < sugLimit))
-                if (!cpdSuggest || (!Affix.NoSplitSuggestions && slst.Count < sugLimit))
+                if (!state.CpdSuggest || (!Affix.NoSplitSuggestions && slst.Count < sugLimit))
                 {
-                    goodSuggestion = TwoWords(slst, word.AsSpan(), cpdSuggest, goodSuggestion);
+                    TwoWords(ref state);
                 }
 
                 if (opLimiter.QueryForCancellation())
                 {
-                    return goodSuggestion;
+                    goto timerExit;
                 }
             }
-            while (!noCompoundTwoWords && IntEx.InversePostfixIncrement(ref cpdSuggest) && !goodSuggestion);
+            while (!noCompoundTwoWords && IntEx.InversePostfixIncrement(ref state.CpdSuggest) && !state.GoodSuggestion);
 
             if (!noCompoundTwoWords && slst.Count != 0)
             {
                 onlyCompoundSug = true;
             }
 
-            return goodSuggestion;
+        timerExit:
+            return state.GoodSuggestion;
         }
 
         private SpellCheckResult CheckDetails(string word) => new QueryCheck(WordList, Options).CheckDetails(word);
@@ -728,11 +754,12 @@ public partial class WordList
         /// The recognized pattern with regex back-references:
         /// "(.)(.)\1\2\1" or "..(.)(.)\1\2"
         /// </remarks>
-        private int DoubleTwoChars(List<string> wlst, ReadOnlySpan<char> word, bool cpdSuggest)
+        private void DoubleTwoChars(in SuggestState sugState)
         {
+            var word = sugState.Word;
             if (word.Length < 5)
             {
-                return wlst.Count;
+                return;
             }
 
             var state = 0;
@@ -747,7 +774,7 @@ public partial class WordList
                         word.Slice(0, i - 1).CopyTo(candidate);
                         word.Slice(i + 1).CopyTo(candidate.Slice(i - 1));
 
-                        TestSug(wlst, candidate, cpdSuggest);
+                        TestSug(sugState.SuggestionList, candidate, sugState.CpdSuggest);
                         state = 0;
                     }
                 }
@@ -756,20 +783,18 @@ public partial class WordList
                     state = 0;
                 }
             }
-
-            return wlst.Count;
         }
 
         /// <summary>
         /// Error is wrong char in place of correct one.
         /// </summary>
-        private int BadChar(List<string> wlst, ReadOnlySpan<char> word, bool cpdSuggest)
+        private void BadChar(in SuggestState state)
         {
             if (Affix.TryString is { Length: > 0 } tryString)
             {
                 var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, Options.CancellationToken);
 
-                var candidate = word.ToArray().AsSpan();
+                var candidate = state.GetBufferForWord();
 
                 // swap out each char one by one and try all the tryme
                 // chars in its place to see if that makes a good word
@@ -784,31 +809,30 @@ public partial class WordList
                         }
 
                         candidate[i] = tryString[j];
-                        TestSug(wlst, candidate, cpdSuggest, timer);
+                        TestSug(state.SuggestionList, candidate, state.CpdSuggest, timer);
                         candidate[i] = tmpc;
 
                         if (timer.QueryForCancellation())
                         {
-                            return wlst.Count;
+                            return;
                         }
                     }
                 }
             }
-
-            return wlst.Count;
         }
 
         /// <summary>
         /// Error is a letter was moved.
         /// </summary>
-        private int MoveChar(List<string> wlst, ReadOnlySpan<char> word, bool cpdSuggest)
+        private void MoveChar(in SuggestState state)
         {
+            var word = state.Word;
             if (word.Length < 2)
             {
-                return wlst.Count;
+                return;
             }
 
-            var candidate = word.ToArray().AsSpan();
+            var candidate = state.GetBufferForWord();
 
             // try moving a char
             for (var p = 0; p < word.Length; p++)
@@ -825,7 +849,7 @@ public partial class WordList
                         continue; // omit swap char
                     }
 
-                    TestSug(wlst, candidate, cpdSuggest);
+                    TestSug(state.SuggestionList, candidate, state.CpdSuggest);
                 }
             }
 
@@ -843,23 +867,24 @@ public partial class WordList
                         continue;  // omit swap char
                     }
 
-                    TestSug(wlst, candidate, cpdSuggest);
+                    TestSug(state.SuggestionList, candidate, state.CpdSuggest);
                 }
             }
 
-            return wlst.Count;
+            return;
         }
 
         /// <summary>
         /// Error is missing a letter it needs.
         /// </summary>
-        private int ForgotChar(List<string> wlst, ReadOnlySpan<char> word, bool cpdSuggest)
+        private void ForgotChar(in SuggestState state)
         {
             if (Affix.TryString is { Length: > 0 })
             {
                 var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, Options.CancellationToken);
 
-                var candidate = new char[word.Length + 1].AsSpan();
+                var word = state.Word;
+                var candidate = state.CandidateBuffer.Slice(0, word.Length + 1);
 
                 // try inserting a tryme character before every letter (and the null terminator)
                 foreach (var tryChar in Affix.TryString)
@@ -867,11 +892,11 @@ public partial class WordList
                     word.CopyTo(candidate);
                     candidate[word.Length] = tryChar;
 
-                    TestSug(wlst, candidate, cpdSuggest, timer);
+                    TestSug(state.SuggestionList, candidate, state.CpdSuggest, timer);
 
                     if (timer.QueryForCancellation())
                     {
-                        return wlst.Count;
+                        return;
                     }
 
                     for (var index = word.Length; index >= 0; index--)
@@ -879,48 +904,49 @@ public partial class WordList
                         candidate[index] = tryChar;
                         word.Slice(index).CopyTo(candidate.Slice(index + 1));
 
-                        TestSug(wlst, candidate, cpdSuggest, timer);
+                        TestSug(state.SuggestionList, candidate, state.CpdSuggest, timer);
 
                         if (timer.QueryForCancellation())
                         {
-                            return wlst.Count;
+                            return;
                         }
                     }
                 }
             }
 
-            return wlst.Count;
+            return;
         }
 
         /// <summary>
         /// Error is word has an extra letter it does not need.
         /// </summary>
-        private int ExtraChar(List<string> wlst, ReadOnlySpan<char> word, bool cpdSuggest)
+        private void ExtraChar(in SuggestState state)
         {
+            var word = state.Word;
+
             if (word.Length >= 2)
             {
-                var buffer = word.Slice(0, word.Length - 1).ToArray().AsSpan();
+                var buffer = state.CandidateBuffer.Slice(0, word.Length - 1);
+                word.Slice(0, word.Length - 1).CopyTo(buffer);
 
-                TestSug(wlst, buffer, cpdSuggest);
+                TestSug(state.SuggestionList, buffer, state.CpdSuggest);
 
                 for (var index = word.Length - 2; index > 0; index--)
                 {
                     word.Slice(index + 1).CopyTo(buffer.Slice(index));
-                    TestSug(wlst, buffer, cpdSuggest);
+                    TestSug(state.SuggestionList, buffer, state.CpdSuggest);
                 }
 
-                TestSug(wlst, word.Slice(1), cpdSuggest);
+                TestSug(state.SuggestionList, word.Slice(1), state.CpdSuggest);
             }
-
-            return wlst.Count;
         }
 
         /// <summary>
         /// error is wrong char in place of correct one (case and keyboard related version)
         /// </summary>
-        private int BadCharKey(List<string> wlst, ReadOnlySpan<char> word, bool cpdSuggest)
+        private void BadCharKey(in SuggestState state)
         {
-            var candidate = word.ToArray().AsSpan();
+            var candidate = state.GetBufferForWord();
             var keyString = Affix.KeyString;
 
             // swap out each char one by one and try uppercase and neighbor
@@ -932,7 +958,7 @@ public partial class WordList
                 candidate[i] = TextInfo.ToUpper(tmpc);
                 if (tmpc != candidate[i])
                 {
-                    TestSug(wlst, candidate, cpdSuggest);
+                    TestSug(state.SuggestionList, candidate, state.CpdSuggest);
                     candidate[i] = tmpc;
                 }
 
@@ -944,14 +970,14 @@ public partial class WordList
                     if (targetLoc >= 0 && keyString[targetLoc] != '|')
                     {
                         candidate[i] = keyString[targetLoc];
-                        TestSug(wlst, candidate, cpdSuggest);
+                        TestSug(state.SuggestionList, candidate, state.CpdSuggest);
                     }
 
                     targetLoc = loc + 1;
                     if (targetLoc < keyString.Length && keyString[targetLoc] != '|')
                     {
                         candidate[i] = keyString[targetLoc];
-                        TestSug(wlst, candidate, cpdSuggest);
+                        TestSug(state.SuggestionList, candidate, state.CpdSuggest);
                     }
 
                     loc = keyString.IndexOf(tmpc, targetLoc);
@@ -959,16 +985,15 @@ public partial class WordList
 
                 candidate[i] = tmpc;
             }
-
-            return wlst.Count;
         }
 
         /// <summary>
         /// Error is not adjacent letter were swapped.
         /// </summary>
-        private int LongSwapChar(List<string> wlst, ReadOnlySpan<char> word, bool cpdSuggest)
+        private void LongSwapChar(in SuggestState state)
         {
-            var candidate = word.ToArray().AsSpan();
+            var candidate = state.GetBufferForWord();
+
             // try swapping not adjacent chars one by one
             for (var p = 0; p < candidate.Length; p++)
             {
@@ -984,28 +1009,27 @@ public partial class WordList
                         candidate[p] = oldq;
                         candidate[q] = oldp;
 
-                        TestSug(wlst, candidate, cpdSuggest);
+                        TestSug(state.SuggestionList, candidate, state.CpdSuggest);
 
                         candidate[q] = oldq;
                         candidate[p] = oldp;
                     }
                 }
             }
-
-            return wlst.Count;
         }
 
         /// <summary>
         /// Error is adjacent letter were swapped.
         /// </summary>
-        private int SwapChar(List<string> wlst, ReadOnlySpan<char> word, bool cpdSuggest)
+        private void SwapChar(in SuggestState state)
         {
+            var word = state.Word;
             if (word.Length < 2)
             {
-                return wlst.Count;
+                return;
             }
 
-            var candidate = word.ToArray().AsSpan();
+            var candidate = state.GetBufferForWord();
 
             // try swapping adjacent chars one by one
             var lastCandidateIndex = candidate.Length - 1;
@@ -1015,7 +1039,7 @@ public partial class WordList
                 var c = candidate[i];
                 candidate[i] = candidate[nexti];
                 candidate[nexti] = c;
-                TestSug(wlst, candidate, cpdSuggest);
+                TestSug(state.SuggestionList, candidate, state.CpdSuggest);
                 candidate[nexti] = candidate[i];
                 candidate[i] = c;
             }
@@ -1030,7 +1054,7 @@ public partial class WordList
                 candidate[candidate.Length - 2] = word[candidate.Length - 1];
                 candidate[candidate.Length - 1] = word[candidate.Length - 2];
 
-                TestSug(wlst, candidate, cpdSuggest);
+                TestSug(state.SuggestionList, candidate, state.CpdSuggest);
 
                 if (candidate.Length == 5)
                 {
@@ -1038,34 +1062,34 @@ public partial class WordList
                     candidate[1] = word[2];
                     candidate[2] = word[1];
 
-                    TestSug(wlst, candidate, cpdSuggest);
+                    TestSug(state.SuggestionList, candidate, state.CpdSuggest);
                 }
             }
 
-            return wlst.Count;
+            return;
         }
 
         private void CapChars(List<string> wlst, string word, bool cpdSuggest) =>
             TestSug(wlst, HunspellTextFunctions.MakeAllCap(word, TextInfo), cpdSuggest);
 
-        private int MapChars(List<string> wlst, string word, bool cpdSuggest)
+        private void MapChars(List<string> wlst, string word, bool cpdSuggest)
         {
             if (word.Length < 2 || Affix.RelatedCharacterMap.IsEmpty)
             {
-                return wlst.Count;
+                return;
             }
 
             var candidate = string.Empty;
-            return MapRelated(word, ref candidate, wn: 0, wlst, cpdSuggest);
+            MapRelated(word, ref candidate, wn: 0, wlst, cpdSuggest);
         }
 
-        private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest)
+        private void MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest)
         {
             var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, Options.CancellationToken);
-            return MapRelated(word, ref candidate, wn, wlst, cpdSuggest, timer);
+            MapRelated(word, ref candidate, wn, wlst, cpdSuggest, timer);
         }
 
-        private int MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest, OperationTimedCountLimiter timer)
+        private void MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest, OperationTimedCountLimiter timer)
         {
             if (wn >= word.Length)
             {
@@ -1080,7 +1104,7 @@ public partial class WordList
                     wlst.Add(candidate);
                 }
 
-                return wlst.Count;
+                return;
             }
 
             var inMap = false;
@@ -1099,7 +1123,7 @@ public partial class WordList
 
                             if (timer.QueryForCancellation())
                             {
-                                return wlst.Count;
+                                return;
                             }
                         }
                     }
@@ -1111,8 +1135,6 @@ public partial class WordList
                 candidate += word[wn];
                 MapRelated(word, ref candidate, wn + 1, wlst, cpdSuggest, timer);
             }
-
-            return wlst.Count;
         }
 
         private void TestSug(List<string> wlst, string candidate, bool cpdSuggest, OperationTimedCountLimiter timer)
@@ -1301,11 +1323,11 @@ public partial class WordList
         /// Suggestions for a typical fault of spelling, that
         /// differs with more, than 1 letter from the right form.
         /// </summary>
-        private int ReplChars(List<string> wlst, string word, bool cpdSuggest)
+        private void ReplChars(List<string> wlst, string word, bool cpdSuggest)
         {
             if (word.Length < 2 || WordList.AllReplacements.IsEmpty)
             {
-                return wlst.Count;
+                return;
             }
 
             foreach (var replacement in WordList.AllReplacements.Replacements)
@@ -1363,7 +1385,7 @@ public partial class WordList
                 }
             }
 
-            return wlst.Count;
+            return;
         }
 
         /// <summary>
@@ -2089,16 +2111,22 @@ public partial class WordList
         /// Error if should have been two words.
         /// </summary>
         /// <returns>Trye if there is a dictionary word pair or there was already a good suggestion before calling.</returns>
-        private bool TwoWords(List<string> wlst, ReadOnlySpan<char> word, bool cpdSuggest, bool good)
+        private void TwoWords(ref SuggestState state)
         {
+            ref var good = ref state.GoodSuggestion;
+            var word = state.Word;
+            var wlst = state.SuggestionList;
+            var cpdSuggest = state.CpdSuggest;
+
             if (word.Length < 3)
             {
-                return false;
+                good = false;
+                return;
             }
 
             var isHungarianAndNotForbidden = Affix.IsHungarian && !CheckForbidden(word);
 
-            var candidate = new char[word.Length + 2].AsSpan();
+            var candidate = state.CandidateBuffer.Slice(0, word.Length + 2);
             candidate[0] = '\0';
             candidate[candidate.Length - 1] = '\0';
             word.CopyTo(candidate.Slice(1));
@@ -2238,8 +2266,6 @@ public partial class WordList
                     }
                 }
             }
-
-            return good;
         }
 
         private bool CheckForbidden(ReadOnlySpan<char> word)
