@@ -369,4 +369,47 @@ static class StringEx
     public static SpanSeparatorSplitEnumerator<char> SplitOnComma(this ReadOnlySpan<char> @this, StringSplitOptions options = StringSplitOptions.None) => new(@this, options, static span => span.IndexOf(','));
 
     public static SpanSeparatorSplitEnumerator<char> SplitOnTabOrSpace(this ReadOnlySpan<char> @this) => new(@this, StringSplitOptions.RemoveEmptyEntries, static span => span.IndexOfAny(' ', '\t'));
+
+#if NO_CHAR_STRINGJOIN
+    public static string Join(char seperator, string[] items)
+    {
+#if DEBUG
+        if (items is null) throw new ArgumentNullException(nameof(items));
+#endif
+
+        if (items.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        if (items.Length == 1)
+        {
+            return items[0];
+        }
+
+        return joinUsingBuilder(seperator, items);
+
+        static string joinUsingBuilder(char seperator, string[] items)
+        {
+            var requiredCapacity = items.Length - 1;
+            int i;
+            for (i = 0; i < items.Length; i++)
+            {
+                requiredCapacity += items[i].Length;
+            }
+
+            var builder = StringBuilderPool.Get(requiredCapacity);
+            builder.Append(items[0]);
+
+            for (i = 1; i < items.Length; i++)
+            {
+                builder.Append(seperator);
+                builder.Append(items[i]);
+            }
+
+            return StringBuilderPool.GetStringAndReturn(builder);
+        }
+    }
+#endif
+
 }

@@ -1564,10 +1564,17 @@ public partial class WordList
             // now we are done generating guesses
             // sort in order of decreasing score
 
-            Array.Sort(guesses, (a, b) => b.Score.CompareTo(a.Score));
             if (hasPhoneEntries)
             {
-                Array.Sort(roots, (a, b) => b.ScorePhone.CompareTo(a.ScorePhone));
+                Array.Sort(roots, static (a, b) => b.ScorePhone.CompareTo(a.ScorePhone) switch
+                {
+                    0 => b.Score.CompareTo(a.Score),
+                    int cmp => cmp
+                });
+            }
+            else
+            {
+                Array.Sort(guesses, static (a, b) => b.Score.CompareTo(a.Score));
             }
 
             // weight suggestions with a similarity index, based on
@@ -2314,7 +2321,7 @@ public partial class WordList
                 return false;
             }
 
-            var morph = morphs.Join(" ");
+            var morph = morphs.Join(' ');
 
             if (morph.Length == 0)
             {
@@ -2333,7 +2340,7 @@ public partial class WordList
             for (var i = begOffset; i < morph.Length; i++)
             {
                 var c = morph[i];
-                if (c == ' ' || c == '\t' || c == '\n')
+                if (c is ' ' or '\t' or '\n')
                 {
                     break;
                 }
