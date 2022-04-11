@@ -38,7 +38,7 @@ static class StringEx
 
     public static int IndexOf(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value, int startIndex, StringComparison comparisonType)
     {
-        var result = @this.IndexOf(value.Slice(startIndex), comparisonType);
+        var result = @this.Slice(startIndex).IndexOf(value, comparisonType);
         return result < 0 ? result : result + startIndex;
     }
 
