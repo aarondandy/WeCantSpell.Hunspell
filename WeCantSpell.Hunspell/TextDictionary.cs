@@ -381,6 +381,46 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         }
     }
 
+    internal struct KeyLengthEnumerator
+    {
+        internal KeyLengthEnumerator(TextDictionary<TValue> dictionary, int minKeyLength, int maxKeyLength)
+        {
+#if DEBUG
+            if (minKeyLength > maxKeyLength) throw new ArgumentOutOfRangeException(nameof(maxKeyLength));
+#endif
+
+            _entries = dictionary._entries;
+            _nextPosition = 0;
+            _minKeyLength = minKeyLength;
+            _maxKeyLength = maxKeyLength;
+            Current = default;
+        }
+
+        private readonly Entry[] _entries;
+        private int _nextPosition;
+        private readonly int _minKeyLength;
+        private readonly int _maxKeyLength;
+
+        public KeyValuePair<string, TValue> Current { get; private set; }
+
+        public bool MoveNext()
+        {
+            while (_nextPosition < _entries.Length)
+            {
+                ref var entry = ref _entries[_nextPosition];
+                _nextPosition++;
+
+                if (entry.Key is { } key && key.Length >= _minKeyLength && key.Length <= _maxKeyLength)
+                {
+                    Current = new(key, entry.Value);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
     private struct Builder
     {
         public Builder(int capacity)
