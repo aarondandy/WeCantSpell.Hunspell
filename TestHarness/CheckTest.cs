@@ -22,7 +22,7 @@ public class CheckTest
             checkWords.AddRange(line.Split(lineSplitChars, StringSplitOptions.RemoveEmptyEntries));
         }
 
-        const int numLoops = 100;
+        const int numLoops = 500;
 
         Console.WriteLine($"Checking {checkWords.Count} words {numLoops} times");
 
