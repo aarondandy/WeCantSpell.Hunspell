@@ -801,15 +801,16 @@ public sealed partial class AffixReader
         }
 
         // piece 4 - is affix string or 0 for null
-        var affixInput = group2;
         StringBuilder affixTextBuilder;
-        if (affixInput.IndexOf('/') is int affixSlashIndex and >= 0)
+        string affixText;
+
+        if (group2.IndexOf('/') is int affixSlashIndex and >= 0)
         {
-            affixTextBuilder = StringBuilderPool.Get(affixInput.Slice(0, affixSlashIndex));
+            affixTextBuilder = StringBuilderPool.Get(group2.Slice(0, affixSlashIndex));
 
             if (_builder.AliasF is { Count: > 0 } aliasF)
             {
-                if (IntEx.TryParseInvariant(affixInput.Slice(affixSlashIndex + 1), out var aliasNumber) && aliasNumber > 0 && aliasNumber <= aliasF.Count)
+                if (IntEx.TryParseInvariant(group2.Slice(affixSlashIndex + 1), out var aliasNumber) && aliasNumber > 0 && aliasNumber <= aliasF.Count)
                 {
                     contClass = aliasF[aliasNumber - 1];
                 }
@@ -821,30 +822,33 @@ public sealed partial class AffixReader
             }
             else
             {
-                contClass = _flagParser.ParseFlagSet(affixInput.Slice(affixSlashIndex + 1));
+                contClass = _flagParser.ParseFlagSet(group2.Slice(affixSlashIndex + 1));
             }
         }
         else
         {
-            affixTextBuilder = StringBuilderPool.Get(affixInput);
+            affixTextBuilder = StringBuilderPool.Get(group2);
         }
 
-        if (_builder.IgnoredChars is { HasItems: true })
+        if (_builder.IgnoredChars.HasItems)
         {
             affixTextBuilder.RemoveChars(_builder.IgnoredChars);
         }
 
-        if (EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes))
-        {
-            affixTextBuilder.Reverse();
-        }
-
         if (affixTextBuilder.Length == 1 && affixTextBuilder[0] == '0')
         {
-            affixTextBuilder.Clear();
+            StringBuilderPool.Return(affixTextBuilder);
+            affixText = string.Empty;
         }
+        else
+        {
+            if (EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes))
+            {
+                affixTextBuilder.Reverse();
+            }
 
-        var affixText = StringBuilderPool.GetStringAndReturn(affixTextBuilder);
+            affixText = StringBuilderPool.GetStringAndReturn(affixTextBuilder);
+        }
 
         // piece 5 - is the conditions descriptions
         var conditionText = group3;
