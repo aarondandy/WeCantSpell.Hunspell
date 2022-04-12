@@ -129,12 +129,6 @@ static class StringEx
         return index < @this.Length ? @this[index] : '\0';
     }
 
-    public static int FindNullTerminatedLength(this ReadOnlySpan<char> @this)
-    {
-        var index = @this.IndexOf('\0');
-        return index < 0 ? @this.Length : index;
-    }
-
     public static string ToStringTerminated(this Span<char> span, int startIndex)
     {
         return ToStringTerminated(span.Slice(startIndex));

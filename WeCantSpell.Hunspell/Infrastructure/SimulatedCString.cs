@@ -7,20 +7,31 @@ struct SimulatedCString
     public SimulatedCString(ReadOnlySpan<char> text)
     {
         _rawBuffer = new char[text.Length + 3]; // 3 extra characters seems to be enough to prevent most reallocations
-
-        text.CopyTo(_rawBuffer.AsSpan());
-
+        text.CopyTo(_rawBuffer.AsSpan(0, text.Length));
         _bufferLength = text.Length;
-        _terminatedLengthCache = null;
+        _terminatedLength = -1;
     }
 
     private char[] _rawBuffer;
-    private int? _terminatedLengthCache;
     private int _bufferLength;
+    private int _terminatedLength;
 
-    public ReadOnlySpan<char> BufferSpan => _rawBuffer.AsSpan(0, _bufferLength);
+    public ReadOnlySpan<char> TerminatedSpan
+    {
+        get
+        {
+            if (_terminatedLength < 0)
+            {
+                _terminatedLength = Array.IndexOf(_rawBuffer, '\0', 0, _bufferLength);
+                if (_terminatedLength < 0)
+                {
+                    _terminatedLength = _bufferLength;
+                }
+            }
 
-    public ReadOnlySpan<char> TerminatedSpan => _rawBuffer.AsSpan(0, _terminatedLengthCache ??= BufferSpan.FindNullTerminatedLength());
+            return _rawBuffer.AsSpan(0, _terminatedLength);
+        }
+    }
 
     public char this[int index]
     {
@@ -37,21 +48,25 @@ struct SimulatedCString
 
             if (value == '\0')
             {
-                if (index < _terminatedLengthCache)
+                if (index < _terminatedLength)
                 {
-                    _terminatedLengthCache = index;
+                    _terminatedLength = index;
                 }
             }
-            else if (index == _terminatedLengthCache)
+            else if (index == _terminatedLength)
             {
-                _terminatedLengthCache = null;
+                _terminatedLength = -1;
             }
         }
     }
 
     public char Exchange(int index, char value)
     {
-        if (index < 0 || index >= _bufferLength)
+#if DEBUG
+        if (index < 0) throw new ArgumentOutOfRangeException(nameof(index));
+#endif
+
+        if (index >= _bufferLength)
         {
             return '\0';
         }
@@ -67,7 +82,10 @@ struct SimulatedCString
 
         text.CopyTo(_rawBuffer.AsSpan(destinationIndex));
 
-        _terminatedLengthCache = null;
+        if (destinationIndex <= _terminatedLength)
+        {
+            _terminatedLength = -1;
+        }
     }
 
     public void Assign(ReadOnlySpan<char> text)
@@ -75,16 +93,16 @@ struct SimulatedCString
 #if DEBUG
         if (text.Length > _bufferLength) throw new ArgumentOutOfRangeException(nameof(text));
 #endif
-        var buffer = _rawBuffer.AsSpan(0, _bufferLength);
 
+        var buffer = _rawBuffer.AsSpan(0, _bufferLength);
         text.CopyTo(buffer);
 
-        if (text.Length < _bufferLength)
+        if (text.Length < buffer.Length)
         {
             buffer.Slice(text.Length).Clear();
         }
 
-        _terminatedLengthCache = null;
+        _terminatedLength = -1;
     }
 
     [System.Diagnostics.Conditional("DEBUG")]
