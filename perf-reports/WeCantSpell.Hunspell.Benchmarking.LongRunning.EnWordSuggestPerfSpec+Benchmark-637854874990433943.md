@@ -1,12 +1,12 @@
 ﻿# WeCantSpell.Hunspell.Benchmarking.LongRunning.EnWordSuggestPerfSpec+Benchmark
 __Ensure that words can be suggested quickly.__
-_4/11/2022 3:09:05 PM_
+_4/13/2022 10:58:19 PM_
 ### System Info
 ```ini
 NBench=NBench, Version=2.0.1.0, Culture=neutral, PublicKeyToken=null
 OS=Microsoft Windows NT 10.0.19043.0
 ProcessorCount=16
-CLR=6.0.3,IsMono=False,MaxGcGeneration=2
+CLR=6.0.4,IsMono=False,MaxGcGeneration=2
 ```
 
 ### NBench Settings
@@ -23,64 +23,64 @@ Tracing=False
 ### Totals
 |          Metric |           Units |             Max |         Average |             Min |          StdDev |
 |---------------- |---------------- |---------------- |---------------- |---------------- |---------------- |
-|TotalBytesAllocated |           bytes |    1,442,408.00 |    1,442,338.67 |    1,442,304.00 |           60.04 |
+|TotalBytesAllocated |           bytes |    1,414,472.00 |    1,414,472.00 |    1,414,472.00 |            0.00 |
 |TotalCollections [Gen0] |     collections |            2.00 |            2.00 |            2.00 |            0.00 |
 |TotalCollections [Gen1] |     collections |            0.00 |            0.00 |            0.00 |            0.00 |
 |TotalCollections [Gen2] |     collections |            0.00 |            0.00 |            0.00 |            0.00 |
-|    Elapsed Time |              ms |        1,246.00 |        1,241.67 |        1,239.00 |            3.79 |
+|    Elapsed Time |              ms |        1,281.00 |        1,271.67 |        1,266.00 |            8.14 |
 |[Counter] SuggestionQueries |      operations |          200.00 |          200.00 |          200.00 |            0.00 |
 
 ### Per-second Totals
 |          Metric |       Units / s |         Max / s |     Average / s |         Min / s |      StdDev / s |
 |---------------- |---------------- |---------------- |---------------- |---------------- |---------------- |
-|TotalBytesAllocated |           bytes |    1,164,221.91 |    1,161,549.29 |    1,157,122.95 |        3,860.76 |
-|TotalCollections [Gen0] |     collections |            1.61 |            1.61 |            1.60 |            0.01 |
+|TotalBytesAllocated |           bytes |    1,117,388.55 |    1,112,039.65 |    1,104,004.17 |        7,085.11 |
+|TotalCollections [Gen0] |     collections |            1.58 |            1.57 |            1.56 |            0.01 |
 |TotalCollections [Gen1] |     collections |            0.00 |            0.00 |            0.00 |            0.00 |
 |TotalCollections [Gen2] |     collections |            0.00 |            0.00 |            0.00 |            0.00 |
-|    Elapsed Time |              ms |        1,000.12 |          999.94 |          999.63 |            0.26 |
-|[Counter] SuggestionQueries |      operations |          161.44 |          161.06 |          160.45 |            0.53 |
+|    Elapsed Time |              ms |        1,000.10 |          999.74 |          999.29 |            0.41 |
+|[Counter] SuggestionQueries |      operations |          157.99 |          157.24 |          156.10 |            1.00 |
 
 ### Raw Data
 #### TotalBytesAllocated
 |           Run # |           bytes |       bytes / s |      ns / bytes |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |    1,442,408.00 |    1,163,302.99 |          859.62 |
-|               2 |    1,442,304.00 |    1,164,221.91 |          858.94 |
-|               3 |    1,442,304.00 |    1,157,122.95 |          864.21 |
+|               1 |    1,414,472.00 |    1,114,726.24 |          897.08 |
+|               2 |    1,414,472.00 |    1,104,004.17 |          905.79 |
+|               3 |    1,414,472.00 |    1,117,388.55 |          894.94 |
 
 #### TotalCollections [Gen0]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |            2.00 |            1.61 |  619,962,300.00 |
-|               2 |            2.00 |            1.61 |  619,428,300.00 |
-|               3 |            2.00 |            1.60 |  623,228,500.00 |
+|               1 |            2.00 |            1.58 |  634,448,150.00 |
+|               2 |            2.00 |            1.56 |  640,609,900.00 |
+|               3 |            2.00 |            1.58 |  632,936,500.00 |
 
 #### TotalCollections [Gen1]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |            0.00 |            0.00 |1,239,924,600.00 |
-|               2 |            0.00 |            0.00 |1,238,856,600.00 |
-|               3 |            0.00 |            0.00 |1,246,457,000.00 |
+|               1 |            0.00 |            0.00 |1,268,896,300.00 |
+|               2 |            0.00 |            0.00 |1,281,219,800.00 |
+|               3 |            0.00 |            0.00 |1,265,873,000.00 |
 
 #### TotalCollections [Gen2]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |            0.00 |            0.00 |1,239,924,600.00 |
-|               2 |            0.00 |            0.00 |1,238,856,600.00 |
-|               3 |            0.00 |            0.00 |1,246,457,000.00 |
+|               1 |            0.00 |            0.00 |1,268,896,300.00 |
+|               2 |            0.00 |            0.00 |1,281,219,800.00 |
+|               3 |            0.00 |            0.00 |1,265,873,000.00 |
 
 #### Elapsed Time
 |           Run # |              ms |          ms / s |         ns / ms |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |        1,240.00 |        1,000.06 |      999,939.19 |
-|               2 |        1,239.00 |        1,000.12 |      999,884.26 |
-|               3 |        1,246.00 |          999.63 |    1,000,366.77 |
+|               1 |        1,268.00 |          999.29 |    1,000,706.86 |
+|               2 |        1,281.00 |          999.83 |    1,000,171.58 |
+|               3 |        1,266.00 |        1,000.10 |      999,899.68 |
 
 #### [Counter] SuggestionQueries
 |           Run # |      operations |  operations / s | ns / operations |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |          200.00 |          161.30 |    6,199,623.00 |
-|               2 |          200.00 |          161.44 |    6,194,283.00 |
-|               3 |          200.00 |          160.45 |    6,232,285.00 |
+|               1 |          200.00 |          157.62 |    6,344,481.50 |
+|               2 |          200.00 |          156.10 |    6,406,099.00 |
+|               3 |          200.00 |          157.99 |    6,329,365.00 |
 
 
