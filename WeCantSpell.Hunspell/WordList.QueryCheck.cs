@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
@@ -164,14 +165,14 @@ public partial class WordList
                     return new SpellCheckResult(root, resultType, false);
                 }
 
-                // check boundary patterns (^begin and end$)
                 foreach (var breakEntry in Affix.BreakPoints.Entries)
                 {
-                    if (breakEntry.Length == 1 || breakEntry.Length > scw.Length)
+                    if (breakEntry.Length <= 1 || breakEntry.Length > scw.Length)
                     {
                         continue;
                     }
 
+                    // check boundary patterns (^begin and end$)
                     var pLastIndex = breakEntry.Length - 1;
                     if (
                         breakEntry.StartsWith('^')
@@ -195,67 +196,65 @@ public partial class WordList
                     }
                 }
 
-                // other patterns
-                foreach (var breakEntry in Affix.BreakPoints.Entries)
+                if (scw.Length > 2)
                 {
-                    var found = scw.IndexOf(breakEntry, StringComparison.Ordinal);
-                    var remainingLength = scw.Length - breakEntry.Length;
-                    if (found > 0 && found < remainingLength)
+                    List<(string breakEntry, int found)>? reSearch = null;
+                    // other patterns
+                    foreach (var breakEntry in Affix.BreakPoints.Entries)
                     {
-                        var found2 = scw.IndexOf(breakEntry, found + 1, StringComparison.Ordinal);
-                        // try to break at the second occurance
-                        // to recognize dictionary words with wordbreak
-                        if (found2 > 0 && (found2 < remainingLength))
+                        var found = scw.IndexOf(breakEntry, 1, scw.Length - 2, StringComparison.Ordinal);
+                        if (found >= 0)
                         {
-                            found = found2;
-                        }
+                            (reSearch ??= new()).Add((breakEntry, found));
 
-                        if (!CheckNested(scw.AsSpan(found + breakEntry.Length)))
-                        {
-                            continue;
-                        }
-
-                        // examine 2 sides of the break point
-                        if (CheckNested(scw.AsSpan(0, found)))
-                        {
-                            return new SpellCheckResult(root, resultType, true);
-                        }
-
-                        // LANG_hu: spec. dash rule
-                        if (Affix.IsHungarian && "-".Equals(breakEntry, StringComparison.Ordinal))
-                        {
-                            if (CheckNested(scw.AsSpan(0, found + 1)))
+                            // try to break at the second occurance
+                            // to recognize dictionary words with wordbreak
+                            if (scw.Length - found > 2 && scw.IndexOf(breakEntry, found + 1, scw.Length - 2 - found, StringComparison.Ordinal) is int found2 and >= 0)
                             {
-                                return new SpellCheckResult(root, resultType, true);
+                                found = found2;
+                            }
+
+                            if (CheckNested(scw.AsSpan(found + breakEntry.Length)))
+                            {
+                                // examine 2 sides of the break point
+                                if (CheckNested(scw.AsSpan(0, found)))
+                                {
+                                    return new SpellCheckResult(root, resultType, true);
+                                }
+
+                                // LANG_hu: spec. dash rule
+                                if (Affix.IsHungarian && "-".Equals(breakEntry, StringComparison.Ordinal))
+                                {
+                                    if (CheckNested(scw.AsSpan(0, found + 1)))
+                                    {
+                                        return new SpellCheckResult(root, resultType, true);
+                                    }
+                                }
                             }
                         }
                     }
-                }
 
-                // other patterns (break at first break point)
-                foreach (var breakEntry in Affix.BreakPoints.Entries)
-                {
-                    var found = scw.IndexOf(breakEntry, StringComparison.Ordinal);
-                    var remainingLength = scw.Length - breakEntry.Length;
-                    if (found > 0 && found < remainingLength)
+                    if (reSearch is not null)
                     {
-                        if (!CheckNested(scw.AsSpan(found + breakEntry.Length)))
+                        // other patterns (break at first break point)
+                        foreach (var (breakEntry, found) in reSearch)
                         {
-                            continue;
-                        }
-
-                        // examine 2 sides of the break point
-                        if (CheckNested(scw.AsSpan(0, found)))
-                        {
-                            return new SpellCheckResult(root, resultType, true);
-                        }
-
-                        // LANG_hu: spec. dash rule
-                        if (Affix.IsHungarian && "-".Equals(breakEntry, StringComparison.Ordinal))
-                        {
-                            if (CheckNested(scw.AsSpan(0, found + 1)))
+                            if (CheckNested(scw.AsSpan(found + breakEntry.Length)))
                             {
-                                return new SpellCheckResult(root, resultType, true);
+                                // examine 2 sides of the break point
+                                if (CheckNested(scw.AsSpan(0, found)))
+                                {
+                                    return new SpellCheckResult(root, resultType, true);
+                                }
+
+                                // LANG_hu: spec. dash rule
+                                if (Affix.IsHungarian && "-".Equals(breakEntry, StringComparison.Ordinal))
+                                {
+                                    if (CheckNested(scw.AsSpan(0, found + 1)))
+                                    {
+                                        return new SpellCheckResult(root, resultType, true);
+                                    }
+                                }
                             }
                         }
                     }
