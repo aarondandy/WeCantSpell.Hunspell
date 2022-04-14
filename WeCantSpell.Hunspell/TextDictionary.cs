@@ -192,7 +192,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 
         if (entry.Key is null)
         {
-            entry.Set(hash, key, value);
+            entry = new(hash, key, value);
             Count++;
             return;
         }
@@ -221,11 +221,10 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
             {
                 entry.Next = _collisionIndex;
 
-                entry = ref _entries[_collisionIndex];
-                entry.Set(hash, key, value);
+                _entries[_collisionIndex] = new(hash, key, value);
+                _collisionIndex--;
 
                 Count++;
-                _collisionIndex--;
 
                 return;
             }
@@ -441,7 +440,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
             ref var entry = ref GetRefByHash(hash);
             if (entry.Key is null)
             {
-                entry.Set(hash, key, value);
+                entry = new(hash, key, value);
             }
             else if (CollisionIndex >= CellarStartIndex)
             {
@@ -465,13 +464,6 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 
         private void ForceAppendCollisionEntry(uint hash, string key, TValue value)
         {
-            ref var entry = ref GetRefByHash(hash);
-
-            while (entry.Next >= 0)
-            {
-                entry = ref Entries[entry.Next];
-            }
-
             for (; CollisionIndex >= 0 && Entries[CollisionIndex].Key is not null; CollisionIndex--) ;
 
             if (CollisionIndex < 0)
@@ -479,10 +471,16 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
                 throwNoRoomForCollision();
             }
 
+            ref var entry = ref GetRefByHash(hash);
+
+            while (entry.Next >= 0)
+            {
+                entry = ref Entries[entry.Next];
+            }
+
             entry.Next = CollisionIndex;
 
-            entry = ref Entries[CollisionIndex];
-            entry.Set(hash, key, value);
+            Entries[CollisionIndex] = new(hash, key, value);
 
             CollisionIndex--;
 
@@ -504,7 +502,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         public string Key;
         public TValue Value;
 
-        public void Set(uint hashCode, string key, TValue value)
+        public Entry(uint hashCode, string key, TValue value)
         {
             HashCode = hashCode;
             Next = -1;
