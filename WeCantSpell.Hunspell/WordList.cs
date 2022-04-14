@@ -164,31 +164,34 @@ public sealed partial class WordList
 #endif
 
             _coreEnumerator = new(wordList.EntriesByRoot, minKeyLength, maxKeyLength);
-            _nGramRestrictedDetails = wordList.NGramRestrictedDetails.Count > 0 ? wordList.NGramRestrictedDetails : null;
-            Current = default;
+            _nGramRestrictedDetails = wordList.NGramRestrictedDetails;
+            _checkRestrictedDetails = _nGramRestrictedDetails.Count != 0;
+            _current = default;
         }
 
         private TextDictionary<WordEntryDetail[]>.KeyLengthEnumerator _coreEnumerator;
-        private TextDictionary<WordEntryDetail[]>? _nGramRestrictedDetails;
+        private TextDictionary<WordEntryDetail[]> _nGramRestrictedDetails;
+        private KeyValuePair<string, WordEntryDetail[]> _current;
+        private bool _checkRestrictedDetails;
 
-        public KeyValuePair<string, WordEntryDetail[]> Current { get; private set; }
+        public KeyValuePair<string, WordEntryDetail[]> Current => _current;
 
         public NGramAllowedEntriesEnumerator GetEnumerator() => this;
 
         public bool MoveNext()
         {
-            if (_nGramRestrictedDetails is not null)
+            if (_checkRestrictedDetails)
             {
                 return MoveNextWithRestrictedDetails();
             }
 
             if (_coreEnumerator.MoveNext())
             {
-                Current = _coreEnumerator.Current;
+                _current = _coreEnumerator.Current;
                 return true;
             }
 
-            Current = default;
+            _current = default;
             return false;
         }
 
@@ -196,37 +199,35 @@ public sealed partial class WordList
         {
             while (_coreEnumerator.MoveNext())
             {
-                Current = _coreEnumerator.Current;
+                _current = _coreEnumerator.Current;
 
-                if (_nGramRestrictedDetails!.TryGetValue(Current.Key, out var restrictedDetails) && restrictedDetails.Length != 0)
+                if (_nGramRestrictedDetails.TryGetValue(_current.Key, out var restrictedDetails) && restrictedDetails.Length != 0)
                 {
-                    if (restrictedDetails.Length == Current.Value.Length)
+                    if (restrictedDetails.Length == _current.Value.Length)
                     {
                         continue;
                     }
-                    else
-                    {
-                        Current = new(Current.Key, filterNonMatching(Current.Value, restrictedDetails));
-                        static WordEntryDetail[] filterNonMatching(WordEntryDetail[] source, WordEntryDetail[] check)
-                        {
-                            var builder = new ArrayBuilder<WordEntryDetail>(source.Length);
-                            foreach (var item in source)
-                            {
-                                if (!check.Contains(item))
-                                {
-                                    builder.Add(item);
-                                }
-                            }
 
-                            return builder.Extract();
+                    _current = new(_current.Key, filterNonMatching(_current.Value, restrictedDetails));
+                    static WordEntryDetail[] filterNonMatching(WordEntryDetail[] source, WordEntryDetail[] check)
+                    {
+                        var builder = new ArrayBuilder<WordEntryDetail>(source.Length);
+                        foreach (var item in source)
+                        {
+                            if (!check.Contains(item))
+                            {
+                                builder.Add(item);
+                            }
                         }
+
+                        return builder.Extract();
                     }
                 }
 
                 return true;
             }
 
-            Current = default;
+            _current = default;
             return false;
         }
     }
