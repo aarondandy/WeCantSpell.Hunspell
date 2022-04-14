@@ -65,7 +65,8 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         }
 
         _entries = new Entry[desiredCapacity];
-        SetCellarStart(CalculateBestCellarIndexForCapacity(_entries.Length));
+        _cellarStartIndex = CalculateBestCellarIndexForCapacity(_entries.Length);
+        _fastmodMul = CalculateFastmodMultiplier(_cellarStartIndex);
         _collisionIndex = _entries.Length - 1;
         Count = 0;
     }
@@ -187,21 +188,13 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
     public void Add(string key, TValue value)
     {
         var hash = CalculateHash(key);
-        if (!TryAddWithoutGrowing(hash, key, value))
-        {
-            RebuildAndInsert(hash, key, value);
-        }
-    }
-
-    private bool TryAddWithoutGrowing(uint hash, string key, TValue value)
-    {
         ref var entry = ref GetRefByHash(hash);
 
         if (entry.Key is null)
         {
             entry.Set(hash, key, value);
             Count++;
-            return true;
+            return;
         }
 
         // search through the chain to ensure there are no collisions
@@ -234,11 +227,11 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
                 Count++;
                 _collisionIndex--;
 
-                return true;
+                return;
             }
         }
 
-        return false;
+        RebuildAndInsert(hash, key, value);
 
 #if !NO_EXPOSED_NULLANNOTATIONS
         [System.Diagnostics.CodeAnalysis.DoesNotReturn]
@@ -271,12 +264,6 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private ref Entry GetRefByHash(uint hash) =>
         ref _entries[GetIndexByHash(hash, _cellarStartIndex, _fastmodMul)];
-
-    private void SetCellarStart(uint cellarStartIndex)
-    {
-        _cellarStartIndex = cellarStartIndex;
-        _fastmodMul = CalculateFastmodMultiplier(cellarStartIndex);
-    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static uint GetIndexByHash(uint hash, uint divisor, ulong multiplier) =>
