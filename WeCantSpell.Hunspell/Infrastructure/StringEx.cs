@@ -129,22 +129,6 @@ static class StringEx
         return index < @this.Length ? @this[index] : '\0';
     }
 
-    public static string ToStringTerminated(this Span<char> span, int startIndex)
-    {
-        return ToStringTerminated(span.Slice(startIndex));
-    }
-
-    public static string ToStringTerminated(this Span<char> span)
-    {
-        var terminatedIndex = span.IndexOf('\0');
-        if (terminatedIndex >= 0)
-        {
-            span = span.Slice(0, terminatedIndex);
-        }
-
-        return span.ToString();
-    }
-
     public static string ConcatString(ReadOnlySpan<char> str0, string str1, char char2, ReadOnlySpan<char> str3)
     {
         var builder = StringBuilderPool.Get(str0.Length + str1.Length + str3.Length + 1);

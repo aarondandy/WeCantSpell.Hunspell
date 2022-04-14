@@ -2126,18 +2126,16 @@ public partial class WordList
 
             var isHungarianAndNotForbidden = Affix.IsHungarian && !CheckForbidden(word);
 
-            var candidate = state.CandidateBuffer.Slice(0, word.Length + 2);
+            var candidate = new SimulatedCString(word.Length + 2);
             candidate[0] = '\0';
-            candidate[candidate.Length - 1] = '\0';
-            word.CopyTo(candidate.Slice(1));
+            candidate.WriteChars(word, 1);
+            candidate[word.Length + 1] = '\0';
 
             // split the string into two pieces after every char
             // if both pieces are good words make them a suggestion
 
-            for (var p = 1; p + 1 < candidate.Length; p++)
+            for (var p = 1; p + 1 < candidate.BufferLength; p++)
             {
-                string currentCandidateString;
-
                 candidate[p - 1] = candidate[p];
 
                 // Suggest only word pairs, if they are listed in the dictionary.
@@ -2148,8 +2146,7 @@ public partial class WordList
                 // a lot ph:alot
                 // alot -> a lot, alto, slot...
                 candidate[p] = ' ';
-                currentCandidateString = candidate.ToStringTerminated();
-                if (!cpdSuggest && CheckWord(currentCandidateString.AsSpan(), cpdSuggest) != 0)
+                if (!cpdSuggest && CheckWord(candidate.TerminatedSpan, cpdSuggest) != 0)
                 {
                     // remove not word pair suggestions
                     if (!good)
@@ -2157,15 +2154,14 @@ public partial class WordList
                         good = true;
                         wlst.Clear();
                     }
-                    wlst.Insert(0, currentCandidateString);
+                    wlst.Insert(0, candidate.TerminatedSpan.ToString());
                 }
 
                 // word pairs with dash?
                 if (Affix.IsLanguageWithDashUsage)
                 {
                     candidate[p] = '-';
-                    currentCandidateString = candidate.ToStringTerminated();
-                    if (!cpdSuggest && CheckWord(currentCandidateString.AsSpan(), cpdSuggest) != 0)
+                    if (!cpdSuggest && CheckWord(candidate.TerminatedSpan, cpdSuggest) != 0)
                     {
                         // remove not word pair suggestions
                         if (!good)
@@ -2173,7 +2169,7 @@ public partial class WordList
                             good = true;
                             wlst.Clear();
                         }
-                        wlst.Insert(0, currentCandidateString);
+                        wlst.Insert(0, candidate.TerminatedSpan.ToString());
                     }
                 }
 
@@ -2181,10 +2177,10 @@ public partial class WordList
                 {
                     candidate[p] = '\0';
 
-                    var c1 = CheckWord(candidate.ToStringTerminated().AsSpan(), cpdSuggest);
+                    var c1 = CheckWord(candidate.TerminatedSpan, cpdSuggest);
                     if (c1 != 0)
                     {
-                        var c2 = CheckWord(candidate.ToStringTerminated(p + 1).AsSpan(), cpdSuggest);
+                        var c2 = CheckWord(candidate.SliceToTerminator(p + 1), cpdSuggest);
                         if (c2 != 0)
                         {
                             // spec. Hungarian code (need a better compound word support)
@@ -2218,7 +2214,7 @@ public partial class WordList
                                 ) ? '-' : ' ';
 
                             var cwrd = true;
-                            currentCandidateString = candidate.ToStringTerminated();
+                            var currentCandidateString = candidate.TerminatedSpan.ToString();
                             for (var k = 0; k < wlst.Count; k++)
                             {
                                 if (string.Equals(wlst[k], currentCandidateString, StringComparison.Ordinal))
@@ -2242,11 +2238,11 @@ public partial class WordList
                                 &&
                                 p > 1
                                 &&
-                                candidate.Length - (p + 1) > 1
+                                candidate.BufferLength - (p + 1) > 1
                             )
                             {
                                 candidate[p] = '-';
-                                currentCandidateString = candidate.ToStringTerminated();
+                                currentCandidateString = candidate.TerminatedSpan.ToString();
 
                                 for (var k = 0; k < wlst.Count; k++)
                                 {
@@ -2266,6 +2262,8 @@ public partial class WordList
                     }
                 }
             }
+
+            candidate.Destroy();
         }
 
         private bool CheckForbidden(ReadOnlySpan<char> word)

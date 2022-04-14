@@ -28,6 +28,19 @@ struct SimulatedCString
         }
     }
 
+    public SimulatedCString(int capacity)
+    {
+        if (capacity <= 0)
+        {
+            capacity = 1;
+        }
+
+        _rawBuffer = GetBuffer(capacity);
+        _bufferLength = capacity;
+        _rawBuffer[0] = '\0';
+        _terminatedLength = 0;
+    }
+
     public SimulatedCString(ReadOnlySpan<char> text)
     {
         _rawBuffer = GetBuffer(text.Length + 3); // 3 extra characters seems to be enough to prevent most reallocations
@@ -39,6 +52,8 @@ struct SimulatedCString
     private char[] _rawBuffer;
     private int _bufferLength;
     private int _terminatedLength;
+
+    public int BufferLength => _bufferLength;
 
     public ReadOnlySpan<char> TerminatedSpan
     {
@@ -82,6 +97,23 @@ struct SimulatedCString
                 _terminatedLength = -1;
             }
         }
+    }
+
+    public ReadOnlySpan<char> SliceToTerminator(int startIndex)
+    {
+        if (startIndex <= _terminatedLength)
+        {
+            return _rawBuffer.AsSpan(startIndex, _terminatedLength - startIndex);
+        }
+
+        var result = _rawBuffer.AsSpan(startIndex, _bufferLength - startIndex);
+        var index = result.IndexOf('\0');
+        if (index >= 0)
+        {
+            result = result.Slice(0, index);
+        }
+
+        return result;
     }
 
     public char Exchange(int index, char value)
