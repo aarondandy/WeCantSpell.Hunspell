@@ -179,45 +179,51 @@ public sealed partial class WordList
         {
             if (_nGramRestrictedDetails is not null)
             {
-                while (_coreEnumerator.MoveNext())
+                return MoveNextWithRestrictedDetails();
+            }
+
+            if (_coreEnumerator.MoveNext())
+            {
+                Current = _coreEnumerator.Current;
+                return true;
+            }
+
+            Current = default;
+            return false;
+        }
+
+        private bool MoveNextWithRestrictedDetails()
+        {
+            while (_coreEnumerator.MoveNext())
+            {
+                Current = _coreEnumerator.Current;
+
+                if (_nGramRestrictedDetails!.TryGetValue(Current.Key, out var restrictedDetails) && restrictedDetails.Length != 0)
                 {
-                    Current = _coreEnumerator.Current;
-
-                    if (_nGramRestrictedDetails.TryGetValue(Current.Key, out var restrictedDetails) && restrictedDetails.Length != 0)
+                    if (restrictedDetails.Length == Current.Value.Length)
                     {
-                        if (restrictedDetails.Length == Current.Value.Length)
+                        continue;
+                    }
+                    else
+                    {
+                        Current = new(Current.Key, filterNonMatching(Current.Value, restrictedDetails));
+                        static WordEntryDetail[] filterNonMatching(WordEntryDetail[] source, WordEntryDetail[] check)
                         {
-                            continue;
-                        }
-                        else
-                        {
-                            Current = new (Current.Key, filterNonMatching(Current.Value, restrictedDetails));
-                            static WordEntryDetail[] filterNonMatching(WordEntryDetail[] source, WordEntryDetail[] check)
+                            var builder = new ArrayBuilder<WordEntryDetail>(source.Length);
+                            foreach (var item in source)
                             {
-                                var builder = new ArrayBuilder<WordEntryDetail>(source.Length);
-                                foreach (var item in source)
+                                if (!check.Contains(item))
                                 {
-                                    if (!check.Contains(item))
-                                    {
-                                        builder.Add(item);
-                                    }
+                                    builder.Add(item);
                                 }
-
-                                return builder.Extract();
                             }
+
+                            return builder.Extract();
                         }
                     }
+                }
 
-                    return true;
-                }
-            }
-            else
-            {
-                if (_coreEnumerator.MoveNext())
-                {
-                    Current = _coreEnumerator.Current;
-                    return true;
-                }
+                return true;
             }
 
             Current = default;

@@ -354,25 +354,24 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         internal Enumerator(TextDictionary<TValue> dictionary)
         {
             _entries = dictionary._entries;
-            _nextPosition = 0;
-            Current = default;
+            _index = 0;
+            _current = default;
         }
 
-        private readonly Entry[] _entries;
-        private int _nextPosition;
+        private Entry[] _entries;
+        private int _index;
+        private KeyValuePair<string, TValue> _current;
 
-        public KeyValuePair<string, TValue> Current { get; private set; }
+        public KeyValuePair<string, TValue> Current => _current;
 
         public bool MoveNext()
         {
-            while (_nextPosition < _entries.Length)
+            while (_index < _entries.Length)
             {
-                ref var entry = ref _entries[_nextPosition];
-                _nextPosition++;
-
+                ref var entry = ref _entries[_index++];
                 if (entry.Key is not null)
                 {
-                    Current = new(entry.Key, entry.Value);
+                    _current = new(entry.Key, entry.Value);
                     return true;
                 }
             }
@@ -390,35 +389,38 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 #endif
 
             _entries = dictionary._entries;
-            _nextPosition = 0;
+            _index = 0;
             _minKeyLength = minKeyLength;
             _maxKeyLength = maxKeyLength;
-            Current = default;
+            _current = default;
         }
 
-        private readonly Entry[] _entries;
-        private int _nextPosition;
-        private readonly int _minKeyLength;
-        private readonly int _maxKeyLength;
+        private Entry[] _entries;
+        private int _index;
+        private int _minKeyLength;
+        private int _maxKeyLength;
+        private KeyValuePair<string, TValue> _current;
 
-        public KeyValuePair<string, TValue> Current { get; private set; }
+        public KeyValuePair<string, TValue> Current => _current;
 
         public bool MoveNext()
         {
-            while (_nextPosition < _entries.Length)
+            while (_index < _entries.Length)
             {
-                ref var entry = ref _entries[_nextPosition];
-                _nextPosition++;
+                ref var entry = ref _entries[_index++];
 
-                if (entry.Key is { } key && key.Length >= _minKeyLength && key.Length <= _maxKeyLength)
+                if (IsMatchingKey(entry.Key))
                 {
-                    Current = new(key, entry.Value);
+                    _current = new(entry.Key, entry.Value);
                     return true;
                 }
             }
 
             return false;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool IsMatchingKey(string key) => key is not null && key.Length <= _maxKeyLength && key.Length >= _minKeyLength;
     }
 
     private struct Builder
