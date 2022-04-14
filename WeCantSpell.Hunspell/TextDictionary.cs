@@ -395,18 +395,19 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
             {
                 ref var entry = ref _entries[_index++];
 
-                if (IsMatchingKey(entry.Key))
+                if (entry.Key is { } key)
                 {
-                    _current = new(entry.Key, entry.Value);
-                    return true;
+                    var length = key.Length;
+                    if (length <= _maxKeyLength && length >= _minKeyLength)
+                    {
+                        _current = new(key, entry.Value);
+                        return true;
+                    }
                 }
             }
 
             return false;
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool IsMatchingKey(string key) => key is not null && key.Length <= _maxKeyLength && key.Length >= _minKeyLength;
     }
 
     private struct Builder
