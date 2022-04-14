@@ -1,12 +1,36 @@
 ﻿using System;
+using System.Threading;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
 struct SimulatedCString
 {
+    private const int DefaultCacheCapacity = 64;
+    private const int MaxCacheCapacity = DefaultCacheCapacity * 2;
+    private static char[]? BufferCache = new char[DefaultCacheCapacity];
+
+    private static char[] GetBuffer(int minCapacity)
+    {
+        var result = Interlocked.Exchange(ref BufferCache, null);
+        if (!(result?.Length >= minCapacity))
+        {
+            result = new char[Math.Max(minCapacity, DefaultCacheCapacity)];
+        }
+
+        return result;
+    }
+
+    private static void ReturnBuffer(char[] buffer)
+    {
+        if (buffer.Length != 0 && buffer.Length < MaxCacheCapacity)
+        {
+            Volatile.Write(ref BufferCache, buffer);
+        }
+    }
+
     public SimulatedCString(ReadOnlySpan<char> text)
     {
-        _rawBuffer = new char[text.Length + 3]; // 3 extra characters seems to be enough to prevent most reallocations
+        _rawBuffer = GetBuffer(text.Length + 3); // 3 extra characters seems to be enough to prevent most reallocations
         text.CopyTo(_rawBuffer.AsSpan(0, text.Length));
         _bufferLength = text.Length;
         _terminatedLength = -1;
@@ -105,10 +129,9 @@ struct SimulatedCString
         _terminatedLength = -1;
     }
 
-    [System.Diagnostics.Conditional("DEBUG")]
     public void Destroy()
     {
-        // I want to keep this method here in case a future implementation can make use of it.
+        ReturnBuffer(_rawBuffer);
     }
 
     private void EnsureBufferCapacity(int neededLength)
@@ -117,7 +140,10 @@ struct SimulatedCString
         {
             if (_rawBuffer.Length < neededLength)
             {
-                Array.Resize(ref _rawBuffer, neededLength);
+                var newBuffer = GetBuffer(neededLength);
+                Array.Copy(_rawBuffer, newBuffer, _bufferLength);
+                ReturnBuffer(_rawBuffer);
+                _rawBuffer = newBuffer;
             }
 
             _bufferLength = neededLength;
