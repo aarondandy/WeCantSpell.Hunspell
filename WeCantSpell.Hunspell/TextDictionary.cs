@@ -395,14 +395,10 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
             {
                 ref var entry = ref _entries[_index++];
 
-                if (entry.Key is { } key)
+                if (entry.Key is not null && entry.Key.Length <= _maxKeyLength && entry.Key.Length >= _minKeyLength)
                 {
-                    var length = key.Length;
-                    if (length <= _maxKeyLength && length >= _minKeyLength)
-                    {
-                        _current = new(key, entry.Value);
-                        return true;
-                    }
+                    _current = new(entry.Key, entry.Value);
+                    return true;
                 }
             }
 
