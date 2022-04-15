@@ -263,7 +263,7 @@ public sealed class WordListReader
     {
         if (Affix.IgnoredChars.HasItems)
         {
-            word = word.WithoutChars(Affix.IgnoredChars);
+            word = Affix.IgnoredChars.RemoveChars(word);
         }
 
         if (Affix.ComplexPrefixes)

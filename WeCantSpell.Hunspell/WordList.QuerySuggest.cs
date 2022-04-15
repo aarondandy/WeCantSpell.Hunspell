@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -44,7 +43,7 @@ public partial class WordList
             }
 
             // process XML input of the simplified API (see manual)
-            if (word.AsSpan().StartsWith(Query.DefaultXmlToken.AsSpan(0, Query.DefaultXmlToken.Length - 3)))
+            if (word.StartsWith(Query.DefaultXmlToken.AsSpanFromEnd(3)))
             {
                 return new(); // TODO: complete support for XML input
             }
@@ -83,7 +82,7 @@ public partial class WordList
             }
 
             // process XML input of the simplified API (see manual)
-            if (word.StartsWith(Query.DefaultXmlToken.AsSpan(0, Query.DefaultXmlToken.Length - 3)))
+            if (word.StartsWith(Query.DefaultXmlToken.AsSpanFromEnd(3)))
             {
                 return new(); // TODO: complete support for XML input
             }

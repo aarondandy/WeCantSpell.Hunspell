@@ -7,6 +7,8 @@ static class StringEx
 {
     public static bool StartsWith(this string @this, char character) => @this.Length != 0 && @this[0] == character;
 
+    public static bool StartsWith(this string @this, ReadOnlySpan<char> value) => @this.AsSpan().StartsWith(value);
+
     public static bool StartsWith(this ReadOnlySpan<char> @this, string value, StringComparison comparison) => @this.StartsWith(value.AsSpan(), comparison);
 
     public static bool StartsWith(this ReadOnlySpan<char> @this, char value) => !@this.IsEmpty && @this[0] == value;
@@ -50,6 +52,8 @@ static class StringEx
 #endif
 
     public static bool ContainsAny(this ReadOnlySpan<char> @this, char value0, char value1) => @this.IndexOfAny(value0, value1) >= 0;
+
+    public static ReadOnlySpan<char> AsSpanFromEnd(this string @this, int index) => @this.AsSpan(0, @this.Length - index);
 
     public static string ReplaceIntoString(this ReadOnlySpan<char> @this, int index, int removeCount, string replacement)
     {

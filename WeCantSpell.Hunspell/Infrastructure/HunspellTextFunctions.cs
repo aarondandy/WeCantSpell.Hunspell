@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Globalization;
-using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
@@ -116,12 +115,6 @@ static class HunspellTextFunctions
     /// <param name="ch">The character value to check.</param>
     /// <returns><c>true</c> is a given character is an ASCII letter.</returns>
     public static bool MyIsAlpha(char ch) => ch >= 128 || char.IsLetter(ch);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string WithoutChars(this string @this, CharacterSet chars) => chars.RemoveChars(@this);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ReadOnlySpan<char> WithoutChars(this ReadOnlySpan<char> @this, CharacterSet chars) => chars.RemoveChars(@this);
 
     public static string MakeInitCap(string s, TextInfo textInfo)
     {

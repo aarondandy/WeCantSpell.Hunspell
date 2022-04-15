@@ -153,7 +153,7 @@ public partial class WordList
 
             if (Affix.IgnoredChars.HasItems)
             {
-                word = word.WithoutChars(Affix.IgnoredChars);
+                word = Affix.IgnoredChars.RemoveChars(word);
 
                 if (word.Length == 0)
                 {
@@ -2048,7 +2048,7 @@ public partial class WordList
         {
             if (Affix.IgnoredChars.HasItems)
             {
-                src = src.WithoutChars(Affix.IgnoredChars);
+                src = Affix.IgnoredChars.RemoveChars(src);
             }
 
             // first skip over any leading blanks
@@ -2074,7 +2074,7 @@ public partial class WordList
         {
             if (Affix.IgnoredChars.HasItems)
             {
-                src = src.WithoutChars(Affix.IgnoredChars);
+                src = Affix.IgnoredChars.RemoveChars(src);
             }
 
             // first skip over any leading blanks
