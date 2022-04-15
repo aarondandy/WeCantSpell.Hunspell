@@ -176,7 +176,7 @@ public partial class WordList
                     var pLastIndex = breakEntry.Length - 1;
                     if (
                         breakEntry.StartsWith('^')
-                        && scw.AsSpan().Limit(pLastIndex).EqualsOrdinal(breakEntry.AsSpan(1))
+                        && scw.AsSpan(0, pLastIndex).EqualsOrdinal(breakEntry.AsSpan(1))
                         && CheckNested(scw.AsSpan(pLastIndex))
                     )
                     {
@@ -187,7 +187,7 @@ public partial class WordList
                     {
                         var wlLessBreakIndex = scw.Length - breakEntry.Length + 1;
                         if (
-                            scw.AsSpan(wlLessBreakIndex).Limit(pLastIndex).EqualsOrdinal(breakEntry.AsSpan().Limit(pLastIndex))
+                            scw.AsSpan(wlLessBreakIndex).EqualsOrdinal(breakEntry.AsSpan().Limit(pLastIndex))
                             && CheckNested(scw.AsSpan(0, wlLessBreakIndex))
                         )
                         {

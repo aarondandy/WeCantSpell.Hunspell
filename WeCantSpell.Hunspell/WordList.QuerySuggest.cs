@@ -2585,7 +2585,7 @@ public partial class WordList
                 return string.Empty;
             }
 
-            var word = inword.AsSpan().Limit(MaxPhoneTUtf8Len).ToArray().AsSpan();
+            var word = inword.ToCharArray().AsSpan();
             var target = StringBuilderPool.Get();
 
             // check word
