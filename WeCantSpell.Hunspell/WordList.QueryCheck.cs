@@ -16,7 +16,7 @@ public partial class WordList
             _query = new(wordList, options);
         }
 
-        private readonly Query _query;
+        private Query _query;
 
         public WordList WordList => _query.WordList;
         public AffixConfig Affix => _query.Affix;

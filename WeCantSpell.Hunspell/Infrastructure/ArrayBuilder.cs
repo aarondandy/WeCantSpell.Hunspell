@@ -4,7 +4,7 @@ using System.Threading;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
-public class ArrayBuilder<T>
+public sealed class ArrayBuilder<T>
 {
     public ArrayBuilder()
     {

@@ -23,7 +23,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 
         builder.Flush();
 
-        return new TextDictionary<TValue>(in builder);
+        return new TextDictionary<TValue>(ref builder);
     }
 
     internal static TextDictionary<TValue> MapFromPairs(KeyValuePair<string, TValue>[] source)
@@ -36,7 +36,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 
         builder.Flush();
 
-        return new TextDictionary<TValue>(in builder);
+        return new TextDictionary<TValue>(ref builder);
     }
 
     private TextDictionary()
@@ -48,7 +48,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         Count = 0;
     }
 
-    private TextDictionary(in Builder builder)
+    private TextDictionary(ref Builder builder)
     {
         _entries = builder.Entries;
         _cellarStartIndex = builder.CellarStartIndex;

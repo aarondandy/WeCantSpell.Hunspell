@@ -60,13 +60,13 @@ public readonly struct BreakSet : IReadOnlyList<string>
     /// </summary>
     internal int FindRecursionLimit(ReadOnlySpan<char> scw)
     {
-        int nbr = 0;
+        var nbr = 0;
 
         if (scw is { Length: > 0 })
         {
             foreach (var breakEntry in Entries)
             {
-                int pos = 0;
+                var pos = 0;
                 while ((pos = scw.IndexOf(breakEntry, pos, StringComparison.Ordinal)) >= 0)
                 {
                     nbr++;

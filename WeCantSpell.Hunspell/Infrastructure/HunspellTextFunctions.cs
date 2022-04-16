@@ -16,7 +16,7 @@ static class HunspellTextFunctions
 
         for (int index1 = 0, index2 = s2.Length - 1; index1 < s1.Length; index1++, index2--)
         {
-            ref readonly var s1c = ref s1[index1];
+            var s1c = s1[index1];
             if (s1c != '.' && s1c != s2[index2])
             {
                 return false;
@@ -37,7 +37,7 @@ static class HunspellTextFunctions
 
         for (var i = 0; i < s1.Length; i++)
         {
-            ref readonly var s1c = ref s1[i];
+            var s1c = s1[i];
             if (s1c != '.' && s1c != s2[i])
             {
                 return false;
@@ -52,7 +52,7 @@ static class HunspellTextFunctions
         byte state = 0; // 0 = begin, 1 = number, 2 = separator
         for (var i = 0; i < word.Length; i++)
         {
-            ref readonly var c = ref word[i];
+            var c = word[i];
             if (char.IsNumber(c))
             {
                 state = 1;
@@ -208,7 +208,7 @@ static class HunspellTextFunctions
 
         for (var i = 0; i < word.Length; i++)
         {
-            ref readonly var c = ref word[i];
+            var c = word[i];
 
             if (!hasFoundMoreCaps && char.IsUpper(c))
             {

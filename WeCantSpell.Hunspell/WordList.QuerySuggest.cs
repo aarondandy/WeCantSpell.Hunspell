@@ -21,7 +21,7 @@ public partial class WordList
             _query = new(wordList, options);
         }
 
-        private readonly Query _query;
+        private Query _query;
 
         public WordList WordList => _query.WordList;
         public AffixConfig Affix => _query.Affix;
@@ -525,7 +525,6 @@ public partial class WordList
         {
             public List<string> SuggestionList;
             public ReadOnlySpan<char> Word;
-            public string WordString;
             public Span<char> CandidateBuffer;
             public bool CpdSuggest;
             public bool GoodSuggestion;
@@ -563,7 +562,6 @@ public partial class WordList
             {
                 SuggestionList = slst,
                 Word = word.AsSpan(),
-                WordString = word,
                 CandidateBuffer = new char[word.Length + 2].AsSpan(),
                 CpdSuggest = false,
                 GoodSuggestion = false
@@ -628,7 +626,7 @@ public partial class WordList
                 // did we swap the order of chars by mistake
                 if (slst.Count < MaxSuggestions && (!state.CpdSuggest || slst.Count < sugLimit))
                 {
-                    SwapChar(in state);
+                    SwapChar(ref state);
                 }
 
                 if (opLimiter.QueryForCancellation())
@@ -639,7 +637,7 @@ public partial class WordList
                 // did we swap the order of non adjacent chars by mistake
                 if (slst.Count < MaxSuggestions && (!state.CpdSuggest || slst.Count < sugLimit))
                 {
-                    LongSwapChar(in state);
+                    LongSwapChar(ref state);
                 }
 
                 if (opLimiter.QueryForCancellation())
@@ -650,7 +648,7 @@ public partial class WordList
                 // did we just hit the wrong key in place of a good char (case and keyboard)
                 if (slst.Count < MaxSuggestions && (!state.CpdSuggest || slst.Count < sugLimit))
                 {
-                    BadCharKey(in state);
+                    BadCharKey(ref state);
                 }
 
                 if (opLimiter.QueryForCancellation())
@@ -661,7 +659,7 @@ public partial class WordList
                 // did we add a char that should not be there
                 if (slst.Count < MaxSuggestions && (!state.CpdSuggest || slst.Count < sugLimit))
                 {
-                    ExtraChar(in state);
+                    ExtraChar(ref state);
                 }
 
                 if (opLimiter.QueryForCancellation())
@@ -672,7 +670,7 @@ public partial class WordList
                 // did we forgot a char
                 if (slst.Count < MaxSuggestions && (!state.CpdSuggest || slst.Count < sugLimit))
                 {
-                    ForgotChar(in state);
+                    ForgotChar(ref state);
                 }
 
                 if (opLimiter.QueryForCancellation())
@@ -683,7 +681,7 @@ public partial class WordList
                 // did we move a char
                 if (slst.Count < MaxSuggestions && (!state.CpdSuggest || slst.Count < sugLimit))
                 {
-                    MoveChar(in state);
+                    MoveChar(ref state);
                 }
 
                 if (opLimiter.QueryForCancellation())
@@ -694,7 +692,7 @@ public partial class WordList
                 // did we just hit the wrong key in place of a good char
                 if (slst.Count < MaxSuggestions && (!state.CpdSuggest || slst.Count < sugLimit))
                 {
-                    BadChar(in state);
+                    BadChar(ref state);
                 }
 
                 if (opLimiter.QueryForCancellation())
@@ -705,7 +703,7 @@ public partial class WordList
                 // did we double two characters
                 if (slst.Count < MaxSuggestions && (!state.CpdSuggest || slst.Count < sugLimit))
                 {
-                    DoubleTwoChars(in state);
+                    DoubleTwoChars(ref state);
                 }
 
                 if (opLimiter.QueryForCancellation())
@@ -751,7 +749,7 @@ public partial class WordList
         /// The recognized pattern with regex back-references:
         /// "(.)(.)\1\2\1" or "..(.)(.)\1\2"
         /// </remarks>
-        private void DoubleTwoChars(in SuggestState sugState)
+        private void DoubleTwoChars(ref SuggestState sugState)
         {
             var word = sugState.Word;
             if (word.Length < 5)
@@ -785,7 +783,7 @@ public partial class WordList
         /// <summary>
         /// Error is wrong char in place of correct one.
         /// </summary>
-        private void BadChar(in SuggestState state)
+        private void BadChar(ref SuggestState state)
         {
             if (Affix.TryString is { Length: > 0 } tryString)
             {
@@ -821,7 +819,7 @@ public partial class WordList
         /// <summary>
         /// Error is a letter was moved.
         /// </summary>
-        private void MoveChar(in SuggestState state)
+        private void MoveChar(ref SuggestState state)
         {
             var word = state.Word;
             if (word.Length < 2)
@@ -874,7 +872,7 @@ public partial class WordList
         /// <summary>
         /// Error is missing a letter it needs.
         /// </summary>
-        private void ForgotChar(in SuggestState state)
+        private void ForgotChar(ref SuggestState state)
         {
             if (Affix.TryString is { Length: > 0 })
             {
@@ -917,7 +915,7 @@ public partial class WordList
         /// <summary>
         /// Error is word has an extra letter it does not need.
         /// </summary>
-        private void ExtraChar(in SuggestState state)
+        private void ExtraChar(ref SuggestState state)
         {
             var word = state.Word;
 
@@ -941,7 +939,7 @@ public partial class WordList
         /// <summary>
         /// error is wrong char in place of correct one (case and keyboard related version)
         /// </summary>
-        private void BadCharKey(in SuggestState state)
+        private void BadCharKey(ref SuggestState state)
         {
             var candidate = state.GetBufferForWord();
             var keyString = Affix.KeyString;
@@ -987,7 +985,7 @@ public partial class WordList
         /// <summary>
         /// Error is not adjacent letter were swapped.
         /// </summary>
-        private void LongSwapChar(in SuggestState state)
+        private void LongSwapChar(ref SuggestState state)
         {
             var candidate = state.GetBufferForWord();
 
@@ -1018,7 +1016,7 @@ public partial class WordList
         /// <summary>
         /// Error is adjacent letter were swapped.
         /// </summary>
-        private void SwapChar(in SuggestState state)
+        private void SwapChar(ref SuggestState state)
         {
             var word = state.Word;
             if (word.Length < 2)
@@ -1131,20 +1129,6 @@ public partial class WordList
             {
                 candidate += word[wn];
                 MapRelated(word, ref candidate, wn + 1, wlst, cpdSuggest, timer);
-            }
-        }
-
-        private void TestSug(List<string> wlst, string candidate, bool cpdSuggest, OperationTimedCountLimiter timer)
-        {
-            if (
-                wlst.Count < MaxSuggestions
-                &&
-                !wlst.Contains(candidate)
-                &&
-                CheckWord(candidate, cpdSuggest, timer) != 0
-            )
-            {
-                wlst.Add(candidate);
             }
         }
 

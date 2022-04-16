@@ -44,7 +44,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         var values = new FlagValue[text.Length];
         for (var i = 0; i < text.Length; i++)
         {
-            ref readonly var c = ref text[i];
+            var c = text[i];
             values[i] = new FlagValue(c);
             unchecked
             {

@@ -8,7 +8,7 @@ using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
-public class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacementEntry>
+public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacementEntry>
 {
     public static readonly MultiReplacementTable Empty = TakeDictionary(new TextDictionary<MultiReplacementEntry>(0));
 
