@@ -2411,7 +2411,7 @@ public partial class WordList
         /// </summary>
         private int NGram(int n, string s1, string s2, NGramOptions opt)
         {
-            if (s1.Length == 0 || s2.Length == 0)
+            if (s1.Length == 0)
             {
                 return 0;
             }
@@ -2470,7 +2470,6 @@ public partial class WordList
         {
 #if DEBUG
             if (s1.IsEmpty) throw new ArgumentOutOfRangeException(nameof(s1));
-            if (t.IsEmpty) throw new ArgumentOutOfRangeException(nameof(t));
 #endif
 
             // all substrings are left aligned for this first iteration so anything not matching needs to be double counted
@@ -2478,14 +2477,9 @@ public partial class WordList
             var matchLength = FindLongestSubstringMatch(needle, t);
             var nscore = matchLength - ((needle.Length - matchLength) * 2);
 
-            while (true)
+            while (s1.Length > 1)
             {
                 s1 = s1.Slice(1);
-
-                if (s1.IsEmpty)
-                {
-                    break;
-                }
 
                 needle = s1.Limit(n);
                 matchLength = FindLongestSubstringMatch(needle, t);
@@ -2519,7 +2513,6 @@ public partial class WordList
         {
 #if DEBUG
             if (s1.IsEmpty) throw new ArgumentOutOfRangeException(nameof(s1));
-            if (s2.IsEmpty) throw new ArgumentOutOfRangeException(nameof(s2));
 #endif
 
             var nscore = 0;
