@@ -511,8 +511,6 @@ public partial class WordList
             return slst;
         }
 
-        private List<string> SuggestNested(string word) => new QuerySuggest(WordList, Options).Suggest(word);
-
         private List<string> SuggestNested(ReadOnlySpan<char> word) => new QuerySuggest(WordList, Options).Suggest(word);
 
         private bool Check(string word) => new QueryCheck(WordList, Options).Check(word);

@@ -28,8 +28,6 @@ public partial class WordList
 
         public bool Check(ReadOnlySpan<char> word) => CheckDetails(word).Correct;
 
-        private bool CheckNested(string word) => new QueryCheck(WordList, Options).Check(word);
-
         private bool CheckNested(ReadOnlySpan<char> word) => new QueryCheck(WordList, Options).Check(word);
 
         public SpellCheckResult CheckDetails(string word)
@@ -64,7 +62,7 @@ public partial class WordList
                 scw = _query.CleanWord2(word, out capType, out abbv);
             }
 
-            if (string.IsNullOrEmpty(scw))
+            if (scw.Length == 0)
             {
                 return new SpellCheckResult(false);
             }
