@@ -89,23 +89,24 @@ public partial class WordList
             }
 
             var details = new ArrayBuilder<WordEntryDetail>();
-                foreach (var rootSet in result.EntriesByRoot)
-                {
-                    details.Clear();
+            foreach (var rootSet in result.EntriesByRoot)
+            {
+                details.Clear();
                 details.GrowToCapacity(1);
-                    foreach (var entry in rootSet.Value)
-                    {
-                        if (result.NGramRestrictedFlags.ContainsAny(entry.Flags))
-                        {
-                            details.Add(entry);
-                        }
-                    }
 
-                    if (details.Count != 0)
+                foreach (var entry in rootSet.Value)
+                {
+                    if (result.NGramRestrictedFlags.ContainsAny(entry.Flags))
                     {
-                    result.NGramRestrictedDetails.Add(rootSet.Key, details.Extract());
+                        details.Add(entry);
                     }
                 }
+
+                if (details.Count != 0)
+                {
+                    result.NGramRestrictedDetails.Add(rootSet.Key, details.Extract());
+                }
+            }
 
             return result;
         }
