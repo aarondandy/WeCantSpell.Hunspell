@@ -1608,7 +1608,7 @@ public partial class WordList
                 if (guess.Guess is not null)
                 {
                     // lowering guess[i]
-                    var gl = HunspellTextFunctions.MakeAllSmall(guess.Guess, textInfo);
+                    var gl = textInfo.ToLower(guess.Guess);
                     var len = guess.Guess.Length;
 
                     var lcsLength = LcsLen(word.AsSpan(), gl.AsSpan());
@@ -1621,7 +1621,7 @@ public partial class WordList
                     }
 
                     // using 2-gram instead of 3, and other weightening
-                    var re = NGram(2, word, gl, NGramOptions.AnyMismatch | NGramOptions.Weighted | NGramOptions.Lowering)
+                    var re = NGram(2, word, gl, NGramOptions.AnyMismatch | NGramOptions.Weighted) // gl has already been lowered
                         + NGram(2, gl, word, NGramOptions.AnyMismatch | NGramOptions.Weighted | NGramOptions.Lowering);
 
                     guesses[i].Score =
@@ -1634,7 +1634,7 @@ public partial class WordList
                         // swap character (not neighboring)
                         + (isSwap ? 10 : 0)
                         // ngram
-                        + NGram(4, word, gl, NGramOptions.AnyMismatch | NGramOptions.Lowering)
+                        + NGram(4, word, gl, NGramOptions.AnyMismatch) // gl has already been lowered
                         // weighted ngrams
                         + re
                         // different limit for dictionaries with PHONE rules
