@@ -43,7 +43,7 @@ public partial class WordList
             }
 
             // process XML input of the simplified API (see manual)
-            if (word.StartsWith(Query.DefaultXmlToken.AsSpanFromEnd(3)))
+            if (word.StartsWith(Query.DefaultXmlTokenCheckPrefix, StringComparison.Ordinal))
             {
                 return new(); // TODO: complete support for XML input
             }
@@ -82,7 +82,7 @@ public partial class WordList
             }
 
             // process XML input of the simplified API (see manual)
-            if (word.StartsWith(Query.DefaultXmlToken.AsSpanFromEnd(3)))
+            if (word.StartsWith(Query.DefaultXmlTokenCheckPrefix, StringComparison.Ordinal))
             {
                 return new(); // TODO: complete support for XML input
             }

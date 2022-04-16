@@ -11,6 +11,7 @@ public partial class WordList
     private struct Query
     {
         internal const string DefaultXmlToken = "<?xml?>";
+        internal const string DefaultXmlTokenCheckPrefix = "<?xml";
 
         private static QueryOptions DefaultOptions { get; } = new();
 

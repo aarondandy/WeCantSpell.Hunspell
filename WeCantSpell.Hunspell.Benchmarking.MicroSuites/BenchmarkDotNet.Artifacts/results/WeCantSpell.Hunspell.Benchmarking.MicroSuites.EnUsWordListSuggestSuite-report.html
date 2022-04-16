@@ -2,7 +2,7 @@
 <html lang='en'>
 <head>
 <meta charset='utf-8' />
-<title>WeCantSpell.Hunspell.Benchmarking.MicroSuites.EnUsWordListSuggestSuite-20220416-141223</title>
+<title>WeCantSpell.Hunspell.Benchmarking.MicroSuites.EnUsWordListSuggestSuite-20220416-162416</title>
 
 <style type="text/css">
 	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
@@ -17,19 +17,19 @@ BenchmarkDotNet=v0.13.1, OS=Windows 10.0.19043.1645 (21H1/May2021Update)
 AMD Ryzen 7 5800H with Radeon Graphics, 1 CPU, 16 logical and 8 physical cores
 .NET SDK=6.0.202
   [Host]     : .NET 6.0.4 (6.0.422.16404), X64 RyuJIT
-  Job-NUBGWY : .NET 6.0.4 (6.0.422.16404), X64 RyuJIT
+  Job-YSYWSA : .NET 6.0.4 (6.0.422.16404), X64 RyuJIT
 </code></pre>
 <pre><code>MinInvokeCount=1  IterationTime=250.0000 ms  MaxIterationCount=20  
 MaxWarmupIterationCount=5  MinIterationCount=1  MinWarmupIterationCount=1  
 </code></pre>
 
 <table>
-<thead><tr><th>                    Method</th><th>Mean</th><th>Error</th><th>StdDev</th><th>Ratio</th>
+<thead><tr><th>                    Method</th><th>Mean</th><th>Error</th><th>StdDev</th><th>Ratio</th><th>RatioSD</th>
 </tr>
-</thead><tbody><tr><td>&#39;Suggest an assortment of words&#39;</td><td>22.01 ms</td><td>0.384 ms</td><td>0.201 ms</td><td>0.93</td>
-</tr><tr><td>&#39;Suggest root words&#39;</td><td>23.76 ms</td><td>0.444 ms</td><td>0.158 ms</td><td>1.00</td>
-</tr><tr><td>&#39;Suggest correct words&#39;</td><td>25.12 ms</td><td>0.192 ms</td><td>0.030 ms</td><td>1.06</td>
-</tr><tr><td>&#39;Suggest wrong words&#39;</td><td>29.61 ms</td><td>0.549 ms</td><td>0.142 ms</td><td>1.25</td>
+</thead><tbody><tr><td>&#39;Suggest an assortment of words&#39;</td><td>21.67 ms</td><td>0.368 ms</td><td>0.192 ms</td><td>0.90</td><td>0.00</td>
+</tr><tr><td>&#39;Suggest root words&#39;</td><td>24.03 ms</td><td>0.396 ms</td><td>0.207 ms</td><td>1.00</td><td>0.00</td>
+</tr><tr><td>&#39;Suggest correct words&#39;</td><td>24.70 ms</td><td>0.475 ms</td><td>0.344 ms</td><td>1.03</td><td>0.02</td>
+</tr><tr><td>&#39;Suggest wrong words&#39;</td><td>27.36 ms</td><td>0.527 ms</td><td>0.234 ms</td><td>1.14</td><td>0.01</td>
 </tr></tbody></table>
 </body>
 </html>

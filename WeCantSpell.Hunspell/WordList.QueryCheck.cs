@@ -37,7 +37,7 @@ public partial class WordList
                 return new SpellCheckResult(false);
             }
 
-            if (word == Query.DefaultXmlToken)
+            if (word.StartsWith(Query.DefaultXmlTokenCheckPrefix, StringComparison.Ordinal))
             {
                 // Hunspell supports XML input of the simplified API (see manual)
                 return new SpellCheckResult(true);
@@ -77,7 +77,7 @@ public partial class WordList
                 return new SpellCheckResult(false);
             }
 
-            if (word.EqualsOrdinal(Query.DefaultXmlToken))
+            if (word.StartsWith(Query.DefaultXmlTokenCheckPrefix, StringComparison.Ordinal))
             {
                 // Hunspell supports XML input of the simplified API (see manual)
                 return new SpellCheckResult(true);
