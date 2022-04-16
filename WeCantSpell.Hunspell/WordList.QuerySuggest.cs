@@ -1826,7 +1826,7 @@ public partial class WordList
         {
             var lcsLength = 0;
             var matchCount = s.CountMatchesFromLeft(s2);
-            if (lcsLength > 0)
+            if (matchCount > 0)
             {
                 lcsLength = matchCount;
                 s = s.Slice(matchCount);
