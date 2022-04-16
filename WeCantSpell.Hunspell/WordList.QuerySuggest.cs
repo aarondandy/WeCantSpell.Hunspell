@@ -1206,7 +1206,7 @@ public partial class WordList
                 {
                     var rwords = new IncrementalWordList(); // buffer for COMPOUND pattern checking
                     var info = SpellCheckResultType.None;
-                    rv = _query.CompoundCheck(word, 0, 0, 100, null, rwords, false, 1, ref info);
+                    rv = _query.CompoundCheck(word, 0, 0, 100, null, rwords, huMovRule: false, isSug: true, ref info);
                     if (rv is not null)
                     {
                         if (!TryLookupFirstDetail(word, out var rvDetail) || !rvDetail.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest))

@@ -23,7 +23,7 @@ public partial class WordList
             Options = options ?? DefaultOptions;
 
             Prefix = null;
-            PrefixAppend = null;
+            //PrefixAppend = null;
             Suffix = null;
             SuffixFlag = default;
             SuffixExtra = false;
@@ -43,7 +43,7 @@ public partial class WordList
         /// <summary>
         /// Previous prefix for counting syllables of the prefix.
         /// </summary>
-        private string? PrefixAppend { get; set; }
+        //private string? PrefixAppend { get; set; }
 
         private Affix<SuffixEntry>? Suffix { get; set; }
 
@@ -83,7 +83,7 @@ public partial class WordList
 
         private void ClearAllAppendAndExtra()
         {
-            PrefixAppend = null;
+            //PrefixAppend = null;
             SuffixAppend = null;
             SuffixExtra = false;
         }
@@ -122,22 +122,22 @@ public partial class WordList
                 (Suffix?.Entry.ContainsContClass(value) == true)
             );
 
-        private bool ContainFlagsOrBlockSuggest(in WordEntryDetail rv, int isSug, FlagValue a, FlagValue b) =>
+        private bool ContainFlagsOrBlockSuggest(in WordEntryDetail rv, bool isSug, FlagValue a, FlagValue b) =>
             rv.HasFlags
             &&
             (
                 rv.ContainsAnyFlags(a, b)
                 ||
-                (isSug != 0 && rv.ContainsFlag(Affix.NoSuggest))
+                (isSug && rv.ContainsFlag(Affix.NoSuggest))
             );
 
-        private bool ContainFlagsOrBlockSuggest(in WordEntryDetail rv, int isSug, FlagValue a, FlagValue b, FlagValue c) =>
+        private bool ContainFlagsOrBlockSuggest(in WordEntryDetail rv, bool isSug, FlagValue a, FlagValue b, FlagValue c) =>
             rv.HasFlags
             &&
             (
                 rv.ContainsAnyFlags(a, b, c)
                 ||
-                (isSug != 0 && rv.ContainsFlag(Affix.NoSuggest))
+                (isSug && rv.ContainsFlag(Affix.NoSuggest))
             );
 
         public WordEntry? CheckWord(
@@ -254,12 +254,12 @@ public partial class WordList
             {
                 // try check compound word
                 var rwords = new IncrementalWordList();
-                he = CompoundCheck(word.AsSpan(), 0, 0, 100, null, rwords, false, 0, ref info);
+                he = CompoundCheck(word.AsSpan(), 0, 0, 100, null, rwords, huMovRule: false, isSug: false, ref info);
 
                 if (he is null && word.EndsWith('-') && Affix.IsHungarian)
                 {
                     // LANG_hu section: `moving rule' with last dash
-                    he = CompoundCheck(word.AsSpan(0, word.Length - 1), -5, 0, 100, null, rwords, true, 0, ref info);
+                    he = CompoundCheck(word.AsSpan(0, word.Length - 1), -5, 0, 100, null, rwords, huMovRule: true, isSug: false, ref info);
                 }
 
                 if (he is not null)
@@ -397,13 +397,13 @@ public partial class WordList
             return null;
         }
 
-        public WordEntry? CompoundCheck(ReadOnlySpan<char> word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info)
+        public WordEntry? CompoundCheck(ReadOnlySpan<char> word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, bool isSug, ref SpellCheckResultType info)
         {
             var opLimiter = new OperationTimedLimiter(Options.TimeLimitCompoundCheck, Options.CancellationToken);
             return CompoundCheck(word, wordNum, numSyllable, maxwordnum, words, rwords, huMovRule, isSug, ref info, opLimiter);
         }
 
-        public WordEntry? CompoundCheck(ReadOnlySpan<char> word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, int isSug, ref SpellCheckResultType info, OperationTimedLimiter opLimiter)
+        public WordEntry? CompoundCheck(ReadOnlySpan<char> word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, bool isSug, ref SpellCheckResultType info, OperationTimedLimiter opLimiter)
         {
             int oldnumsyllable, oldnumsyllable2, oldwordnum, oldwordnum2;
             WordEntry? rv;
@@ -1571,8 +1571,7 @@ public partial class WordList
                                     Affix.IsHungarian
                                     && sptrEntry.Key.Length >= 2
                                     && sptrEntry.Key[0] == 'i'
-                                    && sptrEntry.Key[1] != 'y'
-                                    && sptrEntry.Key[1] != 't'
+                                    && sptrEntry.Key[1] is not ('y' or 't')
                                 )
                                 {
                                     // LANG_hu section: spec. Hungarian rule
@@ -1645,10 +1644,6 @@ public partial class WordList
 
         private WordEntry? LookupFirst(ReadOnlySpan<char> word) => WordList.FindFirstEntryByRootWord(word);
 
-        public WordEntryDetail[] LookupDetails(string word) => WordList.FindEntryDetailsByRootWord(word);
-
-        public WordEntryDetail[] LookupDetails(ReadOnlySpan<char> word) => WordList.FindEntryDetailsByRootWord(word);
-
         public bool TryLookupDetails(ReadOnlySpan<char> word, out string actualKey, out WordEntryDetail[] details) => WordList.EntriesByRoot.TryGetValue(word, out actualKey, out details);
 
         /// <summary>
@@ -1678,29 +1673,33 @@ public partial class WordList
             // NOTE: this implementation could be much simpler but an attempt is made here
             // to preserve the same result when indexes may be out of bounds
             var hasUpper = false;
-
-            if (pos > 0)
-            {
-                var a = pos - 1;
-                if (word[a] == '-')
-                {
-                    return false;
-                }
-
-                if (char.IsUpper(word[a]))
-                {
-                    hasUpper = true;
-                }
-            }
+            char c;
 
             if (pos < word.Length)
             {
-                if (word[pos] == '-')
+                if (pos > 0)
+                {
+                    c = word[pos - 1];
+
+                    if (c == '-')
+                    {
+                        return false;
+                    }
+
+                    if (char.IsUpper(c))
+                    {
+                        hasUpper = true;
+                    }
+                }
+
+                c = word[pos];
+
+                if (c == '-')
                 {
                     return false;
                 }
 
-                if (!hasUpper && char.IsUpper(word[pos]))
+                if (!hasUpper && char.IsUpper(c))
                 {
                     hasUpper = true;
                 }
@@ -1715,14 +1714,13 @@ public partial class WordList
         private int GetSyllable(ReadOnlySpan<char> word)
         {
             var num = 0;
-            int index;
             if (Affix.CompoundMaxSyllable != 0 && Affix.CompoundVowels.HasItems)
             {
-                index = 0;
-                while ((index = Affix.CompoundVowels.FindIndexOfMatch(word, index)) >= 0)
+                var index = Affix.CompoundVowels.FindIndexOfMatch(word);
+                while (index >= 0)
                 {
                     num++;
-                    index++;
+                    index = Affix.CompoundVowels.FindIndexOfMatch(word, index + 1);
                 }
             }
 
@@ -1744,7 +1742,7 @@ public partial class WordList
         /// </summary>
         /// <seealso cref="AffixConfig.CheckCompoundRep"/>
         /// <seealso cref="AffixConfig.Replacements"/>
-        /// <seealso cref="WordList.AllReplacements"/>
+        /// <seealso cref="AllReplacements"/>
         private bool CompoundReplacementCheck(ReadOnlySpan<char> word)
         {
             if (word.Length < 2 || WordList.AllReplacements.IsEmpty)
@@ -1876,11 +1874,17 @@ public partial class WordList
 
             var optFlagsHasCrossProduct = EnumEx.HasFlag(optFlags, AffixEntryOptions.CrossProduct);
             if (
-                (optFlagsHasCrossProduct && !EnumEx.HasFlag(affix.Options, AffixEntryOptions.CrossProduct))
+                (
+                    optFlagsHasCrossProduct
+                    &&
+                    (
+                        pfx is null // enabled by prefix is impossible
+                        ||
+                        !EnumEx.HasFlag(affix.Options, AffixEntryOptions.CrossProduct)
+                    )
+                )
                 ||
                 (cclass.HasValue && !entry.ContainsContClass(cclass)) // ! handle cont. class
-                ||
-                (optFlagsHasCrossProduct && pfx is null) // enabled by prefix is impossible
             )
             {
                 return null;
