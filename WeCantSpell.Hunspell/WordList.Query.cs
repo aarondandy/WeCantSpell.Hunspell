@@ -497,17 +497,17 @@ public partial class WordList
                                 && searchEntryDetails.Length > 0
                             )
                             {
-                                WordEntryDetail? rvDetail = searchEntryDetails[0];
-
-                                // forbid dictionary stems with COMPOUNDFORBIDFLAG in
-                                // compound words, overriding the effect of COMPOUNDPERMITFLAG
-                                if (!huMovRule && rvDetail.Value.ContainsFlag(Affix.CompoundForbidFlag))
+                                if (!huMovRule)
                                 {
-                                    continue;
-                                }
+                                    if (searchEntryDetails[0].ContainsFlag(Affix.CompoundForbidFlag))
+                                    {
+                                        // forbid dictionary stems with COMPOUNDFORBIDFLAG in
+                                        // compound words, overriding the effect of COMPOUNDPERMITFLAG
+                                        continue;
+                                    }
 
-                                if (rvDetail is not null && !huMovRule)
-                                {
+                                    WordEntryDetail? rvDetail;
+
                                     if (onlycpdrule)
                                     {
                                         if (Affix.CompoundRules.HasItems && (wordNum == 0 || words is not null))
@@ -547,9 +547,13 @@ public partial class WordList
                                             rvDetail = null;
                                         }
                                     }
-                                }
 
-                                rv = rvDetail?.ToEntry(searchEntryWord);
+                                    rv = rvDetail?.ToEntry(searchEntryWord);
+                                }
+                                else
+                                {
+                                    rv = searchEntryDetails[0].ToEntry(searchEntryWord);
+                                }
                             }
                             else
                             {
@@ -1448,8 +1452,8 @@ public partial class WordList
             var pfxDoesNotNeedAffix = false;
             if (pfx is not null)
             {
-                pfxHasCircumfix = pfx.Value.Entry.ContainsContClass(Affix.Circumfix);
-                pfxDoesNotNeedAffix = !pfx.Value.Entry.ContainsContClass(Affix.NeedAffix);
+                pfxHasCircumfix = pfx.GetValueOrDefault().Entry.ContainsContClass(Affix.Circumfix);
+                pfxDoesNotNeedAffix = !pfx.GetValueOrDefault().Entry.ContainsContClass(Affix.NeedAffix);
             }
 
             // first handle the special case of 0 length suffixes
@@ -1627,7 +1631,7 @@ public partial class WordList
                         rv = CheckTwoSfx(group.CreateAffix(entry), word, sfxopts, pfx, needflag);
                         if (rv is not null && Suffix is not null)
                         {
-                            SetSuffixFlag(Suffix.Value.AFlag);
+                            SetSuffixFlag(Suffix.GetValueOrDefault().AFlag);
                             if (!entry.ContClass.HasItems)
                             {
                                 SetSuffixAppend(entry.Key);
@@ -1941,9 +1945,9 @@ public partial class WordList
                                         pfx is not null
                                         &&
                                         (
-                                            heDetail.ContainsFlag(pfx.Value.AFlag)
+                                            heDetail.ContainsFlag(pfx.GetValueOrDefault().AFlag)
                                             ||
-                                            entry.ContainsContClass(pfx.Value.AFlag) // enabled by prefix
+                                            entry.ContainsContClass(pfx.GetValueOrDefault().AFlag) // enabled by prefix
                                         )
                                     )
                                 )
@@ -2013,7 +2017,7 @@ public partial class WordList
                 // if all conditions are met then recall suffix_check
                 if (entry.TestCondition(tmpword))
                 {
-                    var he = ppfx is not null && entry.ContainsContClass(ppfx.Value.AFlag)
+                    var he = ppfx is not null && entry.ContainsContClass(ppfx.GetValueOrDefault().AFlag)
                         // handle conditional suffix
                         ? SuffixCheck(tmpword, AffixEntryOptions.None, null, se.AFlag, needflag, CompoundOptions.Not)
                         : SuffixCheck(tmpword, optflags, ppfx, se.AFlag, needflag, CompoundOptions.Not);

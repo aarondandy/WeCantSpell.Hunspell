@@ -306,8 +306,7 @@ public partial class WordList
                     var pos = sitem.IndexOf('-');
                     if (pos >= 0)
                     {
-                        var info = CheckDetails(sitem.Remove(pos, 1)).Info;
-                        var desiredChar = EnumEx.HasFlag(info, SpellCheckResultType.Compound | SpellCheckResultType.Forbidden)
+                        var desiredChar = EnumEx.HasFlag(CheckDetails(sitem.Remove(pos, 1)).Info, SpellCheckResultType.Compound | SpellCheckResultType.Forbidden)
                             ? ' '
                             : '-';
 
@@ -400,8 +399,9 @@ public partial class WordList
                             var info = SpellCheckResultType.None;
                             if (Affix.ForbiddenWord.HasValue)
                             {
-                                _query.CheckWord(wspace, ref info, out _);
+                                _ = _query.CheckWord(wspace, ref info, out _);
                             }
+
                             if (!EnumEx.HasFlag(info, SpellCheckResultType.Forbidden))
                             {
                                 InsertSuggestion(slst, wspace);
@@ -733,8 +733,6 @@ public partial class WordList
 
         private SpellCheckResult CheckDetails(string word) => new QueryCheck(WordList, Options).CheckDetails(word);
 
-        private SpellCheckResult CheckDetails(ReadOnlySpan<char> word) => new QueryCheck(WordList, Options).CheckDetails(word);
-
         /// <summary>
         /// perhaps we doubled two characters (pattern aba -> ababa, for example vacation -> vacacation)
         /// </summary>
@@ -752,7 +750,7 @@ public partial class WordList
             }
 
             var state = 0;
-            var candidate = new char[word.Length - 2].AsSpan();
+            var candidate = sugState.CandidateBuffer.Slice(0, word.Length - 2);
             for (var i = 2; i < word.Length; i++)
             {
                 if (word[i] == word[i - 2])
@@ -859,8 +857,6 @@ public partial class WordList
                     TestSug(state.SuggestionList, candidate, state.CpdSuggest);
                 }
             }
-
-            return;
         }
 
         /// <summary>
@@ -902,8 +898,6 @@ public partial class WordList
                     }
                 }
             }
-
-            return;
         }
 
         /// <summary>
@@ -1054,8 +1048,6 @@ public partial class WordList
                     TestSug(state.SuggestionList, candidate, state.CpdSuggest);
                 }
             }
-
-            return;
         }
 
         private void CapChars(List<string> wlst, string word, bool cpdSuggest) =>
@@ -1412,7 +1404,7 @@ public partial class WordList
                     // - in the case of German, where not only proper
                     //   nouns are capitalized, or
                     // - the capitalized word has special pronunciation
-                    if (isNonGermanLowercase && !hasPhoneEntries && EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.InitCap) && !EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.Phon))
+                    if (isNonGermanLowercase && !hasPhoneEntries && ((hpDetail.Options & (WordEntryOptions.InitCap | WordEntryOptions.Phon)) == WordEntryOptions.InitCap))
                     {
                         continue;
                     }
@@ -1689,9 +1681,7 @@ public partial class WordList
                             // don't suggest previous suggestions or a previous suggestion with
                             // prefixes or affixes
                             if (
-                                (guess.GuessOrig is null && guess.Guess.Contains(wlst[j]))
-                                ||
-                                (guess.GuessOrig is not null && guess.GuessOrig.Contains(wlst[j]))
+                                (guess.GuessOrig ?? guess.Guess).Contains(wlst[j])
                                 || // check forbidden words
                                 CheckWord(guess.Guess.AsSpan(), false) == 0
                             )
@@ -1945,7 +1935,7 @@ public partial class WordList
                         var key = sptr.Key;
                         if (
                             (
-                                string.IsNullOrEmpty(key)
+                                key.Length == 0
                                 ||
                                 (
                                     bad.Length > key.Length
@@ -2237,18 +2227,18 @@ public partial class WordList
         private bool CheckForbidden(ReadOnlySpan<char> word)
         {
             var rv = LookupFirstDetail(word);
-            if (rv.HasValue && rv.Value.ContainsAnyFlags(Affix.NeedAffix, Affix.OnlyInCompound))
+            if ((rv?.ContainsAnyFlags(Affix.NeedAffix, Affix.OnlyInCompound)).GetValueOrDefault())
             {
                 rv = null;
             }
 
             if (_query.PrefixCheck(word, CompoundOptions.Begin, default) is null)
             {
-                rv = _query.SuffixCheck(word, AffixEntryOptions.None, default, default, default, CompoundOptions.Not)?.Detail; // prefix+suffix, suffix
+                rv = _query.SuffixCheck(word, AffixEntryOptions.None, null, default, default, CompoundOptions.Not)?.Detail; // prefix+suffix, suffix
             }
 
             // check forbidden words
-            return rv.HasValue && rv.Value.ContainsFlag(Affix.ForbiddenWord);
+            return (rv?.ContainsFlag(Affix.ForbiddenWord)).GetValueOrDefault();
         }
 
         /// <summary>
