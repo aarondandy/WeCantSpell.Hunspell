@@ -71,7 +71,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
                 return _values[0] == value;
             }
 
-            if (unchecked((value & _mask) != default))
+            if (unchecked((value & _mask) != 0))
             {
                 if (_values.Length <= 8)
                 {
@@ -85,11 +85,104 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
         return false;
     }
 
-    public string GetCharactersAsString()
+    public int FindIndexOfMatch(ReadOnlySpan<char> text)
     {
-        var builder = StringBuilderPool.Get(_values.AsSpan());
+        if (HasItems)
+        {
+            switch (_values.Length)
+            {
+                case 1:
+                    return text.IndexOf(_values[0]);
+                case <= 8:
+                    return text.IndexOfAny(_values.AsSpan());
+                default:
+                    for (var searchLocation = 0; searchLocation < text.Length; searchLocation++)
+                    {
+                        if (Contains(text[searchLocation]))
+                        {
+                            return searchLocation;
+                        }
+                    }
+
+                    break;
+            }
+        }
+
+        return -1;
+    }
+
+    public int FindIndexOfMatch(ReadOnlySpan<char> text, int startIndex)
+    {
+        var result = FindIndexOfMatch(text.Slice(startIndex));
+        return result < 0 ? result : result + startIndex;
+    }
+
+    public string RemoveChars(string text)
+    {
+        if (text is not { Length: > 0 } || IsEmpty)
+        {
+            return text;
+        }
+
+        var textSpan = text.AsSpan();
+        var index = FindIndexOfMatch(textSpan);
+        if (index < 0)
+        {
+            return text;
+        }
+
+        if (index == textSpan.Length - 1)
+        {
+            return text.Substring(0, index);
+        }
+
+        var builder = StringBuilderPool.Get(textSpan.Length - 1);
+
+        do
+        {
+            builder.Append(textSpan.Slice(0, index));
+            textSpan = textSpan.Slice(index + 1);
+        }
+        while ((index = FindIndexOfMatch(textSpan)) >= 0);
+
+        builder.Append(textSpan);
+
         return StringBuilderPool.GetStringAndReturn(builder);
     }
+
+    public ReadOnlySpan<char> RemoveChars(ReadOnlySpan<char> text)
+    {
+        if (text.IsEmpty || IsEmpty)
+        {
+            return text;
+        }
+
+        var index = FindIndexOfMatch(text);
+        if (index < 0)
+        {
+            return text;
+        }
+
+        if (index == text.Length - 1)
+        {
+            return text.Slice(0, index);
+        }
+
+        var builder = StringBuilderPool.Get(text.Length - 1);
+
+        do
+        {
+            builder.Append(text.Slice(0, index));
+            text = text.Slice(index + 1);
+        }
+        while ((index = FindIndexOfMatch(text)) >= 0);
+
+        builder.Append(text);
+
+        return StringBuilderPool.GetStringAndReturn(builder).AsSpan();
+    }
+
+    public override string ToString() => new(_values);
 
     public bool Equals(CharacterSet obj) => _values.SequenceEqual(obj._values);
 

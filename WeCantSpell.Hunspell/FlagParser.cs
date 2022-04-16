@@ -25,7 +25,7 @@ internal struct FlagParser
 
     public FlagValue ParseFlagOrDefault(ReadOnlySpan<char> text)
     {
-        TryParseFlag(text, out var result);
+        _ = TryParseFlag(text, out var result);
         return result;
     }
 

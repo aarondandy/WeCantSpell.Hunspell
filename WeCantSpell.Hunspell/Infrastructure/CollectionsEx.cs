@@ -167,4 +167,28 @@ static class CollectionsEx
 
         return removed;
     }
+
+    public static bool Contains(this List<string> list, ReadOnlySpan<char> value)
+    {
+        foreach (var item in list)
+        {
+            if (item is not null && value.Equals(item.AsSpan(), StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+        }
+        return false;
+    }
+
+#if NO_KVP_DECONSTRUCT
+
+    public static void Deconstruct<TKey, TValue>(this KeyValuePair<TKey, TValue> pair, out TKey key, out TValue value)
+    {
+        key = pair.Key;
+        value = pair.Value;
+    }
+
+#endif
+
 }

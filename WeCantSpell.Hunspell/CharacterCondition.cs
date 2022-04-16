@@ -88,14 +88,23 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 
     public bool MatchesAnySingleCharacter => Mode == ModeKind.RestrictChars && IsEmpty;
 
-    public string GetEncoded() => Mode switch
+    public string GetEncoded()
     {
-        ModeKind.MatchSequence => Characters.AsSpan().ToString(),
-        ModeKind.RestrictChars when Characters.Length == 0 => ".",
-        ModeKind.RestrictChars => $"[^{Characters.AsSpan().ToString()}]",
-        ModeKind.PermitChars => $"[{Characters.AsSpan().ToString()}]",
-        _ => throw new NotSupportedException(),
-    };
+        if (Characters.Length == 0 && Mode == ModeKind.RestrictChars)
+        {
+            return ".";
+        }
+
+        var stringValue = Characters.AsSpan().ToString();
+
+        return Mode switch
+        {
+            ModeKind.MatchSequence => stringValue,
+            ModeKind.RestrictChars => "[^" + stringValue + "]",
+            ModeKind.PermitChars => "[" + stringValue + "]",
+            _ => throw new NotSupportedException(),
+        };
+    }
 
     public override string ToString() => GetEncoded();
 

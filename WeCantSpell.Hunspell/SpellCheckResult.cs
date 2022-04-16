@@ -1,6 +1,6 @@
 ﻿namespace WeCantSpell.Hunspell;
 
-public struct SpellCheckResult
+public readonly struct SpellCheckResult
 {
     public SpellCheckResult(bool correct)
     {

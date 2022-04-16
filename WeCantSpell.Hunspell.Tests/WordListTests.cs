@@ -64,4 +64,17 @@ public class WordListTests
             suggestions.Should().BeEmpty();
         }
     }
+
+    public class CheckTests : WordListTests
+    {
+        [Fact]
+        public void can_check_with_appended_special_chars()
+        {
+            var wordList = WordList.CreateFromWords(new[] { "Word" });
+
+            var actual = wordList.Check("  Word..");
+
+            actual.Should().BeTrue();
+        }
+    }
 }

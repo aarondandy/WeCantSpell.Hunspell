@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -31,9 +30,7 @@ public partial class WordList
 
         public void Add(string word, WordEntryDetail detail)
         {
-            var details = GetOrCreateDetailList(word);
-
-            details.Add(detail);
+            GetOrCreateDetailList(word).Add(detail);
         }
 
         internal ArrayBuilder<WordEntryDetail> GetOrCreateDetailList(string word)
@@ -62,30 +59,15 @@ public partial class WordList
                 SpecialFlags.OnlyUpcaseFlag
             }));
 
-#if NO_HASHSET_CAPACITY
-            result.EntriesByRoot = new(EntryDetailsByRoot.Count);
-#else
-            result.EntriesByRoot.Clear();
-            result.EntriesByRoot.EnsureCapacity(EntryDetailsByRoot.Count);
-#endif
-
             if (allowDestructive)
             {
-                foreach (var pair in EntryDetailsByRoot)
-                {
-                    result.EntriesByRoot.Add(pair.Key, pair.Value.Extract());
-                }
-
+                result.EntriesByRoot = TextDictionary<WordEntryDetail[]>.MapFromDictionary(EntryDetailsByRoot, static v => v.Extract());
                 EntryDetailsByRoot.Clear();
             }
             else
             {
-                foreach (var pair in EntryDetailsByRoot)
-                {
-                    result.EntriesByRoot.Add(pair.Key, pair.Value.MakeArray());
-                }
+                result.EntriesByRoot = TextDictionary<WordEntryDetail[]>.MapFromDictionary(EntryDetailsByRoot, static v => v.MakeArray());
             }
-
 
             result.AllReplacements = Affix.Replacements;
             if (PhoneticReplacements is { Count: > 0 })
@@ -111,6 +93,7 @@ public partial class WordList
             {
                 details.Clear();
                 details.GrowToCapacity(1);
+
                 foreach (var entry in rootSet.Value)
                 {
                     if (result.NGramRestrictedFlags.ContainsAny(entry.Flags))
@@ -136,7 +119,7 @@ public partial class WordList
 #if NO_HASHSET_CAPACITY
             if (EntryDetailsByRoot.Count == 0)
             {
-                EntryDetailsByRoot = new((expectedSize / 100) + expectedSize);
+                EntryDetailsByRoot = new(expectedCapacity);
             }
 #else
             EntryDetailsByRoot.EnsureCapacity(expectedCapacity);

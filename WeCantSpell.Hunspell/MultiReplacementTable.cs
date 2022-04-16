@@ -8,24 +8,64 @@ using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
-public class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacementEntry>
+public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacementEntry>
 {
-    public static readonly MultiReplacementTable Empty = TakeDictionary(new Dictionary<string, MultiReplacementEntry>(0));
+    public static readonly MultiReplacementTable Empty = TakeDictionary(new TextDictionary<MultiReplacementEntry>(0));
 
-    public static MultiReplacementTable Create(IEnumerable<KeyValuePair<string, MultiReplacementEntry>>? replacements) =>
-        replacements is null ? Empty : TakeDictionary(replacements.ToDictionary(s => s.Key, s => s.Value));
+    public static MultiReplacementTable Create(Dictionary<string, MultiReplacementEntry>? replacements)
+    {
+        if (replacements is null)
+        {
+            return Empty;
+        }
 
-    internal static MultiReplacementTable TakeDictionary(Dictionary<string, MultiReplacementEntry>? replacements) =>
+        var result = new TextDictionary<MultiReplacementEntry>(replacements.Count);
+        foreach (var replacement in replacements)
+        {
+            result.Add(replacement.Key, replacement.Value);
+        }
+
+        return TakeDictionary(result);
+    }
+
+    internal static MultiReplacementTable Create(TextDictionary<MultiReplacementEntry>? replacements)
+    {
+        if (replacements is null)
+        {
+            return Empty;
+        }
+
+        var result = new TextDictionary<MultiReplacementEntry>(replacements.Count);
+        foreach (var replacement in replacements)
+        {
+            result.Add(replacement.Key, replacement.Value);
+        }
+
+        return TakeDictionary(result);
+    }
+
+    internal static MultiReplacementTable TakeDictionary(TextDictionary<MultiReplacementEntry>? replacements) =>
         replacements is null ? Empty : new MultiReplacementTable(replacements);
 
-    private MultiReplacementTable(Dictionary<string, MultiReplacementEntry> replacements)
+    private MultiReplacementTable(TextDictionary<MultiReplacementEntry> replacements)
     {
         _replacements = replacements;
     }
 
-    private readonly Dictionary<string, MultiReplacementEntry> _replacements;
+    private readonly TextDictionary<MultiReplacementEntry> _replacements;
 
-    public MultiReplacementEntry this[string key] => _replacements[key];
+    public MultiReplacementEntry this[string key]
+    {
+        get
+        {
+            if (_replacements.TryGetValue(key, out var result))
+            {
+                return result;
+            }
+
+            throw new InvalidOperationException();
+        }
+    }
 
     public int Count => _replacements.Count;
 
@@ -51,14 +91,9 @@ public class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacemen
         if (text is null) throw new ArgumentNullException(nameof(text));
 #endif
 
-        var appliedConversion = false;
-
-        if (text.Length == 0)
+        if (!string.IsNullOrEmpty(text))
         {
-            converted = text;
-        }
-        else
-        {
+            var appliedConversion = false;
             var convertedBuilder = StringBuilderPool.Get(text.Length);
 
             for (var i = 0; i < text.Length; i++)
@@ -77,10 +112,57 @@ public class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacemen
                 }
             }
 
-            converted = StringBuilderPool.GetStringAndReturn(convertedBuilder);
+            if (appliedConversion)
+            {
+                converted = StringBuilderPool.GetStringAndReturn(convertedBuilder);
+                return true;
+            }
+            else
+            {
+                StringBuilderPool.Return(convertedBuilder);
+            }
         }
 
-        return appliedConversion;
+        converted = string.Empty;
+        return false;
+    }
+
+    internal bool TryConvert(ReadOnlySpan<char> text, out string converted)
+    {
+        if (!text.IsEmpty)
+        {
+            var appliedConversion = false;
+            var convertedBuilder = StringBuilderPool.Get(text.Length);
+
+            for (var i = 0; i < text.Length; i++)
+            {
+                if (
+                    FindLargestMatchingConversion(text.Slice(i)) is { } replacementEntry
+                    && replacementEntry.ExtractReplacementText(text.Length - i, i == 0) is { Length: > 0 } replacementText)
+                {
+                    convertedBuilder.Append(replacementText);
+                    i += replacementEntry.Pattern.Length - 1;
+                    appliedConversion = true;
+                }
+                else
+                {
+                    convertedBuilder.Append(text[i]);
+                }
+            }
+
+            if (appliedConversion)
+            {
+                converted = StringBuilderPool.GetStringAndReturn(convertedBuilder);
+                return true;
+            }
+            else
+            {
+                StringBuilderPool.Return(convertedBuilder);
+            }
+        }
+
+        converted = string.Empty;
+        return false;
     }
 
     /// <summary>
@@ -93,7 +175,7 @@ public class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacemen
     {
         for (var searchLength = text.Length; searchLength > 0; searchLength--)
         {
-            if (_replacements.TryGetValue(text.Slice(0, searchLength).ToString(), out var entry))
+            if (_replacements.TryGetValue(text.Slice(0, searchLength), out var entry))
             {
                 return entry;
             }
@@ -102,9 +184,7 @@ public class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacemen
         return null;
     }
 
-    internal Dictionary<string, MultiReplacementEntry>.Enumerator GetEnumerator() => _replacements.GetEnumerator();
+    public IEnumerator<KeyValuePair<string, MultiReplacementEntry>> GetEnumerator() => _replacements.AsEnumerable().GetEnumerator();
 
-    IEnumerator<KeyValuePair<string, MultiReplacementEntry>> IEnumerable<KeyValuePair<string, MultiReplacementEntry>>.GetEnumerator() => _replacements.GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => _replacements.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

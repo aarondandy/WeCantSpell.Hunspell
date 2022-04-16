@@ -5,7 +5,7 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class HunspellTextFunctions
 {
-    public static bool IsReverseSubset(string s1, string s2) => IsReverseSubset(s1.AsSpan(), s2.AsSpan());
+    public static bool IsReverseSubset(string s1, ReadOnlySpan<char> s2) => IsReverseSubset(s1.AsSpan(), s2);
 
     public static bool IsReverseSubset(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
     {
@@ -16,7 +16,7 @@ static class HunspellTextFunctions
 
         for (int index1 = 0, index2 = s2.Length - 1; index1 < s1.Length; index1++, index2--)
         {
-            ref readonly var s1c = ref s1[index1];
+            var s1c = s1[index1];
             if (s1c != '.' && s1c != s2[index2])
             {
                 return false;
@@ -25,8 +25,6 @@ static class HunspellTextFunctions
 
         return true;
     }
-
-    public static bool IsSubset(string s1, string s2) => IsSubset(s1.AsSpan(), s2.AsSpan());
 
     public static bool IsSubset(string s1, ReadOnlySpan<char> s2) => IsSubset(s1.AsSpan(), s2);
 
@@ -39,7 +37,7 @@ static class HunspellTextFunctions
 
         for (var i = 0; i < s1.Length; i++)
         {
-            ref readonly var s1c = ref s1[i];
+            var s1c = s1[i];
             if (s1c != '.' && s1c != s2[i])
             {
                 return false;
@@ -49,13 +47,12 @@ static class HunspellTextFunctions
         return true;
     }
 
-    public static bool IsNumericWord(string word)
+    public static bool IsNumericWord(ReadOnlySpan<char> word)
     {
         byte state = 0; // 0 = begin, 1 = number, 2 = separator
-        var wordSpan = word.AsSpan();
-        for (var i = 0; i < wordSpan.Length; i++)
+        for (var i = 0; i < word.Length; i++)
         {
-            ref readonly var c = ref wordSpan[i];
+            var c = word[i];
             if (char.IsNumber(c))
             {
                 state = 1;
@@ -86,7 +83,24 @@ static class HunspellTextFunctions
         return count;
     }
 
+    public static int CountMatchingFromLeft(ReadOnlySpan<char> text, char character)
+    {
+        var count = 0;
+        for (; count < text.Length && text[count] == character; count++) ;
+
+        return count;
+    }
+
     public static int CountMatchingFromRight(string text, char character)
+    {
+        var lastIndex = text.Length - 1;
+        var searchIndex = lastIndex;
+        for (; searchIndex >= 0 && text[searchIndex] == character; searchIndex--) ;
+
+        return lastIndex - searchIndex;
+    }
+
+    public static int CountMatchingFromRight(ReadOnlySpan<char> text, char character)
     {
         var lastIndex = text.Length - 1;
         var searchIndex = lastIndex;
@@ -102,74 +116,34 @@ static class HunspellTextFunctions
     /// <returns><c>true</c> is a given character is an ASCII letter.</returns>
     public static bool MyIsAlpha(char ch) => ch >= 128 || char.IsLetter(ch);
 
-
-    public static string WithoutChars(this string @this, CharacterSet chars)
+    public static string MakeInitCap(string s, TextInfo textInfo)
     {
-        if (@this.Length == 0 || chars.IsEmpty)
+        if (s.Length > 0)
         {
-            return @this;
-        }
-
-        var thisSpan = @this.AsSpan();
-        var index = thisSpan.IndexOfAny(chars);
-        if (index < 0)
-        {
-            return @this;
-        }
-
-        var lastIndex = thisSpan.Length - 1;
-        if (index == lastIndex)
-        {
-            return @this.Substring(0, lastIndex);
-        }
-
-        var builder = StringBuilderPool.Get(lastIndex);
-        builder.Append(thisSpan.Slice(0, index));
-        index++;
-        for (; index < thisSpan.Length; index++)
-        {
-            ref readonly var c = ref thisSpan[index];
-            if (!chars.Contains(c))
+            var actualFirstLetter = s[0];
+            var expectedFirstLetter = textInfo.ToUpper(actualFirstLetter);
+            if (expectedFirstLetter != actualFirstLetter)
             {
-                builder.Append(c);
+                return ReplaceFirstLetter(expectedFirstLetter, s.AsSpan());
             }
         }
 
-        return StringBuilderPool.GetStringAndReturn(builder);
+        return s;
     }
 
-    public static string MakeInitCap(string s, TextInfo textInfo)
+    public static ReadOnlySpan<char> MakeInitCap(ReadOnlySpan<char> s, TextInfo textInfo)
     {
-        if (s.Length == 0)
+        if (!s.IsEmpty)
         {
-            return s;
+            var actualFirstLetter = s[0];
+            var expectedFirstLetter = textInfo.ToUpper(actualFirstLetter);
+            if (expectedFirstLetter != actualFirstLetter)
+            {
+                return ReplaceFirstLetter(expectedFirstLetter, s).AsSpan();
+            }
         }
 
-        var actualFirstLetter = s[0];
-        var expectedFirstLetter = textInfo.ToUpper(actualFirstLetter);
-        if (expectedFirstLetter == actualFirstLetter)
-        {
-            return s;
-        }
-
-        return ReplaceFirstLetter(expectedFirstLetter, s.AsSpan());
-    }
-
-    public static string MakeInitCap(ReadOnlySpan<char> s, TextInfo textInfo)
-    {
-        if (s.IsEmpty)
-        {
-            return string.Empty;
-        }
-
-        ref readonly var actualFirstLetter = ref s[0];
-        var expectedFirstLetter = textInfo.ToUpper(actualFirstLetter);
-        if (expectedFirstLetter == actualFirstLetter)
-        {
-            return s.ToString();
-        }
-
-        return ReplaceFirstLetter(expectedFirstLetter, s);
+        return s;
     }
 
     private static string ReplaceFirstLetter(char firstLetter, ReadOnlySpan<char> baseText)
@@ -191,33 +165,31 @@ static class HunspellTextFunctions
 
     public static string MakeInitSmall(string s, TextInfo textInfo)
     {
-        if (s.Length == 0)
+        if (s.Length != 0)
         {
-            return s;
+            var actualFirstLetter = s[0];
+            var expectedFirstLetter = textInfo.ToLower(actualFirstLetter);
+            if (expectedFirstLetter != actualFirstLetter)
+            {
+                return ReplaceFirstLetter(expectedFirstLetter, s.AsSpan());
+            }
         }
 
-        var actualFirstLetter = s[0];
-        var expectedFirstLetter = textInfo.ToLower(actualFirstLetter);
-        if (expectedFirstLetter == actualFirstLetter)
-        {
-            return s;
-        }
-
-        return ReplaceFirstLetter(expectedFirstLetter, s.AsSpan());
+        return s;
     }
 
     public static string MakeAllCap(string s, TextInfo textInfo) => textInfo.ToUpper(s);
 
     public static string MakeTitleCase(string s, CultureInfo cultureInfo)
     {
-        if (s.Length == 0)
+        if (s.Length != 0)
         {
-            return s;
+            var builder = StringBuilderPool.Get(cultureInfo.TextInfo.ToLower(s));
+            builder[0] = cultureInfo.TextInfo.ToUpper(s[0]);
+            return StringBuilderPool.GetStringAndReturn(builder);
         }
 
-        var builder = StringBuilderPool.Get(cultureInfo.TextInfo.ToLower(s));
-        builder[0] = cultureInfo.TextInfo.ToUpper(s[0]);
-        return StringBuilderPool.GetStringAndReturn(builder);
+        return s;
     }
 
     public static CapitalizationType GetCapitalizationType(string word, TextInfo textInfo) =>
@@ -234,9 +206,9 @@ static class HunspellTextFunctions
         var firstIsUpper = false;
         var hasLower = false;
 
-        for (int i = 0; i < word.Length; i++)
+        for (var i = 0; i < word.Length; i++)
         {
-            ref readonly var c = ref word[i];
+            var c = word[i];
 
             if (!hasFoundMoreCaps && char.IsUpper(c))
             {
