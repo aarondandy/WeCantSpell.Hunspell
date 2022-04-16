@@ -54,17 +54,12 @@ public partial class WordList
             }
 
             // input conversion
-            CapitalizationType capType;
-            int abbv;
-            string scw;
-            if (Affix.InputConversions.HasReplacements && Affix.InputConversions.TryConvert(word, out var tempString))
+            if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out var scw))
             {
-                scw = _query.CleanWord2(tempString, out capType, out abbv);
+                scw = word;
             }
-            else
-            {
-                scw = _query.CleanWord2(word, out capType, out abbv);
-            }
+
+            scw = _query.CleanWord2(scw, out var capType, out var abbv);
 
             if (string.IsNullOrEmpty(scw))
             {
@@ -95,10 +90,9 @@ public partial class WordList
             // input conversion
             CapitalizationType capType;
             int abbv;
-            string scw;
-            if (Affix.InputConversions.HasReplacements && Affix.InputConversions.TryConvert(word, out var tempString))
+            if (Affix.InputConversions.HasReplacements && Affix.InputConversions.TryConvert(word, out var scw))
             {
-                scw = _query.CleanWord2(tempString, out capType, out abbv);
+                scw = _query.CleanWord2(scw, out capType, out abbv);
             }
             else
             {

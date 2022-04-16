@@ -2058,17 +2058,21 @@ public partial class WordList
             // now strip off any trailing periods (recording their presence)
             abbv = HunspellTextFunctions.CountMatchingFromRight(src, '.');
 
-            var nl = src.Length - qIndex - abbv;
-            if (nl <= 0)
+            var newLength = src.Length - qIndex - abbv;
+            if (newLength <= 0)
             {
                 // if no characters are left it can't be capitalized
                 capType = CapitalizationType.None;
                 return string.Empty;
             }
 
-            var dest = qIndex == 0 && nl == src.Length ? src : src.Substring(qIndex, nl);
-            capType = HunspellTextFunctions.GetCapitalizationType(dest, TextInfo);
-            return dest;
+            if (newLength < src.Length)
+            {
+                src = src.Substring(qIndex, newLength);
+            }
+
+            capType = HunspellTextFunctions.GetCapitalizationType(src, TextInfo);
+            return src;
         }
 
         public string CleanWord2(ReadOnlySpan<char> src, out CapitalizationType capType, out int abbv)
@@ -2084,17 +2088,21 @@ public partial class WordList
             // now strip off any trailing periods (recording their presence)
             abbv = HunspellTextFunctions.CountMatchingFromRight(src, '.');
 
-            var nl = src.Length - qIndex - abbv;
-            if (nl <= 0)
+            var newLength = src.Length - qIndex - abbv;
+            if (newLength <= 0)
             {
                 // if no characters are left it can't be capitalized
                 capType = CapitalizationType.None;
                 return string.Empty;
             }
 
-            var dest = qIndex == 0 && nl == src.Length ? src : src.Slice(qIndex, nl);
-            capType = HunspellTextFunctions.GetCapitalizationType(dest, TextInfo);
-            return dest.ToString();
+            if (newLength < src.Length)
+            {
+                src = src.Slice(qIndex, newLength);
+            }
+
+            capType = HunspellTextFunctions.GetCapitalizationType(src, TextInfo);
+            return src.ToString();
         }
     }
 
