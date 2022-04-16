@@ -52,7 +52,7 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
     internal string Join(string seperator) => string.Join(seperator, _morphs);
 
     internal string Join(char seperator) =>
-#if NO_CHAR_STRINGJOIN
+#if NO_STATIC_STRINGCHAR_METHODS
         StringEx.Join(seperator, _morphs);
 #else
         string.Join(seperator, _morphs);

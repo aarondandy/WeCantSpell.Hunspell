@@ -5,7 +5,9 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class StringEx
 {
+#if NO_STATIC_STRINGCHAR_METHODS
     public static bool StartsWith(this string @this, char character) => @this.Length != 0 && @this[0] == character;
+#endif
 
     public static bool StartsWith(this string @this, ReadOnlySpan<char> value) => @this.AsSpan().StartsWith(value);
 
@@ -352,7 +354,7 @@ static class StringEx
 
     public static SpanSeparatorSplitEnumerator<char> SplitOnTabOrSpace(this ReadOnlySpan<char> @this) => new(@this, StringSplitOptions.RemoveEmptyEntries, static span => span.IndexOfAny(' ', '\t'));
 
-#if NO_CHAR_STRINGJOIN
+#if NO_STATIC_STRINGCHAR_METHODS
     public static string Join(char seperator, string[] items)
     {
 #if DEBUG
