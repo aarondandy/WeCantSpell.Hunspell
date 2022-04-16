@@ -1015,15 +1015,13 @@ public partial class WordList
             var candidate = state.GetBufferForWord();
 
             // try swapping adjacent chars one by one
-            var lastCandidateIndex = candidate.Length - 1;
-            for (var i = 0; i < lastCandidateIndex; i++)
+            for (var i = 1; i < candidate.Length; i++)
             {
-                var nexti = i + 1;
                 var c = candidate[i];
-                candidate[i] = candidate[nexti];
-                candidate[nexti] = c;
+                candidate[i] = candidate[i - 1];
+                candidate[i - 1] = c;
                 TestSug(state.SuggestionList, candidate, state.CpdSuggest);
-                candidate[nexti] = candidate[i];
+                candidate[i - 1] = candidate[i];
                 candidate[i] = c;
             }
 
@@ -1034,8 +1032,8 @@ public partial class WordList
                 candidate[0] = word[1];
                 candidate[1] = word[0];
                 candidate[2] = word[2];
-                candidate[candidate.Length - 2] = word[candidate.Length - 1];
-                candidate[candidate.Length - 1] = word[candidate.Length - 2];
+                candidate[candidate.Length - 2] = word[word.Length - 1];
+                candidate[candidate.Length - 1] = word[word.Length - 2];
 
                 TestSug(state.SuggestionList, candidate, state.CpdSuggest);
 
