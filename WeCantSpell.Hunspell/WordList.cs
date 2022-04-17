@@ -118,6 +118,13 @@ public sealed partial class WordList
             : null;
     }
 
+    internal WordEntry? FindFirstEntryByRootWord(string rootWord)
+    {
+        return EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length > 0
+            ? new WordEntry(rootWord, details[0])
+            : null;
+    }
+
     internal WordEntryDetail[] FindEntryDetailsByRootWord(string rootWord)
     {
 #if DEBUG
@@ -144,6 +151,18 @@ public sealed partial class WordList
     }
 
     internal bool TryFindFirstEntryDetailByRootWord(ReadOnlySpan<char> rootWord, out WordEntryDetail entryDetail)
+    {
+        if (EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length > 0)
+        {
+            entryDetail = details[0];
+            return true;
+        }
+
+        entryDetail = default;
+        return false;
+    }
+
+    internal bool TryFindFirstEntryDetailByRootWord(string rootWord, out WordEntryDetail entryDetail)
     {
         if (EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length > 0)
         {

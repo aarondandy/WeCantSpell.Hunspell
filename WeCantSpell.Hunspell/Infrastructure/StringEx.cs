@@ -55,7 +55,9 @@ static class StringEx
 
     public static bool ContainsAny(this ReadOnlySpan<char> @this, char value0, char value1) => @this.IndexOfAny(value0, value1) >= 0;
 
-    public static ReadOnlySpan<char> AsSpanFromEnd(this string @this, int index) => @this.AsSpan(0, @this.Length - index);
+    public static ReadOnlySpan<char> AsSpanRemoveFromEnd(this string @this, int toRemove) => @this.AsSpan(0, @this.Length - toRemove);
+
+    public static ReadOnlySpan<char> SliceRemoveFromEnd(this ReadOnlySpan<char> @this, int toRemove) => @this.Slice(0, @this.Length - toRemove);
 
     public static string ReplaceIntoString(this ReadOnlySpan<char> @this, int index, int removeCount, string replacement)
     {

@@ -1648,7 +1648,11 @@ public partial class WordList
 
         private WordEntry? LookupFirst(ReadOnlySpan<char> word) => WordList.FindFirstEntryByRootWord(word);
 
+        private WordEntry? LookupFirst(string word) => WordList.FindFirstEntryByRootWord(word);
+
         public bool TryLookupDetails(ReadOnlySpan<char> word, out string actualKey, out WordEntryDetail[] details) => WordList.EntriesByRoot.TryGetValue(word, out actualKey, out details);
+
+        public bool TryLookupDetails(string word, out WordEntryDetail[] details) => WordList.EntriesByRoot.TryGetValue(word, out details);
 
         /// <summary>
         /// Compound check patterns.

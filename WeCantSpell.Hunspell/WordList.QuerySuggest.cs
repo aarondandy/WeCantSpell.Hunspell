@@ -516,6 +516,8 @@ public partial class WordList
         
         private bool TryLookupFirstDetail(ReadOnlySpan<char> word, out WordEntryDetail wordEntryDetail) => WordList.TryFindFirstEntryDetailByRootWord(word, out wordEntryDetail);
 
+        private bool TryLookupFirstDetail(string word, out WordEntryDetail wordEntryDetail) => WordList.TryFindFirstEntryDetailByRootWord(word, out wordEntryDetail);
+
         private ref struct SuggestState
         {
             public SuggestState(string word, List<string> slst)
@@ -1109,7 +1111,7 @@ public partial class WordList
             {
                 foreach (var mapEntryValue in mapEntry.Items)
                 {
-                    if (word.AsSpan(wn).StartsWith(mapEntryValue.AsSpan()))
+                    if (word.AsSpan(wn).StartsWith(mapEntryValue, StringComparison.Ordinal))
                     {
                         inMap = true;
                         var candidatePrefix = candidate;
@@ -1155,7 +1157,7 @@ public partial class WordList
                 &&
                 !wlst.Contains(candidate)
                 &&
-                CheckWord(candidate.AsSpan(), cpdSuggest) != 0
+                CheckWord(candidate, cpdSuggest) != 0
             )
             {
                 wlst.Add(candidate);
@@ -1176,17 +1178,7 @@ public partial class WordList
             }
         }
 
-        private int CheckWord(string word, bool cpdSuggest, OperationTimedCountLimiter timer)
-        {
-            if (timer.QueryForCancellation())
-            {
-                return 0;
-            }
-
-            return CheckWord(word.AsSpan(), cpdSuggest);
-        }
-
-        private int CheckWord(ReadOnlySpan<char> word, bool cpdSuggest, OperationTimedCountLimiter timer)
+        private byte CheckWord(string word, bool cpdSuggest, OperationTimedCountLimiter timer)
         {
             if (timer.QueryForCancellation())
             {
@@ -1196,80 +1188,46 @@ public partial class WordList
             return CheckWord(word, cpdSuggest);
         }
 
-        /// <summary>
-        /// See if a candidate suggestion is spelled correctly
-        /// needs to check both root words and words with affixes.
-        /// </summary>
-        /// <remarks>
-        /// Obsolote MySpell-HU modifications:
-        /// return value 2 and 3 marks compounding with hyphen (-)
-        /// `3' marks roots without suffix
-        /// </remarks>
-        private int CheckWord(ReadOnlySpan<char> word, bool cpdSuggest)
+        private byte CheckWord(ReadOnlySpan<char> word, bool cpdSuggest, OperationTimedCountLimiter timer)
         {
-            WordEntry? rv;
-            if (cpdSuggest)
+            if (timer.QueryForCancellation())
             {
-                if (Affix.HasCompound)
-                {
-                    var rwords = new IncrementalWordList(); // buffer for COMPOUND pattern checking
-                    var info = SpellCheckResultType.None;
-                    rv = _query.CompoundCheck(word, 0, 0, 100, null, rwords, huMovRule: false, isSug: true, ref info);
-                    if (rv is not null)
-                    {
-                        if (!TryLookupFirstDetail(word, out var rvDetail) || !rvDetail.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest))
-                        {
-                            return 3; // XXX obsolote categorisation + only ICONV needs affix flag check?
-                        }
-                    }
-                }
-
                 return 0;
             }
 
-            // get homonyms
-            if (_query.TryLookupDetails(word, out var wordString, out var rvDetails) && rvDetails is { Length: > 0 })
-            {
-                if (rvDetails[0].ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest, Affix.SubStandard))
-                {
-                    return 0;
-                }
+            return CheckWord(word, cpdSuggest);
+        }
 
-                rv = findDetailForEntry(wordString, rvDetails, Affix);
-
-                static WordEntry? findDetailForEntry(string word, WordEntryDetail[] rvDetails, AffixConfig affix)
-                {
+        private static WordEntry? CheckWordHomonymPortion(string word, WordEntryDetail[] rvDetails, AffixConfig affix)
+        {
 #if DEBUG
-                    if (rvDetails.Length <= 0) throw new ArgumentOutOfRangeException(nameof(rvDetails));
+            if (rvDetails.Length <= 0) throw new ArgumentOutOfRangeException(nameof(rvDetails));
 #endif
 
-                    WordEntryDetail rvDetail;
-                    var rvIndex = 0;
-                    do
-                    {
-                        rvDetail = rvDetails[rvIndex];
-                        if (!rvDetail.ContainsAnyFlags(affix.NeedAffix, SpecialFlags.OnlyUpcaseFlag, affix.OnlyInCompound))
-                        {
-                            break;
-                        }
-
-                        rvIndex++;
-                    }
-                    while (rvIndex < rvDetails.Length) ;
-
-                    if (rvIndex >= rvDetails.Length)
-                    {
-                        return null;
-                    }
-
-                    return new WordEntry(word, rvDetail);
-                }
-            }
-            else
+            WordEntryDetail rvDetail;
+            var rvIndex = 0;
+            do
             {
-                rv = _query.PrefixCheck(word, CompoundOptions.Not, default); // only prefix, and prefix + suffix XXX
+                rvDetail = rvDetails[rvIndex];
+                if (!rvDetail.ContainsAnyFlags(affix.NeedAffix, SpecialFlags.OnlyUpcaseFlag, affix.OnlyInCompound))
+                {
+                    break;
+                }
+
+                rvIndex++;
+            }
+            while (rvIndex < rvDetails.Length);
+
+            if (rvIndex >= rvDetails.Length)
+            {
+                return null;
             }
 
+            return new WordEntry(word, rvDetail);
+        }
+
+        private byte CheckWordAffixPortion(WordEntry? rv, ReadOnlySpan<char> word)
+        {
             var noSuffix = rv is not null;
             if (!noSuffix)
             {
@@ -1293,13 +1251,106 @@ public partial class WordList
                 // XXX obsolete
                 if (rv.ContainsFlag(Affix.CompoundFlag))
                 {
-                    return noSuffix ? 3 : 2;
+                    return noSuffix ? (byte)3 : (byte)2;
                 }
 
                 return 1;
             }
 
             return 0;
+        }
+
+
+        /// <summary>
+        /// See if a candidate suggestion is spelled correctly
+        /// needs to check both root words and words with affixes.
+        /// </summary>
+        /// <remarks>
+        /// Obsolote MySpell-HU modifications:
+        /// return value 2 and 3 marks compounding with hyphen (-)
+        /// `3' marks roots without suffix
+        /// </remarks>
+        private byte CheckWord(ReadOnlySpan<char> word, bool cpdSuggest)
+        {
+            WordEntry? rv;
+            if (cpdSuggest)
+            {
+                if (Affix.HasCompound)
+                {
+                    var rwords = new IncrementalWordList(); // buffer for COMPOUND pattern checking
+                    var info = SpellCheckResultType.None;
+                    rv = _query.CompoundCheck(word, 0, 0, 100, null, rwords, huMovRule: false, isSug: true, ref info);
+                    if (rv is not null && (!TryLookupFirstDetail(word, out var rvDetail) || !rvDetail.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest)))
+                    {
+                        return 3; // XXX obsolote categorisation + only ICONV needs affix flag check?
+                    }
+                }
+
+                return 0;
+            }
+
+            // get homonyms
+            if (_query.TryLookupDetails(word, out var wordString, out var rvDetails) && rvDetails is { Length: > 0 })
+            {
+                if (rvDetails[0].ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest, Affix.SubStandard))
+                {
+                    return 0;
+                }
+
+                rv = CheckWordHomonymPortion(wordString, rvDetails, Affix);
+            }
+            else
+            {
+                rv = _query.PrefixCheck(word, CompoundOptions.Not, default); // only prefix, and prefix + suffix XXX
+            }
+
+            return CheckWordAffixPortion(rv, word);
+        }
+
+        /// <summary>
+        /// See if a candidate suggestion is spelled correctly
+        /// needs to check both root words and words with affixes.
+        /// </summary>
+        /// <remarks>
+        /// Obsolote MySpell-HU modifications:
+        /// return value 2 and 3 marks compounding with hyphen (-)
+        /// `3' marks roots without suffix
+        /// </remarks>
+        private byte CheckWord(string word, bool cpdSuggest)
+        {
+            WordEntry? rv;
+            if (cpdSuggest)
+            {
+                if (Affix.HasCompound)
+                {
+                    var rwords = new IncrementalWordList(); // buffer for COMPOUND pattern checking
+                    var info = SpellCheckResultType.None;
+                    rv = _query.CompoundCheck(word.AsSpan(), 0, 0, 100, null, rwords, huMovRule: false, isSug: true, ref info);
+                    if (rv is not null && (!TryLookupFirstDetail(word, out var rvDetail) || !rvDetail.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest)))
+                    {
+                        return 3; // XXX obsolote categorisation + only ICONV needs affix flag check?
+                    }
+                }
+
+                return 0;
+            }
+
+            // get homonyms
+            if (_query.TryLookupDetails(word, out var rvDetails) && rvDetails is { Length: > 0 })
+            {
+                if (rvDetails[0].ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest, Affix.SubStandard))
+                {
+                    return 0;
+                }
+
+                rv = CheckWordHomonymPortion(word, rvDetails, Affix);
+            }
+            else
+            {
+                rv = _query.PrefixCheck(word.AsSpan(), CompoundOptions.Not, default); // only prefix, and prefix + suffix XXX
+            }
+
+            return CheckWordAffixPortion(rv, word.AsSpan());
         }
 
         /// <summary>
@@ -1728,7 +1779,7 @@ public partial class WordList
                             if (
                                 (guess.GuessOrig ?? guess.Guess).Contains(wlst[j])
                                 || // check forbidden words
-                                CheckWord(guess.Guess.AsSpan(), false) == 0
+                                CheckWord(guess.Guess, false) == 0
                             )
                             {
                                 unique = false;
@@ -1767,7 +1818,7 @@ public partial class WordList
                             if (
                                 rootPhon.Contains(wlst[j])
                                 || // check forbidden words
-                                CheckWord(rootPhon.AsSpan(), false) == 0
+                                CheckWord(rootPhon, false) == 0
                             )
                             {
                                 unique = false;
@@ -2318,8 +2369,7 @@ public partial class WordList
         {
             if (word.Length > entry.Strip.Length || (word.Length == 0 && Affix.FullStrip))
             {
-                var wordSpan = word.AsSpan();
-                if (entry.TestCondition(wordSpan))
+                if (entry.TestCondition(word.AsSpan()))
                 {
                     if (entry.Strip.Length == 0)
                     {
@@ -2330,7 +2380,7 @@ public partial class WordList
                     if (word.StartsWith(entry.Strip, StringComparison.Ordinal))
                     {
                         // we have a match so add prefix
-                        return StringEx.ConcatString(entry.Append, wordSpan.Slice(entry.Strip.Length));
+                        return StringEx.ConcatString(entry.Append, word.AsSpan(entry.Strip.Length));
                     }
                 }
             }
@@ -2346,8 +2396,7 @@ public partial class WordList
             // make sure all conditions match
             if (word.Length > entry.Strip.Length || (word.Length == 0 && Affix.FullStrip))
             {
-                var wordSpan = word.AsSpan();
-                if (entry.TestCondition(wordSpan))
+                if (entry.TestCondition(word.AsSpan()))
                 {
                     if (entry.Strip.Length == 0)
                     {
@@ -2355,10 +2404,10 @@ public partial class WordList
                         return string.Concat(word, entry.Append);
                     }
 
-                    if (wordSpan.Slice(wordSpan.Length - entry.Strip.Length).EqualsOrdinal(entry.Strip))
+                    if (word.AsSpan(word.Length - entry.Strip.Length).EqualsOrdinal(entry.Strip))
                     {
                         // we have a match so add suffix
-                        return wordSpan.Slice(0, wordSpan.Length - entry.Strip.Length).ConcatString(entry.Append);
+                        return word.AsSpanRemoveFromEnd(entry.Strip.Length).ConcatString(entry.Append);
                     }
                 }
             }
