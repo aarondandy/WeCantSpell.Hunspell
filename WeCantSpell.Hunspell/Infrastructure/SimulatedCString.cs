@@ -1,33 +1,10 @@
 ﻿using System;
-using System.Threading;
+using System.Buffers;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
 struct SimulatedCString
 {
-    private const int DefaultCacheCapacity = 64;
-    private const int MaxCacheCapacity = DefaultCacheCapacity * 2;
-    private static char[]? BufferCache = new char[DefaultCacheCapacity];
-
-    private static char[] GetBuffer(int minCapacity)
-    {
-        var result = Interlocked.Exchange(ref BufferCache, null);
-        if (!(result?.Length >= minCapacity))
-        {
-            result = new char[Math.Max(minCapacity, DefaultCacheCapacity)];
-        }
-
-        return result;
-    }
-
-    private static void ReturnBuffer(char[] buffer)
-    {
-        if (buffer.Length != 0 && buffer.Length < MaxCacheCapacity)
-        {
-            Volatile.Write(ref BufferCache, buffer);
-        }
-    }
-
     public SimulatedCString(int capacity)
     {
         if (capacity <= 0)
@@ -35,7 +12,7 @@ struct SimulatedCString
             capacity = 1;
         }
 
-        _rawBuffer = GetBuffer(capacity);
+        _rawBuffer = ArrayPool<char>.Shared.Rent(capacity);
         _bufferLength = capacity;
         _rawBuffer[0] = '\0';
         _terminatedLength = 0;
@@ -43,7 +20,7 @@ struct SimulatedCString
 
     public SimulatedCString(ReadOnlySpan<char> text)
     {
-        _rawBuffer = GetBuffer(text.Length + 3); // 3 extra characters seems to be enough to prevent most reallocations
+        _rawBuffer = ArrayPool<char>.Shared.Rent(text.Length + 3); // 3 extra characters seems to be enough to prevent most reallocations
         text.CopyTo(_rawBuffer.AsSpan(0, text.Length));
         _bufferLength = text.Length;
         _terminatedLength = -1;
@@ -163,7 +140,12 @@ struct SimulatedCString
 
     public void Destroy()
     {
-        ReturnBuffer(_rawBuffer);
+        if (_rawBuffer.Length != 0)
+        {
+            ArrayPool<char>.Shared.Return(_rawBuffer);
+            _rawBuffer = Array.Empty<char>();
+            _bufferLength = 0;
+        }
     }
 
     private void EnsureBufferCapacity(int neededLength)
@@ -172,9 +154,9 @@ struct SimulatedCString
         {
             if (_rawBuffer.Length < neededLength)
             {
-                var newBuffer = GetBuffer(neededLength);
+                var newBuffer = ArrayPool<char>.Shared.Rent(neededLength);
                 Array.Copy(_rawBuffer, newBuffer, _bufferLength);
-                ReturnBuffer(_rawBuffer);
+                ArrayPool<char>.Shared.Return(_rawBuffer);
                 _rawBuffer = newBuffer;
             }
 
