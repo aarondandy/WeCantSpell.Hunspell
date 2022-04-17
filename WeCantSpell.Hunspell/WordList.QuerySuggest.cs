@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -1817,43 +1818,19 @@ public partial class WordList
 
             static int lcsAlgorithm(ReadOnlySpan<char> s, ReadOnlySpan<char> s2)
             {
-                var result = lcsMatrixBuilder(s, s2);
-
-                var i = s.Length;
-                var j = s2.Length;
                 var nNext = s2.Length + 1;
-                var len = 0;
-                while (i > 0 && j > 0)
-                {
-                    switch (result[(i * nNext) + j])
-                    {
-                        case LongestCommonSubsequenceType.UpLeft:
-                            len++;
-                            i--;
-                            j--;
-                            break;
-                        case LongestCommonSubsequenceType.Up:
-                            i--;
-                            break;
-                        default:
-                            j--;
-                            break;
-                    }
-                }
+                var requiredCapacity = (s.Length + 1) * nNext;
 
-                return len;
-            }
+                var c = ArrayPool<LongestCommonSubsequenceType>.Shared.Rent(requiredCapacity);
+                Array.Clear(c, 0, requiredCapacity);
+                var b = ArrayPool<LongestCommonSubsequenceType>.Shared.Rent(requiredCapacity);
+                Array.Clear(b, 0, requiredCapacity);
 
-            static LongestCommonSubsequenceType[] lcsMatrixBuilder(ReadOnlySpan<char> s, ReadOnlySpan<char> s2)
-            {
-                var nNext = s2.Length + 1;
-                var c = new LongestCommonSubsequenceType[(s.Length + 1) * nNext]; // NOTE: arrays are already zero (Up);
-                var b = new LongestCommonSubsequenceType[(s.Length + 1) * nNext]; // NOTE: arrays are already zero (Up);
-
-                for (var i = 1; i <= s.Length; i++)
+                int i, j;
+                for (i = 1; i <= s.Length; i++)
                 {
                     var iPrev = i - 1;
-                    for (var j = 1; j <= s2.Length; j++)
+                    for (j = 1; j <= s2.Length; j++)
                     {
                         var inj = (i * nNext) + j;
                         ref var cInj = ref c[inj];
@@ -1883,7 +1860,32 @@ public partial class WordList
                     }
                 }
 
-                return b;
+                ArrayPool<LongestCommonSubsequenceType>.Shared.Return(c);
+
+                i = s.Length;
+                j = s2.Length;
+                var len = 0;
+                while (i > 0 && j > 0)
+                {
+                    switch (b[(i * nNext) + j])
+                    {
+                        case LongestCommonSubsequenceType.UpLeft:
+                            len++;
+                            i--;
+                            j--;
+                            break;
+                        case LongestCommonSubsequenceType.Up:
+                            i--;
+                            break;
+                        default:
+                            j--;
+                            break;
+                    }
+                }
+
+                ArrayPool<LongestCommonSubsequenceType>.Shared.Return(b);
+
+                return len;
             }
         }
 
