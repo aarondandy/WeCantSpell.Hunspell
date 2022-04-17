@@ -178,7 +178,7 @@ public partial class WordList
                     {
                         var wlLessBreakIndex = scw.Length - breakEntry.Length + 1;
                         if (
-                            scw.AsSpan(wlLessBreakIndex).EqualsOrdinal(breakEntry.AsSpan().Limit(pLastIndex))
+                            scw.AsSpan(wlLessBreakIndex).EqualsOrdinal(breakEntry.AsSpan(0, pLastIndex))
                             && CheckNested(scw.AsSpan(0, wlLessBreakIndex))
                         )
                         {
