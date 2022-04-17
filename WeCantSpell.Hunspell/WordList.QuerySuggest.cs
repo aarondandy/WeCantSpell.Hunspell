@@ -518,17 +518,38 @@ public partial class WordList
 
         private ref struct SuggestState
         {
-            public List<string> SuggestionList;
+            public SuggestState(string word, List<string> slst)
+            {
+                Word = word.AsSpan();
+                _rawCandidateBuffer = ArrayPool<char>.Shared.Rent(word.Length + 2);
+                CandidateBuffer = _rawCandidateBuffer.AsSpan(0, word.Length + 2);
+                SuggestionList = slst;
+                CpdSuggest = false;
+                GoodSuggestion = false;
+            }
+
             public ReadOnlySpan<char> Word;
             public Span<char> CandidateBuffer;
             public bool CpdSuggest;
             public bool GoodSuggestion;
+            public List<string> SuggestionList;
+            private char[] _rawCandidateBuffer;
 
             public Span<char> GetBufferForWord()
             {
                 var result = CandidateBuffer.Slice(0, Word.Length);
                 Word.CopyTo(result);
                 return result;
+            }
+
+            public void DestroyBuffer()
+            {
+                if (_rawCandidateBuffer.Length != 0)
+                {
+                    ArrayPool<char>.Shared.Return(_rawCandidateBuffer);
+                    _rawCandidateBuffer = Array.Empty<char>();
+                    CandidateBuffer = Span<char>.Empty;
+                }
             }
         }
 
@@ -553,14 +574,7 @@ public partial class WordList
 
             var opLimiter = new OperationTimedLimiter(Options.TimeLimitCompoundSuggest, Options.CancellationToken);
 
-            var state = new SuggestState
-            {
-                SuggestionList = slst,
-                Word = word.AsSpan(),
-                CandidateBuffer = new char[word.Length + 2].AsSpan(),
-                CpdSuggest = false,
-                GoodSuggestion = false
-            };
+            var state = new SuggestState(word, slst);
 
             do
             {
@@ -729,6 +743,9 @@ public partial class WordList
             }
 
         timerExit:
+
+            state.DestroyBuffer();
+
             return state.GoodSuggestion;
         }
 
