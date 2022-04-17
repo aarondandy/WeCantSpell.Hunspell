@@ -1364,10 +1364,13 @@ public partial class WordList
 
             // exhaustively search through all root words
             // keeping track of the MAX_ROOTS most similar root words
-            var roots = new NGramSuggestSearchRoot[MaxRoots]; // TODO: this should come from a pool
+
+            var rootsRental = ArrayPool<NGramSuggestSearchRoot>.Shared.Rent(MaxRoots);
+            var roots = rootsRental.AsSpan(0, MaxRoots);
+
             for (var i = 0; i < roots.Length; i++)
             {
-                roots[i] = new NGramSuggestSearchRoot(i);
+                roots[i] = new(i);
             }
 
             var lp = roots.Length - 1;
@@ -1487,15 +1490,17 @@ public partial class WordList
             // now expand affixes on each of these root words and
             // and use length adjusted ngram scores to select
             // possible suggestions
-            var guesses = new NGramGuess[MaxGuess];
+            var guessesRental = ArrayPool<NGramGuess>.Shared.Rent(MaxGuess);
+            var guesses = guessesRental.AsSpan(0, MaxGuess);
             for (var i = 0; i < guesses.Length; i++)
             {
-                guesses[i] = new NGramGuess(i);
+                guesses[i] = new(i);
             }
 
             lp = guesses.Length - 1;
 
-            var glst = new GuessWord[MaxWords];
+            var glstRental = ArrayPool<GuessWord>.Shared.Rent(MaxWords);
+            var glst = glstRental.AsSpan(0, MaxWords);
             for (var i = 0; i < roots.Length; i++)
             {
                 var rp = roots[i].Root;
@@ -1547,16 +1552,29 @@ public partial class WordList
                 }
             }
 
-            glst = null;
+            ArrayPool<GuessWord>.Shared.Return(glstRental);
+            glstRental = null!;
+            glst = Span<GuessWord>.Empty;
 
             // now we are done generating guesses
             // sort in order of decreasing score
-            Array.Sort(guesses, static (a, b) => b.Score.CompareTo(a.Score));
+
+#if NO_SPAN_COMPARISON_SORT
+            Array.Sort(guessesRental, 0, guesses.Length, NGramGuess.ScoreComparer.Default);
 
             if (hasPhoneEntries)
             {
-                Array.Sort(roots, static (a, b) => b.ScorePhone.CompareTo(a.ScorePhone));
+                Array.Sort(rootsRental, 0, roots.Length, NGramSuggestSearchRoot.ScorePhoneComparer.Default);
             }
+
+#else
+            guesses.Sort(NGramGuess.ScoreComparer.Comparison);
+
+            if (hasPhoneEntries)
+            {
+                roots.Sort(NGramSuggestSearchRoot.ScorePhoneComparer.Comparison);
+            }
+#endif
 
             // weight suggestions with a similarity index, based on
             // the longest common subsequent algorithm and resort
@@ -1609,7 +1627,14 @@ public partial class WordList
                 }
             }
 
-            Array.Sort(guesses, static (a, b) => b.Score.CompareTo(a.Score));
+#if NO_SPAN_COMPARISON_SORT
+            Array.Sort(guessesRental, 0, guesses.Length, NGramGuess.ScoreComparer.Default);
+#else
+            guesses.Sort(NGramGuess.ScoreComparer.Comparison);
+#endif
+
+
+            Array.Sort(guessesRental, 0, guesses.Length, NGramGuess.ScoreComparer.Default);
 
             // phonetic version
             if (hasPhoneEntries)
@@ -1630,7 +1655,11 @@ public partial class WordList
                     }
                 }
 
-                Array.Sort(roots, static (a, b) => b.ScorePhone.CompareTo(a.ScorePhone));
+#if NO_SPAN_COMPARISON_SORT
+                Array.Sort(rootsRental, 0, roots.Length, NGramSuggestSearchRoot.ScorePhoneComparer.Default);
+#else
+                roots.Sort(NGramSuggestSearchRoot.ScorePhoneComparer.Comparison);
+#endif
             }
 
             // copy over
@@ -1700,6 +1729,10 @@ public partial class WordList
                 }
             }
 
+            ArrayPool<NGramGuess>.Shared.Return(guessesRental);
+            guessesRental = null!;
+            guesses = Span<NGramGuess>.Empty;
+
             oldns = wlst.Count;
             wlstLimit = Math.Min(MaxSuggestions, oldns + MaxPhonSugs);
 
@@ -1707,8 +1740,7 @@ public partial class WordList
             {
                 for (var i = 0; i < roots.Length; i++)
                 {
-                    ref var root = ref roots[i];
-                    if (root.RootPhon is not null && wlst.Count < wlstLimit)
+                    if (roots[i].RootPhon is { } rootPhon && wlst.Count < wlstLimit)
                     {
                         var unique = true;
                         for (var j = 0; j < wlst.Count; j++)
@@ -1716,9 +1748,9 @@ public partial class WordList
                             // don't suggest previous suggestions or a previous suggestion with
                             // prefixes or affixes
                             if (
-                                root.RootPhon.Contains(wlst[j])
+                                rootPhon.Contains(wlst[j])
                                 || // check forbidden words
-                                CheckWord(root.RootPhon.AsSpan(), false) == 0
+                                CheckWord(rootPhon.AsSpan(), false) == 0
                             )
                             {
                                 unique = false;
@@ -1728,11 +1760,15 @@ public partial class WordList
 
                         if (unique)
                         {
-                            wlst.Add(root.RootPhon);
+                            wlst.Add(rootPhon);
                         }
                     }
                 }
             }
+
+            ArrayPool<NGramSuggestSearchRoot>.Shared.Return(rootsRental);
+            rootsRental = null!;
+            roots = Span<NGramSuggestSearchRoot>.Empty;
         }
 
         private int CommonCharacterPositions(string s1, string s2, ref bool isSwap)
@@ -1889,34 +1925,46 @@ public partial class WordList
             }
         }
 
-        private int ExpandRootWord(GuessWord[] wlst, WordEntry entry, string bad, string? phon)
+        private int ExpandRootWord(Span<GuessWord> wlst, WordEntry entry, string bad, string? phon)
         {
+            if (wlst.IsEmpty)
+            {
+                return 0;
+            }
+
+            ref var wlstNh = ref wlst[0];
+
             var nh = 0;
             // first add root word to list
             if (nh < wlst.Length && !entry.Detail.ContainsAnyFlags(Affix.NeedAffix, Affix.OnlyInCompound))
             {
-                wlst[nh].Word = entry.Word;
-                if (wlst[nh].Word is null)
+                wlstNh = ref wlst[nh];
+
+                wlstNh.Word = entry.Word;
+                if (wlstNh.Word is null)
                 {
                     return 0;
                 }
 
-                wlst[nh].Allow = false;
-                wlst[nh].Orig = null;
+                wlstNh.Allow = false;
+                wlstNh.Orig = null;
+
                 nh++;
 
                 // add special phonetic version
                 if (phon is not null && nh < wlst.Length)
                 {
-                    wlst[nh].Word = phon;
-                    if (wlst[nh].Word is null)
+                    wlstNh = ref wlst[nh];
+
+                    wlstNh.Word = phon;
+                    if (wlstNh.Word is null)
                     {
                         return nh - 1;
                     }
 
-                    wlst[nh].Allow = false;
-                    wlst[nh].Orig = entry.Word;
-                    if (wlst[nh].Orig is null)
+                    wlstNh.Allow = false;
+                    wlstNh.Orig = entry.Word;
+                    if (wlstNh.Orig is null)
                     {
                         return nh - 1;
                     }
@@ -1952,23 +2000,26 @@ public partial class WordList
                             {
                                 if (nh < wlst.Length)
                                 {
-                                    wlst[nh].Word = newword;
-                                    wlst[nh].Allow = sptrGroup.AllowCross;
-                                    wlst[nh].Orig = null;
+                                    wlstNh = ref wlst[nh];
+                                    wlstNh.Word = newword;
+                                    wlstNh.Allow = sptrGroup.AllowCross;
+                                    wlstNh.Orig = null;
+
                                     nh++;
 
                                     // add special phonetic version
                                     if (phon is not null && nh < wlst.Length)
                                     {
-                                        wlst[nh].Word = phon + key.GetReversed();
-                                        if (wlst[nh].Word is null)
+                                        wlstNh = ref wlst[nh];
+                                        wlstNh.Word = phon + key.GetReversed();
+                                        if (wlstNh.Word is null)
                                         {
                                             return nh - 1;
                                         }
 
-                                        wlst[nh].Allow = false;
-                                        wlst[nh].Orig = newword;
-                                        if (wlst[nh].Orig is null)
+                                        wlstNh.Allow = false;
+                                        wlstNh.Orig = newword;
+                                        if (wlstNh.Orig is null)
                                         {
                                             return nh - 1;
                                         }
@@ -2016,9 +2067,10 @@ public partial class WordList
                                 {
                                     if (nh < wlst.Length)
                                     {
-                                        wlst[nh].Word = newword;
-                                        wlst[nh].Allow = pfxGroup.AllowCross;
-                                        wlst[nh].Orig = null;
+                                        wlstNh = ref wlst[nh];
+                                        wlstNh.Word = newword;
+                                        wlstNh.Allow = pfxGroup.AllowCross;
+                                        wlstNh.Orig = null;
                                     }
                                 }
                             }
@@ -2052,9 +2104,10 @@ public partial class WordList
                             var newword = Add(ptr, entry.Word);
                             if (newword.Length != 0 && nh < wlst.Length)
                             {
-                                wlst[nh].Word = newword;
-                                wlst[nh].Allow = ptrGroup.AllowCross;
-                                wlst[nh].Orig = null;
+                                wlstNh = ref wlst[nh];
+                                wlstNh.Word = newword;
+                                wlstNh.Allow = ptrGroup.AllowCross;
+                                wlstNh.Orig = null;
                                 nh++;
                             }
                         }
@@ -2852,6 +2905,19 @@ public partial class WordList
             public int Score;
 
             public int ScorePhone;
+
+            public class ScorePhoneComparer : IComparer<NGramSuggestSearchRoot>
+            {
+                public static readonly ScorePhoneComparer Default = new();
+
+                private ScorePhoneComparer()
+                {
+                }
+
+                public static int Comparison(NGramSuggestSearchRoot x, NGramSuggestSearchRoot y) => y.ScorePhone.CompareTo(x.ScorePhone);
+
+                public int Compare(NGramSuggestSearchRoot x, NGramSuggestSearchRoot y) => Comparison(x, y);
+            }
         }
 
         private struct NGramGuess
@@ -2873,6 +2939,19 @@ public partial class WordList
             {
                 Guess = null;
                 GuessOrig = null;
+            }
+
+            public class ScoreComparer : IComparer<NGramGuess>
+            {
+                public static readonly ScoreComparer Default = new();
+
+                private ScoreComparer()
+                {
+                }
+
+                public static int Comparison(NGramGuess x, NGramGuess y) => y.Score.CompareTo(x.Score);
+
+                public int Compare(NGramGuess x, NGramGuess y) => Comparison(x, y);
             }
         }
 
