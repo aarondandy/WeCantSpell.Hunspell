@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
@@ -1753,26 +1754,24 @@ public partial class WordList
         /// <seealso cref="AllReplacements"/>
         private bool CompoundReplacementCheck(ReadOnlySpan<char> word)
         {
-            if (word.Length < 2 || WordList.AllReplacements.IsEmpty)
+            if (word.Length >= 2 && !WordList.AllReplacements.IsEmpty)
             {
-                return false;
-            }
-
-            foreach (var replacementEntry in WordList.AllReplacements.Replacements)
-            {
-                // use only available mid patterns
-                if (replacementEntry.Med is { Length: > 0 } replacement)
+                foreach (var replacementEntry in WordList.AllReplacements.Replacements)
                 {
-                    // search every occurence of the pattern in the word
-                    var rIndex = word.IndexOf(replacementEntry.Pattern.AsSpan());
-                    while (rIndex >= 0)
+                    // use only available mid patterns
+                    if (replacementEntry.Med is { Length: > 0 } replacement)
                     {
-                        if (CandidateCheck(word.ReplaceIntoString(rIndex, replacementEntry.Pattern.Length, replacement)))
+                        // search every occurence of the pattern in the word
+                        var rIndex = word.IndexOf(replacementEntry.Pattern.AsSpan());
+                        while (rIndex >= 0)
                         {
-                            return true;
-                        }
+                            if (CandidateCheck(word.ReplaceIntoString(rIndex, replacementEntry.Pattern.Length, replacement)))
+                            {
+                                return true;
+                            }
 
-                        rIndex = word.IndexOf(replacementEntry.Pattern.AsSpan(), rIndex + 1);
+                            rIndex = word.IndexOf(replacementEntry.Pattern.AsSpan(), rIndex + 1);
+                        }
                     }
                 }
             }
@@ -1782,27 +1781,31 @@ public partial class WordList
 
         private bool CompoundWordPairCheck(ReadOnlySpan<char> wordSlice)
         {
-            if (wordSlice.Length <= 2)
-            {
-                return false;
-            }
+            var ok = false;
 
-            var candidate = (new char[wordSlice.Length + 1]).AsSpan();
-            candidate[0] = wordSlice[0];
-
-            for (var i = 1; i < wordSlice.Length; i++)
+            if (wordSlice.Length > 2)
             {
-                candidate[i] = ' ';
-                wordSlice.Slice(i).CopyTo(candidate.Slice(i + 1));
-                if (CandidateCheck(candidate))
+                var candidateBuffer = ArrayPool<char>.Shared.Rent(wordSlice.Length + 1);
+                var candidate = candidateBuffer.AsSpan(0, wordSlice.Length + 1);
+                candidate[0] = wordSlice[0];
+
+                for (var i = 1; i < wordSlice.Length; i++)
                 {
-                    return true;
+                    candidate[i] = ' ';
+                    wordSlice.Slice(i).CopyTo(candidate.Slice(i + 1));
+                    if (CandidateCheck(candidate))
+                    {
+                        ok = true;
+                        break;
+                    }
+
+                    candidate[i] = wordSlice[i];
                 }
 
-                candidate[i] = wordSlice[i];
+                ArrayPool<char>.Shared.Return(candidateBuffer);
             }
 
-            return false;
+            return ok;
         }
 
         private WordEntry? CheckWordPrefix(Affix<PrefixEntry> affix, ReadOnlySpan<char> word, CompoundOptions inCompound, FlagValue needFlag)
