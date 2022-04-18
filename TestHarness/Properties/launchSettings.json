@@ -22,6 +22,11 @@
       "commandName": "Project",
       "commandLineArgs": "check --dic-file \"../samples/English (American).dic\" --word-file \"../hunspell-origin/tests/suggestiontest/List_of_common_misspellings.txt\"",
       "workingDirectory": "./"
+    },
+    "Issue #40": {
+      "commandName": "Project",
+      "commandLineArgs": "suggest-word --dic-file \"../temp-data/fr-toutesvariantes.dic\" --word Systemes",
+      "workingDirectory": "./"
     }
   }
 }
