@@ -129,6 +129,30 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 
     public int Count { get; private set; }
 
+    public TValue this[string key]
+    {
+        get
+        {
+            if (TryGetValue(key, out var result))
+            {
+                return result;
+            }
+
+            throwNotFound();
+            return default!;
+
+#if !NO_EXPOSED_NULLANNOTATIONS
+            [System.Diagnostics.CodeAnalysis.DoesNotReturn]
+#endif
+            static void throwNotFound() => throw new KeyNotFoundException("Given key was not found");
+        }
+        set
+        {
+            ref var entryValue = ref GetOrAdd(key);
+            entryValue = value;
+        }
+    }
+
     public IEnumerable<string> Keys => FilledEntries.Select(static e => e.Key);
 
     public IEnumerable<TValue> Values => FilledEntries.Select(static e => e.Value);
@@ -143,11 +167,9 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 
     IEnumerator IEnumerable.GetEnumerator() => this.AsEnumerable().GetEnumerator();
 
-    public bool ContainsKey(string key) =>
-        !Unsafe.IsNullRef(ref GetRefByKey(key));
+    public bool ContainsKey(string key) => !Unsafe.IsNullRef(ref GetRefByKey(key));
 
-    public bool ContainsKey(ReadOnlySpan<char> key) =>
-        !Unsafe.IsNullRef(ref GetRefByKey(key));
+    public bool ContainsKey(ReadOnlySpan<char> key) => !Unsafe.IsNullRef(ref GetRefByKey(key));
 
     public bool TryGetValue(string key, out TValue value)
     {
@@ -190,19 +212,49 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         return true;
     }
 
+    public void EnsureCapacity(int capacity)
+    {
+        if (_entries.Length >= capacity)
+        {
+            return;
+        }
+
+        var builder = new Builder(capacity);
+        foreach (var oldEntry in _entries)
+        {
+            if (oldEntry.Key is not null)
+            {
+                builder.Write(oldEntry.HashCode, oldEntry.Key, oldEntry.Value);
+            }
+        }
+
+        builder.Flush();
+
+#if DEBUG
+        if (Count != builder.Count) throw new InvalidOperationException();
+#endif
+
+        _entries = builder.Entries;
+        _cellarStartIndex = builder.CellarStartIndex;
+        _fastmodMul = builder.FastmodMultiplier;
+        _collisionIndex = builder.CollisionIndex;
+    }
+
     public void Add(string key, TValue value)
     {
         var hash = CalculateHash(key);
-
-        if (!AddWithoutGrowth(hash, key, value))
+        ref var entry = ref GetOrAddWithoutGrowth(hash, key, isAdd: true);
+        if (Unsafe.IsNullRef(ref entry))
         {
             EnsureCapacity(Math.Max(_entries.Length * 2, 1));
-
-            if (!AddWithoutGrowth(hash, key, value))
+            entry = ref GetOrAddWithoutGrowth(hash, key, isAdd: true);
+            if (Unsafe.IsNullRef(ref entry))
             {
                 throwFailed();
             }
         }
+
+        entry.Value = value;
 
 #if !NO_EXPOSED_NULLANNOTATIONS
         [System.Diagnostics.CodeAnalysis.DoesNotReturn]
@@ -210,75 +262,21 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         static void throwFailed() => throw new InvalidOperationException("Failed to add");
     }
 
-    private bool AddWithoutGrowth(uint hash, string key, TValue value)
-    {
-        ref var entry = ref GetRefByHash(hash);
-        if (entry.Key is null)
-        {
-            entry = new(hash, key, value);
-            Count++;
-            return true;
-        }
-
-        // search through the chain to ensure there are no collisions
-        while (true)
-        {
-            if (entry.HashCode == hash && CheckKeysEqual(entry.Key, key))
-            {
-                throwDuplicate();
-            }
-
-            if (entry.Next < 0)
-            {
-                break;
-            }
-
-            entry = ref _entries[entry.Next];
-        }
-
-        if (Count < _entries.Length)
-        {
-            FindNextEmptyCollisionIndex();
-
-            if (_collisionIndex >= 0)
-            {
-                entry.Next = _collisionIndex;
-
-                entry = ref _entries[_collisionIndex--];
-                entry = new(hash, key, value);
-                Count++;
-
-                return true;
-            }
-        }
-
-        return false;
-
-#if !NO_EXPOSED_NULLANNOTATIONS
-        [System.Diagnostics.CodeAnalysis.DoesNotReturn]
-#endif
-        static void throwDuplicate() => throw new InvalidOperationException("Duplicate key");
-    }
-
     internal ref TValue GetOrAdd(string key)
     {
         var hash = CalculateHash(key);
-
-        ref var entry = ref GetOrAddWithoutGrowth(hash, key);
-        if (!Unsafe.IsNullRef(ref entry))
+        ref var entry = ref GetOrAddWithoutGrowth(hash, key, isAdd: false);
+        if (Unsafe.IsNullRef(ref entry))
         {
-            return ref entry.Value;
+            EnsureCapacity(Math.Max(_entries.Length * 2, 1));
+            entry = ref GetOrAddWithoutGrowth(hash, key, isAdd: false);
+            if (Unsafe.IsNullRef(ref entry))
+            {
+                return ref throwFailed();
+            }
         }
 
-        EnsureCapacity(Math.Max(_entries.Length * 2, 1));
-
-        entry = ref GetOrAddWithoutGrowth(hash, key);
-        if (!Unsafe.IsNullRef(ref entry))
-        {
-            return ref entry.Value;
-        }
-
-        return ref throwFailed();
+        return ref entry.Value;
 
 #if !NO_EXPOSED_NULLANNOTATIONS
         [System.Diagnostics.CodeAnalysis.DoesNotReturn]
@@ -286,7 +284,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         static ref TValue throwFailed() => throw new InvalidOperationException("Failed to add");
     }
 
-    private ref Entry GetOrAddWithoutGrowth(uint hash, string key)
+    private ref Entry GetOrAddWithoutGrowth(uint hash, string key, bool isAdd)
     {
         ref var entry = ref GetRefByHash(hash);
 
@@ -301,6 +299,11 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         {
             if (entry.HashCode == hash && CheckKeysEqual(entry.Key, key))
             {
+                if (isAdd)
+                {
+                    throwDuplicate();
+                }
+
                 return ref entry;
             }
 
@@ -329,35 +332,11 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         }
 
         return ref Unsafe.NullRef<Entry>();
-    }
 
-
-    public void EnsureCapacity(int capacity)
-    {
-        if (_entries.Length >= capacity)
-        {
-            return;
-        }
-
-        var builder = new Builder(capacity);
-        foreach (var oldEntry in _entries)
-        {
-            if (oldEntry.Key is not null)
-            {
-                builder.Write(oldEntry.HashCode, oldEntry.Key, oldEntry.Value);
-            }
-        }
-
-        builder.Flush();
-
-#if DEBUG
-        if (Count != builder.Count) throw new InvalidOperationException();
+#if !NO_EXPOSED_NULLANNOTATIONS
+        [System.Diagnostics.CodeAnalysis.DoesNotReturn]
 #endif
-
-        _entries = builder.Entries;
-        _cellarStartIndex = builder.CellarStartIndex;
-        _fastmodMul = builder.FastmodMultiplier;
-        _collisionIndex = builder.CollisionIndex;
+        static void throwDuplicate() => throw new InvalidOperationException("Duplicate key");
     }
 
     private void FindNextEmptyCollisionIndex()
@@ -636,9 +615,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 
             entry.Next = CollisionIndex;
 
-            Entries[CollisionIndex] = new(hash, key, value);
-
-            CollisionIndex--;
+            Entries[CollisionIndex--] = new(hash, key, value);
 
 #if !NO_EXPOSED_NULLANNOTATIONS
             [System.Diagnostics.CodeAnalysis.DoesNotReturn]
