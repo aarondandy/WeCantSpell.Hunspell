@@ -12,37 +12,15 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
 {
     public static readonly MultiReplacementTable Empty = TakeDictionary(new TextDictionary<MultiReplacementEntry>(0));
 
-    public static MultiReplacementTable Create(Dictionary<string, MultiReplacementEntry>? replacements)
-    {
-        if (replacements is null)
-        {
-            return Empty;
-        }
+    public static MultiReplacementTable Create(Dictionary<string, MultiReplacementEntry>? replacements) =>
+        replacements is null
+            ? Empty
+            : TakeDictionary(TextDictionary<MultiReplacementEntry>.MapFromDictionary(replacements));
 
-        var result = new TextDictionary<MultiReplacementEntry>(replacements.Count);
-        foreach (var replacement in replacements)
-        {
-            result.Add(replacement.Key, replacement.Value);
-        }
-
-        return TakeDictionary(result);
-    }
-
-    internal static MultiReplacementTable Create(TextDictionary<MultiReplacementEntry>? replacements)
-    {
-        if (replacements is null)
-        {
-            return Empty;
-        }
-
-        var result = new TextDictionary<MultiReplacementEntry>(replacements.Count);
-        foreach (var replacement in replacements)
-        {
-            result.Add(replacement.Key, replacement.Value);
-        }
-
-        return TakeDictionary(result);
-    }
+    internal static MultiReplacementTable Create(TextDictionary<MultiReplacementEntry>? replacements) =>
+        replacements is null
+            ? Empty
+            : TakeDictionary(TextDictionary<MultiReplacementEntry>.Clone(replacements));
 
     internal static MultiReplacementTable TakeDictionary(TextDictionary<MultiReplacementEntry>? replacements) =>
         replacements is null ? Empty : new MultiReplacementTable(replacements);

@@ -12,7 +12,7 @@ public abstract class AffixCollection<TEntry> :
     IEnumerable<AffixEntryGroup<TEntry>>
     where TEntry : AffixEntry
 {
-    protected static void Apply<TResult>(TResult result, List<AffixEntryGroup<TEntry>.Builder> builders)
+    protected static void Apply<TResult>(TResult result, List<AffixEntryGroup<TEntry>.Builder> builders, bool allowDestructive)
         where TResult : AffixCollection<TEntry>
     {
         var affixesByFlag = new Dictionary<FlagValue, AffixEntryGroup<TEntry>>(builders.Count);
@@ -21,8 +21,10 @@ public abstract class AffixCollection<TEntry> :
         var affixesWithDots = new List<AffixEntryGroup<TEntry>>();
         var contClassesBuilder = new FlagSet.Builder();
 
-        foreach (var group in builders.Select(static builder => builder.ToImmutable(false))) // TODO: refactor this to allow for destructive ToImmutable
+        foreach (var sourceBuilder in builders)
         {
+            var group = sourceBuilder.ToImmutable(allowDestructive: allowDestructive);
+
             affixesByFlag.Add(group.AFlag, group);
 
             var entriesWithNoKey = new AffixEntryGroup<TEntry>.Builder(group.AFlag, group.Options);
@@ -50,13 +52,13 @@ public abstract class AffixCollection<TEntry> :
                         groupBuildersByKeyAndFlag.Add(indexedKey, groupBuildersByFlag);
                     }
 
-                    if (!groupBuildersByFlag.TryGetValue(group.AFlag, out var groupBuilder))
+                    if (!groupBuildersByFlag.TryGetValue(group.AFlag, out var groupBuilderByFlag))
                     {
-                        groupBuilder = new(group.AFlag, group.Options);
-                        groupBuildersByFlag.Add(group.AFlag, groupBuilder);
+                        groupBuilderByFlag = new(group.AFlag, group.Options);
+                        groupBuildersByFlag.Add(group.AFlag, groupBuilderByFlag);
                     }
 
-                    groupBuilder.Entries.Add(entry);
+                    groupBuilderByFlag.Entries.Add(entry);
                 }
             }
 
@@ -155,13 +157,15 @@ public sealed class SuffixCollection : AffixCollection<SuffixEntry>
 {
     public static SuffixCollection Empty { get; } = new();
 
-    public static SuffixCollection Create(List<AffixEntryGroup<SuffixEntry>.Builder>? builders)
+    public static SuffixCollection Create(List<AffixEntryGroup<SuffixEntry>.Builder>? builders) => Create(builders, allowDestructive: false);
+
+    internal static SuffixCollection Create(List<AffixEntryGroup<SuffixEntry>.Builder>? builders, bool allowDestructive)
     {
         var result = new SuffixCollection();
 
         if (builders is { Count: > 0 })
         {
-            Apply(result, builders);
+            Apply(result, builders, allowDestructive: allowDestructive);
         }
 
         return result;
@@ -221,13 +225,15 @@ public sealed class PrefixCollection : AffixCollection<PrefixEntry>
 {
     public static PrefixCollection Empty { get; } = new();
 
-    public static PrefixCollection Create(List<AffixEntryGroup<PrefixEntry>.Builder>? builders)
+    public static PrefixCollection Create(List<AffixEntryGroup<PrefixEntry>.Builder>? builders) => Create(builders, allowDestructive: false);
+
+    internal static PrefixCollection Create(List<AffixEntryGroup<PrefixEntry>.Builder>? builders, bool allowDestructive)
     {
         var result = new PrefixCollection();
 
         if (builders is { Count: > 0 })
         {
-            Apply(result, builders);
+            Apply(result, builders, allowDestructive: allowDestructive);
         }
 
         return result;
