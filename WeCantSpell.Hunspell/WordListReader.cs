@@ -426,7 +426,9 @@ public sealed class WordListReader
             morphs = AddWord_HandleMorph(morphs, word, capType, ref options);
         }
 
-        if (Builder.EntryDetailsByRoot.TryGetValue(word, out var details))
+        ref var details = ref Builder.EntryDetailsByRoot.GetOrAdd(word);
+
+        if (details is not null)
         {
             if (onlyUpperCase)
             {
@@ -453,14 +455,13 @@ public sealed class WordListReader
                 flags,
                 new MorphSet(morphs),
                 options);
-            Builder.EntryDetailsByRoot[word] = details;
         }
         else
         {
-            Builder.EntryDetailsByRoot.Add(word, new WordEntryDetail[]
+            details = new WordEntryDetail[]
             {
                 new(flags, new MorphSet(morphs),options)
-            });
+            };
         }
     }
 

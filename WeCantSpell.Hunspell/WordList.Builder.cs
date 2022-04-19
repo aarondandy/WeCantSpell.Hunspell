@@ -17,10 +17,10 @@ public partial class WordList
         public Builder(AffixConfig affix)
         {
             Affix = affix;
-            EntryDetailsByRoot = new();
+            EntryDetailsByRoot = new(1);
         }
 
-        internal Dictionary<string, WordEntryDetail[]> EntryDetailsByRoot;
+        internal TextDictionary<WordEntryDetail[]> EntryDetailsByRoot;
 
         public readonly AffixConfig Affix;
 
@@ -31,15 +31,15 @@ public partial class WordList
 
         public void Add(string word, WordEntryDetail detail)
         {
-            if (EntryDetailsByRoot.TryGetValue(word, out var details))
+            ref var details = ref EntryDetailsByRoot.GetOrAdd(word);
+            if (details is null)
             {
-                Array.Resize(ref details, details.Length + 1);
-                details[details.Length - 1] = detail;
-                EntryDetailsByRoot[word] = details;
+                details = new[] { detail };
             }
             else
             {
-                EntryDetailsByRoot.Add(word, new[] { detail });
+                Array.Resize(ref details, details.Length + 1);
+                details[details.Length - 1] = detail;
             }
         }
 
@@ -60,12 +60,12 @@ public partial class WordList
 
             if (allowDestructive)
             {
-                result.EntriesByRoot = TextDictionary<WordEntryDetail[]>.MapFromDictionary(EntryDetailsByRoot);
-                EntryDetailsByRoot.Clear();
+                result.EntriesByRoot = EntryDetailsByRoot;
+                EntryDetailsByRoot = new(1);
             }
             else
             {
-                result.EntriesByRoot = TextDictionary<WordEntryDetail[]>.MapFromDictionary(EntryDetailsByRoot, static v => v.ToArray());
+                result.EntriesByRoot = TextDictionary<WordEntryDetail[]>.Clone(EntryDetailsByRoot, static v => v.ToArray());
             }
 
             result.AllReplacements = Affix.Replacements;
