@@ -5,19 +5,20 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class HunspellTextFunctions
 {
-    public static bool IsReverseSubset(string s1, ReadOnlySpan<char> s2) => IsReverseSubset(s1.AsSpan(), s2);
+    public static bool IsReverseSubset(string s1, ReadOnlySpan<char> s2) =>
+        s1.Length <= s2.Length && IsReverseSubsetLoop(s1.AsSpan(), s2);
 
-    public static bool IsReverseSubset(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
+    public static bool IsReverseSubset(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2) =>
+        s1.Length <= s2.Length && IsReverseSubsetLoop(s1, s2);
+
+    private static bool IsReverseSubsetLoop(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
     {
-        if (s1.Length > s2.Length)
-        {
-            return false;
-        }
+        var s2LastIndex = s2.Length - 1;
 
-        for (int index1 = 0, index2 = s2.Length - 1; index1 < s1.Length; index1++, index2--)
+        for (var i = 0; i < s1.Length; i++)
         {
-            var s1c = s1[index1];
-            if (s1c != '.' && s1c != s2[index2])
+            var s1c = s1[i];
+            if (s1c != '.' && s1c != s2[s2LastIndex - i])
             {
                 return false;
             }
@@ -26,15 +27,14 @@ static class HunspellTextFunctions
         return true;
     }
 
-    public static bool IsSubset(string s1, ReadOnlySpan<char> s2) => IsSubset(s1.AsSpan(), s2);
+    public static bool IsSubset(string s1, ReadOnlySpan<char> s2) =>
+        s1.Length <= s2.Length && IsSubsetLoop(s1.AsSpan(), s2);
 
-    public static bool IsSubset(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
+    public static bool IsSubset(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2) =>
+        s1.Length <= s2.Length && IsSubsetLoop(s1, s2);
+
+    private static bool IsSubsetLoop(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
     {
-        if (s1.Length > s2.Length)
-        {
-            return false;
-        }
-
         for (var i = 0; i < s1.Length; i++)
         {
             var s1c = s1[i];
@@ -150,6 +150,7 @@ static class HunspellTextFunctions
     {
         var builder = StringBuilderPool.Get(baseText.Length);
         builder.Append(firstLetter);
+
         if (baseText.Length > 1)
         {
             builder.Append(baseText.Slice(1));
