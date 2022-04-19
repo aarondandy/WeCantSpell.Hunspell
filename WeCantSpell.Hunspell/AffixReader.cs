@@ -737,9 +737,6 @@ public sealed partial class AffixReader
             return false;
         }
 
-        var affixGroup = groups.FindLast(g => g.AFlag == aFlag);
-        var contClass = FlagSet.Empty;
-
         var group1 = affixParser.ParseNextArgument();
         var group2 = affixParser.ParseNextArgument();
 
@@ -749,6 +746,8 @@ public sealed partial class AffixReader
             return false;
         }
 
+        var contClass = FlagSet.Empty;
+        var affixGroup = findLastByFlag(groups, aFlag);
         if (affixGroup is null)
         {
             // If the affix group is new, this should be the init line for it
@@ -928,6 +927,19 @@ public sealed partial class AffixReader
             contClass));
 
         return true;
+
+        static AffixEntryGroup<TEntry>.Builder? findLastByFlag(List<AffixEntryGroup<TEntry>.Builder> groups, FlagValue aFlag)
+        {
+            for (var i = groups.Count - 1; i >= 0; i--)
+            {
+                if (groups[i].AFlag == aFlag)
+                {
+                    return groups[i];
+                }
+            }
+
+            return null;
+        }
     }
 
     private static TEntry CreateEntry<TEntry>(
