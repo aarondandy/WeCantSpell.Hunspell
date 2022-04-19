@@ -286,12 +286,12 @@ public sealed class WordListReader
         if (Affix.IsAliasM)
         {
             options |= WordEntryOptions.AliasM;
-            var morphBuilder = new List<string>();
+            var morphBuilder = ArrayBuilderPool<string>.Get();
             foreach (var originalValue in morphs)
             {
                 if (IntEx.TryParseInvariant(originalValue, out var morphNumber) && Affix.TryGetAliasM(morphNumber, out var aliasedMorph))
                 {
-                    morphBuilder.AddRange(aliasedMorph);
+                    morphBuilder.AddRange(aliasedMorph.GetInternalArray());
                 }
                 else
                 {
@@ -299,95 +299,122 @@ public sealed class WordListReader
                 }
             }
 
-            morphs = morphBuilder.ToArray();
+            morphs = ArrayBuilderPool<string>.ExtractAndReturn(morphBuilder);
         }
 
-        using (var morphPhonEnumerator = morphs.Where(static m => m is not null && m.StartsWith(MorphologicalTags.Phon)).GetEnumerator())
+        var morphPhonEnumerator = new AddWordMorphFilterEnumerator(morphs);
+        if (morphPhonEnumerator.MoveNext())
         {
-            if (morphPhonEnumerator.MoveNext())
+            options |= WordEntryOptions.Phon;
+
+            // store ph: fields (pronounciation, misspellings, old orthography etc.)
+            // of a morphological description in reptable to use in REP replacements.
+
+            do
             {
-                options |= WordEntryOptions.Phon;
-
-                // store ph: fields (pronounciation, misspellings, old orthography etc.)
-                // of a morphological description in reptable to use in REP replacements.
-
-                do
+                var ph = morphPhonEnumerator.Current.AsSpan(MorphologicalTags.Phon.Length);
+                if (ph.Length == 0)
                 {
-                    var ph = morphPhonEnumerator.Current.AsSpan(MorphologicalTags.Phon.Length);
-                    if (ph.Length == 0)
-                    {
-                        continue;
-                    }
-
-                    ReadOnlySpan<char> wordpart;
-                    // dictionary based REP replacement, separated by "->"
-                    // for example "pretty ph:prity ph:priti->pretti" to handle
-                    // both prity -> pretty and pritier -> prettiest suggestions.
-                    var strippatt = ph.IndexOf("->".AsSpan());
-                    if (strippatt > 0 && strippatt < (ph.Length - 2))
-                    {
-                        wordpart = ph.Slice(strippatt + 2);
-                        ph = ph.Slice(0, strippatt);
-                    }
-                    else
-                    {
-                        wordpart = word.AsSpan();
-                    }
-
-                    // when the ph: field ends with the character *,
-                    // strip last character of the pattern and the replacement
-                    // to match in REP suggestions also at character changes,
-                    // for example, "pretty ph:prity*" results "prit->prett"
-                    // REP replacement instead of "prity->pretty", to get
-                    // prity->pretty and pritiest->prettiest suggestions.
-                    if (ph.EndsWith('*'))
-                    {
-                        if (ph.Length > 2 && wordpart.Length > 1)
-                        {
-                            ph = ph.Slice(0, ph.Length - 2);
-                            wordpart = wordpart.Slice(0, word.Length - 1);
-                        }
-                    }
-
-                    var phString = ph.ToString();
-                    var wordpartString = wordpart.ToString();
-
-                    // capitalize lowercase pattern for capitalized words to support
-                    // good suggestions also for capitalized misspellings, eg.
-                    // Wednesday ph:wendsay
-                    // results wendsay -> Wednesday and Wendsay -> Wednesday, too.
-                    if (capType == CapitalizationType.Init)
-                    {
-                        var phCapitalized = HunspellTextFunctions.MakeInitCap(phString, Affix.Culture.TextInfo);
-                        if (phCapitalized.Length != 0)
-                        {
-                            // add also lowercase word in the case of German or
-                            // Hungarian to support lowercase suggestions lowercased by
-                            // compound word generation or derivational suffixes
-                            // (for example by adjectival suffix "-i" of geographical
-                            // names in Hungarian:
-                            // Massachusetts ph:messzecsuzec
-                            // messzecsuzeci -> massachusettsi (adjective)
-                            // For lowercasing by conditional PFX rules, see
-                            // tests/germancompounding test example or the
-                            // Hungarian dictionary.)
-                            if (Affix.IsGerman || Affix.IsHungarian)
-                            {
-                                var wordpartLower = HunspellTextFunctions.MakeAllSmall(wordpartString, Affix.Culture.TextInfo);
-                                Builder.PhoneticReplacements.Add(new SingleReplacement(phString, wordpartLower, ReplacementValueType.Med));
-                            }
-
-                            Builder.PhoneticReplacements.Add(new SingleReplacement(phCapitalized, wordpartString, ReplacementValueType.Med));
-                        }
-                    }
-
-                    Builder.PhoneticReplacements.Add(new SingleReplacement(phString, wordpartString, ReplacementValueType.Med));
+                    continue;
                 }
-                while (morphPhonEnumerator.MoveNext());
+
+                ReadOnlySpan<char> wordpart;
+                // dictionary based REP replacement, separated by "->"
+                // for example "pretty ph:prity ph:priti->pretti" to handle
+                // both prity -> pretty and pritier -> prettiest suggestions.
+                var strippatt = ph.IndexOf("->".AsSpan());
+                if (strippatt > 0 && strippatt < (ph.Length - 2))
+                {
+                    wordpart = ph.Slice(strippatt + 2);
+                    ph = ph.Slice(0, strippatt);
+                }
+                else
+                {
+                    wordpart = word.AsSpan();
+                }
+
+                // when the ph: field ends with the character *,
+                // strip last character of the pattern and the replacement
+                // to match in REP suggestions also at character changes,
+                // for example, "pretty ph:prity*" results "prit->prett"
+                // REP replacement instead of "prity->pretty", to get
+                // prity->pretty and pritiest->prettiest suggestions.
+                if (ph.EndsWith('*'))
+                {
+                    if (ph.Length > 2 && wordpart.Length > 1)
+                    {
+                        ph = ph.Slice(0, ph.Length - 2);
+                        wordpart = wordpart.Slice(0, word.Length - 1);
+                    }
+                }
+
+                var phString = ph.ToString();
+                var wordpartString = wordpart.ToString();
+
+                // capitalize lowercase pattern for capitalized words to support
+                // good suggestions also for capitalized misspellings, eg.
+                // Wednesday ph:wendsay
+                // results wendsay -> Wednesday and Wendsay -> Wednesday, too.
+                if (capType == CapitalizationType.Init)
+                {
+                    var phCapitalized = HunspellTextFunctions.MakeInitCap(phString, Affix.Culture.TextInfo);
+                    if (phCapitalized.Length != 0)
+                    {
+                        // add also lowercase word in the case of German or
+                        // Hungarian to support lowercase suggestions lowercased by
+                        // compound word generation or derivational suffixes
+                        // (for example by adjectival suffix "-i" of geographical
+                        // names in Hungarian:
+                        // Massachusetts ph:messzecsuzec
+                        // messzecsuzeci -> massachusettsi (adjective)
+                        // For lowercasing by conditional PFX rules, see
+                        // tests/germancompounding test example or the
+                        // Hungarian dictionary.)
+                        if (Affix.IsGerman || Affix.IsHungarian)
+                        {
+                            var wordpartLower = HunspellTextFunctions.MakeAllSmall(wordpartString, Affix.Culture.TextInfo);
+                            Builder.PhoneticReplacements.Add(new SingleReplacement(phString, wordpartLower, ReplacementValueType.Med));
+                        }
+
+                        Builder.PhoneticReplacements.Add(new SingleReplacement(phCapitalized, wordpartString, ReplacementValueType.Med));
+                    }
+                }
+
+                Builder.PhoneticReplacements.Add(new SingleReplacement(phString, wordpartString, ReplacementValueType.Med));
             }
+            while (morphPhonEnumerator.MoveNext());
         }
 
         return morphs;
+    }
+
+    private struct AddWordMorphFilterEnumerator
+    {
+        public AddWordMorphFilterEnumerator(string[] morphs)
+        {
+            _morphs = morphs;
+            _index = 0;
+            Current = null!;
+        }
+
+        private string[] _morphs;
+        private int _index;
+
+        public string Current;
+
+        public bool MoveNext()
+        {
+            while (_index < _morphs.Length)
+            {
+                Current = _morphs[_index++];
+                if (Current is not null && Current.StartsWith(MorphologicalTags.Phon))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     private void AddWord(string word, FlagSet flags, string[] morphs, bool onlyUpperCase, CapitalizationType capType)
@@ -399,33 +426,42 @@ public sealed class WordListReader
             morphs = AddWord_HandleMorph(morphs, word, capType, ref options);
         }
 
-        var details = Builder.GetOrCreateDetailList(word);
-
-        if (onlyUpperCase)
+        if (Builder.EntryDetailsByRoot.TryGetValue(word, out var details))
         {
-            if (details.Count != 0)
+            if (onlyUpperCase)
             {
-                return;
-            }
-        }
-        else
-        {
-            for (var i = 0; i < details.Count; i++)
-            {
-                var existingEntry = details[i];
-                if (existingEntry.ContainsFlag(SpecialFlags.OnlyUpcaseFlag))
+                if (details.Length != 0)
                 {
-                    details[i] = new WordEntryDetail(flags, existingEntry.Morphs, existingEntry.Options);
                     return;
                 }
             }
-        }
+            else
+            {
+                for (var i = 0; i < details.Length; i++)
+                {
+                    ref var entry = ref details[i];
+                    if (entry.ContainsFlag(SpecialFlags.OnlyUpcaseFlag))
+                    {
+                        entry = new(flags, entry.Morphs, entry.Options);
+                        return;
+                    }
+                }
+            }
 
-        details.Add(
-            new WordEntryDetail(
+            Array.Resize(ref details, details.Length + 1);
+            details[details.Length - 1] = new(
                 flags,
                 new MorphSet(morphs),
-                options));
+                options);
+            Builder.EntryDetailsByRoot[word] = details;
+        }
+        else
+        {
+            Builder.EntryDetailsByRoot.Add(word, new WordEntryDetail[]
+            {
+                new(flags, new MorphSet(morphs),options)
+            });
+        }
     }
 
     private void AddWordCapitalized(string word, FlagSet flags, string[] morphs, CapitalizationType capType)

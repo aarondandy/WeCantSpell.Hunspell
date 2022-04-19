@@ -13,6 +13,19 @@ namespace WeCantSpell.Hunspell;
 /// </remarks>
 sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 {
+    public static TextDictionary<TValue> MapFromDictionary(Dictionary<string, TValue> source)
+    {
+        var builder = new Builder(source.Count);
+        foreach (var entry in source)
+        {
+            builder.Write(entry.Key, entry.Value);
+        }
+
+        builder.Flush();
+
+        return new TextDictionary<TValue>(ref builder);
+    }
+
     public static TextDictionary<TValue> MapFromDictionary<TSourceValue>(Dictionary<string, TSourceValue> source, Func<TSourceValue, TValue> valueSelector)
     {
         var builder = new Builder(source.Count);

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -19,7 +20,7 @@ public partial class WordList
             EntryDetailsByRoot = new();
         }
 
-        private Dictionary<string, ArrayBuilder<WordEntryDetail>> EntryDetailsByRoot;
+        internal Dictionary<string, WordEntryDetail[]> EntryDetailsByRoot;
 
         public readonly AffixConfig Affix;
 
@@ -30,18 +31,16 @@ public partial class WordList
 
         public void Add(string word, WordEntryDetail detail)
         {
-            GetOrCreateDetailList(word).Add(detail);
-        }
-
-        internal ArrayBuilder<WordEntryDetail> GetOrCreateDetailList(string word)
-        {
-            if (!EntryDetailsByRoot.TryGetValue(word, out var details))
+            if (EntryDetailsByRoot.TryGetValue(word, out var details))
             {
-                details = new(1);
-                EntryDetailsByRoot.Add(word, details);
+                Array.Resize(ref details, details.Length + 1);
+                details[details.Length - 1] = detail;
+                EntryDetailsByRoot[word] = details;
             }
-
-            return details;
+            else
+            {
+                EntryDetailsByRoot.Add(word, new[] { detail });
+            }
         }
 
         public WordList ToImmutable() => ToImmutable(allowDestructive: false);
@@ -61,12 +60,12 @@ public partial class WordList
 
             if (allowDestructive)
             {
-                result.EntriesByRoot = TextDictionary<WordEntryDetail[]>.MapFromDictionary(EntryDetailsByRoot, static v => v.Extract());
+                result.EntriesByRoot = TextDictionary<WordEntryDetail[]>.MapFromDictionary(EntryDetailsByRoot);
                 EntryDetailsByRoot.Clear();
             }
             else
             {
-                result.EntriesByRoot = TextDictionary<WordEntryDetail[]>.MapFromDictionary(EntryDetailsByRoot, static v => v.MakeArray());
+                result.EntriesByRoot = TextDictionary<WordEntryDetail[]>.MapFromDictionary(EntryDetailsByRoot, static v => v.ToArray());
             }
 
             result.AllReplacements = Affix.Replacements;

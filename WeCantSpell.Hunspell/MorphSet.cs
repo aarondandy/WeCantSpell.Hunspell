@@ -64,6 +64,8 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
 
     public override int GetHashCode() => ((IStructuralEquatable)_morphs).GetHashCode(StringComparer.Ordinal);
 
+    internal string[] GetInternalArray() => _morphs;
+
     public class Comparer : IEqualityComparer<MorphSet>
     {
         public static Comparer Instance { get; } = new();
