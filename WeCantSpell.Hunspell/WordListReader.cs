@@ -506,10 +506,12 @@ public sealed class WordListReader
 
             // read past any leading tabs or spaces
             for (i = 0; i < line.Length && line[i].IsTabOrSpace(); ++i) ;
+
             if (i > 0)
             {
                 line = line.Slice(i);
             }
+
             if (line.IsEmpty)
             {
                 return default;
@@ -548,16 +550,21 @@ public sealed class WordListReader
                 return default;
             }
 
-            var morphs = Array.Empty<string>();
-            if (!morphPart.IsEmpty)
+            string[] morphs;
+            if (morphPart.IsEmpty)
             {
-                var morphsBuilder = new List<string>();
+                morphs = Array.Empty<string>();
+            }
+            else
+            {
+                var morphsBuilder = ArrayBuilderPool<string>.Get();
+
                 foreach (var morph in morphPart.SplitOnTabOrSpace())
                 {
                     morphsBuilder.Add(morph.ToString());
                 }
 
-                morphs = morphsBuilder.ToArray();
+                morphs = ArrayBuilderPool<string>.ExtractAndReturn(morphsBuilder);
             }
 
             return new ParsedWordLine(

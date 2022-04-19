@@ -187,6 +187,14 @@ public sealed class ArrayBuilder<T>
         return result;
     }
 
+    public void Reverse()
+    {
+        if (Count > 0)
+        {
+            Array.Reverse(_values, 0, Count);
+        }
+    }
+
     public T[] MakeArray() => Count == 0 ? Array.Empty<T>() : _values.AsSpan(0, Count).ToArray();
 
     public T[] MakeOrExtractArray(bool extract) => extract ? Extract() : MakeArray();

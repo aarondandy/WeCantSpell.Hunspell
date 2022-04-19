@@ -15,6 +15,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
     public static readonly CharacterConditionGroup AllowAnySingleCharacter = Create(CharacterCondition.AllowAny);
 
     public static CharacterConditionGroup Create(CharacterCondition condition) => new(new[] { condition });
+
     public static CharacterConditionGroup Create(IEnumerable<CharacterCondition> conditions) =>
         new((conditions ?? throw new ArgumentNullException(nameof(conditions))).ToArray());
 
@@ -33,7 +34,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
         }
 
         ReadOnlySpan<char> span;
-        var conditions = new List<CharacterCondition>();
+        var conditions = ArrayBuilderPool<CharacterCondition>.Get();
 
         do
         {
@@ -79,7 +80,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
         }
         while (!text.IsEmpty);
 
-        return Create(conditions);
+        return new(ArrayBuilderPool<CharacterCondition>.ExtractAndReturn(conditions));
     }
 
     internal CharacterConditionGroup(CharacterCondition[] items)

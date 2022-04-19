@@ -663,14 +663,16 @@ public sealed partial class AffixReader
 
     private bool TryParseAliasM(ReadOnlySpan<char> parameterText, ImmutableArray<MorphSet>.Builder entries)
     {
-        var parts = new List<string>();
+        var parts = ArrayBuilderPool<string>.Get();
 
         if (EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes))
         {
             foreach (var part in parameterText.SplitOnTabOrSpace())
             {
-                parts.Insert(0, part.ToStringReversed());
+                parts.Add(part.ToStringReversed());
             }
+
+            parts.Reverse();
         }
         else
         {
@@ -680,7 +682,7 @@ public sealed partial class AffixReader
             }
         }
 
-        entries.Add(MorphSet.Create(parts));
+        entries.Add(new MorphSet(ArrayBuilderPool<string>.ExtractAndReturn(parts)));
 
         return true;
     }
