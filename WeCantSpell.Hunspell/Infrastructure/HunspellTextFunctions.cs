@@ -1,50 +1,51 @@
 ﻿using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class HunspellTextFunctions
 {
-    public static bool IsReverseSubset(string s1, ReadOnlySpan<char> s2) =>
-        s1.Length <= s2.Length && IsReverseSubsetLoop(s1.AsSpan(), s2);
-
-    public static bool IsReverseSubset(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2) =>
-        s1.Length <= s2.Length && IsReverseSubsetLoop(s1, s2);
-
-    private static bool IsReverseSubsetLoop(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
+    public static bool IsReverseSubset(string s1, ReadOnlySpan<char> s2)
     {
-        var s2LastIndex = s2.Length - 1;
+        return s1.Length <= s2.Length && isReverseSubset(s1.AsSpan(), s2);
 
-        for (var i = 0; i < s1.Length; i++)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static bool isReverseSubset(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
         {
-            var s1c = s1[i];
-            if (s1c != '.' && s1c != s2[s2LastIndex - i])
-            {
-                return false;
-            }
-        }
+            var s2LastIndex = s2.Length - 1;
 
-        return true;
+            for (var i = 0; i < s1.Length; i++)
+            {
+                var c = s1[i];
+                if (c != '.' && s2[s2LastIndex - i] != c)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 
-    public static bool IsSubset(string s1, ReadOnlySpan<char> s2) =>
-        s1.Length <= s2.Length && IsSubsetLoop(s1.AsSpan(), s2);
-
-    public static bool IsSubset(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2) =>
-        s1.Length <= s2.Length && IsSubsetLoop(s1, s2);
-
-    private static bool IsSubsetLoop(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
+    public static bool IsSubset(string s1, ReadOnlySpan<char> s2)
     {
-        for (var i = 0; i < s1.Length; i++)
-        {
-            var s1c = s1[i];
-            if (s1c != '.' && s1c != s2[i])
-            {
-                return false;
-            }
-        }
+        return s1.Length <= s2.Length && isSubset(s1.AsSpan(), s2);
 
-        return true;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static bool isSubset(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
+        {
+            for (var i = 0; i < s1.Length; i++)
+            {
+                var c = s1[i];
+                if (c != '.' && s2[i] != c)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 
     public static bool IsNumericWord(ReadOnlySpan<char> word)

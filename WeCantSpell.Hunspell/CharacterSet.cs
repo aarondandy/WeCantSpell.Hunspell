@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -64,7 +63,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
     public bool Contains(char value)
     {
-        if (HasItems)
+        if (_values is not null)
         {
             if (_values.Length == 1)
             {
@@ -73,21 +72,33 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
             if (unchecked((value & _mask) == value))
             {
-                if (_values.Length <= 8)
-                {
-                    return _values.Contains(value);
-                }
-
-                return Array.BinarySearch(_values, value) >= 0;
+                return _values.Length <= 8
+                    ? checkIterative(_values, value)
+                    : Array.BinarySearch(_values, value) >= 0;
             }
         }
 
         return false;
+
+        static bool checkIterative(char[] values, char value)
+        {
+            for (var i = 0; i < values.Length; i++)
+            {
+                switch (values[i].CompareTo(value))
+                {
+                    case 0: return true;
+                    case > 0: goto done;
+                }
+            }
+
+        done:
+            return false;
+        }
     }
 
     public int FindIndexOfMatch(ReadOnlySpan<char> text)
     {
-        if (HasItems)
+        if (_values is not null)
         {
             switch (_values.Length)
             {

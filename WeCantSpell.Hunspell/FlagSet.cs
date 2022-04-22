@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -72,7 +71,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             builder.Add(FlagValue.CreateAsLong(text[i], text[i + 1]));
         }
 
-        if (lastIndex % 2 == 0)
+        if ((lastIndex & 1) == 0)
         {
             builder.Add(new FlagValue(text[lastIndex]));
         }
@@ -118,6 +117,11 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     public FlagSet Union(FlagValue value)
     {
+        if (!value.HasValue)
+        {
+            return this;
+        }
+
         var valueIndex = Array.BinarySearch(Values, value);
         if (valueIndex >= 0)
         {
@@ -177,7 +181,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     public bool Contains(FlagValue value)
     {
-        if (value.HasValue && HasItems)
+        if (value.HasValue && Values is not null)
         {
             if (Values.Length == 1)
             {
@@ -186,16 +190,28 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
             if (unchecked(value & _mask) == value)
             {
-                if (Values.Length <= 8)
-                {
-                    return Values.Contains(value);
-                }
-
-                return Array.BinarySearch(Values, value) >= 0;
+                return Values.Length <= 8
+                    ? checkIterative(Values, value)
+                    : Array.BinarySearch(Values, value) >= 0;
             }
         }
 
         return false;
+
+        static  bool checkIterative(FlagValue[] values, FlagValue value)
+        {
+            for (var i = 0; i < values.Length; i++)
+            {
+                switch (values[i].CompareTo(value))
+                {
+                    case 0: return true;
+                    case > 0: goto done;
+                }
+            }
+
+        done:
+            return false;
+        }
     }
 
     public bool ContainsAny(FlagSet values)
@@ -246,14 +262,111 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         }
     }
 
-    public bool ContainsAny(FlagValue a, FlagValue b) =>
-        HasItems && (Contains(a) || Contains(b));
+    public bool ContainsAny(FlagValue a, FlagValue b)
+    {
+        if (Values is not null && Values.Length != 0)
+        {
+            if (Values.Length == 1)
+            {
+                return Values[0].EqualsAny(a, b);
+            }
 
-    public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c) =>
-        HasItems && (Contains(a) || Contains(b) || Contains(c));
+            if (b < a)
+            {
+                (b, a) = (a, b);
+            }
+
+            var i = 0;
+            if (a.HasValue && unchecked((a & _mask) == a))
+            {
+                i = Array.BinarySearch(Values, i, Values.Length - i, a);
+                if (i >= 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    i = ~i;
+                }
+            }
+
+            if (b.HasValue && unchecked((b & _mask) == b))
+            {
+                i = Array.BinarySearch(Values, i, Values.Length - i, b);
+                if (i >= 0)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c)
+    {
+        if (Values is not null && Values.Length != 0)
+        {
+            if (Values.Length == 1)
+            {
+                return Values[0].EqualsAny(a, b, c);
+            }
+
+            if (c < b)
+            {
+                (c, b) = (b, c);
+            }
+            if (b < a)
+            {
+                (b, a) = (a, b);
+            }
+            if (c < b)
+            {
+                (c, b) = (b, c);
+            }
+
+            var i = 0;
+            if (a.HasValue && unchecked((a & _mask) == a))
+            {
+                i = Array.BinarySearch(Values, i, Values.Length - i, a);
+                if (i >= 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    i = ~i;
+                }
+            }
+
+            if (b.HasValue && unchecked((b & _mask) == b))
+            {
+                i = Array.BinarySearch(Values, i, Values.Length - i, b);
+                if (i >= 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    i = ~i;
+                }
+            }
+
+            if (c.HasValue && unchecked((c & _mask) == c))
+            {
+                i = Array.BinarySearch(Values, i, Values.Length - i, c);
+                if (i >= 0)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 
     public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c, FlagValue d) =>
-        HasItems && (Contains(a) || Contains(b) || Contains(c) || Contains(d));
+        ContainsAny(a, b, c) || Contains(d);
 
     public bool Equals(FlagSet other) => Values.SequenceEqual(other.Values);
 
@@ -301,10 +414,13 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
         public void Add(FlagValue value)
         {
-            _builder.AddAsSortedSet(value);
-            unchecked
+            if (value.HasValue)
             {
-                _mask |= value;
+                _builder.AddAsSortedSet(value);
+                unchecked
+                {
+                    _mask |= value;
+                }
             }
         }
 
