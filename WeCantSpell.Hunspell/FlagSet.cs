@@ -184,7 +184,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
                 return Values[0].Equals(value);
             }
 
-            if (unchecked(value & _mask) != default)
+            if (unchecked(value & _mask) == value)
             {
                 if (Values.Length <= 8)
                 {

@@ -71,7 +71,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
                 return _values[0] == value;
             }
 
-            if (unchecked((value & _mask) != 0))
+            if (unchecked((value & _mask) == value))
             {
                 if (_values.Length <= 8)
                 {
