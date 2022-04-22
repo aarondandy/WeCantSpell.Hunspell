@@ -26,6 +26,49 @@ public readonly struct AffixEntryGroupCollection<TEntry> : IReadOnlyList<AffixEn
     public bool IsEmpty => !HasItems;
     public bool HasItems => Groups is { Length: > 0 };
     public AffixEntryGroup<TEntry> this[int index] => Groups[index];
-    public IEnumerator<AffixEntryGroup<TEntry>> GetEnumerator() => ((IEnumerable<AffixEntryGroup<TEntry>>)Groups).GetEnumerator();
+    public Enumerator<AffixEntryGroup<TEntry>> GetEnumerator() => new(Groups);
+    IEnumerator<AffixEntryGroup<TEntry>> IEnumerable<AffixEntryGroup<TEntry>>.GetEnumerator() => ((IEnumerable<AffixEntryGroup<TEntry>>)Groups).GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => Groups.GetEnumerator();
+
+    public struct Enumerator<TValue> : IEnumerator<TValue>
+    {
+        internal Enumerator(TValue[] items)
+        {
+            _items = items;
+            _index = -1;
+        }
+
+        private TValue[] _items;
+        private int _index;
+
+        public TValue Current
+        {
+            get
+            {
+                return _index >= 0 && _index < _items.Length ? _items[_index] : throwBadIndex();
+                static TValue throwBadIndex() => throw new InvalidOperationException("Invalid index");
+            }
+        }
+
+        object IEnumerator.Current => (object)Current!;
+
+        public bool MoveNext()
+        {
+            if (_index < _items.Length)
+            {
+                return ++_index < _items.Length;
+            }
+
+            return false;
+        }
+
+        public void Reset()
+        {
+            _index = 0;
+        }
+
+        public void Dispose()
+        {
+        }
+    }
 }

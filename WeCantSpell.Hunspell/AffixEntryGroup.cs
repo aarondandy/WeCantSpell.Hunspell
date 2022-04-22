@@ -43,9 +43,39 @@ public sealed class AffixEntryGroup<TEntry> where TEntry : AffixEntry
     /// <seealso cref="AffixEntryOptions"/>
     public bool AllowCross => EnumEx.HasFlag(Options, AffixEntryOptions.CrossProduct);
 
-    internal IEnumerable<Affix<TEntry>> ToAffixes() => Entries.Select(CreateAffix);
+    internal AffixEnumerable ToAffixes() => new(Entries, AFlag, Options);
 
     internal Affix<TEntry> CreateAffix(TEntry entry) => new(entry, AFlag, Options);
+
+    internal struct AffixEnumerable
+    {
+        public AffixEnumerable(ImmutableArray<TEntry> entries, FlagValue aFlag, AffixEntryOptions options)
+        {
+            _core = entries.GetEnumerator();
+            _aFlag = aFlag;
+            _options = options;
+            Current = default!;
+        }
+
+        private ImmutableArray<TEntry>.Enumerator _core;
+        private FlagValue _aFlag;
+        private AffixEntryOptions _options;
+
+        public Affix<TEntry> Current { get; private set; }
+
+        public AffixEnumerable GetEnumerator() => this;
+
+        public bool MoveNext()
+        {
+            if (_core.MoveNext())
+            {
+                Current = new(_core.Current, _aFlag, _options);
+                return true;
+            }
+
+            return false;
+        }
+    }
 
     public sealed class Builder
     {

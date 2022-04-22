@@ -175,48 +175,120 @@ public sealed class SuffixCollection : AffixCollection<SuffixEntry>
     {
     }
 
-    internal IEnumerable<AffixEntryGroup<SuffixEntry>> GetMatchingAffixGroups(ReadOnlySpan<char> word)
+    internal AffixGroupWordEnumerator GetMatchingAffixGroups(ReadOnlySpan<char> word)
     {
-        var results = Enumerable.Empty<AffixEntryGroup<SuffixEntry>>();
+        var first = Array.Empty<AffixEntryGroup<SuffixEntry>>();
+        var second = AffixEntryGroupCollection<SuffixEntry>.Empty;
 
         if (!word.IsEmpty)
         {
             if (AffixesByIndexedByKey.TryGetValue(word[word.Length - 1], out var indexedGroups))
             {
-                results = indexedGroups.Groups;
+                first = indexedGroups.Groups;
             }
 
-            if (AffixesWithDots.HasItems)
-            {
-                results = results.Concat(AffixesWithDots);
-            }
+            second = AffixesWithDots;
         }
 
-        return results;
+        return new(first, second);
     }
 
-    internal IEnumerable<AffixEntryGroup<SuffixEntry>> GetMatchingAffixGroups(ReadOnlySpan<char> word, FlagSet groupFlagFilter)
+    internal struct AffixGroupWordEnumerator
     {
-        var results = Enumerable.Empty<AffixEntryGroup<SuffixEntry>>();
+        public AffixGroupWordEnumerator(AffixEntryGroup<SuffixEntry>[] first, AffixEntryGroupCollection<SuffixEntry> second)
+        {
+            _first = first;
+            _firstIndex = 0;
+            _second = second;
+            _secondIndex = 0;
+            Current = default!;
+        }
+
+        private int _firstIndex = 0;
+        private int _secondIndex = 0;
+        private AffixEntryGroup<SuffixEntry>[] _first;
+        private AffixEntryGroupCollection<SuffixEntry> _second;
+
+        public AffixEntryGroup<SuffixEntry> Current { get; private set; }
+
+        public AffixGroupWordEnumerator GetEnumerator() => this;
+
+        public bool MoveNext()
+        {
+            if (_firstIndex < _first.Length)
+            {
+                Current = _first[_firstIndex++];
+                return true;
+            }
+
+            if (_secondIndex < _second.Count)
+            {
+                Current = _second[_secondIndex++];
+                return true;
+            }
+
+            return false;
+        }
+    }
+
+    internal AffixGroupWordFlagEnumerator GetMatchingAffixGroups(ReadOnlySpan<char> word, FlagSet groupFlagFilter)
+    {
+        var first = Array.Empty<AffixEntryGroup<SuffixEntry>>();
+        var second = AffixEntryGroupCollection<SuffixEntry>.Empty;
 
         if (!word.IsEmpty)
         {
             if (groupFlagFilter.HasItems && AffixesByIndexedByKey.TryGetValue(word[word.Length - 1], out var indexedGroups))
             {
-                results = getFilteredGroups(indexedGroups, groupFlagFilter);
+                first = indexedGroups.Groups;
             }
 
-            if (AffixesWithDots.HasItems)
-            {
-                results = results.Concat(AffixesWithDots);
-            }
+            second = AffixesWithDots;
         }
 
-        return results;
+        return new (first, second, groupFlagFilter);
+    }
 
-        static IEnumerable<AffixEntryGroup<SuffixEntry>> getFilteredGroups(AffixEntryGroupCollection<SuffixEntry> indexedGroups, FlagSet groupFlagFilter)
+    internal struct AffixGroupWordFlagEnumerator
+    {
+        public AffixGroupWordFlagEnumerator(AffixEntryGroup<SuffixEntry>[] first, AffixEntryGroupCollection<SuffixEntry> second, FlagSet groupFlagFilter)
         {
-            return indexedGroups.Groups.Where(group => groupFlagFilter.Contains(group.AFlag));
+            _first = first;
+            _firstIndex = 0;
+            _firstFlagFilter = groupFlagFilter;
+            _second = second;
+            _secondIndex = 0;
+            Current = default!;
+        }
+
+        private int _firstIndex = 0;
+        private int _secondIndex = 0;
+        private AffixEntryGroup<SuffixEntry>[] _first;
+        private AffixEntryGroupCollection<SuffixEntry> _second;
+        private FlagSet _firstFlagFilter;
+
+        public AffixEntryGroup<SuffixEntry> Current { get; private set; }
+
+        public AffixGroupWordFlagEnumerator GetEnumerator() => this;
+
+        public bool MoveNext()
+        {
+            while (_firstIndex < _first.Length)
+            {
+                Current = _first[_firstIndex++];
+                if (_firstFlagFilter.Contains(Current.AFlag))
+                {
+                    return true;
+                }
+            }
+
+            if (_secondIndex < _second.Count)
+            {
+                Current = _second[_secondIndex++];
+                return true;
+            }
+
+            return false;
         }
     }
 }
@@ -243,23 +315,62 @@ public sealed class PrefixCollection : AffixCollection<PrefixEntry>
     {
     }
 
-    internal IEnumerable<AffixEntryGroup<PrefixEntry>> GetMatchingAffixGroups(ReadOnlySpan<char> word)
+    internal AffixGroupWordEnumerator GetMatchingAffixGroups(ReadOnlySpan<char> word)
     {
-        var results = Enumerable.Empty<AffixEntryGroup<PrefixEntry>>();
+        var first = Array.Empty<AffixEntryGroup<PrefixEntry>>();
+        var second = AffixEntryGroupCollection<PrefixEntry>.Empty;
 
         if (!word.IsEmpty)
         {
             if (AffixesByIndexedByKey.TryGetValue(word[0], out var indexedGroups))
             {
-                results = indexedGroups.Groups;
+                first = indexedGroups.Groups;
             }
 
             if (AffixesWithDots.HasItems)
             {
-                results = results.Concat(AffixesWithDots);
+                second = AffixesWithDots;
             }
         }
 
-        return results;
+        return new(first, second);
+    }
+
+    internal struct AffixGroupWordEnumerator
+    {
+        public AffixGroupWordEnumerator(AffixEntryGroup<PrefixEntry>[] first, AffixEntryGroupCollection<PrefixEntry> second)
+        {
+            _first = first;
+            _firstIndex = 0;
+            _second = second;
+            _secondIndex = 0;
+            Current = default!;
+        }
+
+        private int _firstIndex = 0;
+        private int _secondIndex = 0;
+        private AffixEntryGroup<PrefixEntry>[] _first;
+        private AffixEntryGroupCollection<PrefixEntry> _second;
+
+        public AffixEntryGroup<PrefixEntry> Current { get; private set; }
+
+        public AffixGroupWordEnumerator GetEnumerator() => this;
+
+        public bool MoveNext()
+        {
+            if (_firstIndex < _first.Length)
+            {
+                Current = _first[_firstIndex++];
+                return true;
+            }
+
+            if (_secondIndex < _second.Count)
+            {
+                Current = _second[_secondIndex++];
+                return true;
+            }
+
+            return false;
+        }
     }
 }
