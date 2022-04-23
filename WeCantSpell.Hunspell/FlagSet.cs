@@ -181,7 +181,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     public bool Contains(FlagValue value)
     {
-        if (value.HasValue && Values is not null)
+        if (Values is not null)
         {
             if (Values.Length == 1)
             {
@@ -198,18 +198,21 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
         return false;
 
-        static  bool checkIterative(FlagValue[] values, FlagValue value)
+        static bool checkIterative(FlagValue[] searchSpace, FlagValue target)
         {
-            for (var i = 0; i < values.Length; i++)
+            foreach (var value in searchSpace)
             {
-                switch (values[i].CompareTo(value))
+                if (value == target)
                 {
-                    case 0: return true;
-                    case > 0: goto done;
+                    return true;
+                }
+
+                if (value > target)
+                {
+                    break;
                 }
             }
 
-        done:
             return false;
         }
     }

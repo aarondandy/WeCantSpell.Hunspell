@@ -67,7 +67,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
         {
             if (_values.Length == 1)
             {
-                return _values[0] == value;
+                return _values[0].Equals(value);
             }
 
             if (unchecked((value & _mask) == value))
@@ -80,18 +80,20 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
         return false;
 
-        static bool checkIterative(char[] values, char value)
+        static bool checkIterative(char[] searchSpace, char target)
         {
-            for (var i = 0; i < values.Length; i++)
+            foreach (var value in searchSpace)
             {
-                switch (values[i].CompareTo(value))
+                if (value == target)
                 {
-                    case 0: return true;
-                    case > 0: goto done;
+                    return true;
+                }
+                if (value > target)
+                {
+                    break;
                 }
             }
 
-        done:
             return false;
         }
     }
