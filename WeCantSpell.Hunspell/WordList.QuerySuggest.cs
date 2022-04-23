@@ -1701,9 +1701,6 @@ public partial class WordList
             guesses.Sort(NGramGuess.ScoreComparer.Comparison);
 #endif
 
-
-            Array.Sort(guessesRental, 0, guesses.Length, NGramGuess.ScoreComparer.Default);
-
             // phonetic version
             if (hasPhoneEntries)
             {
