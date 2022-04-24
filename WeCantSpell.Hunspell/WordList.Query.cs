@@ -1471,9 +1471,11 @@ public partial class WordList
                         &&
                         // needaffix on prefix or first suffix
                         (
+                            pfxDoesNotNeedAffix
+                            ||
                             cclass.HasValue
-                                ? se.ContClass.HasItems
-                                : (pfxDoesNotNeedAffix || !se.ContainsContClass(Affix.NeedAffix))
+                            ||
+                            !se.ContainsContClass(Affix.NeedAffix)
                         )
                         &&
                         (
