@@ -1231,12 +1231,12 @@ public partial class WordList
             var noSuffix = rv is not null;
             if (!noSuffix)
             {
-                rv = _query.SuffixCheck(word, AffixEntryOptions.None, default, default, default, CompoundOptions.Not); // only suffix
+                rv = _query.SuffixCheck(word, AffixEntryOptions.None, null, default, default, CompoundOptions.Not); // only suffix
             }
 
             if (Affix.ContClasses.HasItems && rv is null)
             {
-                rv = _query.SuffixCheckTwoSfx(word, AffixEntryOptions.None, default, default)
+                rv = _query.SuffixCheckTwoSfx(word, AffixEntryOptions.None, null, default)
                     ?? _query.PrefixCheckTwoSfx(word, CompoundOptions.Not, default);
             }
 

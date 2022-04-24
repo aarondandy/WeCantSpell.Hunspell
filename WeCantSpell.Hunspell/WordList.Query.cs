@@ -574,10 +574,10 @@ public partial class WordList
                                 rv = PrefixCheck(st.TerminatedSpan, movCompoundOptions, Affix.CompoundFlag);
                                 if (rv is null)
                                 {
-                                    rv = SuffixCheck(st.TerminatedSpan, 0, default, new FlagValue(), Affix.CompoundFlag, movCompoundOptions);
+                                    rv = SuffixCheck(st.TerminatedSpan, AffixEntryOptions.None, null, new FlagValue(), Affix.CompoundFlag, movCompoundOptions);
                                     if (rv is null && Affix.CompoundMoreSuffixes)
                                     {
-                                        rv = SuffixCheckTwoSfx(st.TerminatedSpan, 0, default, Affix.CompoundFlag);
+                                        rv = SuffixCheckTwoSfx(st.TerminatedSpan, AffixEntryOptions.None, null, Affix.CompoundFlag);
                                     }
 
                                     if (
@@ -599,13 +599,13 @@ public partial class WordList
                             }
                             else if (wordNum == 0 && Affix.CompoundBegin.HasValue)
                             {
-                                rv = SuffixCheck(st.TerminatedSpan, 0, default, default, Affix.CompoundBegin, movCompoundOptions);
+                                rv = SuffixCheck(st.TerminatedSpan, AffixEntryOptions.None, null, default, Affix.CompoundBegin, movCompoundOptions);
 
                                 if(rv is null)
                                 {
                                     if(Affix.CompoundMoreSuffixes)
                                     {
-                                        rv = SuffixCheckTwoSfx(st.TerminatedSpan, 0, default, Affix.CompoundBegin);
+                                        rv = SuffixCheckTwoSfx(st.TerminatedSpan, AffixEntryOptions.None, null, Affix.CompoundBegin);
                                         if (rv is not null)
                                         {
                                             checkedPrefix = true;
@@ -628,12 +628,12 @@ public partial class WordList
                             }
                             else if (wordNum > 0 && Affix.CompoundMiddle.HasValue)
                             {
-                                rv = SuffixCheck(st.TerminatedSpan, 0, default, default, Affix.CompoundMiddle, movCompoundOptions);
+                                rv = SuffixCheck(st.TerminatedSpan, AffixEntryOptions.None, null, default, Affix.CompoundMiddle, movCompoundOptions);
                                 if (rv is null)
                                 {
                                     if (Affix.CompoundMoreSuffixes)
                                     {
-                                        rv = SuffixCheckTwoSfx(st.TerminatedSpan, 0, default, Affix.CompoundMiddle);
+                                        rv = SuffixCheckTwoSfx(st.TerminatedSpan, AffixEntryOptions.None, null, Affix.CompoundMiddle);
                                         if (rv is not null)
                                         {
                                             checkedPrefix = true;
@@ -1248,7 +1248,7 @@ public partial class WordList
             if (rv is null)
             {
                 // if still not found check all suffixes
-                rv = SuffixCheck(word, 0, null, default, needFlag, inCompound);
+                rv = SuffixCheck(word, AffixEntryOptions.None, null, default, needFlag, inCompound);
 
                 if (Affix.ContClasses.HasItems)
                 {
@@ -1259,7 +1259,7 @@ public partial class WordList
                     {
                         rv =
                             // if still not found check all two-level suffixes
-                            SuffixCheckTwoSfx(word, 0, null, needFlag)
+                            SuffixCheckTwoSfx(word, AffixEntryOptions.None, null, needFlag)
                             ??
                             // if still not found check all two-level prefixes
                             PrefixCheckTwoSfx(word, CompoundOptions.Not, needFlag);
