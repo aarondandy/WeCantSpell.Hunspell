@@ -1279,8 +1279,7 @@ public partial class WordList
             ClearAllAppendAndExtra();
             WordEntry? rv;
 
-            var isEndCompound = inCompound == CompoundOptions.End;
-            if (isEndCompound && Affix.CompoundPermitFlag.IsZero)
+            if (inCompound == CompoundOptions.End && Affix.CompoundPermitFlag.IsZero)
             {
                 // not possible to permit prefixes in compounds
                 return null;
@@ -1296,7 +1295,7 @@ public partial class WordList
                         (inCompound != CompoundOptions.Not || !pe.ContainsContClass(Affix.OnlyInCompound))
                         &&
                         // permit prefixes in compounds
-                        (!isEndCompound || pe.ContainsContClass(Affix.CompoundPermitFlag))
+                        (inCompound != CompoundOptions.End || pe.ContainsContClass(Affix.CompoundPermitFlag))
                     )
                     {
                         // check prefix
@@ -1319,7 +1318,7 @@ public partial class WordList
                         (inCompound != CompoundOptions.Not || !entry.ContainsContClass(Affix.OnlyInCompound))
                         &&
                         // permit prefixes in compounds
-                        (!isEndCompound || entry.ContainsContClass(Affix.CompoundPermitFlag))
+                        (inCompound != CompoundOptions.End || entry.ContainsContClass(Affix.CompoundPermitFlag))
                         &&
                         HunspellTextFunctions.IsSubset(entry.Key, word)
                     )
