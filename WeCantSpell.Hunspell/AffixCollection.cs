@@ -138,9 +138,9 @@ public sealed class SuffixCollection : IEnumerable<AffixEntryGroup<SuffixEntry>>
 
         if (!word.IsEmpty)
         {
-            if (_affixesByIndexedByKey.TryGetValue(word[word.Length - 1], out var indexedGroups))
+            if (_affixesByIndexedByKey.TryGetValue(word[word.Length - 1], out var indexedAffixes))
             {
-                first = indexedGroups;
+                first = indexedAffixes;
             }
 
             second = _affixesWithDots;
@@ -194,9 +194,9 @@ public sealed class SuffixCollection : IEnumerable<AffixEntryGroup<SuffixEntry>>
 
         if (!word.IsEmpty)
         {
-            if (groupFlagFilter.HasItems && _affixesByIndexedByKey.TryGetValue(word[word.Length - 1], out var indexedGroups))
+            if (groupFlagFilter.HasItems && _affixesByIndexedByKey.TryGetValue(word[word.Length - 1], out var indexedAffixes))
             {
-                first = indexedGroups;
+                first = indexedAffixes;
             }
 
             second = _affixesWithDots;
@@ -255,93 +255,60 @@ public sealed class PrefixCollection : IEnumerable<AffixEntryGroup<PrefixEntry>>
 
     public static PrefixCollection Create(List<AffixEntryGroup<PrefixEntry>.Builder>? builders) => Create(builders, allowDestructive: false);
 
-    private static void Apply(PrefixCollection result, List<AffixEntryGroup<PrefixEntry>.Builder> builders, bool allowDestructive)
+    internal static PrefixCollection Create(List<AffixEntryGroup<PrefixEntry>.Builder>? builders, bool allowDestructive)
     {
-        var affixesByFlag = new Dictionary<FlagValue, AffixEntryGroup<PrefixEntry>>(builders.Count);
-        var groupBuildersByKeyAndFlag = new Dictionary<char, Dictionary<FlagValue, AffixEntryGroup<PrefixEntry>.Builder>>();
-        var affixesWithEmptyKeys = new List<AffixEntryGroup<PrefixEntry>>();
-        var affixesWithDots = new List<AffixEntryGroup<PrefixEntry>>();
+        if (builders is not { Count: > 0 })
+        {
+            return Empty;
+        }
+
+        var result = new PrefixCollection();
+        result._affixesByFlag = new Dictionary<FlagValue, AffixEntryGroup<PrefixEntry>>(builders.Count);
+
         var contClassesBuilder = new FlagSet.Builder();
+        var affixesWithEmptyKeys = new ArrayBuilder<Affix<PrefixEntry>>();
+        var affixesWithDots = new ArrayBuilder<Affix<PrefixEntry>>();
+        var affixesByKey = new Dictionary<char, ArrayBuilder<Affix<PrefixEntry>>>();
 
         foreach (var sourceBuilder in builders)
         {
             var group = sourceBuilder.ToImmutable(allowDestructive: allowDestructive);
 
-            affixesByFlag.Add(group.AFlag, group);
-
-            var entriesWithNoKey = new AffixEntryGroup<PrefixEntry>.Builder(group.AFlag, group.Options);
-            var entriesWithDots = new AffixEntryGroup<PrefixEntry>.Builder(group.AFlag, group.Options);
+            result._affixesByFlag.Add(group.AFlag, group);
 
             foreach (var entry in group.Entries)
             {
                 contClassesBuilder.AddRange(entry.ContClass);
 
+                var affix = group.CreateAffix(entry);
+
                 if (string.IsNullOrEmpty(entry.Key))
                 {
-                    entriesWithNoKey.Add(entry);
+                    affixesWithEmptyKeys.Add(affix);
                 }
                 else if (entry.Key.Contains('.'))
                 {
-                    entriesWithDots.Add(entry);
+                    affixesWithDots.Add(affix);
                 }
                 else
                 {
                     var indexedKey = entry.Key[0];
 
-                    if (!groupBuildersByKeyAndFlag.TryGetValue(indexedKey, out var groupBuildersByFlag))
+                    if (!affixesByKey.TryGetValue(indexedKey, out var indexGroup))
                     {
-                        groupBuildersByFlag = new();
-                        groupBuildersByKeyAndFlag.Add(indexedKey, groupBuildersByFlag);
+                        indexGroup = new();
+                        affixesByKey.Add(indexedKey, indexGroup);
                     }
 
-                    if (!groupBuildersByFlag.TryGetValue(group.AFlag, out var groupBuilderByFlag))
-                    {
-                        groupBuilderByFlag = new(group.AFlag, group.Options);
-                        groupBuildersByFlag.Add(group.AFlag, groupBuilderByFlag);
-                    }
-
-                    groupBuilderByFlag.Entries.Add(entry);
+                    indexGroup.Add(affix);
                 }
             }
-
-            if (entriesWithNoKey.HasEntries)
-            {
-                affixesWithEmptyKeys.Add(entriesWithNoKey.ToImmutable(true));
-            }
-
-            if (entriesWithDots.HasEntries)
-            {
-                affixesWithDots.Add(entriesWithDots.ToImmutable(true));
-            }
         }
 
-        var affixesByKey = new Dictionary<char, AffixEntryGroupCollection<PrefixEntry>>(groupBuildersByKeyAndFlag.Count);
-        foreach (var keyedBuilder in groupBuildersByKeyAndFlag)
-        {
-            var indexedAffixEntryGroups = new AffixEntryGroup<PrefixEntry>[keyedBuilder.Value.Count];
-            var writeIndex = 0;
-            foreach (var b in keyedBuilder.Value.Values)
-            {
-                indexedAffixEntryGroups[writeIndex++] = b.ToImmutable(allowDestructive: true);
-            }
-            affixesByKey.Add(keyedBuilder.Key, new(indexedAffixEntryGroups));
-        }
-
-        result._affixesByFlag = affixesByFlag;
-        result._affixesByIndexedByKey = affixesByKey;
-        result.AffixesWithDots = new(affixesWithDots.ToArray());
-        result.AffixesWithEmptyKeys = new(affixesWithEmptyKeys.ToArray());
         result.ContClasses = contClassesBuilder.MoveToFlagSet();
-    }
-
-    internal static PrefixCollection Create(List<AffixEntryGroup<PrefixEntry>.Builder>? builders, bool allowDestructive)
-    {
-        var result = new PrefixCollection();
-
-        if (builders is { Count: > 0 })
-        {
-            Apply(result, builders, allowDestructive: allowDestructive);
-        }
+        result._affixesWithEmptyKeys = affixesWithEmptyKeys.Extract();
+        result._affixesWithDots = affixesWithDots.Extract();
+        result._affixesByIndexedByKey = affixesByKey.ToDictionary(static pair => pair.Key, static pair => pair.Value.Extract());
 
         return result;
     }
@@ -351,12 +318,9 @@ public sealed class PrefixCollection : IEnumerable<AffixEntryGroup<PrefixEntry>>
     }
 
     private Dictionary<FlagValue, AffixEntryGroup<PrefixEntry>> _affixesByFlag = new();
-
-    private Dictionary<char, AffixEntryGroupCollection<PrefixEntry>> _affixesByIndexedByKey = new();
-
-    public AffixEntryGroupCollection<PrefixEntry> AffixesWithDots { get; private set; } = AffixEntryGroupCollection<PrefixEntry>.Empty;
-
-    public AffixEntryGroupCollection<PrefixEntry> AffixesWithEmptyKeys { get; private set; } = AffixEntryGroupCollection<PrefixEntry>.Empty;
+    private Dictionary<char, Affix<PrefixEntry>[]> _affixesByIndexedByKey = new();
+    private Affix<PrefixEntry>[] _affixesWithDots = Array.Empty<Affix<PrefixEntry>>();
+    private Affix<PrefixEntry>[] _affixesWithEmptyKeys = Array.Empty<Affix<PrefixEntry>>();
 
     public FlagSet ContClasses { get; private set; } = FlagSet.Empty;
 
@@ -369,6 +333,8 @@ public sealed class PrefixCollection : IEnumerable<AffixEntryGroup<PrefixEntry>>
     public IEnumerator<AffixEntryGroup<PrefixEntry>> GetEnumerator() => _affixesByFlag.Values.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    internal Affix<PrefixEntry>[] GetAffixesWithEmptyKeys() => _affixesWithEmptyKeys;
 
     internal GetByFlagsEnumerator GetByFlags(FlagSet flags) => new(flags, _affixesByFlag);
 
@@ -406,30 +372,27 @@ public sealed class PrefixCollection : IEnumerable<AffixEntryGroup<PrefixEntry>>
         }
     }
 
-    internal AffixGroupWordEnumerator GetMatchingAffixGroups(ReadOnlySpan<char> word)
+    internal AffixWordEnumerator GetMatchingAffixes(ReadOnlySpan<char> word)
     {
-        var first = Array.Empty<AffixEntryGroup<PrefixEntry>>();
-        var second = AffixEntryGroupCollection<PrefixEntry>.Empty;
+        var first = Array.Empty<Affix<PrefixEntry>>();
+        var second = Array.Empty<Affix<PrefixEntry>>();
 
         if (!word.IsEmpty)
         {
-            if (_affixesByIndexedByKey.TryGetValue(word[0], out var indexedGroups))
+            if (_affixesByIndexedByKey.TryGetValue(word[0], out var indexedAffixes))
             {
-                first = indexedGroups.Groups;
+                first = indexedAffixes;
             }
 
-            if (AffixesWithDots.HasItems)
-            {
-                second = AffixesWithDots;
-            }
+            second = _affixesWithDots;
         }
 
         return new(first, second);
     }
 
-    internal struct AffixGroupWordEnumerator
+    internal struct AffixWordEnumerator
     {
-        public AffixGroupWordEnumerator(AffixEntryGroup<PrefixEntry>[] first, AffixEntryGroupCollection<PrefixEntry> second)
+        public AffixWordEnumerator(Affix<PrefixEntry>[] first, Affix<PrefixEntry>[] second)
         {
             _first = first;
             _firstIndex = 0;
@@ -440,12 +403,12 @@ public sealed class PrefixCollection : IEnumerable<AffixEntryGroup<PrefixEntry>>
 
         private int _firstIndex = 0;
         private int _secondIndex = 0;
-        private AffixEntryGroup<PrefixEntry>[] _first;
-        private AffixEntryGroupCollection<PrefixEntry> _second;
+        private Affix<PrefixEntry>[] _first;
+        private Affix<PrefixEntry>[] _second;
 
-        public AffixEntryGroup<PrefixEntry> Current { get; private set; }
+        public Affix<PrefixEntry> Current { get; private set; }
 
-        public AffixGroupWordEnumerator GetEnumerator() => this;
+        public AffixWordEnumerator GetEnumerator() => this;
 
         public bool MoveNext()
         {
@@ -455,7 +418,7 @@ public sealed class PrefixCollection : IEnumerable<AffixEntryGroup<PrefixEntry>>
                 return true;
             }
 
-            if (_secondIndex < _second.Count)
+            if (_secondIndex < _second.Length)
             {
                 Current = _second[_secondIndex++];
                 return true;

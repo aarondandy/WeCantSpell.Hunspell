@@ -1286,50 +1286,44 @@ public partial class WordList
             }
 
             // first handle the special case of 0 length prefixes
-            foreach (var peGroup in Affix.Prefixes.AffixesWithEmptyKeys.Groups)
+            foreach (var pe in Affix.Prefixes.GetAffixesWithEmptyKeys())
             {
-                foreach (var pe in peGroup.Entries)
+                if (
+                    // fogemorpheme
+                    (inCompound != CompoundOptions.Not || !pe.ContainsContClass(Affix.OnlyInCompound))
+                    &&
+                    // permit prefixes in compounds
+                    (inCompound != CompoundOptions.End || pe.ContainsContClass(Affix.CompoundPermitFlag))
+                )
                 {
-                    if (
-                        // fogemorpheme
-                        (inCompound != CompoundOptions.Not || !pe.ContainsContClass(Affix.OnlyInCompound))
-                        &&
-                        // permit prefixes in compounds
-                        (inCompound != CompoundOptions.End || pe.ContainsContClass(Affix.CompoundPermitFlag))
-                    )
+                    // check prefix
+                    rv = CheckWordPrefix(pe, word, inCompound, needFlag);
+                    if (rv is not null)
                     {
-                        // check prefix
-                        rv = CheckWordPrefix(peGroup.CreateAffix(pe), word, inCompound, needFlag);
-                        if (rv is not null)
-                        {
-                            SetPrefix(pe);
-                            return rv;
-                        }
+                        SetPrefix(pe.Entry);
+                        return rv;
                     }
                 }
             }
 
-            foreach (var group in Affix.Prefixes.GetMatchingAffixGroups(word))
+            foreach (var pe in Affix.Prefixes.GetMatchingAffixes(word))
             {
-                foreach (var entry in group.Entries)
+                if (
+                    // fogemorpheme
+                    (inCompound != CompoundOptions.Not || !pe.ContainsContClass(Affix.OnlyInCompound))
+                    &&
+                    // permit prefixes in compounds
+                    (inCompound != CompoundOptions.End || pe.ContainsContClass(Affix.CompoundPermitFlag))
+                    &&
+                    HunspellTextFunctions.IsSubset(pe.Key, word)
+                )
                 {
-                    if (
-                        // fogemorpheme
-                        (inCompound != CompoundOptions.Not || !entry.ContainsContClass(Affix.OnlyInCompound))
-                        &&
-                        // permit prefixes in compounds
-                        (inCompound != CompoundOptions.End || entry.ContainsContClass(Affix.CompoundPermitFlag))
-                        &&
-                        HunspellTextFunctions.IsSubset(entry.Key, word)
-                    )
+                    // check prefix
+                    rv = CheckWordPrefix(pe, word, inCompound, needFlag);
+                    if (rv is not null)
                     {
-                        // check prefix
-                        rv = CheckWordPrefix(group.CreateAffix(entry), word, inCompound, needFlag);
-                        if (rv is not null)
-                        {
-                            SetPrefix(entry);
-                            return rv;
-                        }
+                        SetPrefix(pe.Entry);
+                        return rv;
                     }
                 }
             }
@@ -1344,31 +1338,25 @@ public partial class WordList
             WordEntry? rv;
 
             // first handle the special case of 0 length prefixes
-            foreach (var peGroup in Affix.Prefixes.AffixesWithEmptyKeys.Groups)
+            foreach (var pe in Affix.Prefixes.GetAffixesWithEmptyKeys())
             {
-                foreach (var pe in peGroup.ToAffixes())
+                rv = CheckTwoSfx(pe, word, inCompound, needFlag);
+                if (rv is not null)
                 {
-                    rv = CheckTwoSfx(pe, word, inCompound, needFlag);
-                    if (rv is not null)
-                    {
-                        return rv;
-                    }
+                    return rv;
                 }
             }
 
             // now handle the general case
-            foreach (var group in Affix.Prefixes.GetMatchingAffixGroups(word))
+            foreach (var pe in Affix.Prefixes.GetMatchingAffixes(word))
             {
-                foreach (var entry in group.Entries)
+                if (HunspellTextFunctions.IsSubset(pe.Key, word))
                 {
-                    if (HunspellTextFunctions.IsSubset(entry.Key, word))
+                    rv = CheckTwoSfx(pe, word, inCompound, needFlag);
+                    if (rv is not null)
                     {
-                        rv = CheckTwoSfx(group.CreateAffix(entry), word, inCompound, needFlag);
-                        if (rv is not null)
-                        {
-                            SetPrefix(entry);
-                            return rv;
-                        }
+                        SetPrefix(pe.Entry);
+                        return rv;
                     }
                 }
             }
