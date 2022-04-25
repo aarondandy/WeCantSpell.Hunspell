@@ -1448,51 +1448,47 @@ public partial class WordList
             }
 
             // first handle the special case of 0 length suffixes
-            foreach (var seGroup in Affix.Suffixes.AffixesWithEmptyKeys.Groups)
+            foreach (var se in Affix.Suffixes.GetAffixesWithEmptyKeys())
             {
-                foreach (var se in seGroup.Entries)
-                {
-                    // suffixes are not allowed in beginning of compounds
-                    if (
-                        (
-                            inCompound != CompoundOptions.Begin
-                            ||
-                            // except when signed with compoundpermitflag flag
-                            se.ContainsContClass(Affix.CompoundPermitFlag)
-                        )
-                        &&
-                        // fogemorpheme
-                        (
-                            inCompound != CompoundOptions.Not
-                            ||
-                            !se.ContainsContClass(Affix.OnlyInCompound)
-                        )
-                        &&
-                        // needaffix on prefix or first suffix
-                        (
-                            pfxDoesNotNeedAffix
-                            ||
-                            cclass.HasValue
-                            ||
-                            !se.ContainsContClass(Affix.NeedAffix)
-                        )
-                        &&
-                        (
-                            Affix.Circumfix.IsZero
-                            ||
-                            // no circumfix flag in prefix and suffix
-                            // circumfix flag in prefix AND suffix
-                            se.ContainsContClass(Affix.Circumfix) == pfxHasCircumfix
-                        )
+                // suffixes are not allowed in beginning of compounds
+                if (
+                    (
+                        inCompound != CompoundOptions.Begin
+                        ||
+                        // except when signed with compoundpermitflag flag
+                        se.ContainsContClass(Affix.CompoundPermitFlag)
                     )
+                    &&
+                    // fogemorpheme
+                    (
+                        inCompound != CompoundOptions.Not
+                        ||
+                        !se.ContainsContClass(Affix.OnlyInCompound)
+                    )
+                    &&
+                    // needaffix on prefix or first suffix
+                    (
+                        pfxDoesNotNeedAffix
+                        ||
+                        cclass.HasValue
+                        ||
+                        !se.ContainsContClass(Affix.NeedAffix)
+                    )
+                    &&
+                    (
+                        Affix.Circumfix.IsZero
+                        ||
+                        // no circumfix flag in prefix and suffix
+                        // circumfix flag in prefix AND suffix
+                        se.ContainsContClass(Affix.Circumfix) == pfxHasCircumfix
+                    )
+                )
+                {
+                    rv = CheckWordSuffix(se, word, sfxOpts, pfx, cclass, needFlag, checkWordCclassFlag);
+                    if (rv is not null)
                     {
-                        var affix = seGroup.CreateAffix(se);
-                        rv = CheckWordSuffix(affix, word, sfxOpts, pfx, cclass, needFlag, checkWordCclassFlag);
-                        if (rv is not null)
-                        {
-                            SetSuffix(affix);
-                            return rv;
-                        }
+                        SetSuffix(se);
+                        return rv;
                     }
                 }
             }
@@ -1503,79 +1499,75 @@ public partial class WordList
                 return null;
             }
 
-            foreach (var group in Affix.Suffixes.GetMatchingAffixGroups(word))
+            foreach (var sptr in Affix.Suffixes.GetMatchingAffixGroups(word))
             {
-                foreach (var sptrEntry in group.Entries)
-                {
-                    if (
-                        (
-                            // suffixes are not allowed in beginning of compounds
-                            inCompound != CompoundOptions.Begin
-                            ||
-                            // except when signed with compoundpermitflag flag
-                            sptrEntry.ContainsContClass(Affix.CompoundPermitFlag)
-                        )
-                        &&
-                        // fogemorpheme
-                        (
-                            inCompound != CompoundOptions.Not
-                            ||
-                            !sptrEntry.ContainsContClass(Affix.OnlyInCompound)
-                        )
-                        &&
-                        (
-                            inCompound != CompoundOptions.End
-                            ||
-                            pfx is not null
-                            ||
-                            !sptrEntry.ContainsContClass(Affix.OnlyInCompound)
-                        )
-                        &&
-                        // needaffix on prefix or first suffix
-                        (
-                            pfxDoesNotNeedAffix
-                            ||
-                            cclass.HasValue
-                            ||
-                            !sptrEntry.ContainsContClass(Affix.NeedAffix)
-                        )
-                        &&
-                        (
-                            Affix.Circumfix.IsZero
-                            ||
-                            // no circumfix flag in prefix and suffix
-                            // circumfix flag in prefix AND suffix
-                            sptrEntry.ContainsContClass(Affix.Circumfix) == pfxHasCircumfix
-                        )
-                        &&
-                        HunspellTextFunctions.IsReverseSubset(sptrEntry.Key, word)
+                if (
+                    (
+                        // suffixes are not allowed in beginning of compounds
+                        inCompound != CompoundOptions.Begin
+                        ||
+                        // except when signed with compoundpermitflag flag
+                        sptr.ContainsContClass(Affix.CompoundPermitFlag)
                     )
+                    &&
+                    // fogemorpheme
+                    (
+                        inCompound != CompoundOptions.Not
+                        ||
+                        !sptr.ContainsContClass(Affix.OnlyInCompound)
+                    )
+                    &&
+                    (
+                        inCompound != CompoundOptions.End
+                        ||
+                        pfx is not null
+                        ||
+                        !sptr.ContainsContClass(Affix.OnlyInCompound)
+                    )
+                    &&
+                    // needaffix on prefix or first suffix
+                    (
+                        pfxDoesNotNeedAffix
+                        ||
+                        cclass.HasValue
+                        ||
+                        !sptr.ContainsContClass(Affix.NeedAffix)
+                    )
+                    &&
+                    (
+                        Affix.Circumfix.IsZero
+                        ||
+                        // no circumfix flag in prefix and suffix
+                        // circumfix flag in prefix AND suffix
+                        sptr.ContainsContClass(Affix.Circumfix) == pfxHasCircumfix
+                    )
+                    &&
+                    HunspellTextFunctions.IsReverseSubset(sptr.Key, word)
+                )
+                {
+                    rv = CheckWordSuffix(sptr, word, sfxOpts, pfx, cclass, needFlag, checkWordCclassFlag);
+                    if (rv is not null)
                     {
-                        var sptr = group.CreateAffix(sptrEntry);
-                        rv = CheckWordSuffix(sptr, word, sfxOpts, pfx, cclass, needFlag, checkWordCclassFlag);
-                        if (rv is not null)
+                        SetSuffix(sptr);
+                        SetSuffixFlag(sptr.AFlag);
+
+                        if (!sptr.Entry.ContClass.HasItems)
                         {
-                            SetSuffix(sptr);
-                            SetSuffixFlag(sptr.AFlag);
-
-                            if (!sptrEntry.ContClass.HasItems)
-                            {
-                                SetSuffixAppend(sptrEntry.Key);
-                            }
-                            else if (
-                                Affix.IsHungarian
-                                && sptrEntry.Key.Length >= 2
-                                && sptrEntry.Key[0] == 'i'
-                                && sptrEntry.Key[1] is not ('y' or 't')
-                            )
-                            {
-                                // LANG_hu section: spec. Hungarian rule
-                                SetSuffixExtra(true);
-                            }
-
-                            // END of LANG_hu section
-                            return rv;
+                            SetSuffixAppend(sptr.Key);
                         }
+                        else if (
+                            Affix.IsHungarian
+                            && sptr.Key.Length >= 2
+                            && sptr.Key[0] == 'i'
+                            && sptr.Key[1] is not ('y' or 't')
+                        )
+                        {
+                            // LANG_hu section: spec. Hungarian rule
+                            SetSuffixExtra(true);
+                        }
+
+                        // END of LANG_hu section
+                        return rv;
                     }
                 }
             }
@@ -1591,17 +1583,14 @@ public partial class WordList
             WordEntry? rv;
 
             // first handle the special case of 0 length suffixes
-            foreach (var seGroup in Affix.Suffixes.AffixesWithEmptyKeys)
+            foreach (var se in Affix.Suffixes.GetAffixesWithEmptyKeys())
             {
-                if (Affix.ContClasses.Contains(seGroup.AFlag))
+                if (Affix.ContClasses.Contains(se.AFlag))
                 {
-                    foreach (var se in seGroup.ToAffixes())
+                    rv = CheckTwoSfx(se, word, sfxopts, pfx, needflag);
+                    if (rv is not null)
                     {
-                        rv = CheckTwoSfx(se, word, sfxopts, pfx, needflag);
-                        if (rv is not null)
-                        {
-                            return rv;
-                        }
+                        return rv;
                     }
                 }
             }
@@ -1612,23 +1601,20 @@ public partial class WordList
                 return null; // FULLSTRIP
             }
 
-            foreach (var group in Affix.Suffixes.GetMatchingAffixGroups(word, Affix.ContClasses))
+            foreach (var affix in Affix.Suffixes.GetMatchingAffixGroups(word, Affix.ContClasses))
             {
-                foreach (var entry in group.Entries)
+                if (HunspellTextFunctions.IsReverseSubset(affix.Key, word))
                 {
-                    if (HunspellTextFunctions.IsReverseSubset(entry.Key, word))
+                    rv = CheckTwoSfx(affix, word, sfxopts, pfx, needflag);
+                    if (rv is not null && Suffix is not null)
                     {
-                        rv = CheckTwoSfx(group.CreateAffix(entry), word, sfxopts, pfx, needflag);
-                        if (rv is not null && Suffix is not null)
+                        SetSuffixFlag(Suffix.GetValueOrDefault().AFlag);
+                        if (!affix.Entry.ContClass.HasItems)
                         {
-                            SetSuffixFlag(Suffix.GetValueOrDefault().AFlag);
-                            if (!entry.ContClass.HasItems)
-                            {
-                                SetSuffixAppend(entry.Key);
-                            }
-
-                            return rv;
+                            SetSuffixAppend(affix.Key);
                         }
+
+                        return rv;
                     }
                 }
             }
