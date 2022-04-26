@@ -25,9 +25,9 @@ public sealed class SuffixCollection : IEnumerable<SuffixGroup>
         result._affixesByFlag = new Dictionary<FlagValue, SuffixGroup>(builders.Count);
 
         var contClassesBuilder = new FlagSet.Builder();
-        var affixesWithEmptyKeys = new ArrayBuilder<Affix<SuffixEntry>>();
-        var affixesWithDots = new ArrayBuilder<Affix<SuffixEntry>>();
-        var affixesByKeyPrefix = new Dictionary<char, ArrayBuilder<Affix<SuffixEntry>>>();
+        var affixesWithEmptyKeys = new ArrayBuilder<Suffix>();
+        var affixesWithDots = new ArrayBuilder<Suffix>();
+        var affixesByKeyPrefix = new Dictionary<char, ArrayBuilder<Suffix>>();
 
         foreach (var sourceBuilder in builders)
         {
@@ -39,7 +39,7 @@ public sealed class SuffixCollection : IEnumerable<SuffixGroup>
             {
                 contClassesBuilder.AddRange(entry.ContClass);
 
-                var affix = new Affix<SuffixEntry>(entry, group.AFlag, group.Options);
+                var affix = new Suffix(entry, group.AFlag, group.Options);
 
                 if (string.IsNullOrEmpty(entry.Key))
                 {
@@ -77,9 +77,9 @@ public sealed class SuffixCollection : IEnumerable<SuffixGroup>
     }
 
     private Dictionary<FlagValue, SuffixGroup> _affixesByFlag = new();
-    private Dictionary<char, Affix<SuffixEntry>[]> _affixesByKeyPrefix = new();
-    private Affix<SuffixEntry>[] _affixesWithDots = Array.Empty<Affix<SuffixEntry>>();
-    private Affix<SuffixEntry>[] _affixesWithEmptyKeys = Array.Empty<Affix<SuffixEntry>>();
+    private Dictionary<char, Suffix[]> _affixesByKeyPrefix = new();
+    private Suffix[] _affixesWithDots = Array.Empty<Suffix>();
+    private Suffix[] _affixesWithEmptyKeys = Array.Empty<Suffix>();
 
     public FlagSet ContClasses { get; private set; } = FlagSet.Empty;
 
@@ -93,7 +93,7 @@ public sealed class SuffixCollection : IEnumerable<SuffixGroup>
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    internal Affix<SuffixEntry>[] GetAffixesWithEmptyKeys() => _affixesWithEmptyKeys;
+    internal Suffix[] GetAffixesWithEmptyKeys() => _affixesWithEmptyKeys;
 
     internal GetByFlagsEnumerator GetByFlags(FlagSet flags) => new(flags, _affixesByFlag);
 
@@ -133,8 +133,8 @@ public sealed class SuffixCollection : IEnumerable<SuffixGroup>
 
     internal AffixWordEnumerator GetMatchingAffixGroups(ReadOnlySpan<char> word)
     {
-        var first = Array.Empty<Affix<SuffixEntry>>();
-        var second = Array.Empty<Affix<SuffixEntry>>();
+        var first = Array.Empty<Suffix>();
+        var second = Array.Empty<Suffix>();
 
         if (!word.IsEmpty)
         {
@@ -151,7 +151,7 @@ public sealed class SuffixCollection : IEnumerable<SuffixGroup>
 
     internal struct AffixWordEnumerator
     {
-        public AffixWordEnumerator(Affix<SuffixEntry>[] first, Affix<SuffixEntry>[] second)
+        public AffixWordEnumerator(Suffix[] first, Suffix[] second)
         {
             _first = first;
             _firstIndex = 0;
@@ -162,10 +162,10 @@ public sealed class SuffixCollection : IEnumerable<SuffixGroup>
 
         private int _firstIndex = 0;
         private int _secondIndex = 0;
-        private Affix<SuffixEntry>[] _first;
-        private Affix<SuffixEntry>[] _second;
+        private Suffix[] _first;
+        private Suffix[] _second;
 
-        public Affix<SuffixEntry> Current { get; private set; }
+        public Suffix Current { get; private set; }
 
         public AffixWordEnumerator GetEnumerator() => this;
 
@@ -189,8 +189,8 @@ public sealed class SuffixCollection : IEnumerable<SuffixGroup>
 
     internal AffixWordFlagEnumerator GetMatchingAffixGroups(ReadOnlySpan<char> word, FlagSet groupFlagFilter)
     {
-        var first = Array.Empty<Affix<SuffixEntry>>();
-        var second = Array.Empty<Affix<SuffixEntry>>();
+        var first = Array.Empty<Suffix>();
+        var second = Array.Empty<Suffix>();
 
         if (!word.IsEmpty)
         {
@@ -207,7 +207,7 @@ public sealed class SuffixCollection : IEnumerable<SuffixGroup>
 
     internal struct AffixWordFlagEnumerator
     {
-        public AffixWordFlagEnumerator(Affix<SuffixEntry>[] first, Affix<SuffixEntry>[] second, FlagSet groupFlagFilter)
+        public AffixWordFlagEnumerator(Suffix[] first, Suffix[] second, FlagSet groupFlagFilter)
         {
             _first = first;
             _firstIndex = 0;
@@ -219,11 +219,11 @@ public sealed class SuffixCollection : IEnumerable<SuffixGroup>
 
         private int _firstIndex = 0;
         private int _secondIndex = 0;
-        private Affix<SuffixEntry>[] _first;
-        private Affix<SuffixEntry>[] _second;
+        private Suffix[] _first;
+        private Suffix[] _second;
         private FlagSet _firstFlagFilter;
 
-        public Affix<SuffixEntry> Current { get; private set; }
+        public Suffix Current { get; private set; }
 
         public AffixWordFlagEnumerator GetEnumerator() => this;
 
@@ -266,9 +266,9 @@ public sealed class PrefixCollection : IEnumerable<PrefixGroup>
         result._affixesByFlag = new Dictionary<FlagValue, PrefixGroup>(builders.Count);
 
         var contClassesBuilder = new FlagSet.Builder();
-        var affixesWithEmptyKeys = new ArrayBuilder<Affix<PrefixEntry>>();
-        var affixesWithDots = new ArrayBuilder<Affix<PrefixEntry>>();
-        var affixesByKeyPrefix = new Dictionary<char, ArrayBuilder<Affix<PrefixEntry>>>();
+        var affixesWithEmptyKeys = new ArrayBuilder<Prefix>();
+        var affixesWithDots = new ArrayBuilder<Prefix>();
+        var affixesByKeyPrefix = new Dictionary<char, ArrayBuilder<Prefix>>();
 
         foreach (var sourceBuilder in builders)
         {
@@ -280,7 +280,7 @@ public sealed class PrefixCollection : IEnumerable<PrefixGroup>
             {
                 contClassesBuilder.AddRange(entry.ContClass);
 
-                var affix = new Affix<PrefixEntry>(entry, group.AFlag, group.Options);
+                var affix = new Prefix(entry, group.AFlag, group.Options);
 
                 if (string.IsNullOrEmpty(entry.Key))
                 {
@@ -318,9 +318,9 @@ public sealed class PrefixCollection : IEnumerable<PrefixGroup>
     }
 
     private Dictionary<FlagValue, PrefixGroup> _affixesByFlag = new();
-    private Dictionary<char, Affix<PrefixEntry>[]> _affixesByKeyPrefix = new();
-    private Affix<PrefixEntry>[] _affixesWithDots = Array.Empty<Affix<PrefixEntry>>();
-    private Affix<PrefixEntry>[] _affixesWithEmptyKeys = Array.Empty<Affix<PrefixEntry>>();
+    private Dictionary<char, Prefix[]> _affixesByKeyPrefix = new();
+    private Prefix[] _affixesWithDots = Array.Empty<Prefix>();
+    private Prefix[] _affixesWithEmptyKeys = Array.Empty<Prefix>();
 
     public FlagSet ContClasses { get; private set; } = FlagSet.Empty;
 
@@ -334,7 +334,7 @@ public sealed class PrefixCollection : IEnumerable<PrefixGroup>
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    internal Affix<PrefixEntry>[] GetAffixesWithEmptyKeys() => _affixesWithEmptyKeys;
+    internal Prefix[] GetAffixesWithEmptyKeys() => _affixesWithEmptyKeys;
 
     internal GetByFlagsEnumerator GetByFlags(FlagSet flags) => new(flags, _affixesByFlag);
 
@@ -374,8 +374,8 @@ public sealed class PrefixCollection : IEnumerable<PrefixGroup>
 
     internal AffixWordEnumerator GetMatchingAffixes(ReadOnlySpan<char> word)
     {
-        var first = Array.Empty<Affix<PrefixEntry>>();
-        var second = Array.Empty<Affix<PrefixEntry>>();
+        var first = Array.Empty<Prefix>();
+        var second = Array.Empty<Prefix>();
 
         if (!word.IsEmpty)
         {
@@ -392,7 +392,7 @@ public sealed class PrefixCollection : IEnumerable<PrefixGroup>
 
     internal struct AffixWordEnumerator
     {
-        public AffixWordEnumerator(Affix<PrefixEntry>[] first, Affix<PrefixEntry>[] second)
+        public AffixWordEnumerator(Prefix[] first, Prefix[] second)
         {
             _first = first;
             _firstIndex = 0;
@@ -403,10 +403,10 @@ public sealed class PrefixCollection : IEnumerable<PrefixGroup>
 
         private int _firstIndex = 0;
         private int _secondIndex = 0;
-        private Affix<PrefixEntry>[] _first;
-        private Affix<PrefixEntry>[] _second;
+        private Prefix[] _first;
+        private Prefix[] _second;
 
-        public Affix<PrefixEntry> Current { get; private set; }
+        public Prefix Current { get; private set; }
 
         public AffixWordEnumerator GetEnumerator() => this;
 

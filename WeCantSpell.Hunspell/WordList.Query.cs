@@ -46,7 +46,7 @@ public partial class WordList
         /// </summary>
         //private string? PrefixAppend { get; set; }
 
-        private Affix<SuffixEntry>? Suffix { get; set; }
+        private Suffix? Suffix { get; set; }
 
         private FlagValue SuffixFlag { get; set; }
 
@@ -94,7 +94,7 @@ public partial class WordList
             Prefix = prefix;
         }
 
-        private void SetSuffix(Affix<SuffixEntry> suffix)
+        private void SetSuffix(Suffix suffix)
         {
             Suffix = suffix;
         }
@@ -1367,7 +1367,7 @@ public partial class WordList
         /// <summary>
         /// Check if this prefix entry matches.
         /// </summary>
-        private WordEntry? CheckTwoSfx(Affix<PrefixEntry> pe, ReadOnlySpan<char> word, CompoundOptions inCompound, FlagValue needFlag)
+        private WordEntry? CheckTwoSfx(Prefix pe, ReadOnlySpan<char> word, CompoundOptions inCompound, FlagValue needFlag)
         {
             // on entry prefix is 0 length or already matches the beginning of the word.
             // So if the remaining root word has positive length
@@ -1416,7 +1416,7 @@ public partial class WordList
             return null;
         }
 
-        public WordEntry? SuffixCheck(ReadOnlySpan<char> word, AffixEntryOptions sfxOpts, Affix<PrefixEntry>? pfx, FlagValue cclass, FlagValue needFlag, CompoundOptions inCompound)
+        public WordEntry? SuffixCheck(ReadOnlySpan<char> word, AffixEntryOptions sfxOpts, Prefix? pfx, FlagValue cclass, FlagValue needFlag, CompoundOptions inCompound)
         {
             if (inCompound == CompoundOptions.Begin && Affix.CompoundPermitFlag.IsZero)
             {
@@ -1566,7 +1566,7 @@ public partial class WordList
         /// <summary>
         /// Check word for two-level suffixes.
         /// </summary>
-        public WordEntry? SuffixCheckTwoSfx(ReadOnlySpan<char> word, AffixEntryOptions sfxopts, Affix<PrefixEntry>? pfx, FlagValue needflag)
+        public WordEntry? SuffixCheckTwoSfx(ReadOnlySpan<char> word, AffixEntryOptions sfxopts, Prefix? pfx, FlagValue needflag)
         {
             WordEntry? rv;
 
@@ -1771,7 +1771,7 @@ public partial class WordList
             return ok;
         }
 
-        private WordEntry? CheckWordPrefix(Affix<PrefixEntry> affix, ReadOnlySpan<char> word, CompoundOptions inCompound, FlagValue needFlag)
+        private WordEntry? CheckWordPrefix(Prefix affix, ReadOnlySpan<char> word, CompoundOptions inCompound, FlagValue needFlag)
         {
             // on entry prefix is 0 length or already matches the beginning of the word.
             // So if the remaining root word has positive length
@@ -1839,7 +1839,7 @@ public partial class WordList
             return null;
         }
 
-        private WordEntry? CheckWordSuffix(Affix<SuffixEntry> affix, ReadOnlySpan<char> word, AffixEntryOptions optFlags, Affix<PrefixEntry>? pfx, FlagValue cclass, FlagValue needFlag, FlagValue badFlag)
+        private WordEntry? CheckWordSuffix(Suffix affix, ReadOnlySpan<char> word, AffixEntryOptions optFlags, Prefix? pfx, FlagValue cclass, FlagValue needFlag, FlagValue badFlag)
         {
             // if this suffix is being cross checked with a prefix
             // but it does not support cross products skip it
@@ -1945,7 +1945,7 @@ public partial class WordList
         /// <summary>
         /// See if two-level suffix is present in the word.
         /// </summary>
-        private WordEntry? CheckTwoSfx(Affix<SuffixEntry> se, ReadOnlySpan<char> word, AffixEntryOptions optflags, Affix<PrefixEntry>? ppfx, FlagValue needflag)
+        private WordEntry? CheckTwoSfx(Suffix se, ReadOnlySpan<char> word, AffixEntryOptions optflags, Prefix? ppfx, FlagValue needflag)
         {
             // if this suffix is being cross checked with a prefix
             // but it does not support cross products skip it
