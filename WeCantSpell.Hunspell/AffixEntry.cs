@@ -53,7 +53,7 @@
 /// This information can be interpreted as follows
 /// 
 /// <para>
-/// In the first line has 4 fields which define the <see cref="AffixEntryGroup{TEntry}"/> for this affix that will contain four <see cref="SuffixEntry"/> objects.
+/// In the first line has 4 fields which define the <see cref="SuffixGroup"/> for this affix that will contain four <see cref="SuffixEntry"/> objects.
 /// </para>
 /// 
 /// <code>

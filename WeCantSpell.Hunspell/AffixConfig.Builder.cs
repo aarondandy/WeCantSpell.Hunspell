@@ -212,13 +212,13 @@ public partial class AffixConfig
         /// Suffixes attached to root words to make other words.
         /// </summary>
         /// <seealso cref="AffixConfig.Suffixes"/>
-        public List<AffixEntryGroup<SuffixEntry>.Builder>? Suffixes;
+        public List<SuffixGroup.Builder>? Suffixes;
 
         /// <summary>
         /// Preffixes attached to root words to make other words.
         /// </summary>
         /// <seealso cref="AffixConfig.Prefixes"/>
-        public List<AffixEntryGroup<PrefixEntry>.Builder>? Prefixes;
+        public List<PrefixGroup.Builder>? Prefixes;
 
         /// <summary>
         /// Ordinal numbers for affix flag compression.

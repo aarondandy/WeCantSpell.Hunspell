@@ -15,11 +15,8 @@ readonly struct Affix<TEntry> where TEntry : AffixEntry
     }
 
     public TEntry Entry { get; }
-
     public FlagValue AFlag { get; }
-
     public AffixEntryOptions Options { get; }
-
     public string Key => Entry.Key;
 
     public bool ContainsContClass(FlagValue flag) => Entry.ContainsContClass(flag);
@@ -40,6 +37,9 @@ readonly struct Prefix
     public PrefixEntry Entry { get; }
     public FlagValue AFlag { get; }
     public AffixEntryOptions Options { get; }
+    public string Key => Entry.Key;
+
+    public bool ContainsContClass(FlagValue flag) => Entry.ContainsContClass(flag);
 }
 
 readonly struct Suffix
@@ -57,4 +57,7 @@ readonly struct Suffix
     public SuffixEntry Entry { get; }
     public FlagValue AFlag { get; }
     public AffixEntryOptions Options { get; }
+    public string Key => Entry.Key;
+
+    public bool ContainsContClass(FlagValue flag) => Entry.ContainsContClass(flag);
 }

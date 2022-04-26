@@ -403,8 +403,8 @@ public sealed partial class AffixReader
                 }
 
                 return parseAsPrefix
-                    ? TryParseAffixIntoList(parameters, ref _builder.Prefixes)
-                    : TryParseAffixIntoList(parameters, ref _builder.Suffixes);
+                    ? TryParsePrefixIntoList(parameters, ref _builder.Prefixes)
+                    : TryParseSuffixIntoList(parameters, ref _builder.Suffixes);
             case AffixReaderCommandKind.AliasF:
                 return TryParseStandardListItem(EntryListType.AliasF, parameters, _builder.AliasF, TryParseAliasF);
             case AffixReaderCommandKind.AliasM:
@@ -726,8 +726,7 @@ public sealed partial class AffixReader
         return true;
     }
 
-    private bool TryParseAffixIntoList<TEntry>(ReadOnlySpan<char> parameterText, ref List<AffixEntryGroup<TEntry>.Builder>? groups)
-        where TEntry : AffixEntry
+    private bool TryParsePrefixIntoList(ReadOnlySpan<char> parameterText, ref List<PrefixGroup.Builder>? groups)
     {
         groups ??= new();
 
@@ -769,12 +768,12 @@ public sealed partial class AffixReader
 
             _ = IntEx.TryParseInvariant(group2, out var expectedEntryCount);
 
-            affixGroup = new AffixEntryGroup<TEntry>.Builder(
+            affixGroup = new PrefixGroup.Builder(
                 aFlag,
                 options,
-                expectedEntryCount is > 2 and <= 1000
-                    ? ImmutableArray.CreateBuilder<TEntry>(expectedEntryCount)
-                    : ImmutableArray.CreateBuilder<TEntry>());
+                expectedEntryCount is > 0 and <= 1000
+                    ? ImmutableArray.CreateBuilder<PrefixEntry>(expectedEntryCount)
+                    : ImmutableArray.CreateBuilder<PrefixEntry>());
 
             groups.Add(affixGroup);
 
@@ -914,14 +913,14 @@ public sealed partial class AffixReader
             morph = MorphSet.Empty;
         }
 
-        affixGroup ??= new AffixEntryGroup<TEntry>.Builder(aFlag, AffixEntryOptions.None);
+        affixGroup ??= new PrefixGroup.Builder(aFlag, AffixEntryOptions.None);
 
         if (!_builder.HasContClass && contClass.HasItems)
         {
             _builder.HasContClass = true;
         }
 
-        affixGroup.Entries.Add(CreateEntry<TEntry>(
+        affixGroup.Entries.Add(new(
             strip.ToString(),
             affixText,
             conditions,
@@ -930,7 +929,7 @@ public sealed partial class AffixReader
 
         return true;
 
-        static AffixEntryGroup<TEntry>.Builder? findLastByFlag(List<AffixEntryGroup<TEntry>.Builder> groups, FlagValue aFlag)
+        static PrefixGroup.Builder? findLastByFlag(List<PrefixGroup.Builder> groups, FlagValue aFlag)
         {
             for (var i = groups.Count - 1; i >= 0; i--)
             {
@@ -944,24 +943,221 @@ public sealed partial class AffixReader
         }
     }
 
-    private static TEntry CreateEntry<TEntry>(
-        string strip,
-        string affixText,
-        CharacterConditionGroup conditions,
-        MorphSet morph,
-        FlagSet contClass)
-        where TEntry : AffixEntry
+    private bool TryParseSuffixIntoList(ReadOnlySpan<char> parameterText, ref List<SuffixGroup.Builder>? groups)
     {
-        if (typeof(TEntry) == typeof(PrefixEntry))
+        groups ??= new();
+
+        var affixParser = new AffixParametersParser(parameterText);
+
+        if (!affixParser.TryParseNextAffixFlag(_flagParser, out var aFlag))
         {
-            return (TEntry)((AffixEntry)new PrefixEntry(strip, affixText, conditions, morph, contClass));
-        }
-        if (typeof(TEntry) == typeof(SuffixEntry))
-        {
-            return (TEntry)((AffixEntry)new SuffixEntry(strip, affixText, conditions, morph, contClass));
+            LogWarning("Failed to parse affix flag: " + parameterText.ToString());
+            return false;
         }
 
-        throw new NotSupportedException();
+        var group1 = affixParser.ParseNextArgument();
+        var group2 = affixParser.ParseNextArgument();
+
+        if (group1.IsEmpty || group2.IsEmpty)
+        {
+            LogWarning("Failed to parse affix line: " + parameterText.ToString());
+            return false;
+        }
+
+        var contClass = FlagSet.Empty;
+        var affixGroup = findLastByFlag(groups, aFlag);
+        if (affixGroup is null)
+        {
+            // If the affix group is new, this should be the init line for it
+            var options = AffixEntryOptions.None;
+            if (group1.StartsWith('Y'))
+            {
+                options |= AffixEntryOptions.CrossProduct;
+            }
+            if (_builder.AliasM is { Count: > 0 })
+            {
+                options |= AffixEntryOptions.AliasM;
+            }
+            if (_builder.AliasF is { Count: > 0 })
+            {
+                options |= AffixEntryOptions.AliasF;
+            }
+
+            _ = IntEx.TryParseInvariant(group2, out var expectedEntryCount);
+
+            affixGroup = new SuffixGroup.Builder(
+                aFlag,
+                options,
+                expectedEntryCount is > 0 and <= 1000
+                    ? ImmutableArray.CreateBuilder<SuffixEntry>(expectedEntryCount)
+                    : ImmutableArray.CreateBuilder<SuffixEntry>());
+
+            groups.Add(affixGroup);
+
+            return true;
+        }
+
+        var group3 = affixParser.ParseNextArgument();
+        if (group3.IsEmpty && group2.EqualsOrdinal("."))
+        {
+            // In some special cases it seems as if the group 2 is blank but groups 1 and 3 have values in them.
+            // I think this is a way to make a blank affix value.
+            group3 = group2;
+            group2 = ReadOnlySpan<char>.Empty;
+        }
+
+        // piece 3 - is string to strip or 0 for null
+        var strip = group1;
+        if (strip.Equals("0".AsSpan(), StringComparison.Ordinal))
+        {
+            strip = ReadOnlySpan<char>.Empty;
+        }
+        else if (EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes))
+        {
+            strip = strip.GetReversed();
+        }
+
+        // piece 4 - is affix string or 0 for null
+        StringBuilder affixTextBuilder;
+        string affixText;
+
+        if (group2.IndexOf('/') is int affixSlashIndex and >= 0)
+        {
+            affixTextBuilder = StringBuilderPool.Get(group2.Slice(0, affixSlashIndex));
+
+            if (_builder.AliasF is { Count: > 0 } aliasF)
+            {
+                if (IntEx.TryParseInvariant(group2.Slice(affixSlashIndex + 1), out var aliasNumber) && aliasNumber > 0 && aliasNumber <= aliasF.Count)
+                {
+                    contClass = aliasF[aliasNumber - 1];
+                }
+                else
+                {
+                    LogWarning($"Failed to parse contclasses from : {parameterText.ToString()}");
+                    return false;
+                }
+            }
+            else
+            {
+                contClass = _flagParser.ParseFlagSet(group2.Slice(affixSlashIndex + 1));
+            }
+        }
+        else
+        {
+            affixTextBuilder = StringBuilderPool.Get(group2);
+        }
+
+        if (_builder.IgnoredChars.HasItems)
+        {
+            affixTextBuilder.RemoveChars(_builder.IgnoredChars);
+        }
+
+        if (affixTextBuilder.Length == 1 && affixTextBuilder[0] == '0')
+        {
+            StringBuilderPool.Return(affixTextBuilder);
+            affixText = string.Empty;
+        }
+        else
+        {
+            if (EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes))
+            {
+                affixTextBuilder.Reverse();
+            }
+
+            affixText = StringBuilderPool.GetStringAndReturn(affixTextBuilder);
+        }
+
+        // piece 5 - is the conditions descriptions
+        var conditionText = group3;
+        if (EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes))
+        {
+            conditionText = ReverseCondition(conditionText).AsSpan();
+        }
+
+        var conditions = CharacterConditionGroup.Parse(conditionText);
+        if (!strip.IsEmpty && !conditions.MatchesAnySingleCharacter)
+        {
+            if (conditions.IsOnlyPossibleMatch(strip))
+            {
+                // determine if the condition is redundant
+                conditions = CharacterConditionGroup.AllowAnySingleCharacter;
+            }
+        }
+
+        var group4 = affixParser.ParseFinalArguments();
+
+        // piece 6
+        MorphSet morph;
+        if (!group4.IsEmpty)
+        {
+            var morphAffixText = group4;
+            if (_builder.AliasM is { Count: > 0 } aliasM)
+            {
+                if (IntEx.TryParseInvariant(morphAffixText, out var morphNumber) && morphNumber > 0 && morphNumber <= aliasM.Count)
+                {
+                    morph = aliasM[morphNumber - 1];
+                }
+                else
+                {
+                    LogWarning($"Failed to parse morph {morphAffixText.ToString()} from: {parameterText.ToString()}");
+                    return false;
+                }
+            }
+            else
+            {
+                var morphSetBuilder = new List<string>();
+
+                if (EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes))
+                {
+                    foreach (var morphValue in morphAffixText.SplitOnTabOrSpace())
+                    {
+                        morphSetBuilder.Insert(0, morphValue.ToStringReversed());
+                    }
+                }
+                else
+                {
+                    foreach (var morphValue in morphAffixText.SplitOnTabOrSpace())
+                    {
+                        morphSetBuilder.Add(morphValue.ToString());
+                    }
+                }
+
+                morph = MorphSet.Create(morphSetBuilder);
+            }
+        }
+        else
+        {
+            morph = MorphSet.Empty;
+        }
+
+        affixGroup ??= new SuffixGroup.Builder(aFlag, AffixEntryOptions.None);
+
+        if (!_builder.HasContClass && contClass.HasItems)
+        {
+            _builder.HasContClass = true;
+        }
+
+        affixGroup.Entries.Add(new(
+            strip.ToString(),
+            affixText,
+            conditions,
+            morph,
+            contClass));
+
+        return true;
+
+        static SuffixGroup.Builder? findLastByFlag(List<SuffixGroup.Builder> groups, FlagValue aFlag)
+        {
+            for (var i = groups.Count - 1; i >= 0; i--)
+            {
+                if (groups[i].AFlag == aFlag)
+                {
+                    return groups[i];
+                }
+            }
+
+            return null;
+        }
     }
 
     private static string ReverseCondition(ReadOnlySpan<char> conditionText)
