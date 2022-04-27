@@ -112,7 +112,8 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     public bool IsEmpty => !HasItems;
     public bool HasItems => Values is { Length: > 0 };
     public FlagValue this[int index] => Values[index];
-    public IEnumerator<FlagValue> GetEnumerator() => ((IEnumerable<FlagValue>)Values).GetEnumerator();
+    public Enumerator GetEnumerator() => new(Values);
+    IEnumerator<FlagValue> IEnumerable<FlagValue>.GetEnumerator() => ((IEnumerable<FlagValue>)Values).GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => Values.GetEnumerator();
 
     public FlagSet Union(FlagValue value)
@@ -481,6 +482,43 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             var result = new FlagSet(ArrayBuilder<FlagValue>.Pool.GetArrayAndReturn(_builder), _mask);
             _builder = null!; // This should operate as a very crude dispose
             return result;
+        }
+    }
+
+    public struct Enumerator : IEnumerator<FlagValue>
+    {
+        internal Enumerator(FlagValue[] values)
+        {
+            _values = values;
+            _index = 0;
+            Current = default!;
+        }
+
+        private readonly FlagValue[] _values;
+        private int _index;
+
+        public FlagValue Current { get; private set; }
+
+        object IEnumerator.Current => Current!;
+
+        public bool MoveNext()
+        {
+            if (_index < _values.Length)
+            {
+                Current = _values[_index++];
+                return true;
+            }
+
+            return false;
+        }
+
+        public void Reset()
+        {
+            _index = 0;
+        }
+
+        public void Dispose()
+        {
         }
     }
 }

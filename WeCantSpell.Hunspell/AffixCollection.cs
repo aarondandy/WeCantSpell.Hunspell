@@ -100,7 +100,7 @@ namespace WeCantSpell.Hunspell;
 /// <seealso cref="SuffixCollection"/>
 public class AffixCollection
 {
-
+    public FlagSet ContClasses { get; protected set; } = FlagSet.Empty;
 }
 
 public sealed class SuffixCollection : AffixCollection, IEnumerable<SuffixGroup>
@@ -176,8 +176,6 @@ public sealed class SuffixCollection : AffixCollection, IEnumerable<SuffixGroup>
     private Suffix[] _affixesWithDots = Array.Empty<Suffix>();
     private Suffix[] _affixesWithEmptyKeys = Array.Empty<Suffix>();
 
-    public FlagSet ContClasses { get; private set; } = FlagSet.Empty;
-
     public bool HasAffixes => _affixesByFlag.Count != 0;
 
     public IEnumerable<FlagValue> FlagValues => _affixesByFlag.Keys;
@@ -190,38 +188,54 @@ public sealed class SuffixCollection : AffixCollection, IEnumerable<SuffixGroup>
 
     internal Suffix[] GetAffixesWithEmptyKeys() => _affixesWithEmptyKeys;
 
-    internal GetByFlagsEnumerator GetByFlags(FlagSet flags) => new(flags, _affixesByFlag);
+    internal GetAffixByFlagsEnumerator GetByFlags(FlagSet flags) => new(flags, _affixesByFlag);
 
-    internal struct GetByFlagsEnumerator
+    internal struct GetAffixByFlagsEnumerator
     {
-        public GetByFlagsEnumerator(FlagSet flags, Dictionary<FlagValue, SuffixGroup> affixesByFlag)
+        public GetAffixByFlagsEnumerator(FlagSet flags, Dictionary<FlagValue, SuffixGroup> affixesByFlag)
         {
-            _flags = flags;
+            _flags = flags.GetEnumerator();
             _affixesByFlag = affixesByFlag;
-            _flagsIndex = 0;
-            Current = SuffixGroup.Invalid;
+            _group = SuffixGroup.Invalid;
+            _groupIndex = 0;
+            Current = default!;
         }
 
-        private readonly FlagSet _flags;
-        private readonly Dictionary<FlagValue, SuffixGroup> _affixesByFlag;
-        private int _flagsIndex;
+        private int _groupIndex;
+        private SuffixGroup _group;
+        private Dictionary<FlagValue, SuffixGroup> _affixesByFlag;
+        private FlagSet.Enumerator _flags;
 
-        public SuffixGroup Current { get; private set; }
+        public Suffix Current { get; private set; }
 
-        public GetByFlagsEnumerator GetEnumerator() => this;
+        public GetAffixByFlagsEnumerator GetEnumerator() => this;
 
         public bool MoveNext()
         {
-            while (_flagsIndex < _flags.Count)
+            if (_groupIndex >= _group.Entries.Length)
             {
-                if (_affixesByFlag.GetValueOrDefault(_flags.Values[_flagsIndex++]) is { } result)
+                if (!MoveNextGroup())
                 {
-                    Current = result;
+                    return false;
+                }
+            }
+
+            Current = new(_group.Entries[_groupIndex++], _group.AFlag, _group.Options);
+            return true;
+        }
+
+        private bool MoveNextGroup()
+        {
+            while (_flags.MoveNext())
+            {
+                if (_affixesByFlag.GetValueOrDefault(_flags.Current) is { } result && result.Entries.Length != 0)
+                {
+                    _group = result;
+                    _groupIndex = 0;
                     return true;
                 }
             }
 
-            Current = SuffixGroup.Invalid;
             return false;
         }
     }
@@ -417,8 +431,6 @@ public sealed class PrefixCollection : AffixCollection, IEnumerable<PrefixGroup>
     private Prefix[] _affixesWithDots = Array.Empty<Prefix>();
     private Prefix[] _affixesWithEmptyKeys = Array.Empty<Prefix>();
 
-    public FlagSet ContClasses { get; private set; } = FlagSet.Empty;
-
     public bool HasAffixes => _affixesByFlag.Count != 0;
 
     public IEnumerable<FlagValue> FlagValues => _affixesByFlag.Keys;
@@ -431,38 +443,87 @@ public sealed class PrefixCollection : AffixCollection, IEnumerable<PrefixGroup>
 
     internal Prefix[] GetAffixesWithEmptyKeys() => _affixesWithEmptyKeys;
 
-    internal GetByFlagsEnumerator GetByFlags(FlagSet flags) => new(flags, _affixesByFlag);
+    internal GetAffixByFlagsEnumerator GetByFlags(FlagSet flags) => new(flags, _affixesByFlag);
 
-    internal struct GetByFlagsEnumerator
+    internal struct GetAffixByFlagsEnumerator
     {
-        public GetByFlagsEnumerator(FlagSet flags, Dictionary<FlagValue, PrefixGroup> affixesByFlag)
+        public GetAffixByFlagsEnumerator(FlagSet flags, Dictionary<FlagValue, PrefixGroup> affixesByFlag)
         {
-            _flags = flags;
+            _flags = flags.GetEnumerator();
             _affixesByFlag = affixesByFlag;
-            _flagsIndex = 0;
-            Current = PrefixGroup.Invalid;
+            _group = PrefixGroup.Invalid;
+            _groupIndex = 0;
+            Current = default!;
         }
 
-        private readonly FlagSet _flags;
-        private readonly Dictionary<FlagValue, PrefixGroup> _affixesByFlag;
-        private int _flagsIndex;
+        private int _groupIndex;
+        private PrefixGroup _group;
+        private Dictionary<FlagValue, PrefixGroup> _affixesByFlag;
+        private FlagSet.Enumerator _flags;
 
-        public PrefixGroup Current { get; private set; }
+        public Prefix Current { get; private set; }
 
-        public GetByFlagsEnumerator GetEnumerator() => this;
+        public GetAffixByFlagsEnumerator GetEnumerator() => this;
 
         public bool MoveNext()
         {
-            while (_flagsIndex < _flags.Count)
+            if (_groupIndex >= _group.Entries.Length)
             {
-                if (_affixesByFlag.GetValueOrDefault(_flags.Values[_flagsIndex++]) is { } result)
+                if (!MoveNextGroup())
+                {
+                    return false;
+                }
+            }
+
+            Current = new(_group.Entries[_groupIndex++], _group.AFlag, _group.Options);
+            return true;
+        }
+
+        private bool MoveNextGroup()
+        {
+            while (_flags.MoveNext())
+            {
+                if (_affixesByFlag.GetValueOrDefault(_flags.Current) is { } result && result.Entries.Length != 0)
+                {
+                    _group = result;
+                    _groupIndex = 0;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
+    internal GetGroupsByFlagsEnumerator GetGroupsByFlags(FlagSet flags) => new(flags, _affixesByFlag);
+
+    internal struct GetGroupsByFlagsEnumerator
+    {
+        public GetGroupsByFlagsEnumerator(FlagSet flags, Dictionary<FlagValue, PrefixGroup> affixesByFlag)
+        {
+            _flags = flags.GetEnumerator();
+            _affixesByFlag = affixesByFlag;
+            Current = PrefixGroup.Invalid;
+        }
+
+        private FlagSet.Enumerator _flags;
+        private readonly Dictionary<FlagValue, PrefixGroup> _affixesByFlag;
+
+        public PrefixGroup Current { get; private set; }
+
+        public GetGroupsByFlagsEnumerator GetEnumerator() => this;
+
+        public bool MoveNext()
+        {
+            while (_flags.MoveNext())
+            {
+                if (_affixesByFlag.GetValueOrDefault(_flags.Current) is { } result)
                 {
                     Current = result;
                     return true;
                 }
             }
 
-            Current = PrefixGroup.Invalid;
             return false;
         }
     }
