@@ -2042,7 +2042,7 @@ public class AffixReaderTests
         }
     }
 
-    protected string Reversed(string text)
+    protected static string Reversed(string text)
     {
         var letters = text.ToCharArray();
         Array.Reverse(letters);

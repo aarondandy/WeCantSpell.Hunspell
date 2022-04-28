@@ -4,7 +4,15 @@ using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
-readonly struct Prefix
+public interface IAffix
+{
+    FlagValue AFlag { get; }
+    AffixEntryOptions Options { get; }
+    string Append { get; }
+    string Key { get; }
+}
+
+public readonly struct Prefix : IAffix
 {
     public Prefix(PrefixEntry entry, FlagValue aFlag, AffixEntryOptions options)
     {
@@ -28,7 +36,7 @@ readonly struct Prefix
     public bool ContainsAnyContClass(FlagValue a, FlagValue b, FlagValue c) => Entry.ContainsAnyContClass(a, b, c);
 }
 
-readonly struct Suffix
+public readonly struct Suffix : IAffix
 {
     public Suffix(SuffixEntry entry, FlagValue aFlag, AffixEntryOptions options)
     {

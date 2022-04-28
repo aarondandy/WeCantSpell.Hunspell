@@ -28,6 +28,27 @@ static class HunspellTextFunctions
         }
     }
 
+    public static bool IsReverseSubsetIgnoringWildcards(string s1, ReadOnlySpan<char> s2)
+    {
+        return s1.Length <= s2.Length && isReverseSubset(s1.AsSpan(), s2);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static bool isReverseSubset(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
+        {
+            var s2LastIndex = s2.Length - 1;
+
+            for (var i = 0; i < s1.Length; i++)
+            {
+                if (s2[s2LastIndex - i] != s1[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+
     public static bool IsSubset(string s1, ReadOnlySpan<char> s2)
     {
         return s1.Length <= s2.Length && isSubset(s1.AsSpan(), s2);
@@ -47,6 +68,9 @@ static class HunspellTextFunctions
             return true;
         }
     }
+
+    public static bool IsSubsetIgnoringWildcards(string s1, ReadOnlySpan<char> s2) =>
+        s1.Length <= s2.Length && s1.AsSpan().Equals(s2.Slice(0, s1.Length), StringComparison.Ordinal);
 
     public static bool IsNumericWord(ReadOnlySpan<char> word)
     {

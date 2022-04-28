@@ -248,7 +248,7 @@ public class HunspellTests
         [Theory, MemberData(nameof(can_find_correct_best_suggestion_args))]
         public async Task can_find_correct_best_suggestion(string dictionaryFilePath, string givenWord, string[] expectedSuggestions)
         {
-            QueryOptions? options = null;
+            QueryOptions options = null;
 
             if (dictionaryFilePath.EndsWith("i35725.dic"))
             {

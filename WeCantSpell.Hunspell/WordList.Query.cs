@@ -1314,8 +1314,6 @@ public partial class WordList
                     &&
                     // permit prefixes in compounds
                     (inCompound != CompoundOptions.End || pe.ContainsContClass(Affix.CompoundPermitFlag))
-                    &&
-                    HunspellTextFunctions.IsSubset(pe.Key, word)
                 )
                 {
                     // check prefix
@@ -1350,14 +1348,11 @@ public partial class WordList
             // now handle the general case
             foreach (var pe in Affix.Prefixes.GetMatchingAffixes(word))
             {
-                if (HunspellTextFunctions.IsSubset(pe.Key, word))
+                rv = CheckTwoSfx(pe, word, inCompound, needFlag);
+                if (rv is not null)
                 {
-                    rv = CheckTwoSfx(pe, word, inCompound, needFlag);
-                    if (rv is not null)
-                    {
-                        SetPrefix(pe.Entry);
-                        return rv;
-                    }
+                    SetPrefix(pe.Entry);
+                    return rv;
                 }
             }
 
@@ -1487,7 +1482,7 @@ public partial class WordList
                 return null;
             }
 
-            foreach (var sptr in Affix.Suffixes.GetMatchingAffixGroups(word))
+            foreach (var sptr in Affix.Suffixes.GetMatchingAffixes(word))
             {
                 if (
                     (
@@ -1529,8 +1524,6 @@ public partial class WordList
                         // circumfix flag in prefix AND suffix
                         sptr.ContainsContClass(Affix.Circumfix) == pfxHasCircumfix
                     )
-                    &&
-                    HunspellTextFunctions.IsReverseSubset(sptr.Key, word)
                 )
                 {
                     rv = CheckWordSuffix(sptr, word, sfxOpts, pfx, cclass, needFlag, checkWordCclassFlag);
@@ -1589,21 +1582,18 @@ public partial class WordList
                 return null; // FULLSTRIP
             }
 
-            foreach (var affix in Affix.Suffixes.GetMatchingAffixGroups(word, Affix.ContClasses))
+            foreach (var affix in Affix.Suffixes.GetMatchingAffixes(word, Affix.ContClasses))
             {
-                if (HunspellTextFunctions.IsReverseSubset(affix.Key, word))
+                rv = CheckTwoSfx(affix, word, sfxopts, pfx, needflag);
+                if (rv is not null && Suffix is not null)
                 {
-                    rv = CheckTwoSfx(affix, word, sfxopts, pfx, needflag);
-                    if (rv is not null && Suffix is not null)
+                    SetSuffixFlag(Suffix.GetValueOrDefault().AFlag);
+                    if (!affix.Entry.ContClass.HasItems)
                     {
-                        SetSuffixFlag(Suffix.GetValueOrDefault().AFlag);
-                        if (!affix.Entry.ContClass.HasItems)
-                        {
-                            SetSuffixAppend(affix.Key);
-                        }
-
-                        return rv;
+                        SetSuffixAppend(affix.Key);
                     }
+
+                    return rv;
                 }
             }
 
