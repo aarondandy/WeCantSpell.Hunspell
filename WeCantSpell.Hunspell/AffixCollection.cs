@@ -210,9 +210,8 @@ public abstract class AffixCollection<TAffixGroup, TAffixEntry, TAffix> : IEnume
         {
             while (_flags.MoveNext())
             {
-                if (_byFlag.GetValueOrDefault(_flags.Current) is { } result && result.Entries.Length != 0)
+                if (_byFlag.TryGetValue(_flags.Current, out _group!) && _group.Entries.Length != 0)
                 {
-                    _group = result;
                     _groupIndex = 0;
                     return true;
                 }
@@ -228,13 +227,14 @@ public abstract class AffixCollection<TAffixGroup, TAffixEntry, TAffix> : IEnume
         {
             _flags = flags.GetEnumerator();
             _byFlag = byFlag;
-            Current = default!;
+            _current = default!;
         }
 
         private FlagSet.Enumerator _flags;
         private readonly Dictionary<FlagValue, TAffixGroup> _byFlag;
+        private TAffixGroup _current;
 
-        public TAffixGroup Current { get; private set; }
+        public TAffixGroup Current => _current;
 
         public GroupsByFlagsEnumerator GetEnumerator() => this;
 
@@ -242,9 +242,8 @@ public abstract class AffixCollection<TAffixGroup, TAffixEntry, TAffix> : IEnume
         {
             while (_flags.MoveNext())
             {
-                if (_byFlag.GetValueOrDefault(_flags.Current) is { } result)
+                if (_byFlag.TryGetValue(_flags.Current, out _current!))
                 {
-                    Current = result;
                     return true;
                 }
             }
@@ -325,18 +324,20 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
         {
             while (_simpleTextIndex < _simpleText.Length)
             {
-                Current = _simpleText[_simpleTextIndex++];
-                if (HunspellTextFunctions.IsReverseSubsetIgnoringWildcards(Current.Key, _word))
+                ref var candidate = ref _simpleText[_simpleTextIndex++];
+                if (HunspellTextFunctions.IsReverseSubsetIgnoringWildcards(candidate.Key, _word))
                 {
+                    Current = candidate;
                     return true;
                 }
             }
 
             while (_withDotsIndex < _withDots.Length)
             {
-                Current = _withDots[_withDotsIndex++];
-                if (HunspellTextFunctions.IsReverseSubset(Current.Key, _word))
+                ref var candidate = ref _withDots[_withDotsIndex++];
+                if (HunspellTextFunctions.IsReverseSubset(candidate.Key, _word))
                 {
+                    Current = candidate;
                     return true;
                 }
             }
@@ -391,18 +392,20 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
         {
             while (_simpleTextIndex < _simpleText.Length)
             {
-                Current = _simpleText[_simpleTextIndex++];
-                if (_firstFlagFilter.Contains(Current.AFlag) && HunspellTextFunctions.IsReverseSubsetIgnoringWildcards(Current.Key, _word))
+                ref var candidate = ref _simpleText[_simpleTextIndex++];
+                if (_firstFlagFilter.Contains(candidate.AFlag) && HunspellTextFunctions.IsReverseSubsetIgnoringWildcards(candidate.Key, _word))
                 {
+                    Current = candidate;
                     return true;
                 }
             }
 
             while (_withDotsIndex < _withDots.Length)
             {
-                Current = _withDots[_withDotsIndex++];
-                if (HunspellTextFunctions.IsReverseSubset(Current.Key, _word))
+                ref var candidate = ref _withDots[_withDotsIndex++];
+                if (HunspellTextFunctions.IsReverseSubset(candidate.Key, _word))
                 {
+                    Current = candidate;
                     return true;
                 }
             }
@@ -483,18 +486,20 @@ public sealed class PrefixCollection : AffixCollection<PrefixGroup, PrefixEntry,
         {
             while (_simpleTextIndex < _simpleText.Length)
             {
-                Current = _simpleText[_simpleTextIndex++];
-                if (HunspellTextFunctions.IsSubsetIgnoringWildcards(Current.Key, _word))
+                ref var candidate = ref _simpleText[_simpleTextIndex++];
+                if (HunspellTextFunctions.IsSubsetIgnoringWildcards(candidate.Key, _word))
                 {
+                    Current = candidate;
                     return true;
                 }
             }
 
             while (_withDotsIndex < _withDots.Length)
             {
-                Current = _withDots[_withDotsIndex++];
-                if (HunspellTextFunctions.IsSubset(Current.Key, _word))
+                ref var candidate = ref _withDots[_withDotsIndex++];
+                if (HunspellTextFunctions.IsSubset(candidate.Key, _word))
                 {
+                    Current = candidate;
                     return true;
                 }
             }
