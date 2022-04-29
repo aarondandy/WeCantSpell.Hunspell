@@ -65,6 +65,10 @@ public sealed class PrefixEntry : IAffixEntry
     public bool ContainsAnyContClass(FlagValue a, FlagValue b) => ContClass.ContainsAny(a, b);
 
     public bool ContainsAnyContClass(FlagValue a, FlagValue b, FlagValue c) => ContClass.ContainsAny(a, b, c);
+
+    public bool IsSubset(ReadOnlySpan<char> s2) => HunspellTextFunctions.IsSubset(Key, s2);
+
+    public bool IsExactSubset(ReadOnlySpan<char> s2) => s2.StartsWith(Key, StringComparison.Ordinal);
 }
 
 public sealed class SuffixEntry : IAffixEntry
@@ -122,4 +126,25 @@ public sealed class SuffixEntry : IAffixEntry
     public bool ContainsAnyContClass(FlagValue a, FlagValue b) => ContClass.ContainsAny(a, b);
 
     public bool ContainsAnyContClass(FlagValue a, FlagValue b, FlagValue c) => ContClass.ContainsAny(a, b, c);
+
+    public bool IsReverseSubset(ReadOnlySpan<char> s2)
+    {
+        return Append.Length <= s2.Length && check(Append.AsSpan(), s2.Slice(s2.Length - Append.Length));
+
+        static bool check(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
+        {
+            for (var i = 0; i < s1.Length; i++)
+            {
+                var c = s1[i];
+                if (c != '.' && s2[i] != c)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+
+    public bool IsExactReverseSubset(ReadOnlySpan<char> s2) => s2.EndsWith(Append, StringComparison.Ordinal);
 }

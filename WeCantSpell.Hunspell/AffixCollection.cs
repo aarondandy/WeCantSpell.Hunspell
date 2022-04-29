@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -180,7 +181,6 @@ public abstract class AffixCollection<TAffixGroup, TAffixEntry, TAffix> : IEnume
             _byFlag = affixesByFlag;
             _group = null!;
             _groupIndex = 0;
-            Current = default!;
         }
 
         private int _groupIndex;
@@ -188,7 +188,7 @@ public abstract class AffixCollection<TAffixGroup, TAffixEntry, TAffix> : IEnume
         private readonly Dictionary<FlagValue, TAffixGroup> _byFlag;
         private FlagSet.Enumerator _flags;
 
-        public TAffix Current { get; private set; }
+        public TAffix Current => _group!.GetAffix(_groupIndex++);
 
         public AffixesByFlagsEnumerator GetEnumerator() => this;
 
@@ -202,7 +202,6 @@ public abstract class AffixCollection<TAffixGroup, TAffixEntry, TAffix> : IEnume
                 }
             }
 
-            Current = _group!.GetAffix(_groupIndex++);
             return true;
         }
 
@@ -230,8 +229,8 @@ public abstract class AffixCollection<TAffixGroup, TAffixEntry, TAffix> : IEnume
             _current = default!;
         }
 
-        private FlagSet.Enumerator _flags;
         private readonly Dictionary<FlagValue, TAffixGroup> _byFlag;
+        private FlagSet.Enumerator _flags;
         private TAffixGroup _current;
 
         public TAffixGroup Current => _current;
@@ -322,10 +321,12 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
 
         public bool MoveNext()
         {
+            ref var candidate = ref Unsafe.NullRef<Suffix>();
+
             while (_simpleTextIndex < _simpleText.Length)
             {
-                ref var candidate = ref _simpleText[_simpleTextIndex++];
-                if (HunspellTextFunctions.IsReverseSubsetIgnoringWildcards(candidate.Key, _word))
+                candidate = ref _simpleText[_simpleTextIndex++];
+                if (candidate.Entry.IsExactReverseSubset(_word))
                 {
                     Current = candidate;
                     return true;
@@ -334,8 +335,8 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
 
             while (_withDotsIndex < _withDots.Length)
             {
-                ref var candidate = ref _withDots[_withDotsIndex++];
-                if (HunspellTextFunctions.IsReverseSubset(candidate.Key, _word))
+                candidate = ref _withDots[_withDotsIndex++];
+                if (candidate.Entry.IsReverseSubset(_word))
                 {
                     Current = candidate;
                     return true;
@@ -390,10 +391,12 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
 
         public bool MoveNext()
         {
+            ref var candidate = ref Unsafe.NullRef<Suffix>();
+
             while (_simpleTextIndex < _simpleText.Length)
             {
-                ref var candidate = ref _simpleText[_simpleTextIndex++];
-                if (_firstFlagFilter.Contains(candidate.AFlag) && HunspellTextFunctions.IsReverseSubsetIgnoringWildcards(candidate.Key, _word))
+                candidate = ref _simpleText[_simpleTextIndex++];
+                if (_firstFlagFilter.Contains(candidate.AFlag) && candidate.Entry.IsExactReverseSubset(_word))
                 {
                     Current = candidate;
                     return true;
@@ -402,8 +405,8 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
 
             while (_withDotsIndex < _withDots.Length)
             {
-                ref var candidate = ref _withDots[_withDotsIndex++];
-                if (HunspellTextFunctions.IsReverseSubset(candidate.Key, _word))
+                candidate = ref _withDots[_withDotsIndex++];
+                if (candidate.Entry.IsReverseSubset(_word))
                 {
                     Current = candidate;
                     return true;
@@ -484,10 +487,12 @@ public sealed class PrefixCollection : AffixCollection<PrefixGroup, PrefixEntry,
 
         public bool MoveNext()
         {
+            ref var candidate = ref Unsafe.NullRef<Prefix>();
+
             while (_simpleTextIndex < _simpleText.Length)
             {
-                ref var candidate = ref _simpleText[_simpleTextIndex++];
-                if (HunspellTextFunctions.IsSubsetIgnoringWildcards(candidate.Key, _word))
+                candidate = ref _simpleText[_simpleTextIndex++];
+                if (candidate.Entry.IsExactSubset(_word))
                 {
                     Current = candidate;
                     return true;
@@ -496,8 +501,8 @@ public sealed class PrefixCollection : AffixCollection<PrefixGroup, PrefixEntry,
 
             while (_withDotsIndex < _withDots.Length)
             {
-                ref var candidate = ref _withDots[_withDotsIndex++];
-                if (HunspellTextFunctions.IsSubset(candidate.Key, _word))
+                candidate = ref _withDots[_withDotsIndex++];
+                if (candidate.Entry.IsSubset(_word))
                 {
                     Current = candidate;
                     return true;

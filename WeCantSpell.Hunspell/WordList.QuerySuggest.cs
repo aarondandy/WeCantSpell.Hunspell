@@ -2062,7 +2062,7 @@ public partial class WordList
                         {
                             wlstNh = ref wlst[nh];
                             wlstNh.Word = newword;
-                            wlstNh.Allow = sptr.AllowCross;
+                            wlstNh.Allow = sptr.Options.AllowCross();
                             wlstNh.Orig = null;
 
                             nh++;
@@ -2105,7 +2105,7 @@ public partial class WordList
 
                     foreach (var pfxGroup in Affix.Prefixes.GetGroupsByFlags(entry.Detail.Flags))
                     {
-                        if (pfxGroup.AllowCross)
+                        if (pfxGroup.Options.AllowCross())
                         {
                             foreach (var cptr in pfxGroup.Entries)
                             {
@@ -2125,7 +2125,7 @@ public partial class WordList
                                         {
                                             wlstNh = ref wlst[nh];
                                             wlstNh.Word = newword;
-                                            wlstNh.Allow = pfxGroup.AllowCross;
+                                            wlstNh.Allow = pfxGroup.Options.AllowCross();
                                             wlstNh.Orig = null;
                                         }
                                     }
@@ -2160,7 +2160,7 @@ public partial class WordList
                         {
                             wlstNh = ref wlst[nh];
                             wlstNh.Word = newword;
-                            wlstNh.Allow = ptr.AllowCross;
+                            wlstNh.Allow = ptr.Options.AllowCross();
                             wlstNh.Orig = null;
                             nh++;
                         }

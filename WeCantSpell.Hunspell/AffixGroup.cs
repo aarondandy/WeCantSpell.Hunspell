@@ -57,12 +57,6 @@ public sealed class PrefixGroup : IAffixGroup<PrefixEntry, Prefix>
     /// </summary>
     public AffixEntryOptions Options { get; }
 
-    /// <summary>
-    /// Indicates if a group has the <see cref="AffixEntryOptions.CrossProduct"/> option enabled.
-    /// </summary>
-    /// <seealso cref="AffixEntryOptions"/>
-    public bool AllowCross => EnumEx.HasFlag(Options, AffixEntryOptions.CrossProduct);
-
     public Prefix ToAffix(PrefixEntry entry) => new(entry, AFlag, Options);
 
     public Prefix GetAffix(int index) => ToAffix(Entries[index]);
@@ -127,12 +121,6 @@ public sealed class SuffixGroup : IAffixGroup<SuffixEntry, Suffix>
     /// Options for this affix group.
     /// </summary>
     public AffixEntryOptions Options { get; }
-
-    /// <summary>
-    /// Indicates if a group has the <see cref="AffixEntryOptions.CrossProduct"/> option enabled.
-    /// </summary>
-    /// <seealso cref="AffixEntryOptions"/>
-    public bool AllowCross => EnumEx.HasFlag(Options, AffixEntryOptions.CrossProduct);
 
     public Suffix ToAffix(SuffixEntry entry) => new(entry, AFlag, Options);
 
