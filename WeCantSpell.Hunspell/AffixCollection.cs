@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Runtime.CompilerServices;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -321,11 +320,14 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
 
         public bool MoveNext()
         {
-            ref var candidate = ref Unsafe.NullRef<Suffix>();
+            return MoveSimple() || MoveWithDots();
+        }
 
+        private bool MoveSimple()
+        {
             while (_simpleTextIndex < _simpleText.Length)
             {
-                candidate = ref _simpleText[_simpleTextIndex++];
+                ref var candidate = ref _simpleText[_simpleTextIndex++];
                 if (candidate.Entry.IsExactReverseSubset(_word))
                 {
                     Current = candidate;
@@ -333,9 +335,14 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
                 }
             }
 
+            return false;
+        }
+
+        private bool MoveWithDots()
+        {
             while (_withDotsIndex < _withDots.Length)
             {
-                candidate = ref _withDots[_withDotsIndex++];
+                ref var candidate = ref _withDots[_withDotsIndex++];
                 if (candidate.Entry.IsReverseSubset(_word))
                 {
                     Current = candidate;
@@ -391,11 +398,14 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
 
         public bool MoveNext()
         {
-            ref var candidate = ref Unsafe.NullRef<Suffix>();
+            return MoveSimple() || MoveWithDots();
+        }
 
+        private bool MoveSimple()
+        {
             while (_simpleTextIndex < _simpleText.Length)
             {
-                candidate = ref _simpleText[_simpleTextIndex++];
+                ref var candidate = ref _simpleText[_simpleTextIndex++];
                 if (_firstFlagFilter.Contains(candidate.AFlag) && candidate.Entry.IsExactReverseSubset(_word))
                 {
                     Current = candidate;
@@ -403,9 +413,14 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
                 }
             }
 
+            return false;
+        }
+
+        private bool MoveWithDots()
+        {
             while (_withDotsIndex < _withDots.Length)
             {
-                candidate = ref _withDots[_withDotsIndex++];
+                ref var candidate = ref _withDots[_withDotsIndex++];
                 if (candidate.Entry.IsReverseSubset(_word))
                 {
                     Current = candidate;
@@ -487,11 +502,14 @@ public sealed class PrefixCollection : AffixCollection<PrefixGroup, PrefixEntry,
 
         public bool MoveNext()
         {
-            ref var candidate = ref Unsafe.NullRef<Prefix>();
+            return MoveSimple() || MoveWithDots();
+        }
 
+        private bool MoveSimple()
+        {
             while (_simpleTextIndex < _simpleText.Length)
             {
-                candidate = ref _simpleText[_simpleTextIndex++];
+                ref var candidate = ref _simpleText[_simpleTextIndex++];
                 if (candidate.Entry.IsExactSubset(_word))
                 {
                     Current = candidate;
@@ -499,9 +517,14 @@ public sealed class PrefixCollection : AffixCollection<PrefixGroup, PrefixEntry,
                 }
             }
 
+            return false;
+        }
+
+        private bool MoveWithDots()
+        {
             while (_withDotsIndex < _withDots.Length)
             {
-                candidate = ref _withDots[_withDotsIndex++];
+                ref var candidate = ref _withDots[_withDotsIndex++];
                 if (candidate.Entry.IsSubset(_word))
                 {
                     Current = candidate;
