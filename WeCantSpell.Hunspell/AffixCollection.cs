@@ -184,7 +184,7 @@ public abstract class AffixCollection<TAffixGroup, TAffixEntry, TAffix> : IEnume
 
         private int _groupIndex;
         private TAffixGroup _group;
-        private readonly Dictionary<FlagValue, TAffixGroup> _byFlag;
+        private Dictionary<FlagValue, TAffixGroup> _byFlag;
         private FlagSet.Enumerator _flags;
 
         public TAffix Current => _group!.GetAffix(_groupIndex++);
@@ -228,7 +228,7 @@ public abstract class AffixCollection<TAffixGroup, TAffixEntry, TAffix> : IEnume
             _current = default!;
         }
 
-        private readonly Dictionary<FlagValue, TAffixGroup> _byFlag;
+        private Dictionary<FlagValue, TAffixGroup> _byFlag;
         private FlagSet.Enumerator _flags;
         private TAffixGroup _current;
 
@@ -310,9 +310,9 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
 
         private int _simpleTextIndex = 0;
         private int _withDotsIndex = 0;
-        private readonly Suffix[] _simpleText;
-        private readonly Suffix[] _withDots;
-        private readonly ReadOnlySpan<char> _word;
+        private Suffix[] _simpleText;
+        private Suffix[] _withDots;
+        private ReadOnlySpan<char> _word;
 
         public Suffix Current { get; private set; }
 
@@ -387,10 +387,10 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
 
         private int _simpleTextIndex = 0;
         private int _withDotsIndex = 0;
-        private readonly Suffix[] _simpleText;
-        private readonly Suffix[] _withDots;
-        private readonly FlagSet _firstFlagFilter;
-        private readonly ReadOnlySpan<char> _word;
+        private Suffix[] _simpleText;
+        private Suffix[] _withDots;
+        private FlagSet _firstFlagFilter;
+        private ReadOnlySpan<char> _word;
 
         public Suffix Current { get; private set; }
 
@@ -492,9 +492,9 @@ public sealed class PrefixCollection : AffixCollection<PrefixGroup, PrefixEntry,
 
         private int _simpleTextIndex = 0;
         private int _withDotsIndex = 0;
-        private readonly Prefix[] _simpleText;
-        private readonly Prefix[] _withDots;
-        private readonly ReadOnlySpan<char> _word;
+        private Prefix[] _simpleText;
+        private Prefix[] _withDots;
+        private ReadOnlySpan<char> _word;
 
         public Prefix Current { get; private set; }
 
