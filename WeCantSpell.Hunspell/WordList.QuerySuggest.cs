@@ -1093,11 +1093,11 @@ public partial class WordList
             if (wn >= word.Length)
             {
                 if (
+                    wlst.Count < MaxSuggestions
+                    &&
                     !wlst.Contains(candidate)
                     &&
                     CheckWord(candidate, cpdSuggest, timer) != 0
-                    &&
-                    wlst.Count < MaxSuggestions
                 )
                 {
                     wlst.Add(candidate);
