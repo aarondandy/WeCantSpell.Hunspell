@@ -1079,13 +1079,8 @@ public partial class WordList
             }
 
             var candidate = string.Empty;
-            MapRelated(word, ref candidate, wn: 0, wlst, cpdSuggest);
-        }
-
-        private void MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest)
-        {
             var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, Options.CancellationToken);
-            MapRelated(word, ref candidate, wn, wlst, cpdSuggest, timer);
+            MapRelated(word, ref candidate, wn: 0, wlst, cpdSuggest, timer);
         }
 
         private void MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest, OperationTimedCountLimiter timer)
