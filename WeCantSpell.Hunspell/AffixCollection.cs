@@ -98,39 +98,36 @@ namespace WeCantSpell.Hunspell;
 /// 
 /// <seealso cref="PrefixCollection"/>
 /// <seealso cref="SuffixCollection"/>
-public abstract class AffixCollection<TAffixGroup, TAffixEntry, TAffix> : IEnumerable<TAffixGroup>
-    where TAffixGroup : class, IAffixGroup<TAffixEntry, TAffix>
+public abstract class AffixCollection<TAffixGroup, TAffixEntry> : IEnumerable<TAffixGroup>
+    where TAffixGroup : class, IAffixGroup<TAffixEntry>
     where TAffixEntry : IAffixEntry
-    where TAffix : IAffix
 {
     protected AffixCollection(Dictionary<FlagValue, TAffixGroup> affixesByFlag)
     {
         AffixesByFlag = affixesByFlag;
 
         var contClassesBuilder = new FlagSet.Builder();
-        var affixesWithEmptyKeys = new ArrayBuilder<TAffix>();
-        var affixesWithDots = new ArrayBuilder<TAffix>();
-        var affixesByKeyPrefix = new Dictionary<char, ArrayBuilder<TAffix>>();
+        var affixesWithEmptyKeys = new ArrayBuilder<TAffixEntry>();
+        var affixesWithDots = new ArrayBuilder<TAffixEntry>();
+        var affixesByKeyPrefix = new Dictionary<char, ArrayBuilder<TAffixEntry>>();
 
         foreach (var group in AffixesByFlag.Values)
         {
-            foreach (var entry in group.Entries)
+            foreach (var affix in group.Entries)
             {
-                contClassesBuilder.AddRange(entry.ContClass);
+                contClassesBuilder.AddRange(affix.ContClass);
 
-                var affix = group.ToAffix(entry);
-
-                if (string.IsNullOrEmpty(entry.Key))
+                if (string.IsNullOrEmpty(affix.Key))
                 {
                     affixesWithEmptyKeys.Add(affix);
                 }
-                else if (entry.Key.Contains('.'))
+                else if (affix.Key.Contains('.'))
                 {
                     affixesWithDots.Add(affix);
                 }
                 else
                 {
-                    var indexedKey = entry.Key[0];
+                    var indexedKey = affix.Key[0];
 
                     if (!affixesByKeyPrefix.TryGetValue(indexedKey, out var indexGroup))
                     {
@@ -150,9 +147,9 @@ public abstract class AffixCollection<TAffixGroup, TAffixEntry, TAffix> : IEnume
     }
 
     protected readonly Dictionary<FlagValue, TAffixGroup> AffixesByFlag;
-    protected readonly Dictionary<char, TAffix[]> AffixesByKeyPrefix;
-    protected readonly TAffix[] AffixesWithDots = Array.Empty<TAffix>();
-    protected readonly TAffix[] AffixesWithEmptyKeys = Array.Empty<TAffix>();
+    protected readonly Dictionary<char, TAffixEntry[]> AffixesByKeyPrefix;
+    protected readonly TAffixEntry[] AffixesWithDots = Array.Empty<TAffixEntry>();
+    protected readonly TAffixEntry[] AffixesWithEmptyKeys = Array.Empty<TAffixEntry>();
 
     public FlagSet ContClasses { get; protected set; } = FlagSet.Empty;
 
@@ -166,7 +163,7 @@ public abstract class AffixCollection<TAffixGroup, TAffixEntry, TAffix> : IEnume
 
     public TAffixGroup? GetByFlag(FlagValue flag) => AffixesByFlag.GetValueOrDefault(flag);
 
-    internal TAffix[] GetAffixesWithEmptyKeys() => AffixesWithEmptyKeys;
+    internal TAffixEntry[] GetAffixesWithEmptyKeys() => AffixesWithEmptyKeys;
 
     internal AffixesByFlagsEnumerator GetByFlags(FlagSet flags) => new(flags, AffixesByFlag);
 
@@ -180,6 +177,7 @@ public abstract class AffixCollection<TAffixGroup, TAffixEntry, TAffix> : IEnume
             _byFlag = affixesByFlag;
             _group = null!;
             _groupIndex = 0;
+            Current = default!;
         }
 
         private int _groupIndex;
@@ -187,7 +185,7 @@ public abstract class AffixCollection<TAffixGroup, TAffixEntry, TAffix> : IEnume
         private Dictionary<FlagValue, TAffixGroup> _byFlag;
         private FlagSet.Enumerator _flags;
 
-        public TAffix Current => _group!.GetAffix(_groupIndex++);
+        public TAffixEntry Current { get; private set; }
 
         public AffixesByFlagsEnumerator GetEnumerator() => this;
 
@@ -201,6 +199,7 @@ public abstract class AffixCollection<TAffixGroup, TAffixEntry, TAffix> : IEnume
                 }
             }
 
+            Current = _group!.Entries[_groupIndex++];
             return true;
         }
 
@@ -251,7 +250,7 @@ public abstract class AffixCollection<TAffixGroup, TAffixEntry, TAffix> : IEnume
     }
 }
 
-public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry, Suffix>
+public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry>
 {
     public static SuffixCollection Empty { get; } = new(new());
 
@@ -280,8 +279,8 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
 
     internal WordEnumerator GetMatchingAffixes(ReadOnlySpan<char> word)
     {
-        var simpleText = Array.Empty<Suffix>();
-        var withDots = Array.Empty<Suffix>();
+        var simpleText = Array.Empty<SuffixEntry>();
+        var withDots = Array.Empty<SuffixEntry>();
 
         if (!word.IsEmpty)
         {
@@ -298,7 +297,7 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
 
     internal ref struct WordEnumerator
     {
-        public WordEnumerator(ReadOnlySpan<char> word, Suffix[] simpleText, Suffix[] withDots)
+        public WordEnumerator(ReadOnlySpan<char> word, SuffixEntry[] simpleText, SuffixEntry[] withDots)
         {
             _word = word;
             _simpleText = simpleText;
@@ -310,11 +309,11 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
 
         private int _simpleTextIndex = 0;
         private int _withDotsIndex = 0;
-        private Suffix[] _simpleText;
-        private Suffix[] _withDots;
+        private SuffixEntry[] _simpleText;
+        private SuffixEntry[] _withDots;
         private ReadOnlySpan<char> _word;
 
-        public Suffix Current { get; private set; }
+        public SuffixEntry Current { get; private set; }
 
         public WordEnumerator GetEnumerator() => this;
 
@@ -328,7 +327,7 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
             while (_simpleTextIndex < _simpleText.Length)
             {
                 ref var candidate = ref _simpleText[_simpleTextIndex++];
-                if (candidate.Entry.IsExactReverseSubset(_word))
+                if (candidate.IsExactReverseSubset(_word))
                 {
                     Current = candidate;
                     return true;
@@ -343,7 +342,7 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
             while (_withDotsIndex < _withDots.Length)
             {
                 ref var candidate = ref _withDots[_withDotsIndex++];
-                if (candidate.Entry.IsReverseSubset(_word))
+                if (candidate.IsReverseSubset(_word))
                 {
                     Current = candidate;
                     return true;
@@ -356,8 +355,8 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
 
     internal WordFlagEnumerator GetMatchingAffixes(ReadOnlySpan<char> word, FlagSet groupFlagFilter)
     {
-        var simpleText = Array.Empty<Suffix>();
-        var withDots = Array.Empty<Suffix>();
+        var simpleText = Array.Empty<SuffixEntry>();
+        var withDots = Array.Empty<SuffixEntry>();
 
         if (!word.IsEmpty)
         {
@@ -374,7 +373,7 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
 
     internal ref struct WordFlagEnumerator
     {
-        public WordFlagEnumerator(ReadOnlySpan<char> word, Suffix[] simpleText, Suffix[] withDots, FlagSet groupFlagFilter)
+        public WordFlagEnumerator(ReadOnlySpan<char> word, SuffixEntry[] simpleText, SuffixEntry[] withDots, FlagSet groupFlagFilter)
         {
             _word = word;
             _simpleText = simpleText;
@@ -387,12 +386,12 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
 
         private int _simpleTextIndex = 0;
         private int _withDotsIndex = 0;
-        private Suffix[] _simpleText;
-        private Suffix[] _withDots;
+        private SuffixEntry[] _simpleText;
+        private SuffixEntry[] _withDots;
         private FlagSet _firstFlagFilter;
         private ReadOnlySpan<char> _word;
 
-        public Suffix Current { get; private set; }
+        public SuffixEntry Current { get; private set; }
 
         public WordFlagEnumerator GetEnumerator() => this;
 
@@ -406,7 +405,7 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
             while (_simpleTextIndex < _simpleText.Length)
             {
                 ref var candidate = ref _simpleText[_simpleTextIndex++];
-                if (_firstFlagFilter.Contains(candidate.AFlag) && candidate.Entry.IsExactReverseSubset(_word))
+                if (_firstFlagFilter.Contains(candidate.AFlag) && candidate.IsExactReverseSubset(_word))
                 {
                     Current = candidate;
                     return true;
@@ -421,7 +420,7 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
             while (_withDotsIndex < _withDots.Length)
             {
                 ref var candidate = ref _withDots[_withDotsIndex++];
-                if (candidate.Entry.IsReverseSubset(_word))
+                if (candidate.IsReverseSubset(_word))
                 {
                     Current = candidate;
                     return true;
@@ -433,7 +432,7 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry,
     }
 }
 
-public sealed class PrefixCollection : AffixCollection<PrefixGroup, PrefixEntry, Prefix>
+public sealed class PrefixCollection : AffixCollection<PrefixGroup, PrefixEntry>
 {
     public static PrefixCollection Empty { get; } = new(new());
 
@@ -462,8 +461,8 @@ public sealed class PrefixCollection : AffixCollection<PrefixGroup, PrefixEntry,
 
     internal WordEnumerator GetMatchingAffixes(ReadOnlySpan<char> word)
     {
-        var simpleText = Array.Empty<Prefix>();
-        var withDots = Array.Empty<Prefix>();
+        var simpleText = Array.Empty<PrefixEntry>();
+        var withDots = Array.Empty<PrefixEntry>();
 
         if (!word.IsEmpty)
         {
@@ -480,7 +479,7 @@ public sealed class PrefixCollection : AffixCollection<PrefixGroup, PrefixEntry,
 
     internal ref struct WordEnumerator
     {
-        public WordEnumerator(ReadOnlySpan<char> word, Prefix[] simpleText, Prefix[] withDots)
+        public WordEnumerator(ReadOnlySpan<char> word, PrefixEntry[] simpleText, PrefixEntry[] withDots)
         {
             _word = word;
             _simpleText = simpleText;
@@ -492,11 +491,11 @@ public sealed class PrefixCollection : AffixCollection<PrefixGroup, PrefixEntry,
 
         private int _simpleTextIndex = 0;
         private int _withDotsIndex = 0;
-        private Prefix[] _simpleText;
-        private Prefix[] _withDots;
+        private PrefixEntry[] _simpleText;
+        private PrefixEntry[] _withDots;
         private ReadOnlySpan<char> _word;
 
-        public Prefix Current { get; private set; }
+        public PrefixEntry Current { get; private set; }
 
         public WordEnumerator GetEnumerator() => this;
 
@@ -510,7 +509,7 @@ public sealed class PrefixCollection : AffixCollection<PrefixGroup, PrefixEntry,
             while (_simpleTextIndex < _simpleText.Length)
             {
                 ref var candidate = ref _simpleText[_simpleTextIndex++];
-                if (candidate.Entry.IsExactSubset(_word))
+                if (candidate.IsExactSubset(_word))
                 {
                     Current = candidate;
                     return true;
@@ -525,7 +524,7 @@ public sealed class PrefixCollection : AffixCollection<PrefixGroup, PrefixEntry,
             while (_withDotsIndex < _withDots.Length)
             {
                 ref var candidate = ref _withDots[_withDotsIndex++];
-                if (candidate.Entry.IsSubset(_word))
+                if (candidate.IsSubset(_word))
                 {
                     Current = candidate;
                     return true;

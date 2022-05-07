@@ -2050,7 +2050,7 @@ public partial class WordList
                     !sptr.ContainsAnyContClass(Affix.NeedAffix, Affix.Circumfix, Affix.OnlyInCompound)
                 )
                 {
-                    var newword = Add(sptr.Entry, entry.Word);
+                    var newword = Add(sptr, entry.Word);
                     if (newword.Length != 0)
                     {
                         if (nh < wlst.Length)
@@ -2150,7 +2150,7 @@ public partial class WordList
                         !ptr.ContainsAnyContClass(Affix.NeedAffix, Affix.Circumfix, Affix.OnlyInCompound)
                     )
                     {
-                        var newword = Add(ptr.Entry, entry.Word);
+                        var newword = Add(ptr, entry.Word);
                         if (newword.Length != 0 && nh < wlst.Length)
                         {
                             wlstNh = ref wlst[nh];

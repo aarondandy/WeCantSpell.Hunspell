@@ -6,25 +6,31 @@ namespace WeCantSpell.Hunspell;
 
 public interface IAffixEntry
 {
+    FlagValue AFlag { get; }
+    AffixEntryOptions Options { get; }
     FlagSet ContClass { get; }
-    public string Append { get; }
-    public string Key { get; }
+    string Append { get; }
+    string Key { get; }
 }
 
-public sealed class PrefixEntry : IAffixEntry
+public class PrefixEntry : IAffixEntry
 {
     public PrefixEntry(
         string strip,
         string affixText,
         CharacterConditionGroup conditions,
         MorphSet morph,
-        FlagSet contClass)
+        FlagSet contClass,
+        FlagValue aFlag,
+        AffixEntryOptions options)
     {
         Strip = strip ?? string.Empty;
         Append = affixText ?? string.Empty;
         Conditions = conditions;
         MorphCode = morph;
         ContClass = contClass;
+        AFlag = aFlag;
+        Options = options;
     }
 
     /// <summary>
@@ -37,6 +43,8 @@ public sealed class PrefixEntry : IAffixEntry
     /// </summary>
     public CharacterConditionGroup Conditions { get; }
 
+    public FlagSet ContClass { get; }
+
     /// <summary>
     /// The affix string to add.
     /// </summary>
@@ -44,6 +52,8 @@ public sealed class PrefixEntry : IAffixEntry
     /// Affix (optionally with flags of continuation classes, separated by a slash).
     /// </remarks>
     public string Append { get; }
+
+    public string Key => Append;
 
     /// <summary>
     /// String to strip before adding affix.
@@ -54,9 +64,9 @@ public sealed class PrefixEntry : IAffixEntry
     /// </remarks>
     public string Strip { get; }
 
-    public FlagSet ContClass { get; }
+    public FlagValue AFlag { get; }
 
-    public string Key => Append;
+    public AffixEntryOptions Options { get; }
 
     internal bool TestCondition(ReadOnlySpan<char> word) => Conditions.IsStartingMatch(word);
 
@@ -71,21 +81,25 @@ public sealed class PrefixEntry : IAffixEntry
     public bool IsExactSubset(ReadOnlySpan<char> s2) => s2.StartsWith(Key, StringComparison.Ordinal);
 }
 
-public sealed class SuffixEntry : IAffixEntry
+public class SuffixEntry : IAffixEntry
 {
     public SuffixEntry(
         string strip,
         string affixText,
         CharacterConditionGroup conditions,
         MorphSet morph,
-        FlagSet contClass)
+        FlagSet contClass,
+        FlagValue aFlag,
+        AffixEntryOptions options)
     {
         Strip = strip ?? string.Empty;
         Append = affixText ?? string.Empty;
+        Key = Append.GetReversed();
         Conditions = conditions;
         MorphCode = morph;
         ContClass = contClass;
-        Key = Append.GetReversed();
+        AFlag = aFlag;
+        Options = options;
     }
 
     /// <summary>
@@ -99,14 +113,6 @@ public sealed class SuffixEntry : IAffixEntry
     public CharacterConditionGroup Conditions { get; }
 
     /// <summary>
-    /// The affix string to add.
-    /// </summary>
-    /// <remarks>
-    /// Affix (optionally with flags of continuation classes, separated by a slash).
-    /// </remarks>
-    public string Append { get; }
-
-    /// <summary>
     /// String to strip before adding affix.
     /// </summary>
     /// <remarks>
@@ -117,7 +123,19 @@ public sealed class SuffixEntry : IAffixEntry
 
     public FlagSet ContClass { get; }
 
+    /// <summary>
+    /// The affix string to add.
+    /// </summary>
+    /// <remarks>
+    /// Affix (optionally with flags of continuation classes, separated by a slash).
+    /// </remarks>
+    public string Append { get; }
+
     public string Key { get; }
+
+    public FlagValue AFlag { get; }
+
+    public AffixEntryOptions Options { get; }
 
     internal bool TestCondition(ReadOnlySpan<char> word) => Conditions.IsEndingMatch(word);
 

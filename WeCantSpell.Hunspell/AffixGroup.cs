@@ -5,8 +5,8 @@ using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
-public interface IAffixGroup<TAffixEntry, TAffix>
-    where TAffix : IAffix
+public interface IAffixGroup<TAffixEntry>
+    where TAffixEntry : IAffixEntry
 {
     /// <summary>
     /// All of the entries that make up this group.
@@ -22,16 +22,12 @@ public interface IAffixGroup<TAffixEntry, TAffix>
     /// Options for this affix group.
     /// </summary>
     AffixEntryOptions Options { get; }
-
-    TAffix ToAffix(TAffixEntry entry);
-
-    TAffix GetAffix(int index);
 }
 
 /// <summary>
 /// Contains a set of <see cref="PrefixEntry"/> instances based on the same <see cref="AFlag"/>.
 /// </summary>
-public sealed class PrefixGroup : IAffixGroup<PrefixEntry, Prefix>
+public sealed class PrefixGroup : IAffixGroup<PrefixEntry>
 {
     internal static PrefixGroup Invalid { get; } = new(default, AffixEntryOptions.None, ImmutableArray<PrefixEntry>.Empty);
 
@@ -56,10 +52,6 @@ public sealed class PrefixGroup : IAffixGroup<PrefixEntry, Prefix>
     /// Options for this affix group.
     /// </summary>
     public AffixEntryOptions Options { get; }
-
-    public Prefix ToAffix(PrefixEntry entry) => new(entry, AFlag, Options);
-
-    public Prefix GetAffix(int index) => ToAffix(Entries[index]);
 
     public sealed class Builder
     {
@@ -96,7 +88,7 @@ public sealed class PrefixGroup : IAffixGroup<PrefixEntry, Prefix>
 /// <summary>
 /// Contains a set of <see cref="SuffixEntry"/> instances based on the same <see cref="AFlag"/>.
 /// </summary>
-public sealed class SuffixGroup : IAffixGroup<SuffixEntry, Suffix>
+public sealed class SuffixGroup : IAffixGroup<SuffixEntry>
 {
     internal static SuffixGroup Invalid { get; } = new(default, AffixEntryOptions.None, ImmutableArray<SuffixEntry>.Empty);
 
@@ -121,10 +113,6 @@ public sealed class SuffixGroup : IAffixGroup<SuffixEntry, Suffix>
     /// Options for this affix group.
     /// </summary>
     public AffixEntryOptions Options { get; }
-
-    public Suffix ToAffix(SuffixEntry entry) => new(entry, AFlag, Options);
-
-    public Suffix GetAffix(int index) => ToAffix(Entries[index]);
 
     public sealed class Builder
     {

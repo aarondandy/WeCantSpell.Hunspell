@@ -925,7 +925,9 @@ public sealed partial class AffixReader
             affixText,
             conditions,
             morph,
-            contClass));
+            contClass,
+            affixGroup.AFlag,
+            affixGroup.Options));
 
         return true;
 
@@ -1142,7 +1144,9 @@ public sealed partial class AffixReader
             affixText,
             conditions,
             morph,
-            contClass));
+            contClass,
+            affixGroup.AFlag,
+            affixGroup.Options));
 
         return true;
 

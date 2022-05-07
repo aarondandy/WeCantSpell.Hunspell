@@ -46,7 +46,7 @@ public partial class WordList
         /// </summary>
         //private string? PrefixAppend { get; set; }
 
-        private Suffix? Suffix { get; set; }
+        private SuffixEntry? Suffix { get; set; }
 
         private FlagValue SuffixFlag { get; set; }
 
@@ -94,7 +94,7 @@ public partial class WordList
             Prefix = prefix;
         }
 
-        private void SetSuffix(Suffix suffix)
+        private void SetSuffix(SuffixEntry suffix)
         {
             Suffix = suffix;
         }
@@ -120,7 +120,7 @@ public partial class WordList
             (
                 (Prefix is not null && Prefix.ContainsContClass(value))
                 ||
-                (Suffix?.Entry.ContainsContClass(value) == true)
+                (Suffix?.ContainsContClass(value) == true)
             );
 
         private bool ContainFlagsOrBlockSuggest(in WordEntryDetail rv, bool isSug, FlagValue a, FlagValue b) =>
@@ -585,7 +585,7 @@ public partial class WordList
                                         &&
                                         !huMovRule
                                         &&
-                                        Suffix?.Entry.ContainsAnyContClass(Affix.CompoundForbidFlag, Affix.CompoundEnd) == true
+                                        Suffix?.ContainsAnyContClass(Affix.CompoundForbidFlag, Affix.CompoundEnd) == true
                                     )
                                     {
                                         rv = null;
@@ -780,7 +780,7 @@ public partial class WordList
                             firstWordCompoundAcceptable =
                                 rv is not null
                                 // XXX hardwired Hungarian dic. codes
-                                && Suffix?.Entry.ContainsAnyContClass(SpecialFlags.LetterXLower, SpecialFlags.LetterPercent) == true;
+                                && Suffix?.ContainsAnyContClass(SpecialFlags.LetterXLower, SpecialFlags.LetterPercent) == true;
                         }
                         else
                         {
@@ -1300,7 +1300,7 @@ public partial class WordList
                     rv = CheckWordPrefix(pe, word, inCompound, needFlag);
                     if (rv is not null)
                     {
-                        SetPrefix(pe.Entry);
+                        SetPrefix(pe);
                         return rv;
                     }
                 }
@@ -1320,7 +1320,7 @@ public partial class WordList
                     rv = CheckWordPrefix(pe, word, inCompound, needFlag);
                     if (rv is not null)
                     {
-                        SetPrefix(pe.Entry);
+                        SetPrefix(pe);
                         return rv;
                     }
                 }
@@ -1351,7 +1351,7 @@ public partial class WordList
                 rv = CheckTwoSfx(pe, word, inCompound, needFlag);
                 if (rv is not null)
                 {
-                    SetPrefix(pe.Entry);
+                    SetPrefix(pe);
                     return rv;
                 }
             }
@@ -1362,26 +1362,25 @@ public partial class WordList
         /// <summary>
         /// Check if this prefix entry matches.
         /// </summary>
-        private WordEntry? CheckTwoSfx(Prefix pe, ReadOnlySpan<char> word, CompoundOptions inCompound, FlagValue needFlag)
+        private WordEntry? CheckTwoSfx(PrefixEntry pe, ReadOnlySpan<char> word, CompoundOptions inCompound, FlagValue needFlag)
         {
             // on entry prefix is 0 length or already matches the beginning of the word.
             // So if the remaining root word has positive length
             // and if there are enough chars in root word and added back strip chars
             // to meet the number of characters conditions, then test it
 
-            var peEntry = pe.Entry;
-            var tmpl = word.Length - peEntry.Append.Length; // length of tmpword
+            var tmpl = word.Length - pe.Append.Length; // length of tmpword
 
             if (
                 (tmpl > 0 || (tmpl == 0 && Affix.FullStrip))
                 &&
-                (tmpl + peEntry.Strip.Length >= peEntry.Conditions.Count)
+                (tmpl + pe.Strip.Length >= pe.Conditions.Count)
             )
             {
                 // generate new root word by removing prefix and adding
                 // back any characters that would have been stripped
 
-                var tmpword = StringEx.ConcatSpan(peEntry.Strip, word.Slice(peEntry.Append.Length));
+                var tmpword = StringEx.ConcatSpan(pe.Strip, word.Slice(pe.Append.Length));
 
                 // now make sure all of the conditions on characters
                 // are met.  Please see the appendix at the end of
@@ -1391,7 +1390,7 @@ public partial class WordList
                 // if all conditions are met then check if resulting
                 // root word in the dictionary
 
-                if (peEntry.TestCondition(tmpword))
+                if (pe.TestCondition(tmpword))
                 {
                     // prefix matched but no root word was found
                     // if CrossProduct is allowed, try again but now
@@ -1411,7 +1410,7 @@ public partial class WordList
             return null;
         }
 
-        public WordEntry? SuffixCheck(ReadOnlySpan<char> word, AffixEntryOptions sfxOpts, Prefix? pfx, FlagValue cclass, FlagValue needFlag, CompoundOptions inCompound)
+        public WordEntry? SuffixCheck(ReadOnlySpan<char> word, AffixEntryOptions sfxOpts, PrefixEntry? pfx, FlagValue cclass, FlagValue needFlag, CompoundOptions inCompound)
         {
             if (inCompound == CompoundOptions.Begin && Affix.CompoundPermitFlag.IsZero)
             {
@@ -1426,8 +1425,8 @@ public partial class WordList
             var pfxDoesNotNeedAffix = false;
             if (pfx is not null)
             {
-                pfxHasCircumfix = pfx.GetValueOrDefault().Entry.ContainsContClass(Affix.Circumfix);
-                pfxDoesNotNeedAffix = !pfx.GetValueOrDefault().Entry.ContainsContClass(Affix.NeedAffix);
+                pfxHasCircumfix = pfx.ContainsContClass(Affix.Circumfix);
+                pfxDoesNotNeedAffix = !pfx.ContainsContClass(Affix.NeedAffix);
             }
 
             // first handle the special case of 0 length suffixes
@@ -1532,7 +1531,7 @@ public partial class WordList
                         SetSuffix(sptr);
                         SetSuffixFlag(sptr.AFlag);
 
-                        if (!sptr.Entry.ContClass.HasItems)
+                        if (!sptr.ContClass.HasItems)
                         {
                             SetSuffixAppend(sptr.Key);
                         }
@@ -1559,7 +1558,7 @@ public partial class WordList
         /// <summary>
         /// Check word for two-level suffixes.
         /// </summary>
-        public WordEntry? SuffixCheckTwoSfx(ReadOnlySpan<char> word, AffixEntryOptions sfxopts, Prefix? pfx, FlagValue needflag)
+        public WordEntry? SuffixCheckTwoSfx(ReadOnlySpan<char> word, AffixEntryOptions sfxopts, PrefixEntry? pfx, FlagValue needflag)
         {
             WordEntry? rv;
 
@@ -1587,8 +1586,8 @@ public partial class WordList
                 rv = CheckTwoSfx(affix, word, sfxopts, pfx, needflag);
                 if (rv is not null && Suffix is not null)
                 {
-                    SetSuffixFlag(Suffix.GetValueOrDefault().AFlag);
-                    if (!affix.Entry.ContClass.HasItems)
+                    SetSuffixFlag(Suffix.AFlag);
+                    if (!affix.ContClass.HasItems)
                     {
                         SetSuffixAppend(affix.Key);
                     }
@@ -1761,22 +1760,21 @@ public partial class WordList
             return ok;
         }
 
-        private WordEntry? CheckWordPrefix(Prefix affix, ReadOnlySpan<char> word, CompoundOptions inCompound, FlagValue needFlag)
+        private WordEntry? CheckWordPrefix(PrefixEntry affix, ReadOnlySpan<char> word, CompoundOptions inCompound, FlagValue needFlag)
         {
             // on entry prefix is 0 length or already matches the beginning of the word.
             // So if the remaining root word has positive length
             // and if there are enough chars in root word and added back strip chars
             // to meet the number of characters conditions, then test it
 
-            var entry = affix.Entry;
-            var tmpl = word.Length - entry.Append.Length; // length of tmpword
+            var tmpl = word.Length - affix.Append.Length; // length of tmpword
 
             if (tmpl > 0 || (tmpl == 0 && Affix.FullStrip))
             {
                 // generate new root word by removing prefix and adding
                 // back any characters that would have been stripped
 
-                var tmpword = StringEx.ConcatSpan(entry.Strip, word.Slice(entry.Append.Length));
+                var tmpword = StringEx.ConcatSpan((string)affix.Strip, word.Slice((int)affix.Append.Length));
 
                 // now make sure all of the conditions on characters
                 // are met.  Please see the appendix at the end of
@@ -1786,7 +1784,7 @@ public partial class WordList
                 // if all conditions are met then check if resulting
                 // root word in the dictionary
 
-                if (entry.TestCondition(tmpword))
+                if (affix.TestCondition(tmpword))
                 {
                     if (TryLookupDetails(tmpword, out var tmpwordString, out var details))
                     {
@@ -1795,14 +1793,14 @@ public partial class WordList
                             if (
                                 detail.ContainsFlag(affix.AFlag)
                                 &&
-                                !entry.ContainsContClass(Affix.NeedAffix) // forbid single prefixes with needaffix flag
+                                !affix.ContainsContClass(Affix.NeedAffix) // forbid single prefixes with needaffix flag
                                 &&
                                 (
                                     needFlag.IsZero
                                     ||
                                     detail.ContainsFlag(needFlag)
                                     ||
-                                    entry.ContainsContClass(needFlag)
+                                    affix.ContainsContClass(needFlag)
                                 )
                             )
                             {
@@ -1829,12 +1827,10 @@ public partial class WordList
             return null;
         }
 
-        private WordEntry? CheckWordSuffix(Suffix affix, ReadOnlySpan<char> word, AffixEntryOptions optFlags, Prefix? pfx, FlagValue cclass, FlagValue needFlag, FlagValue badFlag)
+        private WordEntry? CheckWordSuffix(SuffixEntry affix, ReadOnlySpan<char> word, AffixEntryOptions optFlags, PrefixEntry? pfx, FlagValue cclass, FlagValue needFlag, FlagValue badFlag)
         {
             // if this suffix is being cross checked with a prefix
             // but it does not support cross products skip it
-
-            var entry = affix.Entry;
 
             var optFlagsHasCrossProduct = EnumEx.HasFlag(optFlags, AffixEntryOptions.CrossProduct);
             if (
@@ -1848,7 +1844,7 @@ public partial class WordList
                     )
                 )
                 ||
-                (cclass.HasValue && !entry.ContainsContClass(cclass)) // ! handle cont. class
+                (cclass.HasValue && !affix.ContainsContClass(cclass)) // ! handle cont. class
             )
             {
                 return null;
@@ -1859,21 +1855,21 @@ public partial class WordList
             // and if there are enough chars in root word and added back strip chars
             // to meet the number of characters conditions, then test it
 
-            var tmpl = word.Length - entry.Append.Length;
+            var tmpl = word.Length - affix.Append.Length;
             // the second condition is not enough for UTF-8 strings
             // it checked in test_condition()
 
             if (
                 (tmpl > 0 || (Affix.FullStrip && tmpl == 0))
                 &&
-                (tmpl + entry.Strip.Length >= entry.Conditions.Count)
+                (tmpl + affix.Strip.Length >= affix.Conditions.Count)
             )
             {
                 // generate new root word by removing suffix and adding
                 // back any characters that would have been stripped or
                 // or null terminating the shorter string
 
-                var tmpSpan = word.Slice(0, tmpl).ConcatSpan(entry.Strip);
+                var tmpSpan = word.Slice(0, tmpl).ConcatSpan(affix.Strip);
 
                 // now make sure all of the conditions on characters
                 // are met.  Please see the appendix at the end of
@@ -1882,7 +1878,7 @@ public partial class WordList
 
                 // if all conditions are met then check if resulting
                 // root word in the dictionary
-                if (entry.Conditions.IsEndingMatch(tmpSpan))
+                if (affix.Conditions.IsEndingMatch(tmpSpan))
                 {
                     if (TryLookupDetails(tmpSpan, out var tmpString, out var details))
                     {
@@ -1893,7 +1889,7 @@ public partial class WordList
                                     heDetail.ContainsFlag(affix.AFlag)
                                     ||
                                     (
-                                        pfx?.Entry.ContainsContClass(affix.AFlag) == true
+                                        pfx?.ContainsContClass(affix.AFlag) == true
                                     )
                                 )
                                 &&
@@ -1904,9 +1900,9 @@ public partial class WordList
                                         pfx is not null
                                         &&
                                         (
-                                            heDetail.ContainsFlag(pfx.GetValueOrDefault().AFlag)
+                                            heDetail.ContainsFlag(pfx.AFlag)
                                             ||
-                                            entry.ContainsContClass(pfx.GetValueOrDefault().AFlag) // enabled by prefix
+                                            affix.ContainsContClass(pfx.AFlag) // enabled by prefix
                                         )
                                     )
                                 )
@@ -1918,7 +1914,7 @@ public partial class WordList
                                     ||
                                     heDetail.ContainsFlag(needFlag)
                                     ||
-                                    entry.ContainsContClass(needFlag)
+                                    affix.ContainsContClass(needFlag)
                                 )
                             )
                             {
@@ -1935,12 +1931,12 @@ public partial class WordList
         /// <summary>
         /// See if two-level suffix is present in the word.
         /// </summary>
-        private WordEntry? CheckTwoSfx(Suffix se, ReadOnlySpan<char> word, AffixEntryOptions optflags, Prefix? ppfx, FlagValue needflag)
+        private WordEntry? CheckTwoSfx(SuffixEntry se, ReadOnlySpan<char> word, AffixEntryOptions optflags, PrefixEntry? ppfx, FlagValue needflag)
         {
             // if this suffix is being cross checked with a prefix
             // but it does not support cross products skip it
 
-            if (EnumEx.HasFlag(optflags, AffixEntryOptions.CrossProduct) && !EnumEx.HasFlag(se.Options, AffixEntryOptions.CrossProduct))
+            if (EnumEx.HasFlag(optflags, AffixEntryOptions.CrossProduct) && !EnumEx.HasFlag((AffixEntryOptions)se.Options, AffixEntryOptions.CrossProduct))
             {
                 return null;
             }
@@ -1950,8 +1946,7 @@ public partial class WordList
             // and if there are enough chars in root word and added back strip chars
             // to meet the number of characters conditions, then test it
 
-            var entry = se.Entry;
-            var tmpl = word.Length - entry.Append.Length; // length of tmpword
+            var tmpl = word.Length - se.Append.Length; // length of tmpword
 
             // the second condition is not enough for UTF-8 strings
             // it checked in test_condition()
@@ -1959,14 +1954,14 @@ public partial class WordList
             if (
                 (tmpl > 0 || (tmpl == 0 && Affix.FullStrip))
                 &&
-                (tmpl + entry.Strip.Length >= entry.Conditions.Count)
+                (tmpl + se.Strip.Length >= se.Conditions.Count)
             )
             {
                 // generate new root word by removing suffix and adding
                 // back any characters that would have been stripped or
                 // or null terminating the shorter string
 
-                var tmpword = word.Slice(0, tmpl).ConcatSpan(entry.Strip);
+                var tmpword = word.Slice(0, tmpl).ConcatSpan(se.Strip);
 
                 // now make sure all of the conditions on characters
                 // are met.  Please see the appendix at the end of
@@ -1974,12 +1969,12 @@ public partial class WordList
                 // tested
 
                 // if all conditions are met then recall suffix_check
-                if (entry.TestCondition(tmpword))
+                if (se.TestCondition(tmpword))
                 {
-                    var he = ppfx is not null && entry.ContainsContClass(ppfx.GetValueOrDefault().AFlag)
+                    var he = ppfx is not null && se.ContainsContClass(ppfx.AFlag)
                         // handle conditional suffix
-                        ? SuffixCheck(tmpword, AffixEntryOptions.None, null, se.AFlag, needflag, CompoundOptions.Not)
-                        : SuffixCheck(tmpword, optflags, ppfx, se.AFlag, needflag, CompoundOptions.Not);
+                        ? SuffixCheck(tmpword, AffixEntryOptions.None, null, (FlagValue)se.AFlag, needflag, CompoundOptions.Not)
+                        : SuffixCheck(tmpword, optflags, ppfx, (FlagValue)se.AFlag, needflag, CompoundOptions.Not);
 
                     if (he is not null)
                     {
