@@ -1120,7 +1120,7 @@ public partial class WordList
                             candidate = candidatePrefix + otherMapEntryValue;
                             MapRelated(word, ref candidate, wn + mapEntryValue.Length, wlst, cpdSuggest, timer);
 
-                            if (timer.QueryForCancellation())
+                            if (timer.HasTriggeredCancellation)
                             {
                                 return;
                             }
