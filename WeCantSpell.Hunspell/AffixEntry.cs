@@ -11,9 +11,11 @@ public interface IAffixEntry
     FlagSet ContClass { get; }
     string Append { get; }
     string Key { get; }
+    bool IsKeySubset(string s2);
+    bool IsWordSubset(ReadOnlySpan<char> word);
 }
 
-public class PrefixEntry : IAffixEntry
+public sealed class PrefixEntry : IAffixEntry
 {
     public PrefixEntry(
         string strip,
@@ -76,14 +78,16 @@ public class PrefixEntry : IAffixEntry
 
     public bool ContainsAnyContClass(FlagValue a, FlagValue b, FlagValue c) => ContClass.ContainsAny(a, b, c);
 
-    public bool IsSubset(string s2) => IsSubset(s2.AsSpan());
+    public bool IsKeySubset(string s2) => IsKeySubset(s2.AsSpan());
 
-    public bool IsSubset(ReadOnlySpan<char> s2) => HunspellTextFunctions.IsSubset(Key, s2);
+    public bool IsKeySubset(ReadOnlySpan<char> s2) => HunspellTextFunctions.IsSubset(Key, s2);
+
+    public bool IsWordSubset(ReadOnlySpan<char> s2) => HunspellTextFunctions.IsSubset(Key, s2);
 
     public bool IsExactSubset(ReadOnlySpan<char> s2) => s2.StartsWith(Key, StringComparison.Ordinal);
 }
 
-public class SuffixEntry : IAffixEntry
+public sealed class SuffixEntry : IAffixEntry
 {
     public SuffixEntry(
         string strip,
@@ -147,9 +151,11 @@ public class SuffixEntry : IAffixEntry
 
     public bool ContainsAnyContClass(FlagValue a, FlagValue b, FlagValue c) => ContClass.ContainsAny(a, b, c);
 
-    public bool IsSubset(string s2) => IsSubset(s2.AsSpan());
+    public bool IsKeySubset(string s2) => IsKeySubset(s2.AsSpan());
 
-    public bool IsSubset(ReadOnlySpan<char> s2) => HunspellTextFunctions.IsSubset(Key, s2);
+    public bool IsKeySubset(ReadOnlySpan<char> s2) => HunspellTextFunctions.IsSubset(Key, s2);
+
+    public bool IsWordSubset(ReadOnlySpan<char> s2) => IsReverseSubset(s2);
 
     public bool IsReverseSubset(ReadOnlySpan<char> s2)
     {
