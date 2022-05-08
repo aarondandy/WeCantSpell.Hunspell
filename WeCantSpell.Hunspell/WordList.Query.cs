@@ -1782,7 +1782,7 @@ public partial class WordList
                 // generate new root word by removing prefix and adding
                 // back any characters that would have been stripped
 
-                var tmpword = StringEx.ConcatSpan((string)affix.Strip, word.Slice((int)affix.Append.Length));
+                var tmpword = StringEx.ConcatSpan(affix.Strip, word.Slice(affix.Append.Length));
 
                 // now make sure all of the conditions on characters
                 // are met.  Please see the appendix at the end of
@@ -1981,8 +1981,8 @@ public partial class WordList
                 {
                     var he = ppfx is not null && se.ContainsContClass(ppfx.AFlag)
                         // handle conditional suffix
-                        ? SuffixCheck(tmpword, AffixEntryOptions.None, null, (FlagValue)se.AFlag, needflag, CompoundOptions.Not)
-                        : SuffixCheck(tmpword, optflags, ppfx, (FlagValue)se.AFlag, needflag, CompoundOptions.Not);
+                        ? SuffixCheck(tmpword, AffixEntryOptions.None, null, se.AFlag, needflag, CompoundOptions.Not)
+                        : SuffixCheck(tmpword, optflags, ppfx, se.AFlag, needflag, CompoundOptions.Not);
 
                     if (he is not null)
                     {
