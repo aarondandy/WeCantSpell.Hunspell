@@ -102,6 +102,10 @@ public abstract class AffixCollection<TAffixGroup, TAffixEntry> : IEnumerable<TA
     where TAffixGroup : class, IAffixGroup<TAffixEntry>
     where TAffixEntry : IAffixEntry
 {
+    internal AffixCollection()
+    {
+    }
+
     protected AffixCollection(Dictionary<FlagValue, TAffixGroup> affixesByFlag)
     {
         AffixesByFlag = affixesByFlag;
@@ -110,6 +114,7 @@ public abstract class AffixCollection<TAffixGroup, TAffixEntry> : IEnumerable<TA
         var affixesWithEmptyKeys = new ArrayBuilder<TAffixEntry>();
         var affixesWithDots = new ArrayBuilder<TAffixEntry>();
         var affixesByKeyPrefix = new Dictionary<char, ArrayBuilder<TAffixEntry>>();
+        var affixesByFirstKeyChar = new Dictionary<char, List<TAffixEntry>>();
 
         foreach (var group in AffixesByFlag.Values)
         {
@@ -121,21 +126,33 @@ public abstract class AffixCollection<TAffixGroup, TAffixEntry> : IEnumerable<TA
                 {
                     affixesWithEmptyKeys.Add(affix);
                 }
-                else if (affix.Key.Contains('.'))
-                {
-                    affixesWithDots.Add(affix);
-                }
                 else
                 {
                     var indexedKey = affix.Key[0];
 
-                    if (!affixesByKeyPrefix.TryGetValue(indexedKey, out var indexGroup))
+                    if (!affixesByFirstKeyChar.TryGetValue(indexedKey, out var firstKeyList))
                     {
-                        indexGroup = new();
-                        affixesByKeyPrefix.Add(indexedKey, indexGroup);
+                        firstKeyList = new();
+                        affixesByFirstKeyChar.Add(indexedKey, firstKeyList);
                     }
 
-                    indexGroup.Add(affix);
+                    firstKeyList.Add(affix);
+
+                    if (affix.Key.Contains('.'))
+                    {
+                        affixesWithDots.Add(affix);
+                    }
+                    else
+                    {
+                        if (!affixesByKeyPrefix.TryGetValue(indexedKey, out var indexGroup))
+                        {
+                            indexGroup = new();
+                            affixesByKeyPrefix.Add(indexedKey, indexGroup);
+                        }
+
+                        indexGroup.Add(affix);
+                    }
+
                 }
             }
         }
@@ -144,12 +161,74 @@ public abstract class AffixCollection<TAffixGroup, TAffixEntry> : IEnumerable<TA
         AffixesWithEmptyKeys = affixesWithEmptyKeys.Extract();
         AffixesWithDots = affixesWithDots.Extract();
         AffixesByKeyPrefix = affixesByKeyPrefix.ToDictionary(static pair => pair.Key, static pair => pair.Value.Extract());
+
+        foreach (var (firstChar, affixes) in affixesByFirstKeyChar)
+        {
+            EntryTreeNode? root = null;
+
+            foreach (var affix in affixes)
+            {
+                var newNode = new EntryTreeNode(affix);
+                if (root is null)
+                {
+                    root = newNode;
+                    continue;
+                }
+
+                var search = root;
+
+                do
+                {
+                    var parent = search;
+                    if (affix.Key.CompareTo(search.Affix.Key) <= 0)
+                    {
+                        search = search.EqualOrSomething;
+                        if (search is null)
+                        {
+                            parent.EqualOrSomething = newNode;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        search = search.NotEqual;
+                        if (search is null)
+                        {
+                            parent.NotEqual = newNode;
+                            break;
+                        }
+                    }
+                }
+                while (true);
+            }
+
+            if (root is not null)
+            {
+                AffixTreeRootsByFirstKeyChar.Add(firstChar, root);
+            }
+        }
+
+
     }
 
-    protected readonly Dictionary<FlagValue, TAffixGroup> AffixesByFlag;
-    protected readonly Dictionary<char, TAffixEntry[]> AffixesByKeyPrefix;
-    protected readonly TAffixEntry[] AffixesWithDots = Array.Empty<TAffixEntry>();
-    protected readonly TAffixEntry[] AffixesWithEmptyKeys = Array.Empty<TAffixEntry>();
+    internal sealed class EntryTreeNode
+    {
+        public EntryTreeNode(TAffixEntry affix)
+        {
+            Affix = affix;
+        }
+
+        public TAffixEntry Affix { get; }
+        public EntryTreeNode? EqualOrSomething { get; set; }
+        public EntryTreeNode? NotEqual { get; set; }
+        public EntryTreeNode? Next { get; set; }
+    }
+
+    protected Dictionary<FlagValue, TAffixGroup> AffixesByFlag;
+    protected Dictionary<char, TAffixEntry[]> AffixesByKeyPrefix;
+    internal Dictionary<char, EntryTreeNode> AffixTreeRootsByFirstKeyChar = new();
+    protected TAffixEntry[] AffixesWithDots = Array.Empty<TAffixEntry>();
+    protected TAffixEntry[] AffixesWithEmptyKeys = Array.Empty<TAffixEntry>();
 
     public FlagSet ContClasses { get; protected set; } = FlagSet.Empty;
 
@@ -277,7 +356,53 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry>
     {
     }
 
-    internal WordEnumerator GetMatchingAffixes(ReadOnlySpan<char> word)
+    internal WordEnumerator GetMatchingAffixesX(ReadOnlySpan<char> word)
+    {
+        if (!word.IsEmpty && AffixTreeRootsByFirstKeyChar.TryGetValue(word[word.Length - 1], out var root))
+        {
+            return new(word, root);
+        }
+
+        return new(word, null);
+    }
+
+    internal ref struct WordEnumerator
+    {
+        internal WordEnumerator(ReadOnlySpan<char> word, EntryTreeNode? node)
+        {
+            _word = word;
+            _node = node;
+            Current = default!;
+        }
+
+        private EntryTreeNode? _node;
+        private ReadOnlySpan<char> _word;
+
+        public SuffixEntry Current { get; private set; }
+
+        public WordEnumerator GetEnumerator() => this;
+
+        public bool MoveNext()
+        {
+            while (_node is not null)
+            {
+                if (_node.Affix.IsReverseSubset(_word))
+                {
+                    Current = _node.Affix;
+                    _node = _node.EqualOrSomething;
+                    return true;
+                }
+                else
+                {
+                    _node = _node.NotEqual;
+                }
+            }
+
+            return false;
+        }
+    }
+
+    internal WordEnumerator2 GetMatchingAffixes(ReadOnlySpan<char> word)
     {
         var simpleText = Array.Empty<SuffixEntry>();
         var withDots = Array.Empty<SuffixEntry>();
@@ -295,9 +420,9 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry>
         return new(word, simpleText, withDots);
     }
 
-    internal ref struct WordEnumerator
+    internal ref struct WordEnumerator2
     {
-        public WordEnumerator(ReadOnlySpan<char> word, SuffixEntry[] simpleText, SuffixEntry[] withDots)
+        public WordEnumerator2(ReadOnlySpan<char> word, SuffixEntry[] simpleText, SuffixEntry[] withDots)
         {
             _word = word;
             _simpleText = simpleText;
@@ -315,7 +440,7 @@ public sealed class SuffixCollection : AffixCollection<SuffixGroup, SuffixEntry>
 
         public SuffixEntry Current { get; private set; }
 
-        public WordEnumerator GetEnumerator() => this;
+        public WordEnumerator2 GetEnumerator() => this;
 
         public bool MoveNext()
         {
@@ -455,44 +580,34 @@ public sealed class PrefixCollection : AffixCollection<PrefixGroup, PrefixEntry>
         return new(byFlag);
     }
 
+    private PrefixCollection() : base()
+    {
+    }
+
     private PrefixCollection(Dictionary<FlagValue, PrefixGroup> byFlag) : base(byFlag)
     {
     }
 
     internal WordEnumerator GetMatchingAffixes(ReadOnlySpan<char> word)
     {
-        var simpleText = Array.Empty<PrefixEntry>();
-        var withDots = Array.Empty<PrefixEntry>();
-
-        if (!word.IsEmpty)
+        if (word.IsEmpty || !AffixTreeRootsByFirstKeyChar.TryGetValue(word[0], out var node))
         {
-            if (AffixesByKeyPrefix.TryGetValue(word[0], out var indexedAffixes))
-            {
-                simpleText = indexedAffixes;
-            }
-
-            withDots = AffixesWithDots;
+            node = null;
         }
 
-        return new(word, simpleText, withDots);
+        return new(word, node);
     }
 
     internal ref struct WordEnumerator
     {
-        public WordEnumerator(ReadOnlySpan<char> word, PrefixEntry[] simpleText, PrefixEntry[] withDots)
+        public WordEnumerator(ReadOnlySpan<char> word, EntryTreeNode? node)
         {
             _word = word;
-            _simpleText = simpleText;
-            _simpleTextIndex = 0;
-            _withDots = withDots;
-            _withDotsIndex = 0;
+            _node = node;
             Current = default!;
         }
 
-        private int _simpleTextIndex = 0;
-        private int _withDotsIndex = 0;
-        private PrefixEntry[] _simpleText;
-        private PrefixEntry[] _withDots;
+        private EntryTreeNode? _node;
         private ReadOnlySpan<char> _word;
 
         public PrefixEntry Current { get; private set; }
@@ -501,37 +616,174 @@ public sealed class PrefixCollection : AffixCollection<PrefixGroup, PrefixEntry>
 
         public bool MoveNext()
         {
-            return MoveSimple() || MoveWithDots();
-        }
-
-        private bool MoveSimple()
-        {
-            while (_simpleTextIndex < _simpleText.Length)
+            while (_node is not null)
             {
-                ref var candidate = ref _simpleText[_simpleTextIndex++];
-                if (candidate.IsExactSubset(_word))
+                if (_node.Affix.IsSubset(_word))
                 {
-                    Current = candidate;
+                    Current = _node.Affix;
+                    _node = _node.EqualOrSomething;
                     return true;
+                }
+                else
+                {
+                    _node = _node.NotEqual;
                 }
             }
 
             return false;
         }
+    }
 
-        private bool MoveWithDots()
+    public class Builder
+    {
+        private Dictionary<FlagValue, PrefixGroup.Builder> _byFlag = new();
+        private ArrayBuilder<PrefixEntry> _emptyKeys = new();
+        private FlagSet.Builder _contClassesBuilder = new();
+        private Dictionary<char, List<PrefixEntry>> _byFirstKeyChar = new();
+
+        public PrefixCollection BuildCollection(bool allowDestructive)
         {
-            while (_withDotsIndex < _withDots.Length)
+            var result = new PrefixCollection();
+            result.ContClasses = allowDestructive ? _contClassesBuilder.MoveToFlagSet() : _contClassesBuilder.Create();
+            result.AffixesByFlag = _byFlag.ToDictionary(static x => x.Key, x => x.Value.ToImmutable(allowDestructive: allowDestructive));
+            result.AffixesWithEmptyKeys = _emptyKeys.MakeOrExtractArray(allowDestructive);
+            result.AffixTreeRootsByFirstKeyChar = new();
+
+            // loop through each prefix list starting point
+            foreach (var (firstChar, affixes) in _byFirstKeyChar)
             {
-                ref var candidate = ref _withDots[_withDotsIndex++];
-                if (candidate.IsSubset(_word))
+                if (affixes.Count == 0)
                 {
-                    Current = candidate;
-                    return true;
+                    continue;
                 }
+
+                // convert from binary tree to sorted list
+                // NOTE: the above comment is a lie, but that is what this sort and initial tree build is for
+                affixes.Sort(static (a, b) => StringComparer.Ordinal.Compare(a.Key, b.Key));
+                var allNodes = affixes.ConvertAll(static affix => new EntryTreeNode(affix));
+                for (var i = 1; i < allNodes.Count; i++)
+                {
+                    allNodes[i - 1].Next = allNodes[i];
+                }
+
+                // look through the remainder of the list
+                // and find next entry with affix that
+                // the current one is not a subset of
+                // mark that as destination for NextNE
+                // use next in list that you are a subset
+                // of as NextEQ
+
+                foreach (var ptr in allNodes)
+                {
+                    var nptr = ptr.Next;
+                    for (; nptr is not null; nptr = nptr.Next)
+                    {
+                        if (!ptr.Affix.IsSubset(nptr.Affix.Key))
+                        {
+                            break;
+                        }
+                    }
+
+                    ptr.NotEqual = nptr;
+                    ptr.EqualOrSomething = null;
+
+                    if (ptr.Next is not null && ptr.Affix.IsSubset(ptr.Next.Affix.Key))
+                    {
+                        ptr.EqualOrSomething = ptr.Next;
+                    }
+                }
+
+                // now clean up by adding smart search termination strings:
+                // if you are already a superset of the previous prefix
+                // but not a subset of the next, search can end here
+                // so set NextNE properly
+
+                foreach (var ptr in allNodes)
+                {
+                    var nptr = ptr.Next;
+                    EntryTreeNode? mptr = null;
+                    for (; nptr is not null; nptr = nptr.Next)
+                    {
+                        if (!ptr.Affix.IsSubset(nptr.Affix.Key))
+                        {
+                            break;
+                        }
+
+                        mptr = nptr;
+                    }
+
+                    if (mptr is not null)
+                    {
+                        mptr.NotEqual = null;
+                    }
+                }
+
+                result.AffixTreeRootsByFirstKeyChar.Add(firstChar, allNodes[0]);
             }
 
-            return false;
+            return result;
+        }
+
+        public bool HasEncounteredAFlag(FlagValue aFlag)
+        {
+            return _byFlag.ContainsKey(aFlag);
+        }
+
+        public void PrepareGroup(FlagValue aFlag, AffixEntryOptions options, int expectedEntryCount)
+        {
+            if (!_byFlag.TryGetValue(aFlag, out var group))
+            {
+                group = new PrefixGroup.Builder(aFlag, options);
+                _byFlag.Add(aFlag, group);
+            }
+
+            if (expectedEntryCount is > 0 and <= 1000)
+            {
+                group.Entries.Capacity = expectedEntryCount;
+            }
+        }
+
+        public void AddEntry(
+            FlagValue aFlag,
+            string strip,
+            string affixText,
+            CharacterConditionGroup conditions,
+            MorphSet morph,
+            FlagSet contClass)
+        {
+            if (!_byFlag.TryGetValue(aFlag, out var group))
+            {
+                return;
+            }
+
+            var entry = new PrefixEntry(
+                strip,
+                affixText,
+                conditions,
+                morph,
+                contClass,
+                aFlag,
+                group.Options);
+
+            group.Entries.Add(entry);
+
+            _contClassesBuilder.AddRange(entry.ContClass);
+
+            if (string.IsNullOrEmpty(entry.Key))
+            {
+                _emptyKeys.Add(entry);
+            }
+            else
+            {
+                var firstChar = entry.Key[0];
+                if (!_byFirstKeyChar.TryGetValue(firstChar, out var byKeyGroup))
+                {
+                    byKeyGroup = new();
+                    _byFirstKeyChar.Add(firstChar, byKeyGroup);
+                }
+
+                byKeyGroup.Add(entry);
+            }
         }
     }
 }

@@ -76,6 +76,8 @@ public class PrefixEntry : IAffixEntry
 
     public bool ContainsAnyContClass(FlagValue a, FlagValue b, FlagValue c) => ContClass.ContainsAny(a, b, c);
 
+    public bool IsSubset(string s2) => IsSubset(s2.AsSpan());
+
     public bool IsSubset(ReadOnlySpan<char> s2) => HunspellTextFunctions.IsSubset(Key, s2);
 
     public bool IsExactSubset(ReadOnlySpan<char> s2) => s2.StartsWith(Key, StringComparison.Ordinal);

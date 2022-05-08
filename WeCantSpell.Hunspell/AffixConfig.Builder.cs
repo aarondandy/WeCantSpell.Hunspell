@@ -218,7 +218,7 @@ public partial class AffixConfig
         /// Preffixes attached to root words to make other words.
         /// </summary>
         /// <seealso cref="AffixConfig.Prefixes"/>
-        public List<PrefixGroup.Builder>? Prefixes;
+        public PrefixCollection.Builder Prefixes = new();
 
         /// <summary>
         /// Ordinal numbers for affix flag compression.
@@ -426,7 +426,7 @@ public partial class AffixConfig
             config.RelatedCharacterMap = new(RelatedCharacterMap.MakeOrExtractArray(allowDestructive));
             config.Phone = new(Phone.MakeOrExtractArray(allowDestructive));
 
-            config.Prefixes = PrefixCollection.Create(Prefixes, allowDestructive);
+            config.Prefixes = Prefixes.BuildCollection(allowDestructive);
             config.Suffixes = SuffixCollection.Create(Suffixes, allowDestructive);
 
             config.ContClasses = config.Prefixes.ContClasses.Union(config.Suffixes.ContClasses);
