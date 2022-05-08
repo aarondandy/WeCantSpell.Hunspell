@@ -38,8 +38,6 @@ public class DictionaryFileLoadPerfSpec
         TestMode = TestMode.Measurement)]
     [MemoryMeasurement(MemoryMetric.TotalBytesAllocated)]
     [GcMeasurement(GcMetric.TotalCollections, GcGeneration.AllGc)]
-    [TimingMeasurement]
-    [CounterMeasurement(nameof(DictionaryFilesLoaded))]
     [CounterThroughputAssertion(nameof(DictionaryFilesLoaded), MustBe.GreaterThanOrEqualTo, 2)]
     public void BenchmarkSync(BenchmarkContext context)
     {
@@ -58,8 +56,6 @@ public class DictionaryFileLoadPerfSpec
         Skip = "All the perf improvements so far will impact sync")]
     [MemoryMeasurement(MemoryMetric.TotalBytesAllocated)]
     [GcMeasurement(GcMetric.TotalCollections, GcGeneration.AllGc)]
-    [TimingMeasurement]
-    [CounterMeasurement(nameof(DictionaryFilesLoaded))]
     [CounterThroughputAssertion(nameof(DictionaryFilesLoaded), MustBe.GreaterThanOrEqualTo, 2)]
     public void BenchmarkAsync(BenchmarkContext context)
     {

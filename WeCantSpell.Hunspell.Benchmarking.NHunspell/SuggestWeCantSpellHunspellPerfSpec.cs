@@ -1,12 +1,13 @@
 ﻿using System.IO;
+using System.Linq;
 
 using NBench;
 
 namespace WeCantSpell.Hunspell.Benchmarking.NHunspell;
 
-public class WordCheckWeCantSpellHunspellPerfSpec : EnWordPerfBase
+public class SuggestWeCantSpellHunspellPerfSpec : EnWordPerfBase
 {
-    private Counter WordsChecked;
+    public Counter SuggestionQueries;
     private WordList _checker;
 
     [PerfSetup]
@@ -18,23 +19,23 @@ public class WordCheckWeCantSpellHunspellPerfSpec : EnWordPerfBase
         var filesDirectory = Path.Combine(Path.GetDirectoryName(testAssemblyPath), "files/");
         _checker = WordList.CreateFromFiles(Path.Combine(filesDirectory, "English (American).dic"));
 
-        WordsChecked = context.GetCounter(nameof(WordsChecked));
+        SuggestionQueries = context.GetCounter(nameof(SuggestionQueries));
     }
 
     [PerfBenchmark(
-        Description = "How fast can this project check English (US) words?",
-        NumberOfIterations = 3,
+        Description = "How fast can this project suggest English (US) words?",
+        NumberOfIterations = 1,
         RunMode = RunMode.Throughput,
         TestMode = TestMode.Measurement)]
     [MemoryMeasurement(MemoryMetric.TotalBytesAllocated)]
     [GcMeasurement(GcMetric.TotalCollections, GcGeneration.AllGc)]
-    [CounterThroughputAssertion(nameof(WordsChecked), MustBe.GreaterThanOrEqualTo, 250_000)]
+    [CounterThroughputAssertion(nameof(SuggestionQueries), MustBe.GreaterThanOrEqualTo, 100)]
     public void Benchmark(BenchmarkContext context)
     {
-        foreach (var word in Words)
+        foreach (var word in Words.Take(1000))
         {
-            _ = _checker.Check(word);
-            WordsChecked.Increment();
+            _ = _checker.Suggest(word);
+            SuggestionQueries.Increment();
         }
     }
 }

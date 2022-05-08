@@ -20,9 +20,7 @@ public class EnWordCheckPerfSpecs : EnWordPerfBase
         TestMode = TestMode.Measurement)]
     [MemoryMeasurement(MemoryMetric.TotalBytesAllocated)]
     [GcMeasurement(GcMetric.TotalCollections, GcGeneration.AllGc)]
-    [TimingMeasurement]
-    [CounterMeasurement(nameof(WordsChecked))]
-    [CounterThroughputAssertion(nameof(WordsChecked), MustBe.GreaterThanOrEqualTo, 400000)]
+    [CounterThroughputAssertion(nameof(WordsChecked), MustBe.GreaterThanOrEqualTo, 1_000_000)]
     public void Benchmark(BenchmarkContext context)
     {
         foreach (var word in Words)

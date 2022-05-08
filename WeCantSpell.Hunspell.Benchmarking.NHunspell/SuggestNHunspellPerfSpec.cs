@@ -1,18 +1,19 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 
 using NBench;
 
 namespace WeCantSpell.Hunspell.Benchmarking.NHunspell;
 
-public class WordCheckNHunspellPerfSpec : EnWordPerfBase, IDisposable
+public class SuggestNHunspellPerfSpec : EnWordPerfBase, IDisposable
 {
-    static WordCheckNHunspellPerfSpec()
+    static SuggestNHunspellPerfSpec()
     {
         Utilities.ApplyCultureHacks();
     }
 
-    public Counter WordsChecked;
+    public Counter SuggestionQueries;
     private global::NHunspell.Hunspell _checker;
 
     [PerfSetup]
@@ -26,7 +27,7 @@ public class WordCheckNHunspellPerfSpec : EnWordPerfBase, IDisposable
         var affixFilePath = Path.ChangeExtension(dictionaryFilePath, "aff");
         _checker = new global::NHunspell.Hunspell(affixFilePath, dictionaryFilePath);
 
-        WordsChecked = context.GetCounter(nameof(WordsChecked));
+        SuggestionQueries = context.GetCounter(nameof(SuggestionQueries));
     }
 
     [PerfCleanup]
@@ -36,19 +37,19 @@ public class WordCheckNHunspellPerfSpec : EnWordPerfBase, IDisposable
     }
 
     [PerfBenchmark(
-        Description = "How fast can NHunspell check English (US) words?",
-        NumberOfIterations = 3,
+        Description = "How fast can NHunspell suggest English (US) words?",
+        NumberOfIterations = 1,
         RunMode = RunMode.Throughput,
         TestMode = TestMode.Measurement)]
     [MemoryMeasurement(MemoryMetric.TotalBytesAllocated)]
     [GcMeasurement(GcMetric.TotalCollections, GcGeneration.AllGc)]
-    [CounterThroughputAssertion(nameof(WordsChecked), MustBe.GreaterThanOrEqualTo, 250_000)]
+    [CounterThroughputAssertion(nameof(SuggestionQueries), MustBe.GreaterThanOrEqualTo, 100)]
     public void Benchmark(BenchmarkContext context)
     {
-        foreach (var word in Words)
+        foreach (var word in Words.Take(1000))
         {
-            _ = _checker.Spell(word);
-            WordsChecked.Increment();
+            _ = _checker.Suggest(word);
+            SuggestionQueries.Increment();
         }
     }
 }
