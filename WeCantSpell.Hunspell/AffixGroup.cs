@@ -6,7 +6,7 @@ using WeCantSpell.Hunspell.Infrastructure;
 namespace WeCantSpell.Hunspell;
 
 public sealed class AffixGroup<TAffixEntry>
-    where TAffixEntry : IAffixEntry
+    where TAffixEntry : AffixEntry
 {
     internal static AffixGroup<TAffixEntry> Invalid { get; } = new(default, AffixEntryOptions.None, ImmutableArray<TAffixEntry>.Empty);
 

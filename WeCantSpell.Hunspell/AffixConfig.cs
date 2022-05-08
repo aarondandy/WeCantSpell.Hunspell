@@ -807,8 +807,7 @@ public sealed partial class AffixConfig
     /// <summary>
     /// The set of cont classes used across all affixes.
     /// </summary>
-    /// <seealso cref="PrefixEntry.ContClass"/>
-    /// <seealso cref="SuffixEntry.ContClass"/>
+    /// <seealso cref="AffixEntry.ContClass"/>
     public FlagSet ContClasses { get; private set; } = FlagSet.Empty;
 
     public bool IsHungarian { get; private set; }

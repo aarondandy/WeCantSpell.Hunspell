@@ -99,7 +99,7 @@ namespace WeCantSpell.Hunspell;
 /// <seealso cref="PrefixCollection"/>
 /// <seealso cref="SuffixCollection"/>
 public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAffixEntry>>
-    where TAffixEntry : IAffixEntry
+    where TAffixEntry : AffixEntry
 {
     internal AffixCollection()
     {

@@ -5,7 +5,7 @@ public class SuggestWordTest
     public static void Run(string dicFilePath, string word)
     {
         var wordList = WordListReader.ReadFile(dicFilePath);
-        const int wordLimit = 20;
+        const int wordLimit = 100;
 
         var results = new List<int>(wordLimit);
 
