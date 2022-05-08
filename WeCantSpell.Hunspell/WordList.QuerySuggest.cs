@@ -819,7 +819,7 @@ public partial class WordList
                         TestSug(state.SuggestionList, candidate, state.CpdSuggest, timer);
                         candidate[i] = tmpc;
 
-                        if (timer.QueryForCancellation())
+                        if (timer.HasBeenCanceled)
                         {
                             return;
                         }
@@ -899,7 +899,7 @@ public partial class WordList
 
                     TestSug(state.SuggestionList, candidate, state.CpdSuggest, timer);
 
-                    if (timer.QueryForCancellation())
+                    if (timer.HasBeenCanceled)
                     {
                         return;
                     }
@@ -911,7 +911,7 @@ public partial class WordList
 
                         TestSug(state.SuggestionList, candidate, state.CpdSuggest, timer);
 
-                        if (timer.QueryForCancellation())
+                        if (timer.HasBeenCanceled)
                         {
                             return;
                         }
@@ -1115,7 +1115,7 @@ public partial class WordList
                             candidate = candidatePrefix + otherMapEntryValue;
                             MapRelated(word, ref candidate, wn + mapEntryValue.Length, wlst, cpdSuggest, timer);
 
-                            if (timer.HasTriggeredCancellation)
+                            if (timer.HasBeenCanceled)
                             {
                                 return;
                             }
