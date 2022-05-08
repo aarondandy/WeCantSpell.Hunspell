@@ -212,7 +212,7 @@ public partial class AffixConfig
         /// Suffixes attached to root words to make other words.
         /// </summary>
         /// <seealso cref="AffixConfig.Suffixes"/>
-        public List<SuffixGroup.Builder>? Suffixes;
+        public SuffixCollection.Builder Suffixes = new();
 
         /// <summary>
         /// Preffixes attached to root words to make other words.
@@ -427,7 +427,7 @@ public partial class AffixConfig
             config.Phone = new(Phone.MakeOrExtractArray(allowDestructive));
 
             config.Prefixes = Prefixes.BuildCollection(allowDestructive);
-            config.Suffixes = SuffixCollection.Create(Suffixes, allowDestructive);
+            config.Suffixes = Suffixes.BuildCollection(allowDestructive);
 
             config.ContClasses = config.Prefixes.ContClasses.Union(config.Suffixes.ContClasses);
 

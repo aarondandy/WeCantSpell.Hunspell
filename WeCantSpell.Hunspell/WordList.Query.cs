@@ -1560,6 +1560,11 @@ public partial class WordList
         /// </summary>
         public WordEntry? SuffixCheckTwoSfx(ReadOnlySpan<char> word, AffixEntryOptions sfxopts, PrefixEntry? pfx, FlagValue needflag)
         {
+            if (Affix.ContClasses.IsEmpty)
+            {
+                return null;
+            }
+
             WordEntry? rv;
 
             // first handle the special case of 0 length suffixes
@@ -1581,18 +1586,21 @@ public partial class WordList
                 return null; // FULLSTRIP
             }
 
-            foreach (var affix in Affix.Suffixes.GetMatchingAffixes(word, Affix.ContClasses))
+            foreach (var affix in Affix.Suffixes.GetMatchingAffixes(word))
             {
-                rv = CheckTwoSfx(affix, word, sfxopts, pfx, needflag);
-                if (rv is not null && Suffix is not null)
+                if (Affix.ContClasses.Contains(affix.AFlag))
                 {
-                    SetSuffixFlag(Suffix.AFlag);
-                    if (!affix.ContClass.HasItems)
+                    rv = CheckTwoSfx(affix, word, sfxopts, pfx, needflag);
+                    if (rv is not null && Suffix is not null)
                     {
-                        SetSuffixAppend(affix.Key);
-                    }
+                        SetSuffixFlag(Suffix.AFlag);
+                        if (!affix.ContClass.HasItems)
+                        {
+                            SetSuffixAppend(affix.Key);
+                        }
 
-                    return rv;
+                        return rv;
+                    }
                 }
             }
 

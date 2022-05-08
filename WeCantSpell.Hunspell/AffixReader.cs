@@ -404,7 +404,7 @@ public sealed partial class AffixReader
 
                 return parseAsPrefix
                     ? TryParsePrefixIntoList(parameters, _builder.Prefixes)
-                    : TryParseSuffixIntoList(parameters, ref _builder.Suffixes);
+                    : TryParseSuffixIntoList(parameters, _builder.Suffixes);
             case AffixReaderCommandKind.AliasF:
                 return TryParseStandardListItem(EntryListType.AliasF, parameters, _builder.AliasF, TryParseAliasF);
             case AffixReaderCommandKind.AliasM:
@@ -920,10 +920,8 @@ public sealed partial class AffixReader
         return true;
     }
 
-    private bool TryParseSuffixIntoList(ReadOnlySpan<char> parameterText, ref List<SuffixGroup.Builder>? groups)
+    private bool TryParseSuffixIntoList(ReadOnlySpan<char> parameterText, SuffixCollection.Builder affixBuilder)
     {
-        groups ??= new();
-
         var affixParser = new AffixParametersParser(parameterText);
 
         if (!affixParser.TryParseNextAffixFlag(_flagParser, out var aFlag))
@@ -942,8 +940,7 @@ public sealed partial class AffixReader
         }
 
         var contClass = FlagSet.Empty;
-        var affixGroup = findLastByFlag(groups, aFlag);
-        if (affixGroup is null)
+        if (!affixBuilder.HasEncounteredAFlag(aFlag))
         {
             // If the affix group is new, this should be the init line for it
             var options = AffixEntryOptions.None;
@@ -962,14 +959,7 @@ public sealed partial class AffixReader
 
             _ = IntEx.TryParseInvariant(group2, out var expectedEntryCount);
 
-            affixGroup = new SuffixGroup.Builder(
-                aFlag,
-                options,
-                expectedEntryCount is > 0 and <= 1000
-                    ? ImmutableArray.CreateBuilder<SuffixEntry>(expectedEntryCount)
-                    : ImmutableArray.CreateBuilder<SuffixEntry>());
-
-            groups.Add(affixGroup);
+            affixBuilder.PrepareGroup(aFlag, options, expectedEntryCount);
 
             return true;
         }
@@ -1107,36 +1097,20 @@ public sealed partial class AffixReader
             morph = MorphSet.Empty;
         }
 
-        affixGroup ??= new SuffixGroup.Builder(aFlag, AffixEntryOptions.None);
-
         if (!_builder.HasContClass && contClass.HasItems)
         {
             _builder.HasContClass = true;
         }
 
-        affixGroup.Entries.Add(new(
+        affixBuilder.AddEntry(
+            aFlag,
             strip.ToString(),
             affixText,
             conditions,
             morph,
-            contClass,
-            affixGroup.AFlag,
-            affixGroup.Options));
+            contClass);
 
         return true;
-
-        static SuffixGroup.Builder? findLastByFlag(List<SuffixGroup.Builder> groups, FlagValue aFlag)
-        {
-            for (var i = groups.Count - 1; i >= 0; i--)
-            {
-                if (groups[i].AFlag == aFlag)
-                {
-                    return groups[i];
-                }
-            }
-
-            return null;
-        }
     }
 
     private static string ReverseCondition(ReadOnlySpan<char> conditionText)

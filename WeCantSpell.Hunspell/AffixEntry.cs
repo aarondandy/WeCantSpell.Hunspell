@@ -147,6 +147,10 @@ public class SuffixEntry : IAffixEntry
 
     public bool ContainsAnyContClass(FlagValue a, FlagValue b, FlagValue c) => ContClass.ContainsAny(a, b, c);
 
+    public bool IsSubset(string s2) => IsSubset(s2.AsSpan());
+
+    public bool IsSubset(ReadOnlySpan<char> s2) => HunspellTextFunctions.IsSubset(Key, s2);
+
     public bool IsReverseSubset(ReadOnlySpan<char> s2)
     {
         return Append.Length <= s2.Length && check(Append.AsSpan(), s2.Slice(s2.Length - Append.Length));
