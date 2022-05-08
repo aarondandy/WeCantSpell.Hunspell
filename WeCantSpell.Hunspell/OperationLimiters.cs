@@ -74,6 +74,8 @@ sealed class OperationTimedCountLimiter
     private readonly int _timeLimitMs;
     private readonly int _countLimit;
 
+    public bool HasBeenCanceled => _hasTriggeredCancellation || _cancellationToken.IsCancellationRequested;
+
     public bool QueryForCancellation()
     {
         if (!_hasTriggeredCancellation)

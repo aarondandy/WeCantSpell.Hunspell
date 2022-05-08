@@ -403,8 +403,8 @@ public sealed partial class AffixReader
                 }
 
                 return parseAsPrefix
-                    ? TryParseAffixIntoList(parameters, ref _builder.Prefixes)
-                    : TryParseAffixIntoList(parameters, ref _builder.Suffixes);
+                    ? TryParseAffixIntoList(parameters, _builder.Prefixes)
+                    : TryParseAffixIntoList(parameters, _builder.Suffixes);
             case AffixReaderCommandKind.AliasF:
                 return TryParseStandardListItem(EntryListType.AliasF, parameters, _builder.AliasF, TryParseAliasF);
             case AffixReaderCommandKind.AliasM:
@@ -726,11 +726,9 @@ public sealed partial class AffixReader
         return true;
     }
 
-    private bool TryParseAffixIntoList<TEntry>(ReadOnlySpan<char> parameterText, ref List<AffixEntryGroup<TEntry>.Builder>? groups)
-        where TEntry : AffixEntry
+    private bool TryParseAffixIntoList<TAffixEntry>(ReadOnlySpan<char> parameterText, AffixCollection<TAffixEntry>.BuilderBase affixBuilder)
+        where TAffixEntry : AffixEntry
     {
-        groups ??= new();
-
         var affixParser = new AffixParametersParser(parameterText);
 
         if (!affixParser.TryParseNextAffixFlag(_flagParser, out var aFlag))
@@ -749,8 +747,9 @@ public sealed partial class AffixReader
         }
 
         var contClass = FlagSet.Empty;
-        var affixGroup = findLastByFlag(groups, aFlag);
-        if (affixGroup is null)
+
+        var groupBuilder = affixBuilder.ForGroup(aFlag);
+        if (!groupBuilder.IsInitialized)
         {
             // If the affix group is new, this should be the init line for it
             var options = AffixEntryOptions.None;
@@ -769,14 +768,7 @@ public sealed partial class AffixReader
 
             _ = IntEx.TryParseInvariant(group2, out var expectedEntryCount);
 
-            affixGroup = new AffixEntryGroup<TEntry>.Builder(
-                aFlag,
-                options,
-                expectedEntryCount is > 2 and <= 1000
-                    ? ImmutableArray.CreateBuilder<TEntry>(expectedEntryCount)
-                    : ImmutableArray.CreateBuilder<TEntry>());
-
-            groups.Add(affixGroup);
+            groupBuilder.Initialize(options, expectedEntryCount);
 
             return true;
         }
@@ -791,14 +783,18 @@ public sealed partial class AffixReader
         }
 
         // piece 3 - is string to strip or 0 for null
-        var strip = group1;
-        if (strip.Equals("0".AsSpan(), StringComparison.Ordinal))
+        string strip;
+        if (group1.Equals("0".AsSpan(), StringComparison.Ordinal))
         {
-            strip = ReadOnlySpan<char>.Empty;
+            strip = string.Empty;
         }
         else if (EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes))
         {
-            strip = strip.GetReversed();
+            strip = group1.ToStringReversed();
+        }
+        else
+        {
+            strip = group1.ToString();
         }
 
         // piece 4 - is affix string or 0 for null
@@ -859,9 +855,9 @@ public sealed partial class AffixReader
         }
 
         var conditions = CharacterConditionGroup.Parse(conditionText);
-        if (!strip.IsEmpty && !conditions.MatchesAnySingleCharacter)
+        if (strip.Length != 0 && !conditions.MatchesAnySingleCharacter)
         {
-            if (conditions.IsOnlyPossibleMatch(strip))
+            if (conditions.IsOnlyPossibleMatch(strip.AsSpan()))
             {
                 // determine if the condition is redundant
                 conditions = CharacterConditionGroup.AllowAnySingleCharacter;
@@ -914,54 +910,19 @@ public sealed partial class AffixReader
             morph = MorphSet.Empty;
         }
 
-        affixGroup ??= new AffixEntryGroup<TEntry>.Builder(aFlag, AffixEntryOptions.None);
-
         if (!_builder.HasContClass && contClass.HasItems)
         {
             _builder.HasContClass = true;
         }
 
-        affixGroup.Entries.Add(CreateEntry<TEntry>(
-            strip.ToString(),
+        groupBuilder.AddEntry(
+            strip,
             affixText,
             conditions,
             morph,
-            contClass));
+            contClass);
 
         return true;
-
-        static AffixEntryGroup<TEntry>.Builder? findLastByFlag(List<AffixEntryGroup<TEntry>.Builder> groups, FlagValue aFlag)
-        {
-            for (var i = groups.Count - 1; i >= 0; i--)
-            {
-                if (groups[i].AFlag == aFlag)
-                {
-                    return groups[i];
-                }
-            }
-
-            return null;
-        }
-    }
-
-    private static TEntry CreateEntry<TEntry>(
-        string strip,
-        string affixText,
-        CharacterConditionGroup conditions,
-        MorphSet morph,
-        FlagSet contClass)
-        where TEntry : AffixEntry
-    {
-        if (typeof(TEntry) == typeof(PrefixEntry))
-        {
-            return (TEntry)((AffixEntry)new PrefixEntry(strip, affixText, conditions, morph, contClass));
-        }
-        if (typeof(TEntry) == typeof(SuffixEntry))
-        {
-            return (TEntry)((AffixEntry)new SuffixEntry(strip, affixText, conditions, morph, contClass));
-        }
-
-        throw new NotSupportedException();
     }
 
     private static string ReverseCondition(ReadOnlySpan<char> conditionText)

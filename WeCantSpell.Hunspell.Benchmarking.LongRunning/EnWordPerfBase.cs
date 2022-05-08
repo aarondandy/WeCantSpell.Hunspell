@@ -36,10 +36,9 @@ public abstract class EnWordPerfBase
         void LoadWords()
         {
             Words = new List<string>();
-            using var stram = new FileStream(Path.Combine(filesDirectory, "List_of_common_misspellings.txt"), FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
-            using var reader = new StreamReader(stram, Encoding.UTF8, true);
-            string line;
+            using var reader = new StreamReader(Path.Combine(filesDirectory, "List_of_common_misspellings.txt"), Encoding.UTF8, true);
 
+            string line;
             while ((line = reader.ReadLine()) is not null)
             {
                 line = line.Trim();

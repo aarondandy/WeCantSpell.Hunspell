@@ -47,8 +47,6 @@ public readonly struct PatternSet : IReadOnlyList<PatternEntry>
         foreach (var patternEntry in _patterns)
         {
             if (
-                HunspellTextFunctions.IsSubset(patternEntry.Pattern2, wordAfterPos)
-                &&
                 (
                     patternEntry.Condition.IsZero
                     ||
@@ -68,6 +66,8 @@ public readonly struct PatternSet : IReadOnlyList<PatternEntry>
                     ||
                     PatternWordCheck(word, pos, patternEntry.Pattern.StartsWith('0') ? r1.Word : patternEntry.Pattern)
                 )
+                &&
+                HunspellTextFunctions.IsSubset(patternEntry.Pattern2, wordAfterPos)
             )
             {
                 return true;

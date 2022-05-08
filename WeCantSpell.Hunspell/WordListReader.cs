@@ -460,7 +460,7 @@ public sealed class WordListReader
         {
             details = new WordEntryDetail[]
             {
-                new(flags, new MorphSet(morphs),options)
+                new(flags, new MorphSet(morphs), options)
             };
         }
     }

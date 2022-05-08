@@ -819,7 +819,7 @@ public partial class WordList
                         TestSug(state.SuggestionList, candidate, state.CpdSuggest, timer);
                         candidate[i] = tmpc;
 
-                        if (timer.QueryForCancellation())
+                        if (timer.HasBeenCanceled)
                         {
                             return;
                         }
@@ -899,7 +899,7 @@ public partial class WordList
 
                     TestSug(state.SuggestionList, candidate, state.CpdSuggest, timer);
 
-                    if (timer.QueryForCancellation())
+                    if (timer.HasBeenCanceled)
                     {
                         return;
                     }
@@ -911,7 +911,7 @@ public partial class WordList
 
                         TestSug(state.SuggestionList, candidate, state.CpdSuggest, timer);
 
-                        if (timer.QueryForCancellation())
+                        if (timer.HasBeenCanceled)
                         {
                             return;
                         }
@@ -1079,13 +1079,8 @@ public partial class WordList
             }
 
             var candidate = string.Empty;
-            MapRelated(word, ref candidate, wn: 0, wlst, cpdSuggest);
-        }
-
-        private void MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest)
-        {
             var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, Options.CancellationToken);
-            MapRelated(word, ref candidate, wn, wlst, cpdSuggest, timer);
+            MapRelated(word, ref candidate, wn: 0, wlst, cpdSuggest, timer);
         }
 
         private void MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest, OperationTimedCountLimiter timer)
@@ -1093,11 +1088,11 @@ public partial class WordList
             if (wn >= word.Length)
             {
                 if (
+                    wlst.Count < MaxSuggestions
+                    &&
                     !wlst.Contains(candidate)
                     &&
                     CheckWord(candidate, cpdSuggest, timer) != 0
-                    &&
-                    wlst.Count < MaxSuggestions
                 )
                 {
                     wlst.Add(candidate);
@@ -1120,7 +1115,7 @@ public partial class WordList
                             candidate = candidatePrefix + otherMapEntryValue;
                             MapRelated(word, ref candidate, wn + mapEntryValue.Length, wlst, cpdSuggest, timer);
 
-                            if (timer.QueryForCancellation())
+                            if (timer.HasBeenCanceled)
                             {
                                 return;
                             }
@@ -1231,12 +1226,12 @@ public partial class WordList
             var noSuffix = rv is not null;
             if (!noSuffix)
             {
-                rv = _query.SuffixCheck(word, AffixEntryOptions.None, default, default, default, CompoundOptions.Not); // only suffix
+                rv = _query.SuffixCheck(word, AffixEntryOptions.None, null, default, default, CompoundOptions.Not); // only suffix
             }
 
             if (Affix.ContClasses.HasItems && rv is null)
             {
-                rv = _query.SuffixCheckTwoSfx(word, AffixEntryOptions.None, default, default)
+                rv = _query.SuffixCheckTwoSfx(word, AffixEntryOptions.None, null, default)
                     ?? _query.PrefixCheckTwoSfx(word, CompoundOptions.Not, default);
             }
 
@@ -1701,9 +1696,6 @@ public partial class WordList
             guesses.Sort(NGramGuess.ScoreComparer.Comparison);
 #endif
 
-
-            Array.Sort(guessesRental, 0, guesses.Length, NGramGuess.ScoreComparer.Default);
-
             // phonetic version
             if (hasPhoneEntries)
             {
@@ -2042,59 +2034,52 @@ public partial class WordList
             }
 
             // handle suffixes
-            if (Affix.Suffixes.HasAffixes)
+            foreach (var sptr in Affix.Suffixes.GetByFlags(entry.Detail.Flags))
             {
-                foreach (var sptrGroup in Affix.Suffixes.GetByFlags(entry.Detail.Flags))
-                {
-                    foreach (var sptr in sptrGroup.Entries)
-                    {
-                        var key = sptr.Key;
-                        if (
-                            (
-                                key.Length == 0
-                                ||
-                                (
-                                    bad.Length > key.Length
-                                    &&
-                                    bad.AsSpan(bad.Length - key.Length).EqualsOrdinal(sptr.Append.AsSpan())
-                                )
-                            )
-                            && // check needaffix flag
-                            !sptr.ContainsAnyContClass(Affix.NeedAffix, Affix.Circumfix, Affix.OnlyInCompound)
+                if (
+                    (
+                        sptr.Append.Length == 0
+                        ||
+                        (
+                            bad.Length > sptr.Append.Length
+                            &&
+                            bad.EndsWith(sptr.Append, StringComparison.Ordinal)
                         )
+                    )
+                    && // check needaffix flag
+                    !sptr.ContainsAnyContClass(Affix.NeedAffix, Affix.Circumfix, Affix.OnlyInCompound)
+                )
+                {
+                    var newword = Add(sptr, entry.Word);
+                    if (newword.Length != 0)
+                    {
+                        if (nh < wlst.Length)
                         {
-                            var newword = Add(sptr, entry.Word);
-                            if (newword.Length != 0)
+                            wlstNh = ref wlst[nh];
+                            wlstNh.Word = newword;
+                            wlstNh.Allow = sptr.Options.AllowCross();
+                            wlstNh.Orig = null;
+
+                            nh++;
+
+                            // add special phonetic version
+                            if (phon is not null && nh < wlst.Length)
                             {
-                                if (nh < wlst.Length)
+                                wlstNh = ref wlst[nh];
+                                wlstNh.Word = phon + sptr.Append;
+                                if (wlstNh.Word is null)
                                 {
-                                    wlstNh = ref wlst[nh];
-                                    wlstNh.Word = newword;
-                                    wlstNh.Allow = sptrGroup.AllowCross;
-                                    wlstNh.Orig = null;
-
-                                    nh++;
-
-                                    // add special phonetic version
-                                    if (phon is not null && nh < wlst.Length)
-                                    {
-                                        wlstNh = ref wlst[nh];
-                                        wlstNh.Word = phon + key.GetReversed();
-                                        if (wlstNh.Word is null)
-                                        {
-                                            return nh - 1;
-                                        }
-
-                                        wlstNh.Allow = false;
-                                        wlstNh.Orig = newword;
-                                        if (wlstNh.Orig is null)
-                                        {
-                                            return nh - 1;
-                                        }
-
-                                        nh++;
-                                    }
+                                    return nh - 1;
                                 }
+
+                                wlstNh.Allow = false;
+                                wlstNh.Orig = newword;
+                                if (wlstNh.Orig is null)
+                                {
+                                    return nh - 1;
+                                }
+
+                                nh++;
                             }
                         }
                     }
@@ -2113,32 +2098,31 @@ public partial class WordList
                         continue;
                     }
 
-                    foreach (var pfxGroup in Affix.Prefixes.GetByFlags(entry.Detail.Flags))
+                    foreach (var pfxGroup in Affix.Prefixes.GetGroupsByFlags(entry.Detail.Flags))
                     {
-                        foreach (var cptr in pfxGroup.Entries)
+                        if (pfxGroup.Options.AllowCross())
                         {
-                            if (
-                                pfxGroup.AllowCross
-                                &&
-                                (
-                                    cptr.Key.Length == 0
+                            foreach (var cptr in pfxGroup.Entries)
+                            {
+                                if (
+                                    cptr.Append.Length == 0
                                     ||
                                     (
-                                        bad.Length > cptr.Key.Length
+                                        bad.Length > cptr.Append.Length
                                         &&
-                                        bad.StartsWith(cptr.Key, StringComparison.Ordinal)
+                                        bad.StartsWith(cptr.Append, StringComparison.Ordinal)
                                     )
                                 )
-                            )
-                            {
-                                if (Add(cptr, wlst[j].Word ?? string.Empty) is { Length: > 0 } newword)
                                 {
-                                    if (nh < wlst.Length)
+                                    if (Add(cptr, wlst[j].Word ?? string.Empty) is { Length: > 0 } newword)
                                     {
-                                        wlstNh = ref wlst[nh];
-                                        wlstNh.Word = newword;
-                                        wlstNh.Allow = pfxGroup.AllowCross;
-                                        wlstNh.Orig = null;
+                                        if (nh < wlst.Length)
+                                        {
+                                            wlstNh = ref wlst[nh];
+                                            wlstNh.Word = newword;
+                                            wlstNh.Allow = pfxGroup.Options.AllowCross();
+                                            wlstNh.Orig = null;
+                                        }
                                     }
                                 }
                             }
@@ -2150,34 +2134,30 @@ public partial class WordList
             // now handle pure prefixes
             if (Affix.Prefixes.HasAffixes)
             {
-                foreach (var ptrGroup in Affix.Prefixes.GetByFlags(entry.Detail.Flags))
+                foreach (var ptr in Affix.Prefixes.GetByFlags(entry.Detail.Flags))
                 {
-                    foreach (var ptr in ptrGroup.Entries)
-                    {
-                        var key = ptr.Key;
-                        if (
+                    if (
+                        (
+                            ptr.Append.Length == 0
+                            ||
                             (
-                                key.Length == 0
-                                ||
-                                (
-                                    bad.Length > key.Length
-                                    &&
-                                    bad.StartsWith(key, StringComparison.Ordinal)
-                                )
+                                bad.Length > ptr.Append.Length
+                                &&
+                                bad.StartsWith(ptr.Append, StringComparison.Ordinal)
                             )
-                            && // check needaffix flag
-                            !ptr.ContainsAnyContClass(Affix.NeedAffix, Affix.Circumfix, Affix.OnlyInCompound)
                         )
+                        && // check needaffix flag
+                        !ptr.ContainsAnyContClass(Affix.NeedAffix, Affix.Circumfix, Affix.OnlyInCompound)
+                    )
+                    {
+                        var newword = Add(ptr, entry.Word);
+                        if (newword.Length != 0 && nh < wlst.Length)
                         {
-                            var newword = Add(ptr, entry.Word);
-                            if (newword.Length != 0 && nh < wlst.Length)
-                            {
-                                wlstNh = ref wlst[nh];
-                                wlstNh.Word = newword;
-                                wlstNh.Allow = ptrGroup.AllowCross;
-                                wlstNh.Orig = null;
-                                nh++;
-                            }
+                            wlstNh = ref wlst[nh];
+                            wlstNh.Word = newword;
+                            wlstNh.Allow = ptr.Options.AllowCross();
+                            wlstNh.Orig = null;
+                            nh++;
                         }
                     }
                 }

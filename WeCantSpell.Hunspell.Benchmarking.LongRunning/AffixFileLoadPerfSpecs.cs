@@ -28,9 +28,7 @@ public class AffixFileLoadPerfSpecs
         TestMode = TestMode.Measurement)]
     [MemoryMeasurement(MemoryMetric.TotalBytesAllocated)]
     [GcMeasurement(GcMetric.TotalCollections, GcGeneration.AllGc)]
-    [TimingMeasurement]
-    [CounterMeasurement(nameof(AffixFilesLoaded))]
-    [CounterThroughputAssertion(nameof(AffixFilesLoaded), MustBe.GreaterThanOrEqualTo, 5)]
+    [CounterThroughputAssertion(nameof(AffixFilesLoaded), MustBe.GreaterThanOrEqualTo, 10)]
     public void Benchmark(BenchmarkContext context)
     {
         foreach (var filePath in AffixFilePaths)

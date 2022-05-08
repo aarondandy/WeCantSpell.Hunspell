@@ -16,13 +16,12 @@ public class FileLoadWeCantSpellHunspellPerfSpec : FileLoadPerfBase
 
     [PerfBenchmark(
         Description = "How fast can this project load files?",
-        NumberOfIterations = 2,
+        NumberOfIterations = 1,
         RunMode = RunMode.Throughput,
         TestMode = TestMode.Measurement)]
     [MemoryMeasurement(MemoryMetric.TotalBytesAllocated)]
     [GcMeasurement(GcMetric.TotalCollections, GcGeneration.AllGc)]
-    [TimingMeasurement]
-    [CounterMeasurement(nameof(FilePairsLoaded))]
+    [CounterThroughputAssertion(nameof(FilePairsLoaded), MustBe.GreaterThanOrEqualTo, 2)]
     public void Benchmark(BenchmarkContext context)
     {
         foreach(var filePair in TestFiles)

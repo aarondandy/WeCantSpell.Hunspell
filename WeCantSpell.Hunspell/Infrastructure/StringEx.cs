@@ -15,6 +15,10 @@ static class StringEx
 
     public static bool StartsWith(this ReadOnlySpan<char> @this, char value) => !@this.IsEmpty && @this[0] == value;
 
+    public static bool EndsWith(this string @this, ReadOnlySpan<char> value) => @this.AsSpan().EndsWith(value);
+
+    public static bool EndsWith(this ReadOnlySpan<char> @this, string value, StringComparison comparison) => @this.EndsWith(value.AsSpan(), comparison);
+
     public static bool EndsWith(this string @this, char character) => @this.Length > 0 && @this[@this.Length - 1] == character;
 
     public static bool EndsWith(this ReadOnlySpan<char> @this, char value) => !@this.IsEmpty && @this[@this.Length - 1] == value;

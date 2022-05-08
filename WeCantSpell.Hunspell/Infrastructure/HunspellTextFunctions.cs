@@ -1,50 +1,51 @@
 ﻿using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class HunspellTextFunctions
 {
-    public static bool IsReverseSubset(string s1, ReadOnlySpan<char> s2) => IsReverseSubset(s1.AsSpan(), s2);
-
-    public static bool IsReverseSubset(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
+    public static bool IsReverseSubset(string s1, ReadOnlySpan<char> s2)
     {
-        if (s1.Length > s2.Length)
-        {
-            return false;
-        }
+        return s1.Length <= s2.Length && check(s1.AsSpan(), s2);
 
-        for (int index1 = 0, index2 = s2.Length - 1; index1 < s1.Length; index1++, index2--)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static bool check(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
         {
-            var s1c = s1[index1];
-            if (s1c != '.' && s1c != s2[index2])
+            var s2LastIndex = s2.Length - 1;
+
+            for (var i = 0; i < s1.Length; i++)
             {
-                return false;
+                var c = s1[i];
+                if (c != '.' && s2[s2LastIndex - i] != c)
+                {
+                    return false;
+                }
             }
-        }
 
-        return true;
+            return true;
+        }
     }
 
-    public static bool IsSubset(string s1, ReadOnlySpan<char> s2) => IsSubset(s1.AsSpan(), s2);
-
-    public static bool IsSubset(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
+    public static bool IsSubset(string s1, ReadOnlySpan<char> s2)
     {
-        if (s1.Length > s2.Length)
-        {
-            return false;
-        }
+        return s1.Length <= s2.Length && check(s1.AsSpan(), s2);
 
-        for (var i = 0; i < s1.Length; i++)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static bool check(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
         {
-            var s1c = s1[i];
-            if (s1c != '.' && s1c != s2[i])
+            for (var i = 0; i < s1.Length; i++)
             {
-                return false;
+                var c = s1[i];
+                if (c != '.' && s2[i] != c)
+                {
+                    return false;
+                }
             }
-        }
 
-        return true;
+            return true;
+        }
     }
 
     public static bool IsNumericWord(ReadOnlySpan<char> word)
@@ -150,6 +151,7 @@ static class HunspellTextFunctions
     {
         var builder = StringBuilderPool.Get(baseText.Length);
         builder.Append(firstLetter);
+
         if (baseText.Length > 1)
         {
             builder.Append(baseText.Slice(1));
