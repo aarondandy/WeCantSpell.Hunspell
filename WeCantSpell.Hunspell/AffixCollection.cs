@@ -146,84 +146,20 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         {
         }
 
-        protected Dictionary<FlagValue, AffixGroup<TAffixEntry>.Builder> _byFlag = new();
+        protected Dictionary<FlagValue, GroupBuilder> _byFlag = new();
         protected ArrayBuilder<TAffixEntry> _emptyKeys = new();
         protected FlagSet.Builder _contClassesBuilder = new();
         protected Dictionary<char, List<TAffixEntry>> _byFirstKeyChar = new();
 
-        public bool HasEncounteredAFlag(FlagValue aFlag) => _byFlag.ContainsKey(aFlag);
-
-        public void PrepareGroup(FlagValue aFlag, AffixEntryOptions options, int expectedEntryCount)
+        public GroupBuilder ForGroup(FlagValue aFlag)
         {
-            if (!_byFlag.TryGetValue(aFlag, out var group))
+            if (!_byFlag.TryGetValue(aFlag, out var groupBuilder))
             {
-                group = new AffixGroup<TAffixEntry>.Builder(aFlag, options);
-                _byFlag.Add(aFlag, group);
+                groupBuilder = new(this, aFlag);
+                _byFlag.Add(aFlag, groupBuilder);
             }
 
-            if (expectedEntryCount is > 0 and <= 1000)
-            {
-                group.Entries.Capacity = expectedEntryCount;
-            }
-        }
-
-        public void AddEntry(
-            FlagValue aFlag,
-            string strip,
-            string affixText,
-            CharacterConditionGroup conditions,
-            MorphSet morph,
-            FlagSet contClass)
-        {
-            if (!_byFlag.TryGetValue(aFlag, out var group))
-            {
-                return;
-            }
-
-            TAffixEntry entry;
-
-            if (typeof(TAffixEntry) == typeof(PrefixEntry))
-            {
-                entry = (TAffixEntry)(object)new PrefixEntry(
-                    strip,
-                    affixText,
-                    conditions,
-                    morph,
-                    contClass,
-                    aFlag,
-                    group.Options);
-            }
-            else
-            {
-                entry = (TAffixEntry)(object)new SuffixEntry(
-                    strip,
-                    affixText,
-                    conditions,
-                    morph,
-                    contClass,
-                    aFlag,
-                    group.Options);
-            }
-
-            group.Entries.Add(entry);
-
-            _contClassesBuilder.AddRange(entry.ContClass);
-
-            if (string.IsNullOrEmpty(entry.Key))
-            {
-                _emptyKeys.Add(entry);
-            }
-            else
-            {
-                var firstChar = entry.Key[0];
-                if (!_byFirstKeyChar.TryGetValue(firstChar, out var byKeyGroup))
-                {
-                    byKeyGroup = new();
-                    _byFirstKeyChar.Add(firstChar, byKeyGroup);
-                }
-
-                byKeyGroup.Add(entry);
-            }
+            return groupBuilder;
         }
 
         protected void ApplyToCollection(AffixCollection<TAffixEntry> target, bool allowDestructive)
@@ -236,73 +172,207 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
             // loop through each prefix list starting point
             foreach (var (firstChar, affixes) in _byFirstKeyChar)
             {
-                if (affixes.Count == 0)
+                if (BuildTree(affixes, allowDestructive: allowDestructive) is { } root)
                 {
-                    continue;
+                    target._affixTreeRootsByFirstKeyChar.Add(firstChar, root);
+                }
+            }
+        }
+
+        private static EntryTreeNode? BuildTree(List<TAffixEntry> affixes, bool allowDestructive)
+        {
+            if (affixes.Count == 0)
+            {
+                return null;
+            }
+
+            // convert from binary tree to sorted list
+            // NOTE: the above comment is a lie, but that is what this sort and initial tree build is for
+
+            int i;
+            EntryTreeNode[] allNodes;
+            if (allowDestructive)
+            {
+                affixes.Sort(static (a, b) => StringComparer.Ordinal.Compare(a.Key, b.Key));
+                allNodes = new EntryTreeNode[affixes.Count];
+
+                i = allNodes.Length - 1;
+                allNodes[i] = new(affixes[affixes.Count - 1]);
+
+                while (--i >= 0)
+                {
+                    ref var node = ref allNodes[i];
+                    node = new(affixes[i]);
+                    node.Next = allNodes[i + 1];
+                }
+            }
+            else
+            {
+                allNodes = new EntryTreeNode[affixes.Count];
+                for (i = 0; i < allNodes.Length; i++)
+                {
+                    allNodes[i] = new(affixes[i]);
                 }
 
-                // convert from binary tree to sorted list
-                // NOTE: the above comment is a lie, but that is what this sort and initial tree build is for
-                affixes.Sort(static (a, b) => StringComparer.Ordinal.Compare(a.Key, b.Key));
-                var allNodes = affixes.ConvertAll(static affix => new EntryTreeNode(affix));
-                for (var i = 1; i < allNodes.Count; i++)
+                Array.Sort(allNodes, static (a, b) => StringComparer.Ordinal.Compare(a.Affix.Key, b.Affix.Key));
+
+                for (i = 1; i < allNodes.Length; i++)
                 {
                     allNodes[i - 1].Next = allNodes[i];
                 }
+            }
 
-                // look through the remainder of the list
-                // and find next entry with affix that
-                // the current one is not a subset of
-                // mark that as destination for NextNE
-                // use next in list that you are a subset
-                // of as NextEQ
+            EntryTreeNode? nptr = null;
 
-                foreach (var ptr in allNodes)
+            // look through the remainder of the list
+            // and find next entry with affix that
+            // the current one is not a subset of
+            // mark that as destination for NextNE
+            // use next in list that you are a subset
+            // of as NextEQ
+
+            foreach (var ptr in allNodes)
+            {
+                nptr = ptr.Next;
+                while (nptr is not null)
                 {
-                    var nptr = ptr.Next;
-                    for (; nptr is not null; nptr = nptr.Next)
+                    if (!ptr.Affix.IsKeySubset(nptr.Affix.Key))
                     {
-                        if (!ptr.Affix.IsKeySubset(nptr.Affix.Key))
-                        {
-                            break;
-                        }
+                        break;
                     }
 
-                    ptr.NextNotEqual = nptr;
-                    ptr.NextEqual = null;
-
-                    if (ptr.Next is not null && ptr.Affix.IsKeySubset(ptr.Next.Affix.Key))
-                    {
-                        ptr.NextEqual = ptr.Next;
-                    }
+                    nptr = nptr.Next;
                 }
 
-                // now clean up by adding smart search termination strings:
-                // if you are already a superset of the previous affix
-                // but not a subset of the next, search can end here
-                // so set NextNE properly
+                ptr.NextNotEqual = nptr;
+                // ptr.NextEqual = null;
 
-                foreach (var ptr in allNodes)
+                if (ptr.Next is not null && ptr.Affix.IsKeySubset(ptr.Next.Affix.Key))
                 {
-                    var nptr = ptr.Next;
-                    EntryTreeNode? mptr = null;
-                    for (; nptr is not null; nptr = nptr.Next)
-                    {
-                        if (!ptr.Affix.IsKeySubset(nptr.Affix.Key))
-                        {
-                            break;
-                        }
+                    ptr.NextEqual = ptr.Next;
+                }
+            }
 
-                        mptr = nptr;
+            // now clean up by adding smart search termination strings:
+            // if you are already a superset of the previous affix
+            // but not a subset of the next, search can end here
+            // so set NextNE properly
+
+            foreach (var ptr in allNodes)
+            {
+                nptr = ptr.Next;
+                EntryTreeNode? mptr = null;
+                while (nptr is not null)
+                {
+                    if (!ptr.Affix.IsKeySubset(nptr.Affix.Key))
+                    {
+                        break;
                     }
 
-                    if (mptr is not null)
-                    {
-                        mptr.NextNotEqual = null;
-                    }
+                    mptr = nptr;
+                    nptr = nptr.Next;
                 }
 
-                target._affixTreeRootsByFirstKeyChar.Add(firstChar, allNodes[0]);
+                if (mptr is not null)
+                {
+                    mptr.NextNotEqual = null;
+                }
+            }
+
+            return allNodes[0];
+        }
+
+        public class GroupBuilder
+        {
+            internal GroupBuilder(BuilderBase parent, FlagValue aFlag)
+            {
+                _parent = parent;
+                Builder = new(aFlag, AffixEntryOptions.None);
+            }
+
+            private readonly BuilderBase _parent;
+
+            public AffixGroup<TAffixEntry>.Builder Builder { get; }
+
+            public FlagValue AFlag => Builder.AFlag;
+
+            public AffixEntryOptions Options { get => Builder.Options; set => Builder.Options = value; }
+
+            public bool IsInitialized { get; private set; }
+
+            public void Initialize(AffixEntryOptions options, int expectedCapacity)
+            {
+                Options = options;
+
+                if (expectedCapacity is > 0 and <= 1000)
+                {
+                    Builder.Entries.Capacity = expectedCapacity;
+                }
+
+                IsInitialized = true;
+            }
+
+            public void AddEntry(
+                string strip,
+                string affixText,
+                CharacterConditionGroup conditions,
+                MorphSet morph,
+                FlagSet contClass)
+            {
+                var entry = CreateEntry(strip, affixText, conditions, morph, contClass);
+
+                Builder.Entries.Add(entry);
+
+                _parent._contClassesBuilder.AddRange(entry.ContClass);
+
+                if (string.IsNullOrEmpty(entry.Key))
+                {
+                    _parent._emptyKeys.Add(entry);
+                }
+                else
+                {
+                    var firstChar = entry.Key[0];
+                    if (!_parent._byFirstKeyChar.TryGetValue(firstChar, out var byKeyGroup))
+                    {
+                        byKeyGroup = new();
+                        _parent._byFirstKeyChar.Add(firstChar, byKeyGroup);
+                    }
+
+                    byKeyGroup.Add(entry);
+                }
+            }
+
+            public AffixGroup<TAffixEntry> ToImmutable(bool allowDestructive) =>
+                Builder.ToImmutable(allowDestructive: allowDestructive);
+
+            private TAffixEntry CreateEntry(string strip,
+                string affixText,
+                CharacterConditionGroup conditions,
+                MorphSet morph,
+                FlagSet contClass)
+            {
+                if (typeof(TAffixEntry) == typeof(PrefixEntry))
+                {
+                    return (TAffixEntry)(AffixEntry)new PrefixEntry(
+                        strip,
+                        affixText,
+                        conditions,
+                        morph,
+                        contClass,
+                        AFlag,
+                        Options);
+                }
+                else
+                {
+                    return (TAffixEntry)(AffixEntry)new SuffixEntry(
+                        strip,
+                        affixText,
+                        conditions,
+                        morph,
+                        contClass,
+                        AFlag,
+                        Options);
+                }
             }
         }
     }
