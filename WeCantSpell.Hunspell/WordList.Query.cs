@@ -401,10 +401,10 @@ public partial class WordList
         public WordEntry? CompoundCheck(ReadOnlySpan<char> word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, bool isSug, ref SpellCheckResultType info)
         {
             var opLimiter = new OperationTimedLimiter(Options.TimeLimitCompoundCheck, Options.CancellationToken);
-            return CompoundCheck(word, wordNum, numSyllable, maxwordnum, words, rwords, huMovRule, isSug, ref info, opLimiter);
+            return CompoundCheck(word, wordNum, numSyllable, maxwordnum, words, rwords, huMovRule, isSug, ref info, ref opLimiter);
         }
 
-        public WordEntry? CompoundCheck(ReadOnlySpan<char> word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, bool isSug, ref SpellCheckResultType info, OperationTimedLimiter opLimiter)
+        public WordEntry? CompoundCheck(ReadOnlySpan<char> word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, bool isSug, ref SpellCheckResultType info, ref OperationTimedLimiter opLimiter)
         {
             int oldnumsyllable, oldnumsyllable2, oldwordnum, oldwordnum2;
             WordEntry? rv;
@@ -1115,7 +1115,7 @@ public partial class WordList
                                 // perhaps second word is a compound word (recursive call)
                                 if (wordNum < maxwordnum)
                                 {
-                                    rv = CompoundCheck(st.TerminatedSpan.Slice(i), wordNum + 1, numSyllable, maxwordnum, words?.CreateIncremented(), rwords.CreateIncremented(), false, isSug, ref info, opLimiter);
+                                    rv = CompoundCheck(st.TerminatedSpan.Slice(i), wordNum + 1, numSyllable, maxwordnum, words?.CreateIncremented(), rwords.CreateIncremented(), false, isSug, ref info, ref opLimiter);
 
                                     if (
                                         rv is not null

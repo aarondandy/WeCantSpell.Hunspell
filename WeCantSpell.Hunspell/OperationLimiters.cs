@@ -3,7 +3,7 @@ using System.Threading;
 
 namespace WeCantSpell.Hunspell;
 
-sealed class OperationTimedLimiter
+struct OperationTimedLimiter
 {
     public OperationTimedLimiter(TimeSpan timeLimit, CancellationToken cancellationToken)
         : this((int)timeLimit.TotalMilliseconds, cancellationToken)
@@ -16,13 +16,14 @@ sealed class OperationTimedLimiter
         _timeLimitMs = timeLimitMs;
         _expiresAtMs = _startedAtMs + timeLimitMs;
         _cancellationToken = cancellationToken;
+        _hasTriggeredCancellation = false;
     }
 
-    private bool _hasTriggeredCancellation;
     private int _expiresAtMs;
     private int _startedAtMs;
-    private readonly CancellationToken _cancellationToken;
     private readonly int _timeLimitMs;
+    private readonly CancellationToken _cancellationToken;
+    private bool _hasTriggeredCancellation;
 
     public bool QueryForCancellation()
     {
@@ -64,15 +65,16 @@ sealed class OperationTimedCountLimiter
         _countLimit = countLimit;
         _counter = countLimit;
         _cancellationToken = cancellationToken;
+        _hasTriggeredCancellation = false;
     }
 
-    private bool _hasTriggeredCancellation;
+    private readonly int _timeLimitMs;
+    private readonly int _countLimit;
     private int _counter;
     private int _expiresAtMs;
     private int _startedAtMs;
     private readonly CancellationToken _cancellationToken;
-    private readonly int _timeLimitMs;
-    private readonly int _countLimit;
+    private bool _hasTriggeredCancellation;
 
     public bool HasBeenCanceled => _hasTriggeredCancellation || _cancellationToken.IsCancellationRequested;
 
