@@ -130,7 +130,7 @@ public partial class WordList
             (
                 (Prefix is not null && Prefix.ContainsContClass(value))
                 ||
-                (Suffix?.ContainsContClass(value) == true)
+                (Suffix?.ContainsContClass(value)).GetValueOrDefault()
             );
 
         private bool ContainFlagsOrBlockSuggest(in WordEntryDetail rv, bool isSug, FlagValue a, FlagValue b) =>
@@ -595,7 +595,7 @@ public partial class WordList
                                         &&
                                         !huMovRule
                                         &&
-                                        Suffix?.ContainsAnyContClass(Affix.CompoundForbidFlag, Affix.CompoundEnd) == true
+                                        (Suffix?.ContainsAnyContClass(Affix.CompoundForbidFlag, Affix.CompoundEnd)).GetValueOrDefault()
                                     )
                                     {
                                         rv = null;
@@ -790,7 +790,8 @@ public partial class WordList
                             firstWordCompoundAcceptable =
                                 rv is not null
                                 // XXX hardwired Hungarian dic. codes
-                                && Suffix?.ContainsAnyContClass(SpecialFlags.LetterXLower, SpecialFlags.LetterPercent) == true;
+                                &&
+                                (Suffix?.ContainsAnyContClass(SpecialFlags.LetterXLower, SpecialFlags.LetterPercent)).GetValueOrDefault();
                         }
                         else
                         {
@@ -1906,9 +1907,7 @@ public partial class WordList
                                 (
                                     heDetail.ContainsFlag(affix.AFlag)
                                     ||
-                                    (
-                                        pfx?.ContainsContClass(affix.AFlag) == true
-                                    )
+                                    (pfx?.ContainsContClass(affix.AFlag)).GetValueOrDefault()
                                 )
                                 &&
                                 (
