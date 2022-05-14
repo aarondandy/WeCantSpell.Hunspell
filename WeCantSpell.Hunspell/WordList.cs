@@ -48,7 +48,7 @@ public sealed partial class WordList
 
         foreach (var word in words)
         {
-            wordListBuilder.Add(word, WordEntryDetail.Default);
+            wordListBuilder.Add(word);
         }
 
         return wordListBuilder.MoveToImmutable();

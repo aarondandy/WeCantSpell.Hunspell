@@ -5,11 +5,8 @@ using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
-public sealed class AffixGroup<TAffixEntry>
-    where TAffixEntry : AffixEntry
+public sealed class AffixGroup<TAffixEntry> where TAffixEntry : AffixEntry
 {
-    internal static AffixGroup<TAffixEntry> Invalid { get; } = new(default, AffixEntryOptions.None, ImmutableArray<TAffixEntry>.Empty);
-
     private AffixGroup(FlagValue aFlag, AffixEntryOptions options, ImmutableArray<TAffixEntry> entries)
     {
         Entries = entries;

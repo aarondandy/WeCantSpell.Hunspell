@@ -2217,7 +2217,8 @@ public partial class WordList
                         good = true;
                         wlst.Clear();
                     }
-                    wlst.Insert(0, candidate.TerminatedSpan.ToString());
+
+                    InsertSuggestion(wlst, candidate.TerminatedSpan.ToString());
                 }
 
                 // word pairs with dash?
@@ -2232,7 +2233,8 @@ public partial class WordList
                             good = true;
                             wlst.Clear();
                         }
-                        wlst.Insert(0, candidate.TerminatedSpan.ToString());
+
+                        InsertSuggestion(wlst, candidate.TerminatedSpan.ToString());
                     }
                 }
 

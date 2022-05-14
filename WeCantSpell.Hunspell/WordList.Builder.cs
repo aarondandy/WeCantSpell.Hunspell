@@ -29,6 +29,11 @@ public partial class WordList
         /// </summary>
         public ArrayBuilder<SingleReplacement> PhoneticReplacements { get; } = new();
 
+        public void Add(string word)
+        {
+            Add(word, WordEntryDetail.Default);
+        }
+
         public void Add(string word, WordEntryDetail detail)
         {
             ref var details = ref EntryDetailsByRoot.GetOrAdd(word);
