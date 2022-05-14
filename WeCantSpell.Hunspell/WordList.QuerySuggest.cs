@@ -2421,7 +2421,7 @@ public partial class WordList
                 return false;
             }
 
-            var begOffset = pos + MorphologicalTags.TagLength;
+            var begOffset = pos + MorphologicalTags.Stem.Length;
             var builder = StringBuilderPool.Get(morph.Length - begOffset);
 
             for (var i = begOffset; i < morph.Length; i++)

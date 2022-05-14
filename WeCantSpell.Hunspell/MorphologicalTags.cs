@@ -18,6 +18,4 @@ public static class MorphologicalTags
     public static string Part { get; } = "pa:";
     public static string Flag { get; } = "fl:";
     public static string HashEntry { get; } = "_H:";
-
-    internal static readonly int TagLength = Stem.Length;
 }

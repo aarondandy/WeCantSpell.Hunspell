@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Diagnostics;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
+[DebuggerDisplay("Options = {Options}, Flags = {Flags}, Morphs = {Morphs}")]
 public readonly struct WordEntryDetail : IEquatable<WordEntryDetail>
 {
     public static bool operator ==(WordEntryDetail a, WordEntryDetail b) => a.Equals(b);

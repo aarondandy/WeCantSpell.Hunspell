@@ -1,5 +1,8 @@
-﻿namespace WeCantSpell.Hunspell;
+﻿using System.Diagnostics;
 
+namespace WeCantSpell.Hunspell;
+
+[DebuggerDisplay("{Correct}: Info = {Info}, Root = {Root}")]
 public readonly struct SpellCheckResult
 {
     public SpellCheckResult(bool correct)

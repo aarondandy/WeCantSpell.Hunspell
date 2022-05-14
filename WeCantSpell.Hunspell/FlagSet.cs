@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -377,6 +379,30 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     public override bool Equals(object? obj) => obj is FlagSet set && Equals(set);
 
     public override int GetHashCode() => HashCode.Combine(Count, _mask);
+
+    public override string ToString()
+    {
+        if (Values?.Length > 0)
+        {
+            if (Array.TrueForAll(Values, static v => v < 256))
+            {
+                var builder = StringBuilderPool.Get(Values.Length);
+
+                foreach (var value in Values)
+                {
+                    builder.Append((char)value);
+                }
+
+                return StringBuilderPool.GetStringAndReturn(builder);
+            }
+            else
+            {
+                return string.Join(",", Values.Select(static v => ((int)v).ToString(CultureInfo.InvariantCulture.NumberFormat)));
+            }
+        }
+
+        return string.Empty;
+    }
 
     public class Comparer : IEqualityComparer<FlagSet>
     {
