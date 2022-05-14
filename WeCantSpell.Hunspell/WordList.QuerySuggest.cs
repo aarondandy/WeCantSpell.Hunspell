@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -14,12 +15,15 @@ public partial class WordList
     {
         private const int MaxPhoneTLen = 256;
         private const int MaxPhoneTUtf8Len = MaxPhoneTLen * 4;
-        [Obsolete("I'm not sure what this is for.")]
-        private const int MaxPlusTimer = 100;
 
-        public QuerySuggest(WordList wordList, QueryOptions? options)
+        public QuerySuggest(WordList wordList, QueryOptions? options, CancellationToken cancellationToken)
         {
-            _query = new(wordList, options);
+            _query = new(wordList, options, cancellationToken);
+        }
+
+        internal QuerySuggest(in Query source)
+        {
+            _query = new(source.WordList, source.Options, source.CancellationToken);
         }
 
         private Query _query;
@@ -112,7 +116,7 @@ public partial class WordList
         {
             var slst = new List<string>();
 
-            var opLimiter = new OperationTimedLimiter(Options.TimeLimitSuggestGlobal, Options.CancellationToken);
+            var opLimiter = new OperationTimedLimiter(Options.TimeLimitSuggestGlobal, _query.CancellationToken);
 
             var textInfo = _query.TextInfo;
 
@@ -506,11 +510,11 @@ public partial class WordList
             return slst;
         }
 
-        private List<string> SuggestNested(ReadOnlySpan<char> word) => new QuerySuggest(WordList, Options).Suggest(word);
+        private List<string> SuggestNested(ReadOnlySpan<char> word) => new QuerySuggest(in _query).Suggest(word);
 
-        private bool Check(string word) => new QueryCheck(WordList, Options).Check(word);
+        private bool Check(string word) => new QueryCheck(in _query).Check(word);
 
-        private bool Check(ReadOnlySpan<char> word) => new QueryCheck(WordList, Options).Check(word);
+        private bool Check(ReadOnlySpan<char> word) => new QueryCheck(in _query).Check(word);
 
         private WordEntryDetail? LookupFirstDetail(ReadOnlySpan<char> word) => WordList.FindFirstEntryDetailByRootWord(word);
         
@@ -574,7 +578,7 @@ public partial class WordList
                 word = word.GetReversed();
             }
 
-            var opLimiter = new OperationTimedLimiter(Options.TimeLimitCompoundSuggest, Options.CancellationToken);
+            var opLimiter = new OperationTimedLimiter(Options.TimeLimitCompoundSuggest, _query.CancellationToken);
 
             var state = new SuggestState(word, slst);
 
@@ -751,7 +755,7 @@ public partial class WordList
             return state.GoodSuggestion;
         }
 
-        private SpellCheckResult CheckDetails(string word) => new QueryCheck(WordList, Options).CheckDetails(word);
+        private SpellCheckResult CheckDetails(string word) => new QueryCheck(in _query).CheckDetails(word);
 
         /// <summary>
         /// perhaps we doubled two characters (pattern aba -> ababa, for example vacation -> vacacation)
@@ -799,7 +803,7 @@ public partial class WordList
         {
             if (Affix.TryString is { Length: > 0 } tryString)
             {
-                var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, Options.CancellationToken);
+                var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, _query.CancellationToken);
 
                 var candidate = state.GetBufferForWord();
 
@@ -886,7 +890,7 @@ public partial class WordList
         {
             if (Affix.TryString is { Length: > 0 })
             {
-                var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, Options.CancellationToken);
+                var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, _query.CancellationToken);
 
                 var word = state.Word;
                 var candidate = state.CandidateBuffer.Slice(0, word.Length + 1);
@@ -1079,7 +1083,7 @@ public partial class WordList
             }
 
             var candidate = string.Empty;
-            var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, Options.CancellationToken);
+            var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, _query.CancellationToken);
             MapRelated(word, ref candidate, wn: 0, wlst, cpdSuggest, timer);
         }
 

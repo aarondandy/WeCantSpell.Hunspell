@@ -49,12 +49,11 @@ public class OptionsTests
         verification.Should().NotBeEmpty();
 
         var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(fullRunTime.TotalMilliseconds * 0.1));
-        options.CancellationToken = cts.Token;
         stopwatch = Stopwatch.StartNew();
-        var actual = wordList.Suggest(word, options);
+        var actual = wordList.Suggest(word, cts.Token);
         stopwatch.Stop();
 
-        options.CancellationToken.IsCancellationRequested.Should().BeTrue();
+        cts.Token.IsCancellationRequested.Should().BeTrue();
         actual.Should().HaveCountLessThanOrEqualTo(verification.Count());
         stopwatch.Elapsed.Should().BeLessThan(fullRunTime);
     }

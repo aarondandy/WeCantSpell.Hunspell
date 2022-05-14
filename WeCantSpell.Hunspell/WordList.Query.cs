@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -16,13 +17,13 @@ public partial class WordList
 
         private static QueryOptions DefaultOptions { get; } = new();
 
-        internal Query(WordList wordList, QueryOptions? options)
+        internal Query(WordList wordList, QueryOptions? options, CancellationToken cancellationToken)
         {
             WordList = wordList;
             Affix = wordList.Affix;
             TextInfo = Affix.Culture.TextInfo;
             Options = options ?? DefaultOptions;
-
+            CancellationToken = cancellationToken;
             Prefix = null;
             //PrefixAppend = null;
             Suffix = null;
@@ -39,12 +40,21 @@ public partial class WordList
 
         public TextInfo TextInfo { get; }
 
+        /// <summary>
+        /// A cancellation token that can be used to request the termination of a check or suggest operation.
+        /// </summary>
+        /// <remarks>
+        /// Note that when cancellation is requested, operations may still take some time to stop.
+        /// Cancellation should never result in an exception from a check or suggest query but may
+        /// instead lead to incomplete results. Using cancellation can further impact the consistency
+        /// of results. Even without cancellation, the consistency of results can't be gauranteed
+        /// due to the use of timing checks throughout the code.
+        /// </remarks>
+        public CancellationToken CancellationToken { get; }
+
         private PrefixEntry? Prefix { get; set; }
 
-        /// <summary>
-        /// Previous prefix for counting syllables of the prefix.
-        /// </summary>
-        //private string? PrefixAppend { get; set; }
+        //private string? PrefixAppend { get; set; } // Previous prefix for counting syllables of the prefix.
 
         private SuffixEntry? Suffix { get; set; }
 
@@ -400,7 +410,7 @@ public partial class WordList
 
         public WordEntry? CompoundCheck(ReadOnlySpan<char> word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, bool isSug, ref SpellCheckResultType info)
         {
-            var opLimiter = new OperationTimedLimiter(Options.TimeLimitCompoundCheck, Options.CancellationToken);
+            var opLimiter = new OperationTimedLimiter(Options.TimeLimitCompoundCheck, CancellationToken);
             return CompoundCheck(word, wordNum, numSyllable, maxwordnum, words, rwords, huMovRule, isSug, ref info, ref opLimiter);
         }
 

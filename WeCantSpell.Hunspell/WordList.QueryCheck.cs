@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Threading;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -10,9 +11,14 @@ public partial class WordList
 {
     private struct QueryCheck
     {
-        public QueryCheck(WordList wordList, QueryOptions? options)
+        public QueryCheck(WordList wordList, QueryOptions? options, CancellationToken cancellationToken)
         {
-            _query = new(wordList, options);
+            _query = new(wordList, options, cancellationToken);
+        }
+
+        internal QueryCheck(in Query source)
+        {
+            _query = new(source.WordList, source.Options, source.CancellationToken);
         }
 
         private Query _query;
@@ -27,7 +33,7 @@ public partial class WordList
 
         public bool Check(ReadOnlySpan<char> word) => CheckDetails(word).Correct;
 
-        private bool CheckNested(ReadOnlySpan<char> word) => new QueryCheck(WordList, Options).Check(word);
+        private bool CheckNested(ReadOnlySpan<char> word) => new QueryCheck(in _query).Check(word);
 
         public SpellCheckResult CheckDetails(string word)
         {

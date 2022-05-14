@@ -48,6 +48,12 @@ struct OperationTimedLimiter
 
 sealed class OperationTimedCountLimiter
 {
+    /// <summary>
+    /// This is the number of operations that are added to a timer if it runs out of operations
+    /// before the time limit has expired.
+    /// </summary>
+    private const int MaxPlusTimer = 100;
+
     public OperationTimedCountLimiter(TimeSpan timeLimit, int countLimit, CancellationToken cancellationToken)
         : this((int)timeLimit.TotalMilliseconds, countLimit, cancellationToken)
     {
@@ -86,13 +92,17 @@ sealed class OperationTimedCountLimiter
             {
                 _hasTriggeredCancellation = true;
             }
-            else if (_counter > 0)
+            else if (_counter > 1)
             {
                 _counter--;
-                return false;
             }
-            else if (_expiresAtMs <= Environment.TickCount)
+            else if (_expiresAtMs > Environment.TickCount)
             {
+                _counter = MaxPlusTimer;
+            }
+            else
+            {
+                _counter = 0;
                 _hasTriggeredCancellation = true;
             }
         }

@@ -84,6 +84,4 @@ public sealed class QueryOptions
     /// A somewhat overall time limit for the suggestion algorithm.
     /// </summary>
     public TimeSpan TimeLimitSuggestGlobal { get; set; } = TimeSpan.FromMilliseconds(250);
-
-    public CancellationToken CancellationToken { get; set; } = CancellationToken.None;
 }

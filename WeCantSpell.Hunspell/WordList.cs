@@ -87,29 +87,53 @@ public sealed partial class WordList
 
     private TextDictionary<WordEntryDetail[]> NGramRestrictedDetails { get; set; }
 
-    public bool Check(string word) => Check(word, options: null);
+    public bool Check(string word) => Check(word, options: null, CancellationToken.None);
 
-    public bool Check(ReadOnlySpan<char> word) => Check(word, options: null);
+    public bool Check(ReadOnlySpan<char> word) => Check(word, options: null, CancellationToken.None);
 
-    public bool Check(string word, QueryOptions? options) => new QueryCheck(this, options).Check(word);
+    public bool Check(string word, QueryOptions? options) => Check(word, options, CancellationToken.None);
 
-    public bool Check(ReadOnlySpan<char> word, QueryOptions? options) => new QueryCheck(this, options).Check(word);
+    public bool Check(ReadOnlySpan<char> word, QueryOptions? options) => Check(word, options, CancellationToken.None);
 
-    public SpellCheckResult CheckDetails(string word) => CheckDetails(word, options: null);
+    public bool Check(string word, CancellationToken cancellationToken) => Check(word, options: null, cancellationToken);
 
-    public SpellCheckResult CheckDetails(ReadOnlySpan<char> word) => CheckDetails(word, options: null);
+    public bool Check(ReadOnlySpan<char> word, CancellationToken cancellationToken) => Check(word, options: null, cancellationToken);
 
-    public SpellCheckResult CheckDetails(string word, QueryOptions? options) => new QueryCheck(this, options).CheckDetails(word);
+    public bool Check(string word, QueryOptions? options, CancellationToken cancellationToken) => new QueryCheck(this, options, cancellationToken).Check(word);
 
-    public SpellCheckResult CheckDetails(ReadOnlySpan<char> word, QueryOptions? options) => new QueryCheck(this, options).CheckDetails(word);
+    public bool Check(ReadOnlySpan<char> word, QueryOptions? options, CancellationToken cancellationToken) => new QueryCheck(this, options, cancellationToken).Check(word);
 
-    public IEnumerable<string> Suggest(string word) => Suggest(word, options: null);
+    public SpellCheckResult CheckDetails(string word) => CheckDetails(word, options: null, CancellationToken.None);
 
-    public IEnumerable<string> Suggest(ReadOnlySpan<char> word) => Suggest(word, options: null);
+    public SpellCheckResult CheckDetails(ReadOnlySpan<char> word) => CheckDetails(word, options: null, CancellationToken.None);
 
-    public IEnumerable<string> Suggest(string word, QueryOptions? options) => new QuerySuggest(this, options).Suggest(word);
+    public SpellCheckResult CheckDetails(string word, QueryOptions? options) => CheckDetails(word, options, CancellationToken.None);
 
-    public IEnumerable<string> Suggest(ReadOnlySpan<char> word, QueryOptions? options) => new QuerySuggest(this, options).Suggest(word);
+    public SpellCheckResult CheckDetails(ReadOnlySpan<char> word, QueryOptions? options) => CheckDetails(word, options, CancellationToken.None);
+
+    public SpellCheckResult CheckDetails(string word, CancellationToken cancellationToken) => CheckDetails(word, options: null, cancellationToken);
+
+    public SpellCheckResult CheckDetails(ReadOnlySpan<char> word, CancellationToken cancellationToken) => CheckDetails(word, options: null, cancellationToken);
+
+    public SpellCheckResult CheckDetails(string word, QueryOptions? options, CancellationToken cancellationToken) => new QueryCheck(this, options, cancellationToken).CheckDetails(word);
+
+    public SpellCheckResult CheckDetails(ReadOnlySpan<char> word, QueryOptions? options, CancellationToken cancellationToken) => new QueryCheck(this, options, cancellationToken).CheckDetails(word);
+
+    public IEnumerable<string> Suggest(string word) => Suggest(word, options: null, CancellationToken.None);
+
+    public IEnumerable<string> Suggest(ReadOnlySpan<char> word) => Suggest(word, options: null, CancellationToken.None);
+
+    public IEnumerable<string> Suggest(string word, QueryOptions? options) => Suggest(word, options, CancellationToken.None);
+
+    public IEnumerable<string> Suggest(ReadOnlySpan<char> word, QueryOptions? options) => Suggest(word, options, CancellationToken.None);
+
+    public IEnumerable<string> Suggest(string word, CancellationToken cancellationToken) => Suggest(word, options: null, cancellationToken);
+
+    public IEnumerable<string> Suggest(ReadOnlySpan<char> word, CancellationToken cancellationToken) => Suggest(word, options: null, cancellationToken);
+
+    public IEnumerable<string> Suggest(string word, QueryOptions? options, CancellationToken cancellationToken) => new QuerySuggest(this, options, cancellationToken).Suggest(word);
+
+    public IEnumerable<string> Suggest(ReadOnlySpan<char> word, QueryOptions? options, CancellationToken cancellationToken) => new QuerySuggest(this, options, cancellationToken).Suggest(word);
 
     internal WordEntry? FindFirstEntryByRootWord(ReadOnlySpan<char> rootWord)
     {
