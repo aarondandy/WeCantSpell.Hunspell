@@ -17,15 +17,16 @@ public readonly struct MapTable : IReadOnlyList<MapEntry>
 #if DEBUG
         if (items is null) throw new ArgumentNullException(nameof(items));
 #endif
-        Entries = items;
+        _entries = items;
     }
 
-    internal MapEntry[] Entries { get; }
+    private readonly MapEntry[] _entries;
 
-    public int Count => Entries.Length;
+    public int Count => _entries.Length;
     public bool IsEmpty => !HasItems;
-    public bool HasItems => Entries is { Length: > 0 };
-    public MapEntry this[int index] => Entries[index];
-    public IEnumerator<MapEntry> GetEnumerator() => ((IEnumerable<MapEntry>)Entries).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => Entries.GetEnumerator();
+    public bool HasItems => _entries is { Length: > 0 };
+    public MapEntry this[int index] => _entries[index];
+    public IEnumerator<MapEntry> GetEnumerator() => ((IEnumerable<MapEntry>)_entries).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => _entries.GetEnumerator();
+    internal MapEntry[] GetInternalArray() => _entries;
 }

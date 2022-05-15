@@ -1106,15 +1106,15 @@ public partial class WordList
             }
 
             var inMap = false;
-            foreach (var mapEntry in Affix.RelatedCharacterMap.Entries)
+            foreach (var mapEntry in Affix.RelatedCharacterMap.GetInternalArray())
             {
-                foreach (var mapEntryValue in mapEntry.Items)
+                foreach (var mapEntryValue in mapEntry.GetInternalArray())
                 {
                     if (word.AsSpan(wn).StartsWith(mapEntryValue, StringComparison.Ordinal))
                     {
                         inMap = true;
                         var candidatePrefix = candidate;
-                        foreach (var otherMapEntryValue in mapEntry.Items)
+                        foreach (var otherMapEntryValue in mapEntry.GetInternalArray())
                         {
                             candidate = candidatePrefix + otherMapEntryValue;
                             MapRelated(word, ref candidate, wn + mapEntryValue.Length, wlst, cpdSuggest, timer);
@@ -1363,24 +1363,24 @@ public partial class WordList
                 return;
             }
 
-            foreach (var replacement in WordList.AllReplacements.Replacements)
+            foreach (var replacement in WordList.AllReplacements.GetInternalArray())
             {
-                if (replacement.Pattern is not { Length: > 0 } replacementPattern)
+                if (replacement.Pattern.Length == 0)
                 {
                     continue;
                 }
 
                 // search every occurence of the pattern in the word
                 for (
-                    var r = word.IndexOf(replacementPattern, StringComparison.Ordinal)
+                    var r = word.IndexOf(replacement.Pattern, StringComparison.Ordinal)
                     ;
                     r >= 0
                     ; 
-                    r = word.IndexOf(replacementPattern, r + 1, StringComparison.Ordinal) // search for the next letter
+                    r = word.IndexOf(replacement.Pattern, r + 1, StringComparison.Ordinal) // search for the next letter
                 )
                 {
                     var type = (r == 0) ? ReplacementValueType.Ini : ReplacementValueType.Med;
-                    if (r + replacementPattern.Length == word.Length)
+                    if (r + replacement.Pattern.Length == word.Length)
                     {
                         type |= ReplacementValueType.Fin;
                     }
@@ -1392,7 +1392,7 @@ public partial class WordList
 
                     if (replacement[type] is { Length: > 0 } replacementValue)
                     {
-                        var candidate = StringEx.ConcatString(word.AsSpan(0, r), replacementValue, word.AsSpan(r + replacementPattern.Length));
+                        var candidate = StringEx.ConcatString(word.AsSpan(0, r), replacementValue, word.AsSpan(r + replacement.Pattern.Length));
 
                         TestSug(wlst, candidate, cpdSuggest);
 

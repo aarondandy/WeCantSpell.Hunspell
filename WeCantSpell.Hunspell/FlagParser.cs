@@ -29,14 +29,23 @@ internal struct FlagParser
         return result;
     }
 
-    public bool TryParseFlag(ReadOnlySpan<char> text, out FlagValue value) => Mode switch
+    public bool TryParseFlag(ReadOnlySpan<char> text, out FlagValue value)
     {
-        FlagParsingMode.Char => FlagValue.TryParseAsChar(text, out value),
-        FlagParsingMode.Uni => TryParseFlagAsUnicode(text, out value),
-        FlagParsingMode.Long => FlagValue.TryParseAsLong(text, out value),
-        FlagParsingMode.Num => FlagValue.TryParseAsNumber(text, out value),
-        _ => throw new NotSupportedException()
-    };
+        return Mode switch
+        {
+            FlagParsingMode.Char => FlagValue.TryParseAsChar(text, out value),
+            FlagParsingMode.Uni => TryParseFlagAsUnicode(text, out value),
+            FlagParsingMode.Long => FlagValue.TryParseAsLong(text, out value),
+            FlagParsingMode.Num => FlagValue.TryParseAsNumber(text, out value),
+            _ => noOp(out value)
+        };
+
+        static bool noOp(out FlagValue value)
+        {
+            value = default!;
+            return false;
+        }
+    }
 
     private bool TryParseFlagAsUnicode(ReadOnlySpan<char> text, out FlagValue value) =>
         FlagValue.TryParseAsChar(ReDecodeConvertedStringAsUtf8(text, Encoding), out value);
@@ -47,7 +56,7 @@ internal struct FlagParser
         FlagParsingMode.Uni => ParseFlagsInOrderAsUnicode(text),
         FlagParsingMode.Long => FlagValue.ParseAsLongs(text),
         FlagParsingMode.Num => FlagValue.ParseAsNumbers(text),
-        _ => throw new NotSupportedException()
+        _ => ThrowNotSupportedFlagMode<FlagValue[]>()
     };
 
     private FlagValue[] ParseFlagsInOrderAsUnicode(ReadOnlySpan<char> text) => FlagValue.ParseAsChars(ReDecodeConvertedStringAsUtf8(text, Encoding));
@@ -58,7 +67,7 @@ internal struct FlagParser
         FlagParsingMode.Uni => ParseFlagSetAsUnicode(text),
         FlagParsingMode.Long => FlagSet.ParseAsLongs(text),
         FlagParsingMode.Num => FlagSet.ParseAsNumbers(text),
-        _ => throw new NotSupportedException()
+        _ => ThrowNotSupportedFlagMode<FlagSet>()
     };
 
     private FlagSet ParseFlagSetAsUnicode(ReadOnlySpan<char> text) => FlagSet.ParseAsChars(ReDecodeConvertedStringAsUtf8(text, Encoding));
@@ -93,5 +102,13 @@ internal struct FlagParser
         _ = encoding.GetBytes(decoded, buffer);
         return Encoding.UTF8.GetString(buffer.WrittenSpan).AsSpan();
 #endif
+    }
+
+#if !NO_EXPOSED_NULLANNOTATIONS
+    [System.Diagnostics.CodeAnalysis.DoesNotReturn]
+#endif
+    private static TResult ThrowNotSupportedFlagMode<TResult>()
+    {
+        throw new NotSupportedException("Flag mode is not supported");
     }
 }

@@ -83,8 +83,6 @@ public sealed partial class WordList
 
     private FlagSet NGramRestrictedFlags { get; set; }
 
-    private NGramAllowedEntriesEnumerator GetNGramAllowedDetailsByKeyLength(int minKeyLength, int maxKeyLength) => new(this, minKeyLength: minKeyLength, maxKeyLength: maxKeyLength);
-
     private TextDictionary<WordEntryDetail[]> NGramRestrictedDetails { get; set; }
 
     public bool Check(string word) => Check(word, options: null, CancellationToken.None);
@@ -135,21 +133,21 @@ public sealed partial class WordList
 
     public IEnumerable<string> Suggest(ReadOnlySpan<char> word, QueryOptions? options, CancellationToken cancellationToken) => new QuerySuggest(this, options, cancellationToken).Suggest(word);
 
-    internal WordEntry? FindFirstEntryByRootWord(ReadOnlySpan<char> rootWord)
+    private WordEntry? FindFirstEntryByRootWord(ReadOnlySpan<char> rootWord)
     {
         return EntriesByRoot.TryGetValue(rootWord, out var key, out var details) && details.Length > 0
             ? new WordEntry(key, details[0])
             : null;
     }
 
-    internal WordEntry? FindFirstEntryByRootWord(string rootWord)
+    private WordEntry? FindFirstEntryByRootWord(string rootWord)
     {
         return EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length > 0
             ? new WordEntry(rootWord, details[0])
             : null;
     }
 
-    internal WordEntryDetail[] FindEntryDetailsByRootWord(string rootWord)
+    private WordEntryDetail[] FindEntryDetailsByRootWord(string rootWord)
     {
 #if DEBUG
         if (rootWord is null) throw new ArgumentNullException(nameof(rootWord));
@@ -160,21 +158,21 @@ public sealed partial class WordList
             : Array.Empty<WordEntryDetail>();
     }
 
-    internal WordEntryDetail[] FindEntryDetailsByRootWord(ReadOnlySpan<char> rootWord)
+    private WordEntryDetail[] FindEntryDetailsByRootWord(ReadOnlySpan<char> rootWord)
     {
         return EntriesByRoot.TryGetValue(rootWord, out var details)
             ? details
             : Array.Empty<WordEntryDetail>();
     }
 
-    internal WordEntryDetail? FindFirstEntryDetailByRootWord(ReadOnlySpan<char> rootWord)
+    private WordEntryDetail? FindFirstEntryDetailByRootWord(ReadOnlySpan<char> rootWord)
     {
         return EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length != 0
             ? details[0]
             : null;
     }
 
-    internal bool TryFindFirstEntryDetailByRootWord(ReadOnlySpan<char> rootWord, out WordEntryDetail entryDetail)
+    private bool TryFindFirstEntryDetailByRootWord(ReadOnlySpan<char> rootWord, out WordEntryDetail entryDetail)
     {
         if (EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length > 0)
         {
@@ -186,7 +184,7 @@ public sealed partial class WordList
         return false;
     }
 
-    internal bool TryFindFirstEntryDetailByRootWord(string rootWord, out WordEntryDetail entryDetail)
+    private bool TryFindFirstEntryDetailByRootWord(string rootWord, out WordEntryDetail entryDetail)
     {
         if (EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length > 0)
         {
@@ -197,6 +195,8 @@ public sealed partial class WordList
         entryDetail = default;
         return false;
     }
+
+    private NGramAllowedEntriesEnumerator GetNGramAllowedDetailsByKeyLength(int minKeyLength, int maxKeyLength) => new(this, minKeyLength: minKeyLength, maxKeyLength: maxKeyLength);
 
     private struct NGramAllowedEntriesEnumerator
     {

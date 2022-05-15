@@ -17,15 +17,19 @@ public readonly struct SingleReplacementSet : IReadOnlyList<SingleReplacement>
 #if DEBUG
         if (replacements is null) throw new ArgumentNullException(nameof(replacements));
 #endif
-        Replacements = replacements;
+        _replacements = replacements;
     }
 
-    internal SingleReplacement[] Replacements { get; }
+    private readonly SingleReplacement[] _replacements;
 
-    public int Count => Replacements.Length;
+    public int Count => _replacements.Length;
     public bool IsEmpty => !HasItems;
-    public bool HasItems => Replacements is { Length: > 0 };
-    public SingleReplacement this[int index] => Replacements[index];
-    public IEnumerator<SingleReplacement> GetEnumerator() => ((IEnumerable<SingleReplacement>)Replacements).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => Replacements.GetEnumerator();
+    public bool HasItems => _replacements is { Length: > 0 };
+    public SingleReplacement this[int index] => _replacements[index];
+
+    public IEnumerator<SingleReplacement> GetEnumerator() => ((IEnumerable<SingleReplacement>)_replacements).GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => _replacements.GetEnumerator();
+
+    internal SingleReplacement[] GetInternalArray() => _replacements ?? Array.Empty<SingleReplacement>();
 }

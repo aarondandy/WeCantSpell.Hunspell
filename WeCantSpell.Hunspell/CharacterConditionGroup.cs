@@ -170,19 +170,4 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
 
         return text.IsEmpty;
     }
-
-    public sealed class Comparer : IEqualityComparer<CharacterConditionGroup>
-    {
-        public static Comparer Instance { get; } = new();
-
-        private Comparer()
-        {
-        }
-
-        public bool Equals(CharacterConditionGroup x, CharacterConditionGroup y) =>
-            x._items.SequenceEqual(y._items);
-
-        public int GetHashCode(CharacterConditionGroup obj) => 
-            ((IStructuralEquatable)obj._items).GetHashCode(EqualityComparer<CharacterCondition>.Default);
-    }
 }

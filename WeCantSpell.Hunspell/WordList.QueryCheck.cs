@@ -162,7 +162,7 @@ public partial class WordList
                     return new SpellCheckResult(root, resultType, false);
                 }
 
-                foreach (var breakEntry in Affix.BreakPoints.Entries)
+                foreach (var breakEntry in Affix.BreakPoints.GetInternalArray())
                 {
                     if (breakEntry.Length <= 1 || breakEntry.Length > scw.Length)
                     {
@@ -197,7 +197,7 @@ public partial class WordList
                 {
                     List<(string breakEntry, int found)>? reSearch = null;
                     // other patterns
-                    foreach (var breakEntry in Affix.BreakPoints.Entries)
+                    foreach (var breakEntry in Affix.BreakPoints.GetInternalArray())
                     {
                         var found = scw.IndexOf(breakEntry, 1, scw.Length - 2, StringComparison.Ordinal);
                         if (found >= 0)

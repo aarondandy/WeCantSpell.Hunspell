@@ -60,6 +60,16 @@ public sealed class ArrayBuilder<T>
         _values[Count++] = value;
     }
 
+    public void AddRange(IEnumerable<T> values)
+    {
+        if (values is null) throw new ArgumentNullException(nameof(values));
+
+        foreach (var value in values)
+        {
+            Add(value);
+        }
+    }
+
     public void AddRange(ICollection<T> values)
     {
         if (values is null) throw new ArgumentNullException(nameof(values));

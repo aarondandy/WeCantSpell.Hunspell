@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
@@ -18,9 +17,6 @@ static class CollectionsEx
         dictionary.TryGetValue(key, out var result) ? result : defaultValue;
 
 #endif
-
-    public static IEnumerable<TValue> WhereNotNull<TValue>(this IEnumerable<TValue?> values) where TValue : class =>
-        values!.Where<TValue>(static value => value is not null);
 
     public static int RemoveDuplicates<T>(this List<T> list, IEqualityComparer<T> comparer)
     {
@@ -88,54 +84,6 @@ static class CollectionsEx
 
     public static ImmutableArray<T> ToImmutable<T>(this ImmutableArray<T>.Builder builder, bool allowDestructive) =>
         allowDestructive && builder.Capacity == builder.Count ? builder.MoveToImmutable() : builder.ToImmutable();
-
-    public static int BinarySearch<T>(this ImmutableArray<T>.Builder builder, T value) where T : IComparable<T> =>
-        builder.BinarySearch(value, 0, builder.Count - 1);
-
-    public static int BinarySearch<T>(this ImmutableArray<T>.Builder builder, T value, int low, int high) where T : IComparable<T>
-    {
-        while (low <= high)
-        {
-            var mid = (low + high) / 2;
-
-            switch (builder[mid].CompareTo(value))
-            {
-                case 0: return mid;
-                case < 0:
-                    low = mid + 1;
-                    break;
-                default:
-                    high = mid - 1;
-                    break;
-            }
-        }
-
-        return ~low;
-    }
-
-    public static int BinarySearch<TValue>(this KeyValuePair<string, TValue>[] array, ReadOnlySpan<char> value, StringComparison comparison)
-    {
-        var low = 0;
-        var high = array.Length - 1;
-
-        while (low <= high)
-        {
-            var mid = (low + high) / 2;
-
-            switch (array[mid].Key.AsSpan().CompareTo(value, comparison))
-            {
-                case 0: return mid;
-                case < 0:
-                    low = mid + 1;
-                    break;
-                default:
-                    high = mid - 1;
-                    break;
-            }
-        }
-
-        return ~low;
-    }
 
     public static int RemoveSortedDuplicates<T>(ref T[] values) where T : notnull, IEquatable<T>
     {

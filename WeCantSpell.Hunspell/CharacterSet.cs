@@ -51,8 +51,8 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
         _values = values;
     }
 
-    private readonly char _mask;
     private readonly char[] _values;
+    private readonly char _mask;
 
     public int Count => _values.Length;
     public bool IsEmpty => !HasItems;
@@ -202,19 +202,6 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
     public override bool Equals(object? obj) => obj is CharacterSet set && Equals(set);
 
     public override int GetHashCode() => HashCode.Combine(Count, _mask);
-
-    public sealed class Comparer : IEqualityComparer<CharacterSet>
-    {
-        public static Comparer Instance { get; } = new();
-
-        private Comparer()
-        {
-        }
-
-        public bool Equals(CharacterSet x, CharacterSet y) => x._values.SequenceEqual(y._values);
-
-        public int GetHashCode(CharacterSet obj) => HashCode.Combine(obj.Count, obj._mask);
-    }
 
     public sealed class Builder
     {

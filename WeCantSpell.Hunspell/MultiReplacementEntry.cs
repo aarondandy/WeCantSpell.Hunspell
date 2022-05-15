@@ -27,7 +27,7 @@ public sealed class MultiReplacementEntry : ReplacementEntry
         ReplacementValueType.Ini => _ini,
         ReplacementValueType.Fin => _fin,
         ReplacementValueType.Isol => _isol,
-        _ => throw new ArgumentOutOfRangeException(nameof(type)),
+        _ => null,
     };
 
     internal void Set(ReplacementValueType type, string value)
@@ -46,7 +46,14 @@ public sealed class MultiReplacementEntry : ReplacementEntry
             case ReplacementValueType.Isol:
                 _isol = value;
                 break;
-            default: throw new ArgumentOutOfRangeException(nameof(type));
+            default:
+                throwOutOfRange();
+                break;
         }
+
+#if !NO_EXPOSED_NULLANNOTATIONS
+        [System.Diagnostics.CodeAnalysis.DoesNotReturn]
+#endif
+        static void throwOutOfRange() => throw new ArgumentOutOfRangeException(nameof(type));
     }
 }

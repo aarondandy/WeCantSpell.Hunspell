@@ -1727,16 +1727,16 @@ public partial class WordList
         {
             if (word.Length >= 2 && !WordList.AllReplacements.IsEmpty)
             {
-                foreach (var replacementEntry in WordList.AllReplacements.Replacements)
+                // use only available mid patterns
+                foreach (var replacementEntry in WordList.AllReplacements.GetInternalArray())
                 {
-                    // use only available mid patterns
-                    if (replacementEntry.Med is { Length: > 0 } replacement)
+                    if (replacementEntry.Med is { Length: > 0 })
                     {
                         // search every occurence of the pattern in the word
                         var rIndex = word.IndexOf(replacementEntry.Pattern.AsSpan());
                         while (rIndex >= 0)
                         {
-                            if (CandidateCheck(word.ReplaceIntoString(rIndex, replacementEntry.Pattern.Length, replacement)))
+                            if (CandidateCheck(word.ReplaceIntoString(rIndex, replacementEntry.Pattern.Length, replacementEntry.Med)))
                             {
                                 return true;
                             }

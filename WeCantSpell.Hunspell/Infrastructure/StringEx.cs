@@ -61,8 +61,6 @@ static class StringEx
 
     public static ReadOnlySpan<char> AsSpanRemoveFromEnd(this string @this, int toRemove) => @this.AsSpan(0, @this.Length - toRemove);
 
-    public static ReadOnlySpan<char> SliceRemoveFromEnd(this ReadOnlySpan<char> @this, int toRemove) => @this.Slice(0, @this.Length - toRemove);
-
     public static string ReplaceIntoString(this ReadOnlySpan<char> @this, int index, int removeCount, string replacement)
     {
         if (index == 0)
@@ -321,23 +319,6 @@ static class StringEx
         }
 
         return StringBuilderPool.GetStringAndReturn(builder);
-    }
-
-    public static ReadOnlySpan<char> GetReversed(this ReadOnlySpan<char> @this)
-    {
-        if (@this is not { Length: > 1 })
-        {
-            return @this;
-        }
-
-        var buffer = new char[@this.Length];
-        var lastIndex = @this.Length - 1;
-        for (var i = 0; i < buffer.Length; i++)
-        {
-            buffer[i] = @this[lastIndex - i];
-        }
-
-        return buffer.AsSpan();
     }
 
     public static string GetReversed(this string @this)

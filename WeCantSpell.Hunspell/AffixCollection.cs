@@ -101,7 +101,7 @@ namespace WeCantSpell.Hunspell;
 public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAffixEntry>>
     where TAffixEntry : AffixEntry
 {
-    internal AffixCollection()
+    protected AffixCollection()
     {
         _affixesByFlag = null!;
     }
@@ -282,7 +282,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
             return allNodes[0];
         }
 
-        public class GroupBuilder
+        public sealed class GroupBuilder
         {
             internal GroupBuilder(BuilderBase parent, FlagValue aFlag)
             {
@@ -381,19 +381,22 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
     {
         public AffixesByFlagsEnumerator(FlagSet flags, Dictionary<FlagValue, AffixGroup<TAffixEntry>> affixesByFlag)
         {
-            _flags = flags.GetEnumerator();
+            _flags = flags.GetInternalArray() ?? Array.Empty<FlagValue>();
+            _flagsIndex = 0;
             _byFlag = affixesByFlag;
             _group = null!;
             _groupIndex = 0;
-            Current = default!;
+            _current = default!;
         }
 
         private AffixGroup<TAffixEntry> _group;
-        private FlagSet.Enumerator _flags;
-        private int _groupIndex;
         private Dictionary<FlagValue, AffixGroup<TAffixEntry>> _byFlag;
+        private FlagValue[] _flags;
+        private TAffixEntry _current;
+        private int _flagsIndex;
+        private int _groupIndex;
 
-        public TAffixEntry Current { get; private set; }
+        public TAffixEntry Current => _current;
 
         public AffixesByFlagsEnumerator GetEnumerator() => this;
 
@@ -407,15 +410,15 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
                 }
             }
 
-            Current = _group!.Entries[_groupIndex++];
+            _current = _group!.Entries[_groupIndex++];
             return true;
         }
 
         private bool MoveNextGroup()
         {
-            while (_flags.MoveNext())
+            while (_flagsIndex < _flags.Length)
             {
-                if (_byFlag.TryGetValue(_flags.Current, out _group!) && _group.Entries.Length != 0)
+                if (_byFlag.TryGetValue(_flags[_flagsIndex++], out _group!) && _group.Entries.Length != 0)
                 {
                     _groupIndex = 0;
                     return true;
@@ -430,14 +433,16 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
     {
         public GroupsByFlagsEnumerator(FlagSet flags, Dictionary<FlagValue, AffixGroup<TAffixEntry>> byFlag)
         {
-            _flags = flags.GetEnumerator();
+            _flags = flags.GetInternalArray() ?? Array.Empty<FlagValue>();
+            _flagsIndex = 0;
             _byFlag = byFlag;
             _current = default!;
         }
 
         private Dictionary<FlagValue, AffixGroup<TAffixEntry>> _byFlag;
-        private FlagSet.Enumerator _flags;
         private AffixGroup<TAffixEntry> _current;
+        private FlagValue[] _flags;
+        private int _flagsIndex;
 
         public AffixGroup<TAffixEntry> Current => _current;
 
@@ -445,9 +450,9 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
         public bool MoveNext()
         {
-            while (_flags.MoveNext())
+            while (_flagsIndex < _flags.Length)
             {
-                if (_byFlag.TryGetValue(_flags.Current, out _current!))
+                if (_byFlag.TryGetValue(_flags[_flagsIndex++], out _current!))
                 {
                     return true;
                 }

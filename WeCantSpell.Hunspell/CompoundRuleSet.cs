@@ -200,7 +200,7 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
         return false;
     }
 
-    private class MetacharData
+    private sealed class MetacharData
     {
         /// <summary>
         /// Metacharacter (*, ?) position for backtracking.

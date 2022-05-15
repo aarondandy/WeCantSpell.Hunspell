@@ -27,7 +27,7 @@ public readonly struct CompoundRule : IReadOnlyList<FlagValue>
     public bool HasItems => _values is { Length: > 0 };
     public FlagValue this[int index] => _values[index];
     public IEnumerator<FlagValue> GetEnumerator() => ((IEnumerable<FlagValue>)_values).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_values).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => _values.GetEnumerator();
 
     internal bool IsWildcard(int index) => (char)_values[index] is '*' or '?';
 

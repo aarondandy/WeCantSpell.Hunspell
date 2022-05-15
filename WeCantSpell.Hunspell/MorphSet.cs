@@ -49,6 +49,14 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
     public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)_morphs).GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => _morphs.GetEnumerator();
 
+    public bool Equals(MorphSet other) => other._morphs.SequenceEqual(_morphs, StringComparer.Ordinal);
+
+    public override bool Equals(object? obj) => obj is MorphSet set && Equals(set);
+
+    public override int GetHashCode() => ((IStructuralEquatable)_morphs).GetHashCode(StringComparer.Ordinal);
+
+    public override string ToString() => Join(' ');
+
     internal string Join(string seperator) => string.Join(seperator, _morphs);
 
     internal string Join(char seperator) =>
@@ -58,26 +66,5 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
         string.Join(seperator, _morphs);
 #endif
 
-    public bool Equals(MorphSet other) => other._morphs.SequenceEqual(_morphs, StringComparer.Ordinal);
-
-    public override bool Equals(object? obj) => obj is MorphSet set && Equals(set);
-
-    public override int GetHashCode() => ((IStructuralEquatable)_morphs).GetHashCode(StringComparer.Ordinal);
-
-    public override string ToString() => Join(' ');
-
     internal string[] GetInternalArray() => _morphs;
-
-    public class Comparer : IEqualityComparer<MorphSet>
-    {
-        public static Comparer Instance { get; } = new();
-
-        private Comparer()
-        {
-        }
-
-        public bool Equals(MorphSet x, MorphSet y) => x.Equals(y);
-
-        public int GetHashCode(MorphSet obj) => obj.GetHashCode();
-    }
 }

@@ -83,7 +83,7 @@ public partial class WordList
                 }
                 else if (allowDestructive)
                 {
-                    PhoneticReplacements.AddRange(result.AllReplacements.Replacements);
+                    PhoneticReplacements.AddRange(result.AllReplacements);
                     result.AllReplacements = new(PhoneticReplacements.Extract());
                 }
                 else

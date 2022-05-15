@@ -53,6 +53,10 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
 
     public IEnumerable<MultiReplacementEntry> Values => _replacements.Values;
 
+    public IEnumerator<KeyValuePair<string, MultiReplacementEntry>> GetEnumerator() => _replacements.AsEnumerable().GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
     public bool ContainsKey(string key) => _replacements.ContainsKey(key);
 
     public bool TryGetValue(
@@ -161,8 +165,4 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
 
         return null;
     }
-
-    public IEnumerator<KeyValuePair<string, MultiReplacementEntry>> GetEnumerator() => _replacements.AsEnumerable().GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

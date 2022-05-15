@@ -19,18 +19,20 @@ public readonly struct BreakSet : IReadOnlyList<string>
 #if DEBUG
         if (entries is null) throw new ArgumentNullException(nameof(entries));
 #endif
-        Entries = entries;
+        _entries = entries;
     }
 
-    internal string[] Entries { get; }
+    private readonly string[] _entries;
 
-    public int Count => Entries.Length;
+    public int Count => _entries.Length;
     public bool IsEmpty => !HasItems;
-    public bool HasItems => Entries is { Length: > 0 };
-    public string this[int index] => Entries[index];
+    public bool HasItems => _entries is { Length: > 0 };
+    public string this[int index] => _entries[index];
 
-    public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)Entries).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => Entries.GetEnumerator();
+    public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)_entries).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => _entries.GetEnumerator();
+
+    internal string[] GetInternalArray() => _entries;
 
     /// <summary>
     /// Calculate break points for recursion limit.
@@ -41,7 +43,7 @@ public readonly struct BreakSet : IReadOnlyList<string>
 
         if (scw.Length != 0)
         {
-            foreach (var breakEntry in Entries)
+            foreach (var breakEntry in _entries)
             {
                 var pos = 0;
                 while ((pos = scw.IndexOf(breakEntry, pos, StringComparison.Ordinal)) >= 0)
@@ -64,7 +66,7 @@ public readonly struct BreakSet : IReadOnlyList<string>
 
         if (scw is { Length: > 0 })
         {
-            foreach (var breakEntry in Entries)
+            foreach (var breakEntry in _entries)
             {
                 var pos = 0;
                 while ((pos = scw.IndexOf(breakEntry, pos, StringComparison.Ordinal)) >= 0)
