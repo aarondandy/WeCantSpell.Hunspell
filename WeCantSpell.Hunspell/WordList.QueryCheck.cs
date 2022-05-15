@@ -39,19 +39,19 @@ public partial class WordList
         {
             if (string.IsNullOrEmpty(word) || word.Length >= MaxWordUtf8Len || !WordList.HasEntries)
             {
-                return new SpellCheckResult(false);
+                return SpellCheckResult.DefaultWrong;
             }
 
             if (word.StartsWith(Query.DefaultXmlTokenCheckPrefix, StringComparison.Ordinal))
             {
                 // Hunspell supports XML input of the simplified API (see manual)
-                return new SpellCheckResult(true);
+                return SpellCheckResult.DefaultCorrect;
             }
 
             if (HunspellTextFunctions.IsNumericWord(word.AsSpan()))
             {
                 // allow numbers with dots, dashes and commas (but forbid double separators: "..", "--" etc.)
-                return new SpellCheckResult(true);
+                return SpellCheckResult.DefaultCorrect;
             }
 
             // input conversion
@@ -64,7 +64,7 @@ public partial class WordList
 
             if (scw.Length == 0)
             {
-                return new SpellCheckResult(false);
+                return SpellCheckResult.DefaultWrong;
             }
 
             return CheckDetailsInternal(scw, capType, abbv);
@@ -74,19 +74,19 @@ public partial class WordList
         {
             if (word.IsEmpty || word.Length >= MaxWordUtf8Len || !WordList.HasEntries)
             {
-                return new SpellCheckResult(false);
+                return SpellCheckResult.DefaultWrong;
             }
 
             if (word.StartsWith(Query.DefaultXmlTokenCheckPrefix, StringComparison.Ordinal))
             {
                 // Hunspell supports XML input of the simplified API (see manual)
-                return new SpellCheckResult(true);
+                return SpellCheckResult.DefaultCorrect;
             }
 
             if (HunspellTextFunctions.IsNumericWord(word))
             {
                 // allow numbers with dots, dashes and commas (but forbid double separators: "..", "--" etc.)
-                return new SpellCheckResult(true);
+                return SpellCheckResult.DefaultCorrect;
             }
 
             // input conversion
@@ -103,7 +103,7 @@ public partial class WordList
 
             if (string.IsNullOrEmpty(scw))
             {
-                return new SpellCheckResult(false);
+                return SpellCheckResult.DefaultWrong;
             }
 
             return CheckDetailsInternal(scw, capType, abbv);
