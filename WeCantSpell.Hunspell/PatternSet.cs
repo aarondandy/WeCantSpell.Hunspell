@@ -1,44 +1,52 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell;
 
-public class PatternSet : ArrayWrapper<PatternEntry>
+public readonly struct PatternSet : IReadOnlyList<PatternEntry>
 {
-    public static readonly PatternSet Empty = TakeArray(ArrayEx<PatternEntry>.Empty);
+    public static PatternSet Empty { get; } = new(Array.Empty<PatternEntry>());
 
-    public static PatternSet Create(IEnumerable<PatternEntry> patterns) => patterns is null ? Empty : TakeArray(patterns.ToArray());
+    public static PatternSet Create(IEnumerable<PatternEntry> entries) =>
+        new((entries ?? throw new ArgumentNullException(nameof(entries))).ToArray());
 
-    internal static PatternSet TakeArray(PatternEntry[] patterns) => patterns is null ? Empty : new PatternSet(patterns);
-
-    private PatternSet(PatternEntry[] patterns) : base(patterns)
+    internal PatternSet(PatternEntry[] patterns)
     {
+#if DEBUG
+        if (patterns is null) throw new ArgumentNullException(nameof(patterns));
+#endif
+
+        _patterns = patterns;
     }
+
+    private readonly PatternEntry[] _patterns;
+
+    public int Count => _patterns.Length;
+    public bool IsEmpty => !HasItems;
+    public bool HasItems => _patterns is { Length: > 0 };
+    public PatternEntry this[int index] => _patterns[index];
+    public IEnumerator<PatternEntry> GetEnumerator() => ((IEnumerable<PatternEntry>)_patterns).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => _patterns.GetEnumerator();
 
     /// <summary>
     /// Forbid compoundings when there are special patterns at word bound.
     /// </summary>
-    internal bool Check(string word, int pos, WordEntry r1, WordEntry r2, bool affixed)
+    internal bool Check(ReadOnlySpan<char> word, int pos, WordEntry r1, WordEntry r2, bool affixed)
     {
 #if DEBUG
         if (r1 is null) throw new ArgumentNullException(nameof(r1));
         if (r2 is null) throw new ArgumentNullException(nameof(r2));
 #endif
 
-        var wordAfterPos = word.AsSpan(pos);
+        var wordAfterPos = word.Slice(pos);
 
-        foreach (var patternEntry in Items)
+        foreach (var patternEntry in _patterns)
         {
             if (
-                HunspellTextFunctions.IsSubset(patternEntry.Pattern2, wordAfterPos)
-                &&
                 (
                     patternEntry.Condition.IsZero
                     ||
@@ -58,6 +66,8 @@ public class PatternSet : ArrayWrapper<PatternEntry>
                     ||
                     PatternWordCheck(word, pos, patternEntry.Pattern.StartsWith('0') ? r1.Word : patternEntry.Pattern)
                 )
+                &&
+                HunspellTextFunctions.IsSubset(patternEntry.Pattern2, wordAfterPos)
             )
             {
                 return true;
@@ -67,10 +77,7 @@ public class PatternSet : ArrayWrapper<PatternEntry>
         return false;
     }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-    private static bool PatternWordCheck(string word, int pos, string other) =>
+    private static bool PatternWordCheck(ReadOnlySpan<char> word, int pos, string other) =>
         other.Length <= pos
-        && word.AsSpan(pos - other.Length).StartsWith(other.AsSpan());
+        && word.Slice(pos - other.Length).StartsWith(other.AsSpan());
 }

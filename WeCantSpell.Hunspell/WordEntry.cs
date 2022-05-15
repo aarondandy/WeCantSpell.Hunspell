@@ -1,39 +1,30 @@
 ﻿using System;
+using System.Diagnostics;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
+using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
+[DebuggerDisplay("Word = {Word}, {Detail}")]
 sealed class WordEntry : IEquatable<WordEntry>
 {
-    public static bool operator ==(WordEntry a, WordEntry b) => a is null ? b is null : a.Equals(b);
+    public static bool operator ==(WordEntry? a, WordEntry? b) => a is null ? b is null : a.Equals(b);
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-    public static bool operator !=(WordEntry a, WordEntry b) => !(a == b);
-
-    public WordEntry(string word, FlagSet flags, MorphSet morphs, WordEntryOptions options)
-        : this(word, new WordEntryDetail(flags, morphs, options)) { }
+    public static bool operator !=(WordEntry? a, WordEntry? b) => !(a == b);
 
     public WordEntry(string word, WordEntryDetail detail)
     {
         Word = word ?? string.Empty;
-        Detail = detail ?? WordEntryDetail.Default;
+        Detail = detail;
     }
 
     public string Word { get; }
 
     public WordEntryDetail Detail { get; }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public bool ContainsFlag(FlagValue flag) => Detail.ContainsFlag(flag);
 
-    public bool Equals(WordEntry other)
+    public bool Equals(WordEntry? other)
     {
         if (other is null)
         {
@@ -49,7 +40,7 @@ sealed class WordEntry : IEquatable<WordEntry>
             && other.Detail.Equals(Detail);
     }
 
-    public override bool Equals(object obj) => Equals(obj as WordEntry);
+    public override bool Equals(object? obj) => obj is WordEntry entry && Equals(entry);
 
-    public override int GetHashCode() => unchecked(Word.GetHashCode() ^ Detail.GetHashCode());
+    public override int GetHashCode() => HashCode.Combine(Word, Detail);
 }

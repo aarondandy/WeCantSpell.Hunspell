@@ -47,12 +47,7 @@ public class HunspellTests
             var expected = searchWord == dictionaryWord;
             var dictionaryBuilder = new WordList.Builder();
             dictionaryBuilder.InitializeEntriesByRoot(1);
-            dictionaryBuilder.Add(
-                dictionaryWord,
-                new WordEntryDetail(
-                    FlagSet.Empty,
-                    MorphSet.Empty,
-                    WordEntryOptions.None));
+            dictionaryBuilder.Add(dictionaryWord, WordEntryDetail.Default);
 
             var dictionary = dictionaryBuilder.ToImmutable();
 
@@ -79,28 +74,37 @@ public class HunspellTests
 
     public class CheckGoodWords : HunspellTests
     {
-        public static IEnumerable<object[]> can_find_good_words_in_dictionary_args =>
-            GetAllDataFilePaths("*.good")
-                .SelectMany(ToDictionaryWordTestData);
+        public static IEnumerable<object[]> can_find_good_words_in_dictionary_args
+        {
+            get
+            {
+                var results = GetAllDataFilePaths("*.good")
+                    .SelectMany(ToDictionaryWordTestData)
+                    // NOTE: These tests are bypassed because capitalization only works when the language is turkish and the UTF8 dic has no language applied
+                    .Where(t => !(t.dictionaryPath.EndsWith("base_utf.dic") && t.word.Contains('İ')))
+                    // Skips test: https://github.com/aarondandy/WeCantSpell.Hunspell/issues/49
+                    .Where(t => !(t.dictionaryPath.EndsWith("allcaps.dic") && t.word.EndsWith("Afrique", StringComparison.InvariantCultureIgnoreCase)));
+
+                return results.Select(t => new[] { t.dictionaryPath, t.word });
+            }
+        }
 
         [Theory, MemberData(nameof(can_find_good_words_in_dictionary_args))]
         public async Task can_find_good_words_in_dictionary(string dictionaryFilePath, string word)
         {
-            if (dictionaryFilePath.EndsWith("base_utf.dic") && word.Contains("İ"))
-            {
-                // NOTE: These tests are bypassed because capitalization only works when the language is turkish and the UTF8 dic has no language applied
-                return;
-            }
-
-            if (dictionaryFilePath.EndsWith("allcaps.dic") && word.EndsWith("Afrique", StringComparison.InvariantCultureIgnoreCase))
-            {
-                // Skips test: https://github.com/aarondandy/WeCantSpell.Hunspell/issues/49
-                return;
-            }
-
             var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
 
             var checkResult = dictionary.Check(word);
+
+            checkResult.Should().BeTrue();
+        }
+
+        [Theory, MemberData(nameof(can_find_good_words_in_dictionary_args))]
+        public async Task can_find_good_word_spans_in_dictionary(string dictionaryFilePath, string word)
+        {
+            var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
+
+            var checkResult = dictionary.Check(word.AsSpan());
 
             checkResult.Should().BeTrue();
         }
@@ -110,7 +114,8 @@ public class HunspellTests
     {
         public static IEnumerable<object[]> cant_find_wrong_words_in_dictionary_args =>
             GetAllDataFilePaths("*.wrong")
-                .SelectMany(ToDictionaryWordTestData);
+                .SelectMany(ToDictionaryWordTestData)
+                .Select(t => new object[] { t.dictionaryPath, t.word });
 
         [Theory, MemberData(nameof(cant_find_wrong_words_in_dictionary_args))]
         public async Task cant_find_wrong_words_in_dictionary(string dictionaryFilePath, string word)
@@ -199,16 +204,24 @@ public class HunspellTests
             actual.Should().BeEquivalentTo(expectedSuggestions);
         }
 
-        [Theory]
-        [InlineData("files/phone.dic", "Brasillian", new[] { "Brasilia", "Xxxxxxxxxx", "Brilliant", "Brazilian", "Brassily", "Brilliance" })]
-        public async Task words_offer_at_least_suggestions_in_any_order(string dictionaryFilePath, string word, string[] expectedSuggestions)
+        [Fact]
+        public async Task can_find_most_phone_suggestions()
         {
+            var dictionaryFilePath = "files/phone.dic";
+            var word = "Brasillian";
+            var minimumExpectedSuggestions = new[] { "Brasilia", "Xxxxxxxxxx", "Brilliant", "Brazilian", "Brassily", "Brilliance" };
+
             var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
 
-            var actual = dictionary.Suggest(word);
+            var actual = dictionary.Suggest(word, new QueryOptions
+            {
+                // Due to different internal dictionary orderings, the expected suggestions may not all appear unless we bring back more results
+                MaxPhoneticSuggestions = 5,
+                MaxSuggestions = 10
+            });
 
             actual.Should().NotBeNullOrEmpty();
-            actual.Should().Contain(expectedSuggestions);
+            actual.Should().Contain(minimumExpectedSuggestions);
         }
 
         public static IEnumerable<object[]> can_find_correct_best_suggestion_args()
@@ -235,9 +248,21 @@ public class HunspellTests
         [Theory, MemberData(nameof(can_find_correct_best_suggestion_args))]
         public async Task can_find_correct_best_suggestion(string dictionaryFilePath, string givenWord, string[] expectedSuggestions)
         {
+            QueryOptions options = null;
+
+            if (dictionaryFilePath.EndsWith("i35725.dic"))
+            {
+                // This one is pretty slow for some reason
+                options = new()
+                {
+                    TimeLimitCompoundSuggest = TimeSpan.FromSeconds(20),
+                    TimeLimitSuggestGlobal = TimeSpan.FromSeconds(20)
+                };
+            }
+
             var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
 
-            var actual = dictionary.Suggest(givenWord);
+            var actual = dictionary.Suggest(givenWord, options);
 
             actual.Should().NotBeNull();
 
@@ -250,12 +275,12 @@ public class HunspellTests
         [Fact]
         public void untested_suggestion_files_should_not_be_found()
         {
-            var untestedSets = GetSuggestionTestFileSets();
+            var untestedSets = GetSuggestionTestFileSets().Where(s => s.WrongLines.Count != s.SuggestionLines.Count);
 
-            untestedSets.Should().NotContain(s => s.WrongLines.Count != s.SuggestionLines.Count);
+            untestedSets.Should().BeEmpty();
         }
 
-        private static readonly HashSet<string> ExcludedSuggestionFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        private static readonly HashSet<string> ExcludedSuggestionFiles = new(StringComparer.OrdinalIgnoreCase)
         {
             "nosuggest",
             "onlyincompound",
@@ -335,21 +360,19 @@ public class HunspellTests
 
     protected static readonly char[] SpaceOrTab = { ' ', '\t' };
 
-    protected static IEnumerable<object[]> ToDictionaryWordTestData(string wordFilePath)
+    protected static IEnumerable<(string dictionaryPath, string word)> ToDictionaryWordTestData(string wordFilePath)
     {
         var dictionaryPath = Path.ChangeExtension(wordFilePath, "dic");
 
         return ExtractMultipleWordsFromWordFile(wordFilePath, Encoding.UTF8)
             .Distinct()
             .OrderBy(w => w, StringComparer.Ordinal)
-            .Select(line => new object[] { dictionaryPath, line });
+            .Select(line => (dictionaryPath, line));
     }
 
     protected static IEnumerable<string> ExtractLinesFromWordFile(string filePath, Encoding encoding, bool allowBlankLines = false)
     {
-        var results = StaticEncodingLineReader.ReadLines(filePath, encoding)
-            .Where(line => line != null)
-            .Select(line => line.Trim(SpaceOrTab));
+        var results = File.ReadAllLines(filePath, encoding).Select(line => line.Trim(SpaceOrTab));
 
         if (!allowBlankLines)
         {

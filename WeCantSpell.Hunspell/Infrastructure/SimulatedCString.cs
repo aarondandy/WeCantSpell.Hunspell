@@ -1,118 +1,166 @@
 ﻿using System;
-
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
+using System.Buffers;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
-ref struct SimulatedCString
+struct SimulatedCString
 {
-    public SimulatedCString(string text)
+    public SimulatedCString(int capacity)
     {
-        _buffer = text.ToCharArray();
-        _cachedSpan = _buffer.AsSpan();
-        _cachedString = null;
-        _cacheRequiresRefresh = true;
+        if (capacity <= 0)
+        {
+            capacity = 1;
+        }
+
+        _rawBuffer = ArrayPool<char>.Shared.Rent(capacity);
+        _bufferLength = capacity;
+        _rawBuffer[0] = '\0';
+        _terminatedLength = 0;
     }
 
-    private char[] _buffer;
-    private string _cachedString;
-    private Span<char> _cachedSpan;
-    private bool _cacheRequiresRefresh;
+    public SimulatedCString(ReadOnlySpan<char> text)
+    {
+        _rawBuffer = ArrayPool<char>.Shared.Rent(text.Length + 3); // 3 extra characters seems to be enough to prevent most reallocations
+        text.CopyTo(_rawBuffer.AsSpan(0, text.Length));
+        _bufferLength = text.Length;
+        _terminatedLength = -1;
+    }
+
+    private char[] _rawBuffer;
+    private int _bufferLength;
+    private int _terminatedLength;
+
+    public int BufferLength => _bufferLength;
+
+    public ReadOnlySpan<char> TerminatedSpan
+    {
+        get
+        {
+            if (_terminatedLength < 0)
+            {
+                _terminatedLength = Array.IndexOf(_rawBuffer, '\0', 0, _bufferLength);
+                if (_terminatedLength < 0)
+                {
+                    _terminatedLength = _bufferLength;
+                }
+            }
+
+            return _rawBuffer.AsSpan(0, _terminatedLength);
+        }
+    }
 
     public char this[int index]
     {
-        get => index < 0 || index >= _buffer.Length ? '\0' : _buffer[index];
+        get
+        {
+            return index >= 0 && index < _bufferLength ? _rawBuffer[index] : '\0';
+        }
         set
         {
-            ResetCache();
-            _buffer[index] = value;
-        }
-    }
-
-    public int BufferLength
-    {
-#if !NO_INLINE
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if DEBUG
+            if (index < 0 || index >= _bufferLength) throw new ArgumentOutOfRangeException(nameof(index));
 #endif
-        get => _buffer.Length;
+            _rawBuffer[index] = value;
+
+            if (value == '\0')
+            {
+                if (index < _terminatedLength)
+                {
+                    _terminatedLength = index;
+                }
+            }
+            else if (index == _terminatedLength)
+            {
+                _terminatedLength = -1;
+            }
+        }
     }
 
-    public void WriteChars(string text, int destinationIndex)
+    public ReadOnlySpan<char> SliceToTerminator(int startIndex)
     {
-        ResetCache();
-
-        var neededLength = text.Length + destinationIndex;
-        if (_buffer.Length < neededLength)
+        if (startIndex <= _terminatedLength)
         {
-            Array.Resize(ref _buffer, neededLength);
+            return _rawBuffer.AsSpan(startIndex, _terminatedLength - startIndex);
         }
 
-        text.CopyTo(0, _buffer, destinationIndex, text.Length);
+        var result = _rawBuffer.AsSpan(startIndex, _bufferLength - startIndex);
+        var index = result.IndexOf('\0');
+        if (index >= 0)
+        {
+            result = result.Slice(0, index);
+        }
+
+        return result;
+    }
+
+    public char Exchange(int index, char value)
+    {
+#if DEBUG
+        if (index < 0) throw new ArgumentOutOfRangeException(nameof(index));
+#endif
+
+        if (index >= _bufferLength)
+        {
+            return '\0';
+        }
+
+        var result = _rawBuffer[index];
+        this[index] = value;
+        return result;
     }
 
     public void WriteChars(ReadOnlySpan<char> text, int destinationIndex)
     {
-        ResetCache();
+        EnsureBufferCapacity(text.Length + destinationIndex);
 
-        var neededLength = text.Length + destinationIndex;
-        if (_buffer.Length < neededLength)
+        text.CopyTo(_rawBuffer.AsSpan(destinationIndex));
+
+        if (destinationIndex <= _terminatedLength)
         {
-            Array.Resize(ref _buffer, neededLength);
+            _terminatedLength = -1;
         }
-
-        text.CopyTo(_buffer.AsSpan(destinationIndex));
     }
 
-    public void Assign(string text)
+    public void Assign(ReadOnlySpan<char> text)
     {
 #if DEBUG
-        if (text is null) throw new ArgumentNullException(nameof(text));
-        if (text.Length > _buffer.Length) throw new ArgumentOutOfRangeException(nameof(text));
+        if (text.Length > _bufferLength) throw new ArgumentOutOfRangeException(nameof(text));
 #endif
-        ResetCache();
 
-        text.CopyTo(0, _buffer, 0, text.Length);
+        var buffer = _rawBuffer.AsSpan(0, _bufferLength);
+        text.CopyTo(buffer);
 
-        if (text.Length < _buffer.Length)
+        if (text.Length < buffer.Length)
         {
-            Array.Clear(_buffer, text.Length, _buffer.Length - text.Length);
+            buffer.Slice(text.Length).Clear();
         }
+
+        _terminatedLength = -1;
     }
 
     public void Destroy()
     {
-        ResetCache();
-        _buffer = null;
-    }
-
-    public override string ToString() =>
-        _cachedString ?? (_cachedString = GetTerminatedSpan().ToString());
-
-    public Span<char> GetTerminatedSpan()
-    {
-        if (_cacheRequiresRefresh)
+        if (_rawBuffer.Length != 0)
         {
-            _cacheRequiresRefresh = false;
-            _cachedSpan = _buffer.AsSpan(0, FindTerminatedLength());
+            ArrayPool<char>.Shared.Return(_rawBuffer);
+            _rawBuffer = Array.Empty<char>();
+            _bufferLength = 0;
         }
-
-        return _cachedSpan;
     }
 
-    private void ResetCache()
+    private void EnsureBufferCapacity(int neededLength)
     {
-        _cacheRequiresRefresh = true;
-        _cachedString = null;
-    }
+        if (_bufferLength < neededLength)
+        {
+            if (_rawBuffer.Length < neededLength)
+            {
+                var newBuffer = ArrayPool<char>.Shared.Rent(neededLength);
+                Array.Copy(_rawBuffer, newBuffer, _bufferLength);
+                ArrayPool<char>.Shared.Return(_rawBuffer);
+                _rawBuffer = newBuffer;
+            }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-    private int FindTerminatedLength()
-    {
-        var length = Array.IndexOf(_buffer, '\0');
-        return length < 0 ? _buffer.Length : length;
+            _bufferLength = neededLength;
+        }
     }
 }

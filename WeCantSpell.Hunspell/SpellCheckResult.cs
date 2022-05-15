@@ -1,17 +1,17 @@
-﻿namespace WeCantSpell.Hunspell;
+﻿using System.Diagnostics;
 
-public struct SpellCheckResult
+namespace WeCantSpell.Hunspell;
+
+[DebuggerDisplay("{Correct}: Info = {Info}, Root = {Root}")]
+public readonly struct SpellCheckResult
 {
-    public SpellCheckResult(bool correct)
-    {
-        Root = null;
-        Info = SpellCheckResultType.None;
-        Correct = correct;
-    }
+    public static SpellCheckResult DefaultCorrect { get; } = new SpellCheckResult(root: null, SpellCheckResultType.None, correct: true);
 
-    public SpellCheckResult(string root, SpellCheckResultType info, bool correct)
+    public static SpellCheckResult DefaultWrong { get; } = new SpellCheckResult(root: null, SpellCheckResultType.None, correct: false);
+
+    public SpellCheckResult(string? root, SpellCheckResultType info, bool correct)
     {
-        Root = root;
+        Root = root ?? string.Empty;
         Info = info;
         Correct = correct;
     }

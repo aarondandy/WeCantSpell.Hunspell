@@ -2,6 +2,9 @@
 
 namespace WeCantSpell.Hunspell;
 
+/// <remarks>
+/// The numeric values assigned to these labels may be used for arithetic so they should not be changed.
+/// </remarks>
 [Flags]
 public enum ReplacementValueType : byte
 {

@@ -6,7 +6,7 @@ namespace WeCantSpell.Hunspell.Benchmarking.NHunspell;
 
 public class WordCheckWeCantSpellHunspellPerfSpec : EnWordPerfBase
 {
-    private Counter _wordsChecked;
+    private Counter WordsChecked;
     private WordList _checker;
 
     [PerfSetup]
@@ -18,7 +18,7 @@ public class WordCheckWeCantSpellHunspellPerfSpec : EnWordPerfBase
         var filesDirectory = Path.Combine(Path.GetDirectoryName(testAssemblyPath), "files/");
         _checker = WordList.CreateFromFiles(Path.Combine(filesDirectory, "English (American).dic"));
 
-        _wordsChecked = context.GetCounter(nameof(_wordsChecked));
+        WordsChecked = context.GetCounter(nameof(WordsChecked));
     }
 
     [PerfBenchmark(
@@ -28,14 +28,13 @@ public class WordCheckWeCantSpellHunspellPerfSpec : EnWordPerfBase
         TestMode = TestMode.Measurement)]
     [MemoryMeasurement(MemoryMetric.TotalBytesAllocated)]
     [GcMeasurement(GcMetric.TotalCollections, GcGeneration.AllGc)]
-    [TimingMeasurement]
-    [CounterMeasurement(nameof(_wordsChecked))]
+    [CounterThroughputAssertion(nameof(WordsChecked), MustBe.GreaterThanOrEqualTo, 250_000)]
     public void Benchmark(BenchmarkContext context)
     {
         foreach (var word in Words)
         {
             _ = _checker.Check(word);
-            _wordsChecked.Increment();
+            WordsChecked.Increment();
         }
     }
 }

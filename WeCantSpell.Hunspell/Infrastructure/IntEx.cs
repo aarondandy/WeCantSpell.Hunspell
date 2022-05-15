@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Globalization;
 
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
-
 namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class IntEx
@@ -43,7 +39,7 @@ static class IntEx
 
         for (int i = text.Length - 2, multiplier = 10; i >= 0; i--, multiplier *= 10)
         {
-            if (!TryParseInvariant(text[i], out int digit))
+            if (!TryParseInvariant(text[i], out var digit))
             {
                 return false;
             }
@@ -59,28 +55,26 @@ static class IntEx
         return true;
     }
 
-    public static int? TryParseInvariant(ReadOnlySpan<char> text) =>
-        TryParseInvariant(text, out int value) ? value : default(int?);
+    public static int? TryParseInvariant(ReadOnlySpan<char> text) => TryParseInvariant(text, out var value) ? value : null;
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
+    /// <remarks>
+    /// This is a strange implementation of a postfix increment to remove the use of an
+    /// int in these cases.
+    /// </remarks>
     public static bool InversePostfixIncrement(ref bool b)
     {
         if (b)
         {
             return false;
         }
-        else
-        {
-            b = true;
-            return true;
-        }
+
+        b = true;
+        return true;
     }
 
     private static bool TryParseInvariant(char character, out int value)
     {
-        if (character >= '0' && character <= '9')
+        if (character is >= '0' and <= '9')
         {
             value = character - '0';
             return true;

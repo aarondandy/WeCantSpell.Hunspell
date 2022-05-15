@@ -17,17 +17,15 @@ public class EnWordSuggestPerfSpec : EnWordPerfBase
 
     [PerfBenchmark(
         Description = "Ensure that words can be suggested quickly.",
-        NumberOfIterations = 3,
+        NumberOfIterations = 1,
         RunMode = RunMode.Throughput,
         TestMode = TestMode.Measurement)]
     [MemoryMeasurement(MemoryMetric.TotalBytesAllocated)]
     [GcMeasurement(GcMetric.TotalCollections, GcGeneration.AllGc)]
-    [TimingMeasurement]
-    [CounterMeasurement(nameof(SuggestionQueries))]
     [CounterThroughputAssertion(nameof(SuggestionQueries), MustBe.GreaterThanOrEqualTo, 30)]
     public void Benchmark(BenchmarkContext context)
     {
-        foreach (var word in Words.Take(100)) // TODO: remove the limit to allow the entire list when performance allows
+        foreach (var word in Words.Take(1000)) // TODO: remove the limit to allow the entire list when performance allows
         {
             _ = Checker.Suggest(word);
             SuggestionQueries.Increment();

@@ -18,6 +18,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeCantSpell.Hunspell.Tests"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeCantSpell.Hunspell.Benchmarking.NHunspell", "WeCantSpell.Hunspell.Benchmarking.NHunspell\WeCantSpell.Hunspell.Benchmarking.NHunspell.csproj", "{D4955F32-5E3C-4B68-8EFE-66B0162F9581}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestHarness", "TestHarness\TestHarness.csproj", "{BA7E989D-7164-4A93-B9D9-9587DB2E5B65}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,6 +46,10 @@ Global
 		{D4955F32-5E3C-4B68-8EFE-66B0162F9581}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D4955F32-5E3C-4B68-8EFE-66B0162F9581}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D4955F32-5E3C-4B68-8EFE-66B0162F9581}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA7E989D-7164-4A93-B9D9-9587DB2E5B65}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA7E989D-7164-4A93-B9D9-9587DB2E5B65}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA7E989D-7164-4A93-B9D9-9587DB2E5B65}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA7E989D-7164-4A93-B9D9-9587DB2E5B65}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

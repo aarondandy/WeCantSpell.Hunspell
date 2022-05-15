@@ -1,30 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
-
-#if !NO_INLINE
-using System.Runtime.CompilerServices;
-#endif
+using System.Linq;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
-class IncrementalWordList
+sealed class IncrementalWordList
 {
-    public IncrementalWordList()
-        : this(new List<WordEntryDetail>(), 0) { }
+    public IncrementalWordList() : this(new(), 0)
+    {
+    }
 
-    public IncrementalWordList(List<WordEntryDetail> words, int wNum)
+    public IncrementalWordList(List<WordEntryDetail?> words, int wNum)
     {
 #if DEBUG
-        if (words is null) throw new ArgumentNullException(nameof(words));
-        if (WNum < 0) throw new ArgumentOutOfRangeException(nameof(wNum));
+        if (wNum < 0) throw new ArgumentOutOfRangeException(nameof(wNum));
 #endif
         Words = words;
         WNum = wNum;
     }
 
-    public List<WordEntryDetail> Words { get; }
-
-    public int WNum { get; }
+    internal readonly List<WordEntryDetail?> Words;
+    internal readonly int WNum;
 
     public void SetCurrent(WordEntryDetail value)
     {
@@ -38,16 +34,7 @@ class IncrementalWordList
         }
         else
         {
-            appendWithLeadingBlanks();
-            void appendWithLeadingBlanks()
-            {
-                for (var i = WNum - Words.Count; i > 0; i--)
-                {
-                    Words.Add(null);
-                }
-
-                Words.Add(value);
-            }
+            Words.AddRange(Enumerable.Repeat<WordEntryDetail?>(null, Math.Max(WNum - Words.Count, 0)).Append(value));
         }
     }
 
@@ -59,17 +46,11 @@ class IncrementalWordList
         }
     }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public bool CheckIfCurrentIsNotNull() => CheckIfNotNull(WNum);
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public bool CheckIfNextIsNotNull() => CheckIfNotNull(WNum + 1);
 
-    private bool CheckIfNotNull(int index) => (index < Words.Count) && Words[index] is not null;
+    private bool CheckIfNotNull(int index) => index < Words.Count && Words[index] is not null;
 
     public bool ContainsFlagAt(int wordIndex, FlagValue flag)
     {
@@ -77,20 +58,10 @@ class IncrementalWordList
         if (wordIndex < 0) throw new ArgumentOutOfRangeException(nameof(wordIndex));
 #endif
 
-        if (wordIndex < Words.Count)
-        {
-            var detail = Words[wordIndex];
-            if (detail != null)
-            {
-                return detail.ContainsFlag(flag);
-            }
-        }
-
-        return false;
+        return wordIndex < Words.Count
+            && Words[wordIndex] is { } detail
+            && detail.ContainsFlag(flag);
     }
 
-#if !NO_INLINE
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
     public IncrementalWordList CreateIncremented() => new(Words, WNum + 1);
 }

@@ -1,0 +1,1 @@
+This folder holds temporary test data and other items that should not be commited to source control.

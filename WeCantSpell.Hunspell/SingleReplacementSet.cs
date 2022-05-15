@@ -1,19 +1,35 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
-
-using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
-public sealed class SingleReplacementSet : ArrayWrapper<SingleReplacement>
+public readonly struct SingleReplacementSet : IReadOnlyList<SingleReplacement>
 {
-    public static readonly SingleReplacementSet Empty = TakeArray(ArrayEx<SingleReplacement>.Empty);
+    public static SingleReplacementSet Empty { get; } = new(Array.Empty<SingleReplacement>());
 
-    public static SingleReplacementSet Create(IEnumerable<SingleReplacement> replacements) => replacements is null ? Empty : TakeArray(replacements.ToArray());
+    public static SingleReplacementSet Create(IEnumerable<SingleReplacement> replacements) =>
+        new((replacements ?? throw new ArgumentNullException(nameof(replacements))).ToArray());
 
-    internal static SingleReplacementSet TakeArray(SingleReplacement[] replacements) => replacements is null ? Empty : new SingleReplacementSet(replacements);
-
-    private SingleReplacementSet(SingleReplacement[] replacements) : base(replacements)
+    internal SingleReplacementSet(SingleReplacement[] replacements)
     {
+#if DEBUG
+        if (replacements is null) throw new ArgumentNullException(nameof(replacements));
+#endif
+        _replacements = replacements;
     }
+
+    private readonly SingleReplacement[] _replacements;
+
+    public int Count => _replacements.Length;
+    public bool IsEmpty => !HasItems;
+    public bool HasItems => _replacements is { Length: > 0 };
+    public SingleReplacement this[int index] => _replacements[index];
+
+    public IEnumerator<SingleReplacement> GetEnumerator() => ((IEnumerable<SingleReplacement>)_replacements).GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => _replacements.GetEnumerator();
+
+    internal SingleReplacement[] GetInternalArray() => _replacements ?? Array.Empty<SingleReplacement>();
 }

@@ -1,34 +1,39 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
-
-using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
-public sealed class CompoundRule : ArrayWrapper<FlagValue>
+public readonly struct CompoundRule : IReadOnlyList<FlagValue>
 {
-    public static readonly CompoundRule Empty = TakeArray(ArrayEx<FlagValue>.Empty);
+    public static CompoundRule Empty { get; } = new(Array.Empty<FlagValue>());
 
-    public static CompoundRule Create(List<FlagValue> values) => values is null ? Empty : TakeArray(values.ToArray());
+    public static CompoundRule Create(IEnumerable<FlagValue> values) =>
+        new((values ?? throw new ArgumentNullException(nameof(values))).ToArray());
 
-    public static CompoundRule Create(IEnumerable<FlagValue> values) => values is null ? Empty : TakeArray(values.ToArray());
-
-    internal static CompoundRule TakeArray(FlagValue[] values) => values is null ? Empty : new CompoundRule(values);
-
-    private CompoundRule(FlagValue[] values)
-        : base(values)
+    internal CompoundRule(FlagValue[] items)
     {
+#if DEBUG
+        if (items is null) throw new ArgumentNullException(nameof(items));
+#endif
+        _values = items;
     }
 
-    public bool IsWildcard(int index)
-    {
-        var value = this[index];
-        return value == '*' || value == '?';
-    }
+    private readonly FlagValue[] _values;
 
-    internal bool ContainsRuleFlagForEntry(WordEntryDetail details)
+    public int Count => _values.Length;
+    public bool IsEmpty => !HasItems;
+    public bool HasItems => _values is { Length: > 0 };
+    public FlagValue this[int index] => _values[index];
+    public IEnumerator<FlagValue> GetEnumerator() => ((IEnumerable<FlagValue>)_values).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => _values.GetEnumerator();
+
+    internal bool IsWildcard(int index) => (char)_values[index] is '*' or '?';
+
+    internal bool ContainsRuleFlagForEntry(in WordEntryDetail details)
     {
-        foreach (var flag in Items)
+        foreach (var flag in _values)
         {
             if (!flag.IsWildcard && details.ContainsFlag(flag))
             {

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -9,116 +10,94 @@ public partial class WordList
 {
     public sealed class Builder
     {
-        public Builder() : this(null, null, null)
+        public Builder() : this(new AffixConfig.Builder().MoveToImmutable())
         {
         }
 
-        public Builder(AffixConfig affix) : this(affix, null, null)
-        {
-        }
-
-        internal Builder(AffixConfig affix, Deduper<FlagSet> flagSetDeduper, Deduper<MorphSet> morphSet)
+        public Builder(AffixConfig affix)
         {
             Affix = affix;
-            FlagSetDeduper = flagSetDeduper ?? new Deduper<FlagSet>(FlagSet.DefaultComparer);
-            FlagSetDeduper.Add(FlagSet.Empty);
-            MorphSetDeduper = morphSet ?? new Deduper<MorphSet>(MorphSet.DefaultComparer);
-            MorphSetDeduper.Add(MorphSet.Empty);
-            WordEntryDetailDeduper = new Deduper<WordEntryDetail>(EqualityComparer<WordEntryDetail>.Default);
-            WordEntryDetailDeduper.Add(WordEntryDetail.Default);
+            EntryDetailsByRoot = new(1);
         }
 
-        private Dictionary<string, List<WordEntryDetail>> EntryDetailsByRoot;
+        internal TextDictionary<WordEntryDetail[]> EntryDetailsByRoot;
 
         public readonly AffixConfig Affix;
 
         /// <summary>
         /// Spelling replacement suggestions based on phonetics.
         /// </summary>
-        public List<SingleReplacement> PhoneticReplacements;
+        public ArrayBuilder<SingleReplacement> PhoneticReplacements { get; } = new();
 
-        internal readonly Deduper<FlagSet> FlagSetDeduper;
-
-        internal readonly Deduper<MorphSet> MorphSetDeduper;
-
-        internal readonly Deduper<WordEntryDetail> WordEntryDetailDeduper;
+        public void Add(string word)
+        {
+            Add(word, WordEntryDetail.Default);
+        }
 
         public void Add(string word, WordEntryDetail detail)
         {
-            var details = GetOrCreateDetailList(word);
-
-            details.Add(detail);
-        }
-
-        internal List<WordEntryDetail> GetOrCreateDetailList(string word)
-        {
-            if (!EntryDetailsByRoot.TryGetValue(word, out List<WordEntryDetail> details))
+            ref var details = ref EntryDetailsByRoot.GetOrAdd(word);
+            if (details is null)
             {
-                details = new List<WordEntryDetail>(2);
-                EntryDetailsByRoot.Add(word, details);
-            }
-
-            return details;
-        }
-
-        public WordList ToImmutable() =>
-            ToImmutable(destructive: false);
-
-        public WordList MoveToImmutable() =>
-            ToImmutable(destructive: true);
-
-        private WordList ToImmutable(bool destructive)
-        {
-            var affix = Affix ?? new AffixConfig.Builder().MoveToImmutable();
-
-            var result = new WordList(affix);
-            result.NGramRestrictedFlags = Dedup(FlagSet.Create(new[]
-            {
-                affix.ForbiddenWord,
-                affix.NoSuggest,
-                affix.NoNgramSuggest,
-                affix.OnlyInCompound,
-                SpecialFlags.OnlyUpcaseFlag
-            }));
-
-            if (EntryDetailsByRoot is null)
-            {
-                result.EntriesByRoot = new Dictionary<string, WordEntryDetail[]>();
+                details = new[] { detail };
             }
             else
             {
-                result.EntriesByRoot = new Dictionary<string, WordEntryDetail[]>(EntryDetailsByRoot.Count);
-                foreach (var pair in EntryDetailsByRoot)
-                {
-                    result.EntriesByRoot.Add(pair.Key, pair.Value.ToArray());
-                }
+                Array.Resize(ref details, details.Length + 1);
+                details[details.Length - 1] = detail;
+            }
+        }
 
-                if (destructive)
-                {
-                    EntryDetailsByRoot = null;
-                }
+        public WordList ToImmutable() => ToImmutable(allowDestructive: false);
+
+        public WordList MoveToImmutable() => ToImmutable(allowDestructive: true);
+
+        public WordList ToImmutable(bool allowDestructive)
+        {
+            var result = new WordList(Affix, FlagSet.Create(new[]
+            {
+                Affix.ForbiddenWord,
+                Affix.NoSuggest,
+                Affix.NoNgramSuggest,
+                Affix.OnlyInCompound,
+                SpecialFlags.OnlyUpcaseFlag
+            }));
+
+            if (allowDestructive)
+            {
+                result.EntriesByRoot = EntryDetailsByRoot;
+                EntryDetailsByRoot = new(1);
+            }
+            else
+            {
+                result.EntriesByRoot = TextDictionary<WordEntryDetail[]>.Clone(EntryDetailsByRoot, static v => v.ToArray());
             }
 
-            result.AllReplacements = affix.Replacements;
-            if (PhoneticReplacements != null && PhoneticReplacements.Count != 0)
+            result.AllReplacements = Affix.Replacements;
+            if (PhoneticReplacements is { Count: > 0 })
             {
                 // store ph: field of a morphological description in reptable
                 if (result.AllReplacements.IsEmpty)
                 {
-                    result.AllReplacements = SingleReplacementSet.Create(PhoneticReplacements);
+                    result.AllReplacements = new(PhoneticReplacements.MakeOrExtractArray(allowDestructive));
+                }
+                else if (allowDestructive)
+                {
+                    PhoneticReplacements.AddRange(result.AllReplacements);
+                    result.AllReplacements = new(PhoneticReplacements.Extract());
                 }
                 else
                 {
-                    result.AllReplacements = SingleReplacementSet.Create(result.AllReplacements.Concat(PhoneticReplacements));
+                    result.AllReplacements = SingleReplacementSet.Create(PhoneticReplacements.MakeArray().Concat(result.AllReplacements));
                 }
             }
 
-            result.NGramRestrictedDetails = new Dictionary<string, WordEntryDetail[]>();
-
-            var details = new List<WordEntryDetail>();
+            var details = new ArrayBuilder<WordEntryDetail>();
             foreach (var rootSet in result.EntriesByRoot)
             {
                 details.Clear();
+                details.GrowToCapacity(1);
+
                 foreach (var entry in rootSet.Value)
                 {
                     if (result.NGramRestrictedFlags.ContainsAny(entry.Flags))
@@ -129,7 +108,7 @@ public partial class WordList
 
                 if (details.Count != 0)
                 {
-                    result.NGramRestrictedDetails.Add(rootSet.Key, details.ToArray());
+                    result.NGramRestrictedDetails.Add(rootSet.Key, details.Extract());
                 }
             }
 
@@ -138,34 +117,17 @@ public partial class WordList
 
         public void InitializeEntriesByRoot(int expectedSize)
         {
-            if (EntryDetailsByRoot != null)
+            // PERF: because we add more entries than we are told about, we add a bit more to the expected size
+            var expectedCapacity = (expectedSize / 100) + expectedSize;
+
+#if NO_HASHSET_CAPACITY
+            if (EntryDetailsByRoot.Count == 0)
             {
-                return;
+                EntryDetailsByRoot = new(expectedCapacity);
             }
-
-            EntryDetailsByRoot = expectedSize <= 0
-                ? new Dictionary<string, List<WordEntryDetail>>()
-                // PERF: because we add more entries than we are told about, we add a bit more to the expected size
-                : new Dictionary<string, List<WordEntryDetail>>((expectedSize / 100) + expectedSize);
+#else
+            EntryDetailsByRoot.EnsureCapacity(expectedCapacity);
+#endif
         }
-
-        public FlagSet Dedup(FlagSet value) =>
-            value == null
-            ? value
-            : value.Count == 0
-            ? FlagSet.Empty
-            : FlagSetDeduper.GetEqualOrAdd(value);
-
-        public MorphSet Dedup(MorphSet value) =>
-            value == null
-            ? value
-            : value.Count == 0
-            ? MorphSet.Empty
-            : MorphSetDeduper.GetEqualOrAdd(value);
-
-        public WordEntryDetail Dedup(WordEntryDetail value) =>
-            value == null
-            ? value
-            : WordEntryDetailDeduper.GetEqualOrAdd(value);
     }
 }

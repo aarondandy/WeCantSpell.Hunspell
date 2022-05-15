@@ -1,27 +1,41 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
-public sealed class CompoundRuleSet : ArrayWrapper<CompoundRule>
+public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
 {
-    public static readonly CompoundRuleSet Empty = TakeArray(ArrayEx<CompoundRule>.Empty);
+    public static CompoundRuleSet Empty { get; } = new(Array.Empty<CompoundRule>());
 
-    public static CompoundRuleSet Create(IEnumerable<CompoundRule> rules) => rules is null ? Empty : TakeArray(rules.ToArray());
+    public static CompoundRuleSet Create(IEnumerable<CompoundRule> rules) =>
+        new((rules ?? throw new ArgumentNullException(nameof(rules))).ToArray());
 
-    internal static CompoundRuleSet TakeArray(CompoundRule[] rules) => rules is null ? Empty : new CompoundRuleSet(rules);
-
-    private CompoundRuleSet(CompoundRule[] rules) : base(rules)
+    internal CompoundRuleSet(CompoundRule[] rules)
     {
+#if DEBUG
+        if (rules is null) throw new ArgumentNullException(nameof(rules));
+#endif
+        _rules = rules;
     }
 
-    internal bool EntryContainsRuleFlags(WordEntryDetail details)
+    private readonly CompoundRule[] _rules;
+
+    public int Count => _rules.Length;
+    public bool IsEmpty => !HasItems;
+    public bool HasItems => _rules is { Length: > 0 };
+    public CompoundRule this[int index] => _rules[index];
+    public IEnumerator<CompoundRule> GetEnumerator() => ((IEnumerable<CompoundRule>)_rules).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => _rules.GetEnumerator();
+
+    internal bool EntryContainsRuleFlags(in WordEntryDetail details)
     {
-        if (details is not null && details.HasFlags)
+        if (details.HasFlags)
         {
-            foreach(var rule in Items)
+            foreach(var rule in _rules)
             {
                 if (rule.ContainsRuleFlagForEntry(details))
                 {
@@ -41,7 +55,7 @@ public sealed class CompoundRuleSet : ArrayWrapper<CompoundRule>
             new MetacharData()
         };
 
-        foreach (var compoundRule in Items)
+        foreach (var compoundRule in _rules)
         {
             var pp = 0; // pattern position
             var wp = 0; // "words" position
@@ -186,7 +200,7 @@ public sealed class CompoundRuleSet : ArrayWrapper<CompoundRule>
         return false;
     }
 
-    private class MetacharData
+    private sealed class MetacharData
     {
         /// <summary>
         /// Metacharacter (*, ?) position for backtracking.

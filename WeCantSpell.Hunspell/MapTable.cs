@@ -1,19 +1,32 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
-
-using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
-public sealed class MapTable : ArrayWrapper<MapEntry>
+public readonly struct MapTable : IReadOnlyList<MapEntry>
 {
-    public static readonly MapTable Empty = TakeArray(ArrayEx<MapEntry>.Empty);
+    public static MapTable Empty { get; } = new(Array.Empty<MapEntry>());
 
-    public static MapTable Create(IEnumerable<MapEntry> entries) => entries is null ? Empty : TakeArray(entries.ToArray());
+    public static MapTable Create(IEnumerable<MapEntry> entries) =>
+        new((entries ?? throw new ArgumentNullException(nameof(entries))).ToArray());
 
-    internal static MapTable TakeArray(MapEntry[] entries) => entries is null ? Empty : new MapTable(entries);
-
-    private MapTable(MapEntry[] entries) : base(entries)
+    internal MapTable(MapEntry[] items)
     {
+#if DEBUG
+        if (items is null) throw new ArgumentNullException(nameof(items));
+#endif
+        _entries = items;
     }
+
+    private readonly MapEntry[] _entries;
+
+    public int Count => _entries.Length;
+    public bool IsEmpty => !HasItems;
+    public bool HasItems => _entries is { Length: > 0 };
+    public MapEntry this[int index] => _entries[index];
+    public IEnumerator<MapEntry> GetEnumerator() => ((IEnumerable<MapEntry>)_entries).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => _entries.GetEnumerator();
+    internal MapEntry[] GetInternalArray() => _entries;
 }

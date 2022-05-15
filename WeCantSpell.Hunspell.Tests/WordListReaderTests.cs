@@ -1046,6 +1046,17 @@ public class WordListReaderTests
             actual["bar"][0].Morphs.Should().BeEquivalentTo(new[] { "<BAR" });
         }
 
+        [Fact]
+        public async Task can_read_english_dic()
+        {
+            var filePath = @"files/English (American).dic";
+
+            var actual = await WordListReader.ReadFileAsync(filePath);
+
+            actual.RootWords.Should().NotBeEmpty();
+            actual.Affix.Warnings.Should().BeEmpty();
+        }
+
         [Theory(Skip = "Not performant enough yet")]
         [MemberData(nameof(large_assortment_of_dic_files))]
         public async Task can_read_file_without_exception(string filePath)
@@ -1058,6 +1069,17 @@ public class WordListReaderTests
 
     public class ReadFile : WordListReaderTests
     {
+        [Fact]
+        public void can_read_english_dic()
+        {
+            var filePath = @"files/English (American).dic";
+
+            var actual = WordListReader.ReadFile(filePath);
+
+            actual.RootWords.Should().NotBeEmpty();
+            actual.Affix.Warnings.Should().BeEmpty();
+        }
+
         [Theory(Skip = "Not performant enough yet")]
         [MemberData(nameof(large_assortment_of_dic_files))]
         public void can_read_file_without_exception(string filePath)
@@ -1068,10 +1090,19 @@ public class WordListReaderTests
         }
     }
 
-    public static IEnumerable<object[]> large_assortment_of_dic_files =
-        Directory.GetFiles("files/", "*.dic")
-        .Concat(Directory.GetFiles("samples/", "*.dic"))
-        .OrderBy(x => x)
-        .Select(filePath => new object[] { filePath })
-        .ToList();
+    public static IEnumerable<object[]> large_assortment_of_dic_files
+    {
+        get
+        {
+            IEnumerable<string> files = Directory.GetFiles("files/", "*.dic");
+            if (Directory.Exists("samples"))
+            {
+                files = files.Concat(Directory.GetFiles("samples/", "*.dic"));
+            }
+
+            return files
+                .OrderBy(x => x)
+                .Select(filePath => new object[] { filePath });
+        }
+    }
 }
