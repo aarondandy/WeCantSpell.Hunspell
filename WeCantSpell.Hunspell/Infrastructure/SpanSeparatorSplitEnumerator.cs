@@ -33,18 +33,23 @@ internal ref struct SpanSeparatorSplitEnumerator<T> where T : IEquatable<T>
     {
         if (_options == StringSplitOptions.RemoveEmptyEntries)
         {
-            while (MoveNextPart())
-            {
-                if (!Current.IsEmpty)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return MoveNextPartSkippingEmpty();
         }
 
         return MoveNextPart();
+    }
+
+    private bool MoveNextPartSkippingEmpty()
+    {
+        while (MoveNextPart())
+        {
+            if (!Current.IsEmpty)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private bool MoveNextPart()
