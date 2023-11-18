@@ -211,7 +211,8 @@ public partial class WordList
                                 found = found2;
                             }
 
-                            if (CheckNested(scw.AsSpan(found + breakEntry.Length)))
+                            var substring = scw.AsSpan(found + breakEntry.Length);
+                            if (!substring.EqualsOrdinal(scw) && CheckNested(substring))
                             {
                                 // examine 2 sides of the break point
                                 if (CheckNested(scw.AsSpan(0, found)))

@@ -391,7 +391,7 @@ public partial class WordList
                     }
 
                     var chunk = scw.AsSpan(prevPos, dashPos - prevPos);
-                    if (!Check(chunk))
+                    if (!chunk.EqualsOrdinal(word) && !Check(chunk))
                     {
                         var nlst = SuggestNested(chunk);
 
