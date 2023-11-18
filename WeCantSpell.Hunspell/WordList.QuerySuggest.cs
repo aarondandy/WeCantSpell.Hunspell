@@ -2694,6 +2694,7 @@ public partial class WordList
                                 sChar = sString.GetCharOrTerminator(++sIndex);
                             }
 
+                            // It's safe to Assume if (sChar == ')') because the length check is built into GetCharOrTerminator
                             sChar = sString.GetCharOrTerminator(++sIndex);
                         }
                     }
