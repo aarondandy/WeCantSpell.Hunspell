@@ -973,21 +973,19 @@ public partial class WordList
                 var loc = keyString.IndexOf(tmpc);
                 while (loc >= 0)
                 {
-                    var targetLoc = loc - 1;
-                    if (targetLoc >= 0 && keyString[targetLoc] != '|')
+                    if (loc > 0 && keyString[loc - 1] != '|')
                     {
-                        candidate[i] = keyString[targetLoc];
+                        candidate[i] = keyString[loc - 1];
                         TestSug(state.SuggestionList, candidate, state.CpdSuggest);
                     }
 
-                    targetLoc = loc + 1;
-                    if (targetLoc < keyString.Length && keyString[targetLoc] != '|')
+                    if ((loc + 1) < keyString.Length && keyString[loc + 1] != '|')
                     {
-                        candidate[i] = keyString[targetLoc];
+                        candidate[i] = keyString[loc + 1];
                         TestSug(state.SuggestionList, candidate, state.CpdSuggest);
                     }
 
-                    loc = keyString.IndexOf(tmpc, targetLoc);
+                    loc = keyString.IndexOf(tmpc, loc + 1);
                 }
 
                 candidate[i] = tmpc;
