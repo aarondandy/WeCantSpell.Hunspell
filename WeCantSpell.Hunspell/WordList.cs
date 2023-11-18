@@ -13,6 +13,7 @@ public sealed partial class WordList
 {
     internal const int MaxWordLen = 100;
     internal const int MaxWordUtf8Len = MaxWordLen * 3;
+    internal const int RecursiveDepthLimit = 16384;
 
     public static WordList CreateFromStreams(Stream dictionaryStream, Stream affixStream) =>
         WordListReader.Read(dictionaryStream, affixStream);

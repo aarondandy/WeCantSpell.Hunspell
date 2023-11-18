@@ -1103,7 +1103,7 @@ public partial class WordList
                 return;
             }
 
-            if (depth > 16384)
+            if (depth > RecursiveDepthLimit)
             {
                 return;
             }

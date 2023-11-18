@@ -6,6 +6,8 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class CollectionsEx
 {
+    internal const int CollectionPreallocationLimit = 16384;
+
     public static bool Contains<T>(this T[] values, T value) => Array.IndexOf(values, value) >= 0;
 
 #if NO_DICTIONARY_GETVALUE

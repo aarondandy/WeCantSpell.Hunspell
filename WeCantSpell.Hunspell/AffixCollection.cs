@@ -304,7 +304,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
             {
                 Options = options;
 
-                if (expectedCapacity is > 0 and <= 1000)
+                if (expectedCapacity is > 0 and <= CollectionsEx.CollectionPreallocationLimit)
                 {
                     Builder.Entries.Capacity = expectedCapacity;
                 }

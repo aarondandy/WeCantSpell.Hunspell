@@ -413,7 +413,9 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
         public Builder(int capacity)
         {
-            _builder = ArrayBuilder<FlagValue>.Pool.Get(capacity);
+            _builder = capacity is >= 0 and <= CollectionsEx.CollectionPreallocationLimit
+                ? ArrayBuilder<FlagValue>.Pool.Get(capacity)
+                : ArrayBuilder<FlagValue>.Pool.Get();
         }
 
         private ArrayBuilder<FlagValue> _builder;
