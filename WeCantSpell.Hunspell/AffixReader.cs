@@ -975,7 +975,7 @@ public sealed partial class AffixReader
                         {
                             neg = true;
                         }
-                        else
+                        else if (neg)
                         {
                             chars[k + 1] = chars[k];
                         }
