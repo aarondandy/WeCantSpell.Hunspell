@@ -82,8 +82,7 @@ public class HunspellTests
                     .SelectMany(ToDictionaryWordTestData)
                     // NOTE: These tests are bypassed because capitalization only works when the language is turkish and the UTF8 dic has no language applied
                     .Where(t => !(t.dictionaryPath.EndsWith("base_utf.dic") && t.word.Contains('İ')))
-                    // Skips test: https://github.com/aarondandy/WeCantSpell.Hunspell/issues/49
-                    .Where(t => !(t.dictionaryPath.EndsWith("allcaps.dic") && t.word.EndsWith("Afrique", StringComparison.InvariantCultureIgnoreCase)));
+                    ;
 
                 return results.Select(t => new[] { t.dictionaryPath, t.word });
             }

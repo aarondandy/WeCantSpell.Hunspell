@@ -1687,7 +1687,6 @@ public class AffixReaderTests
         public static HashSet<string> can_read_file_without_exception_warning_exceptions = new(StringComparer.OrdinalIgnoreCase)
         {
             "base_utf.aff", // this file has some strange morph lines at the bottom, maybe a bug?
-            "allcaps.aff", // Bug: https://github.com/aarondandy/WeCantSpell.Hunspell/issues/49
             "Russian-English Bilingual.aff",
             "1748408-2.aff",
             "1748408-4.aff"
