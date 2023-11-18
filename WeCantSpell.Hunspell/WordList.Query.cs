@@ -206,6 +206,7 @@ public partial class WordList
                 return null;
             }
 
+            // remove IGNORE characters from the string
             if (Affix.IgnoredChars.HasItems)
             {
                 word = Affix.IgnoredChars.RemoveChars(word);
