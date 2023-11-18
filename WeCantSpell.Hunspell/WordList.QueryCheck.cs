@@ -18,7 +18,7 @@ public partial class WordList
 
         internal QueryCheck(in Query source)
         {
-            _query = new(source.WordList, source.Options, source.CancellationToken);
+            _query = new(in source);
         }
 
         private Query _query;
@@ -54,6 +54,12 @@ public partial class WordList
                 return SpellCheckResult.DefaultCorrect;
             }
 
+            // something very broken if spell ends up calling itself with the same word
+            if (_query.ContainsCandidate(word))
+            {
+                return SpellCheckResult.DefaultWrong;
+            }
+
             // input conversion
             if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out var scw))
             {
@@ -67,7 +73,7 @@ public partial class WordList
                 return SpellCheckResult.DefaultWrong;
             }
 
-            return CheckDetailsInternal(scw, capType, abbv);
+            return CheckDetails(scw, capType, abbv);
         }
 
         public SpellCheckResult CheckDetails(ReadOnlySpan<char> word)
@@ -89,6 +95,12 @@ public partial class WordList
                 return SpellCheckResult.DefaultCorrect;
             }
 
+            // something very broken if spell ends up calling itself with the same word
+            if (_query.ContainsCandidate(word))
+            {
+                return SpellCheckResult.DefaultWrong;
+            }
+
             // input conversion
             CapitalizationType capType;
             int abbv;
@@ -106,10 +118,21 @@ public partial class WordList
                 return SpellCheckResult.DefaultWrong;
             }
 
-            return CheckDetailsInternal(scw, capType, abbv);
+            return CheckDetails(scw, capType, abbv);
         }
 
-        public SpellCheckResult CheckDetailsInternal(string scw, CapitalizationType capType, int abbv)
+        private SpellCheckResult CheckDetails(string scw, CapitalizationType capType, int abbv)
+        {
+            _query.PushCandidate(scw); // NOTE: because a string isn't formed until this point, the candidate is pushed here
+            var result = CheckDetailsInternal(scw, capType, abbv);
+            _query.PopCandidate();
+
+            // TODO: Should oconv be handled here?
+
+            return result;
+        }
+
+        private SpellCheckResult CheckDetailsInternal(string scw, CapitalizationType capType, int abbv)
         {
             var resultType = SpellCheckResultType.None;
             string? root = null;
@@ -211,8 +234,7 @@ public partial class WordList
                                 found = found2;
                             }
 
-                            var substring = scw.AsSpan(found + breakEntry.Length);
-                            if (!substring.EqualsOrdinal(scw) && CheckNested(substring))
+                            if (CheckNested(scw.AsSpan(found + breakEntry.Length)))
                             {
                                 // examine 2 sides of the break point
                                 if (CheckNested(scw.AsSpan(0, found)))

@@ -23,7 +23,7 @@ public partial class WordList
 
         internal QuerySuggest(in Query source)
         {
-            _query = new(source.WordList, source.Options, source.CancellationToken);
+            _query = new(in source);
         }
 
         private Query _query;
