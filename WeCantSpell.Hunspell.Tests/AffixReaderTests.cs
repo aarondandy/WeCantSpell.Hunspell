@@ -1688,7 +1688,9 @@ public class AffixReaderTests
         {
             "base_utf.aff", // this file has some strange morph lines at the bottom, maybe a bug?
             "allcaps.aff", // Bug: https://github.com/aarondandy/WeCantSpell.Hunspell/issues/49
-            "Russian-English Bilingual.aff"
+            "Russian-English Bilingual.aff",
+            "1748408-2.aff",
+            "1748408-4.aff"
         };
 
         [Theory, MemberData(nameof(can_read_file_without_exception_args))]
