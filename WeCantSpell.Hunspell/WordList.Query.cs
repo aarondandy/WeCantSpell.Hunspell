@@ -955,8 +955,8 @@ public partial class WordList
                                 ClearSuffixAndFlag();
 
                                 {
-                                    var wordSubI = word.Slice(i);
-                                    rv = (!onlycpdrule && Affix.CompoundFlag.HasValue)
+                                    var wordSubI = word.Slice(Math.Min(i, word.Length));
+                                    rv = (!onlycpdrule && Affix.CompoundFlag.HasValue && !wordSubI.IsEmpty)
                                          ? AffixCheck(wordSubI, Affix.CompoundFlag, CompoundOptions.End)
                                          : null;
 
@@ -964,12 +964,19 @@ public partial class WordList
                                     {
                                         ClearSuffix();
                                         ClearPrefix();
-                                        rv = AffixCheck(wordSubI, Affix.CompoundEnd, CompoundOptions.End);
+                                        if (!wordSubI.IsEmpty)
+                                        {
+                                            rv = AffixCheck(wordSubI, Affix.CompoundEnd, CompoundOptions.End);
+                                        }
                                     }
 
                                     if (rv is null && Affix.CompoundRules.HasItems && words is not null)
                                     {
-                                        rv = AffixCheck(wordSubI, default, CompoundOptions.End);
+                                        if (!wordSubI.IsEmpty)
+                                        {
+                                            rv = AffixCheck(wordSubI, default, CompoundOptions.End);
+                                        }
+
                                         if (rv is not null && DefCompoundCheck(words.CreateIncremented(), rv.Detail, true))
                                         {
                                             st.Destroy();
