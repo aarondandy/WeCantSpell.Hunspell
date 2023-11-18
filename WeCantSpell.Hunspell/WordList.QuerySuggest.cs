@@ -1084,10 +1084,10 @@ public partial class WordList
 
             var candidate = string.Empty;
             var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, _query.CancellationToken);
-            MapRelated(word, ref candidate, wn: 0, wlst, cpdSuggest, timer);
+            MapRelated(word, ref candidate, wn: 0, wlst, cpdSuggest, timer, 0);
         }
 
-        private void MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest, OperationTimedCountLimiter timer)
+        private void MapRelated(string word, ref string candidate, int wn, List<string> wlst, bool cpdSuggest, OperationTimedCountLimiter timer, int depth)
         {
             if (wn >= word.Length)
             {
@@ -1105,6 +1105,11 @@ public partial class WordList
                 return;
             }
 
+            if (depth > 16384)
+            {
+                return;
+            }
+
             var inMap = false;
             foreach (var mapEntry in Affix.RelatedCharacterMap.GetInternalArray())
             {
@@ -1117,7 +1122,7 @@ public partial class WordList
                         foreach (var otherMapEntryValue in mapEntry.GetInternalArray())
                         {
                             candidate = candidatePrefix + otherMapEntryValue;
-                            MapRelated(word, ref candidate, wn + mapEntryValue.Length, wlst, cpdSuggest, timer);
+                            MapRelated(word, ref candidate, wn + mapEntryValue.Length, wlst, cpdSuggest, timer, depth + 1);
 
                             if (timer.HasBeenCanceled)
                             {
@@ -1131,7 +1136,7 @@ public partial class WordList
             if (!inMap)
             {
                 candidate += word[wn];
-                MapRelated(word, ref candidate, wn + 1, wlst, cpdSuggest, timer);
+                MapRelated(word, ref candidate, wn + 1, wlst, cpdSuggest, timer, depth + 1);
             }
         }
 
