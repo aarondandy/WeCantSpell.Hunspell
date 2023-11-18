@@ -123,7 +123,12 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
                     && replacementEntry.ExtractReplacementText(text.Length - i, i == 0) is { Length: > 0 } replacementText)
                 {
                     convertedBuilder.Append(replacementText);
-                    i += replacementEntry.Pattern.Length - 1;
+
+                    if (replacementEntry.Pattern.Length > 1)
+                    {
+                        i += replacementEntry.Pattern.Length - 1;
+                    }
+
                     appliedConversion = true;
                 }
                 else
