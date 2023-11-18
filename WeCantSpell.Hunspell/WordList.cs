@@ -114,9 +114,28 @@ public sealed partial class WordList
 
     public SpellCheckResult CheckDetails(ReadOnlySpan<char> word, CancellationToken cancellationToken) => CheckDetails(word, options: null, cancellationToken);
 
-    public SpellCheckResult CheckDetails(string word, QueryOptions? options, CancellationToken cancellationToken) => new QueryCheck(this, options, cancellationToken).CheckDetails(word);
+    public SpellCheckResult CheckDetails(string word, QueryOptions? options, CancellationToken cancellationToken)
+    {
+        var result = new QueryCheck(this, options, cancellationToken).CheckDetails(word);
+        ApplyRootOutputConversions(ref result);
+        return result;
+    }
 
-    public SpellCheckResult CheckDetails(ReadOnlySpan<char> word, QueryOptions? options, CancellationToken cancellationToken) => new QueryCheck(this, options, cancellationToken).CheckDetails(word);
+    public SpellCheckResult CheckDetails(ReadOnlySpan<char> word, QueryOptions? options, CancellationToken cancellationToken)
+    {
+        var result = new QueryCheck(this, options, cancellationToken).CheckDetails(word);
+        ApplyRootOutputConversions(ref result);
+        return result;
+    }
+
+    private void ApplyRootOutputConversions(ref SpellCheckResult result)
+    {
+        // output conversion
+        if (result.Correct && Affix.OutputConversions.HasReplacements && Affix.OutputConversions.TryConvert(result.Root, out var converted) && !string.Equals(result.Root, converted, StringComparison.Ordinal))
+        {
+            result = new SpellCheckResult(converted, result.Info, true);
+        }
+    }
 
     public IEnumerable<string> Suggest(string word) => Suggest(word, options: null, CancellationToken.None);
 

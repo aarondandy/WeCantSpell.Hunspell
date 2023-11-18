@@ -127,8 +127,6 @@ public partial class WordList
             var result = CheckDetailsInternal(scw, capType, abbv);
             _query.PopCandidate();
 
-            // TODO: Should oconv be handled here?
-
             return result;
         }
 

@@ -194,10 +194,7 @@ public partial class WordList
                 (isSug && rv.ContainsFlag(Affix.NoSuggest))
             );
 
-        public WordEntry? CheckWord(
-            string word,
-            ref SpellCheckResultType info,
-            out string? root)
+        public WordEntry? CheckWord(string word, ref SpellCheckResultType info, out string? root)
         {
             root = null;
 
@@ -272,64 +269,65 @@ public partial class WordList
             }
 
             // check with affixes
+            {
+                // try stripping off affixes
+                var he = AffixCheck(word.AsSpan(), default, CompoundOptions.Not);
 
-            // try stripping off affixes
-            var he = AffixCheck(word.AsSpan(), default, CompoundOptions.Not);
-
-            // check compound restriction and onlyupcase
-            if (
-                he is not null
-                &&
-                (
-                    he.ContainsFlag(Affix.OnlyInCompound)
-                    ||
-                    hasSpecialInitCap(info, he.Detail)
+                // check compound restriction and onlyupcase
+                if (
+                    he is not null
+                    &&
+                    (
+                        he.ContainsFlag(Affix.OnlyInCompound)
+                        ||
+                        hasSpecialInitCap(info, he.Detail)
+                    )
                 )
-            )
-            {
-                he = null;
-            }
-
-            if (he is not null)
-            {
-                if (he.ContainsFlag(Affix.ForbiddenWord))
                 {
-                    info |= SpellCheckResultType.Forbidden;
-
-                    return null;
-                }
-
-                root = he.Word;
-                if (Affix.ComplexPrefixes)
-                {
-                    root = root.GetReversed();
-                }
-            }
-            else if (Affix.HasCompound)
-            {
-                // try check compound word
-                var rwords = new IncrementalWordList();
-                he = CompoundCheck(word.AsSpan(), 0, 0, 100, null, rwords, huMovRule: false, isSug: false, ref info);
-
-                if (he is null && word.EndsWith('-') && Affix.IsHungarian)
-                {
-                    // LANG_hu section: `moving rule' with last dash
-                    he = CompoundCheck(word.AsSpan(0, word.Length - 1), -5, 0, 100, null, rwords, huMovRule: true, isSug: false, ref info);
+                    he = null;
                 }
 
                 if (he is not null)
                 {
+                    if (he.ContainsFlag(Affix.ForbiddenWord))
+                    {
+                        info |= SpellCheckResultType.Forbidden;
+
+                        return null;
+                    }
+
                     root = he.Word;
                     if (Affix.ComplexPrefixes)
                     {
                         root = root.GetReversed();
                     }
-
-                    info |= SpellCheckResultType.Compound;
                 }
-            }
+                else if (Affix.HasCompound)
+                {
+                    // try check compound word
+                    var rwords = new IncrementalWordList();
+                    he = CompoundCheck(word.AsSpan(), 0, 0, 100, null, rwords, huMovRule: false, isSug: false, ref info);
 
-            return he;
+                    if (he is null && word.EndsWith('-') && Affix.IsHungarian)
+                    {
+                        // LANG_hu section: `moving rule' with last dash
+                        he = CompoundCheck(word.AsSpan(0, word.Length - 1), -5, 0, 100, null, rwords, huMovRule: true, isSug: false, ref info);
+                    }
+
+                    if (he is not null)
+                    {
+                        root = he.Word;
+                        if (Affix.ComplexPrefixes)
+                        {
+                            root = root.GetReversed();
+                        }
+
+                        info |= SpellCheckResultType.Compound;
+                    }
+                }
+
+                return he;
+            }
 
             static bool hasSpecialInitCap(SpellCheckResultType info, in WordEntryDetail he) =>
                 EnumEx.HasFlag(info, SpellCheckResultType.InitCap) && he.ContainsFlag(SpecialFlags.OnlyUpcaseFlag);
