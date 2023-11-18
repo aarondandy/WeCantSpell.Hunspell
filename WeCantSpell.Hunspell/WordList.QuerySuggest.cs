@@ -1380,7 +1380,7 @@ public partial class WordList
                 )
                 {
                     var type = (r == 0) ? ReplacementValueType.Ini : ReplacementValueType.Med;
-                    if (r + replacement.Pattern.Length == word.Length)
+                    if ((replacement.Pattern.Length + r) == word.Length)
                     {
                         type |= ReplacementValueType.Fin;
                     }
