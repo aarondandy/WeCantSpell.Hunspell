@@ -870,7 +870,7 @@ public partial class WordList
                                         checkedSimplifiedTriple = true;
                                         i--; // check "fahrt" instead of "ahrt" in "Schiffahrt"
                                     }
-                                    else if (i > 2 && word[i - 1] == word[i - 2])
+                                    else if (i > 2 && i <= word.Length && word[i - 1] == word[i - 2])
                                     {
                                         simplifiedTripple = true;
                                     }
