@@ -1069,8 +1069,11 @@ public partial class WordList
 
                                 if (Affix.IsHungarian)
                                 {
-                                    // calculate syllable number of the word
-                                    numSyllable += GetSyllable(word.Slice(0, i));
+                                    if (i < word.Length)
+                                    {
+                                        // calculate syllable number of the word
+                                        numSyllable += GetSyllable(word.Slice(0, i));
+                                    }
 
                                     // - affix syllable num.
                                     // XXX only second suffix (inflections, not derivations)
