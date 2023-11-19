@@ -1167,7 +1167,7 @@ public partial class WordList
                                 wordNum = oldwordnum2;
 
                                 // perhaps second word is a compound word (recursive call)
-                                if (wordNum < maxwordnum)
+                                if ((wordNum + 2) < maxwordnum)
                                 {
                                     rv = CompoundCheck(st.TerminatedSpan.Slice(i), wordNum + 1, numSyllable, maxwordnum, words?.CreateIncremented(), rwords.CreateIncremented(), false, isSug, ref info, ref opLimiter);
 
@@ -1175,6 +1175,8 @@ public partial class WordList
                                         rv is not null
                                         &&
                                         Affix.CompoundPatterns.HasItems
+                                        &&
+                                        i < word.Length
                                         &&
                                         (scpd != 0 ^ Affix.CompoundPatterns.Check(word, i, rvFirst, rv, affixed))
                                     )
