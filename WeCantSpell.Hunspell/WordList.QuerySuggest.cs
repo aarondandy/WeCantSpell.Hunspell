@@ -19,14 +19,18 @@ public partial class WordList
         public QuerySuggest(WordList wordList, QueryOptions? options, CancellationToken cancellationToken)
         {
             _query = new(wordList, options, cancellationToken);
+            SuggestCandidateStack = new();
         }
 
-        internal QuerySuggest(in Query source)
+        internal QuerySuggest(in QuerySuggest source)
         {
-            _query = new(in source);
+            _query = new(in source._query);
+            SuggestCandidateStack = source.SuggestCandidateStack;
         }
 
         private Query _query;
+
+        public CandidateStack SuggestCandidateStack { get; private set; }
 
         public WordList WordList => _query.WordList;
         public AffixConfig Affix => _query.Affix;
@@ -58,6 +62,12 @@ public partial class WordList
                 return new();
             }
 
+            // something very broken if suggest ends up calling itself with the same word
+            if (SuggestCandidateStack.Contains(word))
+            {
+                return new();
+            }
+
             // input conversion
             if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out var scw))
             {
@@ -71,7 +81,13 @@ public partial class WordList
                 return new();
             }
 
-            return SuggestInternal(word.AsSpan(), scw, capType, abbv);
+            SuggestCandidateStack.Push(word);
+
+            var slst = SuggestInternal(word.AsSpan(), scw, capType, abbv);
+
+            SuggestCandidateStack.Pop();
+
+            return slst;
         }
 
         public List<string> Suggest(ReadOnlySpan<char> word)
@@ -88,6 +104,12 @@ public partial class WordList
             }
 
             if (word.Length >= MaxWordUtf8Len)
+            {
+                return new();
+            }
+
+            // something very broken if suggest ends up calling itself with the same word
+            if (SuggestCandidateStack.Contains(word))
             {
                 return new();
             }
@@ -109,10 +131,17 @@ public partial class WordList
                 return new();
             }
 
-            return SuggestInternal(word, scw, capType, abbv);
+            // NOTE: because a string isn't formed until this point, scw is pushed instead. It isn't the same, but might be good enough.
+            SuggestCandidateStack.Push(scw);
+
+            var slst = SuggestInternal(word, scw, capType, abbv);
+
+            SuggestCandidateStack.Pop();
+
+            return slst;
         }
 
-        public List<string> SuggestInternal(ReadOnlySpan<char> word, string scw, CapitalizationType capType, int abbv)
+        private List<string> SuggestInternal(ReadOnlySpan<char> word, string scw, CapitalizationType capType, int abbv)
         {
             var slst = new List<string>();
 
@@ -510,7 +539,7 @@ public partial class WordList
             return slst;
         }
 
-        private List<string> SuggestNested(ReadOnlySpan<char> word) => new QuerySuggest(in _query).Suggest(word);
+        private List<string> SuggestNested(ReadOnlySpan<char> word) => new QuerySuggest(in this).Suggest(word);
 
         private bool Check(string word) => new QueryCheck(in _query).Check(word);
 

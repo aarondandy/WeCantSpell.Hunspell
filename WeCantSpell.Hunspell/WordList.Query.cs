@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -25,7 +24,7 @@ public partial class WordList
             TextInfo = Affix.Culture.TextInfo;
             Options = options ?? DefaultOptions;
             CancellationToken = cancellationToken;
-            CandidateStack = new(1); // Preallocate with a small value as it doesn't often grow very large
+            SpellCandidateStack = new();
             Prefix = null;
             //PrefixAppend = null;
             Suffix = null;
@@ -41,7 +40,7 @@ public partial class WordList
             TextInfo = Affix.Culture.TextInfo;
             Options = source.Options;
             CancellationToken = source.CancellationToken;
-            CandidateStack = source.CandidateStack;
+            SpellCandidateStack = source.SpellCandidateStack;
             Prefix = null;
             //PrefixAppend = null;
             Suffix = null;
@@ -70,7 +69,7 @@ public partial class WordList
         /// </remarks>
         public CancellationToken CancellationToken { get; }
 
-        private List<string> CandidateStack { get; set; }
+        public CandidateStack SpellCandidateStack { get; private set; }
 
         private PrefixEntry? Prefix { get; set; }
 
@@ -89,29 +88,6 @@ public partial class WordList
         /// Previous suffix for counting syllables of the suffix.
         /// </summary>
         private string? SuffixAppend { get; set; }
-
-        /// <remarks>
-        /// I'm not sure these checks do a whole lot, but upstream has them so 🤷. Maybe it protects against some kind of infinite loop detected through fuzzing.
-        /// </remarks>
-        public bool ContainsCandidate(ReadOnlySpan<char> word) => CandidateStack.Contains(word);
-
-        /// <remarks>
-        /// I'm not sure these checks do a whole lot, but upstream has them so 🤷. Maybe it protects against some kind of infinite loop detected through fuzzing.
-        /// </remarks>
-        public bool ContainsCandidate(string word) => CandidateStack.Contains(word);
-
-        public void PushCandidate(string word)
-        {
-            CandidateStack.Add(word);
-        }
-
-        public void PopCandidate()
-        {
-            if (CandidateStack.Count != 0)
-            {
-                CandidateStack.RemoveAt(CandidateStack.Count - 1);
-            }
-        }
 
         private void ClearPrefix()
         {
