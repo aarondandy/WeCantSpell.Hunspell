@@ -1221,8 +1221,11 @@ public partial class WordList
 
                                             if (Affix.ForbiddenWord.HasValue)
                                             {
-                                                var rv2 = LookupFirst(word)
-                                                    ?? AffixCheck(word.Slice(0, len), default, CompoundOptions.Not);
+                                                var rv2 = LookupFirst(word);
+                                                if (rv2 is null && len <= word.Length)
+                                                {
+                                                    rv2 = AffixCheck(word.Slice(0, len), default, CompoundOptions.Not);
+                                                }
 
                                                 if (
                                                     rv2 is not null
