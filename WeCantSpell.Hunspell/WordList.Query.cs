@@ -1209,7 +1209,7 @@ public partial class WordList
                                         }
 
                                         // check first part
-                                        if (word.Slice(i).StartsWith(rv.Word.AsSpan()))
+                                        if (i < word.Length && word.Slice(i).StartsWith(rv.Word.AsSpan()))
                                         {
                                             var r = st.Exchange(i + rv.Word.Length, '\0');
 
