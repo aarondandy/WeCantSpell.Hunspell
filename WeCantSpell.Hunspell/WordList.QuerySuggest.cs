@@ -2385,7 +2385,7 @@ public partial class WordList
         /// </summary>
         private string Add(PrefixEntry entry, string word)
         {
-            if (word.Length > entry.Strip.Length || (word.Length == 0 && Affix.FullStrip))
+            if (word.Length >= entry.Strip.Length || (word.Length == 0 && Affix.FullStrip))
             {
                 if (entry.TestCondition(word.AsSpan()))
                 {
