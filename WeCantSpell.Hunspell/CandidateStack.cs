@@ -9,6 +9,11 @@ internal sealed class CandidateStack : List<string>
         // Preallocate with a small capacity as it doesn't often grow very large
     }
 
+    /// <remarks>
+    /// apply a fairly arbitrary depth limit
+    /// </remarks>
+    public bool ExceedsArbitraryDepthLimit => Count > 2048;
+
     public void Push(string value)
     {
         Add(value);

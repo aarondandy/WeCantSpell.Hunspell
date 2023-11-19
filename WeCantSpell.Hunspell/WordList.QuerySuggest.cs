@@ -109,7 +109,7 @@ public partial class WordList
             }
 
             // something very broken if suggest ends up calling itself with the same word
-            if (SuggestCandidateStack.Contains(word))
+            if (SuggestCandidateStack.ExceedsArbitraryDepthLimit || SuggestCandidateStack.Contains(word))
             {
                 return new();
             }
