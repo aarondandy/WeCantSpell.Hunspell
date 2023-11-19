@@ -955,7 +955,11 @@ public partial class WordList
                                             ||
                                             scpd != 0
                                             ||
-                                            !Affix.CompoundPatterns.Check(word, i, rvFirst, rv, false)
+                                            (
+                                                i < word.Length
+                                                &&
+                                                !Affix.CompoundPatterns.Check(word, i, rvFirst, rv, false)
+                                            )
                                         )
                                         && // test CHECKCOMPOUNDPATTERN conditions
                                         (
