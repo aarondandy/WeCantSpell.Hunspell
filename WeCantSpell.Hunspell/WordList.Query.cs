@@ -514,6 +514,12 @@ public partial class WordList
                             scpdPatternEntryCondition2 = default;
                         }
 
+                        if (i > st.BufferLength)
+                        {
+                            // abandon early on dubious pattern replacement outcome
+                            return null;
+                        }
+
                         ch = st.Exchange(i, '\0');
 
                         ClearSuffix();
