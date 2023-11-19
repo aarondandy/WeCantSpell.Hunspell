@@ -477,7 +477,7 @@ public partial class WordList
             }
 
             // expand suggestions with dot(s)
-            if (abbv != 0 && Affix.SuggestWithDots)
+            if (abbv != 0 && Affix.SuggestWithDots && word.Length >= abbv)
             {
                 for (var j = 0; j < slst.Count; j++)
                 {
