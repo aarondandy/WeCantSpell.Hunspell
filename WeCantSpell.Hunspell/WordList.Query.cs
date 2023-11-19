@@ -1274,15 +1274,18 @@ public partial class WordList
                     if (soldi != 0)
                     {
                         i = soldi;
-                        st.Assign(word);
+                        st.Assign(word); // XXX add more optim.
                         soldi = 0;
+                        len = oldlen;
+                        cmin = oldcmin;
+                        cmax = oldcmax;
                     }
                     else
                     {
                         st[i] = ch;
                     }
                 }
-                while (Affix.CompoundRules.HasItems && oldwordnum == 0 && IntEx.InversePostfixIncrement(ref onlycpdrule));
+                while (Affix.CompoundRules.HasItems && oldwordnum == 0 && IntEx.InversePostfixIncrement(ref onlycpdrule)); // end of onlycpd loop
             }
 
             st.Destroy();
