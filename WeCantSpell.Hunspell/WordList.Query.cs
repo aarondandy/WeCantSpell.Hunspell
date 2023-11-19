@@ -391,8 +391,10 @@ public partial class WordList
 
         private WordEntry? HomonymWordSearch(ReadOnlySpan<char> homonymWord, IncrementalWordList? words, FlagValue condition2, bool scpdIsZero)
         {
+            // perhaps without prefix
             if (TryLookupDetails(homonymWord, out var homonymWordString, out var details) && details.Length > 0)
             {
+                // search homonym with compound flag
                 foreach (var homonymCandidate in details)
                 {
                     if (
@@ -521,7 +523,9 @@ public partial class WordList
 
                         var affixed = true;
                         {
+                            // perhaps without prefix
                             if (
+                                // NOTE: st.TerminatedSpan should have a length of i
                                 TryLookupDetails(st.TerminatedSpan, out var searchEntryWord, out var searchEntryDetails)
                                 && searchEntryDetails.Length > 0
                             )
@@ -866,6 +870,7 @@ public partial class WordList
                                     }
                                 }
 
+                                // NOTE: st.TerminatedSpan should terminate at its full length, but we can't know that for sure
                                 rv = HomonymWordSearch(st.TerminatedSpan.Slice(i), words, scpdPatternEntryCondition2, scpd == 0);
 
                                 if (rv is not null)
@@ -1171,10 +1176,10 @@ public partial class WordList
 
                                 if (rv is not null)
                                 {
-                                    var wordLenPrefix = word.Limit(len);
-                                    // forbid compound word, if it is a non compound word with typical fault
+                                    // forbid compound word, if it is a non-compound word with typical
+                                    // fault, or a dictionary word pair
 
-                                    // or a dictionary word pair
+                                    var wordLenPrefix = word.Limit(len);
                                     if (CompoundWordPairCheck(wordLenPrefix))
                                     {
                                         return null;
