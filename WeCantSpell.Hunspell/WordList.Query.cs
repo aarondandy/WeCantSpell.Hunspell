@@ -806,6 +806,8 @@ public partial class WordList
                                         (
                                             !Affix.CheckCompoundCase
                                             ||
+                                            word.IsEmpty
+                                            ||
                                             !CompoundCaseCheck(word, i)
                                         )
                                     )
