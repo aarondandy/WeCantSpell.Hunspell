@@ -1737,15 +1737,7 @@ public class AffixReaderTests
 
             actual.Language.Should().Be(langCode);
             actual.Culture.Should().NotBeNull();
-
-            if (string.Equals(expectedCulture, actual.Culture.Name))
-            {
-                actual.Culture.Name.Should().Be(expectedCulture);
-            }
-            else
-            {
-                throw new InvalidOperationException();
-            }
+            actual.Culture.Name.Should().Be(expectedCulture);
         }
 
         [Fact]
