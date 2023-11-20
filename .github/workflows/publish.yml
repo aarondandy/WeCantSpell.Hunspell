@@ -24,9 +24,11 @@ jobs:
 
       - run: dotnet test WeCantSpell.Hunspell.Tests/WeCantSpell.Hunspell.Tests.csproj -c Release --no-build --logger GitHubActions
 
-      - run: dotnet pack WeCantSpell.Hunspell/WeCantSpell.Hunspell.csproj -c Release --output ./artifacts --include-symbols
+      - run: dotnet pack WeCantSpell.Hunspell/WeCantSpell.Hunspell.csproj -c Release --output ./artifacts --include-symbols -p:SymbolPackageFormat=snupkg
 
       - uses: actions/upload-artifact@v2
         with:
           name: nuget-packages
-          path: ./artifacts/WeCantSpell.Hunspell.*.*pkg
+          path: |
+            ./artifacts/WeCantSpell.Hunspell.*.*nupkg
+            ./artifacts/WeCantSpell.Hunspell.*.*snupkg
