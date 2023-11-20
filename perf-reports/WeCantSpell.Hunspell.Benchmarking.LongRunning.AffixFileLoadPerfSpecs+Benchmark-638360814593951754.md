@@ -1,6 +1,6 @@
 ﻿# WeCantSpell.Hunspell.Benchmarking.LongRunning.AffixFileLoadPerfSpecs+Benchmark
 __Ensure that affix files can be loaded quickly.__
-_11/20/2023 3:54:15 AM_
+_11/20/2023 12:50:59 PM_
 ### System Info
 ```ini
 NBench=NBench, Version=2.0.1.0, Culture=neutral, PublicKeyToken=null
@@ -23,7 +23,7 @@ Tracing=False
 ### Totals
 |          Metric |           Units |             Max |         Average |             Min |          StdDev |
 |---------------- |---------------- |---------------- |---------------- |---------------- |---------------- |
-|TotalBytesAllocated |           bytes |    2,023,296.00 |    2,023,296.00 |    2,023,296.00 |            0.00 |
+|TotalBytesAllocated |           bytes |    2,019,616.00 |    2,019,616.00 |    2,019,616.00 |            0.00 |
 |TotalCollections [Gen0] |     collections |           22.00 |           22.00 |           22.00 |            0.00 |
 |TotalCollections [Gen1] |     collections |           12.00 |           12.00 |           12.00 |            0.00 |
 |TotalCollections [Gen2] |     collections |            4.00 |            4.00 |            4.00 |            0.00 |
@@ -32,36 +32,36 @@ Tracing=False
 ### Per-second Totals
 |          Metric |       Units / s |         Max / s |     Average / s |         Min / s |      StdDev / s |
 |---------------- |---------------- |---------------- |---------------- |---------------- |---------------- |
-|TotalBytesAllocated |           bytes |    1,771,423.96 |    1,771,423.96 |    1,771,423.96 |            0.00 |
-|TotalCollections [Gen0] |     collections |           19.26 |           19.26 |           19.26 |            0.00 |
-|TotalCollections [Gen1] |     collections |           10.51 |           10.51 |           10.51 |            0.00 |
-|TotalCollections [Gen2] |     collections |            3.50 |            3.50 |            3.50 |            0.00 |
-|[Counter] AffixFilesLoaded |      operations |           51.66 |           51.66 |           51.66 |            0.00 |
+|TotalBytesAllocated |           bytes |    1,807,126.32 |    1,807,126.32 |    1,807,126.32 |            0.00 |
+|TotalCollections [Gen0] |     collections |           19.69 |           19.69 |           19.69 |            0.00 |
+|TotalCollections [Gen1] |     collections |           10.74 |           10.74 |           10.74 |            0.00 |
+|TotalCollections [Gen2] |     collections |            3.58 |            3.58 |            3.58 |            0.00 |
+|[Counter] AffixFilesLoaded |      operations |           52.79 |           52.79 |           52.79 |            0.00 |
 
 ### Raw Data
 #### TotalBytesAllocated
 |           Run # |           bytes |       bytes / s |      ns / bytes |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |    2,023,296.00 |    1,771,423.96 |          564.52 |
+|               1 |    2,019,616.00 |    1,807,126.32 |          553.36 |
 
 #### TotalCollections [Gen0]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |           22.00 |           19.26 |   51,917,554.55 |
+|               1 |           22.00 |           19.69 |   50,799,286.36 |
 
 #### TotalCollections [Gen1]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |           12.00 |           10.51 |   95,182,183.33 |
+|               1 |           12.00 |           10.74 |   93,132,025.00 |
 
 #### TotalCollections [Gen2]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |            4.00 |            3.50 |  285,546,550.00 |
+|               1 |            4.00 |            3.58 |  279,396,075.00 |
 
 #### [Counter] AffixFilesLoaded
 |           Run # |      operations |  operations / s | ns / operations |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |           59.00 |           51.66 |   19,359,088.14 |
+|               1 |           59.00 |           52.79 |   18,942,106.78 |
 
 

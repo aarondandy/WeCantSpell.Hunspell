@@ -1,6 +1,6 @@
 ﻿# WeCantSpell.Hunspell.Benchmarking.LongRunning.EnWordSuggestPerfSpec+Benchmark
 __Ensure that words can be suggested quickly.__
-_11/20/2023 3:56:31 AM_
+_11/20/2023 12:53:12 PM_
 ### System Info
 ```ini
 NBench=NBench, Version=2.0.1.0, Culture=neutral, PublicKeyToken=null
@@ -23,7 +23,7 @@ Tracing=False
 ### Totals
 |          Metric |           Units |             Max |         Average |             Min |          StdDev |
 |---------------- |---------------- |---------------- |---------------- |---------------- |---------------- |
-|TotalBytesAllocated |           bytes |    2,495,280.00 |    2,495,280.00 |    2,495,280.00 |            0.00 |
+|TotalBytesAllocated |           bytes |    2,190,208.00 |    2,190,208.00 |    2,190,208.00 |            0.00 |
 |TotalCollections [Gen0] |     collections |            7.00 |            7.00 |            7.00 |            0.00 |
 |TotalCollections [Gen1] |     collections |            0.00 |            0.00 |            0.00 |            0.00 |
 |TotalCollections [Gen2] |     collections |            0.00 |            0.00 |            0.00 |            0.00 |
@@ -32,36 +32,36 @@ Tracing=False
 ### Per-second Totals
 |          Metric |       Units / s |         Max / s |     Average / s |         Min / s |      StdDev / s |
 |---------------- |---------------- |---------------- |---------------- |---------------- |---------------- |
-|TotalBytesAllocated |           bytes |      411,346.66 |      411,346.66 |      411,346.66 |            0.00 |
+|TotalBytesAllocated |           bytes |      361,213.87 |      361,213.87 |      361,213.87 |            0.00 |
 |TotalCollections [Gen0] |     collections |            1.15 |            1.15 |            1.15 |            0.00 |
 |TotalCollections [Gen1] |     collections |            0.00 |            0.00 |            0.00 |            0.00 |
 |TotalCollections [Gen2] |     collections |            0.00 |            0.00 |            0.00 |            0.00 |
-|[Counter] SuggestionQueries |      operations |          164.85 |          164.85 |          164.85 |            0.00 |
+|[Counter] SuggestionQueries |      operations |          164.92 |          164.92 |          164.92 |            0.00 |
 
 ### Raw Data
 #### TotalBytesAllocated
 |           Run # |           bytes |       bytes / s |      ns / bytes |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |    2,495,280.00 |      411,346.66 |        2,431.04 |
+|               1 |    2,190,208.00 |      361,213.87 |        2,768.44 |
 
 #### TotalCollections [Gen0]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |            7.00 |            1.15 |  866,589,185.71 |
+|               1 |            7.00 |            1.15 |  866,209,414.29 |
 
 #### TotalCollections [Gen1]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |            0.00 |            0.00 |6,066,124,300.00 |
+|               1 |            0.00 |            0.00 |6,063,465,900.00 |
 
 #### TotalCollections [Gen2]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |            0.00 |            0.00 |6,066,124,300.00 |
+|               1 |            0.00 |            0.00 |6,063,465,900.00 |
 
 #### [Counter] SuggestionQueries
 |           Run # |      operations |  operations / s | ns / operations |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |        1,000.00 |          164.85 |    6,066,124.30 |
+|               1 |        1,000.00 |          164.92 |    6,063,465.90 |
 
 
