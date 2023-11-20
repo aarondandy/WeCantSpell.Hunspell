@@ -1,6 +1,6 @@
 ﻿# WeCantSpell.Hunspell.Benchmarking.NHunspell.SuggestWeCantSpellHunspellPerfSpec+Benchmark
 __How fast can this project suggest English (US) words?__
-_05/08/2022 22:41:44_
+_11/20/2023 04:03:23_
 ### System Info
 ```ini
 NBench=NBench, Version=2.0.1.0, Culture=neutral, PublicKeyToken=null
@@ -23,8 +23,8 @@ Tracing=False
 ### Totals
 |          Metric |           Units |             Max |         Average |             Min |          StdDev |
 |---------------- |---------------- |---------------- |---------------- |---------------- |---------------- |
-|TotalBytesAllocated |           bytes |    2,377,352.00 |    2,377,352.00 |    2,377,352.00 |            0.00 |
-|TotalCollections [Gen0] |     collections |          224.00 |          224.00 |          224.00 |            0.00 |
+|TotalBytesAllocated |           bytes |    3,171,096.00 |    3,171,096.00 |    3,171,096.00 |            0.00 |
+|TotalCollections [Gen0] |     collections |          225.00 |          225.00 |          225.00 |            0.00 |
 |TotalCollections [Gen1] |     collections |            1.00 |            1.00 |            1.00 |            0.00 |
 |TotalCollections [Gen2] |     collections |            0.00 |            0.00 |            0.00 |            0.00 |
 |[Counter] SuggestionQueries |      operations |        1,000.00 |        1,000.00 |        1,000.00 |            0.00 |
@@ -32,36 +32,36 @@ Tracing=False
 ### Per-second Totals
 |          Metric |       Units / s |         Max / s |     Average / s |         Min / s |      StdDev / s |
 |---------------- |---------------- |---------------- |---------------- |---------------- |---------------- |
-|TotalBytesAllocated |           bytes |      221,657.76 |      221,657.76 |      221,657.76 |            0.00 |
-|TotalCollections [Gen0] |     collections |           20.89 |           20.89 |           20.89 |            0.00 |
+|TotalBytesAllocated |           bytes |      294,636.82 |      294,636.82 |      294,636.82 |            0.00 |
+|TotalCollections [Gen0] |     collections |           20.91 |           20.91 |           20.91 |            0.00 |
 |TotalCollections [Gen1] |     collections |            0.09 |            0.09 |            0.09 |            0.00 |
 |TotalCollections [Gen2] |     collections |            0.00 |            0.00 |            0.00 |            0.00 |
-|[Counter] SuggestionQueries |      operations |           93.24 |           93.24 |           93.24 |            0.00 |
+|[Counter] SuggestionQueries |      operations |           92.91 |           92.91 |           92.91 |            0.00 |
 
 ### Raw Data
 #### TotalBytesAllocated
 |           Run # |           bytes |       bytes / s |      ns / bytes |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |    2,377,352.00 |      221,657.76 |        4,511.46 |
+|               1 |    3,171,096.00 |      294,636.82 |        3,394.01 |
 
 #### TotalCollections [Gen0]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |          224.00 |           20.89 |   47,880,925.89 |
+|               1 |          225.00 |           20.91 |   47,834,347.11 |
 
 #### TotalCollections [Gen1]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |            1.00 |            0.09 |10,725,327,400.00 |
+|               1 |            1.00 |            0.09 |10,762,728,100.00 |
 
 #### TotalCollections [Gen2]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |            0.00 |            0.00 |10,725,327,400.00 |
+|               1 |            0.00 |            0.00 |10,762,728,100.00 |
 
 #### [Counter] SuggestionQueries
 |           Run # |      operations |  operations / s | ns / operations |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |        1,000.00 |           93.24 |   10,725,327.40 |
+|               1 |        1,000.00 |           92.91 |   10,762,728.10 |
 
 
