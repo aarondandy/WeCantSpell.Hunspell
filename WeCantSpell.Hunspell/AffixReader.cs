@@ -422,7 +422,7 @@ public sealed partial class AffixReader
         {
             SetInitialized(entryListType);
 
-            if (IntEx.TryParseInvariant(parameterText, out var expectedSize) && expectedSize >= 0)
+            if (IntEx.TryParseInvariant(parameterText, out var expectedSize) && expectedSize is >= 0 and <= CollectionsEx.CollectionPreallocationLimit)
             {
                 entries.Capacity = expectedSize;
                 return true;
@@ -439,7 +439,7 @@ public sealed partial class AffixReader
         {
             SetInitialized(entryListType);
 
-            if (IntEx.TryParseInvariant(parameterText, out var expectedSize) && expectedSize >= 0)
+            if (IntEx.TryParseInvariant(parameterText, out var expectedSize) && expectedSize is >= 0 and <= CollectionsEx.CollectionPreallocationLimit)
             {
                 entries.GrowToCapacity(expectedSize);
                 return true;
@@ -975,7 +975,7 @@ public sealed partial class AffixReader
                         {
                             neg = true;
                         }
-                        else
+                        else if (neg)
                         {
                             chars[k + 1] = chars[k];
                         }

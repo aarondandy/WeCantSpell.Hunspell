@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 4.1.0 - 2023-11
+
+- Updates the library to match changes in [Hunspell 1.7.2](https://github.com/hunspell/hunspell/releases/tag/v1.7.2)
+
 ## 4.0.0 - 2022-05
 
 - Changes library target to net6.0 and netstandard2.0

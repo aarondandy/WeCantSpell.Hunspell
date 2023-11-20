@@ -1687,8 +1687,9 @@ public class AffixReaderTests
         public static HashSet<string> can_read_file_without_exception_warning_exceptions = new(StringComparer.OrdinalIgnoreCase)
         {
             "base_utf.aff", // this file has some strange morph lines at the bottom, maybe a bug?
-            "allcaps.aff", // Bug: https://github.com/aarondandy/WeCantSpell.Hunspell/issues/49
-            "Russian-English Bilingual.aff"
+            "Russian-English Bilingual.aff",
+            "1748408-2.aff",
+            "1748408-4.aff"
         };
 
         [Theory, MemberData(nameof(can_read_file_without_exception_args))]
@@ -1737,13 +1738,15 @@ public class AffixReaderTests
             actual.Language.Should().Be(langCode);
             actual.Culture.Should().NotBeNull();
 
-            if (string.Equals(expectedCulture, actual.Culture.Name))
+            if (expectedCulture.Equals(actual.Culture.Name, StringComparison.OrdinalIgnoreCase))
             {
                 actual.Culture.Name.Should().Be(expectedCulture);
             }
             else
             {
-                throw new InvalidOperationException();
+                // On linux net48 runs unknown cultures may behave differently
+                expectedCulture.Should().StartWith(actual.Culture.Name, because: "en-XX may change to en, or worse");
+                actual.Language.Should().Be(expectedCulture);
             }
         }
 

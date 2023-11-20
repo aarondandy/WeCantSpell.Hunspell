@@ -18,7 +18,7 @@ public partial class WordList
 
         internal QueryCheck(in Query source)
         {
-            _query = new(source.WordList, source.Options, source.CancellationToken);
+            _query = new(in source);
         }
 
         private Query _query;
@@ -54,6 +54,12 @@ public partial class WordList
                 return SpellCheckResult.DefaultCorrect;
             }
 
+            // something very broken if spell ends up calling itself with the same word
+            if (_query.SpellCandidateStack.Contains(word))
+            {
+                return SpellCheckResult.DefaultWrong;
+            }
+
             // input conversion
             if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out var scw))
             {
@@ -67,7 +73,13 @@ public partial class WordList
                 return SpellCheckResult.DefaultWrong;
             }
 
-            return CheckDetailsInternal(scw, capType, abbv);
+            _query.SpellCandidateStack.Push(word);
+
+            var result = CheckDetailsInternal(scw, capType, abbv);
+
+            _query.SpellCandidateStack.Pop();
+
+            return result;
         }
 
         public SpellCheckResult CheckDetails(ReadOnlySpan<char> word)
@@ -89,6 +101,12 @@ public partial class WordList
                 return SpellCheckResult.DefaultCorrect;
             }
 
+            // something very broken if spell ends up calling itself with the same word
+            if (_query.SpellCandidateStack.Contains(word))
+            {
+                return SpellCheckResult.DefaultWrong;
+            }
+
             // input conversion
             CapitalizationType capType;
             int abbv;
@@ -106,10 +124,17 @@ public partial class WordList
                 return SpellCheckResult.DefaultWrong;
             }
 
-            return CheckDetailsInternal(scw, capType, abbv);
+            // NOTE: because a string isn't formed until this point, scw is pushed instead. It isn't the same, but might be good enough.
+            _query.SpellCandidateStack.Push(scw);
+
+            var result = CheckDetailsInternal(scw, capType, abbv);
+
+            _query.SpellCandidateStack.Pop();
+
+            return result;
         }
 
-        public SpellCheckResult CheckDetailsInternal(string scw, CapitalizationType capType, int abbv)
+        private SpellCheckResult CheckDetailsInternal(string scw, CapitalizationType capType, int abbv)
         {
             var resultType = SpellCheckResultType.None;
             string? root = null;
@@ -162,6 +187,7 @@ public partial class WordList
                     return new SpellCheckResult(root, resultType, false);
                 }
 
+                // check boundary patterns (^begin and end$)
                 foreach (var breakEntry in Affix.BreakPoints.GetInternalArray())
                 {
                     if (breakEntry.Length <= 1 || breakEntry.Length > scw.Length)
@@ -169,7 +195,6 @@ public partial class WordList
                         continue;
                     }
 
-                    // check boundary patterns (^begin and end$)
                     var pLastIndex = breakEntry.Length - 1;
                     if (
                         breakEntry.StartsWith('^')
@@ -177,7 +202,7 @@ public partial class WordList
                         && CheckNested(scw.AsSpan(pLastIndex))
                     )
                     {
-                        return new SpellCheckResult(root, resultType, true);
+                        return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true);
                     }
 
                     if (breakEntry.EndsWith('$'))
@@ -188,7 +213,7 @@ public partial class WordList
                             && CheckNested(scw.AsSpan(0, wlLessBreakIndex))
                         )
                         {
-                            return new SpellCheckResult(root, resultType, true);
+                            return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true);
                         }
                     }
                 }
@@ -216,7 +241,7 @@ public partial class WordList
                                 // examine 2 sides of the break point
                                 if (CheckNested(scw.AsSpan(0, found)))
                                 {
-                                    return new SpellCheckResult(root, resultType, true);
+                                    return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true);
                                 }
 
                                 // LANG_hu: spec. dash rule
@@ -224,7 +249,7 @@ public partial class WordList
                                 {
                                     if (CheckNested(scw.AsSpan(0, found + 1)))
                                     {
-                                        return new SpellCheckResult(root, resultType, true);
+                                        return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true); // check the first part with dash
                                     }
                                 }
                             }
@@ -241,7 +266,7 @@ public partial class WordList
                                 // examine 2 sides of the break point
                                 if (CheckNested(scw.AsSpan(0, found)))
                                 {
-                                    return new SpellCheckResult(root, resultType, true);
+                                    return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true);
                                 }
 
                                 // LANG_hu: spec. dash rule
@@ -249,7 +274,7 @@ public partial class WordList
                                 {
                                     if (CheckNested(scw.AsSpan(0, found + 1)))
                                     {
-                                        return new SpellCheckResult(root, resultType, true);
+                                        return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true); // check the first part with dash
                                     }
                                 }
                             }

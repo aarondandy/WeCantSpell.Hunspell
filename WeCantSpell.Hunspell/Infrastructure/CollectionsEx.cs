@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class CollectionsEx
 {
+    internal const int CollectionPreallocationLimit = 16384;
+
     public static bool Contains<T>(this T[] values, T value) => Array.IndexOf(values, value) >= 0;
 
 #if NO_DICTIONARY_GETVALUE
@@ -139,4 +142,9 @@ static class CollectionsEx
 
 #endif
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool Any<T>(this List<T> list) => list.Count != 0;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool Any<T>(this T[] array) => array.Length != 0;
 }

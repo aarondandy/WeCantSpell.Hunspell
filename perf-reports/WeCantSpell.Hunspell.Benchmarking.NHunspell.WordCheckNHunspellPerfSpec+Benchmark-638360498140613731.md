@@ -1,6 +1,6 @@
-﻿# WeCantSpell.Hunspell.Benchmarking.NHunspell.SuggestNHunspellPerfSpec+Benchmark
-__How fast can NHunspell suggest English (US) words?__
-_05/08/2022 22:40:39_
+﻿# WeCantSpell.Hunspell.Benchmarking.NHunspell.WordCheckNHunspellPerfSpec+Benchmark
+__How fast can NHunspell check English (US) words?__
+_11/20/2023 04:03:34_
 ### System Info
 ```ini
 NBench=NBench, Version=2.0.1.0, Culture=neutral, PublicKeyToken=null
@@ -12,7 +12,7 @@ CLR=4.0.30319.42000,IsMono=False,MaxGcGeneration=2
 ### NBench Settings
 ```ini
 RunMode=Throughput, TestMode=Measurement
-NumberOfIterations=1, MaximumRunTime=00:00:01
+NumberOfIterations=3, MaximumRunTime=00:00:01
 Concurrent=False
 Tracing=False
 ```
@@ -23,45 +23,55 @@ Tracing=False
 ### Totals
 |          Metric |           Units |             Max |         Average |             Min |          StdDev |
 |---------------- |---------------- |---------------- |---------------- |---------------- |---------------- |
-|TotalBytesAllocated |           bytes |      212,992.00 |      212,992.00 |      212,992.00 |            0.00 |
+|TotalBytesAllocated |           bytes |            0.00 |            0.00 |            0.00 |            0.00 |
 |TotalCollections [Gen0] |     collections |            0.00 |            0.00 |            0.00 |            0.00 |
 |TotalCollections [Gen1] |     collections |            0.00 |            0.00 |            0.00 |            0.00 |
 |TotalCollections [Gen2] |     collections |            0.00 |            0.00 |            0.00 |            0.00 |
-|[Counter] SuggestionQueries |      operations |        1,000.00 |        1,000.00 |        1,000.00 |            0.00 |
+|[Counter] WordsChecked |      operations |    1,292,928.00 |    1,292,928.00 |    1,292,928.00 |            0.00 |
 
 ### Per-second Totals
 |          Metric |       Units / s |         Max / s |     Average / s |         Min / s |      StdDev / s |
 |---------------- |---------------- |---------------- |---------------- |---------------- |---------------- |
-|TotalBytesAllocated |           bytes |        8,220.66 |        8,220.66 |        8,220.66 |            0.00 |
+|TotalBytesAllocated |           bytes |            0.00 |            0.00 |            0.00 |            0.00 |
 |TotalCollections [Gen0] |     collections |            0.00 |            0.00 |            0.00 |            0.00 |
 |TotalCollections [Gen1] |     collections |            0.00 |            0.00 |            0.00 |            0.00 |
 |TotalCollections [Gen2] |     collections |            0.00 |            0.00 |            0.00 |            0.00 |
-|[Counter] SuggestionQueries |      operations |           38.60 |           38.60 |           38.60 |            0.00 |
+|[Counter] WordsChecked |      operations |    1,289,491.89 |    1,286,804.29 |    1,281,988.15 |        4,180.25 |
 
 ### Raw Data
 #### TotalBytesAllocated
 |           Run # |           bytes |       bytes / s |      ns / bytes |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |      212,992.00 |        8,220.66 |      121,644.69 |
+|               1 |            0.00 |            0.00 |1,002,664,700.00 |
+|               2 |            0.00 |            0.00 |1,008,533,500.00 |
+|               3 |            0.00 |            0.00 |1,003,099,600.00 |
 
 #### TotalCollections [Gen0]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |            0.00 |            0.00 |25,909,345,600.00 |
+|               1 |            0.00 |            0.00 |1,002,664,700.00 |
+|               2 |            0.00 |            0.00 |1,008,533,500.00 |
+|               3 |            0.00 |            0.00 |1,003,099,600.00 |
 
 #### TotalCollections [Gen1]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |            0.00 |            0.00 |25,909,345,600.00 |
+|               1 |            0.00 |            0.00 |1,002,664,700.00 |
+|               2 |            0.00 |            0.00 |1,008,533,500.00 |
+|               3 |            0.00 |            0.00 |1,003,099,600.00 |
 
 #### TotalCollections [Gen2]
 |           Run # |     collections | collections / s |ns / collections |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |            0.00 |            0.00 |25,909,345,600.00 |
+|               1 |            0.00 |            0.00 |1,002,664,700.00 |
+|               2 |            0.00 |            0.00 |1,008,533,500.00 |
+|               3 |            0.00 |            0.00 |1,003,099,600.00 |
 
-#### [Counter] SuggestionQueries
+#### [Counter] WordsChecked
 |           Run # |      operations |  operations / s | ns / operations |
 |---------------- |---------------- |---------------- |---------------- |
-|               1 |        1,000.00 |           38.60 |   25,909,345.60 |
+|               1 |    1,292,928.00 |    1,289,491.89 |          775.50 |
+|               2 |    1,292,928.00 |    1,281,988.15 |          780.04 |
+|               3 |    1,292,928.00 |    1,288,932.82 |          775.84 |
 
 

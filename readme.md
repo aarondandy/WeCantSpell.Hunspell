@@ -54,9 +54,9 @@ If you need better performance you should check out [NHunspell](https://www.nuge
 
 | Benchmark | [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/) net6 | [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/) net48 | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
 |---------------------|--------------|--------------|--------------|
-| Dictionary Loads /s | 🥌 4         | 🐌 3        | 🐇 14        |
-| Words Checked /s    | 🐇 1,244,387 | 🐢 670,525  | 🐇 1,319,847 |
-| Suggest Queries / s | 🐇 167       | 🥌 93       | 🐢 38        |
+| Dictionary Loads /s | 🐢 4         | 🐌 3        | 🐇 14        |
+| Words Checked /s    | 🐢 820,297   | 🐌 441,415  | 🐇 1,289,491 |
+| Suggest Queries / s | 🐇 164       | 🐢 92       | 🐌 37        |
 
 _Note: Measurements taken on an AMD 5800H._
 

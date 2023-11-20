@@ -207,12 +207,14 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
     {
         public Builder()
         {
-            _builder = new();
+            _builder = new ArrayBuilder<char>();
         }
 
         public Builder(int capacity)
         {
-            _builder = new(capacity);
+            _builder = capacity is >= 0 and <= CollectionsEx.CollectionPreallocationLimit
+                ? new ArrayBuilder<char>(capacity)
+                : new ArrayBuilder<char>();
         }
 
         private readonly ArrayBuilder<char> _builder;

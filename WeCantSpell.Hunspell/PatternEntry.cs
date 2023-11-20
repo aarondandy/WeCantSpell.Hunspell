@@ -27,5 +27,6 @@ public sealed class PatternEntry
 
     internal bool Pattern3DoesNotMatch(ReadOnlySpan<char> word, int offset) =>
         Pattern3.Length == 0
+        || offset > word.Length
         || !word.Slice(offset).StartsWith(Pattern3.AsSpan()); 
 }

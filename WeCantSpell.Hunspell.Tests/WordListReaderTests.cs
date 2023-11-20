@@ -134,6 +134,8 @@ public class WordListReaderTests
             actual["UNICEF"][0].Flags.Should().ContainInOrder(new[] { 'S' });
             actual["Unicef"].Should().HaveCount(1);
             actual["Unicef"][0].Flags.Should().ContainInOrder(new[] { 'S', (char)SpecialFlags.OnlyUpcaseFlag });
+            actual["Afrique"].Should().HaveCount(1);
+            actual["Afrique"][0].Flags.Should().ContainInOrder(new[] { 'L' });
         }
 
         [Fact]
