@@ -249,12 +249,18 @@ public class HunspellTests
         {
             QueryOptions options = null;
 
-            if (dictionaryFilePath.EndsWith("i35725.dic"))
+            if (
+                dictionaryFilePath.EndsWith("i35725.dic")
+                ||
+                dictionaryFilePath.EndsWith("opentaal_keepcase.dic")
+            )
             {
-                // This one is pretty slow for some reason
+                // These tests run a bit slower than others and need some more time to complete
                 options = new()
                 {
+                    TimeLimitSuggestStep = TimeSpan.FromSeconds(20),
                     TimeLimitCompoundSuggest = TimeSpan.FromSeconds(20),
+                    TimeLimitCompoundCheck = TimeSpan.FromSeconds(20),
                     TimeLimitSuggestGlobal = TimeSpan.FromSeconds(20)
                 };
             }
