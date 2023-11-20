@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
@@ -141,4 +142,9 @@ static class CollectionsEx
 
 #endif
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool Any<T>(this List<T> list) => list.Count != 0;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool Any<T>(this T[] array) => array.Length != 0;
 }

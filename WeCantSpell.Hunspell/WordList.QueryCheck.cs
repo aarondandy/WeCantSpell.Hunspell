@@ -187,6 +187,7 @@ public partial class WordList
                     return new SpellCheckResult(root, resultType, false);
                 }
 
+                // check boundary patterns (^begin and end$)
                 foreach (var breakEntry in Affix.BreakPoints.GetInternalArray())
                 {
                     if (breakEntry.Length <= 1 || breakEntry.Length > scw.Length)
@@ -194,7 +195,6 @@ public partial class WordList
                         continue;
                     }
 
-                    // check boundary patterns (^begin and end$)
                     var pLastIndex = breakEntry.Length - 1;
                     if (
                         breakEntry.StartsWith('^')
@@ -202,7 +202,7 @@ public partial class WordList
                         && CheckNested(scw.AsSpan(pLastIndex))
                     )
                     {
-                        return new SpellCheckResult(root, resultType, true);
+                        return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true);
                     }
 
                     if (breakEntry.EndsWith('$'))
@@ -213,7 +213,7 @@ public partial class WordList
                             && CheckNested(scw.AsSpan(0, wlLessBreakIndex))
                         )
                         {
-                            return new SpellCheckResult(root, resultType, true);
+                            return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true);
                         }
                     }
                 }
@@ -241,7 +241,7 @@ public partial class WordList
                                 // examine 2 sides of the break point
                                 if (CheckNested(scw.AsSpan(0, found)))
                                 {
-                                    return new SpellCheckResult(root, resultType, true);
+                                    return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true);
                                 }
 
                                 // LANG_hu: spec. dash rule
@@ -249,7 +249,7 @@ public partial class WordList
                                 {
                                     if (CheckNested(scw.AsSpan(0, found + 1)))
                                     {
-                                        return new SpellCheckResult(root, resultType, true);
+                                        return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true); // check the first part with dash
                                     }
                                 }
                             }
@@ -266,7 +266,7 @@ public partial class WordList
                                 // examine 2 sides of the break point
                                 if (CheckNested(scw.AsSpan(0, found)))
                                 {
-                                    return new SpellCheckResult(root, resultType, true);
+                                    return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true);
                                 }
 
                                 // LANG_hu: spec. dash rule
@@ -274,7 +274,7 @@ public partial class WordList
                                 {
                                     if (CheckNested(scw.AsSpan(0, found + 1)))
                                     {
-                                        return new SpellCheckResult(root, resultType, true);
+                                        return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true); // check the first part with dash
                                     }
                                 }
                             }

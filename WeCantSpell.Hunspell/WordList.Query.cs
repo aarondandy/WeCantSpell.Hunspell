@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -282,7 +283,36 @@ public partial class WordList
                 {
                     // try check compound word
                     var rwords = new IncrementalWordList();
-                    he = CompoundCheck(word.AsSpan(), 0, 0, 100, null, rwords, huMovRule: false, isSug: false, ref info);
+
+                    // first allow only 2 words in the compound
+                    var setinfo = SpellCheckResultType.Compound2 | info;
+                    he = CompoundCheck(word.AsSpan(), 0, 0, 100, null, rwords, huMovRule: false, isSug: false, ref setinfo);
+                    info = setinfo & ~SpellCheckResultType.Compound2; // unset Compound2
+
+                    // if not 2-word compoud word, try with 3 or more words
+                    // (only if original info didn't forbid it)
+                    if (he is null && !info.HasFlag(SpellCheckResultType.Compound2))
+                    {
+                        info &= ~SpellCheckResultType.Compound2;
+                        he = CompoundCheck(word.AsSpan(), 0, 0, 100, null, rwords, huMovRule: false, isSug: false, ref info);
+                        // accept the compound with 3 or more words only if it is
+                        // - not a dictionary word with a typo and
+                        // - not two words written separately,
+                        // - or if it's an arbitrary number accepted by compound rules (e.g. 999%)
+                        if (he is not null && word.Length > 0 && !char.IsDigit(word[0]))
+                        {
+                            var querySuggest = new QuerySuggest(WordList, Options, CancellationToken)
+                            {
+                                TestSimpleSuggestion = true
+                            };
+
+                            bool onlyCompoundSug = false;
+                            if (querySuggest.Suggest(new List<string>(), word, ref onlyCompoundSug))
+                            {
+                                he = null;
+                            }
+                        }
+                    }
 
                     if (he is null && word.EndsWith('-') && Affix.IsHungarian)
                     {
@@ -1169,7 +1199,12 @@ public partial class WordList
                                 wordNum = oldwordnum2;
 
                                 // perhaps second word is a compound word (recursive call)
-                                if ((wordNum + 2) < maxwordnum)
+                                // (only if SPELL_COMPOUND_2 is not set and maxwordnum is not exceeded)
+                                if (
+                                    !info.HasFlag(SpellCheckResultType.Compound2)
+                                    &&
+                                    (wordNum + 2) < maxwordnum
+                                )
                                 {
                                     rv = CompoundCheck(st.TerminatedSpan.Slice(i), wordNum + 1, numSyllable, maxwordnum, words?.CreateIncremented(), rwords.CreateIncremented(), false, isSug, ref info, ref opLimiter);
 
