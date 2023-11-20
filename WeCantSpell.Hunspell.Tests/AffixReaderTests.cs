@@ -1744,9 +1744,8 @@ public class AffixReaderTests
             }
             else
             {
-                // On linux, unknown cultures may behave differently
-                actual.Culture.Name.Should().NotBeNullOrWhiteSpace();
-                expectedCulture.Should().StartWith(actual.Culture.Name, because: "en-XX may change to en");
+                // On linux net48 runs unknown cultures may behave differently
+                expectedCulture.Should().StartWith(actual.Culture.Name, because: "en-XX may change to en, or worse");
                 actual.Language.Should().Be(expectedCulture);
             }
         }
