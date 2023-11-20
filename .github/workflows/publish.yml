@@ -1,4 +1,4 @@
-name: CI
+name: Publish
 
 on:
   push:
@@ -21,9 +21,9 @@ jobs:
 
       - run: dotnet build WeCantSpell.Hunspell.sln -c Release
 
-      - run: dotnet test WeCantSpell.Hunspell.Tests/WeCantSpell.Hunspell.Tests.csproj -c Release
+      - run: dotnet test WeCantSpell.Hunspell.Tests/WeCantSpell.Hunspell.Tests.csproj -c Release --no-build --logger GitHubActions
 
-      - run: dotnet pack WeCantSpell.Hunspell/WeCantSpell.Hunspell.csproj -c Release --output ./artifacts --no-build --logger GitHubActions
+      - run: dotnet pack WeCantSpell.Hunspell/WeCantSpell.Hunspell.csproj -c Release --output ./artifacts
 
       - uses: actions/upload-artifact@v2
         with:
