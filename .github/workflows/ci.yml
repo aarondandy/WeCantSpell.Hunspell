@@ -2,36 +2,24 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
-      - release-*
+    branches: '**'
   pull_request:
-    branches:
-      - main
-      - release-*
-  workflow_dispatch:
+    branches: '**'
 
 env:
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
   DOTNET_NOLOGO: true
 
 jobs:
-  build:
-    runs-on: windows-2022 # TODO: change back to windows-latest when possible
+  validate:
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0 # The value of 0 may be imporant to include tags for MinVer
+          fetch-depth: 0 # The value of 0 may be important to include tags for MinVer
           submodules: true
 
       - run: dotnet build WeCantSpell.Hunspell.sln -c Release
 
       - run: dotnet test WeCantSpell.Hunspell.Tests/WeCantSpell.Hunspell.Tests.csproj -c Release
-
-      - run: dotnet pack WeCantSpell.Hunspell/WeCantSpell.Hunspell.csproj -c Release --output ./artifacts
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: nuget-package
-          path: ./artifacts/WeCantSpell.Hunspell.*.nupkg
