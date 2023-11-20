@@ -1737,7 +1737,19 @@ public class AffixReaderTests
 
             actual.Language.Should().Be(langCode);
             actual.Culture.Should().NotBeNull();
-            actual.Culture.Name.Should().Be(expectedCulture);
+
+            if (expectedCulture.Equals(actual.Culture.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                actual.Culture.Name.Should().Be(expectedCulture);
+                actual.Warnings.Should().BeEmpty();
+            }
+            else
+            {
+                // On linux, unknown cultures may behave differently
+                actual.Culture.Name.Should().NotBeNullOrWhiteSpace();
+                expectedCulture.Should().StartWith(actual.Culture.Name, because: "en-XX may change to en");
+                actual.Warnings.Should().NotBeEmpty();
+            }
         }
 
         [Fact]
