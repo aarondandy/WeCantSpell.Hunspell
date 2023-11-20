@@ -22,4 +22,4 @@ jobs:
 
       - run: dotnet build WeCantSpell.Hunspell.sln -c Release
 
-      - run: dotnet test WeCantSpell.Hunspell.Tests/WeCantSpell.Hunspell.Tests.csproj -c Release
+      - run: dotnet test WeCantSpell.Hunspell.Tests/WeCantSpell.Hunspell.Tests.csproj -c Debug
