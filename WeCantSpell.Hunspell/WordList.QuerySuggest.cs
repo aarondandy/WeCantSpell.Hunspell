@@ -669,6 +669,10 @@ public partial class WordList
                     if (slst.Count > i)
                     {
                         state.GoodSuggestion = true;
+                        if (state.Info.HasFlag(SpellCheckResultType.BestSug))
+                        {
+                            goto bestSug;
+                        }
                     }
                 }
 
@@ -769,6 +773,11 @@ public partial class WordList
                 if (!state.IsCpdSuggest || (!Affix.NoSplitSuggestions && slst.Count < sugLimit))
                 {
                     TwoWords(ref state);
+
+                    if (state.Info.HasFlag(SpellCheckResultType.BestSug))
+                    {
+                        goto bestSug;
+                    }
                 }
 
                 if (opLimiter.QueryForCancellation()) goto timerExit;
@@ -801,6 +810,10 @@ public partial class WordList
             goto actualExit;
 
         timerExit:
+            goto actualExit;
+
+        bestSug:
+            state.GoodSuggestion = true;
             goto actualExit;
 
         actualExit:
@@ -1465,17 +1478,25 @@ public partial class WordList
                     if (replacement[type] is { Length: > 0 } replacementValue)
                     {
                         var candidate = StringEx.ConcatString(word.AsSpan(0, r), replacementValue, word.AsSpan(r + replacement.Pattern.Length));
+                        var sp = candidate.IndexOf(' ');
 
+                        var oldNs = wlst.Count;
                         TestSug(wlst, candidate, ref state);
+                        if (oldNs < wlst.Count)
+                        {
+                            var patlen = replacement.Pattern.Length;
+                            var replen = replacementValue.Length;
+                            // REP suggestions are the best, don't search other type of suggestions
+                            state.Info |= SpellCheckResultType.BestSug;
+                        }
 
                         // check REP suggestions with space
-                        var sp = candidate.IndexOf(' ');
                         var prev = 0;
                         while (sp >= 0)
                         {
                             if (CheckWord(candidate.AsSpan(prev, sp - prev), cpdSuggest: 0) != 0)
                             {
-                                var oldNs = wlst.Count;
+                                oldNs = wlst.Count;
                                 TestSug(wlst, candidate.AsSpan(sp + 1), ref state);
                                 if (oldNs < wlst.Count)
                                 {
@@ -2293,6 +2314,9 @@ public partial class WordList
                 candidate[p] = ' ';
                 if (cpdSuggest == 0 && CheckWord(candidate.TerminatedSpan, cpdSuggest) != 0)
                 {
+                    // best solution
+                    state.Info |= SpellCheckResultType.BestSug;
+
                     // remove not word pair suggestions
                     if (!good)
                     {
@@ -2309,6 +2333,9 @@ public partial class WordList
                     candidate[p] = '-';
                     if (cpdSuggest == 0 && CheckWord(candidate.TerminatedSpan, cpdSuggest) != 0)
                     {
+                        // best solution
+                        state.Info |= SpellCheckResultType.BestSug;
+
                         // remove not word pair suggestions
                         if (!good)
                         {
