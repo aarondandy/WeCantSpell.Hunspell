@@ -569,10 +569,17 @@ public partial class WordList
                             {
                                 if (!huMovRule)
                                 {
+                                    // forbid dictionary stems with COMPOUNDFORBIDFLAG in
+                                    // compound words, overriding the effect of COMPOUNDPERMITFLAG
                                     if (searchEntryDetails[0].ContainsFlag(Affix.CompoundForbidFlag))
                                     {
-                                        // forbid dictionary stems with COMPOUNDFORBIDFLAG in
-                                        // compound words, overriding the effect of COMPOUNDPERMITFLAG
+                                        // given the while conditions that continue jumps to, this situation never ends
+                                        if (scpd == 0 && !onlycpdrule && Affix.SimplifiedCompound)
+                                        {
+                                            // TODO: HUNSPELL_WARNING(stderr, "break infinite loop\n");
+                                            break;
+                                        }
+
                                         continue;
                                     }
 
