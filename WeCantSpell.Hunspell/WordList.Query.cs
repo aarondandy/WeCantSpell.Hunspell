@@ -460,6 +460,8 @@ public partial class WordList
 
         public WordEntry? CompoundCheck(ReadOnlySpan<char> word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, bool isSug, ref SpellCheckResultType info)
         {
+            // add a time limit to handle possible
+            // combinatorical explosion of the overlapping words
             var opLimiter = new OperationTimedLimiter(Options.TimeLimitCompoundCheck, CancellationToken);
             return CompoundCheck(word, wordNum, numSyllable, maxwordnum, words, rwords, huMovRule, isSug, ref info, ref opLimiter);
         }
@@ -478,6 +480,12 @@ public partial class WordList
             var checkedSimplifiedTriple = false;
             var oldwords = words;
             var len = word.Length;
+
+            if (wordNum != 0)
+            {
+                // Reduce the number of clock checks by querying for cancellation once per method invocation
+                opLimiter.QueryForCancellation();
+            }
 
             // setcminmax
             var cmin = Affix.CompoundMin;
@@ -502,7 +510,7 @@ public partial class WordList
 
                     do // simplified checkcompoundpattern loop
                     {
-                        if (opLimiter.QueryForCancellation())
+                        if (opLimiter.HasBeenCanceled)
                         {
                             return null;
                         }

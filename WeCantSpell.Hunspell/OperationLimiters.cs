@@ -25,6 +25,8 @@ struct OperationTimedLimiter
     private readonly CancellationToken _cancellationToken;
     private bool _hasTriggeredCancellation;
 
+    public bool HasBeenCanceled => _hasTriggeredCancellation || _cancellationToken.IsCancellationRequested;
+
     public bool QueryForCancellation()
     {
         if (!_hasTriggeredCancellation)
