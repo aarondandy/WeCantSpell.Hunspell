@@ -573,11 +573,23 @@ public partial class WordList
                                     // compound words, overriding the effect of COMPOUNDPERMITFLAG
                                     if (searchEntryDetails[0].ContainsFlag(Affix.CompoundForbidFlag))
                                     {
-                                        // given the while conditions that continue jumps to, this situation never ends
-                                        if (scpd == 0 && !onlycpdrule && Affix.SimplifiedCompound)
+                                        if (!onlycpdrule && Affix.SimplifiedCompound) // would_continue
                                         {
-                                            // TODO: HUNSPELL_WARNING(stderr, "break infinite loop\n");
-                                            break;
+                                            if (scpd == 0)
+                                            {
+                                                // given the while conditions that continue jumps to, this situation never ends
+                                                // TODO: HUNSPELL_WARNING(stderr, "break infinite loop\n");
+                                                break;
+                                            }
+
+                                            if (scpd > 0)
+                                            {
+                                                // under these conditions we loop again, but the assumption above
+                                                // appears to be that cmin and cmax are the original values they
+                                                // had in the outside loop
+                                                cmin = oldcmin;
+                                                cmax = oldcmax;
+                                            }
                                         }
 
                                         continue;
