@@ -1542,6 +1542,13 @@ public partial class WordList
                 word = word.GetReversed();
             }
 
+            // ofz#59067 a replist entry can generate a very long word, abandon
+            // ngram if that odd-edge case arises
+            if (word.Length > MaxWordLen * 4)
+            {
+                return;
+            }
+
             var hasPhoneEntries = Affix.Phone.HasItems;
             var textInfo = TextInfo;
             var target = hasPhoneEntries
