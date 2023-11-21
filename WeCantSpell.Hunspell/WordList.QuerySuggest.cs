@@ -1512,6 +1512,8 @@ public partial class WordList
                 roots[i] = new(i);
             }
 
+            var hasRoots = false;
+            var hasRootsPhon = false;
             var lp = roots.Length - 1;
             var lpphon = lp;
 
@@ -1576,6 +1578,7 @@ public partial class WordList
                     {
                         roots[lp].Score = sc;
                         roots[lp].Root = new WordEntry(hpSet.Key, hpDetail);
+                        hasRoots = true;
                         lval = sc;
                         for (var j = 0; j < roots.Length; j++)
                         {
@@ -1591,6 +1594,7 @@ public partial class WordList
                     {
                         roots[lpphon].ScorePhone = scphon;
                         roots[lpphon].RootPhon = hpSet.Key;
+                        hasRootsPhon = true;
                         lval = scphon;
                         for (var j = 0; j < roots.Length; j++)
                         {
@@ -1602,6 +1606,12 @@ public partial class WordList
                         }
                     }
                 }
+            }
+
+            if (!hasRoots && !hasRootsPhon)
+            {
+                // with no roots there will be no guesses and no point running ngram
+                return;
             }
 
             // find minimum threshold for a passable suggestion
