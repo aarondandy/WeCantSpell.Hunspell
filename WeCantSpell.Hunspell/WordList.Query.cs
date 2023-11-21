@@ -479,6 +479,7 @@ public partial class WordList
             var oldwords = words;
             var len = word.Length;
 
+            // setcminmax
             var cmin = Affix.CompoundMin;
             var cmax = word.Length - cmin + 1;
 
