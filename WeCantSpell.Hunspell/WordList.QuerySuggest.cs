@@ -1484,8 +1484,6 @@ public partial class WordList
                         TestSug(wlst, candidate, ref state);
                         if (oldNs < wlst.Count)
                         {
-                            var patlen = replacement.Pattern.Length;
-                            var replen = replacementValue.Length;
                             // REP suggestions are the best, don't search other type of suggestions
                             state.Info |= SpellCheckResultType.BestSug;
                         }
