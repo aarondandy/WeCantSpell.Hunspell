@@ -1,49 +1,43 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
-using BenchmarkDotNet.Attributes;
-
+﻿using BenchmarkDotNet.Attributes;
 using WeCantSpell.Hunspell.Benchmarking.MicroSuites.Data;
 using WeCantSpell.Hunspell.Benchmarking.MicroSuites.Infrastructure;
 
-namespace WeCantSpell.Hunspell.Benchmarking.NHunspell.Suites;
+namespace WeCantSpell.Hunspell.Benchmarking.NHunspell;
 
-[SimpleJob]
+[SimpleJob(id: "Check en-US")]
 [MinColumn, MaxColumn, MeanColumn, MedianColumn]
 [MinWarmupCount(1), MaxWarmupCount(5)]
 [MinIterationCount(1), MaxIterationCount(20), MinInvokeCount(1), IterationTime(1000)]
-public class SuggestSuite
+public class CheckEnUsSuite
 {
     private CategorizedWordData WordData => EnUsTestData.Data;
 
-    private List<string> _testWords;
     private WordList _dictionary;
     private global::NHunspell.Hunspell _dictionaryNHunspell;
 
     [GlobalSetup]
     public void Setup()
     {
-        _testWords = WordData.AllWords.Where(static (_, i) => i % 50 == 0).ToList();
         _dictionary = EnUsTestData.CreateDictionary();
         _dictionaryNHunspell = new global::NHunspell.Hunspell(EnUsTestData.FilePathAff, EnUsTestData.FilePathDic);
     }
 
-    [Benchmark(Description = "Suggest words: WeCantSpell", Baseline = true)]
+    [Benchmark(Description = "Check words: WeCantSpell", Baseline = true)]
     public void All_WeCantSpell()
     {
-        foreach (var word in _testWords)
+        foreach (var word in WordData.AllWords)
         {
-            _ = _dictionary.Suggest(word);
+            _ = _dictionary.Check(word);
         }
     }
 
-    [Benchmark(Description = "Suggest words: NHunspell")]
+    [Benchmark(Description = "Check words: NHunspell")]
     public void All_NHunspell()
     {
 
-        foreach (var word in _testWords)
+        foreach (var word in WordData.AllWords)
         {
-            _ = _dictionaryNHunspell.Suggest(word);
+            _ = _dictionaryNHunspell.Spell(word);
         }
     }
 

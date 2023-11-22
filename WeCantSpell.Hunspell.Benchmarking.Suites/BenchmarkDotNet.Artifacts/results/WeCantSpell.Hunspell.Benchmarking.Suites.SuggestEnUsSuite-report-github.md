@@ -12,9 +12,9 @@ MinInvokeCount=1  IterationTime=250.0000 ms  MaxIterationCount=20
 MaxWarmupIterationCount=5  MinIterationCount=1  MinWarmupIterationCount=1  
 
 ```
-| Method             | Runtime            | Mean     | Error    | StdDev  | Ratio |
-|------------------- |------------------- |---------:|---------:|--------:|------:|
-| &#39;Suggest assorted&#39; | .NET Framework 4.8 | 831.4 ms | 12.56 ms | 3.26 ms |  2.02 |
-| &#39;Suggest assorted&#39; | .NET 6.0           | 412.6 ms |  5.16 ms | 1.34 ms |  1.00 |
-| &#39;Suggest assorted&#39; | .NET 7.0           | 425.2 ms |  7.82 ms | 0.43 ms |  1.03 |
-| &#39;Suggest assorted&#39; | .NET 8.0           | 385.5 ms |  7.40 ms | 3.28 ms |  0.93 |
+| Method          | Runtime            | Mean     | Error    | StdDev  | Ratio |
+|---------------- |------------------- |---------:|---------:|--------:|------:|
+| &#39;Suggest words&#39; | .NET Framework 4.8 | 761.0 ms | 11.40 ms | 1.76 ms |  1.80 |
+| &#39;Suggest words&#39; | .NET 6.0           | 422.5 ms |  5.23 ms | 1.36 ms |  1.00 |
+| &#39;Suggest words&#39; | .NET 7.0           | 413.6 ms |  5.61 ms | 0.87 ms |  0.98 |
+| &#39;Suggest words&#39; | .NET 8.0           | 365.4 ms |  5.54 ms | 0.86 ms |  0.86 |

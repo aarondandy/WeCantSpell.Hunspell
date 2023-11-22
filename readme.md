@@ -48,23 +48,15 @@ To know how up to date this port is, check the hunspell-origin submodule.
 
 "Good enough I guess"
 
-The performance of this port while not fantastic relative to the original
-binaries and NHunspell is definitely acceptable.
-If you need better performance you should check out [NHunspell](https://www.nuget.org/packages/NHunspell/).
+The performance of this port while not fantastic relative to the original binaries and NHunspell is definitely acceptable.
+If you need better check performance you should check out [NHunspell](https://www.nuget.org/packages/NHunspell/) but the implementation may be missing recent changes.
 
-| Benchmark | [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/) net6 | [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/) net48 | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
-|---------------------|--------------|--------------|--------------|
-| Dictionary Loads /s | 🐢 4         | 🐌 3        | 🐇 14        |
-| Words Checked /s    | 🐢 820,297   | 🐌 441,415  | 🐇 1,289,491 |
-| Suggest Queries / s | 🐇 164       | 🐢 92       | 🐌 37        |
+| Benchmark | [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/) net8 | [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/) net48 | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
+|---------------|---------------|---------------|---------------|
+| Check test    | 🐢 7,855.9 μs | 🐌 18,942 μs | 🐇 6,106 μs   |
+| Suggest test  | 🐇 365.4 ms   | 🐢 755.4 ms  | 🐌 1,905.0 ms |
 
 _Note: Measurements taken on an AMD 5800H._
-
-To reproduce:
-```
-dotnet run -c Release --project .\WeCantSpell.Hunspell.Benchmarking.LongRunning\WeCantSpell.Hunspell.Benchmarking.LongRunning.csproj --output ./perf-reports/
-dotnet run -c Release --project .\WeCantSpell.Hunspell.Benchmarking.NHunspell\WeCantSpell.Hunspell.Benchmarking.NHunspell.csproj --output ./perf-reports/
-```
 
 ## Specialized Examples
 

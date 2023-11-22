@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 
 using BenchmarkDotNet.Attributes;
 
@@ -7,7 +6,7 @@ using WeCantSpell.Hunspell.Benchmarking.MicroSuites.Data;
 
 namespace WeCantSpell.Hunspell.Benchmarking.Suites;
 
-[SimpleJob(id: "Checks en-US")]
+[SimpleJob(id: "Check en-US")]
 [MinColumn, MaxColumn, MeanColumn, MedianColumn]
 [MinWarmupCount(1), MaxWarmupCount(5)]
 [MinIterationCount(1), MaxIterationCount(20), MinInvokeCount(1), IterationTime(250)]
@@ -30,7 +29,7 @@ public class CheckEnUsSuite
         yield return new object[] { "Wrong", wordData.WrongWords.ToArray() };
     }
 
-    [Benchmark]
+    [Benchmark(Description = "Check words")]
     [ArgumentsSource(nameof(CheckData))]
     public void CheckWords(string set, string[] words)
     {

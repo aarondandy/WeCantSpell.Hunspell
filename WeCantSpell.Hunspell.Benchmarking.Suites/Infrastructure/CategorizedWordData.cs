@@ -48,13 +48,16 @@ public class CategorizedWordData
         wrongWords.TrimExcess();
         var rootWords = allWords.FindAll(word => isRoot(word));
         rootWords.TrimExcess();
+        var smallSampling = allWords.Where(static (_, i) => i % 100 == 0).ToList();
+        smallSampling.TrimExcess();
 
         return new CategorizedWordData
         {
             AllWords = allWords,
             CorrectWords = correctWords,
             WrongWords = wrongWords,
-            RootWords = rootWords
+            RootWords = rootWords,
+            SmallSampling = smallSampling
         };
     }
 
@@ -66,4 +69,5 @@ public class CategorizedWordData
     public List<string> CorrectWords { get; private set; }
     public List<string> WrongWords { get; private set; }
     public List<string> RootWords { get; private set; }
+    public List<string> SmallSampling { get; private set; }
 }

@@ -41,6 +41,7 @@
 
   <ItemGroup>
     <Folder Include="BenchmarkDotNet.Artifacts\results\" />
+    <Folder Include="Suites\" />
   </ItemGroup>
 
 </Project>

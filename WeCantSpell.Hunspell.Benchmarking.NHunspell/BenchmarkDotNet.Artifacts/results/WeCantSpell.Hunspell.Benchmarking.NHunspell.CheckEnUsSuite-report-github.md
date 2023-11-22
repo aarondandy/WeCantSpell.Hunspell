@@ -9,7 +9,7 @@ MinInvokeCount=1  IterationTime=1.0000 s  MaxIterationCount=20
 MaxWarmupIterationCount=5  MinIterationCount=1  MinWarmupIterationCount=1  
 
 ```
-| Method                       | Mean    | Error    | StdDev   | Min     | Max     | Median  | Ratio |
-|----------------------------- |--------:|---------:|---------:|--------:|--------:|--------:|------:|
-| &#39;Suggest words: WeCantSpell&#39; | 1.554 s | 0.0232 s | 0.0060 s | 1.548 s | 1.562 s | 1.553 s |  1.00 |
-| &#39;Suggest words: NHunspell&#39;   | 3.766 s | 0.0702 s | 0.0182 s | 3.737 s | 3.785 s | 3.769 s |  2.42 |
+| Method                     | Mean      | Error     | StdDev    | Min       | Max       | Median    | Ratio |
+|--------------------------- |----------:|----------:|----------:|----------:|----------:|----------:|------:|
+| &#39;Check words: WeCantSpell&#39; | 18.942 ms | 0.2804 ms | 0.1000 ms | 18.831 ms | 19.084 ms | 18.935 ms |  1.00 |
+| &#39;Check words: NHunspell&#39;   |  6.106 ms | 0.1112 ms | 0.0494 ms |  6.038 ms |  6.160 ms |  6.117 ms |  0.32 |
