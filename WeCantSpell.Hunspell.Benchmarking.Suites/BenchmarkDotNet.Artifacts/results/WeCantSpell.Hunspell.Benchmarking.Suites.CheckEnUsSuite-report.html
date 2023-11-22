@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>WeCantSpell.Hunspell.Benchmarking.Suites.CheckEnUsSuite-20231121-224840</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.13.10, Windows 11 (10.0.22631.2715/23H2/2023Update/SunValley3)
+AMD Ryzen 7 5800H with Radeon Graphics, 1 CPU, 16 logical and 8 physical cores
+  [Host]     : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
+  Job-MAJNXI : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
+  Job-GTHRWI : .NET 6.0.25 (6.0.2523.51912), X64 RyuJIT AVX2
+  Job-TLSYXV : .NET 7.0.14 (7.0.1423.51910), X64 RyuJIT AVX2
+  Job-YRAWZO : .NET 8.0.0 (8.0.23.53103), X64 RyuJIT AVX2
+</code></pre>
+<pre><code>MinInvokeCount=1  IterationTime=250.0000 ms  MaxIterationCount=20  
+MaxWarmupIterationCount=5  MinIterationCount=1  MinWarmupIterationCount=1  
+</code></pre>
+
+<table>
+<thead><tr><th>Method</th><th>Runtime     </th><th>set</th><th>words </th><th>Mean </th><th>Error</th><th>StdDev</th><th>Min  </th><th>Max  </th><th>Median</th><th>Ratio</th><th>RatioSD</th>
+</tr>
+</thead><tbody><tr><td>CheckWords</td><td>.NET Framework 4.8</td><td>All</td><td>String[7158]</td><td>19,136.6 &mu;s</td><td>346.44 &mu;s</td><td>206.16 &mu;s</td><td>18,941.5 &mu;s</td><td>19,531.2 &mu;s</td><td>19,024.4 &mu;s</td><td>1.86</td><td>0.02</td>
+</tr><tr><td>CheckWords</td><td>.NET 6.0</td><td>All</td><td>String[7158]</td><td>10,375.8 &mu;s</td><td>151.94 &mu;s</td><td>39.46 &mu;s</td><td>10,318.5 &mu;s</td><td>10,410.4 &mu;s</td><td>10,394.8 &mu;s</td><td>1.00</td><td>0.00</td>
+</tr><tr><td>CheckWords</td><td>.NET 7.0</td><td>All</td><td>String[7158]</td><td>9,996.3 &mu;s</td><td>97.64 &mu;s</td><td>15.11 &mu;s</td><td>9,979.8 &mu;s</td><td>10,016.0 &mu;s</td><td>9,994.8 &mu;s</td><td>0.96</td><td>0.01</td>
+</tr><tr><td>CheckWords</td><td>.NET 8.0</td><td>All</td><td>String[7158]</td><td>7,835.4 &mu;s</td><td>145.43 &mu;s</td><td>22.51 &mu;s</td><td>7,817.7 &mu;s</td><td>7,867.4 &mu;s</td><td>7,828.3 &mu;s</td><td>0.75</td><td>0.00</td>
+</tr><tr><td>CheckWords</td><td>.NET Framework 4.8</td><td>Correct</td><td>String[3001]</td><td>1,387.9 &mu;s</td><td>27.53 &mu;s</td><td>16.38 &mu;s</td><td>1,361.2 &mu;s</td><td>1,405.9 &mu;s</td><td>1,388.8 &mu;s</td><td>1.75</td><td>0.02</td>
+</tr><tr><td>CheckWords</td><td>.NET 6.0</td><td>Correct</td><td>String[3001]</td><td>796.5 &mu;s</td><td>13.47 &mu;s</td><td>2.08 &mu;s</td><td>793.9 &mu;s</td><td>798.3 &mu;s</td><td>796.9 &mu;s</td><td>1.00</td><td>0.00</td>
+</tr><tr><td>CheckWords</td><td>.NET 7.0</td><td>Correct</td><td>String[3001]</td><td>764.5 &mu;s</td><td>14.30 &mu;s</td><td>2.21 &mu;s</td><td>761.4 &mu;s</td><td>766.6 &mu;s</td><td>765.0 &mu;s</td><td>0.96</td><td>0.00</td>
+</tr><tr><td>CheckWords</td><td>.NET 8.0</td><td>Correct</td><td>String[3001]</td><td>547.9 &mu;s</td><td>8.56 &mu;s</td><td>6.69 &mu;s</td><td>544.2 &mu;s</td><td>568.6 &mu;s</td><td>545.5 &mu;s</td><td>0.69</td><td>0.01</td>
+</tr><tr><td>CheckWords</td><td>.NET Framework 4.8</td><td>Roots</td><td>String[2035]</td><td>543.3 &mu;s</td><td>3.64 &mu;s</td><td>0.20 &mu;s</td><td>543.1 &mu;s</td><td>543.5 &mu;s</td><td>543.4 &mu;s</td><td>1.44</td><td>0.00</td>
+</tr><tr><td>CheckWords</td><td>.NET 6.0</td><td>Roots</td><td>String[2035]</td><td>376.2 &mu;s</td><td>5.60 &mu;s</td><td>0.87 &mu;s</td><td>375.2 &mu;s</td><td>377.3 &mu;s</td><td>376.1 &mu;s</td><td>1.00</td><td>0.00</td>
+</tr><tr><td>CheckWords</td><td>.NET 7.0</td><td>Roots</td><td>String[2035]</td><td>357.0 &mu;s</td><td>6.70 &mu;s</td><td>1.74 &mu;s</td><td>355.4 &mu;s</td><td>359.3 &mu;s</td><td>356.2 &mu;s</td><td>0.95</td><td>0.00</td>
+</tr><tr><td>CheckWords</td><td>.NET 8.0</td><td>Roots</td><td>String[2035]</td><td>243.7 &mu;s</td><td>3.61 &mu;s</td><td>1.29 &mu;s</td><td>242.1 &mu;s</td><td>245.2 &mu;s</td><td>243.7 &mu;s</td><td>0.65</td><td>0.00</td>
+</tr><tr><td>CheckWords</td><td>.NET Framework 4.8</td><td>Wrong</td><td>String[4157]</td><td>17,101.8 &mu;s</td><td>145.43 &mu;s</td><td>22.51 &mu;s</td><td>17,077.1 &mu;s</td><td>17,124.1 &mu;s</td><td>17,103.1 &mu;s</td><td>1.83</td><td>0.00</td>
+</tr><tr><td>CheckWords</td><td>.NET 6.0</td><td>Wrong</td><td>String[4157]</td><td>9,355.9 &mu;s</td><td>84.78 &mu;s</td><td>13.12 &mu;s</td><td>9,337.7 &mu;s</td><td>9,368.6 &mu;s</td><td>9,358.7 &mu;s</td><td>1.00</td><td>0.00</td>
+</tr><tr><td>CheckWords</td><td>.NET 7.0</td><td>Wrong</td><td>String[4157]</td><td>9,042.2 &mu;s</td><td>154.60 &mu;s</td><td>23.92 &mu;s</td><td>9,016.7 &mu;s</td><td>9,074.3 &mu;s</td><td>9,039.0 &mu;s</td><td>0.97</td><td>0.00</td>
+</tr><tr><td>CheckWords</td><td>.NET 8.0</td><td>Wrong</td><td>String[4157]</td><td>7,395.3 &mu;s</td><td>134.95 &mu;s</td><td>89.26 &mu;s</td><td>7,231.7 &mu;s</td><td>7,527.5 &mu;s</td><td>7,423.1 &mu;s</td><td>0.79</td><td>0.01</td>
+</tr></tbody></table>
+</body>
+</html>

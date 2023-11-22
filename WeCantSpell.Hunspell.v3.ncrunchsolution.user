@@ -1,0 +1,38 @@
+﻿<SolutionConfiguration>
+  <Settings>
+    <AutoEnable>True</AutoEnable>
+    <CurrentEngineMode>Run impacted tests automatically, others manually [Global]</CurrentEngineMode>
+    <TestsWindowMenuOptions>
+      <VerticalSplitMenuOption>false</VerticalSplitMenuOption>
+      <ShowPassingTestsMenuOption>true</ShowPassingTestsMenuOption>
+      <ShowFailingTestsMenuOption>true</ShowFailingTestsMenuOption>
+      <ShowUnexecutedTestsMenuOption>true</ShowUnexecutedTestsMenuOption>
+      <ShowIgnoredTestsMenuOption>true</ShowIgnoredTestsMenuOption>
+    </TestsWindowMenuOptions>
+    <TestsWindowSplitterDistance>54.8829689025879%</TestsWindowSplitterDistance>
+    <TestsWindowTreeLayout>
+      <Column>
+        <Name>Name</Name>
+        <Width>507</Width>
+      </Column>
+      <Column>
+        <Name>Status</Name>
+        <Width>59</Width>
+      </Column>
+      <Column>
+        <Name>LastExecutionTime</Name>
+        <Width>76</Width>
+      </Column>
+      <Column>
+        <Name>GridNode</Name>
+        <Width>55</Width>
+      </Column>
+    </TestsWindowTreeLayout>
+    <TestsWindowTreeSortOrder>
+      <Sort>
+        <Name>Name</Name>
+        <Order>Ascending</Order>
+      </Sort>
+    </TestsWindowTreeSortOrder>
+  </Settings>
+</SolutionConfiguration>

@@ -1,6 +1,8 @@
-﻿namespace WeCantSpell.Hunspell.Benchmarking.NHunspell;
+﻿using BenchmarkDotNet.Running;
+
+namespace WeCantSpell.Hunspell.Benchmarking.NHunspell;
 
 class Program
 {
-    static int Main(string[] _) => NBench.NBenchRunner.Run<Program>();
+    static void Main(string[] args) => BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
 }
