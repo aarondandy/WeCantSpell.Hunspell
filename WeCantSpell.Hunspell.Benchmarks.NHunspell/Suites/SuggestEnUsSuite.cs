@@ -1,8 +1,8 @@
 ﻿using BenchmarkDotNet.Attributes;
-using WeCantSpell.Hunspell.Benchmarking.MicroSuites.Data;
-using WeCantSpell.Hunspell.Benchmarking.MicroSuites.Infrastructure;
 
-namespace WeCantSpell.Hunspell.Benchmarking.NHunspell;
+using WeCantSpell.Hunspell.Benchmarks.Helpers;
+
+namespace WeCantSpell.Hunspell.Benchmarks.NHunspell.Suites;
 
 [SimpleJob(id: "Suggest en-US")]
 [MinColumn, MaxColumn, MeanColumn, MedianColumn]

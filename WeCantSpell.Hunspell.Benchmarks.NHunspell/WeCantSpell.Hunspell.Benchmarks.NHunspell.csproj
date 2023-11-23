@@ -35,13 +35,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\WeCantSpell.Hunspell.Benchmarking.Suites\WeCantSpell.Hunspell.Benchmarking.Suites.csproj" />
+    <ProjectReference Include="..\WeCantSpell.Hunspell.Benchmarks\WeCantSpell.Hunspell.Benchmarks.csproj" />
     <ProjectReference Include="..\WeCantSpell.Hunspell\WeCantSpell.Hunspell.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="BenchmarkDotNet.Artifacts\results\" />
-    <Folder Include="Suites\" />
   </ItemGroup>
 
 </Project>

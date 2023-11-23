@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace WeCantSpell.Hunspell.Benchmarking.MicroSuites.Infrastructure;
+namespace WeCantSpell.Hunspell.Benchmarks.Helpers;
 
 public class CategorizedWordData
 {

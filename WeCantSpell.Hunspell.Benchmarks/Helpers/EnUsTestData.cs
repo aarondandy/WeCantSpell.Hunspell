@@ -1,8 +1,6 @@
 ﻿using System.IO;
 
-using WeCantSpell.Hunspell.Benchmarking.MicroSuites.Infrastructure;
-
-namespace WeCantSpell.Hunspell.Benchmarking.MicroSuites.Data;
+namespace WeCantSpell.Hunspell.Benchmarks.Helpers;
 
 public static class EnUsTestData
 {

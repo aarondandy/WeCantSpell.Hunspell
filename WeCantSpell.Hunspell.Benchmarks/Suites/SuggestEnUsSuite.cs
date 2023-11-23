@@ -1,9 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
+using WeCantSpell.Hunspell.Benchmarks.Helpers;
 
-using WeCantSpell.Hunspell.Benchmarking.MicroSuites.Data;
-using WeCantSpell.Hunspell.Benchmarking.MicroSuites.Infrastructure;
-
-namespace WeCantSpell.Hunspell.Benchmarking.Suites;
+namespace WeCantSpell.Hunspell.Benchmarks.Suites;
 
 [SimpleJob(id: "Suggest en-US")]
 [MinWarmupCount(1), MaxWarmupCount(5)]

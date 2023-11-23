@@ -1,10 +1,9 @@
 ﻿using System.Collections.Generic;
 
 using BenchmarkDotNet.Attributes;
+using WeCantSpell.Hunspell.Benchmarks.Helpers;
 
-using WeCantSpell.Hunspell.Benchmarking.MicroSuites.Data;
-
-namespace WeCantSpell.Hunspell.Benchmarking.Suites;
+namespace WeCantSpell.Hunspell.Benchmarks.Suites;
 
 [SimpleJob(id: "Check en-US")]
 [MinColumn, MaxColumn, MeanColumn, MedianColumn]
