@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>WeCantSpell.Hunspell.Benchmarks.Suites.SuggestEnUsSuite-20231123-101605</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.13.10, Windows 11 (10.0.22631.2715/23H2/2023Update/SunValley3)
+AMD Ryzen 7 5800H with Radeon Graphics, 1 CPU, 16 logical and 8 physical cores
+  [Host]     : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
+  Job-MAJNXI : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
+  Job-GTHRWI : .NET 6.0.25 (6.0.2523.51912), X64 RyuJIT AVX2
+  Job-YRAWZO : .NET 8.0.0 (8.0.23.53103), X64 RyuJIT AVX2
+</code></pre>
+<pre><code>MinInvokeCount=1  IterationTime=250.0000 ms  MaxIterationCount=20  
+MaxWarmupIterationCount=5  MinIterationCount=1  MinWarmupIterationCount=1  
+</code></pre>
+
+<table>
+<thead><tr><th>Method   </th><th>Runtime     </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Ratio</th>
+</tr>
+</thead><tbody><tr><td>&#39;Suggest words&#39;</td><td>.NET Framework 4.8</td><td>760.5 ms</td><td>12.29 ms</td><td>0.67 ms</td><td>1.83</td>
+</tr><tr><td>&#39;Suggest words&#39;</td><td>.NET 6.0</td><td>416.3 ms</td><td>7.74 ms</td><td>2.01 ms</td><td>1.00</td>
+</tr><tr><td>&#39;Suggest words&#39;</td><td>.NET 8.0</td><td>375.9 ms</td><td>5.90 ms</td><td>2.62 ms</td><td>0.90</td>
+</tr></tbody></table>
+</body>
+</html>

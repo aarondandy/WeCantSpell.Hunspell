@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>WeCantSpell.Hunspell.Benchmarks.NHunspell.Suites.CheckEnUsSuite-20231123-101630</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.13.10, Windows 11 (10.0.22631.2715/23H2/2023Update/SunValley3)
+AMD Ryzen 7 5800H with Radeon Graphics, 1 CPU, 16 logical and 8 physical cores
+  [Host]     : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
+  Job-TPWOKF : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
+</code></pre>
+<pre><code>MinInvokeCount=1  IterationTime=1.0000 s  MaxIterationCount=20  
+MaxWarmupIterationCount=5  MinIterationCount=1  MinWarmupIterationCount=1  
+</code></pre>
+
+<table>
+<thead><tr><th>Method              </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Min</th><th>Max</th><th>Median</th><th>Ratio</th>
+</tr>
+</thead><tbody><tr><td>&#39;Check words: WeCantSpell&#39;</td><td>18.521 ms</td><td>0.1870 ms</td><td>0.0289 ms</td><td>18.490 ms</td><td>18.558 ms</td><td>18.519 ms</td><td>1.00</td>
+</tr><tr><td>&#39;Check words: NHunspell&#39;</td><td>6.126 ms</td><td>0.0670 ms</td><td>0.0104 ms</td><td>6.113 ms</td><td>6.138 ms</td><td>6.127 ms</td><td>0.33</td>
+</tr></tbody></table>
+</body>
+</html>
