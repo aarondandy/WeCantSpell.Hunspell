@@ -10,18 +10,30 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterCondition>
 {
-    public static readonly CharacterConditionGroup Empty = new(Array.Empty<CharacterCondition>());
+    public static readonly CharacterConditionGroup Empty = new([]);
 
     public static readonly CharacterConditionGroup AllowAnySingleCharacter = Create(CharacterCondition.AllowAny);
 
-    public static CharacterConditionGroup Create(CharacterCondition condition) => new(new[] { condition });
+    public static CharacterConditionGroup Create(CharacterCondition condition) => new([condition]);
 
-    public static CharacterConditionGroup Create(IEnumerable<CharacterCondition> conditions) =>
-        new((conditions ?? throw new ArgumentNullException(nameof(conditions))).ToArray());
+    public static CharacterConditionGroup Create(IEnumerable<CharacterCondition> conditions)
+    {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(conditions);
+#else
+        if (conditions is null) throw new ArgumentNullException(nameof(conditions));
+#endif
+
+        return new(conditions.ToArray());
+    }
 
     public static CharacterConditionGroup Parse(string text)
     {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(text);
+#else
         if (text is null) throw new ArgumentNullException(nameof(text));
+#endif
 
         return Parse(text.AsSpan());
     }
@@ -56,7 +68,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
                     }
                     else
                     {
-                        text = ReadOnlySpan<char>.Empty;
+                        text = [];
                     }
 
                     var restricted = span.Length > 0 && span[0] == '^';
@@ -85,8 +97,8 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
 
     internal CharacterConditionGroup(CharacterCondition[] items)
     {
-#if DEBUG
-        if (items is null) throw new ArgumentNullException(nameof(items));
+#if DEBUG && HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(items);
 #endif
         _items = items;
     }

@@ -19,7 +19,11 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
     public static CharacterSet Create(IEnumerable<char> values)
     {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(values);
+#else
         if (values is null) throw new ArgumentNullException(nameof(values));
+#endif
 
         var builder = new Builder();
         builder.AddRange(values);
@@ -28,7 +32,11 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
     public static CharacterSet Create(string values)
     {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(values);
+#else
         if (values is null) throw new ArgumentNullException(nameof(values));
+#endif
 
         return Create(values.AsSpan());
     }
@@ -54,12 +62,25 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
     private readonly char[] _values;
     private readonly char _mask;
 
-    public int Count => _values.Length;
+    public int Count => (_values?.Length).GetValueOrDefault();
     public bool IsEmpty => !HasItems;
     public bool HasItems => _values is { Length: > 0 };
-    public char this[int index] => _values[index];
-    public IEnumerator<char> GetEnumerator() => ((IEnumerable<char>)_values).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => _values.GetEnumerator();
+    public char this[int index]
+    {
+        get
+        {
+#if HAS_THROWOOR
+            ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
+#else
+            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+#endif
+            return _values![index];
+        }
+    }
+
+    public IEnumerator<char> GetEnumerator() => ((IEnumerable<char>)(_values ?? [])).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public bool Contains(char value)
     {
@@ -195,9 +216,9 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
         return StringBuilderPool.GetStringAndReturn(builder).AsSpan();
     }
 
-    public override string ToString() => new(_values);
+    public override string ToString() => new(_values ?? []);
 
-    public bool Equals(CharacterSet obj) => _values.SequenceEqual(obj._values);
+    public bool Equals(CharacterSet obj) => (_values ?? []).SequenceEqual(obj._values ?? []);
 
     public override bool Equals(object? obj) => obj is CharacterSet set && Equals(set);
 

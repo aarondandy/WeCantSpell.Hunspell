@@ -10,17 +10,21 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 {
-    public static readonly FlagSet Empty = new(Array.Empty<FlagValue>(), default);
+    public static readonly FlagSet Empty = new([], default);
 
     public static bool operator ==(FlagSet left, FlagSet right) => left.Equals(right);
 
     public static bool operator !=(FlagSet left, FlagSet right) => !(left == right);
 
-    public static FlagSet Create(FlagValue value) => new(new[] { value }, value);
+    public static FlagSet Create(FlagValue value) => new([value], value);
 
     public static FlagSet Create(IEnumerable<FlagValue> values)
     {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(values);
+#else
         if (values is null) throw new ArgumentNullException(nameof(values));
+#endif
 
         var builder = values is ICollection collection ? new Builder(collection.Count) : new Builder();
         builder.AddRange(values);
@@ -36,7 +40,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
         if (text.Length == 1)
         {
-            return new(new FlagValue[] { new FlagValue(text[0]) }, text[0]);
+            return new([new FlagValue(text[0])], text[0]);
         }
 
         char mask = default;
@@ -423,7 +427,11 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
         public void AddRange(IEnumerable<FlagValue> values)
         {
+#if HAS_THROWNULL
+            ArgumentNullException.ThrowIfNull(values);
+#else
             if (values is null) throw new ArgumentNullException(nameof(values));
+#endif
 
             foreach (var value in values)
             {

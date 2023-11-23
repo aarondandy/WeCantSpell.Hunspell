@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
@@ -58,7 +57,7 @@ static class StringBuilderEx
         {
             unsafe
             {
-                fixed (char* start = &MemoryMarshal.GetReference(value))
+                fixed (char* start = &System.Runtime.InteropServices.MemoryMarshal.GetReference(value))
                 {
                     builder.Append(start, value.Length);
                 }

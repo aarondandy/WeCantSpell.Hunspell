@@ -37,8 +37,8 @@ static class StringEx
 
     public static int IndexOf(this ReadOnlySpan<char> @this, string value, int startIndex, StringComparison comparisonType)
     {
-#if DEBUG
-        if (value is null) throw new ArgumentNullException(nameof(value));
+#if DEBUG && HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(value);
 #endif
 
         return @this.IndexOf(value.AsSpan(), startIndex, comparisonType);
@@ -125,16 +125,16 @@ static class StringEx
 
     public static char GetCharOrTerminator(this string @this, int index)
     {
-#if DEBUG
-        if (index < 0) throw new ArgumentOutOfRangeException(nameof(index));
+#if DEBUG && HAS_THROWOOR
+        ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
 #endif
         return index < @this.Length ? @this[index] : '\0';
     }
 
     public static char GetCharOrTerminator(this Span<char> @this, int index)
     {
-#if DEBUG
-        if (index < 0) throw new ArgumentOutOfRangeException(nameof(index));
+#if DEBUG && HAS_THROWOOR
+        ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
 #endif
         return index < @this.Length ? @this[index] : '\0';
     }
@@ -200,8 +200,8 @@ static class StringEx
 
     public static string ConcatString(this ReadOnlySpan<char> @this, string value)
     {
-#if DEBUG
-        if (value is null) throw new ArgumentNullException(nameof(value));
+#if DEBUG && HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(value);
 #endif
         if (@this.IsEmpty)
         {
@@ -223,8 +223,8 @@ static class StringEx
 
     public static ReadOnlySpan<char> ConcatSpan(this ReadOnlySpan<char> @this, string value)
     {
-#if DEBUG
-        if (value is null) throw new ArgumentNullException(nameof(value));
+#if DEBUG && HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(value);
 #endif
         if (@this.IsEmpty)
         {
