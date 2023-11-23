@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>WeCantSpell.Hunspell.Benchmarks.Suites.CheckEnUsSuite-20231123-100225</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.13.10, Windows 11 (10.0.22631.2715/23H2/2023Update/SunValley3)
+AMD Ryzen 7 5800H with Radeon Graphics, 1 CPU, 16 logical and 8 physical cores
+  [Host]     : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
+  Job-MAJNXI : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
+  Job-GTHRWI : .NET 6.0.25 (6.0.2523.51912), X64 RyuJIT AVX2
+  Job-YRAWZO : .NET 8.0.0 (8.0.23.53103), X64 RyuJIT AVX2
+</code></pre>
+<pre><code>MinInvokeCount=1  IterationTime=250.0000 ms  MaxIterationCount=20  
+MaxWarmupIterationCount=5  MinIterationCount=1  MinWarmupIterationCount=1  
+</code></pre>
+
+<table>
+<thead><tr><th>Method </th><th>Runtime     </th><th>set</th><th>words </th><th>Mean </th><th>Error</th><th>StdDev</th><th>Min  </th><th>Max  </th><th>Median</th><th>Ratio</th>
+</tr>
+</thead><tbody><tr><td>&#39;Check words&#39;</td><td>.NET Framework 4.8</td><td>All</td><td>String[7158]</td><td>18,985.4 &mu;s</td><td>205.19 &mu;s</td><td>31.75 &mu;s</td><td>18,943.2 &mu;s</td><td>19,013.0 &mu;s</td><td>18,992.8 &mu;s</td><td>1.89</td>
+</tr><tr><td>&#39;Check words&#39;</td><td>.NET 6.0</td><td>All</td><td>String[7158]</td><td>10,023.9 &mu;s</td><td>159.67 &mu;s</td><td>24.71 &mu;s</td><td>10,000.7 &mu;s</td><td>10,057.1 &mu;s</td><td>10,018.8 &mu;s</td><td>1.00</td>
+</tr><tr><td>&#39;Check words&#39;</td><td>.NET 8.0</td><td>All</td><td>String[7158]</td><td>7,949.9 &mu;s</td><td>140.55 &mu;s</td><td>21.75 &mu;s</td><td>7,925.0 &mu;s</td><td>7,974.2 &mu;s</td><td>7,950.2 &mu;s</td><td>0.79</td>
+</tr><tr><td>&#39;Check words&#39;</td><td>.NET Framework 4.8</td><td>Correct</td><td>String[3001]</td><td>1,364.5 &mu;s</td><td>2.25 &mu;s</td><td>0.12 &mu;s</td><td>1,364.4 &mu;s</td><td>1,364.6 &mu;s</td><td>1,364.4 &mu;s</td><td>1.71</td>
+</tr><tr><td>&#39;Check words&#39;</td><td>.NET 6.0</td><td>Correct</td><td>String[3001]</td><td>798.5 &mu;s</td><td>12.34 &mu;s</td><td>1.91 &mu;s</td><td>797.3 &mu;s</td><td>801.4 &mu;s</td><td>797.7 &mu;s</td><td>1.00</td>
+</tr><tr><td>&#39;Check words&#39;</td><td>.NET 8.0</td><td>Correct</td><td>String[3001]</td><td>575.6 &mu;s</td><td>9.37 &mu;s</td><td>2.43 &mu;s</td><td>572.8 &mu;s</td><td>579.0 &mu;s</td><td>575.2 &mu;s</td><td>0.72</td>
+</tr><tr><td>&#39;Check words&#39;</td><td>.NET Framework 4.8</td><td>Roots</td><td>String[2035]</td><td>541.8 &mu;s</td><td>5.15 &mu;s</td><td>0.80 &mu;s</td><td>540.7 &mu;s</td><td>542.4 &mu;s</td><td>542.1 &mu;s</td><td>1.43</td>
+</tr><tr><td>&#39;Check words&#39;</td><td>.NET 6.0</td><td>Roots</td><td>String[2035]</td><td>378.8 &mu;s</td><td>0.94 &mu;s</td><td>0.05 &mu;s</td><td>378.7 &mu;s</td><td>378.8 &mu;s</td><td>378.8 &mu;s</td><td>1.00</td>
+</tr><tr><td>&#39;Check words&#39;</td><td>.NET 8.0</td><td>Roots</td><td>String[2035]</td><td>242.4 &mu;s</td><td>4.46 &mu;s</td><td>1.16 &mu;s</td><td>241.5 &mu;s</td><td>244.2 &mu;s</td><td>241.9 &mu;s</td><td>0.64</td>
+</tr><tr><td>&#39;Check words&#39;</td><td>.NET Framework 4.8</td><td>Wrong</td><td>String[4157]</td><td>16,793.9 &mu;s</td><td>211.93 &mu;s</td><td>32.80 &mu;s</td><td>16,753.9 &mu;s</td><td>16,830.6 &mu;s</td><td>16,795.5 &mu;s</td><td>1.86</td>
+</tr><tr><td>&#39;Check words&#39;</td><td>.NET 6.0</td><td>Wrong</td><td>String[4157]</td><td>9,029.9 &mu;s</td><td>155.62 &mu;s</td><td>24.08 &mu;s</td><td>9,010.2 &mu;s</td><td>9,062.9 &mu;s</td><td>9,023.3 &mu;s</td><td>1.00</td>
+</tr><tr><td>&#39;Check words&#39;</td><td>.NET 8.0</td><td>Wrong</td><td>String[4157]</td><td>7,430.4 &mu;s</td><td>147.08 &mu;s</td><td>97.29 &mu;s</td><td>7,314.0 &mu;s</td><td>7,580.1 &mu;s</td><td>7,434.8 &mu;s</td><td>0.82</td>
+</tr></tbody></table>
+</body>
+</html>
