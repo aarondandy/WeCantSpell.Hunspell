@@ -13,12 +13,11 @@ A port of [Hunspell](https://github.com/hunspell/hunspell) for .NET.
 
 * Reads Hunspell DIC and AFF file formats
 * Supports checking and suggesting words
-* Ported to fully managed C#
+* No unmanaged dependencies
 * Can be queried concurrently
 * Confusing LGPL, GPL, MPL tri-license
-* Compatible with .NET Core and .NET Standard
-* Compatible with multiple .NET framework versions
-* Uses .NET to handle cultures and encodings
+* Compatible with .NET, .NET Core, and .NET Framework
+* Uses .NET to handle most culture, encoding, and text concerns.
 
 ## License
 
@@ -26,8 +25,8 @@ A port of [Hunspell](https://github.com/hunspell/hunspell) for .NET.
 
 Read the license: [LICENSE](license.txt)
 
-This library was ported from the original Hunspell source
-and as a result is licensed under an MPL, LGPL, and GPL tri-license. Read the [LICENSE](license.txt) file to be sure you can use this library.
+This library was ported from the original [Hunspell](https://github.com/hunspell/hunspell) source
+and as a result is licensed under their MPL, LGPL, and GPL tri-license. Read the [LICENSE](license.txt) file to be sure you can use this library.
 
 ## Quick Start Example
 
@@ -42,19 +41,18 @@ bool ok = dictionary.Check("Colour");
 
 ## Upstream
 
-To know how up to date this port is, check the hunspell-origin submodule.
+Check the hunspell-origin submodule to see how up to date this library is compared to the [source](https://github.com/hunspell/hunspell) .
 
 ## Performance
 
-"Good enough I guess"
+"Good enough"
 
-The performance of this port while not fantastic relative to the original binaries and NHunspell is definitely acceptable.
-If you need better check performance you should check out [NHunspell](https://www.nuget.org/packages/NHunspell/) but the implementation may be missing recent changes.
+This port will likely perform slower relative to the original binaries and [NHunspell](https://www.nuget.org/packages/NHunspell/) but it should be acceptable. It is worth considering that while NHunspell is faster, it hasn't been updated in a long while and may be missing important fixes and changes.
 
-| Benchmark | [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/) net8 | [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/) net48 | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
-|---------------|---------------|---------------|---------------|
-| Check test    | 🐢 7,855.9 μs | 🐌 18,942 μs | 🐇 6,106 μs   |
-| Suggest test  | 🐇 365.4 ms   | 🐢 755.4 ms  | 🐌 1,905.0 ms |
+| Benchmark     | .NET 8       | .NET 4.8     | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
+|---------------|------------- |--------------|--------------|
+| Check test    | 🐢 7,902 μs | 🐌 18,476 μs | 🐇 6,097 μs |
+| Suggest test  | 🐇 373 ms   | 🐢 751 ms    | 🐌 1,896 ms |
 
 _Note: Measurements taken on an AMD 5800H._
 

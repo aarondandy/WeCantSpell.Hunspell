@@ -13,6 +13,6 @@ MaxWarmupIterationCount=5  MinIterationCount=1  MinWarmupIterationCount=1
 ```
 | Method          | Runtime            | Mean     | Error    | StdDev  | Ratio |
 |---------------- |------------------- |---------:|---------:|--------:|------:|
-| &#39;Suggest words&#39; | .NET Framework 4.8 | 760.5 ms | 12.29 ms | 0.67 ms |  1.83 |
-| &#39;Suggest words&#39; | .NET 6.0           | 416.3 ms |  7.74 ms | 2.01 ms |  1.00 |
-| &#39;Suggest words&#39; | .NET 8.0           | 375.9 ms |  5.90 ms | 2.62 ms |  0.90 |
+| &#39;Suggest words&#39; | .NET Framework 4.8 | 781.4 ms | 14.53 ms | 2.25 ms |  1.79 |
+| &#39;Suggest words&#39; | .NET 6.0           | 437.5 ms |  6.54 ms | 2.33 ms |  1.00 |
+| &#39;Suggest words&#39; | .NET 8.0           | 373.1 ms |  2.41 ms | 0.13 ms |  0.85 |
