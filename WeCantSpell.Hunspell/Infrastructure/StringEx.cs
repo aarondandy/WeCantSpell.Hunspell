@@ -5,6 +5,10 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class StringEx
 {
+#if HAS_SEARCHVALUES
+    private static readonly System.Buffers.SearchValues<char> TabOrSpace = System.Buffers.SearchValues.Create("\t ");
+#endif
+
 #if NO_STATIC_STRINGCHAR_METHODS
     public static bool StartsWith(this string @this, char character) => @this.Length != 0 && @this[0] == character;
 #endif
@@ -31,9 +35,13 @@ static class StringEx
 
     public static bool EqualsOrdinal(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value) => @this.Equals(value, StringComparison.Ordinal);
 
-    public static bool IsTabOrSpace(this char c) => c is ' ' or '\t';
+    public static bool IsTabOrSpace(this char c) => c is '\t' or ' ';
 
-    public static int IndexOfTabOrSpace(this ReadOnlySpan<char> span) => span.IndexOfAny(' ', '\t');
+#if HAS_SEARCHVALUES
+    public static int IndexOfTabOrSpace(this ReadOnlySpan<char> span) => span.IndexOfAny(TabOrSpace);
+#else
+    public static int IndexOfTabOrSpace(this ReadOnlySpan<char> span) => span.IndexOfAny('\t', ' ');
+#endif
 
     public static int IndexOf(this ReadOnlySpan<char> @this, string value, int startIndex, StringComparison comparisonType)
     {
@@ -339,7 +347,7 @@ static class StringEx
 
     public static SpanSeparatorSplitEnumerator<char> SplitOnComma(this ReadOnlySpan<char> @this, StringSplitOptions options = StringSplitOptions.None) => new(@this, options, static span => span.IndexOf(','));
 
-    public static SpanSeparatorSplitEnumerator<char> SplitOnTabOrSpace(this ReadOnlySpan<char> @this) => new(@this, StringSplitOptions.RemoveEmptyEntries, static span => span.IndexOfAny(' ', '\t'));
+    public static SpanSeparatorSplitEnumerator<char> SplitOnTabOrSpace(this ReadOnlySpan<char> @this) => new(@this, StringSplitOptions.RemoveEmptyEntries, static span => span.IndexOfTabOrSpace());
 
 #if NO_STATIC_STRINGCHAR_METHODS
     public static string Join(char seperator, string[] items)

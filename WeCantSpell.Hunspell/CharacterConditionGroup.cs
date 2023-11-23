@@ -10,6 +10,10 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterCondition>
 {
+#if HAS_SEARCHVALUES
+    private static readonly System.Buffers.SearchValues<char> ConditionParseStopCharacters = System.Buffers.SearchValues.Create(".[");
+#endif
+
     public static readonly CharacterConditionGroup Empty = new([]);
 
     public static readonly CharacterConditionGroup AllowAnySingleCharacter = Create(CharacterCondition.AllowAny);
@@ -81,7 +85,11 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
                     break;
 
                 default:
+#if HAS_SEARCHVALUES
+                    var stopIndex = text.IndexOfAny(ConditionParseStopCharacters);
+#else
                     var stopIndex = text.IndexOfAny('.', '[');
+#endif
                     span = stopIndex < 0 ? text : text.Slice(0, stopIndex);
                     text = text.Slice(span.Length);
 
