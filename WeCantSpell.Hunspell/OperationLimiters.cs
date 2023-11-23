@@ -3,35 +3,26 @@ using System.Threading;
 
 namespace WeCantSpell.Hunspell;
 
-struct OperationTimedLimiter
+ref struct OperationTimedLimiter
 {
     public OperationTimedLimiter(TimeSpan timeLimit, CancellationToken cancellationToken)
-        : this((int)timeLimit.TotalMilliseconds, cancellationToken)
     {
-    }
-
-    public OperationTimedLimiter(int timeLimitMs, CancellationToken cancellationToken)
-    {
-        _startedAtMs = Environment.TickCount;
-        _timeLimitMs = timeLimitMs;
-        _expiresAtMs = _startedAtMs + timeLimitMs;
+        _timer = new ExpirationTimer(timeLimit);
         _cancellationToken = cancellationToken;
         _hasTriggeredCancellation = false;
     }
 
-    private int _expiresAtMs;
-    private int _startedAtMs;
-    private readonly int _timeLimitMs;
+    private readonly ExpirationTimer _timer;
     private readonly CancellationToken _cancellationToken;
     private bool _hasTriggeredCancellation;
 
-    public bool HasBeenCanceled => _hasTriggeredCancellation || _cancellationToken.IsCancellationRequested;
+    public readonly bool HasBeenCanceled => _hasTriggeredCancellation || _cancellationToken.IsCancellationRequested;
 
     public bool QueryForCancellation()
     {
         if (!_hasTriggeredCancellation)
         {
-            if (_cancellationToken.IsCancellationRequested || _expiresAtMs <= Environment.TickCount)
+            if (_cancellationToken.IsCancellationRequested || _timer.CheckForExpiration())
             {
                 _hasTriggeredCancellation = true;
             }
@@ -39,52 +30,33 @@ struct OperationTimedLimiter
 
         return _hasTriggeredCancellation;
     }
-
-    public void Reset()
-    {
-        _hasTriggeredCancellation = false;
-        _startedAtMs = Environment.TickCount;
-        _expiresAtMs = _startedAtMs + _timeLimitMs;
-    }
 }
 
-sealed class OperationTimedCountLimiter
+ref struct OperationTimedCountLimiter
 {
     /// <summary>
-    /// This is the number of operations that are added to a timer if it runs out of operations
-    /// before the time limit has expired.
+    /// This is the number of operations that are added to a limiter if it runs out of operations before the time limit has expired.
     /// </summary>
     private const int MaxPlusTimer = 100;
 
     public OperationTimedCountLimiter(TimeSpan timeLimit, int countLimit, CancellationToken cancellationToken)
-        : this((int)timeLimit.TotalMilliseconds, countLimit, cancellationToken)
-    {
-    }
-
-    public OperationTimedCountLimiter(int timeLimitMs, int countLimit, CancellationToken cancellationToken)
     {
 #if DEBUG
         if (countLimit < 0) throw new ArgumentOutOfRangeException(nameof(countLimit));
 #endif
 
-        _startedAtMs = Environment.TickCount;
-        _timeLimitMs = timeLimitMs;
-        _expiresAtMs = _startedAtMs + timeLimitMs;
-        _countLimit = countLimit;
-        _counter = countLimit;
+        _timer = new ExpirationTimer(timeLimit);
         _cancellationToken = cancellationToken;
+        _counter = countLimit;
         _hasTriggeredCancellation = false;
     }
 
-    private readonly int _timeLimitMs;
-    private readonly int _countLimit;
-    private int _counter;
-    private int _expiresAtMs;
-    private int _startedAtMs;
+    private readonly ExpirationTimer _timer;
     private readonly CancellationToken _cancellationToken;
+    private int _counter;
     private bool _hasTriggeredCancellation;
 
-    public bool HasBeenCanceled => _hasTriggeredCancellation || _cancellationToken.IsCancellationRequested;
+    public readonly bool HasBeenCanceled => _hasTriggeredCancellation || _cancellationToken.IsCancellationRequested;
 
     public bool QueryForCancellation()
     {
@@ -98,7 +70,7 @@ sealed class OperationTimedCountLimiter
             {
                 _counter--;
             }
-            else if (_expiresAtMs > Environment.TickCount)
+            else if (_timer.CheckForExpiration())
             {
                 _counter = MaxPlusTimer;
             }
@@ -111,12 +83,32 @@ sealed class OperationTimedCountLimiter
 
         return _hasTriggeredCancellation;
     }
+}
 
-    public void Reset()
+readonly struct ExpirationTimer
+{
+    private const long DisabledSentinelValue = long.MinValue;
+
+    private static long GetCurrentTicks() => DateTime.UtcNow.Ticks;
+
+    internal ExpirationTimer(TimeSpan timeLimit)
     {
-        _counter = _countLimit;
-        _hasTriggeredCancellation = false;
-        _startedAtMs = Environment.TickCount;
-        _expiresAtMs = _startedAtMs + _timeLimitMs;
+        var limitTicks = timeLimit.Ticks;
+        if (limitTicks < 0)
+        {
+            _expiresAt = DisabledSentinelValue;
+        }
+        else
+        {
+            _expiresAt = GetCurrentTicks() + limitTicks;
+            if (_expiresAt < DateTime.MinValue.Ticks || _expiresAt > DateTime.MaxValue.Ticks)
+            {
+                _expiresAt = DisabledSentinelValue;
+            }
+        }
     }
+
+    private readonly long _expiresAt;
+
+    public readonly bool CheckForExpiration() => _expiresAt != DisabledSentinelValue && _expiresAt <= GetCurrentTicks();
 }

@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## Upcoming
 
+- Removes usages of `Environment.TickCount`: [PR #83](https://github.com/aarondandy/WeCantSpell.Hunspell/pull/83)
 - Updates the library to match unreleased changes and fixes from Hunspell
 
 ## 4.1.0 - 2023-11
