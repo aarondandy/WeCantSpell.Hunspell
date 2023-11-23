@@ -39,8 +39,4 @@
     <ProjectReference Include="..\WeCantSpell.Hunspell\WeCantSpell.Hunspell.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="BenchmarkDotNet.Artifacts\results\" />
-  </ItemGroup>
-
 </Project>
