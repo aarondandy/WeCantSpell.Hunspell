@@ -622,8 +622,6 @@ public partial class WordList
                 word = word.GetReversed();
             }
 
-            var opLimiter = new OperationTimedLimiter(Options.TimeLimitCompoundSuggest, _query.CancellationToken);
-
             // three loops:
             // - the first without compounding,
             // - the second one with 2-word compounding,
@@ -640,7 +638,7 @@ public partial class WordList
             for (state.CpdSuggest = 0; state.CpdSuggest < 3 && !noCompoundTwoWords; state.CpdSuggest++)
             {
                 // initialize both in non-compound and compound cycles
-                opLimiter.Reset();
+                var opLimiter = new OperationTimedLimiter(Options.TimeLimitCompoundSuggest, _query.CancellationToken);
 
                 // limit compound suggestion
                 if (state.CpdSuggest > 0)
@@ -886,7 +884,7 @@ public partial class WordList
                         }
 
                         candidate[i] = tryString[j];
-                        TestSug(state.SuggestionList, candidate, ref state, timer);
+                        TestSug(state.SuggestionList, candidate, ref state, ref timer);
                         candidate[i] = tmpc;
 
                         if (timer.HasBeenCanceled)
@@ -967,7 +965,7 @@ public partial class WordList
                     word.CopyTo(candidate);
                     candidate[word.Length] = tryChar;
 
-                    TestSug(state.SuggestionList, candidate, ref state, timer);
+                    TestSug(state.SuggestionList, candidate, ref state, ref timer);
 
                     if (timer.HasBeenCanceled)
                     {
@@ -979,7 +977,7 @@ public partial class WordList
                         candidate[index] = tryChar;
                         word.Slice(index).CopyTo(candidate.Slice(index + 1));
 
-                        TestSug(state.SuggestionList, candidate, ref state, timer);
+                        TestSug(state.SuggestionList, candidate, ref state, ref timer);
 
                         if (timer.HasBeenCanceled)
                         {
@@ -1148,10 +1146,10 @@ public partial class WordList
 
             var candidate = string.Empty;
             var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, _query.CancellationToken);
-            MapRelated(word, ref candidate, wn: 0, wlst, in state, timer, depth: 0);
+            MapRelated(word, ref candidate, wn: 0, wlst, in state, ref timer, depth: 0);
         }
 
-        private void MapRelated(string word, ref string candidate, int wn, List<string> wlst, in SuggestState state, OperationTimedCountLimiter timer, int depth)
+        private void MapRelated(string word, ref string candidate, int wn, List<string> wlst, in SuggestState state, ref OperationTimedCountLimiter timer, int depth)
         {
             if (word.Length == wn)
             {
@@ -1160,7 +1158,7 @@ public partial class WordList
                     &&
                     !wlst.Contains(candidate)
                     &&
-                    CheckWord(candidate, state.CpdSuggest, timer) != 0
+                    CheckWord(candidate, state.CpdSuggest, ref timer) != 0
                 )
                 {
                     wlst.Add(candidate);
@@ -1186,7 +1184,7 @@ public partial class WordList
                         foreach (var otherMapEntryValue in mapEntry.GetInternalArray())
                         {
                             candidate = candidatePrefix + otherMapEntryValue;
-                            MapRelated(word, ref candidate, wn + mapEntryValue.Length, wlst, in state, timer, depth + 1);
+                            MapRelated(word, ref candidate, wn + mapEntryValue.Length, wlst, in state, ref timer, depth + 1);
 
                             if (timer.HasBeenCanceled)
                             {
@@ -1200,15 +1198,15 @@ public partial class WordList
             if (!inMap)
             {
                 candidate += word[wn];
-                MapRelated(word, ref candidate, wn + 1, wlst, in state, timer, depth + 1);
+                MapRelated(word, ref candidate, wn + 1, wlst, in state, ref timer, depth + 1);
             }
         }
 
-        private void TestSug(List<string> wlst, ReadOnlySpan<char> candidate, ref SuggestState state, OperationTimedCountLimiter timer)
+        private void TestSug(List<string> wlst, ReadOnlySpan<char> candidate, ref SuggestState state, ref OperationTimedCountLimiter timer)
         {
             if (wlst.Count < MaxSuggestions && !wlst.Contains(candidate))
             {
-                var result = CheckWord(candidate, state.CpdSuggest, timer);
+                var result = CheckWord(candidate, state.CpdSuggest, ref timer);
                 if (result != 0)
                 {
                     // compound word in the dictionary
@@ -1258,7 +1256,7 @@ public partial class WordList
             }
         }
 
-        private byte CheckWord(string word, byte cpdSuggest, OperationTimedCountLimiter timer)
+        private byte CheckWord(string word, byte cpdSuggest, ref OperationTimedCountLimiter timer)
         {
             if (timer.QueryForCancellation())
             {
@@ -1268,7 +1266,7 @@ public partial class WordList
             return CheckWord(word, cpdSuggest);
         }
 
-        private byte CheckWord(ReadOnlySpan<char> word, byte cpdSuggest, OperationTimedCountLimiter timer)
+        private byte CheckWord(ReadOnlySpan<char> word, byte cpdSuggest, ref OperationTimedCountLimiter timer)
         {
             if (timer.QueryForCancellation())
             {
