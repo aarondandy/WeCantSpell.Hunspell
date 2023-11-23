@@ -460,6 +460,8 @@ public partial class WordList
 
         public WordEntry? CompoundCheck(ReadOnlySpan<char> word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, bool isSug, ref SpellCheckResultType info)
         {
+            // add a time limit to handle possible
+            // combinatorical explosion of the overlapping words
             var opLimiter = new OperationTimedLimiter(Options.TimeLimitCompoundCheck, CancellationToken);
             return CompoundCheck(word, wordNum, numSyllable, maxwordnum, words, rwords, huMovRule, isSug, ref info, ref opLimiter);
         }
@@ -479,6 +481,13 @@ public partial class WordList
             var oldwords = words;
             var len = word.Length;
 
+            if (wordNum != 0)
+            {
+                // Reduce the number of clock checks by querying for cancellation once per method invocation
+                opLimiter.QueryForCancellation();
+            }
+
+            // setcminmax
             var cmin = Affix.CompoundMin;
             var cmax = word.Length - cmin + 1;
 
@@ -501,7 +510,7 @@ public partial class WordList
 
                     do // simplified checkcompoundpattern loop
                     {
-                        if (opLimiter.QueryForCancellation())
+                        if (opLimiter.HasBeenCanceled)
                         {
                             return null;
                         }
@@ -568,10 +577,29 @@ public partial class WordList
                             {
                                 if (!huMovRule)
                                 {
+                                    // forbid dictionary stems with COMPOUNDFORBIDFLAG in
+                                    // compound words, overriding the effect of COMPOUNDPERMITFLAG
                                     if (searchEntryDetails[0].ContainsFlag(Affix.CompoundForbidFlag))
                                     {
-                                        // forbid dictionary stems with COMPOUNDFORBIDFLAG in
-                                        // compound words, overriding the effect of COMPOUNDPERMITFLAG
+                                        if (!onlycpdrule && Affix.SimplifiedCompound) // would_continue
+                                        {
+                                            if (scpd == 0)
+                                            {
+                                                // given the while conditions that continue jumps to, this situation never ends
+                                                // TODO: HUNSPELL_WARNING(stderr, "break infinite loop\n");
+                                                break;
+                                            }
+
+                                            if (scpd > 0)
+                                            {
+                                                // under these conditions we loop again, but the assumption above
+                                                // appears to be that cmin and cmax are the original values they
+                                                // had in the outside loop
+                                                cmin = oldcmin;
+                                                cmax = oldcmax;
+                                            }
+                                        }
+
                                         continue;
                                     }
 

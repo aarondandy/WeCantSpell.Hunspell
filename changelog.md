@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## Upcoming
+
+- Updates the library to match unreleased changes and fixes from Hunspell
+
 ## 4.1.0 - 2023-11
 
 - Updates the library to match changes in [Hunspell 1.7.2](https://github.com/hunspell/hunspell/releases/tag/v1.7.2)

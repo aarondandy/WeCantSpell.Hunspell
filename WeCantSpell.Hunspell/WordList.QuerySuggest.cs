@@ -669,6 +669,10 @@ public partial class WordList
                     if (slst.Count > i)
                     {
                         state.GoodSuggestion = true;
+                        if (state.Info.HasFlag(SpellCheckResultType.BestSug))
+                        {
+                            goto bestSug;
+                        }
                     }
                 }
 
@@ -769,6 +773,11 @@ public partial class WordList
                 if (!state.IsCpdSuggest || (!Affix.NoSplitSuggestions && slst.Count < sugLimit))
                 {
                     TwoWords(ref state);
+
+                    if (state.Info.HasFlag(SpellCheckResultType.BestSug))
+                    {
+                        goto bestSug;
+                    }
                 }
 
                 if (opLimiter.QueryForCancellation()) goto timerExit;
@@ -801,6 +810,10 @@ public partial class WordList
             goto actualExit;
 
         timerExit:
+            goto actualExit;
+
+        bestSug:
+            state.GoodSuggestion = true;
             goto actualExit;
 
         actualExit:
@@ -1465,17 +1478,23 @@ public partial class WordList
                     if (replacement[type] is { Length: > 0 } replacementValue)
                     {
                         var candidate = StringEx.ConcatString(word.AsSpan(0, r), replacementValue, word.AsSpan(r + replacement.Pattern.Length));
+                        var sp = candidate.IndexOf(' ');
 
+                        var oldNs = wlst.Count;
                         TestSug(wlst, candidate, ref state);
+                        if (oldNs < wlst.Count)
+                        {
+                            // REP suggestions are the best, don't search other type of suggestions
+                            state.Info |= SpellCheckResultType.BestSug;
+                        }
 
                         // check REP suggestions with space
-                        var sp = candidate.IndexOf(' ');
                         var prev = 0;
                         while (sp >= 0)
                         {
                             if (CheckWord(candidate.AsSpan(prev, sp - prev), cpdSuggest: 0) != 0)
                             {
-                                var oldNs = wlst.Count;
+                                oldNs = wlst.Count;
                                 TestSug(wlst, candidate.AsSpan(sp + 1), ref state);
                                 if (oldNs < wlst.Count)
                                 {
@@ -1512,6 +1531,8 @@ public partial class WordList
                 roots[i] = new(i);
             }
 
+            var hasRoots = false;
+            var hasRootsPhon = false;
             var lp = roots.Length - 1;
             var lpphon = lp;
 
@@ -1519,6 +1540,13 @@ public partial class WordList
             if (Affix.ComplexPrefixes)
             {
                 word = word.GetReversed();
+            }
+
+            // ofz#59067 a replist entry can generate a very long word, abandon
+            // ngram if that odd-edge case arises
+            if (word.Length > MaxWordLen * 4)
+            {
+                return;
             }
 
             var hasPhoneEntries = Affix.Phone.HasItems;
@@ -1576,6 +1604,7 @@ public partial class WordList
                     {
                         roots[lp].Score = sc;
                         roots[lp].Root = new WordEntry(hpSet.Key, hpDetail);
+                        hasRoots = true;
                         lval = sc;
                         for (var j = 0; j < roots.Length; j++)
                         {
@@ -1591,6 +1620,7 @@ public partial class WordList
                     {
                         roots[lpphon].ScorePhone = scphon;
                         roots[lpphon].RootPhon = hpSet.Key;
+                        hasRootsPhon = true;
                         lval = scphon;
                         for (var j = 0; j < roots.Length; j++)
                         {
@@ -1602,6 +1632,12 @@ public partial class WordList
                         }
                     }
                 }
+            }
+
+            if (!hasRoots && !hasRootsPhon)
+            {
+                // with no roots there will be no guesses and no point running ngram
+                return;
             }
 
             // find minimum threshold for a passable suggestion
@@ -2283,6 +2319,9 @@ public partial class WordList
                 candidate[p] = ' ';
                 if (cpdSuggest == 0 && CheckWord(candidate.TerminatedSpan, cpdSuggest) != 0)
                 {
+                    // best solution
+                    state.Info |= SpellCheckResultType.BestSug;
+
                     // remove not word pair suggestions
                     if (!good)
                     {
@@ -2299,6 +2338,9 @@ public partial class WordList
                     candidate[p] = '-';
                     if (cpdSuggest == 0 && CheckWord(candidate.TerminatedSpan, cpdSuggest) != 0)
                     {
+                        // best solution
+                        state.Info |= SpellCheckResultType.BestSug;
+
                         // remove not word pair suggestions
                         if (!good)
                         {

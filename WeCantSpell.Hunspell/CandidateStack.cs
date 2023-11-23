@@ -4,6 +4,8 @@ namespace WeCantSpell.Hunspell;
 
 internal sealed class CandidateStack : List<string>
 {
+    internal const int MaxCandidateStackDepth = 2048;
+
     public CandidateStack() : base(1)
     {
         // Preallocate with a small capacity as it doesn't often grow very large
@@ -12,7 +14,7 @@ internal sealed class CandidateStack : List<string>
     /// <remarks>
     /// apply a fairly arbitrary depth limit
     /// </remarks>
-    public bool ExceedsArbitraryDepthLimit => Count > 2048;
+    public bool ExceedsArbitraryDepthLimit => Count > MaxCandidateStackDepth;
 
     public void Push(string value)
     {

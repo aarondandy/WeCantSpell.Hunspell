@@ -184,7 +184,7 @@ public class HunspellTests
         [InlineData("files/rep.dic", "un'alunno", new[] { "un alunno" })]
         [InlineData("files/rep.dic", "foo", new[] { "bar" })]
         [InlineData("files/rep.dic", "vinteún", new[] { "vinte e un" })]
-        [InlineData("files/rep.dic", "autos", new[] { "auto's", "auto" })]
+        [InlineData("files/rep.dic", "autos", new[] { "auto's" })]
         [InlineData("files/ngram_utf_fix.dic", "человеко", new[] { "человек" })]
         [InlineData("files/utf8_nonbmp.dic", "𐏑𐏒𐏒", new[] { "𐏑 𐏒𐏒", "𐏒𐏑", "𐏒𐏒" })]
         [InlineData("files/ignoresug.dic", "ինչ", new[] { "ինչ" })]

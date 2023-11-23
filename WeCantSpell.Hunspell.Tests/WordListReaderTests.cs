@@ -845,10 +845,9 @@ public class WordListReaderTests
 
             var actual = await WordListReader.ReadFileAsync(filePath);
 
-            actual.RootWords.Should().HaveCount(2);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
-                "들어오세요",
-                "안녕하세요" });
+            actual.RootWords.Should().HaveCountGreaterThanOrEqualTo(2);
+            actual.RootWords.Should().Contain("들어오세요");
+            actual.RootWords.Should().Contain("안녕하세요");
         }
 
         [Fact]

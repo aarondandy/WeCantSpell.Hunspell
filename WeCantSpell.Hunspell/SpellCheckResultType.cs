@@ -3,7 +3,7 @@
 namespace WeCantSpell.Hunspell;
 
 [Flags]
-public enum SpellCheckResultType : byte
+public enum SpellCheckResultType : ushort
 {
     None = 0,
     /// <summary>
@@ -20,4 +20,8 @@ public enum SpellCheckResultType : byte
     /// Permit only 2 dictionary words in the compound.
     /// </summary>
     Compound2 = 1 << 7,
+    /// <summary>
+    /// limit suggestions for the best ones, i.e. ph:
+    /// </summary>
+    BestSug = 1 << 8,
 }
