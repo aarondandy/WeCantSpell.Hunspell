@@ -71,6 +71,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
         _searchValues = SearchValues.Create(values);
     }
 
+    private readonly char[]? _values;
     private readonly SearchValues<char>? _searchValues;
 
 #else
@@ -85,11 +86,10 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
         _mask = mask;
     }
 
+    private readonly char[]? _values;
     private readonly char _mask;
 
 #endif
-
-    private readonly char[]? _values;
 
     public int Count => (_values?.Length).GetValueOrDefault();
     public bool IsEmpty => !HasItems;
@@ -108,8 +108,10 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
         }
     }
 
-    public IEnumerator<char> GetEnumerator() => ((IEnumerable<char>)(_values ?? [])).GetEnumerator();
+    public IEnumerator<char> GetEnumerator() => ((IEnumerable<char>)GetInternalArray()).GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    private char[] GetInternalArray() => _values ?? [];
 
 #if HAS_SEARCHVALUES
 
@@ -255,9 +257,9 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
         return StringBuilderPool.GetStringAndReturn(builder).AsSpan();
     }
 
-    public override string ToString() => new(_values ?? []);
+    public override string ToString() => new(GetInternalArray());
 
-    public bool Equals(CharacterSet obj) => (_values ?? []).SequenceEqual(obj._values ?? []);
+    public bool Equals(CharacterSet obj) => GetInternalArray().SequenceEqual(obj.GetInternalArray());
 
     public override bool Equals(object? obj) => obj is CharacterSet set && Equals(set);
 

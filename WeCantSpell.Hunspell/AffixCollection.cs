@@ -381,7 +381,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
     {
         public AffixesByFlagsEnumerator(FlagSet flags, Dictionary<FlagValue, AffixGroup<TAffixEntry>> affixesByFlag)
         {
-            _flags = flags.GetInternalArray() ?? Array.Empty<FlagValue>();
+            _flags = flags.GetInternalArray();
             _flagsIndex = 0;
             _byFlag = affixesByFlag;
             _group = null!;
@@ -433,7 +433,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
     {
         public GroupsByFlagsEnumerator(FlagSet flags, Dictionary<FlagValue, AffixGroup<TAffixEntry>> byFlag)
         {
-            _flags = flags.GetInternalArray() ?? Array.Empty<FlagValue>();
+            _flags = flags.GetInternalArray();
             _flagsIndex = 0;
             _byFlag = byFlag;
             _current = default!;
