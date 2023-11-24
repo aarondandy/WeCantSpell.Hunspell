@@ -11,5 +11,5 @@ MaxWarmupIterationCount=5  MinIterationCount=1  MinWarmupIterationCount=1
 ```
 | Method                     | Mean      | Error     | StdDev    | Min       | Max       | Median    | Ratio |
 |--------------------------- |----------:|----------:|----------:|----------:|----------:|----------:|------:|
-| &#39;Check words: WeCantSpell&#39; | 19.080 ms | 0.3218 ms | 0.0498 ms | 19.030 ms | 19.132 ms | 19.078 ms |  1.00 |
-| &#39;Check words: NHunspell&#39;   |  6.113 ms | 0.1177 ms | 0.0065 ms |  6.106 ms |  6.119 ms |  6.114 ms |  0.32 |
+| &#39;Check words: WeCantSpell&#39; | 18.958 ms | 0.3598 ms | 0.0197 ms | 18.938 ms | 18.977 ms | 18.960 ms |  1.00 |
+| &#39;Check words: NHunspell&#39;   |  6.165 ms | 0.0718 ms | 0.0111 ms |  6.155 ms |  6.180 ms |  6.162 ms |  0.33 |

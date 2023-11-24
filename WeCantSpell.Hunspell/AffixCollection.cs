@@ -391,7 +391,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
         private AffixGroup<TAffixEntry> _group;
         private Dictionary<FlagValue, AffixGroup<TAffixEntry>> _byFlag;
-        private FlagValue[] _flags;
+        private char[] _flags;
         private TAffixEntry _current;
         private int _flagsIndex;
         private int _groupIndex;
@@ -418,7 +418,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         {
             while (_flagsIndex < _flags.Length)
             {
-                if (_byFlag.TryGetValue(_flags[_flagsIndex++], out _group!) && _group.Entries.Length != 0)
+                if (_byFlag.TryGetValue((FlagValue)_flags[_flagsIndex++], out _group!) && _group.Entries.Length != 0)
                 {
                     _groupIndex = 0;
                     return true;
@@ -441,7 +441,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
         private Dictionary<FlagValue, AffixGroup<TAffixEntry>> _byFlag;
         private AffixGroup<TAffixEntry> _current;
-        private FlagValue[] _flags;
+        private char[] _flags;
         private int _flagsIndex;
 
         public AffixGroup<TAffixEntry> Current => _current;
@@ -452,7 +452,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         {
             while (_flagsIndex < _flags.Length)
             {
-                if (_byFlag.TryGetValue(_flags[_flagsIndex++], out _current!))
+                if (_byFlag.TryGetValue((FlagValue)_flags[_flagsIndex++], out _current!))
                 {
                     return true;
                 }

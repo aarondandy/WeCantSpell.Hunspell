@@ -10,13 +10,13 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 {
-    public static readonly FlagSet Empty = new([], default);
+    public static readonly FlagSet Empty = new([]);
 
     public static bool operator ==(FlagSet left, FlagSet right) => left.Equals(right);
 
     public static bool operator !=(FlagSet left, FlagSet right) => !(left == right);
 
-    public static FlagSet Create(FlagValue value) => new([value], value);
+    public static FlagSet Create(FlagValue value) => new(value);
 
     public static FlagSet Create(IEnumerable<FlagValue> values)
     {
@@ -40,25 +40,13 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
         if (text.Length == 1)
         {
-            return new([new FlagValue(text[0])], text[0]);
+            return new(text[0]);
         }
 
-        char mask = default;
-
-        var values = new FlagValue[text.Length];
-        for (var i = 0; i < text.Length; i++)
-        {
-            var c = text[i];
-            values[i] = new FlagValue(c);
-            unchecked
-            {
-                mask |= c;
-            }
-        }
-
+        var values = text.ToArray();
         Array.Sort(values);
         CollectionsEx.RemoveSortedDuplicates(ref values);
-        return new(values, mask);
+        return new(values);
     }
 
     internal static FlagSet ParseAsLongs(ReadOnlySpan<char> text)
@@ -104,23 +92,263 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         return flags.MoveToFlagSet();
     }
 
-    private FlagSet(FlagValue[] values, char mask)
+    private static char CalculateMask(ReadOnlySpan<char> values)
     {
-        _mask = mask;
-        _values = values;
+        char mask = default;
+        foreach (var value in values)
+        {
+            unchecked
+            {
+                mask |= value;
+            }
+        }
+
+        return mask;
     }
 
-    private readonly FlagValue[] _values;
+    private static bool SortedInterectionTest(ReadOnlySpan<char> aSet, ReadOnlySpan<char> bSet)
+    {
+        if (aSet.Length <= 4 && bSet.Length <= 4)
+        {
+            return SortedInterectionTestLinear(aSet, bSet);
+        }
+
+        return SortedInterectionTestBinary(aSet, bSet);
+    }
+
+    private static bool SortedInterectionTestLinear(ReadOnlySpan<char> aSet, ReadOnlySpan<char> bSet)
+    {
+        if (aSet.IsEmpty || bSet.IsEmpty)
+        {
+            return false;
+        }
+
+        var aIndex = 0;
+        var bIndex = 0;
+
+        do
+        {
+            var cmp = aSet[aIndex].CompareTo(bSet[bIndex]);
+            if (cmp == 0)
+            {
+                return true;
+            }
+            else if (cmp < 0)
+            {
+                aIndex++;
+
+                if (aIndex >= aSet.Length)
+                {
+                    break; // disjoint or empty can't match
+                }
+            }
+            else
+            {
+                bIndex++;
+
+                if (bIndex >= bSet.Length)
+                {
+                    break; // disjoint or empty can't match
+                }
+            }
+        }
+        while (true);
+
+        return false;
+    }
+
+    private static bool SortedInterectionTestBinary(ReadOnlySpan<char> aSet, ReadOnlySpan<char> bSet)
+    {
+        if (aSet.IsEmpty || bSet.IsEmpty)
+        {
+            return false;
+        }
+
+        do
+        {
+            if (aSet.Length > bSet.Length)
+            {
+                var tmp = aSet;
+                aSet = bSet;
+                bSet = tmp;
+            }
+
+            var flagValuesIndex = bSet.BinarySearch(aSet[0]);
+            if (flagValuesIndex >= 0)
+            {
+                return true;
+            }
+            else
+            {
+                aSet = aSet.Slice(1);
+                if (aSet.IsEmpty)
+                {
+                    break;
+                }
+
+                bSet = bSet.Slice(~flagValuesIndex);
+                if (bSet.IsEmpty)
+                {
+                    break;
+                }
+            }
+        }
+        while (true);
+
+        return false;
+    }
+
+    private FlagSet(FlagValue value) : this((char)value)
+    {
+    }
+
+    private FlagSet(char value) : this([value], mask: value)
+    {
+    }
+
+    private FlagSet(char[] values) : this(values, mask: CalculateMask(values))
+    {
+    }
+
+    private FlagSet(char[] values, char mask)
+    {
+        _values = values;
+        _mask = mask;
+    }
+
+    private readonly char[]? _values;
     private readonly char _mask;
 
-    public int Count => _values.Length;
-    public bool IsEmpty => !HasItems;
-    public bool HasItems => _values is { Length: > 0 };
-    public FlagValue this[int index] => _values[index];
-    public IEnumerator<FlagValue> GetEnumerator() => ((IEnumerable<FlagValue>)_values).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => _values.GetEnumerator();
+    public int Count => (_values?.Length).GetValueOrDefault();
 
-    internal FlagValue[] GetInternalArray() => _values;
+    public bool IsEmpty => !HasItems;
+
+    public bool HasItems => _values is { Length: > 0 };
+
+    public FlagValue this[int index]
+    {
+        get
+        {
+#if HAS_THROWOOR
+            ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
+#else
+            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+#endif
+            return (FlagValue)_values![index];
+        }
+    }
+
+    public IEnumerator<FlagValue> GetEnumerator() => GetInternalArray().Select(static v => (FlagValue)v).GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    public override string ToString()
+    {
+        if (!HasItems)
+        {
+            return string.Empty;
+        }
+
+        if (Array.TrueForAll(_values!, static v => v < 256))
+        {
+            var builder = StringBuilderPool.Get(_values!.Length);
+
+            foreach (var value in _values)
+            {
+                builder.Append(value);
+            }
+
+            return StringBuilderPool.GetStringAndReturn(builder);
+        }
+        else
+        {
+            return string.Join(",", _values!.Select(static v => ((int)v).ToString(CultureInfo.InvariantCulture.NumberFormat)));
+        }
+    }
+
+    public override int GetHashCode() => HashCode.Combine(Count, _mask);
+
+    public bool Equals(FlagSet other) => GetInternalArray().SequenceEqual(other.GetInternalArray());
+
+    public override bool Equals(object? obj) => obj is FlagSet set && Equals(set);
+
+    public bool Contains(FlagValue value) => Contains((char)value);
+
+    public bool ContainsAny(FlagValue a, FlagValue b)
+    {
+        if (!HasItems)
+        {
+            return false;
+        }
+
+        if (a > b)
+        {
+            MemoryEx.Swap(ref a, ref b);
+        }
+
+        return ContainsAnySorted([(char)a, (char)b]);
+    }
+
+    public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c)
+    {
+        return HasItems && ContainsAnyUnsorted([(char)a, (char)b, (char)c]);
+    }
+
+    public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c, FlagValue d)
+    {
+        return HasItems && ContainsAnyUnsorted([(char)a, (char)b, (char)c, (char)d]);
+    }
+
+    public bool ContainsAny(FlagSet other)
+    {
+        if (IsEmpty || other.IsEmpty || (_mask & other._mask) == default)
+        {
+            return false;
+        }
+
+        if (other._values!.Length == 1)
+        {
+            return Contains(other._values[0]);
+        }
+
+        if (_values!.Length == 1)
+        {
+            return other.Contains(_values[0]);
+        }
+
+        return _values!.Length >= other._values!.Length
+            ? ContainsAnySorted(other._values)
+            : other.ContainsAnySorted(_values);
+    }
+
+    public FlagSet Union(FlagSet other)
+    {
+        if (other.IsEmpty)
+        {
+            return this;
+        }
+
+        if (IsEmpty)
+        {
+            return other;
+        }
+
+        if (other.Count == 1)
+        {
+            return Union(other[0]);
+        }
+
+        if (Count == 1)
+        {
+            return other.Union(this[0]);
+        }
+
+        var builder = new Builder();
+        builder.AddRange(this);
+        builder.AddRange(other);
+        return builder.MoveToFlagSet();
+    }
 
     public FlagSet Union(FlagValue value)
     {
@@ -129,7 +357,12 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             return this;
         }
 
-        var valueIndex = Array.BinarySearch(_values, value);
+        if (!HasItems)
+        {
+            return new(value);
+        }
+
+        var valueIndex = Array.BinarySearch(_values!, value);
         if (valueIndex >= 0)
         {
             return this;
@@ -137,7 +370,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
         valueIndex = ~valueIndex; // locate the best insertion point
 
-        var newValues = new FlagValue[_values.Length + 1];
+        var newValues = new char[_values!.Length + 1];
         if (valueIndex >= _values.Length)
         {
             _values.CopyTo(newValues.AsSpan());
@@ -158,39 +391,13 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         return new(newValues, unchecked((char)(_mask | value)));
     }
 
-    public FlagSet Union(FlagSet other)
+    internal char[] GetInternalArray() => _values ?? [];
+
+    internal bool Contains(char value)
     {
-        if (other.IsEmpty)
+        if (HasItems)
         {
-            return this;
-        }
-
-        if (IsEmpty)
-        {
-            return other;
-        }
-
-        if (other._values.Length == 1)
-        {
-            return Union(other._values[0]);
-        }
-
-        if (_values.Length == 1)
-        {
-            return other.Union(_values[0]);
-        }
-
-        var builder = new Builder();
-        builder.AddRange(_values);
-        builder.AddRange(other._values);
-        return builder.MoveToFlagSet();
-    }
-
-    public bool Contains(FlagValue value)
-    {
-        if (_values is not null)
-        {
-            if (_values.Length == 1)
+            if (_values!.Length == 1)
             {
                 return _values[0].Equals(value);
             }
@@ -205,7 +412,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
         return false;
 
-        static bool checkIterative(FlagValue[] searchSpace, FlagValue target)
+        static bool checkIterative(char[] searchSpace, char target)
         {
             foreach (var value in searchSpace)
             {
@@ -224,206 +431,88 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         }
     }
 
-    public bool ContainsAny(FlagSet values)
+    private bool ContainsAnyUnsorted(Span<char> other)
     {
-        if (IsEmpty || values.IsEmpty || (_mask & values._mask) == default)
+        other.Sort();
+        return ContainsAnySorted(other);
+    }
+
+    private bool ContainsAnySorted(ReadOnlySpan<char> other)
+    {
+#if DEBUG
+        for (var i = other.Length - 2; i >= 0; i--)
+        {
+            if (other[i] > other[i + 1]) throw new InvalidOperationException("Values must be sorted in ascending order");
+        }
+#endif
+
+        if (IsEmpty)
         {
             return false;
         }
 
-        if (Count == 1)
+        other = TrimUnmatchableSorted(other); // Trim ends that won't match
+
+        if (other.IsEmpty)
         {
-            return values.Contains(_values[0]);
-        }
-
-        if (values.Count == 1)
-        {
-            return Contains(values[0]);
-        }
-
-        return checkIterative(_values, values._values);
-
-        static bool checkIterative(FlagValue[] aSet, FlagValue[] bSet)
-        {
-            var aIndex = 0;
-            var bIndex = 0;
-
-            while (aIndex < aSet.Length && bIndex < bSet.Length)
-            {
-                var a = aSet[aIndex];
-                var b = bSet[bIndex];
-
-                if (a == b)
-                {
-                    return true;
-                }
-
-                if (a < b)
-                {
-                    aIndex++;
-                }
-                else
-                {
-                    bIndex++;
-                }
-            }
-
             return false;
         }
-    }
 
-    public bool ContainsAny(FlagValue a, FlagValue b)
-    {
-        if (_values is not null && _values.Length != 0)
+        if (other.Length == 1)
         {
-            if (_values.Length == 1)
-            {
-                return _values[0].EqualsAny(a, b);
-            }
-
-            if (b < a)
-            {
-                (b, a) = (a, b);
-            }
-
-            var i = 0;
-            if (a.HasValue && unchecked((a & _mask) == a))
-            {
-                i = Array.BinarySearch(_values, i, _values.Length - i, a);
-                if (i >= 0)
-                {
-                    return true;
-                }
-                else
-                {
-                    i = ~i;
-                }
-            }
-
-            if (b.HasValue && unchecked((b & _mask) == b))
-            {
-                i = Array.BinarySearch(_values, i, _values.Length - i, b);
-                if (i >= 0)
-                {
-                    return true;
-                }
-            }
+            return Contains(other[0]);
         }
 
-        return false;
-    }
-
-    public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c)
-    {
-        if (_values is not null && _values.Length != 0)
+        if (
+            other.IsEmpty
+            || other[0] > _values![_values.Length - 1]
+            || other[other.Length - 1] < _values[0]
+        )
         {
-            if (_values.Length == 1)
-            {
-                return _values[0].EqualsAny(a, b, c);
-            }
-
-            if (c < b)
-            {
-                (c, b) = (b, c);
-            }
-            if (b < a)
-            {
-                (b, a) = (a, b);
-            }
-            if (c < b)
-            {
-                (c, b) = (b, c);
-            }
-
-            var i = 0;
-            if (a.HasValue && unchecked((a & _mask) == a))
-            {
-                i = Array.BinarySearch(_values, i, _values.Length - i, a);
-                if (i >= 0)
-                {
-                    return true;
-                }
-                else
-                {
-                    i = ~i;
-                }
-            }
-
-            if (b.HasValue && unchecked((b & _mask) == b))
-            {
-                i = Array.BinarySearch(_values, i, _values.Length - i, b);
-                if (i >= 0)
-                {
-                    return true;
-                }
-                else
-                {
-                    i = ~i;
-                }
-            }
-
-            if (c.HasValue && unchecked((c & _mask) == c))
-            {
-                i = Array.BinarySearch(_values, i, _values.Length - i, c);
-                if (i >= 0)
-                {
-                    return true;
-                }
-            }
+            // If the sets are disjoint then a match is impossible
+            return false;
         }
 
-        return false;
+        return SortedInterectionTest(other, _values);
     }
 
-    public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c, FlagValue d) =>
-        ContainsAny(a, b, c) || Contains(d);
-
-    public bool Equals(FlagSet other) => _values.SequenceEqual(other._values);
-
-    public override bool Equals(object? obj) => obj is FlagSet set && Equals(set);
-
-    public override int GetHashCode() => HashCode.Combine(Count, _mask);
-
-    public override string ToString()
+    private ReadOnlySpan<char> TrimUnmatchableSorted(ReadOnlySpan<char> span)
     {
-        if (_values?.Length > 0)
-        {
-            if (Array.TrueForAll(_values, static v => v < 256))
-            {
-                var builder = StringBuilderPool.Get(_values.Length);
+        // Only trim zero values from the start as the span should be sorted
+        var start = 0;
+        for (; start < span.Length && (span[start] == FlagValue.ZeroValue || (span[start] & _mask) == default); start++) ;
 
-                foreach (var value in _values)
-                {
-                    builder.Append((char)value);
-                }
+        var end = span.Length - 1;
+        for (; end >= start && (span[end] & _mask) == default; end--) ;
 
-                return StringBuilderPool.GetStringAndReturn(builder);
-            }
-            else
-            {
-                return string.Join(",", _values.Select(static v => ((int)v).ToString(CultureInfo.InvariantCulture.NumberFormat)));
-            }
-        }
-
-        return string.Empty;
+        return span.Slice(start, end - start + 1);
     }
 
     public sealed class Builder
     {
         public Builder()
         {
-            _builder = ArrayBuilder<FlagValue>.Pool.Get();
+            _builder = ArrayBuilder<char>.Pool.Get();
         }
 
         public Builder(int capacity)
         {
             _builder = capacity is >= 0 and <= CollectionsEx.CollectionPreallocationLimit
-                ? ArrayBuilder<FlagValue>.Pool.Get(capacity)
-                : ArrayBuilder<FlagValue>.Pool.Get();
+                ? ArrayBuilder<char>.Pool.Get(capacity)
+                : ArrayBuilder<char>.Pool.Get();
         }
 
-        private ArrayBuilder<FlagValue> _builder;
+        private ArrayBuilder<char> _builder;
         private char _mask = default;
+
+        public void Add(FlagValue value)
+        {
+            if (value.HasValue)
+            {
+                _builder.AddAsSortedSet(value);
+                UnionMask(value);
+            }
+        }
 
         public void AddRange(IEnumerable<FlagValue> values)
         {
@@ -439,53 +528,51 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             }
         }
 
-        public void Add(FlagValue value)
-        {
-            if (value.HasValue)
-            {
-                _builder.AddAsSortedSet(value);
-                unchecked
-                {
-                    _mask |= value;
-                }
-            }
-        }
-
         public void AddRange(FlagSet values)
         {
-            if (_builder.Count == 0)
-            {
-                _builder.AddRange(values._values);
-                _mask = values._mask;
-                return;
-            }
-
             if (values.IsEmpty)
             {
                 return;
             }
 
-            var lowBoundIndex = 0;
-            foreach (var value in values._values)
-            {
-                unchecked
-                {
-                    _mask |= value;
-                }
+            AddRange(values._values!);
+            UnionMask(values._mask);
+        }
 
+        public FlagSet Create() => new(_builder.MakeArray(), _mask);
+
+        internal FlagSet MoveToFlagSet()
+        {
+            var result = new FlagSet(ArrayBuilder<char>.Pool.GetArrayAndReturn(_builder), _mask);
+            _builder = null!; // This should operate as a very crude dispose
+            return result;
+        }
+
+        private void AddRange(char[] values)
+        {
+            if (values is not { Length: > 0 })
+            {
+                return;
+            }
+
+            if (_builder.Count == 0)
+            {
+                _builder.AddRange(values);
+                return;
+            }
+
+            var lowBoundIndex = 0;
+            foreach (var value in values)
+            {
                 var valueIndex = _builder.BinarySearch(lowBoundIndex, _builder.Count - lowBoundIndex, value);
                 if (valueIndex < 0)
                 {
+                    UnionMask(value);
+
                     valueIndex = ~valueIndex; // locate the best insertion point
 
                     if (valueIndex >= _builder.Count)
                     {
-#if DEBUG
-                        if (valueIndex > _builder.Count)
-                        {
-                            throw new InvalidOperationException();
-                        }
-#endif
                         _builder.Add(value);
                     }
                     else
@@ -498,13 +585,12 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             }
         }
 
-        public FlagSet Create() => new(_builder.MakeArray(), _mask);
-
-        internal FlagSet MoveToFlagSet()
+        private void UnionMask(char value)
         {
-            var result = new FlagSet(ArrayBuilder<FlagValue>.Pool.GetArrayAndReturn(_builder), _mask);
-            _builder = null!; // This should operate as a very crude dispose
-            return result;
+            unchecked
+            {
+                _mask |= value;
+            }
         }
     }
 }

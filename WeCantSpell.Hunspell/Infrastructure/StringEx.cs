@@ -63,6 +63,8 @@ static class StringEx
     public static bool Contains(this string @this, char value) => @this.IndexOf(value) >= 0;
 
     public static bool Contains(this ReadOnlySpan<char> @this, char value) => @this.IndexOf(value) >= 0;
+
+    public static bool Contains(this Span<char> @this, char value) => @this.IndexOf(value) >= 0;
 #endif
 
     public static bool ContainsAny(this string @this, char value0, char value1) => @this.AsSpan().ContainsAny(value0, value1);
@@ -72,6 +74,42 @@ static class StringEx
     public static bool ContainsAny(this ReadOnlySpan<char> @this, char value0, char value1) => @this.IndexOfAny(value0, value1) >= 0;
 
     public static bool ContainsAny(this ReadOnlySpan<char> @this, char value0, char value1, char value2) => @this.IndexOfAny(value0, value1, value2) >= 0;
+
+#endif
+
+#if NO_SPAN_TRIM
+
+    public static ReadOnlySpan<T> TrimStart<T>(this ReadOnlySpan<T> span, T value) where T : IEquatable<T>?
+    {
+        int start = 0;
+
+        if (value is null)
+        {
+            for (; start < span.Length && span[start] is not null; start++) ;
+        }
+        else
+        {
+            for (; start < span.Length && !value.Equals(span[start]); start++) ;
+        }
+
+        return span.Slice(start);
+    }
+
+    public static Span<T> TrimStart<T>(this Span<T> span, T value) where T : IEquatable<T>?
+    {
+        int start = 0;
+
+        if (value is null)
+        {
+            for (; start < span.Length && span[start] is null; start++) ;
+        }
+        else
+        {
+            for (; start < span.Length && value.Equals(span[start]); start++) ;
+        }
+
+        return span.Slice(start);
+    }
 
 #endif
 

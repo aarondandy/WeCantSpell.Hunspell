@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -14,26 +14,38 @@ public readonly struct FlagValue :
     IComparable<int>,
     IComparable<char>
 {
-    private const char ZeroValue = '\0';
+    internal const char ZeroValue = '\0';
 
+    public static FlagValue Zero { get; } = (FlagValue)ZeroValue;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static implicit operator char(FlagValue flag) => flag._value;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator FlagValue(char value) => new(value);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static implicit operator int(FlagValue flag) => flag._value;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator FlagValue(int value) => new(value);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator !=(FlagValue a, FlagValue b) => a._value != b._value;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator ==(FlagValue a, FlagValue b) => a._value == b._value;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator >=(FlagValue a, FlagValue b) => a._value >= b._value;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator <=(FlagValue a, FlagValue b) => a._value <= b._value;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator >(FlagValue a, FlagValue b) => a._value > b._value;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator <(FlagValue a, FlagValue b) => a._value < b._value;
 
     internal static FlagValue CreateAsLong(char high, char low) => new(unchecked((char)((high << 8) | low)));
@@ -80,11 +92,10 @@ public readonly struct FlagValue :
     {
         if (text.IsEmpty)
         {
-            return Array.Empty<FlagValue>();
+            return [];
         }
 
         var values = new FlagValue[text.Length];
-
         for (var i = 0; i < values.Length; i++)
         {
             values[i] = new FlagValue(text[i]);
@@ -97,7 +108,7 @@ public readonly struct FlagValue :
     {
         if (text.IsEmpty)
         {
-            return Array.Empty<FlagValue>();
+            return [];
         }
 
         var flags = new FlagValue[(text.Length + 1) / 2];
@@ -120,20 +131,20 @@ public readonly struct FlagValue :
     {
         if (text.IsEmpty)
         {
-            return Array.Empty<FlagValue>();
+            return [];
         }
 
-        var flags = new List<FlagValue>();
+        var builder = ArrayBuilder<FlagValue>.Pool.Get();
 
         foreach (var part in text.SplitOnComma(StringSplitOptions.RemoveEmptyEntries))
         {
             if (TryParseAsNumber(part, out var value))
             {
-                flags.Add(value);
+                builder.Add(value);
             }
         }
 
-        return flags.ToArray();
+        return ArrayBuilder<FlagValue>.Pool.GetArrayAndReturn(builder);
     }
 
     public FlagValue(char value)

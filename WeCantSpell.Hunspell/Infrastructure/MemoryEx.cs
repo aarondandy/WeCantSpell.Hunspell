@@ -40,8 +40,38 @@ static class MemoryEx
         return @this.Length > maxLength ? @this.Slice(0, maxLength) : @this;
     }
 
-    public static void Swap<T>(this Span<T> span, int a, int b)
+    public static void Swap<T>(ref T value0, ref T value1)
     {
-        (span[b], span[a]) = (span[a], span[b]);
+        (value1, value0) = (value0, value1);
     }
+
+    public static void Swap<T>(this Span<T> span, int index0, int index1)
+    {
+        (span[index1], span[index0]) = (span[index0], span[index1]);
+    }
+
+#if NO_SPAN_SORT
+
+    public static void Sort<T>(this Span<T> span) where T : IComparable<T>
+    {
+        // This should be called on small collections and I'm lazy, so it's bubblesort.
+
+        while (span.Length >= 2)
+        {
+            for (var i = span.Length - 2; i >= 0; i--)
+            {
+                ref var value0 = ref span[i];
+                ref var value1 = ref span[i + 1];
+                if (value0.CompareTo(value1) > 0)
+                {
+                    Swap(ref value0, ref value1);
+                }
+            }
+
+            span = span.Slice(1);
+        }
+    }
+
+#endif
+
 }
