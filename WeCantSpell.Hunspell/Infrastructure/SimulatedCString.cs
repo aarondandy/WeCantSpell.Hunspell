@@ -53,12 +53,12 @@ struct SimulatedCString
     {
         get
         {
-            return index >= 0 && index < _bufferLength ? _rawBuffer[index] : '\0';
+            return index < _bufferLength ? _rawBuffer[index] : '\0';
         }
         set
         {
 #if DEBUG
-            if (index < 0 || index >= _bufferLength) throw new ArgumentOutOfRangeException(nameof(index));
+            if (index >= _bufferLength) throw new ArgumentOutOfRangeException(nameof(index));
 #endif
             _rawBuffer[index] = value;
 
@@ -95,10 +95,6 @@ struct SimulatedCString
 
     public char Exchange(int index, char value)
     {
-#if DEBUG
-        if (index < 0) throw new ArgumentOutOfRangeException(nameof(index));
-#endif
-
         if (index >= _bufferLength)
         {
             return '\0';
@@ -123,10 +119,6 @@ struct SimulatedCString
 
     public void Assign(ReadOnlySpan<char> text)
     {
-#if DEBUG
-        if (text.Length > _bufferLength) throw new ArgumentOutOfRangeException(nameof(text));
-#endif
-
         var buffer = _rawBuffer.AsSpan(0, _bufferLength);
         text.CopyTo(buffer);
 

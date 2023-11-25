@@ -105,9 +105,6 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
 
     internal CharacterConditionGroup(CharacterCondition[] items)
     {
-#if DEBUG && HAS_THROWNULL
-        ArgumentNullException.ThrowIfNull(items);
-#endif
         _items = items;
     }
 

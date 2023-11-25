@@ -41,10 +41,6 @@ ref struct OperationTimedCountLimiter
 
     public OperationTimedCountLimiter(TimeSpan timeLimit, int countLimit, CancellationToken cancellationToken)
     {
-#if DEBUG
-        if (countLimit < 0) throw new ArgumentOutOfRangeException(nameof(countLimit));
-#endif
-
         _timer = new ExpirationTimer(timeLimit);
         _cancellationToken = cancellationToken;
         _counter = countLimit;

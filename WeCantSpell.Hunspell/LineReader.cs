@@ -137,13 +137,6 @@ internal sealed class LineReader : IDisposable
         TextBufferLine buffer;
         if (_position.BufferIndex == lineTerminalPosition.BufferIndex)
         {
-#if DEBUG
-            if (_position.SubIndex > lineTerminalPosition.SubIndex)
-            {
-                throw new InvalidOperationException();
-            }
-#endif
-
             buffer = _buffers[_position.BufferIndex];
             Current = buffer.Memory.Slice(_position.SubIndex, lineTerminalPosition.SubIndex - _position.SubIndex);
         }
@@ -338,10 +331,7 @@ internal sealed class LineReader : IDisposable
                 out _);
 
 #if DEBUG
-            if (bytesConsumed == 0)
-            {
-                throw new InvalidOperationException();
-            }
+            if (bytesConsumed == 0) throw new InvalidOperationException();
 #endif
 
             fileReadByteBuffer = fileReadByteBuffer.Slice(bytesConsumed);
@@ -445,10 +435,7 @@ internal sealed class LineReader : IDisposable
                 var newCharactersCount = newEncoding.GetChars(restoredBytes, newCharacters.AsSpan());
 
 #if DEBUG
-                if (newCharactersCount != newCharacters.Length)
-                {
-                    throw new InvalidOperationException();
-                }
+                if (newCharactersCount != newCharacters.Length) throw new InvalidOperationException();
 #endif
 #endif
                 _buffers[bufferIndex] = new TextBufferLine(newCharacters)

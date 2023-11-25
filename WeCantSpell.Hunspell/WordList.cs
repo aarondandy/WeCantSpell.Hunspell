@@ -33,15 +33,26 @@ public sealed partial class WordList
     public static Task<WordList> CreateFromFilesAsync(string dictionaryFilePath, string affixFilePath, CancellationToken cancellationToken = default) =>
         WordListReader.ReadFileAsync(dictionaryFilePath, affixFilePath, cancellationToken);
 
-    public static WordList CreateFromWords(IEnumerable<string> words) =>
-        CreateFromWords(
-            words ?? throw new ArgumentNullException(nameof(words)),
-            new AffixConfig.Builder().MoveToImmutable());
+    public static WordList CreateFromWords(IEnumerable<string> words)
+    {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(words);
+#else
+        if (words is null) throw new ArgumentNullException(nameof(words));
+#endif
+
+        return CreateFromWords(words, new AffixConfig.Builder().MoveToImmutable());
+    }
 
     public static WordList CreateFromWords(IEnumerable<string> words, AffixConfig affix)
     {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(words);
+        ArgumentNullException.ThrowIfNull(affix);
+#else
         if (words is null) throw new ArgumentNullException(nameof(words));
         if (affix is null) throw new ArgumentNullException(nameof(affix));
+#endif
 
         var wordListBuilder = new Builder(affix);
 
@@ -169,13 +180,7 @@ public sealed partial class WordList
 
     private WordEntryDetail[] FindEntryDetailsByRootWord(string rootWord)
     {
-#if DEBUG
-        if (rootWord is null) throw new ArgumentNullException(nameof(rootWord));
-#endif
-
-        return EntriesByRoot.TryGetValue(rootWord, out var details)
-            ? details
-            : Array.Empty<WordEntryDetail>();
+        return EntriesByRoot.TryGetValue(rootWord, out var details) ? details : [];
     }
 
     private WordEntryDetail[] FindEntryDetailsByRootWord(ReadOnlySpan<char> rootWord)
@@ -222,10 +227,6 @@ public sealed partial class WordList
     {
         public NGramAllowedEntriesEnumerator(WordList wordList, int minKeyLength, int maxKeyLength)
         {
-#if DEBUG
-            if (minKeyLength > maxKeyLength) throw new ArgumentOutOfRangeException(nameof(maxKeyLength));
-#endif
-
             _coreEnumerator = new(wordList.EntriesByRoot, minKeyLength, maxKeyLength);
             _nGramRestrictedDetails = wordList.NGramRestrictedDetails;
             _checkRestrictedDetails = _nGramRestrictedDetails.Count != 0;

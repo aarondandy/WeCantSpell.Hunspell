@@ -11,14 +11,18 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
 {
     public static CompoundRuleSet Empty { get; } = new(Array.Empty<CompoundRule>());
 
-    public static CompoundRuleSet Create(IEnumerable<CompoundRule> rules) =>
-        new((rules ?? throw new ArgumentNullException(nameof(rules))).ToArray());
+    public static CompoundRuleSet Create(IEnumerable<CompoundRule> rules)
+    {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(rules);
+#else
+        if (rules is null) throw new ArgumentNullException(nameof(rules));
+#endif
+        return new(rules.ToArray());
+    }
 
     internal CompoundRuleSet(CompoundRule[] rules)
     {
-#if DEBUG
-        if (rules is null) throw new ArgumentNullException(nameof(rules));
-#endif
         _rules = rules;
     }
 

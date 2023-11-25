@@ -9,7 +9,7 @@ internal ref struct SpanSeparatorSplitEnumerator<T> where T : IEquatable<T>
     public SpanSeparatorSplitEnumerator(ReadOnlySpan<T> span, StringSplitOptions options, FindNextSeparator findNextSeparator)
     {
 #if DEBUG
-        if (options != StringSplitOptions.None && options != StringSplitOptions.RemoveEmptyEntries)
+        if (options is not (StringSplitOptions.None or StringSplitOptions.RemoveEmptyEntries))
         {
             throw new ArgumentOutOfRangeException(nameof(options));
         }

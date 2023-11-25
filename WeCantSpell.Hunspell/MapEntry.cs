@@ -9,14 +9,19 @@ public readonly struct MapEntry : IReadOnlyList<string>
 {
     public static MapEntry Empty { get; } = new(Array.Empty<string>());
 
-    public static MapEntry Create(IEnumerable<string> items) =>
-        new((items ?? throw new ArgumentNullException(nameof(items))).ToArray());
+    public static MapEntry Create(IEnumerable<string> items)
+    {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(items);
+#else
+        if (items is null) throw new ArgumentNullException(nameof(items));
+#endif
+
+        return new(items.ToArray());
+    }
 
     internal MapEntry(string[] items)
     {
-#if DEBUG
-        if (items is null) throw new ArgumentNullException(nameof(items));
-#endif
         _items = items;
     }
 

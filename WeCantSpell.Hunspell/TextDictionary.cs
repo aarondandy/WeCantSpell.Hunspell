@@ -133,13 +133,12 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
     {
         get
         {
-            if (TryGetValue(key, out var result))
+            if (!TryGetValue(key, out var result))
             {
-                return result;
+                throwNotFound();
             }
 
-            throwNotFound();
-            return default!;
+            return result;
 
 #if !NO_EXPOSED_NULLANNOTATIONS
             [System.Diagnostics.CodeAnalysis.DoesNotReturn]

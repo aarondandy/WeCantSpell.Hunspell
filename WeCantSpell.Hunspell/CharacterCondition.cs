@@ -102,8 +102,16 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
             ModeKind.MatchSequence => stringValue,
             ModeKind.RestrictChars => "[^" + stringValue + "]",
             ModeKind.PermitChars => "[" + stringValue + "]",
-            _ => throw new NotSupportedException(),
+            _ => handleUnsupportedMode(),
         };
+
+#if !NO_EXPOSED_NULLANNOTATIONS
+        [System.Diagnostics.CodeAnalysis.DoesNotReturn]
+#endif
+        static string handleUnsupportedMode()
+        {
+            throw new NotSupportedException();
+        }
     }
 
     public override string ToString() => GetEncoded();

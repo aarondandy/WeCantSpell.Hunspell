@@ -15,8 +15,16 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
 
     public static bool operator !=(MorphSet left, MorphSet right) => !(left == right);
 
-    public static MorphSet Create(IEnumerable<string> morphs) =>
-        new((morphs ?? throw new ArgumentNullException(nameof(morphs))).ToArray());
+    public static MorphSet Create(IEnumerable<string> morphs)
+    {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(morphs);
+#else
+        if (morphs is null) throw new ArgumentNullException(nameof(morphs));
+#endif
+
+        return new(morphs.ToArray());
+    }
 
     internal static string[] CreateReversedStrings(string[] oldMorphs)
     {
@@ -33,9 +41,6 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
 
     internal MorphSet(string[] morphs)
     {
-#if DEBUG
-        if (morphs is null) throw new ArgumentNullException(nameof(morphs));
-#endif
         _morphs = morphs;
     }
 

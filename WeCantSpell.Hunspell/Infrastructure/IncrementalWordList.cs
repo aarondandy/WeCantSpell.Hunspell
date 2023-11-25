@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
@@ -11,9 +10,6 @@ sealed class IncrementalWordList
 
     public IncrementalWordList(List<WordEntryDetail?> words, int wNum)
     {
-#if DEBUG && HAS_THROWOOR
-        ArgumentOutOfRangeException.ThrowIfLessThan(wNum, 0);
-#endif
         Words = words;
         WNum = wNum;
     }
@@ -54,10 +50,6 @@ sealed class IncrementalWordList
 
     public bool ContainsFlagAt(int wordIndex, FlagValue flag)
     {
-#if DEBUG && HAS_THROWOOR
-        ArgumentOutOfRangeException.ThrowIfLessThan(wordIndex, 0);
-#endif
-
         return wordIndex < Words.Count
             && Words[wordIndex] is { } detail
             && detail.ContainsFlag(flag);

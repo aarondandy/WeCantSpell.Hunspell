@@ -26,10 +26,6 @@ static class StringBuilderPool
 
     public static void Return(StringBuilder builder)
     {
-#if DEBUG
-        if (builder is null) throw new ArgumentNullException(nameof(builder));
-#endif
-
         if (builder.Capacity <= MaxCachedBuilderCapacity)
         {
             Volatile.Write(ref Cache, builder);

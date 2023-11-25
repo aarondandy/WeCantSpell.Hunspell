@@ -32,18 +32,7 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
 
     private readonly TextDictionary<MultiReplacementEntry> _replacements;
 
-    public MultiReplacementEntry this[string key]
-    {
-        get
-        {
-            if (_replacements.TryGetValue(key, out var result))
-            {
-                return result;
-            }
-
-            throw new InvalidOperationException();
-        }
-    }
+    public MultiReplacementEntry this[string key] => _replacements[key];
 
     public int Count => _replacements.Count;
 
@@ -69,11 +58,7 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
 
     internal bool TryConvert(string text, out string converted)
     {
-#if DEBUG
-        if (text is null) throw new ArgumentNullException(nameof(text));
-#endif
-
-        if (!string.IsNullOrEmpty(text))
+        if (text.Length != 0)
         {
             var appliedConversion = false;
             var convertedBuilder = StringBuilderPool.Get(text.Length);

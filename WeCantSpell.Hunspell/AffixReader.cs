@@ -116,7 +116,11 @@ public sealed partial class AffixReader
 
     public static async Task<AffixConfig> ReadFileAsync(string filePath, AffixConfig.Builder? builder, CancellationToken cancellationToken = default)
     {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(filePath);
+#else
         if (filePath is null) throw new ArgumentNullException(nameof(filePath));
+#endif
 
         using var stream = StreamEx.OpenAsyncReadFileStream(filePath);
         return await ReadAsync(stream, builder, cancellationToken).ConfigureAwait(false);
@@ -127,7 +131,11 @@ public sealed partial class AffixReader
 
     public static async Task<AffixConfig> ReadAsync(Stream stream, AffixConfig.Builder? builder, CancellationToken cancellationToken = default)
     {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(stream);
+#else
         if (stream is null) throw new ArgumentNullException(nameof(stream));
+#endif
 
         return await ReadInternalAsync(stream, builder, cancellationToken).ConfigureAwait(false);
     }
@@ -152,7 +160,11 @@ public sealed partial class AffixReader
 
     public static AffixConfig ReadFile(string filePath, AffixConfig.Builder? builder)
     {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(filePath);
+#else
         if (filePath is null) throw new ArgumentNullException(nameof(filePath));
+#endif
 
         using var stream = StreamEx.OpenReadFileStream(filePath);
         return Read(stream, builder);
@@ -181,7 +193,11 @@ public sealed partial class AffixReader
 
     public static AffixConfig Read(Stream stream, AffixConfig.Builder? builder)
     {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(stream);
+#else
         if (stream is null) throw new ArgumentNullException(nameof(stream));
+#endif
 
         var readerInstance = new AffixReader(builder);
 
@@ -262,10 +278,6 @@ public sealed partial class AffixReader
 
     private bool TryHandleParameterizedCommand(ReadOnlySpan<char> commandName, ReadOnlySpan<char> parameters)
     {
-#if DEBUG
-        if (parameters.IsEmpty) throw new ArgumentOutOfRangeException(nameof(parameters));
-#endif
-
         if (!CommandMap.TryGetValue(commandName, out var command))
         {
             LogWarning($"Unknown command {commandName.ToString()} with params: {parameters.ToString()}");
@@ -611,7 +623,7 @@ public sealed partial class AffixReader
             }
             else
             {
-                throw new InvalidOperationException();
+                handleInvalidConv();
             }
         }
 
@@ -647,6 +659,14 @@ public sealed partial class AffixReader
 
         entry.Set(type, pattern2.ReplaceIntoString('_', ' '));
         return true;
+
+#if !NO_EXPOSED_NULLANNOTATIONS
+        [System.Diagnostics.CodeAnalysis.DoesNotReturn]
+#endif
+        static void handleInvalidConv()
+        {
+            throw new InvalidOperationException();
+        }
     }
 
     private bool TryParseBreak(ReadOnlySpan<char> parameterText, ArrayBuilder<string> entries)

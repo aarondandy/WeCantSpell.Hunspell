@@ -9,14 +9,19 @@ public readonly struct SingleReplacementSet : IReadOnlyList<SingleReplacement>
 {
     public static SingleReplacementSet Empty { get; } = new(Array.Empty<SingleReplacement>());
 
-    public static SingleReplacementSet Create(IEnumerable<SingleReplacement> replacements) =>
-        new((replacements ?? throw new ArgumentNullException(nameof(replacements))).ToArray());
+    public static SingleReplacementSet Create(IEnumerable<SingleReplacement> replacements)
+    {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(replacements);
+#else
+        if (replacements is null) throw new ArgumentNullException(nameof(replacements));
+#endif
+
+        return new(replacements.ToArray());
+    }
 
     internal SingleReplacementSet(SingleReplacement[] replacements)
     {
-#if DEBUG
-        if (replacements is null) throw new ArgumentNullException(nameof(replacements));
-#endif
         _replacements = replacements;
     }
 

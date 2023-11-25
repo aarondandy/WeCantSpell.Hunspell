@@ -68,14 +68,6 @@ static class CollectionsEx
             }
 
             var duplicateCount = list.Count - writeIndex;
-
-#if DEBUG
-            if (duplicateCount < 0)
-            {
-                throw new InvalidOperationException();
-            }
-#endif
-
             if (duplicateCount > 0)
             {
                 list.RemoveRange(writeIndex, duplicateCount);

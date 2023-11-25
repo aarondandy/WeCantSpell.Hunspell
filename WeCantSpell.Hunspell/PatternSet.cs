@@ -11,15 +11,19 @@ public readonly struct PatternSet : IReadOnlyList<PatternEntry>
 {
     public static PatternSet Empty { get; } = new(Array.Empty<PatternEntry>());
 
-    public static PatternSet Create(IEnumerable<PatternEntry> entries) =>
-        new((entries ?? throw new ArgumentNullException(nameof(entries))).ToArray());
+    public static PatternSet Create(IEnumerable<PatternEntry> entries)
+    {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(entries);
+#else
+        if (entries is null) throw new ArgumentNullException(nameof(entries));
+#endif
+
+        return new(entries.ToArray());
+    }
 
     internal PatternSet(PatternEntry[] patterns)
     {
-#if DEBUG
-        if (patterns is null) throw new ArgumentNullException(nameof(patterns));
-#endif
-
         _patterns = patterns;
     }
 
@@ -37,11 +41,6 @@ public readonly struct PatternSet : IReadOnlyList<PatternEntry>
     /// </summary>
     internal bool Check(ReadOnlySpan<char> word, int pos, WordEntry r1, WordEntry r2, bool affixed)
     {
-#if DEBUG
-        if (r1 is null) throw new ArgumentNullException(nameof(r1));
-        if (r2 is null) throw new ArgumentNullException(nameof(r2));
-#endif
-
         var wordAfterPos = word.Slice(pos);
 
         foreach (var patternEntry in _patterns)

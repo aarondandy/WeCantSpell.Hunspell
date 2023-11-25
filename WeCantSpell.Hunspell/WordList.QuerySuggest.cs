@@ -1278,10 +1278,6 @@ public partial class WordList
 
         private static WordEntry? CheckWordHomonymPortion(string word, WordEntryDetail[] rvDetails, AffixConfig affix)
         {
-#if DEBUG
-            if (rvDetails.Length <= 0) throw new ArgumentOutOfRangeException(nameof(rvDetails));
-#endif
-
             WordEntryDetail rvDetail;
             var rvIndex = 0;
             do
@@ -2644,10 +2640,6 @@ public partial class WordList
         /// </remarks>
         private static int NGramWeightedSearch(int n, ReadOnlySpan<char> s1, ReadOnlySpan<char> t)
         {
-#if DEBUG
-            if (s1.IsEmpty) throw new ArgumentOutOfRangeException(nameof(s1));
-#endif
-
             // all substrings are left aligned for this first iteration so anything not matching needs to be double counted
             var needle = s1.Limit(n);
             var matchLength = FindLongestSubstringMatch(needle, t);
@@ -2687,10 +2679,6 @@ public partial class WordList
         /// </remarks>
         private static int NGramNonWeightedSearch(int n, ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
         {
-#if DEBUG
-            if (s1.IsEmpty) throw new ArgumentOutOfRangeException(nameof(s1));
-#endif
-
             var nscore = 0;
 
             do
@@ -2705,10 +2693,6 @@ public partial class WordList
 
         private static int FindLongestSubstringMatch(ReadOnlySpan<char> needle, ReadOnlySpan<char> haystack)
         {
-#if DEBUG
-            if (needle.IsEmpty) throw new ArgumentOutOfRangeException(nameof(needle));
-#endif
-
             // This brute force algorithm leans heavily on the performance benefits of IndexOf.
             // As an optimization, break out when a better result is not possible.
 

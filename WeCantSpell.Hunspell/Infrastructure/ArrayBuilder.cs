@@ -19,10 +19,13 @@ public sealed class ArrayBuilder<T>
 
     public ArrayBuilder(int initialCapacity)
     {
-#if DEBUG
+#if HAS_THROWOOR
+        ArgumentOutOfRangeException.ThrowIfLessThan(initialCapacity, 0);
+#else
         if (initialCapacity < 0) throw new ArgumentOutOfRangeException(nameof(initialCapacity));
 #endif
-        _values = initialCapacity == 0 ? Array.Empty<T>() : new T[initialCapacity];
+
+        _values = initialCapacity == 0 ? [] : new T[initialCapacity];
     }
 
     private T[] _values;
@@ -38,14 +41,24 @@ public sealed class ArrayBuilder<T>
 
     public T this[int index]
     {
-        get => index >= 0 && index < Count ? _values[index] : throw new ArgumentOutOfRangeException(nameof(index));
+        get
+        {
+#if HAS_THROWOOR
+            ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
+#else
+            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+#endif
+            return _values[index];
+        }
         set
         {
-            if (index < 0 || index >= Count)
-            {
-                throw new ArgumentOutOfRangeException(nameof(index));
-            }
-
+#if HAS_THROWOOR
+            ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
+#else
+            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+#endif
             _values[index] = value;
         }
     }
@@ -62,7 +75,11 @@ public sealed class ArrayBuilder<T>
 
     public void AddRange(IEnumerable<T> values)
     {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(values);
+#else
         if (values is null) throw new ArgumentNullException(nameof(values));
+#endif
 
         foreach (var value in values)
         {
@@ -72,7 +89,11 @@ public sealed class ArrayBuilder<T>
 
     public void AddRange(ICollection<T> values)
     {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(values);
+#else
         if (values is null) throw new ArgumentNullException(nameof(values));
+#endif
 
         var futureSize = Count + values.Count;
         EnsureCapacityAtLeast(futureSize);
@@ -90,7 +111,11 @@ public sealed class ArrayBuilder<T>
 
     public void AddRange(T[] values)
     {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(values);
+#else
         if (values is null) throw new ArgumentNullException(nameof(values));
+#endif
 
         var futureSize = Count + values.Length;
         EnsureCapacityAtLeast(futureSize);
@@ -100,7 +125,11 @@ public sealed class ArrayBuilder<T>
 
     public void GrowToCapacity(int requiredLength)
     {
+#if HAS_THROWOOR
+        ArgumentOutOfRangeException.ThrowIfLessThan(requiredLength, 0);
+#else
         if (requiredLength < 0) throw new ArgumentOutOfRangeException(nameof(requiredLength));
+#endif
 
         if (_values.Length < requiredLength)
         {
@@ -110,7 +139,11 @@ public sealed class ArrayBuilder<T>
 
     public void EnsureCapacityAtLeast(int requiredLength)
     {
+#if HAS_THROWOOR
+        ArgumentOutOfRangeException.ThrowIfLessThan(requiredLength, 0);
+#else
         if (requiredLength < 0) throw new ArgumentOutOfRangeException(nameof(requiredLength));
+#endif
 
         if (_values.Length < requiredLength)
         {
@@ -138,15 +171,7 @@ public sealed class ArrayBuilder<T>
         return true;
     }
 
-    internal int BinarySearch(int startIndex, int count, T value)
-    {
-#if DEBUG
-        if (startIndex < 0 || startIndex >= Count) throw new ArgumentOutOfRangeException(nameof(startIndex));
-        if (startIndex + count > Count) throw new ArgumentOutOfRangeException(nameof(count));
-#endif
-
-        return Array.BinarySearch(_values, startIndex, count, value);
-    }
+    internal int BinarySearch(int startIndex, int count, T value) => Array.BinarySearch(_values, startIndex, count, value);
 
     public void Insert(int insertionIndex, T value)
     {
@@ -235,10 +260,6 @@ public sealed class ArrayBuilder<T>
 
         public static ArrayBuilder<T> Get(int capacity)
         {
-#if DEBUG
-            if (capacity <= 0) throw new ArgumentOutOfRangeException(nameof(capacity));
-#endif
-
             if (Interlocked.Exchange(ref Cache, null) is { } taken)
             {
                 taken.Clear();
@@ -254,10 +275,6 @@ public sealed class ArrayBuilder<T>
 
         public static void Return(ArrayBuilder<T> builder)
         {
-#if DEBUG
-            if (builder is null) throw new ArgumentNullException(nameof(builder));
-#endif
-
             if (builder.Capacity > 0 && builder.Capacity <= MaxCapacity)
             {
                 Volatile.Write(ref Cache, builder);

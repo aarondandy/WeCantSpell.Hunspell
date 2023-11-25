@@ -11,14 +11,18 @@ public readonly struct BreakSet : IReadOnlyList<string>
 {
     public static BreakSet Empty { get; } = new(Array.Empty<string>());
 
-    public static BreakSet Create(IEnumerable<string> entries) =>
-        new((entries ?? throw new ArgumentNullException(nameof(entries))).ToArray());
+    public static BreakSet Create(IEnumerable<string> entries)
+    {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(entries);
+#else
+        if (entries is null) throw new ArgumentNullException(nameof(entries));
+#endif
+        return new(entries.ToArray());
+    }
 
     internal BreakSet(string[] entries)
     {
-#if DEBUG
-        if (entries is null) throw new ArgumentNullException(nameof(entries));
-#endif
         _entries = entries;
     }
 

@@ -9,14 +9,19 @@ public readonly struct CompoundRule : IReadOnlyList<FlagValue>
 {
     public static CompoundRule Empty { get; } = new(Array.Empty<FlagValue>());
 
-    public static CompoundRule Create(IEnumerable<FlagValue> values) =>
-        new((values ?? throw new ArgumentNullException(nameof(values))).ToArray());
+    public static CompoundRule Create(IEnumerable<FlagValue> values)
+    {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(values);
+#else
+        if (values is null) throw new ArgumentNullException(nameof(values));
+#endif
+
+        return new(values.ToArray());
+    }
 
     internal CompoundRule(FlagValue[] items)
     {
-#if DEBUG
-        if (items is null) throw new ArgumentNullException(nameof(items));
-#endif
         _values = items;
     }
 
