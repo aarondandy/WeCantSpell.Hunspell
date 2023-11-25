@@ -107,6 +107,22 @@ static class HunspellTextFunctions
         return text.Length - searchIndex - 1;
     }
 
+    public static int CountMatchesFromLeft<T>(this ReadOnlySpan<T> a, ReadOnlySpan<T> b) where T : notnull, IEquatable<T>
+    {
+        var minLength = Math.Min(a.Length, b.Length);
+        var count = 0;
+        for (; count < minLength && a[count].Equals(b[count]); count++) ;
+        return count;
+    }
+
+    public static int CountMatchesFromRight<T>(this ReadOnlySpan<T> a, ReadOnlySpan<T> b) where T : notnull, IEquatable<T>
+    {
+        var minLength = Math.Min(a.Length, b.Length);
+        var count = 0;
+        for (; count < minLength && a[a.Length - 1 - count].Equals(b[b.Length - 1 - count]); count++) ;
+        return count;
+    }
+
     /// <summary>
     /// This is a character class function used within Hunspell to determine if a character is an ASCII letter or something else.
     /// </summary>

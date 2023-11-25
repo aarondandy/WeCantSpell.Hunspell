@@ -4,22 +4,6 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class MemoryEx
 {
-    public static int CountMatchesFromLeft<T>(this ReadOnlySpan<T> a, ReadOnlySpan<T> b) where T : notnull, IEquatable<T>
-    {
-        var minLength = Math.Min(a.Length, b.Length);
-        var count = 0;
-        for (; count < minLength && a[count].Equals(b[count]); count++) ;
-        return count;
-    }
-
-    public static int CountMatchesFromRight<T>(this ReadOnlySpan<T> a, ReadOnlySpan<T> b) where T : notnull, IEquatable<T>
-    {
-        var minLength = Math.Min(a.Length, b.Length);
-        var count = 0;
-        for (; count < minLength && a[a.Length - 1 - count].Equals(b[b.Length - 1 - count]); count++) ;
-        return count;
-    }
-
     public static int IndexOf<T>(this ReadOnlySpan<T> @this, T value, int startIndex) where T:IEquatable<T>
     {
         var result = @this.Slice(startIndex).IndexOf(value);
