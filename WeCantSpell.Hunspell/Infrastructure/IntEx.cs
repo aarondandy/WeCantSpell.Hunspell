@@ -12,6 +12,9 @@ static class IntEx
 
     public static bool TryParseInvariant(ReadOnlySpan<char> text, out int value)
     {
+#if HAS_SPANCULTUREPARSE_INT
+        return int.TryParse(text.Trim(), NumberStyles.Integer, InvariantNumberFormat, out value);
+#else
         text = text.Trim();
         if (text.IsEmpty)
         {
@@ -32,14 +35,14 @@ static class IntEx
             return false;
         }
 
-        if (!TryParseInvariant(text[text.Length - 1], out value))
+        if (!tryParseInvariant(text[text.Length - 1], out value))
         {
             return false;
         }
 
         for (int i = text.Length - 2, multiplier = 10; i >= 0; i--, multiplier *= 10)
         {
-            if (!TryParseInvariant(text[i], out var digit))
+            if (!tryParseInvariant(text[i], out var digit))
             {
                 return false;
             }
@@ -53,6 +56,19 @@ static class IntEx
         }
 
         return true;
+
+        static bool tryParseInvariant(char character, out int value)
+        {
+            if (character is >= '0' and <= '9')
+            {
+                value = character - '0';
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
+#endif
     }
 
     public static int? TryParseInvariant(ReadOnlySpan<char> text) => TryParseInvariant(text, out var value) ? value : null;
@@ -70,17 +86,5 @@ static class IntEx
 
         b = true;
         return true;
-    }
-
-    private static bool TryParseInvariant(char character, out int value)
-    {
-        if (character is >= '0' and <= '9')
-        {
-            value = character - '0';
-            return true;
-        }
-
-        value = default;
-        return false;
     }
 }
