@@ -1,19 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
 sealed class IncrementalWordList
 {
-    public IncrementalWordList() : this(new(), 0)
+    public IncrementalWordList() : this([], 0)
     {
     }
 
     public IncrementalWordList(List<WordEntryDetail?> words, int wNum)
     {
-#if DEBUG
-        if (wNum < 0) throw new ArgumentOutOfRangeException(nameof(wNum));
+#if DEBUG && HAS_THROWOOR
+        ArgumentOutOfRangeException.ThrowIfLessThan(wNum, 0);
 #endif
         Words = words;
         WNum = wNum;
@@ -24,17 +23,18 @@ sealed class IncrementalWordList
 
     public void SetCurrent(WordEntryDetail value)
     {
-        if (WNum == Words.Count)
-        {
-            Words.Add(value);
-        }
-        else if (WNum < Words.Count)
+        if (WNum < Words.Count)
         {
             Words[WNum] = value;
         }
         else
         {
-            Words.AddRange(Enumerable.Repeat<WordEntryDetail?>(null, Math.Max(WNum - Words.Count, 0)).Append(value));
+            while (WNum > Words.Count)
+            {
+                Words.Add(null);
+            }
+
+            Words.Add(value);
         }
     }
 
@@ -54,8 +54,8 @@ sealed class IncrementalWordList
 
     public bool ContainsFlagAt(int wordIndex, FlagValue flag)
     {
-#if DEBUG
-        if (wordIndex < 0) throw new ArgumentOutOfRangeException(nameof(wordIndex));
+#if DEBUG && HAS_THROWOOR
+        ArgumentOutOfRangeException.ThrowIfLessThan(wordIndex, 0);
 #endif
 
         return wordIndex < Words.Count
