@@ -75,7 +75,7 @@ public partial class WordList
 
             _query.SpellCandidateStack.Push(word);
 
-            var result = CheckDetailsInternal(scw, capType, abbv);
+            var result = CheckDetailsInternal(scw, capType, abbv != 0);
 
             _query.SpellCandidateStack.Pop();
 
@@ -119,7 +119,7 @@ public partial class WordList
                 scw = _query.CleanWord2(word, out capType, out abbv);
             }
 
-            if (string.IsNullOrEmpty(scw))
+            if (scw.Length == 0)
             {
                 return SpellCheckResult.DefaultWrong;
             }
@@ -127,14 +127,14 @@ public partial class WordList
             // NOTE: because a string isn't formed until this point, scw is pushed instead. It isn't the same, but might be good enough.
             _query.SpellCandidateStack.Push(scw);
 
-            var result = CheckDetailsInternal(scw, capType, abbv);
+            var result = CheckDetailsInternal(scw, capType, abbv != 0);
 
             _query.SpellCandidateStack.Pop();
 
             return result;
         }
 
-        private SpellCheckResult CheckDetailsInternal(string scw, CapitalizationType capType, int abbv)
+        private SpellCheckResult CheckDetailsInternal(string scw, CapitalizationType capType, bool abbv)
         {
             var resultType = SpellCheckResultType.None;
             string? root = null;
@@ -148,7 +148,7 @@ public partial class WordList
                 }
 
                 rv = _query.CheckWord(scw, ref resultType, out root);
-                if (abbv != 0 && rv is null)
+                if (abbv && rv is null)
                 {
                     rv = _query.CheckWord(scw + ".", ref resultType, out root);
                 }
@@ -286,7 +286,7 @@ public partial class WordList
             return new SpellCheckResult(root, resultType, false);
         }
 
-        private WordEntry? CheckDetailsAllCap(int abbv, ref string scw, ref SpellCheckResultType resultType, out string? root)
+        private WordEntry? CheckDetailsAllCap(bool abbv, ref string scw, ref SpellCheckResultType resultType, out string? root)
         {
             resultType |= SpellCheckResultType.OrigCap;
             var rv = _query.CheckWord(scw, ref resultType, out root);
@@ -295,7 +295,7 @@ public partial class WordList
                 return rv;
             }
 
-            if (abbv != 0)
+            if (abbv)
             {
                 rv = _query.CheckWord(scw + ".", ref resultType, out root);
                 if (rv is not null)
@@ -342,7 +342,7 @@ public partial class WordList
                     rv = SpellSharps(ref scw, ref resultType, out root);
                 }
 
-                if (abbv != 0 && rv is null)
+                if (abbv && rv is null)
                 {
                     u8buffer += ".";
                     rv = SpellSharps(ref u8buffer, ref resultType, out root);
@@ -357,7 +357,7 @@ public partial class WordList
             return rv;
         }
 
-        private WordEntry? CheckDetailsInitCap(int abbv, CapitalizationType capType, ref string scw, ref SpellCheckResultType resultType, out string? root)
+        private WordEntry? CheckDetailsInitCap(bool abbv, CapitalizationType capType, ref string scw, ref SpellCheckResultType resultType, out string? root)
         {
             var u8buffer = HunspellTextFunctions.MakeAllSmall(scw, TextInfo);
             scw = HunspellTextFunctions.MakeInitCap(u8buffer, TextInfo);
@@ -397,7 +397,7 @@ public partial class WordList
 
             rv = _query.CheckWord(u8buffer, ref resultType, out root);
 
-            if (abbv != 0 && rv is null)
+            if (abbv && rv is null)
             {
                 u8buffer += ".";
                 rv = _query.CheckWord(u8buffer, ref resultType, out root);

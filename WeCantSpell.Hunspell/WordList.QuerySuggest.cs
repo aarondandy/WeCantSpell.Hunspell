@@ -84,11 +84,11 @@ public partial class WordList
                 scw = word;
             }
 
-            scw = _query.CleanWord2(scw, out var capType, out var abbv);
+            scw = _query.CleanWord2(scw, out var capType, out int abbv);
 
-            if (string.IsNullOrEmpty(scw))
+            if (scw.Length == 0)
             {
-                return new();
+                return [];
             }
 
             SuggestCandidateStack.Push(word);
@@ -136,9 +136,9 @@ public partial class WordList
                 scw = _query.CleanWord2(word, out capType, out abbv);
             }
 
-            if (string.IsNullOrEmpty(scw))
+            if (scw.Length == 0)
             {
-                return new();
+                return [];
             }
 
             // NOTE: because a string isn't formed until this point, scw is pushed instead. It isn't the same, but might be good enough.
