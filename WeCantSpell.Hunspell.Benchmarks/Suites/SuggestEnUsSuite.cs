@@ -4,8 +4,7 @@ using WeCantSpell.Hunspell.Benchmarks.Helpers;
 namespace WeCantSpell.Hunspell.Benchmarks.Suites;
 
 [SimpleJob(id: "Suggest en-US")]
-[MinWarmupCount(1), MaxWarmupCount(5)]
-[MinIterationCount(1), MaxIterationCount(20), MinInvokeCount(1), IterationTime(250)]
+[MinColumn, MeanColumn, MedianColumn]
 public class SuggestEnUsSuite
 {
     protected WordList WordList;

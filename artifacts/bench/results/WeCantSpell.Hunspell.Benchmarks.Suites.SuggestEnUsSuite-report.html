@@ -2,7 +2,7 @@
 <html lang='en'>
 <head>
 <meta charset='utf-8' />
-<title>WeCantSpell.Hunspell.Benchmarks.Suites.SuggestEnUsSuite-20231124-235812</title>
+<title>WeCantSpell.Hunspell.Benchmarks.Suites.SuggestEnUsSuite-20231125-143450</title>
 
 <style type="text/css">
 	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
@@ -15,21 +15,19 @@
 <pre><code>
 BenchmarkDotNet v0.13.10, Windows 11 (10.0.22631.2715/23H2/2023Update/SunValley3)
 AMD Ryzen 7 5800H with Radeon Graphics, 1 CPU, 16 logical and 8 physical cores
-  [Host]     : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
-  Job-MAJNXI : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
-  Job-GTHRWI : .NET 6.0.25 (6.0.2523.51912), X64 RyuJIT AVX2
-  Job-YRAWZO : .NET 8.0.0 (8.0.23.53103), X64 RyuJIT AVX2
+  [Host]        : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
+  Job-FYOECP    : .NET 6.0.25 (6.0.2523.51912), X64 RyuJIT AVX2
+  Job-ACBKDI    : .NET 8.0.0 (8.0.23.53103), X64 RyuJIT AVX2
+  Suggest en-US : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
 </code></pre>
-<pre><code>MinInvokeCount=1  IterationTime=250.0000 ms  MaxIterationCount=20  
-MaxWarmupIterationCount=5  MinIterationCount=1  MinWarmupIterationCount=1  
-</code></pre>
+<pre><code></code></pre>
 
 <table>
-<thead><tr><th>Method   </th><th>Runtime     </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Ratio</th>
+<thead><tr><th>Method   </th><th>Job    </th><th>Runtime     </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Min</th><th>Median</th><th>Ratio</th>
 </tr>
-</thead><tbody><tr><td>&#39;Suggest words&#39;</td><td>.NET Framework 4.8</td><td>764.2 ms</td><td>15.14 ms</td><td>2.34 ms</td><td>1.87</td>
-</tr><tr><td>&#39;Suggest words&#39;</td><td>.NET 6.0</td><td>409.3 ms</td><td>7.21 ms</td><td>1.12 ms</td><td>1.00</td>
-</tr><tr><td>&#39;Suggest words&#39;</td><td>.NET 8.0</td><td>375.9 ms</td><td>2.80 ms</td><td>0.43 ms</td><td>0.92</td>
+</thead><tbody><tr><td>&#39;Suggest words&#39;</td><td>Job-FYOECP</td><td>.NET 6.0</td><td>421.2 ms</td><td>2.04 ms</td><td>1.59 ms</td><td>418.3 ms</td><td>421.8 ms</td><td>1.00</td>
+</tr><tr><td>&#39;Suggest words&#39;</td><td>Job-ACBKDI</td><td>.NET 8.0</td><td>373.3 ms</td><td>0.98 ms</td><td>0.92 ms</td><td>371.6 ms</td><td>373.4 ms</td><td>0.89</td>
+</tr><tr><td>&#39;Suggest words&#39;</td><td>Suggest en-US</td><td>.NET Framework 4.8</td><td>765.7 ms</td><td>2.13 ms</td><td>1.99 ms</td><td>761.0 ms</td><td>766.3 ms</td><td>1.82</td>
 </tr></tbody></table>
 </body>
 </html>
