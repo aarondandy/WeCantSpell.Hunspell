@@ -193,6 +193,19 @@ static class StringEx
         return index < @this.Length ? @this[index] : '\0';
     }
 
+    public static string ConcatString(char c, ReadOnlySpan<char> span)
+    {
+        var builder = StringBuilderPool.Get(span.Length + 1);
+        builder.Append(c);
+
+        if (!span.IsEmpty)
+        {
+            builder.Append(span);
+        }
+
+        return StringBuilderPool.GetStringAndReturn(builder);
+    }
+
     public static string ConcatString(ReadOnlySpan<char> str0, string str1, char char2, ReadOnlySpan<char> str3)
     {
         var builder = StringBuilderPool.Get(str0.Length + str1.Length + str3.Length + 1);
