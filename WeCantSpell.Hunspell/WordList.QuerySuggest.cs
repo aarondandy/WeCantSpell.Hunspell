@@ -2780,7 +2780,7 @@ public partial class WordList
                     sIndex++; // important for (see below)  "*(s-1)"
                     var sChar = sString.GetCharOrTerminator(sIndex);
 
-                    while (sChar != '\0' && word.GetCharOrTerminator(i + k) == sChar && !char.IsDigit(sChar) && !"(-<^$".Contains(sChar))
+                    while (sChar != '\0' && word.GetCharOrTerminator(i + k) == sChar && !char.IsDigit(sChar) && notConditionMarkup(sChar))
                     {
                         k++;
                         sChar = sString.GetCharOrTerminator(++sIndex);
@@ -2878,7 +2878,7 @@ public partial class WordList
                                 sString = phoneEntryNested.Rule;
                                 sChar = sString.GetCharOrTerminator(++sIndex);
 
-                                while (sChar != '\0' && word.GetCharOrTerminator(i + k0) == sChar && !char.IsDigit(sChar) && !"(-<^$".Contains(sChar))
+                                while (sChar != '\0' && word.GetCharOrTerminator(i + k0) == sChar && !char.IsDigit(sChar) && notConditionMarkup(sChar))
                                 {
                                     k0++;
                                     sChar = sString.GetCharOrTerminator(++sIndex);
@@ -3033,6 +3033,8 @@ public partial class WordList
             }
 
             return StringBuilderPool.GetStringAndReturn(target);
+
+            static bool notConditionMarkup(char c) => c is not '(' or '-' or '<' or '^' or '$';
         }
 
         private static void StrMove(Span<char> span, int destIndex, int srcOffset)
