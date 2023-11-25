@@ -179,7 +179,7 @@ public partial class WordList
             }
 
             // recursive breaking at break points
-            if (Affix.BreakPoints.HasItems && !EnumEx.HasFlag(resultType, SpellCheckResultType.Forbidden))
+            if (Affix.BreakPoints.HasItems && !resultType.HasFlagEx(SpellCheckResultType.Forbidden))
             {
                 // calculate break points for recursion limit
                 if (Affix.BreakPoints.FindRecursionLimit(scw) >= 10)
@@ -379,7 +379,7 @@ public partial class WordList
             // (for example, ijs -> Ijs instead of IJs in Dutch)
             // use explicit forms in dic: Ijs/F (F = FORBIDDENWORD flag)
 
-            if (EnumEx.HasFlag(resultType, SpellCheckResultType.Forbidden))
+            if (resultType.HasFlagEx(SpellCheckResultType.Forbidden))
             {
                 rv = null;
                 return rv;

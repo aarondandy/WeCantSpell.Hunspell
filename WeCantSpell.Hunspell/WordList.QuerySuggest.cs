@@ -350,7 +350,7 @@ public partial class WordList
                     var pos = sitem.IndexOf('-');
                     if (pos >= 0)
                     {
-                        var desiredChar = EnumEx.HasFlag(CheckDetails(sitem.Remove(pos, 1)).Info, SpellCheckResultType.Compound | SpellCheckResultType.Forbidden)
+                        var desiredChar = CheckDetails(sitem.Remove(pos, 1)).Info.HasFlagEx(SpellCheckResultType.Compound | SpellCheckResultType.Forbidden)
                             ? ' '
                             : '-';
 
@@ -447,7 +447,7 @@ public partial class WordList
                                 _ = _query.CheckWord(wspace, ref info, out _);
                             }
 
-                            if (!EnumEx.HasFlag(info, SpellCheckResultType.Forbidden))
+                            if (!info.HasFlagEx(SpellCheckResultType.Forbidden))
                             {
                                 InsertSuggestion(slst, wspace);
                             }
@@ -667,7 +667,7 @@ public partial class WordList
                     if (slst.Count > i)
                     {
                         state.GoodSuggestion = true;
-                        if (state.Info.HasFlag(SpellCheckResultType.BestSug))
+                        if (state.Info.HasFlagEx(SpellCheckResultType.BestSug))
                         {
                             goto bestSug;
                         }
@@ -772,7 +772,7 @@ public partial class WordList
                 {
                     TwoWords(ref state);
 
-                    if (state.Info.HasFlag(SpellCheckResultType.BestSug))
+                    if (state.Info.HasFlagEx(SpellCheckResultType.BestSug))
                     {
                         goto bestSug;
                     }
@@ -789,7 +789,7 @@ public partial class WordList
                 // don't need third loop, if the second loop was successful or
                 // the first loop found a dictionary-based compound word
                 // (we don't need more, likely worse and false 3-or-more-word compound words)
-                if (state.CpdSuggest == 1 && (slst.Count > oldSug || state.Info.HasFlag(SpellCheckResultType.Compound)))
+                if (state.CpdSuggest == 1 && (slst.Count > oldSug || state.Info.HasFlagEx(SpellCheckResultType.Compound)))
                 {
                     noCompoundTwoWords = true;
                 }
@@ -1581,7 +1581,7 @@ public partial class WordList
 
                     // check special pronunciation
                     var f = string.Empty;
-                    if (EnumEx.HasFlag(hpDetail.Options, WordEntryOptions.Phon) && CopyField(ref f, hpDetail.Morphs, MorphologicalTags.Phon))
+                    if (hpDetail.Options.HasFlagEx(WordEntryOptions.Phon) && CopyField(ref f, hpDetail.Morphs, MorphologicalTags.Phon))
                     {
                         var sc2 = NGram(3, word, f, NGramOptions.LongerWorse | NGramOptions.Lowering)
                             + LeftCommonSubstring(word, f);
@@ -1680,7 +1680,7 @@ public partial class WordList
                 if (rp is not null)
                 {
                     var field = string.Empty;
-                    if (!EnumEx.HasFlag(rp.Detail.Options, WordEntryOptions.Phon) || !QuerySuggest.CopyField(ref field, rp.Detail.Morphs, MorphologicalTags.Phon))
+                    if (!rp.Detail.Options.HasFlagEx(WordEntryOptions.Phon) || !QuerySuggest.CopyField(ref field, rp.Detail.Morphs, MorphologicalTags.Phon))
                     {
                         field = null;
                     }
@@ -2167,7 +2167,7 @@ public partial class WordList
                         {
                             wlstNh = ref wlst[nh];
                             wlstNh.Word = newword;
-                            wlstNh.Allow = sptr.Options.AllowCross();
+                            wlstNh.Allow = sptr.Options.HasFlagEx(AffixEntryOptions.CrossProduct);
                             wlstNh.Orig = null;
 
                             nh++;
@@ -2210,7 +2210,7 @@ public partial class WordList
 
                     foreach (var pfxGroup in Affix.Prefixes.GetGroupsByFlags(entry.Detail.Flags))
                     {
-                        if (pfxGroup.Options.AllowCross())
+                        if (pfxGroup.Options.HasFlagEx(AffixEntryOptions.CrossProduct))
                         {
                             foreach (var cptr in pfxGroup.Entries)
                             {
@@ -2230,7 +2230,7 @@ public partial class WordList
                                         {
                                             wlstNh = ref wlst[nh];
                                             wlstNh.Word = newword;
-                                            wlstNh.Allow = pfxGroup.Options.AllowCross();
+                                            wlstNh.Allow = pfxGroup.Options.HasFlagEx(AffixEntryOptions.CrossProduct);
                                             wlstNh.Orig = null;
                                         }
                                     }
@@ -2265,7 +2265,7 @@ public partial class WordList
                         {
                             wlstNh = ref wlst[nh];
                             wlstNh.Word = newword;
-                            wlstNh.Allow = ptr.Options.AllowCross();
+                            wlstNh.Allow = ptr.Options.HasFlagEx(AffixEntryOptions.CrossProduct);
                             wlstNh.Orig = null;
                             nh++;
                         }

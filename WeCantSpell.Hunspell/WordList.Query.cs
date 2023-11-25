@@ -291,7 +291,7 @@ public partial class WordList
 
                     // if not 2-word compoud word, try with 3 or more words
                     // (only if original info didn't forbid it)
-                    if (he is null && !info.HasFlag(SpellCheckResultType.Compound2))
+                    if (he is null && !info.HasFlagEx(SpellCheckResultType.Compound2))
                     {
                         info &= ~SpellCheckResultType.Compound2;
                         he = CompoundCheck(word.AsSpan(), 0, 0, 100, null, rwords, huMovRule: false, isSug: false, ref info);
@@ -336,7 +336,7 @@ public partial class WordList
             }
 
             static bool hasSpecialInitCap(SpellCheckResultType info, in WordEntryDetail he) =>
-                EnumEx.HasFlag(info, SpellCheckResultType.InitCap) && he.ContainsFlag(SpecialFlags.OnlyUpcaseFlag);
+                info.HasFlagEx(SpellCheckResultType.InitCap) && he.ContainsFlag(SpecialFlags.OnlyUpcaseFlag);
         }
 
         private WordEntryDetail? CompoundCheckWordSearch_OnlyCpdRule(
@@ -942,7 +942,7 @@ public partial class WordList
                                 if (rv is not null)
                                 {
                                     // check FORCEUCASE
-                                    if (!EnumEx.HasFlag(info, SpellCheckResultType.OrigCap) && rv.ContainsFlag(Affix.ForceUpperCase))
+                                    if (!info.HasFlagEx(SpellCheckResultType.OrigCap) && rv.ContainsFlag(Affix.ForceUpperCase))
                                     {
                                         rv = null;
                                     }
@@ -1086,7 +1086,7 @@ public partial class WordList
                                     (
                                         // check FORCEUCASE
                                         (
-                                            !EnumEx.HasFlag(info, SpellCheckResultType.OrigCap)
+                                            !info.HasFlagEx(SpellCheckResultType.OrigCap)
                                             &&
                                             rv.ContainsFlag(Affix.ForceUpperCase)
                                         )
@@ -1229,7 +1229,7 @@ public partial class WordList
                                 // perhaps second word is a compound word (recursive call)
                                 // (only if SPELL_COMPOUND_2 is not set and maxwordnum is not exceeded)
                                 if (
-                                    !info.HasFlag(SpellCheckResultType.Compound2)
+                                    !info.HasFlagEx(SpellCheckResultType.Compound2)
                                     &&
                                     (wordNum + 2) < maxwordnum
                                 )
@@ -1523,7 +1523,7 @@ public partial class WordList
                     // if CrossProduct is allowed, try again but now
                     // cross checked combined with a suffix
 
-                    if (EnumEx.HasFlag(pe.Options, AffixEntryOptions.CrossProduct) && (inCompound != CompoundOptions.Begin))
+                    if (pe.Options.HasFlagEx(AffixEntryOptions.CrossProduct) && (inCompound != CompoundOptions.Begin))
                     {
                         // find hash entry of root word
                         if (SuffixCheckTwoSfx(tmpword, AffixEntryOptions.CrossProduct, pe, needFlag) is { } he)
@@ -1948,7 +1948,7 @@ public partial class WordList
                     // if aeXPRODUCT is allowed, try again but now
                     // ross checked combined with a suffix
 
-                    if (EnumEx.HasFlag(affix.Options, AffixEntryOptions.CrossProduct))
+                    if (affix.Options.HasFlagEx(AffixEntryOptions.CrossProduct))
                     {
                         if (SuffixCheck(tmpword, AffixEntryOptions.CrossProduct, affix, default, needFlag, inCompound) is { } he)
                         {
@@ -1967,7 +1967,7 @@ public partial class WordList
             // if this suffix is being cross checked with a prefix
             // but it does not support cross products skip it
 
-            var optFlagsHasCrossProduct = EnumEx.HasFlag(optFlags, AffixEntryOptions.CrossProduct);
+            var optFlagsHasCrossProduct = optFlags.HasFlagEx(AffixEntryOptions.CrossProduct);
             if (
                 (
                     optFlagsHasCrossProduct
@@ -1975,7 +1975,7 @@ public partial class WordList
                     (
                         pfx is null // enabled by prefix is impossible
                         ||
-                        !EnumEx.HasFlag(affix.Options, AffixEntryOptions.CrossProduct)
+                        !affix.Options.HasFlagEx(AffixEntryOptions.CrossProduct)
                     )
                 )
                 ||
@@ -2069,7 +2069,7 @@ public partial class WordList
             // if this suffix is being cross checked with a prefix
             // but it does not support cross products skip it
 
-            if (EnumEx.HasFlag(optflags, AffixEntryOptions.CrossProduct) && !EnumEx.HasFlag((AffixEntryOptions)se.Options, AffixEntryOptions.CrossProduct))
+            if (optflags.HasFlagEx(AffixEntryOptions.CrossProduct) && !se.Options.HasFlagEx(AffixEntryOptions.CrossProduct))
             {
                 return null;
             }

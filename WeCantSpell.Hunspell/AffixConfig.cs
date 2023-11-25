@@ -41,21 +41,21 @@ public sealed partial class AffixConfig
         private set
         {
             _options = value;
-            ComplexPrefixes = EnumEx.HasFlag(_options, AffixConfigOptions.ComplexPrefixes);
-            CompoundMoreSuffixes = EnumEx.HasFlag(_options, AffixConfigOptions.CompoundMoreSuffixes);
-            CheckCompoundDup = EnumEx.HasFlag(_options, AffixConfigOptions.CheckCompoundDup);
-            CheckCompoundRep = EnumEx.HasFlag(_options, AffixConfigOptions.CheckCompoundRep);
-            CheckCompoundTriple = EnumEx.HasFlag(_options, AffixConfigOptions.CheckCompoundTriple);
-            SimplifiedTriple = EnumEx.HasFlag(_options, AffixConfigOptions.SimplifiedTriple);
-            CheckCompoundCase = EnumEx.HasFlag(_options, AffixConfigOptions.CheckCompoundCase);
-            CheckNum = EnumEx.HasFlag(_options, AffixConfigOptions.CheckNum);
-            OnlyMaxDiff = EnumEx.HasFlag(_options, AffixConfigOptions.OnlyMaxDiff);
-            NoSplitSuggestions = EnumEx.HasFlag(_options, AffixConfigOptions.NoSplitSuggestions);
-            FullStrip = EnumEx.HasFlag(_options, AffixConfigOptions.FullStrip);
-            SuggestWithDots = EnumEx.HasFlag(_options, AffixConfigOptions.SuggestWithDots);
-            ForbidWarn = EnumEx.HasFlag(_options, AffixConfigOptions.ForbidWarn);
-            CheckSharps = EnumEx.HasFlag(_options, AffixConfigOptions.CheckSharps);
-            SimplifiedCompound = EnumEx.HasFlag(_options, AffixConfigOptions.SimplifiedCompound);
+            ComplexPrefixes = _options.HasFlagEx(AffixConfigOptions.ComplexPrefixes);
+            CompoundMoreSuffixes = _options.HasFlagEx(AffixConfigOptions.CompoundMoreSuffixes);
+            CheckCompoundDup = _options.HasFlagEx(AffixConfigOptions.CheckCompoundDup);
+            CheckCompoundRep = _options.HasFlagEx(AffixConfigOptions.CheckCompoundRep);
+            CheckCompoundTriple = _options.HasFlagEx(AffixConfigOptions.CheckCompoundTriple);
+            SimplifiedTriple = _options.HasFlagEx(AffixConfigOptions.SimplifiedTriple);
+            CheckCompoundCase = _options.HasFlagEx(AffixConfigOptions.CheckCompoundCase);
+            CheckNum = _options.HasFlagEx(AffixConfigOptions.CheckNum);
+            OnlyMaxDiff = _options.HasFlagEx(AffixConfigOptions.OnlyMaxDiff);
+            NoSplitSuggestions = _options.HasFlagEx(AffixConfigOptions.NoSplitSuggestions);
+            FullStrip = _options.HasFlagEx(AffixConfigOptions.FullStrip);
+            SuggestWithDots = _options.HasFlagEx(AffixConfigOptions.SuggestWithDots);
+            ForbidWarn = _options.HasFlagEx(AffixConfigOptions.ForbidWarn);
+            CheckSharps = _options.HasFlagEx(AffixConfigOptions.CheckSharps);
+            SimplifiedCompound = _options.HasFlagEx(AffixConfigOptions.SimplifiedCompound);
         }
     }
 

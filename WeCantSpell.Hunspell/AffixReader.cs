@@ -310,11 +310,11 @@ public sealed partial class AffixReader
             case AffixReaderCommandKind.CompoundMiddle:
                 return _flagParser.TryParseFlag(parameters, out _builder.CompoundMiddle);
             case AffixReaderCommandKind.CompoundBegin:
-                return EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes)
+                return _builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes)
                     ? _flagParser.TryParseFlag(parameters, out _builder.CompoundEnd)
                     : _flagParser.TryParseFlag(parameters, out _builder.CompoundBegin);
             case AffixReaderCommandKind.CompoundEnd:
-                return EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes)
+                return _builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes)
                     ? _flagParser.TryParseFlag(parameters, out _builder.CompoundBegin)
                     : _flagParser.TryParseFlag(parameters, out _builder.CompoundEnd);
             case AffixReaderCommandKind.CompoundWordMax:
@@ -397,7 +397,7 @@ public sealed partial class AffixReader
             case AffixReaderCommandKind.Suffix:
                 var parseAsPrefix = AffixReaderCommandKind.Prefix == command;
 
-                if (EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes))
+                if (_builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes))
                 {
                     parseAsPrefix = !parseAsPrefix;
                 }
@@ -665,7 +665,7 @@ public sealed partial class AffixReader
     {
         var parts = ArrayBuilderPool<string>.Get();
 
-        if (EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes))
+        if (_builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes))
         {
             foreach (var part in parameterText.SplitOnTabOrSpace())
             {
@@ -788,7 +788,7 @@ public sealed partial class AffixReader
         {
             strip = string.Empty;
         }
-        else if (EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes))
+        else if (_builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes))
         {
             strip = group1.ToStringReversed();
         }
@@ -839,7 +839,7 @@ public sealed partial class AffixReader
         }
         else
         {
-            if (EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes))
+            if (_builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes))
             {
                 affixTextBuilder.Reverse();
             }
@@ -849,7 +849,7 @@ public sealed partial class AffixReader
 
         // piece 5 - is the conditions descriptions
         var conditionText = group3;
-        if (EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes))
+        if (_builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes))
         {
             conditionText = ReverseCondition(conditionText).AsSpan();
         }
@@ -887,7 +887,7 @@ public sealed partial class AffixReader
             {
                 var morphSetBuilder = new List<string>();
 
-                if (EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes))
+                if (_builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes))
                 {
                     foreach (var morphValue in morphAffixText.SplitOnTabOrSpace())
                     {
