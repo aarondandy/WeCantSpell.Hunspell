@@ -8,7 +8,7 @@ AMD Ryzen 7 5800H with Radeon Graphics, 1 CPU, 16 logical and 8 physical cores
 Job=Suggest en-US  
 
 ```
-| Method                       | Mean       | Error   | StdDev  | Min        | Median     | Ratio |
-|----------------------------- |-----------:|--------:|--------:|-----------:|-----------:|------:|
-| &#39;Suggest words: WeCantSpell&#39; |   745.3 ms | 1.86 ms | 1.65 ms |   742.4 ms |   745.3 ms |  1.00 |
-| &#39;Suggest words: NHunspell&#39;   | 1,895.9 ms | 4.34 ms | 4.06 ms | 1,887.3 ms | 1,897.6 ms |  2.54 |
+| Method                       | Mean       | Error    | StdDev  | Min        | Median     | Ratio |
+|----------------------------- |-----------:|---------:|--------:|-----------:|-----------:|------:|
+| &#39;Suggest words: WeCantSpell&#39; |   754.8 ms |  1.31 ms | 1.23 ms |   752.3 ms |   755.0 ms |  1.00 |
+| &#39;Suggest words: NHunspell&#39;   | 1,909.9 ms | 10.07 ms | 9.42 ms | 1,882.8 ms | 1,911.4 ms |  2.53 |

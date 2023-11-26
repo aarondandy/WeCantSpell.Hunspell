@@ -11,18 +11,18 @@ AMD Ryzen 7 5800H with Radeon Graphics, 1 CPU, 16 logical and 8 physical cores
 ```
 | Method        | Job         | Runtime            | set     | words        | Mean        | Error    | StdDev   | Min         | Median      | Ratio |
 |-------------- |------------ |------------------- |-------- |------------- |------------:|---------:|---------:|------------:|------------:|------:|
-| **&#39;Check words&#39;** | **Job-FYOECP**  | **.NET 6.0**           | **All**     | **String[7158]** |  **9,964.8 μs** | **46.07 μs** | **38.47 μs** |  **9,911.3 μs** |  **9,960.9 μs** |  **1.00** |
-| &#39;Check words&#39; | Job-ACBKDI  | .NET 8.0           | All     | String[7158] |  7,399.6 μs | 16.32 μs | 12.74 μs |  7,364.0 μs |  7,400.2 μs |  0.74 |
-| &#39;Check words&#39; | Check en-US | .NET Framework 4.8 | All     | String[7158] | 18,359.9 μs | 32.90 μs | 29.16 μs | 18,314.7 μs | 18,360.7 μs |  1.84 |
+| **&#39;Check words&#39;** | **Job-FYOECP**  | **.NET 6.0**           | **All**     | **String[7158]** | **10,443.3 μs** | **23.04 μs** | **21.55 μs** | **10,396.4 μs** | **10,447.5 μs** |  **1.00** |
+| &#39;Check words&#39; | Job-ACBKDI  | .NET 8.0           | All     | String[7158] |  7,629.5 μs |  9.30 μs |  8.24 μs |  7,621.3 μs |  7,626.8 μs |  0.73 |
+| &#39;Check words&#39; | Check en-US | .NET Framework 4.8 | All     | String[7158] | 18,830.7 μs | 60.16 μs | 56.27 μs | 18,631.2 μs | 18,847.4 μs |  1.80 |
 |               |             |                    |         |              |             |          |          |             |             |       |
-| **&#39;Check words&#39;** | **Job-FYOECP**  | **.NET 6.0**           | **Correct** | **String[3001]** |    **808.8 μs** |  **2.82 μs** |  **2.64 μs** |    **805.4 μs** |    **807.3 μs** |  **1.00** |
-| &#39;Check words&#39; | Job-ACBKDI  | .NET 8.0           | Correct | String[3001] |    524.6 μs |  1.45 μs |  1.21 μs |    522.9 μs |    524.8 μs |  0.65 |
-| &#39;Check words&#39; | Check en-US | .NET Framework 4.8 | Correct | String[3001] |  1,389.2 μs |  2.10 μs |  1.96 μs |  1,386.0 μs |  1,389.2 μs |  1.72 |
+| **&#39;Check words&#39;** | **Job-FYOECP**  | **.NET 6.0**           | **Correct** | **String[3001]** |    **812.8 μs** |  **1.03 μs** |  **0.96 μs** |    **811.3 μs** |    **813.0 μs** |  **1.00** |
+| &#39;Check words&#39; | Job-ACBKDI  | .NET 8.0           | Correct | String[3001] |    551.5 μs |  0.79 μs |  0.66 μs |    550.4 μs |    551.5 μs |  0.68 |
+| &#39;Check words&#39; | Check en-US | .NET Framework 4.8 | Correct | String[3001] |  1,408.2 μs |  1.07 μs |  1.00 μs |  1,406.7 μs |  1,407.9 μs |  1.73 |
 |               |             |                    |         |              |             |          |          |             |             |       |
-| **&#39;Check words&#39;** | **Job-FYOECP**  | **.NET 6.0**           | **Roots**   | **String[2035]** |    **391.6 μs** |  **3.33 μs** |  **2.78 μs** |    **389.0 μs** |    **390.5 μs** |  **1.00** |
-| &#39;Check words&#39; | Job-ACBKDI  | .NET 8.0           | Roots   | String[2035] |    249.1 μs |  1.18 μs |  1.05 μs |    248.1 μs |    248.8 μs |  0.64 |
-| &#39;Check words&#39; | Check en-US | .NET Framework 4.8 | Roots   | String[2035] |    581.8 μs |  2.51 μs |  2.23 μs |    579.7 μs |    580.4 μs |  1.49 |
+| **&#39;Check words&#39;** | **Job-FYOECP**  | **.NET 6.0**           | **Roots**   | **String[2035]** |    **400.4 μs** |  **1.40 μs** |  **1.17 μs** |    **399.1 μs** |    **399.9 μs** |  **1.00** |
+| &#39;Check words&#39; | Job-ACBKDI  | .NET 8.0           | Roots   | String[2035] |    250.6 μs |  1.30 μs |  1.15 μs |    248.1 μs |    250.8 μs |  0.63 |
+| &#39;Check words&#39; | Check en-US | .NET Framework 4.8 | Roots   | String[2035] |    579.3 μs |  0.76 μs |  0.64 μs |    578.1 μs |    579.3 μs |  1.45 |
 |               |             |                    |         |              |             |          |          |             |             |       |
-| **&#39;Check words&#39;** | **Job-FYOECP**  | **.NET 6.0**           | **Wrong**   | **String[4157]** |  **8,881.5 μs** | **12.94 μs** | **12.10 μs** |  **8,866.8 μs** |  **8,883.1 μs** |  **1.00** |
-| &#39;Check words&#39; | Job-ACBKDI  | .NET 8.0           | Wrong   | String[4157] |  6,726.7 μs |  6.33 μs |  4.94 μs |  6,720.1 μs |  6,726.0 μs |  0.76 |
-| &#39;Check words&#39; | Check en-US | .NET Framework 4.8 | Wrong   | String[4157] | 16,735.2 μs | 13.63 μs | 12.08 μs | 16,715.4 μs | 16,732.0 μs |  1.88 |
+| **&#39;Check words&#39;** | **Job-FYOECP**  | **.NET 6.0**           | **Wrong**   | **String[4157]** |  **9,163.0 μs** | **38.06 μs** | **35.60 μs** |  **9,036.0 μs** |  **9,173.6 μs** |  **1.00** |
+| &#39;Check words&#39; | Job-ACBKDI  | .NET 8.0           | Wrong   | String[4157] |  6,962.6 μs |  8.02 μs |  7.50 μs |  6,949.2 μs |  6,964.1 μs |  0.76 |
+| &#39;Check words&#39; | Check en-US | .NET Framework 4.8 | Wrong   | String[4157] | 16,956.6 μs |  7.68 μs |  6.81 μs | 16,946.4 μs | 16,955.2 μs |  1.85 |
