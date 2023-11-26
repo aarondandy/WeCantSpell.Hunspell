@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Buffers;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace WeCantSpell.Hunspell;
@@ -88,7 +87,7 @@ internal struct FlagParser
 
         unsafe
         {
-            fixed (char* decodedPointer = &MemoryMarshal.GetReference(decoded))
+            fixed (char* decodedPointer = &System.Runtime.InteropServices.MemoryMarshal.GetReference(decoded))
             {
                 encodedBytes = new byte[Encoding.UTF8.GetByteCount(decodedPointer, decoded.Length)];
                 fixed (byte* encodedBytesPointer = &encodedBytes[0])

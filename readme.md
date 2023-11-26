@@ -13,7 +13,7 @@ A port of [Hunspell](https://github.com/hunspell/hunspell) for .NET.
 
 * Reads Hunspell DIC and AFF file formats
 * Supports checking and suggesting words
-* No unmanaged dependencies
+* No unmanaged dependencies and mostly "safe" code
 * Can be queried concurrently
 * Confusing LGPL, GPL, MPL tri-license
 * Compatible with .NET, .NET Core, and .NET Framework

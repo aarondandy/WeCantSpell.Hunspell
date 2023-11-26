@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
@@ -55,8 +54,8 @@ static class EncodingEx
     {
         unsafe
         {
-            fixed (byte* bytesPointer = &MemoryMarshal.GetReference(bytes))
-            fixed (char* charsPointer = &MemoryMarshal.GetReference(chars))
+            fixed (byte* bytesPointer = &System.Runtime.InteropServices.MemoryMarshal.GetReference(bytes))
+            fixed (char* charsPointer = &System.Runtime.InteropServices.MemoryMarshal.GetReference(chars))
             {
                 decoder.Convert(
                     bytesPointer,
