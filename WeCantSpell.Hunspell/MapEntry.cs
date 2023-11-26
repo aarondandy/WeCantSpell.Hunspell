@@ -25,13 +25,29 @@ public readonly struct MapEntry : IReadOnlyList<string>
         _items = items;
     }
 
-    private readonly string[] _items;
+    private readonly string[]? _items;
 
-    public int Count => _items.Length;
+    public int Count => (_items?.Length).GetValueOrDefault();
     public bool IsEmpty => !HasItems;
     public bool HasItems => _items is { Length: > 0 };
-    public string this[int index] => _items[index];
-    public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)_items).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => _items.GetEnumerator();
-    internal string[] GetInternalArray() => _items;
+    public string this[int index]
+    {
+        get
+        {
+#if HAS_THROWOOR
+            ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
+#else
+            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+#endif
+
+            return _items![index];
+        }
+    }
+
+    public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)GetInternalArray()).GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    internal string[] GetInternalArray() => _items ?? [];
 }

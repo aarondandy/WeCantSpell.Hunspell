@@ -92,7 +92,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
 
     private TextDictionary()
     {
-        _entries = Array.Empty<Entry>();
+        _entries = [];
         _cellarStartIndex = 0;
         _fastmodMul = 0;
         _collisionIndex = 0;
@@ -152,9 +152,9 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         }
     }
 
-    public KeysCollection Keys => new KeysCollection(this);
+    public KeysCollection Keys => new(this);
 
-    public ValuesCollection Values => new ValuesCollection(this);
+    public ValuesCollection Values => new(this);
 
     private IEnumerable<Entry> FilledEntries => _entries.Where(static e => e.Key is not null);
 
@@ -553,7 +553,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         private int _index;
         private KeyValuePair<string, TValue> _current;
 
-        public KeyValuePair<string, TValue> Current => _current;
+        public readonly KeyValuePair<string, TValue> Current => _current;
 
         public bool MoveNext()
         {
@@ -592,7 +592,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         private int _maxKeyLength;
         private KeyValuePair<string, TValue> _current;
 
-        public KeyValuePair<string, TValue> Current => _current;
+        public readonly KeyValuePair<string, TValue> Current => _current;
 
         public bool MoveNext()
         {
@@ -658,9 +658,9 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
 
         public void Flush()
         {
-            foreach (var leftover in _leftovers)
+            foreach (var (hash, key, value) in _leftovers)
             {
-                ForceAppendCollisionEntry(leftover.hash, leftover.key, leftover.value);
+                ForceAppendCollisionEntry(hash, key, value);
             }
         }
 
@@ -691,7 +691,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private ref Entry GetRefByHash(uint hash) =>
+        private readonly ref Entry GetRefByHash(uint hash) =>
             ref Entries[GetIndexByHash(hash, CellarStartIndex, FastmodMultiplier)];
     }
 

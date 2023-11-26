@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -17,10 +16,10 @@ public partial class WordList
         public Builder(AffixConfig affix)
         {
             Affix = affix;
-            EntryDetailsByRoot = new(1);
+            _entryDetailsByRoot = new(1);
         }
 
-        internal TextDictionary<WordEntryDetail[]> EntryDetailsByRoot;
+        internal TextDictionary<WordEntryDetail[]> _entryDetailsByRoot;
 
         public readonly AffixConfig Affix;
 
@@ -36,10 +35,10 @@ public partial class WordList
 
         public void Add(string word, WordEntryDetail detail)
         {
-            ref var details = ref EntryDetailsByRoot.GetOrAdd(word);
+            ref var details = ref _entryDetailsByRoot.GetOrAdd(word);
             if (details is null)
             {
-                details = new[] { detail };
+                details = [detail];
             }
             else
             {
@@ -65,12 +64,12 @@ public partial class WordList
 
             if (allowDestructive)
             {
-                result.EntriesByRoot = EntryDetailsByRoot;
-                EntryDetailsByRoot = new(1);
+                result.EntriesByRoot = _entryDetailsByRoot;
+                _entryDetailsByRoot = new(1);
             }
             else
             {
-                result.EntriesByRoot = TextDictionary<WordEntryDetail[]>.Clone(EntryDetailsByRoot, static v => v.ToArray());
+                result.EntriesByRoot = TextDictionary<WordEntryDetail[]>.Clone(_entryDetailsByRoot, static v => v.ToArray());
             }
 
             result.AllReplacements = Affix.Replacements;
@@ -121,12 +120,12 @@ public partial class WordList
             var expectedCapacity = (expectedSize / 100) + expectedSize;
 
 #if NO_HASHSET_CAPACITY
-            if (EntryDetailsByRoot.Count == 0)
+            if (_entryDetailsByRoot.Count == 0)
             {
-                EntryDetailsByRoot = new(expectedCapacity);
+                _entryDetailsByRoot = new(expectedCapacity);
             }
 #else
-            EntryDetailsByRoot.EnsureCapacity(expectedCapacity);
+            _entryDetailsByRoot.EnsureCapacity(expectedCapacity);
 #endif
         }
     }

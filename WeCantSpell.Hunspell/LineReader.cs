@@ -21,14 +21,13 @@ internal sealed class LineReader : IDisposable
     {
         // NOTE: the order of these encodings must be preserved
         PreambleEncodings =
-            new Encoding[]
-            {
-                new UnicodeEncoding(true, true),
-                new UnicodeEncoding(false, true),
-                new UTF32Encoding(false, true),
-                Encoding.UTF8,
-                new UTF32Encoding(true, true)
-            };
+        [
+            new UnicodeEncoding(true, true),
+            new UnicodeEncoding(false, true),
+            new UTF32Encoding(false, true),
+            Encoding.UTF8,
+            new UTF32Encoding(true, true)
+        ];
     }
 
     internal LineReader(Stream stream, Encoding encoding, bool allowEncodingChanges = false, bool ownsStream = false)
@@ -194,7 +193,7 @@ internal sealed class LineReader : IDisposable
                     return span.Slice(startIndex, endIndex - startIndex + 1);
                 }
 
-                return ReadOnlySpan<char>.Empty;
+                return [];
             }
         }
 
@@ -476,15 +475,15 @@ internal sealed class LineReader : IDisposable
         public ReadOnlyMemory<char> Memory = ReadOnlyMemory<char>.Empty;
         public bool PreventRecycle = false;
 
-        public int Length => Memory.Length;
+        public readonly int Length => Memory.Length;
 
-        public Span<char> WriteSpan => Raw.AsSpan();
+        public readonly Span<char> WriteSpan => Raw.AsSpan();
 
-        public ReadOnlySpan<char> ReadSpan => Memory.Span;
+        public readonly ReadOnlySpan<char> ReadSpan => Memory.Span;
 
-        public int FindLineBreak() => Memory.Span.IndexOf(CharacterLf);
+        public readonly int FindLineBreak() => Memory.Span.IndexOf(CharacterLf);
 
-        public int FindLineBreak(int startIndex) => Memory.Span.IndexOf(CharacterLf, startIndex);
+        public readonly int FindLineBreak(int startIndex) => Memory.Span.IndexOf(CharacterLf, startIndex);
 
         public void PrepareMemoryForUse(int valueSize)
         {
@@ -508,7 +507,7 @@ internal sealed class LineReader : IDisposable
         public int BufferIndex;
         public int SubIndex;
 
-        public void Deconstruct(out int bufferIndex, out int subIndex)
+        public readonly void Deconstruct(out int bufferIndex, out int subIndex)
         {
             bufferIndex = BufferIndex;
             subIndex = SubIndex;

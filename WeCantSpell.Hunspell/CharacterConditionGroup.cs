@@ -108,18 +108,34 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
         _items = items;
     }
 
-    private readonly CharacterCondition[] _items;
+    private readonly CharacterCondition[]? _items;
 
-    public int Count => _items.Length;
+    public int Count => (_items?.Length).GetValueOrDefault();
     public bool IsEmpty => !HasItems;
     public bool HasItems => _items is { Length: > 0 };
-    public CharacterCondition this[int index] => _items[index];
-    public IEnumerator<CharacterCondition> GetEnumerator() => ((IEnumerable<CharacterCondition>)_items).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => _items.GetEnumerator();
+    public CharacterCondition this[int index]
+    {
+        get
+        {
+#if HAS_THROWOOR
+            ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
+#else
+            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+#endif
+            return _items![index];
+        }
+    }
 
-    public bool MatchesAnySingleCharacter => HasItems && _items.Length == 1 && _items[0].MatchesAnySingleCharacter;
+    public IEnumerator<CharacterCondition> GetEnumerator() => ((IEnumerable<CharacterCondition>)GetInternalArray()).GetEnumerator();
 
-    public string GetEncoded() => string.Concat(_items.Select(c => c.GetEncoded()));
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    internal CharacterCondition[] GetInternalArray() => _items ?? [];
+
+    public bool MatchesAnySingleCharacter => _items is { Length: 1 } && _items[0].MatchesAnySingleCharacter;
+
+    public string GetEncoded() => string.Concat(GetInternalArray().Select(c => c.GetEncoded()));
 
     public override string ToString() => GetEncoded();
 
@@ -135,7 +151,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
             return false;
         }
 
-        foreach (var condition in _items)
+        foreach (var condition in _items!)
         {
             if (!condition.FullyMatchesFromStart(text, out var matchLength))
             {
@@ -160,7 +176,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
             return false;
         }
 
-        for (var conditionIndex = _items.Length - 1; conditionIndex >= 0; conditionIndex--)
+        for (var conditionIndex = _items!.Length - 1; conditionIndex >= 0; conditionIndex--)
         {
             if (!_items[conditionIndex].FullyMatchesFromEnd(text, out var matchLength))
             {
@@ -175,7 +191,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
 
     public bool IsOnlyPossibleMatch(ReadOnlySpan<char> text)
     {
-        foreach (var condition in _items)
+        foreach (var condition in GetInternalArray())
         {
             if (!condition.IsOnlyPossibleMatch(text, out var matchLength))
             {

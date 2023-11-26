@@ -42,40 +42,40 @@ public partial class WordList
         /// </remarks>
         internal bool TestSimpleSuggestion { get; set; }
 
-        public WordList WordList => _query.WordList;
-        public AffixConfig Affix => _query.Affix;
-        public TextInfo TextInfo => _query.TextInfo;
-        public QueryOptions Options => _query.Options;
-        public int MaxCharDistance => Options.MaxCharDistance;
-        public int MaxCompoundSuggestions => Options.MaxCompoundSuggestions;
-        public int MaxSuggestions => Options.MaxSuggestions;
-        public int MaxRoots => Options.MaxRoots;
-        public int MaxWords => Options.MaxWords;
-        public int MaxGuess => Options.MaxGuess;
-        public int MaxPhonSugs => Options.MaxPhoneticSuggestions;
+        public readonly WordList WordList => _query.WordList;
+        public readonly AffixConfig Affix => _query.Affix;
+        public readonly TextInfo TextInfo => _query.TextInfo;
+        public readonly QueryOptions Options => _query.Options;
+        public readonly int MaxCharDistance => Options.MaxCharDistance;
+        public readonly int MaxCompoundSuggestions => Options.MaxCompoundSuggestions;
+        public readonly int MaxSuggestions => Options.MaxSuggestions;
+        public readonly int MaxRoots => Options.MaxRoots;
+        public readonly int MaxWords => Options.MaxWords;
+        public readonly int MaxGuess => Options.MaxGuess;
+        public readonly int MaxPhonSugs => Options.MaxPhoneticSuggestions;
 
         public List<string> Suggest(string word)
         {
             if (!_query.WordList.HasEntries)
             {
-                return new();
+                return [];
             }
 
             // process XML input of the simplified API (see manual)
             if (word.StartsWith(Query.DefaultXmlTokenCheckPrefix, StringComparison.Ordinal))
             {
-                return new(); // TODO: complete support for XML input
+                return []; // TODO: complete support for XML input
             }
 
             if (word.Length >= MaxWordUtf8Len)
             {
-                return new();
+                return [];
             }
 
             // something very broken if suggest ends up calling itself with the same word
             if (SuggestCandidateStack.Contains(word))
             {
-                return new();
+                return [];
             }
 
             // input conversion
@@ -84,7 +84,7 @@ public partial class WordList
                 scw = word;
             }
 
-            scw = _query.CleanWord2(scw, out var capType, out int abbv);
+            scw = _query.CleanWord2(scw, out var capType, out var abbv);
 
             if (scw.Length == 0)
             {
@@ -104,24 +104,24 @@ public partial class WordList
         {
             if (!_query.WordList.HasEntries)
             {
-                return new();
+                return [];
             }
 
             // process XML input of the simplified API (see manual)
             if (word.StartsWith(Query.DefaultXmlTokenCheckPrefix, StringComparison.Ordinal))
             {
-                return new(); // TODO: complete support for XML input
+                return []; // TODO: complete support for XML input
             }
 
             if (word.Length >= MaxWordUtf8Len)
             {
-                return new();
+                return [];
             }
 
             // something very broken if suggest ends up calling itself with the same word
             if (SuggestCandidateStack.ExceedsArbitraryDepthLimit || SuggestCandidateStack.Contains(word))
             {
-                return new();
+                return [];
             }
 
             // input conversion
@@ -550,17 +550,17 @@ public partial class WordList
             return slst;
         }
 
-        private List<string> SuggestNested(ReadOnlySpan<char> word) => new QuerySuggest(in this).Suggest(word);
+        private readonly List<string> SuggestNested(ReadOnlySpan<char> word) => new QuerySuggest(in this).Suggest(word);
 
-        private bool Check(string word) => new QueryCheck(in _query).Check(word);
+        private readonly bool Check(string word) => new QueryCheck(in _query).Check(word);
 
-        private bool Check(ReadOnlySpan<char> word) => new QueryCheck(in _query).Check(word);
+        private readonly bool Check(ReadOnlySpan<char> word) => new QueryCheck(in _query).Check(word);
 
-        private WordEntryDetail? LookupFirstDetail(ReadOnlySpan<char> word) => WordList.FindFirstEntryDetailByRootWord(word);
+        private readonly WordEntryDetail? LookupFirstDetail(ReadOnlySpan<char> word) => WordList.FindFirstEntryDetailByRootWord(word);
         
-        private bool TryLookupFirstDetail(ReadOnlySpan<char> word, out WordEntryDetail wordEntryDetail) => WordList.TryFindFirstEntryDetailByRootWord(word, out wordEntryDetail);
+        private readonly bool TryLookupFirstDetail(ReadOnlySpan<char> word, out WordEntryDetail wordEntryDetail) => WordList.TryFindFirstEntryDetailByRootWord(word, out wordEntryDetail);
 
-        private bool TryLookupFirstDetail(string word, out WordEntryDetail wordEntryDetail) => WordList.TryFindFirstEntryDetailByRootWord(word, out wordEntryDetail);
+        private readonly bool TryLookupFirstDetail(string word, out WordEntryDetail wordEntryDetail) => WordList.TryFindFirstEntryDetailByRootWord(word, out wordEntryDetail);
 
         private ref struct SuggestState
         {
@@ -583,9 +583,9 @@ public partial class WordList
             public List<string> SuggestionList;
             private char[] _rawCandidateBuffer;
 
-            public bool IsCpdSuggest => CpdSuggest != 0;
+            public readonly bool IsCpdSuggest => CpdSuggest != 0;
 
-            public Span<char> GetBufferForWord()
+            public readonly Span<char> GetBufferForWord()
             {
                 var result = CandidateBuffer.Slice(0, Word.Length);
                 Word.CopyTo(result);
@@ -597,8 +597,8 @@ public partial class WordList
                 if (_rawCandidateBuffer.Length != 0)
                 {
                     ArrayPool<char>.Shared.Return(_rawCandidateBuffer);
-                    _rawCandidateBuffer = Array.Empty<char>();
-                    CandidateBuffer = Span<char>.Empty;
+                    _rawCandidateBuffer = [];
+                    CandidateBuffer = [];
                 }
             }
         }
@@ -819,7 +819,7 @@ public partial class WordList
             return state.GoodSuggestion;
         }
 
-        private SpellCheckResult CheckDetails(string word) => new QueryCheck(in _query).CheckDetails(word);
+        private readonly SpellCheckResult CheckDetails(string word) => new QueryCheck(in _query).CheckDetails(word);
 
         /// <summary>
         /// perhaps we doubled two characters (pattern aba -> ababa, for example vacation -> vacacation)
@@ -1723,7 +1723,7 @@ public partial class WordList
 
             ArrayPool<GuessWord>.Shared.Return(glstRental);
             glstRental = null!;
-            glst = Span<GuessWord>.Empty;
+            glst = [];
 
             // now we are done generating guesses
             // sort in order of decreasing score
@@ -1897,7 +1897,7 @@ public partial class WordList
 
             ArrayPool<NGramGuess>.Shared.Return(guessesRental);
             guessesRental = null!;
-            guesses = Span<NGramGuess>.Empty;
+            guesses = [];
 
             oldns = wlst.Count;
             wlstLimit = Math.Min(MaxSuggestions, oldns + MaxPhonSugs);
@@ -1934,10 +1934,10 @@ public partial class WordList
 
             ArrayPool<NGramSuggestSearchRoot>.Shared.Return(rootsRental);
             rootsRental = null!;
-            roots = Span<NGramSuggestSearchRoot>.Empty;
+            roots = [];
         }
 
-        private int CommonCharacterPositions(string s1, string s2, ref bool isSwap)
+        private readonly int CommonCharacterPositions(string s1, string s2, ref bool isSwap)
         {
             // decapitalize dictionary word
             var t = Affix.ComplexPrefixes
@@ -2091,7 +2091,7 @@ public partial class WordList
             }
         }
 
-        private int ExpandRootWord(Span<GuessWord> wlst, WordEntry entry, string bad, string? phon)
+        private readonly int ExpandRootWord(Span<GuessWord> wlst, WordEntry entry, string bad, string? phon)
         {
             if (wlst.IsEmpty)
             {
@@ -2459,7 +2459,7 @@ public partial class WordList
         /// <summary>
         /// Add prefix to this word assuming conditions hold.
         /// </summary>
-        private string Add(PrefixEntry entry, string word)
+        private readonly string Add(PrefixEntry entry, string word)
         {
             if (word.Length >= entry.Strip.Length || (word.Length == 0 && Affix.FullStrip))
             {
@@ -2485,7 +2485,7 @@ public partial class WordList
         /// <summary>
         /// Add suffix to this word assuming conditions hold.
         /// </summary>
-        private string Add(SuffixEntry entry, string word)
+        private readonly string Add(SuffixEntry entry, string word)
         {
             // make sure all conditions match
             if (word.Length > entry.Strip.Length || (word.Length == 0 && Affix.FullStrip))
@@ -2550,7 +2550,7 @@ public partial class WordList
         /// <summary>
         /// Length of the left common substring of s1 and (decapitalised) s2.
         /// </summary>
-        private int LeftCommonSubstring(string s1, string s2)
+        private readonly int LeftCommonSubstring(string s1, string s2)
         {
             if (s1.Length == 0 || s2.Length == 0)
             {
@@ -2581,7 +2581,7 @@ public partial class WordList
         /// <summary>
         /// Generate an n-gram score comparing s1 and s2.
         /// </summary>
-        private int NGram(int n, string s1, string s2, NGramOptions opt)
+        private readonly int NGram(int n, string s1, string s2, NGramOptions opt)
         {
             if (s1.Length == 0)
             {
@@ -2729,7 +2729,7 @@ public partial class WordList
         /// see: http://aspell.net/man-html/Phonetic-Code.html
         /// convert string to uppercase before this call
         /// </remarks>
-        private string Phonet(string inword)
+        private readonly string Phonet(string inword)
         {
             var len = inword.Length;
             if (len > MaxPhoneTUtf8Len)

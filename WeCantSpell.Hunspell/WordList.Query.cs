@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -144,7 +143,7 @@ public partial class WordList
             SuffixAppend = append;
         }
 
-        private bool AffixContainsContClass(FlagValue value) =>
+        private readonly bool AffixContainsContClass(FlagValue value) =>
             value.HasValue
             &&
             (
@@ -153,7 +152,7 @@ public partial class WordList
                 (Suffix?.ContainsContClass(value)).GetValueOrDefault()
             );
 
-        private bool ContainFlagsOrBlockSuggest(in WordEntryDetail rv, bool isSug, FlagValue a, FlagValue b) =>
+        private readonly bool ContainFlagsOrBlockSuggest(in WordEntryDetail rv, bool isSug, FlagValue a, FlagValue b) =>
             rv.HasFlags
             &&
             (
@@ -162,7 +161,7 @@ public partial class WordList
                 (isSug && rv.ContainsFlag(Affix.NoSuggest))
             );
 
-        private bool ContainFlagsOrBlockSuggest(in WordEntryDetail rv, bool isSug, FlagValue a, FlagValue b, FlagValue c) =>
+        private readonly bool ContainFlagsOrBlockSuggest(in WordEntryDetail rv, bool isSug, FlagValue a, FlagValue b, FlagValue c) =>
             rv.HasFlags
             &&
             (
@@ -306,8 +305,8 @@ public partial class WordList
                                 TestSimpleSuggestion = true
                             };
 
-                            bool onlyCompoundSug = false;
-                            if (querySuggest.Suggest(new List<string>(), word, ref onlyCompoundSug))
+                            var onlyCompoundSug = false;
+                            if (querySuggest.Suggest([], word, ref onlyCompoundSug))
                             {
                                 he = null;
                             }
@@ -339,7 +338,7 @@ public partial class WordList
                 info.HasFlagEx(SpellCheckResultType.InitCap) && he.ContainsFlag(SpecialFlags.OnlyUpcaseFlag);
         }
 
-        private WordEntryDetail? CompoundCheckWordSearch_OnlyCpdRule(
+        private readonly WordEntryDetail? CompoundCheckWordSearch_OnlyCpdRule(
             WordEntryDetail[] searchEntryDetails,
             FlagValue scpdPatternEntryCondition,
             ref IncrementalWordList? words,
@@ -378,7 +377,7 @@ public partial class WordList
             return null;
         }
 
-        private WordEntryDetail? CompoundCheckWordSearch_NormalNoWordList(
+        private readonly WordEntryDetail? CompoundCheckWordSearch_NormalNoWordList(
             WordEntryDetail[] searchEntryDetails,
             FlagValue scpdPatternEntryCondition,
             FlagValue compoundPart)
@@ -398,7 +397,7 @@ public partial class WordList
             return null;
         }
 
-        private WordEntryDetail? CompoundCheckWordSearch_NormalWithExistingWordList(
+        private readonly WordEntryDetail? CompoundCheckWordSearch_NormalWithExistingWordList(
             WordEntryDetail[] searchEntryDetails,
             FlagValue scpdPatternEntryCondition)
         {
@@ -419,7 +418,7 @@ public partial class WordList
             return null;
         }
 
-        private WordEntry? HomonymWordSearch(ReadOnlySpan<char> homonymWord, IncrementalWordList? words, FlagValue condition2, bool scpdIsZero)
+        private readonly WordEntry? HomonymWordSearch(ReadOnlySpan<char> homonymWord, IncrementalWordList? words, FlagValue condition2, bool scpdIsZero)
         {
             // perhaps without prefix
             if (TryLookupDetails(homonymWord, out var homonymWordString, out var details) && details.Length > 0)
@@ -1395,15 +1394,12 @@ public partial class WordList
                     ClearSuffix();
                     ClearPrefix();
 
-                    if (rv is null)
-                    {
-                        rv =
-                            // if still not found check all two-level suffixes
-                            SuffixCheckTwoSfx(word, AffixEntryOptions.None, null, needFlag)
-                            ??
-                            // if still not found check all two-level prefixes
-                            PrefixCheckTwoSfx(word, CompoundOptions.Not, needFlag);
-                    }
+                    rv ??=
+                        // if still not found check all two-level suffixes
+                        SuffixCheckTwoSfx(word, AffixEntryOptions.None, null, needFlag)
+                        ??
+                        // if still not found check all two-level prefixes
+                        PrefixCheckTwoSfx(word, CompoundOptions.Not, needFlag);
                 }
             }
 
@@ -1747,18 +1743,20 @@ public partial class WordList
             return null;
         }
 
-        private WordEntry? LookupFirst(ReadOnlySpan<char> word) => WordList.FindFirstEntryByRootWord(word);
+        private readonly WordEntry? LookupFirst(ReadOnlySpan<char> word) => WordList.FindFirstEntryByRootWord(word);
 
-        private WordEntry? LookupFirst(string word) => WordList.FindFirstEntryByRootWord(word);
+        private readonly WordEntry? LookupFirst(string word) => WordList.FindFirstEntryByRootWord(word);
 
-        public bool TryLookupDetails(ReadOnlySpan<char> word, out string actualKey, out WordEntryDetail[] details) => WordList.EntriesByRoot.TryGetValue(word, out actualKey, out details);
+        public readonly bool TryLookupDetails(ReadOnlySpan<char> word, out string actualKey, out WordEntryDetail[] details) =>
+            WordList.EntriesByRoot.TryGetValue(word, out actualKey, out details);
 
-        public bool TryLookupDetails(string word, out WordEntryDetail[] details) => WordList.EntriesByRoot.TryGetValue(word, out details);
+        public readonly bool TryLookupDetails(string word, out WordEntryDetail[] details) =>
+            WordList.EntriesByRoot.TryGetValue(word, out details);
 
         /// <summary>
         /// Compound check patterns.
         /// </summary>
-        private bool DefCompoundCheck(IncrementalWordList words, in WordEntryDetail rv, bool all)
+        private readonly bool DefCompoundCheck(IncrementalWordList words, in WordEntryDetail rv, bool all)
         {
             // has the last word COMPOUNDRULE flag?
             if (Affix.CompoundRules.EntryContainsRuleFlags(rv))
@@ -1820,7 +1818,7 @@ public partial class WordList
         /// <summary>
         /// Calculate number of syllable for compound-checking.
         /// </summary>
-        private int GetSyllable(ReadOnlySpan<char> word)
+        private readonly int GetSyllable(ReadOnlySpan<char> word)
         {
             var num = 0;
             if (Affix.CompoundMaxSyllable != 0 && Affix.CompoundVowels.HasItems)
@@ -1840,7 +1838,7 @@ public partial class WordList
         /// Calculate number of syllable for compound-checking.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int GetSyllableReversed(ReadOnlySpan<char> word)
+        private readonly int GetSyllableReversed(ReadOnlySpan<char> word)
         {
             // Because the code is effectively the same, forward and reverse searches can use the same algorithm
             return GetSyllable(word);
@@ -1975,7 +1973,7 @@ public partial class WordList
             return null;
         }
 
-        private WordEntry? CheckWordSuffix(SuffixEntry affix, ReadOnlySpan<char> word, AffixEntryOptions optFlags, PrefixEntry? pfx, FlagValue cclass, FlagValue needFlag, FlagValue badFlag)
+        private readonly WordEntry? CheckWordSuffix(SuffixEntry affix, ReadOnlySpan<char> word, AffixEntryOptions optFlags, PrefixEntry? pfx, FlagValue cclass, FlagValue needFlag, FlagValue badFlag)
         {
             // if this suffix is being cross checked with a prefix
             // but it does not support cross products skip it
@@ -2133,10 +2131,10 @@ public partial class WordList
         }
 
         private bool CandidateCheck(string word) =>
-            WordList.ContainsEntriesForRootWord(word) || AffixCheck(word.AsSpan(), default(FlagValue), CompoundOptions.Not) is not null;
+            WordList.ContainsEntriesForRootWord(word) || AffixCheck(word.AsSpan(), default, CompoundOptions.Not) is not null;
 
         private bool CandidateCheck(ReadOnlySpan<char> word) =>
-            WordList.ContainsEntriesForRootWord(word) || AffixCheck(word, default(FlagValue), CompoundOptions.Not) is not null;
+            WordList.ContainsEntriesForRootWord(word) || AffixCheck(word, default, CompoundOptions.Not) is not null;
 
         /// <summary>
         /// Make a copy of <paramref name="src"/> and returns it
@@ -2153,7 +2151,7 @@ public partial class WordList
         /// set the capitalization type (<paramref name="capType"/>) and
         /// return the length of the "cleaned" (and UTF-8 encoded) word
         /// </remarks>
-        public string CleanWord2(string src, out CapitalizationType capType, out int abbv)
+        public readonly string CleanWord2(string src, out CapitalizationType capType, out int abbv)
         {
             if (Affix.IgnoredChars.HasItems)
             {
@@ -2183,7 +2181,7 @@ public partial class WordList
             return src;
         }
 
-        public string CleanWord2(ReadOnlySpan<char> src, out CapitalizationType capType, out int abbv)
+        public readonly string CleanWord2(ReadOnlySpan<char> src, out CapitalizationType capType, out int abbv)
         {
             if (Affix.IgnoredChars.HasItems)
             {

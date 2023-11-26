@@ -27,7 +27,7 @@ internal ref struct SpanSeparatorSplitEnumerator<T> where T : IEquatable<T>
 
     public ReadOnlySpan<T> Current { get; private set; } = [];
 
-    public SpanSeparatorSplitEnumerator<T> GetEnumerator() => this;
+    public readonly SpanSeparatorSplitEnumerator<T> GetEnumerator() => this;
 
     public bool MoveNext()
     {

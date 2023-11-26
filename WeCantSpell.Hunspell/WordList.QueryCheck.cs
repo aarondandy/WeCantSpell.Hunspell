@@ -23,17 +23,17 @@ public partial class WordList
 
         private Query _query;
 
-        public WordList WordList => _query.WordList;
-        public AffixConfig Affix => _query.Affix;
-        public TextInfo TextInfo => _query.TextInfo;
-        public QueryOptions Options => _query.Options;
-        public int MaxSharps => Options.MaxSharps;
+        public readonly WordList WordList => _query.WordList;
+        public readonly AffixConfig Affix => _query.Affix;
+        public readonly TextInfo TextInfo => _query.TextInfo;
+        public readonly QueryOptions Options => _query.Options;
+        public readonly int MaxSharps => Options.MaxSharps;
 
         public bool Check(string word) => CheckDetails(word).Correct;
 
         public bool Check(ReadOnlySpan<char> word) => CheckDetails(word).Correct;
 
-        private bool CheckNested(ReadOnlySpan<char> word) => new QueryCheck(in _query).Check(word);
+        private readonly bool CheckNested(ReadOnlySpan<char> word) => new QueryCheck(in _query).Check(word);
 
         public SpellCheckResult CheckDetails(string word)
         {
@@ -227,7 +227,7 @@ public partial class WordList
                         var found = scw.IndexOf(breakEntry, 1, scw.Length - 2, StringComparison.Ordinal);
                         if (found >= 0)
                         {
-                            (reSearch ??= new()).Add((breakEntry, found));
+                            (reSearch ??= []).Add((breakEntry, found));
 
                             // try to break at the second occurance
                             // to recognize dictionary words with wordbreak
@@ -490,6 +490,6 @@ public partial class WordList
             return null;
         }
 
-        private bool IsKeepCase(WordEntry rv) => rv.ContainsFlag(Affix.KeepCase);
+        private readonly bool IsKeepCase(WordEntry rv) => rv.ContainsFlag(Affix.KeepCase);
     }
 }

@@ -42,6 +42,7 @@ public readonly struct BreakSet : IReadOnlyList<string>
 #else
             if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
 #endif
+
             return _entries![index];
         }
     }

@@ -9,8 +9,8 @@ AMD Ryzen 7 5800H with Radeon Graphics, 1 CPU, 16 logical and 8 physical cores
 
 
 ```
-| Method          | Job           | Runtime            | Mean     | Error   | StdDev  | Min      | Median   | Ratio | RatioSD |
-|---------------- |-------------- |------------------- |---------:|--------:|--------:|---------:|---------:|------:|--------:|
-| &#39;Suggest words&#39; | Job-FYOECP    | .NET 6.0           | 411.8 ms | 1.68 ms | 1.41 ms | 408.9 ms | 412.0 ms |  1.00 |    0.00 |
-| &#39;Suggest words&#39; | Job-ACBKDI    | .NET 8.0           | 380.3 ms | 7.49 ms | 7.36 ms | 370.7 ms | 379.9 ms |  0.92 |    0.02 |
-| &#39;Suggest words&#39; | Suggest en-US | .NET Framework 4.8 | 773.8 ms | 4.86 ms | 4.55 ms | 766.6 ms | 773.6 ms |  1.88 |    0.01 |
+| Method          | Job           | Runtime            | Mean     | Error   | StdDev   | Min      | Median   | Ratio | RatioSD |
+|---------------- |-------------- |------------------- |---------:|--------:|---------:|---------:|---------:|------:|--------:|
+| &#39;Suggest words&#39; | Job-FYOECP    | .NET 6.0           | 405.1 ms | 0.82 ms |  0.68 ms | 404.0 ms | 405.2 ms |  1.00 |    0.00 |
+| &#39;Suggest words&#39; | Job-ACBKDI    | .NET 8.0           | 366.4 ms | 0.77 ms |  0.72 ms | 365.5 ms | 366.6 ms |  0.90 |    0.00 |
+| &#39;Suggest words&#39; | Suggest en-US | .NET Framework 4.8 | 750.5 ms | 8.75 ms | 12.27 ms | 738.6 ms | 746.7 ms |  1.87 |    0.03 |

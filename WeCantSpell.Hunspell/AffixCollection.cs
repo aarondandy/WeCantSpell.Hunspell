@@ -396,9 +396,9 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         private int _flagsIndex;
         private int _groupIndex;
 
-        public TAffixEntry Current => _current;
+        public readonly TAffixEntry Current => _current;
 
-        public AffixesByFlagsEnumerator GetEnumerator() => this;
+        public readonly AffixesByFlagsEnumerator GetEnumerator() => this;
 
         public bool MoveNext()
         {
@@ -444,9 +444,9 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         private char[] _flags;
         private int _flagsIndex;
 
-        public AffixGroup<TAffixEntry> Current => _current;
+        public readonly AffixGroup<TAffixEntry> Current => _current;
 
-        public GroupsByFlagsEnumerator GetEnumerator() => this;
+        public readonly GroupsByFlagsEnumerator GetEnumerator() => this;
 
         public bool MoveNext()
         {
@@ -476,7 +476,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
         public TAffixEntry Current { get; private set; }
 
-        public WordEnumerator GetEnumerator() => this;
+        public readonly WordEnumerator GetEnumerator() => this;
 
         public bool MoveNext()
         {

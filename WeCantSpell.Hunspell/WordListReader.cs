@@ -477,7 +477,7 @@ public sealed class WordListReader
             morphs = AddWord_HandleMorph(morphs, word, capType, ref options);
         }
 
-        ref var details = ref Builder.EntryDetailsByRoot.GetOrAdd(word);
+        ref var details = ref Builder._entryDetailsByRoot.GetOrAdd(word);
 
         if (details is not null)
         {
@@ -509,10 +509,10 @@ public sealed class WordListReader
         }
         else
         {
-            details = new WordEntryDetail[]
-            {
+            details =
+            [
                 new(flags, new MorphSet(morphs), options)
-            };
+            ];
         }
     }
 
@@ -593,7 +593,7 @@ public sealed class WordListReader
             }
             else
             {
-                flagsPart = ReadOnlySpan<char>.Empty;
+                flagsPart = [];
             }
 
             if (wordPart.IsEmpty)
@@ -604,7 +604,7 @@ public sealed class WordListReader
             string[] morphs;
             if (morphPart.IsEmpty)
             {
-                morphs = Array.Empty<string>();
+                morphs = [];
             }
             else
             {

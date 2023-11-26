@@ -109,6 +109,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
     }
 
     public IEnumerator<char> GetEnumerator() => ((IEnumerable<char>)GetInternalArray()).GetEnumerator();
+
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     private char[] GetInternalArray() => _values ?? [];

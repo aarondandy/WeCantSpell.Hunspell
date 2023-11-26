@@ -9,7 +9,7 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
 {
-    public static CompoundRuleSet Empty { get; } = new(Array.Empty<CompoundRule>());
+    public static CompoundRuleSet Empty { get; } = new([]);
 
     public static CompoundRuleSet Create(IEnumerable<CompoundRule> rules)
     {
@@ -26,20 +26,40 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
         _rules = rules;
     }
 
-    private readonly CompoundRule[] _rules;
+    private readonly CompoundRule[]? _rules;
 
-    public int Count => _rules.Length;
+    public int Count => (_rules?.Length).GetValueOrDefault();
+
     public bool IsEmpty => !HasItems;
+
     public bool HasItems => _rules is { Length: > 0 };
-    public CompoundRule this[int index] => _rules[index];
-    public IEnumerator<CompoundRule> GetEnumerator() => ((IEnumerable<CompoundRule>)_rules).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => _rules.GetEnumerator();
+
+    public CompoundRule this[int index]
+    {
+        get
+        {
+#if HAS_THROWOOR
+            ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
+#else
+            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+#endif
+
+            return _rules![index];
+        }
+    }
+
+    public IEnumerator<CompoundRule> GetEnumerator() => ((IEnumerable<CompoundRule>)GetInternalArray()).GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    internal CompoundRule[] GetInternalArray() => _rules ?? [];
 
     internal bool EntryContainsRuleFlags(in WordEntryDetail details)
     {
-        if (details.HasFlags)
+        if (details.HasFlags && HasItems)
         {
-            foreach(var rule in _rules)
+            foreach(var rule in _rules!)
             {
                 if (rule.ContainsRuleFlagForEntry(details))
                 {
@@ -59,7 +79,7 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
             new MetacharData()
         };
 
-        foreach (var compoundRule in _rules)
+        foreach (var compoundRule in GetInternalArray())
         {
             var pp = 0; // pattern position
             var wp = 0; // "words" position

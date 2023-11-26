@@ -23,13 +23,13 @@ internal struct FlagParser
 
     public Encoding Encoding { get; set; }
 
-    public FlagValue ParseFlagOrDefault(ReadOnlySpan<char> text)
+    public readonly FlagValue ParseFlagOrDefault(ReadOnlySpan<char> text)
     {
         _ = TryParseFlag(text, out var result);
         return result;
     }
 
-    public bool TryParseFlag(ReadOnlySpan<char> text, out FlagValue value)
+    public readonly bool TryParseFlag(ReadOnlySpan<char> text, out FlagValue value)
     {
         return Mode switch
         {
@@ -47,10 +47,10 @@ internal struct FlagParser
         }
     }
 
-    private bool TryParseFlagAsUnicode(ReadOnlySpan<char> text, out FlagValue value) =>
+    private readonly bool TryParseFlagAsUnicode(ReadOnlySpan<char> text, out FlagValue value) =>
         FlagValue.TryParseAsChar(ReDecodeConvertedStringAsUtf8(text, Encoding), out value);
 
-    public FlagValue[] ParseFlagsInOrder(ReadOnlySpan<char> text) => Mode switch
+    public readonly FlagValue[] ParseFlagsInOrder(ReadOnlySpan<char> text) => Mode switch
     {
         FlagParsingMode.Char => FlagValue.ParseAsChars(text),
         FlagParsingMode.Uni => ParseFlagsInOrderAsUnicode(text),
@@ -59,9 +59,10 @@ internal struct FlagParser
         _ => ThrowNotSupportedFlagMode<FlagValue[]>()
     };
 
-    private FlagValue[] ParseFlagsInOrderAsUnicode(ReadOnlySpan<char> text) => FlagValue.ParseAsChars(ReDecodeConvertedStringAsUtf8(text, Encoding));
+    private readonly FlagValue[] ParseFlagsInOrderAsUnicode(ReadOnlySpan<char> text) =>
+        FlagValue.ParseAsChars(ReDecodeConvertedStringAsUtf8(text, Encoding));
 
-    public FlagSet ParseFlagSet(ReadOnlySpan<char> text) => Mode switch
+    public readonly FlagSet ParseFlagSet(ReadOnlySpan<char> text) => Mode switch
     {
         FlagParsingMode.Char => FlagSet.ParseAsChars(text),
         FlagParsingMode.Uni => ParseFlagSetAsUnicode(text),
@@ -70,7 +71,8 @@ internal struct FlagParser
         _ => ThrowNotSupportedFlagMode<FlagSet>()
     };
 
-    private FlagSet ParseFlagSetAsUnicode(ReadOnlySpan<char> text) => FlagSet.ParseAsChars(ReDecodeConvertedStringAsUtf8(text, Encoding));
+    private readonly FlagSet ParseFlagSetAsUnicode(ReadOnlySpan<char> text) =>
+        FlagSet.ParseAsChars(ReDecodeConvertedStringAsUtf8(text, Encoding));
 
     private static ReadOnlySpan<char> ReDecodeConvertedStringAsUtf8(ReadOnlySpan<char> decoded, Encoding encoding)
     {

@@ -87,9 +87,7 @@ public sealed partial class WordList
     public bool ContainsEntriesForRootWord(ReadOnlySpan<char> rootWord) => EntriesByRoot.ContainsKey(rootWord);
 
     public WordEntryDetail[] this[string rootWord] =>
-        rootWord is not null
-            ? FindEntryDetailsByRootWord(rootWord).ToArray()
-            : Array.Empty<WordEntryDetail>();
+        rootWord is not null ? FindEntryDetailsByRootWord(rootWord).ToArray() : [];
 
     private TextDictionary<WordEntryDetail[]> EntriesByRoot { get; set; }
 
@@ -187,7 +185,7 @@ public sealed partial class WordList
     {
         return EntriesByRoot.TryGetValue(rootWord, out var details)
             ? details
-            : Array.Empty<WordEntryDetail>();
+            : [];
     }
 
     private WordEntryDetail? FindFirstEntryDetailByRootWord(ReadOnlySpan<char> rootWord)
@@ -238,9 +236,9 @@ public sealed partial class WordList
         private KeyValuePair<string, WordEntryDetail[]> _current;
         private bool _checkRestrictedDetails;
 
-        public KeyValuePair<string, WordEntryDetail[]> Current => _current;
+        public readonly KeyValuePair<string, WordEntryDetail[]> Current => _current;
 
-        public NGramAllowedEntriesEnumerator GetEnumerator() => this;
+        public readonly NGramAllowedEntriesEnumerator GetEnumerator() => this;
 
         public bool MoveNext()
         {

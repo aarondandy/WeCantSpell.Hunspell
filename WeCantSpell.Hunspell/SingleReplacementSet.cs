@@ -7,7 +7,7 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct SingleReplacementSet : IReadOnlyList<SingleReplacement>
 {
-    public static SingleReplacementSet Empty { get; } = new(Array.Empty<SingleReplacement>());
+    public static SingleReplacementSet Empty { get; } = new([]);
 
     public static SingleReplacementSet Create(IEnumerable<SingleReplacement> replacements)
     {
@@ -25,16 +25,32 @@ public readonly struct SingleReplacementSet : IReadOnlyList<SingleReplacement>
         _replacements = replacements;
     }
 
-    private readonly SingleReplacement[] _replacements;
+    private readonly SingleReplacement[]? _replacements;
 
-    public int Count => _replacements.Length;
+    public int Count => (_replacements?.Length).GetValueOrDefault();
+
     public bool IsEmpty => !HasItems;
+
     public bool HasItems => _replacements is { Length: > 0 };
-    public SingleReplacement this[int index] => _replacements[index];
 
-    public IEnumerator<SingleReplacement> GetEnumerator() => ((IEnumerable<SingleReplacement>)_replacements).GetEnumerator();
+    public SingleReplacement this[int index]
+    {
+        get
+        {
+#if HAS_THROWOOR
+            ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
+#else
+            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+#endif
 
-    IEnumerator IEnumerable.GetEnumerator() => _replacements.GetEnumerator();
+            return _replacements![index];
+        }
+    }
 
-    internal SingleReplacement[] GetInternalArray() => _replacements ?? Array.Empty<SingleReplacement>();
+    public IEnumerator<SingleReplacement> GetEnumerator() => ((IEnumerable<SingleReplacement>)GetInternalArray()).GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    internal SingleReplacement[] GetInternalArray() => _replacements ?? [];
 }
