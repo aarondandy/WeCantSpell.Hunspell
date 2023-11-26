@@ -3,7 +3,6 @@ using System.Buffers;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading;
-
 using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;

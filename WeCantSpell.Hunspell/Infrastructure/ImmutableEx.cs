@@ -2,7 +2,7 @@
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
-internal static class ImmutableEx
+static class ImmutableEx
 {
     public static ImmutableArray<T> ToImmutable<T>(this ImmutableArray<T>.Builder builder, bool allowDestructive)
     {
