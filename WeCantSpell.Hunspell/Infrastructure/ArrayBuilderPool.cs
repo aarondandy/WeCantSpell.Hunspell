@@ -1,6 +1,7 @@
 ﻿using System.Threading;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
+
 static class ArrayBuilderPool<T>
 {
     private static ArrayBuilder<T>? Cache;

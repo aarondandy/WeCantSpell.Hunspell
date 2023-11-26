@@ -8,7 +8,7 @@ public sealed class ArrayBuilder<T>
 {
     public ArrayBuilder()
     {
-        _values = Array.Empty<T>();
+        _values = [];
     }
 
     internal ArrayBuilder(T[] values)
@@ -230,7 +230,7 @@ public sealed class ArrayBuilder<T>
         }
     }
 
-    public T[] MakeArray() => Count == 0 ? Array.Empty<T>() : _values.AsSpan(0, Count).ToArray();
+    public T[] MakeArray() => Count == 0 ? [] : _values.AsSpan(0, Count).ToArray();
 
     public T[] MakeOrExtractArray(bool extract) => extract ? Extract() : MakeArray();
 

@@ -255,13 +255,17 @@ public partial class AffixConfig
         /// Input conversion entries.
         /// </summary>
         /// <seealso cref="AffixConfig.InputConversions"/>
-        internal TextDictionary<MultiReplacementEntry>? InputConversions;
+        internal TextDictionary<MultiReplacementEntry> _inputConversions = new(0);
+
+        public IDictionary<string, MultiReplacementEntry> InputConversions => _inputConversions;
 
         /// <summary>
         /// Output conversion entries.
         /// </summary>
         /// <seealso cref="AffixConfig.OutputConversions"/>
-        internal TextDictionary<MultiReplacementEntry>? OutputConversions;
+        internal TextDictionary<MultiReplacementEntry> _outputConversions = new(0);
+
+        public IDictionary<string, MultiReplacementEntry> OutputConversions => _outputConversions;
 
         /// <summary>
         /// Mappings between related characters.
@@ -398,23 +402,23 @@ public partial class AffixConfig
 
             if (allowDestructive)
             {
-                config.InputConversions = InputConversions is null
-                    ? MultiReplacementTable.Empty
-                    : MultiReplacementTable.TakeDictionary(InputConversions);
-                InputConversions = null;
-                config.OutputConversions = OutputConversions is null
-                    ? MultiReplacementTable.Empty
-                    : MultiReplacementTable.TakeDictionary(OutputConversions);
-                OutputConversions = null;
+                config.InputConversions = _inputConversions is { Count: > 0 }
+                    ? MultiReplacementTable.TakeDictionary(_inputConversions)
+                    : MultiReplacementTable.Empty;
+                _inputConversions = new(0);
+                config.OutputConversions = _outputConversions is { Count: > 0 }
+                    ? MultiReplacementTable.TakeDictionary(_outputConversions)
+                    : MultiReplacementTable.Empty;
+                _outputConversions = new(0);
             }
             else
             {
-                config.InputConversions = config.InputConversions = InputConversions is null
-                    ? MultiReplacementTable.Empty
-                    : MultiReplacementTable.Create(InputConversions);
-                config.OutputConversions = OutputConversions is null
-                    ? MultiReplacementTable.Empty
-                    : MultiReplacementTable.Create(OutputConversions);
+                config.InputConversions = config.InputConversions = _inputConversions is { Count: > 0 }
+                    ? MultiReplacementTable.Create(_inputConversions)
+                    : MultiReplacementTable.Empty;
+                config.OutputConversions = _outputConversions is { Count: > 0 }
+                    ? MultiReplacementTable.Create(_outputConversions)
+                    : MultiReplacementTable.Empty;
             }
 
             config.AliasF = AliasF.ToImmutable(allowDestructive);

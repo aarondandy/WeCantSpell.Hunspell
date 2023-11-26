@@ -245,7 +245,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     public override string ToString()
     {
-        if (!HasItems)
+        if (IsEmpty)
         {
             return string.Empty;
         }

@@ -1355,7 +1355,7 @@ public partial class WordList
                         st[i] = ch;
                     }
                 }
-                while (Affix.CompoundRules.HasItems && oldwordnum == 0 && IntEx.InversePostfixIncrement(ref onlycpdrule)); // end of onlycpd loop
+                while (Affix.CompoundRules.HasItems && oldwordnum == 0 && inversePostfixIncrement(ref onlycpdrule)); // end of onlycpd loop
             }
 
             st.Destroy();
@@ -1363,6 +1363,19 @@ public partial class WordList
 
             static bool equalsOrdinalLimited(ReadOnlySpan<char> a, ReadOnlySpan<char> b, int lengthLimit) =>
                 a.Limit(lengthLimit).EqualsOrdinal(b.Limit(lengthLimit));
+
+            static bool inversePostfixIncrement(ref bool b)
+            {
+                // This is a strange implementation of a postfix increment to remove the use of an int in these cases.
+
+                if (b)
+                {
+                    return false;
+                }
+
+                b = true;
+                return true;
+            }
         }
 
         /// <summary>

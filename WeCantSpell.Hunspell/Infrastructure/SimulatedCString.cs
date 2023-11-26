@@ -30,7 +30,7 @@ struct SimulatedCString
     private int _bufferLength;
     private int _terminatedLength;
 
-    public int BufferLength => _bufferLength;
+    public readonly int BufferLength => _bufferLength;
 
     public ReadOnlySpan<char> TerminatedSpan
     {
@@ -51,10 +51,7 @@ struct SimulatedCString
 
     public char this[int index]
     {
-        get
-        {
-            return index < _bufferLength ? _rawBuffer[index] : '\0';
-        }
+        readonly get => index < _bufferLength ? _rawBuffer[index] : '\0';
         set
         {
 #if DEBUG
@@ -76,7 +73,7 @@ struct SimulatedCString
         }
     }
 
-    public ReadOnlySpan<char> SliceToTerminator(int startIndex)
+    public readonly ReadOnlySpan<char> SliceToTerminator(int startIndex)
     {
         if (startIndex <= _terminatedLength)
         {
@@ -135,7 +132,7 @@ struct SimulatedCString
         if (_rawBuffer.Length != 0)
         {
             ArrayPool<char>.Shared.Return(_rawBuffer);
-            _rawBuffer = Array.Empty<char>();
+            _rawBuffer = [];
             _bufferLength = 0;
         }
     }

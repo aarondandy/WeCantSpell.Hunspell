@@ -72,19 +72,4 @@ static class IntEx
     }
 
     public static int? TryParseInvariant(ReadOnlySpan<char> text) => TryParseInvariant(text, out var value) ? value : null;
-
-    /// <remarks>
-    /// This is a strange implementation of a postfix increment to remove the use of an
-    /// int in these cases.
-    /// </remarks>
-    public static bool InversePostfixIncrement(ref bool b)
-    {
-        if (b)
-        {
-            return false;
-        }
-
-        b = true;
-        return true;
-    }
 }

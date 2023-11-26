@@ -11,7 +11,7 @@ namespace WeCantSpell.Hunspell;
 /// <remarks>
 /// This probably does not need to exist if https://github.com/dotnet/runtime/issues/27229 works out.
 /// </remarks>
-sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
+sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>, IDictionary<string, TValue>
 {
     public static TextDictionary<TValue> Clone(TextDictionary<TValue> source)
     {
@@ -152,11 +152,17 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         }
     }
 
-    public IEnumerable<string> Keys => FilledEntries.Select(static e => e.Key);
+    public KeysCollection Keys => new KeysCollection(this);
 
-    public IEnumerable<TValue> Values => FilledEntries.Select(static e => e.Value);
+    public ValuesCollection Values => new ValuesCollection(this);
 
     private IEnumerable<Entry> FilledEntries => _entries.Where(static e => e.Key is not null);
+
+    ICollection<string> IDictionary<string, TValue>.Keys => new KeysCollection(this);
+
+    ICollection<TValue> IDictionary<string, TValue>.Values => new ValuesCollection(this);
+
+    public bool IsReadOnly => false;
 
     public Enumerator GetEnumerator() => new(this);
 
@@ -169,6 +175,9 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
     public bool ContainsKey(string key) => !Unsafe.IsNullRef(ref GetRefByKey(key));
 
     public bool ContainsKey(ReadOnlySpan<char> key) => !Unsafe.IsNullRef(ref GetRefByKey(key));
+
+    public bool Contains(KeyValuePair<string, TValue> item) =>
+        TryGetValue(item.Key, out var value) && EqualityComparer<TValue>.Default.Equals(value, item.Value);
 
     public bool TryGetValue(string key, out TValue value)
     {
@@ -239,6 +248,8 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
         _collisionIndex = builder.CollisionIndex;
     }
 
+    public void Add(KeyValuePair<string, TValue> item) => Add(item.Key, item.Value);
+
     public void Add(string key, TValue value)
     {
         var hash = CalculateHash(key);
@@ -260,6 +271,20 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 #endif
         static void throwFailed() => throw new InvalidOperationException("Failed to add");
     }
+
+    public void CopyTo(KeyValuePair<string, TValue>[] array, int arrayIndex)
+    {
+        foreach (var pair in this)
+        {
+            array[arrayIndex++] = pair;
+        }
+    }
+
+    public void Clear() => throw new NotImplementedException();
+
+    public bool Remove(string key) => throw new NotImplementedException();
+
+    public bool Remove(KeyValuePair<string, TValue> item) => throw new NotImplementedException();
 
     internal ref TValue GetOrAdd(string key)
     {
@@ -470,6 +495,49 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>
 
             return true;
         }
+    }
+
+    public class KeysCollection : ICollection<string>
+    {
+        internal KeysCollection(TextDictionary<TValue> dictionary)
+        {
+            _dictionary = dictionary;
+        }
+
+        private readonly TextDictionary<TValue> _dictionary;
+
+        public int Count => _dictionary.Count;
+        public bool IsReadOnly => true;
+
+        public void Add(string item) => throw new NotSupportedException();
+        public void Clear() => throw new NotSupportedException();
+        public bool Contains(string item) => _dictionary.ContainsKey(item);
+        public void CopyTo(string[] array, int arrayIndex) => throw new NotImplementedException();
+        public bool Remove(string item) => throw new NotSupportedException();
+        public IEnumerator<string> GetEnumerator() => _dictionary.FilledEntries.Select(static e => e.Key).GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+
+    public class ValuesCollection : ICollection<TValue>
+    {
+        internal ValuesCollection(TextDictionary<TValue> dictionary)
+        {
+            _dictionary = dictionary;
+        }
+
+        private readonly TextDictionary<TValue> _dictionary;
+
+        public int Count => _dictionary.Count;
+        public bool IsReadOnly => true;
+
+        public void Add(TValue item) => throw new NotSupportedException();
+        public void Clear() => throw new NotSupportedException();
+        public bool Contains(TValue item) => GetValues().Contains(item);
+        public void CopyTo(TValue[] array, int arrayIndex) => throw new NotImplementedException();
+        public bool Remove(TValue item) => throw new NotSupportedException();
+        public IEnumerator<TValue> GetEnumerator() => GetValues().GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        private IEnumerable<TValue> GetValues() => _dictionary.FilledEntries.Select(static e => e.Value);
     }
 
     public struct Enumerator

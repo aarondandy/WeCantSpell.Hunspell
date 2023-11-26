@@ -14,8 +14,8 @@ sealed class IncrementalWordList
         WNum = wNum;
     }
 
-    internal readonly List<WordEntryDetail?> Words;
-    internal readonly int WNum;
+    public readonly List<WordEntryDetail?> Words;
+    public readonly int WNum;
 
     public void SetCurrent(WordEntryDetail value)
     {

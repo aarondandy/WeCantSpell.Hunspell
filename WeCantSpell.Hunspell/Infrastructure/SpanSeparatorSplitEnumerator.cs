@@ -25,7 +25,7 @@ internal ref struct SpanSeparatorSplitEnumerator<T> where T : IEquatable<T>
     private readonly FindNextSeparator _findNextSeparator;
     private bool _done = false;
 
-    public ReadOnlySpan<T> Current { get; private set; } = ReadOnlySpan<T>.Empty;
+    public ReadOnlySpan<T> Current { get; private set; } = [];
 
     public SpanSeparatorSplitEnumerator<T> GetEnumerator() => this;
 
@@ -65,9 +65,7 @@ internal ref struct SpanSeparatorSplitEnumerator<T> where T : IEquatable<T>
             Current = _span.Slice(0, separatorIndex);
 
             var nextStartIndex = separatorIndex + 1;
-            _span = _span.Length > nextStartIndex
-                ? _span.Slice(nextStartIndex)
-                : ReadOnlySpan<T>.Empty;
+            _span = _span.Length > nextStartIndex ? _span.Slice(nextStartIndex) : [];
         }
         else
         {

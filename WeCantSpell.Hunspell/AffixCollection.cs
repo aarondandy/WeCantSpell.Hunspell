@@ -103,12 +103,11 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 {
     protected AffixCollection()
     {
-        _affixesByFlag = null!;
     }
 
-    private Dictionary<FlagValue, AffixGroup<TAffixEntry>> _affixesByFlag;
-    private TAffixEntry[] _affixesWithEmptyKeys = Array.Empty<TAffixEntry>();
-    private Dictionary<char, EntryTreeNode> _affixTreeRootsByFirstKeyChar = new();
+    private Dictionary<FlagValue, AffixGroup<TAffixEntry>> _affixesByFlag = null!; // implementing types are expected to initialize
+    private TAffixEntry[] _affixesWithEmptyKeys = [];
+    private Dictionary<char, EntryTreeNode> _affixTreeRootsByFirstKeyChar = [];
 
     public FlagSet ContClasses { get; protected set; } = FlagSet.Empty;
 
@@ -146,10 +145,10 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         {
         }
 
-        protected Dictionary<FlagValue, GroupBuilder> _byFlag = new();
+        protected Dictionary<FlagValue, GroupBuilder> _byFlag = [];
         protected ArrayBuilder<TAffixEntry> _emptyKeys = new();
         protected FlagSet.Builder _contClassesBuilder = new();
-        protected Dictionary<char, List<TAffixEntry>> _byFirstKeyChar = new();
+        protected Dictionary<char, List<TAffixEntry>> _byFirstKeyChar = [];
 
         public GroupBuilder ForGroup(FlagValue aFlag)
         {
@@ -167,7 +166,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
             target.ContClasses = allowDestructive ? _contClassesBuilder.MoveToFlagSet() : _contClassesBuilder.Create();
             target._affixesByFlag = _byFlag.ToDictionary(static x => x.Key, x => x.Value.ToImmutable(allowDestructive: allowDestructive));
             target._affixesWithEmptyKeys = _emptyKeys.MakeOrExtractArray(allowDestructive);
-            target._affixTreeRootsByFirstKeyChar = new();
+            target._affixTreeRootsByFirstKeyChar = [];
 
             // loop through each prefix list starting point
             foreach (var (firstChar, affixes) in _byFirstKeyChar)
@@ -201,9 +200,10 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
                 while (--i >= 0)
                 {
-                    ref var node = ref allNodes[i];
-                    node = new(affixes[i]);
-                    node.Next = allNodes[i + 1];
+                    allNodes[i] = new(affixes[i])
+                    {
+                        Next = allNodes[i + 1]
+                    };
                 }
             }
             else
@@ -334,7 +334,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
                     var firstChar = entry.Key[0];
                     if (!_parent._byFirstKeyChar.TryGetValue(firstChar, out var byKeyGroup))
                     {
-                        byKeyGroup = new();
+                        byKeyGroup = [];
                         _parent._byFirstKeyChar.Add(firstChar, byKeyGroup);
                     }
 

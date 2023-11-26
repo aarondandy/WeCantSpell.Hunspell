@@ -32,7 +32,7 @@ public partial class AffixReader
         {
             AdvanceThroughWhiteSpace();
 
-            var resultSpan = ReadGroup();
+            var resultSpan = ReadCurrentGroup();
             _text = _text.Slice(resultSpan.Length);
 
             return resultSpan;
@@ -44,39 +44,39 @@ public partial class AffixReader
 
             var remainder = _text;
 
-            var commentIndex = LocateComments(remainder);
+            var commentIndex = locateComments(remainder);
             if (commentIndex >= 0)
             {
                 remainder = remainder.Slice(0, commentIndex);
             }
 
             return remainder;
-        }
 
-        private static int LocateComments(ReadOnlySpan<char> span)
-        {
-            var i = 0;
-            while (i >= 0)
+            static int locateComments(ReadOnlySpan<char> span)
             {
-                i = span.IndexOf('#', i);
-                if (i < 0)
+                var i = 0;
+                while (i >= 0)
                 {
-                    break;
-                }
-                else if (i == 0)
-                {
-                    return 0;
-                }
-                else if (i > 0)
-                {
-                    if (span[i - 1].IsTabOrSpace())
+                    i = span.IndexOf('#', i);
+                    if (i < 0)
                     {
-                        return i;
+                        break;
+                    }
+                    else if (i == 0)
+                    {
+                        return 0;
+                    }
+                    else if (i > 0)
+                    {
+                        if (span[i - 1].IsTabOrSpace())
+                        {
+                            return i;
+                        }
                     }
                 }
-            }
 
-            return -1;
+                return -1;
+            }
         }
 
         private void AdvanceThroughWhiteSpace()
@@ -90,11 +90,11 @@ public partial class AffixReader
             }
         }
 
-        private ReadOnlySpan<char> ReadGroup()
+        private readonly ReadOnlySpan<char> ReadCurrentGroup()
         {
             if (_text.IsEmpty)
             {
-                return ReadOnlySpan<char>.Empty;
+                return [];
             }
 
             var i = _text.IndexOfTabOrSpace();

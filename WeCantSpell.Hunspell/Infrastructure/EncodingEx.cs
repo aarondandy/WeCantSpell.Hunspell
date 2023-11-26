@@ -14,7 +14,7 @@ static class EncodingEx
 
     private static Encoding? GetUtf8EncodingOrDefault(ReadOnlySpan<char> encodingName)
     {
-        if (!encodingName.IsEmpty && (encodingName.EqualsOrdinal("UTF8") || encodingName.EqualsOrdinal("UTF-8")))
+        if (encodingName.EqualsOrdinal("UTF8") || encodingName.EqualsOrdinal("UTF-8"))
         {
             return Encoding.UTF8;
         }

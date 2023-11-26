@@ -10,5 +10,5 @@ Job=Check en-US
 ```
 | Method                     | Mean      | Error     | StdDev    | Min       | Median    | Ratio |
 |--------------------------- |----------:|----------:|----------:|----------:|----------:|------:|
-| &#39;Check words: WeCantSpell&#39; | 18.940 ms | 0.2177 ms | 0.1930 ms | 18.750 ms | 18.824 ms |  1.00 |
-| &#39;Check words: NHunspell&#39;   |  6.142 ms | 0.0299 ms | 0.0265 ms |  6.097 ms |  6.149 ms |  0.32 |
+| &#39;Check words: WeCantSpell&#39; | 19.676 ms | 0.0624 ms | 0.0521 ms | 19.616 ms | 19.665 ms |  1.00 |
+| &#39;Check words: NHunspell&#39;   |  6.162 ms | 0.0249 ms | 0.0233 ms |  6.100 ms |  6.159 ms |  0.31 |
