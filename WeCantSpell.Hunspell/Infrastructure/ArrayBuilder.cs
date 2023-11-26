@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
-public sealed class ArrayBuilder<T>
+sealed class ArrayBuilder<T> : IList<T>
 {
     public ArrayBuilder()
     {
@@ -34,6 +35,8 @@ public sealed class ArrayBuilder<T>
 
     public int Capacity => _values.Length;
 
+    public bool IsReadOnly => false;
+
     public void Clear()
     {
         Count = 0;
@@ -62,6 +65,22 @@ public sealed class ArrayBuilder<T>
             _values[index] = value;
         }
     }
+
+    public int IndexOf(T item) => Array.IndexOf(_values, item, 0, Count);
+
+    public bool Contains(T item) => IndexOf(item) >= 0;
+
+    public void CopyTo(T[] array, int arrayIndex) => Array.Copy(_values, 0, array, arrayIndex, Count);
+
+    public IEnumerator<T> GetEnumerator()
+    {
+        for (var i = 0; i < Count; i++)
+        {
+            yield return _values[i];
+        }
+    }
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public void Add(T value)
     {
@@ -171,8 +190,6 @@ public sealed class ArrayBuilder<T>
         return true;
     }
 
-    internal int BinarySearch(int startIndex, int count, T value) => Array.BinarySearch(_values, startIndex, count, value);
-
     public void Insert(int insertionIndex, T value)
     {
         if (insertionIndex >= Count)
@@ -207,6 +224,42 @@ public sealed class ArrayBuilder<T>
         Count++;
     }
 
+    public void RemoveAt(int index)
+    {
+#if HAS_THROWOOR
+        ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
+#else
+        if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+#endif
+
+        if (Count > 0)
+        {
+            var newSize = Count - 1;
+
+            if (index < newSize)
+            {
+                Array.Copy(_values, index + 1, _values, index, newSize - index);
+            }
+
+            _values[newSize] = default!;
+
+            Count = newSize;
+        }
+    }
+
+    public bool Remove(T item)
+    {
+        var index = IndexOf(item);
+        if (index >= 0)
+        {
+            RemoveAt(index);
+            return true;
+        }
+
+        return false;
+    }
+
     public T[] Extract()
     {
 #if DEBUG
@@ -233,6 +286,8 @@ public sealed class ArrayBuilder<T>
     public T[] MakeArray() => Count == 0 ? [] : _values.AsSpan(0, Count).ToArray();
 
     public T[] MakeOrExtractArray(bool extract) => extract ? Extract() : MakeArray();
+
+    internal int BinarySearch(int startIndex, int count, T value) => Array.BinarySearch(_values, startIndex, count, value);
 
     private int CalculateBestCapacity(int minCapacity) => Math.Max(CalculateNextCapacity(), minCapacity);
 

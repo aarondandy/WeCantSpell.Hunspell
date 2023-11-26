@@ -275,9 +275,9 @@ public sealed partial class AffixReader
     {
         if (!IsInitialized(EntryListType.Break))
         {
-            if (_builder.BreakPoints.Count == 0)
+            if (_builder._breakPoints.Count == 0)
             {
-                _builder.BreakPoints.AddRange(DefaultBreakTableEntries);
+                _builder._breakPoints.AddRange(DefaultBreakTableEntries);
             }
         }
 
@@ -378,21 +378,21 @@ public sealed partial class AffixReader
             case AffixReaderCommandKind.NeedAffix:
                 return _flagParser.TryParseFlag(parameters, out _builder.NeedAffix);
             case AffixReaderCommandKind.Replacement:
-                return TryParseStandardListItem(EntryListType.Replacements, parameters, _builder.Replacements, TryParseReplacements);
+                return TryParseStandardListItem(EntryListType.Replacements, parameters, _builder._replacements, TryParseReplacements);
             case AffixReaderCommandKind.InputConversions:
                 return TryParseConv(parameters, EntryListType.Iconv, ref _builder._inputConversions);
             case AffixReaderCommandKind.OutputConversions:
                 return TryParseConv(parameters, EntryListType.Oconv, ref _builder._outputConversions);
             case AffixReaderCommandKind.Phone:
-                return TryParseStandardListItem(EntryListType.Phone, parameters, _builder.Phone, TryParsePhone);
+                return TryParseStandardListItem(EntryListType.Phone, parameters, _builder._phone, TryParsePhone);
             case AffixReaderCommandKind.CheckCompoundPattern:
-                return TryParseStandardListItem(EntryListType.CompoundPatterns, parameters, _builder.CompoundPatterns, TryParseCheckCompoundPatternIntoCompoundPatterns);
+                return TryParseStandardListItem(EntryListType.CompoundPatterns, parameters, _builder._compoundPatterns, TryParseCheckCompoundPatternIntoCompoundPatterns);
             case AffixReaderCommandKind.CompoundRule:
-                return TryParseStandardListItem(EntryListType.CompoundRules, parameters, _builder.CompoundRules, TryParseCompoundRuleIntoList);
+                return TryParseStandardListItem(EntryListType.CompoundRules, parameters, _builder._compoundRules, TryParseCompoundRuleIntoList);
             case AffixReaderCommandKind.Map:
-                return TryParseStandardListItem(EntryListType.Map, parameters, _builder.RelatedCharacterMap, TryParseMapEntry);
+                return TryParseStandardListItem(EntryListType.Map, parameters, _builder._relatedCharacterMap, TryParseMapEntry);
             case AffixReaderCommandKind.Break:
-                return TryParseStandardListItem(EntryListType.Break, parameters, _builder.BreakPoints, TryParseBreak);
+                return TryParseStandardListItem(EntryListType.Break, parameters, _builder._breakPoints, TryParseBreak);
             case AffixReaderCommandKind.Version:
                 _builder.Version = parameters.ToString();
                 return true;

@@ -206,7 +206,9 @@ public partial class AffixConfig
         /// Specifies modifications to try first.
         /// </summary>
         /// <seealso cref="AffixConfig.Replacements"/>
-        public ArrayBuilder<SingleReplacement> Replacements { get; } = new();
+        public IList<SingleReplacement> Replacements => _replacements;
+
+        internal ArrayBuilder<SingleReplacement> _replacements { get; } = new();
 
         /// <summary>
         /// Suffixes attached to root words to make other words.
@@ -236,20 +238,26 @@ public partial class AffixConfig
         /// Defines custom compound patterns with a regex-like syntax.
         /// </summary>
         /// <seealso cref="AffixConfig.CompoundRules"/>
-        public ArrayBuilder<CompoundRule> CompoundRules { get; } = new();
+        public IList<CompoundRule> CompoundRules => _compoundRules;
+
+        internal ArrayBuilder<CompoundRule> _compoundRules { get; } = new();
 
         /// <summary>
         /// Forbid compounding, if the first word in the compound ends with endchars, and
         /// next word begins with beginchars and(optionally) they have the requested flags.
         /// </summary>
         /// <seealso cref="AffixConfig.CompoundPatterns"/>
-        public ArrayBuilder<PatternEntry> CompoundPatterns { get; } = new();
+        public IList<PatternEntry> CompoundPatterns => _compoundPatterns;
+
+        internal ArrayBuilder<PatternEntry> _compoundPatterns { get; } = new();
 
         /// <summary>
         /// Defines new break points for breaking words and checking word parts separately.
         /// </summary>
         /// <seealso cref="AffixConfig.BreakPoints"/>
-        public ArrayBuilder<string> BreakPoints { get; } = new();
+        public IList<string> BreakPoints => _breakPoints;
+
+        internal ArrayBuilder<string> _breakPoints { get; } = new();
 
         /// <summary>
         /// Input conversion entries.
@@ -271,13 +279,17 @@ public partial class AffixConfig
         /// Mappings between related characters.
         /// </summary>
         /// <seealso cref="AffixConfig.RelatedCharacterMap"/>
-        public ArrayBuilder<MapEntry> RelatedCharacterMap { get; } = new();
+        public IList<MapEntry> RelatedCharacterMap => _relatedCharacterMap;
+
+        internal ArrayBuilder<MapEntry> _relatedCharacterMap { get; } = new();
 
         /// <summary>
         /// Phonetic transcription entries.
         /// </summary>
         /// <seealso cref="AffixConfig.Phone"/>
-        public ArrayBuilder<PhoneticEntry> Phone { get; } = new();
+        public IList<PhoneticEntry> Phone => _phone;
+
+        internal ArrayBuilder<PhoneticEntry> _phone { get; } = new();
 
         /// <summary>
         /// Maximum syllable number, that may be in a
@@ -423,12 +435,12 @@ public partial class AffixConfig
 
             config.AliasF = AliasF.ToImmutable(allowDestructive);
             config.AliasM = AliasM.ToImmutable(allowDestructive);
-            config.BreakPoints = new(BreakPoints.MakeOrExtractArray(allowDestructive));
-            config.Replacements = new(Replacements.MakeOrExtractArray(allowDestructive));
-            config.CompoundRules = new(CompoundRules.MakeOrExtractArray(allowDestructive));
-            config.CompoundPatterns = new(CompoundPatterns.MakeOrExtractArray(allowDestructive));
-            config.RelatedCharacterMap = new(RelatedCharacterMap.MakeOrExtractArray(allowDestructive));
-            config.Phone = new(Phone.MakeOrExtractArray(allowDestructive));
+            config.BreakPoints = new(_breakPoints.MakeOrExtractArray(allowDestructive));
+            config.Replacements = new(_replacements.MakeOrExtractArray(allowDestructive));
+            config.CompoundRules = new(_compoundRules.MakeOrExtractArray(allowDestructive));
+            config.CompoundPatterns = new(_compoundPatterns.MakeOrExtractArray(allowDestructive));
+            config.RelatedCharacterMap = new(_relatedCharacterMap.MakeOrExtractArray(allowDestructive));
+            config.Phone = new(_phone.MakeOrExtractArray(allowDestructive));
 
             config.Prefixes = Prefixes.BuildCollection(allowDestructive);
             config.Suffixes = Suffixes.BuildCollection(allowDestructive);

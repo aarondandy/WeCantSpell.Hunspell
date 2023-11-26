@@ -146,7 +146,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         }
 
         protected Dictionary<FlagValue, GroupBuilder> _byFlag = [];
-        protected ArrayBuilder<TAffixEntry> _emptyKeys = new();
+        private protected ArrayBuilder<TAffixEntry> _emptyKeys = new();
         protected FlagSet.Builder _contClassesBuilder = new();
         protected Dictionary<char, List<TAffixEntry>> _byFirstKeyChar = [];
 
