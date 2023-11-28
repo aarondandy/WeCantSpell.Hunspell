@@ -1,31 +1,75 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+
+using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
-internal sealed class CandidateStack : List<string>
+struct CandidateStack
 {
     internal const int MaxCandidateStackDepth = 2048;
 
-    public CandidateStack() : base(1)
+    public static void Push(ref CandidateStack stack, string value)
     {
-        // Preallocate with a small capacity as it doesn't often grow very large
+        if (stack._s0 is null)
+        {
+            stack._s0 = value;
+        }
+        else
+        {
+            (stack._rest ??= []).Add(value);
+        }
+    }
+
+    public static void Pop(ref CandidateStack stack)
+    {
+        if (stack._rest is { Count: > 0 })
+        {
+            stack._rest.RemoveLast();
+        }
+        else
+        {
+            stack._s0 = null;
+        }
+    }
+
+    private string? _s0;
+    private List<string>? _rest;
+
+    public CandidateStack()
+    {
     }
 
     /// <remarks>
     /// apply a fairly arbitrary depth limit
     /// </remarks>
-    public bool ExceedsArbitraryDepthLimit => Count > MaxCandidateStackDepth;
+    public readonly bool ExceedsArbitraryDepthLimit => Count > MaxCandidateStackDepth;
 
-    public void Push(string value)
+    public readonly int Count => _s0 is null ? 0 : (_rest?.Count).GetValueOrDefault() + 1;
+
+    public readonly bool Contains(string value)
     {
-        Add(value);
+        return
+            _s0 is not null
+            &&
+            (
+                _s0.Equals(value)
+                ||
+                (_rest?.Contains(value)).GetValueOrDefault()
+            );
     }
 
-    public void Pop()
+    public readonly bool Contains(ReadOnlySpan<char> value)
     {
-        if (Count > 0)
-        {
-            RemoveAt(Count - 1);
-        }
+        return
+            _s0 is not null
+            &&
+            (
+                StringEx.EqualsOrdinal(_s0, value)
+                ||
+                (_rest?.Contains(value)).GetValueOrDefault()
+            );
     }
+
 }

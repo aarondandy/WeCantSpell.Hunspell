@@ -23,7 +23,7 @@ public partial class WordList
             TextInfo = Affix.Culture.TextInfo;
             Options = options ?? DefaultOptions;
             CancellationToken = cancellationToken;
-            SpellCandidateStack = new();
+            _spellCandidateStack = new();
             Prefix = null;
             //PrefixAppend = null;
             Suffix = null;
@@ -39,7 +39,7 @@ public partial class WordList
             TextInfo = Affix.Culture.TextInfo;
             Options = source.Options;
             CancellationToken = source.CancellationToken;
-            SpellCandidateStack = source.SpellCandidateStack;
+            _spellCandidateStack = source._spellCandidateStack;
             Prefix = null;
             //PrefixAppend = null;
             Suffix = null;
@@ -68,7 +68,7 @@ public partial class WordList
         /// </remarks>
         public CancellationToken CancellationToken { get; }
 
-        public CandidateStack SpellCandidateStack { get; private set; }
+        internal CandidateStack _spellCandidateStack;
 
         private PrefixEntry? Prefix { get; set; }
 

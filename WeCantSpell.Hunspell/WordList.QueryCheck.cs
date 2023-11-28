@@ -55,7 +55,7 @@ public partial class WordList
             }
 
             // something very broken if spell ends up calling itself with the same word
-            if (_query.SpellCandidateStack.Contains(word))
+            if (_query._spellCandidateStack.Contains(word))
             {
                 return SpellCheckResult.DefaultWrong;
             }
@@ -73,11 +73,11 @@ public partial class WordList
                 return SpellCheckResult.DefaultWrong;
             }
 
-            _query.SpellCandidateStack.Push(word);
+            CandidateStack.Push(ref _query._spellCandidateStack, word);
 
             var result = CheckDetailsInternal(scw, capType, abbv != 0);
 
-            _query.SpellCandidateStack.Pop();
+            CandidateStack.Pop(ref _query._spellCandidateStack);
 
             return result;
         }
@@ -102,7 +102,7 @@ public partial class WordList
             }
 
             // something very broken if spell ends up calling itself with the same word
-            if (_query.SpellCandidateStack.Contains(word))
+            if (_query._spellCandidateStack.Contains(word))
             {
                 return SpellCheckResult.DefaultWrong;
             }
@@ -125,11 +125,11 @@ public partial class WordList
             }
 
             // NOTE: because a string isn't formed until this point, scw is pushed instead. It isn't the same, but might be good enough.
-            _query.SpellCandidateStack.Push(scw);
+            CandidateStack.Push(ref _query._spellCandidateStack, scw);
 
             var result = CheckDetailsInternal(scw, capType, abbv != 0);
 
-            _query.SpellCandidateStack.Pop();
+            CandidateStack.Pop(ref _query._spellCandidateStack);
 
             return result;
         }

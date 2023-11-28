@@ -95,20 +95,11 @@ static class CollectionsEx
         return removed;
     }
 
-    public static bool Contains(this List<string> list, ReadOnlySpan<char> value)
-    {
-        foreach (var item in list)
-        {
-            if (item is not null && value.Equals(item.AsSpan(), StringComparison.Ordinal))
-            {
-                return true;
-            }
-
-        }
-
-        return false;
-    }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool Any<T>(this List<T> list) => list.Count != 0;
+
+    public static void RemoveLast<T>(this List<T> list)
+    {
+        list.RemoveAt(list.Count - 1);
+    }
 }

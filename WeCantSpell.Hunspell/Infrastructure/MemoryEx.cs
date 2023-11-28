@@ -31,6 +31,34 @@ static class MemoryEx
         (span[index1], span[index0]) = (span[index0], span[index1]);
     }
 
+#if NO_SPAN_CONTAINS
+    public static bool Contains<T>(this ReadOnlySpan<T> span, T value) where T : IEquatable<T>
+    {
+        if (value is null)
+        {
+            foreach (var item in span)
+            {
+                if (item is null)
+                {
+                    return true;
+                }
+            }
+        }
+        else
+        {
+            foreach (var item in span)
+            {
+                if (value.Equals(item))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+#endif
+
 #if NO_SPAN_SORT
 
     public static void Sort<T>(this Span<T> span) where T : IComparable<T>

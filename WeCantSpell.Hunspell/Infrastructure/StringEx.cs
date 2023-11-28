@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
@@ -32,6 +33,8 @@ static class StringEx
     public static bool Equals(this ReadOnlySpan<char> @this, string value, StringComparison comparison) => @this.Equals(value.AsSpan(), comparison);
 
     public static bool EqualsOrdinal(this ReadOnlySpan<char> @this, string value) => @this.Equals(value, StringComparison.Ordinal);
+
+    public static bool EqualsOrdinal(this string @this, ReadOnlySpan<char> value) => value.Equals(@this, StringComparison.Ordinal);
 
     public static bool EqualsOrdinal(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value) => @this.Equals(value, StringComparison.Ordinal);
 
@@ -72,6 +75,33 @@ static class StringEx
     public static bool ContainsAny(this ReadOnlySpan<char> @this, char value0, char value1, char value2) => @this.IndexOfAny(value0, value1, value2) >= 0;
 
 #endif
+
+    public static bool Contains(this ReadOnlySpan<string?> @this, ReadOnlySpan<char> value)
+    {
+        foreach (var item in @this)
+        {
+            if (item is not null && value.Equals(item.AsSpan(), StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static bool Contains(this List<string> list, ReadOnlySpan<char> value)
+    {
+        foreach (var item in list)
+        {
+            if (item is not null && value.Equals(item.AsSpan(), StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+        }
+
+        return false;
+    }
 
 #if NO_SPAN_TRIM
 

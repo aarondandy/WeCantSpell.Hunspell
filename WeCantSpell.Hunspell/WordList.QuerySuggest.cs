@@ -20,19 +20,19 @@ public partial class WordList
         {
             _query = new(wordList, options, cancellationToken);
             TestSimpleSuggestion = false;
-            SuggestCandidateStack = new();
+            _suggestCandidateStack = new();
         }
 
         internal QuerySuggest(in QuerySuggest source)
         {
             _query = new(in source._query);
             TestSimpleSuggestion = source.TestSimpleSuggestion;
-            SuggestCandidateStack = source.SuggestCandidateStack;
+            _suggestCandidateStack = source._suggestCandidateStack;
         }
 
         private Query _query;
 
-        public CandidateStack SuggestCandidateStack { get; private set; }
+        internal CandidateStack _suggestCandidateStack;
 
         /// <summary>
         /// For testing compound words formed from 3 or more words.
@@ -73,7 +73,7 @@ public partial class WordList
             }
 
             // something very broken if suggest ends up calling itself with the same word
-            if (SuggestCandidateStack.Contains(word))
+            if (_suggestCandidateStack.Contains(word))
             {
                 return [];
             }
@@ -91,11 +91,11 @@ public partial class WordList
                 return [];
             }
 
-            SuggestCandidateStack.Push(word);
+            CandidateStack.Push(ref _suggestCandidateStack, word);
 
             var slst = SuggestInternal(word.AsSpan(), scw, capType, abbv);
 
-            SuggestCandidateStack.Pop();
+            CandidateStack.Pop(ref _suggestCandidateStack);
 
             return slst;
         }
@@ -119,7 +119,7 @@ public partial class WordList
             }
 
             // something very broken if suggest ends up calling itself with the same word
-            if (SuggestCandidateStack.ExceedsArbitraryDepthLimit || SuggestCandidateStack.Contains(word))
+            if (_suggestCandidateStack.ExceedsArbitraryDepthLimit || _suggestCandidateStack.Contains(word))
             {
                 return [];
             }
@@ -142,11 +142,12 @@ public partial class WordList
             }
 
             // NOTE: because a string isn't formed until this point, scw is pushed instead. It isn't the same, but might be good enough.
-            SuggestCandidateStack.Push(scw);
+
+            CandidateStack.Push(ref _suggestCandidateStack, scw);
 
             var slst = SuggestInternal(word, scw, capType, abbv);
 
-            SuggestCandidateStack.Pop();
+            CandidateStack.Pop(ref _suggestCandidateStack);
 
             return slst;
         }
