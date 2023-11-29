@@ -2,7 +2,7 @@
 <html lang='en'>
 <head>
 <meta charset='utf-8' />
-<title>WeCantSpell.Hunspell.Benchmarks.Suites.SuggestEnUsSuite-20231128-090940</title>
+<title>WeCantSpell.Hunspell.Benchmarks.Suites.SuggestEnUsSuite-20231129-094730</title>
 
 <style type="text/css">
 	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
@@ -15,19 +15,18 @@
 <pre><code>
 BenchmarkDotNet v0.13.10, Windows 11 (10.0.22631.2715/23H2/2023Update/SunValley3)
 AMD Ryzen 7 5800H with Radeon Graphics, 1 CPU, 16 logical and 8 physical cores
-  [Host]        : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
-  Job-FYOECP    : .NET 6.0.25 (6.0.2523.51912), X64 RyuJIT AVX2
-  Job-ACBKDI    : .NET 8.0.0 (8.0.23.53103), X64 RyuJIT AVX2
-  Suggest en-US : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
+.NET SDK 8.0.100
+  [Host]        : .NET 8.0.0 (8.0.23.53103), X64 RyuJIT AVX2
+  Suggest en-US : .NET 6.0.25 (6.0.2523.51912), X64 RyuJIT AVX2
 </code></pre>
-<pre><code></code></pre>
+<pre><code>Job=Suggest en-US  
+</code></pre>
 
 <table>
-<thead><tr><th>Method   </th><th>Job    </th><th>Runtime     </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Min</th><th>Median</th><th>Ratio</th>
+<thead><tr><th>Method   </th><th>Runtime</th><th>Mean</th><th>Error</th><th>StdDev</th><th>Min</th><th>Median</th><th>Ratio</th>
 </tr>
-</thead><tbody><tr><td>&#39;Suggest words&#39;</td><td>Job-FYOECP</td><td>.NET 6.0</td><td>417.8 ms</td><td>2.05 ms</td><td>1.82 ms</td><td>414.8 ms</td><td>417.7 ms</td><td>1.00</td>
-</tr><tr><td>&#39;Suggest words&#39;</td><td>Job-ACBKDI</td><td>.NET 8.0</td><td>380.6 ms</td><td>2.60 ms</td><td>2.43 ms</td><td>377.3 ms</td><td>380.1 ms</td><td>0.91</td>
-</tr><tr><td>&#39;Suggest words&#39;</td><td>Suggest en-US</td><td>.NET Framework 4.8</td><td>757.1 ms</td><td>1.73 ms</td><td>1.62 ms</td><td>753.9 ms</td><td>757.1 ms</td><td>1.81</td>
+</thead><tbody><tr><td>&#39;Suggest words&#39;</td><td>.NET 6.0</td><td>423.3 ms</td><td>2.91 ms</td><td>2.72 ms</td><td>415.8 ms</td><td>424.1 ms</td><td>1.12</td>
+</tr><tr><td>&#39;Suggest words&#39;</td><td>.NET 8.0</td><td>376.4 ms</td><td>1.99 ms</td><td>1.86 ms</td><td>374.1 ms</td><td>375.7 ms</td><td>1.00</td>
 </tr></tbody></table>
 </body>
 </html>

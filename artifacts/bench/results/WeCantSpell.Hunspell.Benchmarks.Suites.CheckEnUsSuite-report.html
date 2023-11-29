@@ -2,7 +2,7 @@
 <html lang='en'>
 <head>
 <meta charset='utf-8' />
-<title>WeCantSpell.Hunspell.Benchmarks.Suites.CheckEnUsSuite-20231128-090528</title>
+<title>WeCantSpell.Hunspell.Benchmarks.Suites.CheckEnUsSuite-20231129-094457</title>
 
 <style type="text/css">
 	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
@@ -15,28 +15,24 @@
 <pre><code>
 BenchmarkDotNet v0.13.10, Windows 11 (10.0.22631.2715/23H2/2023Update/SunValley3)
 AMD Ryzen 7 5800H with Radeon Graphics, 1 CPU, 16 logical and 8 physical cores
-  [Host]      : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
-  Job-FYOECP  : .NET 6.0.25 (6.0.2523.51912), X64 RyuJIT AVX2
-  Job-ACBKDI  : .NET 8.0.0 (8.0.23.53103), X64 RyuJIT AVX2
-  Check en-US : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
+.NET SDK 8.0.100
+  [Host]      : .NET 8.0.0 (8.0.23.53103), X64 RyuJIT AVX2
+  Check en-US : .NET 6.0.25 (6.0.2523.51912), X64 RyuJIT AVX2
 </code></pre>
-<pre><code></code></pre>
+<pre><code>Job=Check en-US  
+</code></pre>
 
 <table>
-<thead><tr><th>Method </th><th>Job  </th><th>Runtime     </th><th>set</th><th>words </th><th>Mean </th><th>Error</th><th>StdDev</th><th>Min  </th><th>Median</th><th>Ratio</th>
+<thead><tr><th>Method </th><th>Runtime</th><th>set</th><th>words </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Min </th><th>Median</th><th>Ratio</th><th>RatioSD</th>
 </tr>
-</thead><tbody><tr><td>&#39;Check words&#39;</td><td>Job-FYOECP</td><td>.NET 6.0</td><td>All</td><td>String[7158]</td><td>10,175.5 &mu;s</td><td>27.63 &mu;s</td><td>24.49 &mu;s</td><td>10,126.6 &mu;s</td><td>10,179.0 &mu;s</td><td>1.00</td>
-</tr><tr><td>&#39;Check words&#39;</td><td>Job-ACBKDI</td><td>.NET 8.0</td><td>All</td><td>String[7158]</td><td>7,595.9 &mu;s</td><td>7.84 &mu;s</td><td>7.33 &mu;s</td><td>7,583.1 &mu;s</td><td>7,596.6 &mu;s</td><td>0.75</td>
-</tr><tr><td>&#39;Check words&#39;</td><td>Check en-US</td><td>.NET Framework 4.8</td><td>All</td><td>String[7158]</td><td>18,130.6 &mu;s</td><td>105.50 &mu;s</td><td>82.36 &mu;s</td><td>17,875.6 &mu;s</td><td>18,157.7 &mu;s</td><td>1.78</td>
-</tr><tr><td>&#39;Check words&#39;</td><td>Job-FYOECP</td><td>.NET 6.0</td><td>Correct</td><td>String[3001]</td><td>820.9 &mu;s</td><td>1.93 &mu;s</td><td>1.81 &mu;s</td><td>818.3 &mu;s</td><td>820.3 &mu;s</td><td>1.00</td>
-</tr><tr><td>&#39;Check words&#39;</td><td>Job-ACBKDI</td><td>.NET 8.0</td><td>Correct</td><td>String[3001]</td><td>510.8 &mu;s</td><td>0.92 &mu;s</td><td>0.82 &mu;s</td><td>509.6 &mu;s</td><td>510.8 &mu;s</td><td>0.62</td>
-</tr><tr><td>&#39;Check words&#39;</td><td>Check en-US</td><td>.NET Framework 4.8</td><td>Correct</td><td>String[3001]</td><td>1,336.0 &mu;s</td><td>5.74 &mu;s</td><td>5.37 &mu;s</td><td>1,317.0 &mu;s</td><td>1,337.3 &mu;s</td><td>1.63</td>
-</tr><tr><td>&#39;Check words&#39;</td><td>Job-FYOECP</td><td>.NET 6.0</td><td>Roots</td><td>String[2035]</td><td>391.3 &mu;s</td><td>0.57 &mu;s</td><td>0.51 &mu;s</td><td>390.6 &mu;s</td><td>391.3 &mu;s</td><td>1.00</td>
-</tr><tr><td>&#39;Check words&#39;</td><td>Job-ACBKDI</td><td>.NET 8.0</td><td>Roots</td><td>String[2035]</td><td>236.6 &mu;s</td><td>0.42 &mu;s</td><td>0.39 &mu;s</td><td>236.0 &mu;s</td><td>236.6 &mu;s</td><td>0.60</td>
-</tr><tr><td>&#39;Check words&#39;</td><td>Check en-US</td><td>.NET Framework 4.8</td><td>Roots</td><td>String[2035]</td><td>547.3 &mu;s</td><td>2.35 &mu;s</td><td>2.20 &mu;s</td><td>539.8 &mu;s</td><td>547.8 &mu;s</td><td>1.40</td>
-</tr><tr><td>&#39;Check words&#39;</td><td>Job-FYOECP</td><td>.NET 6.0</td><td>Wrong</td><td>String[4157]</td><td>9,199.7 &mu;s</td><td>13.80 &mu;s</td><td>12.23 &mu;s</td><td>9,168.4 &mu;s</td><td>9,200.9 &mu;s</td><td>1.00</td>
-</tr><tr><td>&#39;Check words&#39;</td><td>Job-ACBKDI</td><td>.NET 8.0</td><td>Wrong</td><td>String[4157]</td><td>6,967.5 &mu;s</td><td>37.31 &mu;s</td><td>33.07 &mu;s</td><td>6,883.6 &mu;s</td><td>6,975.3 &mu;s</td><td>0.76</td>
-</tr><tr><td>&#39;Check words&#39;</td><td>Check en-US</td><td>.NET Framework 4.8</td><td>Wrong</td><td>String[4157]</td><td>16,785.5 &mu;s</td><td>11.95 &mu;s</td><td>10.59 &mu;s</td><td>16,768.4 &mu;s</td><td>16,783.4 &mu;s</td><td>1.82</td>
+</thead><tbody><tr><td>&#39;Check words&#39;</td><td>.NET 6.0</td><td>All</td><td>String[7158]</td><td>9,930.6 &mu;s</td><td>10.06 &mu;s</td><td>9.41 &mu;s</td><td>9,914.7 &mu;s</td><td>9,932.4 &mu;s</td><td>1.31</td><td>0.01</td>
+</tr><tr><td>&#39;Check words&#39;</td><td>.NET 8.0</td><td>All</td><td>String[7158]</td><td>7,555.2 &mu;s</td><td>47.01 &mu;s</td><td>43.98 &mu;s</td><td>7,462.9 &mu;s</td><td>7,571.0 &mu;s</td><td>1.00</td><td>0.00</td>
+</tr><tr><td>&#39;Check words&#39;</td><td>.NET 6.0</td><td>Correct</td><td>String[3001]</td><td>804.9 &mu;s</td><td>1.54 &mu;s</td><td>1.29 &mu;s</td><td>801.4 &mu;s</td><td>805.0 &mu;s</td><td>1.54</td><td>0.00</td>
+</tr><tr><td>&#39;Check words&#39;</td><td>.NET 8.0</td><td>Correct</td><td>String[3001]</td><td>522.9 &mu;s</td><td>0.63 &mu;s</td><td>0.59 &mu;s</td><td>522.1 &mu;s</td><td>522.8 &mu;s</td><td>1.00</td><td>0.00</td>
+</tr><tr><td>&#39;Check words&#39;</td><td>.NET 6.0</td><td>Roots</td><td>String[2035]</td><td>382.3 &mu;s</td><td>4.62 &mu;s</td><td>4.32 &mu;s</td><td>375.5 &mu;s</td><td>383.2 &mu;s</td><td>1.54</td><td>0.02</td>
+</tr><tr><td>&#39;Check words&#39;</td><td>.NET 8.0</td><td>Roots</td><td>String[2035]</td><td>247.9 &mu;s</td><td>0.55 &mu;s</td><td>0.52 &mu;s</td><td>246.9 &mu;s</td><td>248.0 &mu;s</td><td>1.00</td><td>0.00</td>
+</tr><tr><td>&#39;Check words&#39;</td><td>.NET 6.0</td><td>Wrong</td><td>String[4157]</td><td>8,861.6 &mu;s</td><td>38.19 &mu;s</td><td>35.73 &mu;s</td><td>8,735.8 &mu;s</td><td>8,869.2 &mu;s</td><td>1.27</td><td>0.00</td>
+</tr><tr><td>&#39;Check words&#39;</td><td>.NET 8.0</td><td>Wrong</td><td>String[4157]</td><td>6,967.3 &mu;s</td><td>16.09 &mu;s</td><td>15.05 &mu;s</td><td>6,941.8 &mu;s</td><td>6,970.0 &mu;s</td><td>1.00</td><td>0.00</td>
 </tr></tbody></table>
 </body>
 </html>

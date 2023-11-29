@@ -1,11 +1,14 @@
 ﻿using System.Collections.Generic;
 
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Jobs;
+
 using WeCantSpell.Hunspell.Benchmarks.Helpers;
 
 namespace WeCantSpell.Hunspell.Benchmarks.Suites;
 
-[SimpleJob(id: "Check en-US")]
+[SimpleJob(id: "Check en-US", runtimeMoniker: RuntimeMoniker.Net80, baseline: true)]
+[SimpleJob(id: "Check en-US", runtimeMoniker: RuntimeMoniker.Net60)]
 [MinColumn, MeanColumn, MedianColumn]
 public class CheckEnUsSuite
 {
