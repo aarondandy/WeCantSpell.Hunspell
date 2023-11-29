@@ -1,44 +1,81 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 
 namespace WeCantSpell.Hunspell;
 
 sealed class IncrementalWordList
 {
-    public IncrementalWordList() : this([], 0)
+    private const int MaxCachedCapacity = 32;
+
+    private static IncrementalWordList? PoolCache;
+
+    public static IncrementalWordList GetRoot()
+    {
+        if (Interlocked.Exchange(ref PoolCache, null) is { } rental)
+        {
+#if DEBUG
+            if (rental.WNum != 0) throw new System.InvalidOperationException();
+#endif
+            rental._words.Clear();
+        }
+        else
+        {
+            rental = new();
+        }
+
+        return rental;
+    }
+
+    public static void ReturnRoot(ref IncrementalWordList? rental)
+    {
+        if (rental is { _words.Capacity: > 0 and <= MaxCachedCapacity })
+        {
+#if DEBUG
+            if (rental.WNum != 0) throw new System.InvalidOperationException();
+#endif
+
+            Volatile.Write(ref PoolCache, rental);
+        }
+
+        rental = null;
+    }
+
+    private IncrementalWordList() : this([], 0)
     {
     }
 
-    public IncrementalWordList(List<WordEntryDetail?> words, int wNum)
+    private IncrementalWordList(List<WordEntryDetail?> words, int wNum)
     {
-        Words = words;
+        _words = words;
         WNum = wNum;
     }
 
-    public readonly List<WordEntryDetail?> Words;
+    private readonly List<WordEntryDetail?> _words;
+
     public readonly int WNum;
 
     public void SetCurrent(WordEntryDetail value)
     {
-        if (WNum < Words.Count)
+        if (WNum < _words.Count)
         {
-            Words[WNum] = value;
+            _words[WNum] = value;
         }
         else
         {
-            while (WNum > Words.Count)
+            while (WNum > _words.Count)
             {
-                Words.Add(null);
+                _words.Add(null);
             }
 
-            Words.Add(value);
+            _words.Add(value);
         }
     }
 
     public void ClearCurrent()
     {
-        if (WNum < Words.Count)
+        if (WNum < _words.Count)
         {
-            Words[WNum] = null;
+            _words[WNum] = null;
         }
     }
 
@@ -46,14 +83,10 @@ sealed class IncrementalWordList
 
     public bool CheckIfNextIsNotNull() => CheckIfNotNull(WNum + 1);
 
-    private bool CheckIfNotNull(int index) => index < Words.Count && Words[index] is not null;
+    private bool CheckIfNotNull(int index) => index < _words.Count && _words[index] is not null;
 
-    public bool ContainsFlagAt(int wordIndex, FlagValue flag)
-    {
-        return wordIndex < Words.Count
-            && Words[wordIndex] is { } detail
-            && detail.ContainsFlag(flag);
-    }
+    public bool ContainsFlagAt(int index, FlagValue flag) =>
+        index < _words.Count && (_words[index]?.ContainsFlag(flag)).GetValueOrDefault();
 
-    public IncrementalWordList CreateIncremented() => new(Words, WNum + 1);
+    public IncrementalWordList CreateIncremented() => new(_words, WNum + 1);
 }

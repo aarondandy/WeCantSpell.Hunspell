@@ -1352,9 +1352,11 @@ public partial class WordList
             {
                 if (Affix.HasCompound)
                 {
-                    var rwords = new IncrementalWordList(); // buffer for COMPOUND pattern checking
+                    var rwords = IncrementalWordList.GetRoot(); // buffer for COMPOUND pattern checking
                     var info = cpdSuggest == 1 ? SpellCheckResultType.Compound2 : SpellCheckResultType.None;
-                    rv = _query.CompoundCheck(word, 0, 0, 100, null, rwords, huMovRule: false, isSug: true, ref info); // EXT
+                    rv = _query.CompoundCheck(word, 0, 0, 100, rwords, huMovRule: false, isSug: true, ref info); // EXT
+                    IncrementalWordList.ReturnRoot(ref rwords);
+
                     // TODO filter 3-word or more compound words, as in spell()
                     // (it's too slow to call suggest() here for all possible compound words)
                     if (rv is not null && (!TryLookupFirstDetail(word, out var rvDetail) || !rvDetail.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest)))
@@ -1400,9 +1402,11 @@ public partial class WordList
             {
                 if (Affix.HasCompound)
                 {
-                    var rwords = new IncrementalWordList(); // buffer for COMPOUND pattern checking
+                    var rwords = IncrementalWordList.GetRoot(); // buffer for COMPOUND pattern checking
                     var info = cpdSuggest == 1 ? SpellCheckResultType.Compound2 : SpellCheckResultType.None;
-                    rv = _query.CompoundCheck(word.AsSpan(), 0, 0, 100, null, rwords, huMovRule: false, isSug: true, ref info); // EXT
+                    rv = _query.CompoundCheck(word.AsSpan(), 0, 0, 100, rwords, huMovRule: false, isSug: true, ref info); // EXT
+                    IncrementalWordList.ReturnRoot(ref rwords);
+
                     // TODO filter 3-word or more compound words, as in spell()
                     // (it's too slow to call suggest() here for all possible compound words)
                     if (rv is not null && (!TryLookupFirstDetail(word, out var rvDetail) || !rvDetail.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest)))

@@ -280,11 +280,11 @@ public partial class WordList
                 else if (Affix.HasCompound)
                 {
                     // try check compound word
-                    var rwords = new IncrementalWordList();
+                    var rwords = IncrementalWordList.GetRoot();
 
                     // first allow only 2 words in the compound
                     var setinfo = SpellCheckResultType.Compound2 | info;
-                    he = CompoundCheck(word.AsSpan(), 0, 0, 100, null, rwords, huMovRule: false, isSug: false, ref setinfo);
+                    he = CompoundCheck(word.AsSpan(), 0, 0, 100, rwords, huMovRule: false, isSug: false, ref setinfo);
                     info = setinfo & ~SpellCheckResultType.Compound2; // unset Compound2
 
                     // if not 2-word compoud word, try with 3 or more words
@@ -292,7 +292,7 @@ public partial class WordList
                     if (he is null && !info.HasFlagEx(SpellCheckResultType.Compound2))
                     {
                         info &= ~SpellCheckResultType.Compound2;
-                        he = CompoundCheck(word.AsSpan(), 0, 0, 100, null, rwords, huMovRule: false, isSug: false, ref info);
+                        he = CompoundCheck(word.AsSpan(), 0, 0, 100, rwords, huMovRule: false, isSug: false, ref info);
                         // accept the compound with 3 or more words only if it is
                         // - not a dictionary word with a typo and
                         // - not two words written separately,
@@ -315,7 +315,7 @@ public partial class WordList
                     if (he is null && word.EndsWith('-') && Affix.IsHungarian)
                     {
                         // LANG_hu section: `moving rule' with last dash
-                        he = CompoundCheck(word.AsSpan(0, word.Length - 1), -5, 0, 100, null, rwords, huMovRule: true, isSug: false, ref info);
+                        he = CompoundCheck(word.AsSpan(0, word.Length - 1), -5, 0, 100, rwords, huMovRule: true, isSug: false, ref info);
                     }
 
                     if (he is not null)
@@ -328,6 +328,8 @@ public partial class WordList
 
                         info |= SpellCheckResultType.Compound;
                     }
+
+                    IncrementalWordList.ReturnRoot(ref rwords);
                 }
 
                 return he;
@@ -456,12 +458,12 @@ public partial class WordList
             return null;
         }
 
-        public WordEntry? CompoundCheck(ReadOnlySpan<char> word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, bool isSug, ref SpellCheckResultType info)
+        public WordEntry? CompoundCheck(ReadOnlySpan<char> word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList rwords, bool huMovRule, bool isSug, ref SpellCheckResultType info)
         {
             // add a time limit to handle possible
             // combinatorical explosion of the overlapping words
             var opLimiter = new OperationTimedLimiter(Options.TimeLimitCompoundCheck, CancellationToken);
-            return CompoundCheck(word, wordNum, numSyllable, maxwordnum, words, rwords, huMovRule, isSug, ref info, ref opLimiter);
+            return CompoundCheck(word, wordNum, numSyllable, maxwordnum, null, rwords, huMovRule, isSug, ref info, ref opLimiter);
         }
 
         public WordEntry? CompoundCheck(ReadOnlySpan<char> word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, bool isSug, ref SpellCheckResultType info, ref OperationTimedLimiter opLimiter)
