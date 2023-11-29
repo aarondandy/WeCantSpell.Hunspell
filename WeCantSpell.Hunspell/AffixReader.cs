@@ -720,7 +720,7 @@ public sealed partial class AffixReader
         FlagValue[] values;
         if (parameterText.Contains('('))
         {
-            var entryBuilder = new List<FlagValue>();
+            var entryBuilder = new ArrayBuilder<FlagValue>();
             for (var index = 0; index < parameterText.Length; index++)
             {
                 var indexBegin = index;
@@ -743,7 +743,7 @@ public sealed partial class AffixReader
                 }
             }
 
-            values = entryBuilder.ToArray();
+            values = entryBuilder.Extract();
         }
         else
         {
