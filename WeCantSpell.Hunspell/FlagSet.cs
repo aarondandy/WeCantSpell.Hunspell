@@ -463,11 +463,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             return Contains(other[0]);
         }
 
-        if (
-            other.IsEmpty
-            || other[0] > _values![_values.Length - 1]
-            || other[other.Length - 1] < _values[0]
-        )
+        if (other[0] > _values![_values.Length - 1] || other[other.Length - 1] < _values[0])
         {
             // If the sets are disjoint then a match is impossible
             return false;

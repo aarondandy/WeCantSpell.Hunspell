@@ -142,6 +142,14 @@ sealed class ArrayBuilder<T> : IList<T>
         Count = futureSize;
     }
 
+    public void AddRange(ReadOnlySpan<T> values)
+    {
+        var futureSize = Count + values.Length;
+        EnsureCapacityAtLeast(futureSize);
+        values.CopyTo(_values.AsSpan());
+        Count = futureSize;
+    }
+
     public void GrowToCapacity(int requiredLength)
     {
 #if HAS_THROWOOR

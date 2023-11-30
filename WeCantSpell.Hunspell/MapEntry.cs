@@ -7,7 +7,7 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct MapEntry : IReadOnlyList<string>
 {
-    public static MapEntry Empty { get; } = new(Array.Empty<string>());
+    public static MapEntry Empty { get; } = new([]);
 
     public static MapEntry Create(IEnumerable<string> items)
     {
