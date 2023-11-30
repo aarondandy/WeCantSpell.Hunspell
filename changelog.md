@@ -2,11 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
-## Upcoming
+## 5.0.0 - Upcoming
 
 - Removes usages of `Environment.TickCount`: [PR #83](https://github.com/aarondandy/WeCantSpell.Hunspell/pull/83)
-- Updates the library to match unreleased changes and fixes from Hunspell
 - Adds `net8.0` as a new target
+- (breaking) Improves many collection types
+- (breaking) Adds more exceptions for exceptional situations
+- (breaking) Moves ArrayBuilder to internal
+- Updates to match unreleased changes and fixes from Hunspell
+- Assorted performance related changes
+- Restricts unsafe code to netstandard2.0 builds
 
 ## 4.1.0 - 2023-11
 

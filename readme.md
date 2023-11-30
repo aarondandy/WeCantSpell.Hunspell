@@ -2,7 +2,7 @@
 
 A port of [Hunspell](https://github.com/hunspell/hunspell) for .NET.
 
-![bee](https://raw.githubusercontent.com/aarondandy/WeCantSpell.Hunspell/main/icon.png)
+![bee icon](https://raw.githubusercontent.com/aarondandy/WeCantSpell.Hunspell/main/icon.png)
 
 **Download and install with NuGet: [WeCantSpell.Hunspell](https://www.nuget.org/packages/WeCantSpell.Hunspell/)**
 
@@ -51,8 +51,8 @@ This port will likely perform slower relative to the original binaries and [NHun
 
 | Benchmark     | .NET 8       | .NET 4.8     | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
 |---------------|------------- |--------------|--------------|
-| Check test    | 🐢 7,782 μs | 🐌 18,338 μs | 🐇 6,060 μs |
-| Suggest test  | 🐇 376 ms   | 🐢 759 ms    | 🐌 1,895 ms |
+| Check test    | 🐢 7,593 μs | 🐌 18,339 μs | 🐇 6,149 μs |
+| Suggest test  | 🐇 371 ms   | 🐢 738 ms    | 🐌 1,905 ms |
 
 _Note: Measurements taken on an AMD 5800H._
 
