@@ -14,7 +14,7 @@ public partial class WordList
         internal const string DefaultXmlToken = "<?xml?>";
         internal const string DefaultXmlTokenCheckPrefix = "<?xml";
 
-        private static QueryOptions DefaultOptions { get; } = new();
+        private static readonly QueryOptions DefaultOptions = new();
 
         internal Query(WordList wordList, QueryOptions? options, CancellationToken cancellationToken)
         {
@@ -24,12 +24,12 @@ public partial class WordList
             Options = options ?? DefaultOptions;
             CancellationToken = cancellationToken;
             _spellCandidateStack = new();
-            Prefix = null;
+            _prefix = null;
             //PrefixAppend = null;
-            Suffix = null;
-            SuffixFlag = default;
-            SuffixExtra = false;
-            SuffixAppend = null;
+            _suffix = null;
+            _suffixFlag = default;
+            _suffixExtra = false;
+            _suffixAppend = null;
         }
 
         internal Query(in Query source)
@@ -40,21 +40,21 @@ public partial class WordList
             Options = source.Options;
             CancellationToken = source.CancellationToken;
             _spellCandidateStack = source._spellCandidateStack;
-            Prefix = null;
+            _prefix = null;
             //PrefixAppend = null;
-            Suffix = null;
-            SuffixFlag = default;
-            SuffixExtra = false;
-            SuffixAppend = null;
+            _suffix = null;
+            _suffixFlag = default;
+            _suffixExtra = false;
+            _suffixAppend = null;
         }
 
-        public WordList WordList { get; }
+        public readonly WordList WordList;
 
-        public AffixConfig Affix { get; }
+        public readonly AffixConfig Affix;
 
-        public QueryOptions Options { get; }
+        public readonly QueryOptions Options;
 
-        public TextInfo TextInfo { get; }
+        public readonly TextInfo TextInfo;
 
         /// <summary>
         /// A cancellation token that can be used to request the termination of a check or suggest operation.
@@ -66,89 +66,89 @@ public partial class WordList
         /// of results. Even without cancellation, the consistency of results can't be gauranteed
         /// due to the use of timing checks throughout the code.
         /// </remarks>
-        public CancellationToken CancellationToken { get; }
+        public readonly CancellationToken CancellationToken;
 
         internal CandidateStack _spellCandidateStack;
 
-        private PrefixEntry? Prefix { get; set; }
+        private PrefixEntry? _prefix;
 
         //private string? PrefixAppend { get; set; } // Previous prefix for counting syllables of the prefix.
 
-        private SuffixEntry? Suffix { get; set; }
+        private SuffixEntry? _suffix;
 
-        private FlagValue SuffixFlag { get; set; }
+        private FlagValue _suffixFlag;
 
         /// <summary>
-        /// Modifier for syllable count of <see cref="SuffixAppend"/>.
+        /// Modifier for syllable count of <see cref="_suffixAppend"/>.
         /// </summary>
-        private bool SuffixExtra { get; set; }
+        private bool _suffixExtra;
 
         /// <summary>
         /// Previous suffix for counting syllables of the suffix.
         /// </summary>
-        private string? SuffixAppend { get; set; }
+        private string? _suffixAppend;
 
         private void ClearPrefix()
         {
-            Prefix = null;
+            _prefix = null;
         }
 
         private void ClearSuffix()
         {
-            Suffix = null;
+            _suffix = null;
         }
 
         private void ClearSuffixAndFlag()
         {
             ClearSuffix();
-            SuffixFlag = default;
+            _suffixFlag = default;
         }
 
         private void ClearSuffixAppendAndExtra()
         {
-            SuffixAppend = null;
-            SuffixExtra = false;
+            _suffixAppend = null;
+            _suffixExtra = false;
         }
 
         private void ClearAllAppendAndExtra()
         {
             //PrefixAppend = null;
-            SuffixAppend = null;
-            SuffixExtra = false;
+            _suffixAppend = null;
+            _suffixExtra = false;
         }
 
         private void SetPrefix(PrefixEntry prefix)
         {
-            Prefix = prefix;
+            _prefix = prefix;
         }
 
         private void SetSuffix(SuffixEntry suffix)
         {
-            Suffix = suffix;
+            _suffix = suffix;
         }
 
         private void SetSuffixFlag(FlagValue flag)
         {
-            SuffixFlag = flag;
+            _suffixFlag = flag;
         }
 
         private void SetSuffixExtra(bool extra)
         {
-            SuffixExtra = extra;
+            _suffixExtra = extra;
         }
 
         private void SetSuffixAppend(string append)
         {
-            SuffixAppend = append;
+            _suffixAppend = append;
         }
 
         private readonly bool AffixContainsContClass(FlagValue value) =>
             value.HasValue
             &&
             (
-                (Prefix is not null && Prefix.ContainsContClass(value))
+                (_prefix is not null && _prefix.ContainsContClass(value))
                 ||
-                (Suffix?.ContainsContClass(value)).GetValueOrDefault()
+                (_suffix?.ContainsContClass(value)).GetValueOrDefault()
             );
 
         private readonly bool ContainFlagsOrBlockSuggest(in WordEntryDetail rv, bool isSug, FlagValue a, FlagValue b) =>
@@ -681,7 +681,7 @@ public partial class WordList
                                         &&
                                         !huMovRule
                                         &&
-                                        (Suffix?.ContainsAnyContClass(Affix.CompoundForbidFlag, Affix.CompoundEnd)).GetValueOrDefault()
+                                        (_suffix?.ContainsAnyContClass(Affix.CompoundForbidFlag, Affix.CompoundEnd)).GetValueOrDefault()
                                     )
                                     {
                                         rv = null;
@@ -879,7 +879,7 @@ public partial class WordList
                                 rv is not null
                                 // XXX hardwired Hungarian dic. codes
                                 &&
-                                (Suffix?.ContainsAnyContClass(SpecialFlags.LetterXLower, SpecialFlags.LetterPercent)).GetValueOrDefault();
+                                (_suffix?.ContainsAnyContClass(SpecialFlags.LetterXLower, SpecialFlags.LetterPercent)).GetValueOrDefault();
                         }
                         else
                         {
@@ -897,17 +897,17 @@ public partial class WordList
 
                                 // - affix syllable num.
                                 // XXX only second suffix (inflections, not derivations)
-                                if (SuffixAppend is not null)
+                                if (_suffixAppend is not null)
                                 {
-                                    numSyllable -= GetSyllableReversed(SuffixAppend.AsSpan());
+                                    numSyllable -= GetSyllableReversed(_suffixAppend.AsSpan());
                                 }
-                                if (SuffixExtra)
+                                if (_suffixExtra)
                                 {
                                     numSyllable -= 1;
                                 }
 
                                 // + 1 word, if syllable number of the prefix > 1 (hungarian convention)
-                                if (Prefix is not null && GetSyllable(Prefix.Key.AsSpan()) > 1)
+                                if (_prefix is not null && GetSyllable(_prefix.Key.AsSpan()) > 1)
                                 {
                                     wordNum++;
                                 }
@@ -1141,18 +1141,18 @@ public partial class WordList
 
                                     // - affix syllable num.
                                     // XXX only second suffix (inflections, not derivations)
-                                    if (SuffixAppend is not null)
+                                    if (_suffixAppend is not null)
                                     {
-                                        numSyllable -= GetSyllableReversed(SuffixAppend.AsSpan());
+                                        numSyllable -= GetSyllableReversed(_suffixAppend.AsSpan());
                                     }
-                                    if (SuffixExtra)
+                                    if (_suffixExtra)
                                     {
                                         numSyllable -= 1;
                                     }
 
                                     // + 1 word, if syllable number of the prefix > 1 (hungarian
                                     // convention)
-                                    if (Prefix is not null && GetSyllable(Prefix.Key.AsSpan()) > 1)
+                                    if (_prefix is not null && GetSyllable(_prefix.Key.AsSpan()) > 1)
                                     {
                                         wordNum++;
                                     }
@@ -1162,15 +1162,15 @@ public partial class WordList
 
                                     if (!string.IsNullOrEmpty(Affix.CompoundSyllableNum))
                                     {
-                                        if (SuffixFlag == SpecialFlags.LetterCLower)
+                                        if (_suffixFlag == SpecialFlags.LetterCLower)
                                         {
                                             numSyllable += 2;
                                         }
                                         else if (
-                                            SuffixFlag == SpecialFlags.LetterJ
+                                            _suffixFlag == SpecialFlags.LetterJ
                                             ||
                                             (
-                                                SuffixFlag == SpecialFlags.LetterI
+                                                _suffixFlag == SpecialFlags.LetterI
                                                 && rv is not null
                                                 && rv.ContainsFlag(SpecialFlags.LetterJ)
                                             )
@@ -1728,9 +1728,9 @@ public partial class WordList
                 if (Affix.ContClasses.Contains(affix.AFlag))
                 {
                     rv = CheckTwoSfx(affix, word, sfxopts, pfx, needflag);
-                    if (rv is not null && Suffix is not null)
+                    if (rv is not null && _suffix is not null)
                     {
-                        SetSuffixFlag(Suffix.AFlag);
+                        SetSuffixFlag(_suffix.AFlag);
                         if (!affix.ContClass.HasItems)
                         {
                             SetSuffixAppend(affix.Key);
