@@ -10,5 +10,5 @@ Job=Suggest en-US
 ```
 | Method                       | Mean       | Error    | StdDev   | Min        | Median     | Ratio | RatioSD |
 |----------------------------- |-----------:|---------:|---------:|-----------:|-----------:|------:|--------:|
-| &#39;Suggest words: WeCantSpell&#39; |   744.9 ms |  1.39 ms |  1.23 ms |   743.1 ms |   744.9 ms |  1.00 |    0.00 |
-| &#39;Suggest words: NHunspell&#39;   | 1,907.2 ms | 13.80 ms | 12.23 ms | 1,871.7 ms | 1,912.2 ms |  2.56 |    0.02 |
+| &#39;Suggest words: WeCantSpell&#39; |   738.5 ms |  7.00 ms |  5.47 ms |   729.7 ms |   739.3 ms |  1.00 |    0.00 |
+| &#39;Suggest words: NHunspell&#39;   | 1,905.4 ms | 14.34 ms | 11.20 ms | 1,879.8 ms | 1,904.4 ms |  2.58 |    0.02 |
