@@ -299,11 +299,7 @@ public partial class WordList
                         // - or if it's an arbitrary number accepted by compound rules (e.g. 999%)
                         if (he is not null && word.Length > 0 && !char.IsDigit(word[0]))
                         {
-                            var querySuggest = new QuerySuggest(WordList, Options, CancellationToken)
-                            {
-                                TestSimpleSuggestion = true
-                            };
-
+                            var querySuggest = new QuerySuggest(WordList, Options, CancellationToken, testSimpleSuggestion: true);
                             var onlyCompoundSug = false;
                             if (querySuggest.Suggest([], word, ref onlyCompoundSug))
                             {

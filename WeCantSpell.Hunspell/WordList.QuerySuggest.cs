@@ -16,17 +16,17 @@ public partial class WordList
         private const int MaxPhoneTLen = 256;
         private const int MaxPhoneTUtf8Len = MaxPhoneTLen * 4;
 
-        public QuerySuggest(WordList wordList, QueryOptions? options, CancellationToken cancellationToken)
+        public QuerySuggest(WordList wordList, QueryOptions? options, CancellationToken cancellationToken, bool testSimpleSuggestion = false)
         {
             _query = new(wordList, options, cancellationToken);
-            TestSimpleSuggestion = false;
+            _testSimpleSuggestion = testSimpleSuggestion;
             _suggestCandidateStack = new();
         }
 
         internal QuerySuggest(in QuerySuggest source)
         {
             _query = new(in source._query);
-            TestSimpleSuggestion = source.TestSimpleSuggestion;
+            _testSimpleSuggestion = source._testSimpleSuggestion;
             _suggestCandidateStack = source._suggestCandidateStack;
         }
 
@@ -40,7 +40,7 @@ public partial class WordList
         /// <remarks>
         /// When <c>true</c>, don't suggest compound words, and <see cref="Suggest(List{string}, string, ref bool)"/> returns <c>true</c> when the first suggestion is found.
         /// </remarks>
-        internal bool TestSimpleSuggestion { get; set; }
+        private readonly bool _testSimpleSuggestion;
 
         public readonly WordList WordList => _query.WordList;
         public readonly AffixConfig Affix => _query.Affix;
@@ -676,7 +676,7 @@ public partial class WordList
                 }
 
                 if (opLimiter.QueryForCancellation()) goto timerExit;
-                if (TestSimpleSuggestion && slst.Any()) goto testSimpleSugExit;
+                if (_testSimpleSuggestion && slst.Any()) goto testSimpleSugExit;
 
                 // perhaps we made chose the wrong char from a related set
                 if (slst.Count < MaxSuggestions && (!state.IsCpdSuggest || slst.Count < sugLimit))
@@ -685,7 +685,7 @@ public partial class WordList
                 }
 
                 if (opLimiter.QueryForCancellation()) goto timerExit;
-                if (TestSimpleSuggestion && slst.Any()) goto testSimpleSugExit;
+                if (_testSimpleSuggestion && slst.Any()) goto testSimpleSugExit;
 
                 // only suggest compound words when no other ~good suggestion
                 if (state.CpdSuggest == 0 && slst.Count > nSugOrig)
@@ -700,7 +700,7 @@ public partial class WordList
                 }
 
                 if (opLimiter.QueryForCancellation()) goto timerExit;
-                if (TestSimpleSuggestion && slst.Any()) goto testSimpleSugExit;
+                if (_testSimpleSuggestion && slst.Any()) goto testSimpleSugExit;
 
                 // did we swap the order of non adjacent chars by mistake
                 if (slst.Count < MaxSuggestions && (!state.IsCpdSuggest || slst.Count < sugLimit))
@@ -709,7 +709,7 @@ public partial class WordList
                 }
 
                 if (opLimiter.QueryForCancellation()) goto timerExit;
-                if (TestSimpleSuggestion && slst.Any()) goto testSimpleSugExit;
+                if (_testSimpleSuggestion && slst.Any()) goto testSimpleSugExit;
 
                 // did we just hit the wrong key in place of a good char (case and keyboard)
                 if (slst.Count < MaxSuggestions && (!state.IsCpdSuggest || slst.Count < sugLimit))
@@ -718,7 +718,7 @@ public partial class WordList
                 }
 
                 if (opLimiter.QueryForCancellation()) goto timerExit;
-                if (TestSimpleSuggestion && slst.Any()) goto testSimpleSugExit;
+                if (_testSimpleSuggestion && slst.Any()) goto testSimpleSugExit;
 
                 // did we add a char that should not be there
                 if (slst.Count < MaxSuggestions && (!state.IsCpdSuggest || slst.Count < sugLimit))
@@ -727,7 +727,7 @@ public partial class WordList
                 }
 
                 if (opLimiter.QueryForCancellation()) goto timerExit;
-                if (TestSimpleSuggestion && slst.Any()) goto testSimpleSugExit;
+                if (_testSimpleSuggestion && slst.Any()) goto testSimpleSugExit;
 
                 // did we forgot a char
                 if (slst.Count < MaxSuggestions && (!state.IsCpdSuggest || slst.Count < sugLimit))
@@ -736,7 +736,7 @@ public partial class WordList
                 }
 
                 if (opLimiter.QueryForCancellation()) goto timerExit;
-                if (TestSimpleSuggestion && slst.Any()) goto testSimpleSugExit;
+                if (_testSimpleSuggestion && slst.Any()) goto testSimpleSugExit;
 
                 // did we move a char
                 if (slst.Count < MaxSuggestions && (!state.IsCpdSuggest || slst.Count < sugLimit))
@@ -745,7 +745,7 @@ public partial class WordList
                 }
 
                 if (opLimiter.QueryForCancellation()) goto timerExit;
-                if (TestSimpleSuggestion && slst.Any()) goto testSimpleSugExit;
+                if (_testSimpleSuggestion && slst.Any()) goto testSimpleSugExit;
 
                 // did we just hit the wrong key in place of a good char
                 if (slst.Count < MaxSuggestions && (!state.IsCpdSuggest || slst.Count < sugLimit))
@@ -754,7 +754,7 @@ public partial class WordList
                 }
 
                 if (opLimiter.QueryForCancellation()) goto timerExit;
-                if (TestSimpleSuggestion && slst.Any()) goto testSimpleSugExit;
+                if (_testSimpleSuggestion && slst.Any()) goto testSimpleSugExit;
 
                 // did we double two characters
                 if (slst.Count < MaxSuggestions && (!state.IsCpdSuggest || slst.Count < sugLimit))
@@ -763,7 +763,7 @@ public partial class WordList
                 }
 
                 if (opLimiter.QueryForCancellation()) goto timerExit;
-                if (TestSimpleSuggestion && slst.Any()) goto testSimpleSugExit;
+                if (_testSimpleSuggestion && slst.Any()) goto testSimpleSugExit;
 
                 // perhaps we forgot to hit space and two words ran together
                 // (dictionary word pairs have top priority here, so
@@ -782,7 +782,7 @@ public partial class WordList
                 if (opLimiter.QueryForCancellation()) goto timerExit;
 
                 // testing returns after the first loop
-                if (TestSimpleSuggestion)
+                if (_testSimpleSuggestion)
                 {
                     goto testSimpleSugExit;
                 }
