@@ -6,7 +6,7 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class StringBuilderPool
 {
-    private const int MaxCachedBuilderCapacity = WordList.MaxWordLen;
+    private const int MaxCachedBuilderCapacity = 100;
 
     private static StringBuilder? Cache;
 

@@ -11,10 +11,6 @@ namespace WeCantSpell.Hunspell;
 
 public sealed partial class WordList
 {
-    internal const int MaxWordLen = 100;
-    internal const int MaxWordUtf8Len = MaxWordLen * 3;
-    internal const int RecursiveDepthLimit = 0x3F00;
-
     public static WordList CreateFromStreams(Stream dictionaryStream, Stream affixStream) =>
         WordListReader.Read(dictionaryStream, affixStream);
 
@@ -140,7 +136,7 @@ public sealed partial class WordList
     private void ApplyRootOutputConversions(ref SpellCheckResult result)
     {
         // output conversion
-        if (result.Correct && Affix.OutputConversions.HasReplacements && Affix.OutputConversions.TryConvert(result.Root, out var converted) && !string.Equals(result.Root, converted, StringComparison.Ordinal))
+        if (result.Correct && Affix.OutputConversions.TryConvert(result.Root, out var converted) && !string.Equals(result.Root, converted, StringComparison.Ordinal))
         {
             result = new SpellCheckResult(converted, result.Info, true);
         }

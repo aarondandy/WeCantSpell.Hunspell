@@ -24,9 +24,13 @@ public partial class WordList
         private Query _query;
 
         public readonly WordList WordList => _query.WordList;
+
         public readonly AffixConfig Affix => _query.Affix;
+
         public readonly TextInfo TextInfo => _query.TextInfo;
+
         public readonly QueryOptions Options => _query.Options;
+
         public readonly int MaxSharps => Options.MaxSharps;
 
         public bool Check(string word) => CheckDetails(word).Correct;
@@ -37,7 +41,7 @@ public partial class WordList
 
         public SpellCheckResult CheckDetails(string word)
         {
-            if (string.IsNullOrEmpty(word) || word.Length >= MaxWordUtf8Len || !WordList.HasEntries)
+            if (string.IsNullOrEmpty(word) || word.Length >= Options.MaxWordLen || !WordList.HasEntries)
             {
                 return SpellCheckResult.DefaultWrong;
             }
@@ -61,7 +65,7 @@ public partial class WordList
             }
 
             // input conversion
-            if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out var scw))
+            if (!Affix.InputConversions.TryConvert(word, out var scw))
             {
                 scw = word;
             }
@@ -84,7 +88,7 @@ public partial class WordList
 
         public SpellCheckResult CheckDetails(ReadOnlySpan<char> word)
         {
-            if (word.IsEmpty || word.Length >= MaxWordUtf8Len || !WordList.HasEntries)
+            if (word.IsEmpty || word.Length >= Options.MaxWordLen || !WordList.HasEntries)
             {
                 return SpellCheckResult.DefaultWrong;
             }
@@ -110,7 +114,7 @@ public partial class WordList
             // input conversion
             CapitalizationType capType;
             int abbv;
-            if (Affix.InputConversions.HasReplacements && Affix.InputConversions.TryConvert(word, out var scw))
+            if (Affix.InputConversions.TryConvert(word, out var scw))
             {
                 scw = _query.CleanWord2(scw, out capType, out abbv);
             }

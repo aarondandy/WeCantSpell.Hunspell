@@ -14,9 +14,6 @@ public partial class WordList
 {
     private struct QuerySuggest
     {
-        private const int MaxPhoneTLen = 256;
-        private const int MaxPhoneTUtf8Len = MaxPhoneTLen * 4;
-
         public QuerySuggest(WordList wordList, QueryOptions? options, CancellationToken cancellationToken, bool testSimpleSuggestion = false)
         {
             _query = new(wordList, options, cancellationToken);
@@ -44,43 +41,53 @@ public partial class WordList
         private readonly bool _testSimpleSuggestion;
 
         public readonly WordList WordList => _query.WordList;
+
         public readonly AffixConfig Affix => _query.Affix;
+
         public readonly TextInfo TextInfo => _query.TextInfo;
+
         public readonly QueryOptions Options => _query.Options;
+
         public readonly int MaxCharDistance => Options.MaxCharDistance;
+
         public readonly int MaxCompoundSuggestions => Options.MaxCompoundSuggestions;
+
         public readonly int MaxSuggestions => Options.MaxSuggestions;
+
         public readonly int MaxRoots => Options.MaxRoots;
+
         public readonly int MaxWords => Options.MaxWords;
+
         public readonly int MaxGuess => Options.MaxGuess;
+
         public readonly int MaxPhonSugs => Options.MaxPhoneticSuggestions;
 
         public List<string> Suggest(string word)
         {
             if (!_query.WordList.HasEntries)
             {
-                return [];
+                return CreateSuggestFailureResult();
             }
 
             // process XML input of the simplified API (see manual)
             if (word.StartsWith(Query.DefaultXmlTokenCheckPrefix, StringComparison.Ordinal))
             {
-                return []; // TODO: complete support for XML input
+                return CreateSuggestFailureResult(); // TODO: complete support for XML input
             }
 
-            if (word.Length >= MaxWordUtf8Len)
+            if (word.Length >= Options.MaxWordLen)
             {
-                return [];
+                return CreateSuggestFailureResult();
             }
 
             // something very broken if suggest ends up calling itself with the same word
             if (_suggestCandidateStack.Contains(word))
             {
-                return [];
+                return CreateSuggestFailureResult();
             }
 
             // input conversion
-            if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out var scw))
+            if (!Affix.InputConversions.TryConvert(word, out var scw))
             {
                 scw = word;
             }
@@ -89,7 +96,7 @@ public partial class WordList
 
             if (scw.Length == 0)
             {
-                return [];
+                return CreateSuggestFailureResult();
             }
 
             CandidateStack.Push(ref _suggestCandidateStack, word);
@@ -105,30 +112,30 @@ public partial class WordList
         {
             if (!_query.WordList.HasEntries)
             {
-                return [];
+                return CreateSuggestFailureResult();
             }
 
             // process XML input of the simplified API (see manual)
             if (word.StartsWith(Query.DefaultXmlTokenCheckPrefix, StringComparison.Ordinal))
             {
-                return []; // TODO: complete support for XML input
+                return CreateSuggestFailureResult(); // TODO: complete support for XML input
             }
 
-            if (word.Length >= MaxWordUtf8Len)
+            if (word.Length >= Options.MaxWordLen)
             {
-                return [];
+                return CreateSuggestFailureResult();
             }
 
             // something very broken if suggest ends up calling itself with the same word
             if (_suggestCandidateStack.ExceedsArbitraryDepthLimit || _suggestCandidateStack.Contains(word))
             {
-                return [];
+                return CreateSuggestFailureResult();
             }
 
             // input conversion
             CapitalizationType capType;
             int abbv;
-            if (Affix.InputConversions.HasReplacements && Affix.InputConversions.TryConvert(word, out var scw))
+            if (Affix.InputConversions.TryConvert(word, out var scw))
             {
                 scw = _query.CleanWord2(scw, out capType, out abbv);
             }
@@ -139,7 +146,7 @@ public partial class WordList
 
             if (scw.Length == 0)
             {
-                return [];
+                return CreateSuggestFailureResult();
             }
 
             // NOTE: because a string isn't formed until this point, scw is pushed instead. It isn't the same, but might be good enough.
@@ -152,6 +159,8 @@ public partial class WordList
 
             return slst;
         }
+
+        private static List<string> CreateSuggestFailureResult() => [];
 
         private List<string> SuggestInternal(ReadOnlySpan<char> word, string scw, CapitalizationType capType, int abbv)
         {
@@ -538,16 +547,7 @@ public partial class WordList
             slst.RemoveDuplicates(Affix.StringComparer);
 
             // output conversion
-            if (Affix.OutputConversions.HasReplacements)
-            {
-                for (var j = 0; j < slst.Count; j++)
-                {
-                    if (Affix.OutputConversions.TryConvert(slst[j], out var wspace))
-                    {
-                        slst[j] = wspace;
-                    }
-                }
-            }
+            Affix.OutputConversions.ConvertAll(slst);
 
             return slst;
         }
@@ -1171,7 +1171,7 @@ public partial class WordList
                 return;
             }
 
-            if (depth > RecursiveDepthLimit)
+            if (depth > Options.RecursiveDepthLimit)
             {
                 return;
             }
@@ -1546,7 +1546,7 @@ public partial class WordList
 
             // ofz#59067 a replist entry can generate a very long word, abandon
             // ngram if that odd-edge case arises
-            if (word.Length > MaxWordLen * 4)
+            if (word.Length > Options.MaxWordLen * 4)
             {
                 return;
             }
@@ -2722,7 +2722,7 @@ public partial class WordList
         private readonly string Phonet(string inword)
         {
             var len = inword.Length;
-            if (len > MaxPhoneTUtf8Len)
+            if (len > Options.MaxPhoneTLen)
             {
                 return string.Empty;
             }
