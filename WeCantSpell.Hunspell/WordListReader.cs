@@ -108,8 +108,11 @@ public sealed class WordListReader
 
         return await ReadInternalAsync(dictionaryStream, affix, builder, cancellationToken).ConfigureAwait(false);
     }
-
+#if NO_VALUETASK
     private static async Task<WordList> ReadInternalAsync(Stream dictionaryStream, AffixConfig affix, WordList.Builder? builder, CancellationToken cancellationToken)
+#else
+    private static async ValueTask<WordList> ReadInternalAsync(Stream dictionaryStream, AffixConfig affix, WordList.Builder? builder, CancellationToken cancellationToken)
+#endif
     {
         var readerInstance = new WordListReader(builder, affix);
 

@@ -70,4 +70,5 @@ static class EncodingEx
         }
     }
 #endif
+
 }

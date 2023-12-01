@@ -14,9 +14,16 @@ static class ArrayBuilderPool<T>
         }
         else
         {
-            builder = new();
+            builder = [];
         }
 
+        return builder;
+    }
+
+    public static ArrayBuilder<T> Get(int minCapacity)
+    {
+        var builder = Get();
+        builder.EnsureCapacityAtLeast(minCapacity);
         return builder;
     }
 

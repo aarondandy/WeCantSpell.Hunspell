@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -1104,12 +1105,14 @@ public partial class WordList
             // try swapping adjacent chars one by one
             for (var i = 1; i < candidate.Length; i++)
             {
+#pragma warning disable IDE0180 // Use tuple to swap values
                 var c = candidate[i];
                 candidate[i] = candidate[i - 1];
                 candidate[i - 1] = c;
                 TestSug(state.SuggestionList, candidate, ref state);
                 candidate[i - 1] = candidate[i];
                 candidate[i] = c;
+#pragma warning restore IDE0180 // Use tuple to swap values
             }
 
             // try double swaps for short words
@@ -1733,22 +1736,12 @@ public partial class WordList
             // now we are done generating guesses
             // sort in order of decreasing score
 
-#if NO_SPAN_COMPARISON_SORT
-            Array.Sort(guessesRental, 0, guesses.Length, NGramGuess.ScoreComparer.Default);
+            guesses.Sort(NGramGuess.ScoreComparison);
 
             if (hasPhoneEntries)
             {
-                Array.Sort(rootsRental, 0, roots.Length, NGramSuggestSearchRoot.ScorePhoneComparer.Default);
+                roots.Sort(NGramSuggestSearchRoot.ScorePhoneComparison);
             }
-
-#else
-            guesses.Sort(NGramGuess.ScoreComparer.Comparison);
-
-            if (hasPhoneEntries)
-            {
-                roots.Sort(NGramSuggestSearchRoot.ScorePhoneComparer.Comparison);
-            }
-#endif
 
             // weight suggestions with a similarity index, based on
             // the longest common subsequent algorithm and resort
@@ -1801,11 +1794,7 @@ public partial class WordList
                 }
             }
 
-#if NO_SPAN_COMPARISON_SORT
-            Array.Sort(guessesRental, 0, guesses.Length, NGramGuess.ScoreComparer.Default);
-#else
-            guesses.Sort(NGramGuess.ScoreComparer.Comparison);
-#endif
+            guesses.Sort(NGramGuess.ScoreComparison);
 
             // phonetic version
             if (hasPhoneEntries)
@@ -1826,11 +1815,7 @@ public partial class WordList
                     }
                 }
 
-#if NO_SPAN_COMPARISON_SORT
-                Array.Sort(rootsRental, 0, roots.Length, NGramSuggestSearchRoot.ScorePhoneComparer.Default);
-#else
-                roots.Sort(NGramSuggestSearchRoot.ScorePhoneComparer.Comparison);
-#endif
+                roots.Sort(NGramSuggestSearchRoot.ScorePhoneComparison);
             }
 
             // copy over
@@ -3046,6 +3031,8 @@ public partial class WordList
 
         private struct NGramSuggestSearchRoot
         {
+            public static int ScorePhoneComparison(NGramSuggestSearchRoot x, NGramSuggestSearchRoot y) => y.ScorePhone.CompareTo(x.ScorePhone);
+
             public NGramSuggestSearchRoot(int i)
             {
                 Root = null;
@@ -3061,23 +3048,12 @@ public partial class WordList
             public int Score;
 
             public int ScorePhone;
-
-            public class ScorePhoneComparer : IComparer<NGramSuggestSearchRoot>
-            {
-                public static readonly ScorePhoneComparer Default = new();
-
-                private ScorePhoneComparer()
-                {
-                }
-
-                public static int Comparison(NGramSuggestSearchRoot x, NGramSuggestSearchRoot y) => y.ScorePhone.CompareTo(x.ScorePhone);
-
-                public int Compare(NGramSuggestSearchRoot x, NGramSuggestSearchRoot y) => Comparison(x, y);
-            }
         }
 
         private struct NGramGuess
         {
+            public static int ScoreComparison(NGramGuess x, NGramGuess y) => y.Score.CompareTo(x.Score);
+
             public NGramGuess(int i)
             {
                 Guess = null;
@@ -3096,19 +3072,6 @@ public partial class WordList
                 Guess = null;
                 GuessOrig = null;
             }
-
-            public class ScoreComparer : IComparer<NGramGuess>
-            {
-                public static readonly ScoreComparer Default = new();
-
-                private ScoreComparer()
-                {
-                }
-
-                public static int Comparison(NGramGuess x, NGramGuess y) => y.Score.CompareTo(x.Score);
-
-                public int Compare(NGramGuess x, NGramGuess y) => Comparison(x, y);
-            }
         }
 
         private struct GuessWord
@@ -3126,6 +3089,7 @@ public partial class WordList
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool HasFlag(NGramOptions value, NGramOptions flag) => (value & flag) == flag;
 
         [Flags]

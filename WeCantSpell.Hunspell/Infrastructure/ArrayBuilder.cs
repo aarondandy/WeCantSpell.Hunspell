@@ -315,7 +315,7 @@ sealed class ArrayBuilder<T> : IList<T>
             }
             else
             {
-                taken = new();
+                taken = [];
             }
 
             return taken;

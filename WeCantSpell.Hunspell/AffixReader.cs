@@ -142,7 +142,11 @@ public sealed partial class AffixReader
         return await ReadInternalAsync(stream, builder, cancellationToken).ConfigureAwait(false);
     }
 
+#if NO_VALUETASK
     private static async Task<AffixConfig> ReadInternalAsync(Stream stream, AffixConfig.Builder? builder, CancellationToken cancellationToken)
+#else
+    private static async ValueTask<AffixConfig> ReadInternalAsync(Stream stream, AffixConfig.Builder? builder, CancellationToken cancellationToken)
+#endif
     {
         var readerInstance = new AffixReader(builder);
 
@@ -691,7 +695,7 @@ public sealed partial class AffixReader
 
     private bool TryParseAliasM(ReadOnlySpan<char> parameterText, ImmutableArray<MorphSet>.Builder entries)
     {
-        var parts = ArrayBuilderPool<string>.Get();
+        var parts = ArrayBuilderPool<string>.Get((parameterText.Length + 1) / 2);
 
         if (_builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes))
         {

@@ -39,7 +39,7 @@ static class StringBuilderEx
         }
     }
 
-    public static bool EndsWith(this StringBuilder builder, char c) => builder.Length > 0 && builder[builder.Length - 1] == c;
+    public static bool EndsWith(this StringBuilder builder, char c) => builder.Length != 0 && builder[builder.Length - 1] == c;
 
 #if NO_SB_SPANS
     public static StringBuilder Append(this StringBuilder builder, ReadOnlySpan<char> value)

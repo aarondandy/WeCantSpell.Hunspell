@@ -438,7 +438,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
 
 #if NO_SPAN_HASHCODE
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint CalculateHash(string key) => unchecked((uint)StringEx.GetHashCode(key.AsSpan()));
+    private static uint CalculateHash(string key) => unchecked((uint)StringEx.GetHashCode(key));
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static uint CalculateHash(ReadOnlySpan<char> key) => unchecked((uint)StringEx.GetHashCode(key));
 #else

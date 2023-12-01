@@ -29,7 +29,7 @@ public partial class WordList
         /// </summary>
         public IList<SingleReplacement> PhoneticReplacements => _phoneticReplacements;
 
-        internal ArrayBuilder<SingleReplacement> _phoneticReplacements { get; } = new();
+        internal ArrayBuilder<SingleReplacement> _phoneticReplacements { get; } = [];
 
         public void Add(string word)
         {
@@ -121,15 +121,7 @@ public partial class WordList
         {
             // PERF: because we add more entries than we are told about, we add a bit more to the expected size
             var expectedCapacity = (expectedSize / 100) + expectedSize;
-
-#if NO_HASHSET_CAPACITY
-            if (_entryDetailsByRoot.Count == 0)
-            {
-                _entryDetailsByRoot = new(expectedCapacity);
-            }
-#else
             _entryDetailsByRoot.EnsureCapacity(expectedCapacity);
-#endif
         }
     }
 }

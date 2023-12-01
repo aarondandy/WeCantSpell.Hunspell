@@ -18,8 +18,7 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 
     public static CharacterCondition CreateCharSet(ReadOnlySpan<char> chars, bool restricted)
     {
-        var builder = ArrayBuilderPool<char>.Get();
-        builder.EnsureCapacityAtLeast(chars.Length);
+        var builder = ArrayBuilderPool<char>.Get(chars.Length);
 
         foreach (var c in chars)
         {
@@ -29,17 +28,9 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
         return new(ArrayBuilderPool<char>.ExtractAndReturn(builder), restricted ? ModeKind.RestrictChars : ModeKind.PermitChars);
     }
 
-    public static CharacterCondition CreateSequence(char c)
-    {
-        return new([c], ModeKind.MatchSequence);
-    }
+    public static CharacterCondition CreateSequence(char c) => new([c], ModeKind.MatchSequence);
 
-    public static CharacterCondition CreateSequence(ReadOnlySpan<char> chars)
-    {
-        var builder = ArrayBuilderPool<char>.Get();
-        builder.AddRange(chars);
-        return new(ArrayBuilderPool<char>.ExtractAndReturn(builder), ModeKind.MatchSequence);
-    }
+    public static CharacterCondition CreateSequence(ReadOnlySpan<char> chars) => new(chars.ToArray(), ModeKind.MatchSequence);
 
     private CharacterCondition(char[] characters, ModeKind mode)
     {

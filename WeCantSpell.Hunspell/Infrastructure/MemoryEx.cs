@@ -4,7 +4,7 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class MemoryEx
 {
-    public static int IndexOf<T>(this ReadOnlySpan<T> @this, T value, int startIndex) where T:IEquatable<T>
+    public static int IndexOf<T>(this ReadOnlySpan<T> @this, T value, int startIndex) where T : IEquatable<T>
     {
         var result = @this.Slice(startIndex).IndexOf(value);
         return result >= 0 ? result + startIndex : result;
@@ -31,34 +31,6 @@ static class MemoryEx
         (span[index1], span[index0]) = (span[index0], span[index1]);
     }
 
-#if NO_SPAN_CONTAINS
-    public static bool Contains<T>(this ReadOnlySpan<T> span, T value) where T : IEquatable<T>
-    {
-        if (value is null)
-        {
-            foreach (var item in span)
-            {
-                if (item is null)
-                {
-                    return true;
-                }
-            }
-        }
-        else
-        {
-            foreach (var item in span)
-            {
-                if (value.Equals(item))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-#endif
-
 #if NO_SPAN_SORT
 
     public static void Sort<T>(this Span<T> span) where T : IComparable<T>
@@ -67,6 +39,8 @@ static class MemoryEx
 
         while (span.Length >= 2)
         {
+            var hasSwapped = false;
+
             for (var i = span.Length - 2; i >= 0; i--)
             {
                 ref var value0 = ref span[i];
@@ -74,7 +48,45 @@ static class MemoryEx
                 if (value0.CompareTo(value1) > 0)
                 {
                     Swap(ref value0, ref value1);
+                    hasSwapped = true;
                 }
+            }
+
+            if (!hasSwapped)
+            {
+                break;
+            }
+
+            span = span.Slice(1);
+        }
+    }
+
+#endif
+
+#if NO_SPAN_COMPARISON_SORT
+
+    public static void Sort<T>(this Span<T> span, Comparison<T> comparer)
+    {
+        // This should be called on small collections and I'm lazy, so it's bubblesort.
+
+        while (span.Length >= 2)
+        {
+            var hasSwapped = false;
+
+            for (var i = span.Length - 2; i >= 0; i--)
+            {
+                ref var value0 = ref span[i];
+                ref var value1 = ref span[i + 1];
+                if (comparer(value0, value1) > 0)
+                {
+                    Swap(ref value0, ref value1);
+                    hasSwapped = true;
+                }
+            }
+
+            if (!hasSwapped)
+            {
+                break;
             }
 
             span = span.Slice(1);

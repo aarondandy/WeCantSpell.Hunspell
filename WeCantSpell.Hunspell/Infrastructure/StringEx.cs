@@ -14,15 +14,9 @@ static class StringEx
     public static bool StartsWith(this string @this, char character) => @this.Length != 0 && @this[0] == character;
 #endif
 
-    public static bool StartsWith(this string @this, ReadOnlySpan<char> value) => @this.AsSpan().StartsWith(value);
-
     public static bool StartsWith(this ReadOnlySpan<char> @this, string value, StringComparison comparison) => @this.StartsWith(value.AsSpan(), comparison);
 
     public static bool StartsWith(this ReadOnlySpan<char> @this, char value) => !@this.IsEmpty && @this[0] == value;
-
-    public static bool EndsWith(this string @this, ReadOnlySpan<char> value) => @this.AsSpan().EndsWith(value);
-
-    public static bool EndsWith(this ReadOnlySpan<char> @this, string value, StringComparison comparison) => @this.EndsWith(value.AsSpan(), comparison);
 
     public static bool EndsWith(this string @this, char character) => @this.Length > 0 && @this[@this.Length - 1] == character;
 
@@ -57,13 +51,12 @@ static class StringEx
         return result < 0 ? result : result + startIndex;
     }
 
-
 #if NO_STRING_CONTAINS
+
     public static bool Contains(this string @this, char value) => @this.IndexOf(value) >= 0;
 
     public static bool Contains(this ReadOnlySpan<char> @this, char value) => @this.IndexOf(value) >= 0;
 
-    public static bool Contains(this Span<char> @this, char value) => @this.IndexOf(value) >= 0;
 #endif
 
     public static bool ContainsAny(this string @this, char value0, char value1) => @this.AsSpan().ContainsAny(value0, value1);
@@ -72,22 +65,7 @@ static class StringEx
 
     public static bool ContainsAny(this ReadOnlySpan<char> @this, char value0, char value1) => @this.IndexOfAny(value0, value1) >= 0;
 
-    public static bool ContainsAny(this ReadOnlySpan<char> @this, char value0, char value1, char value2) => @this.IndexOfAny(value0, value1, value2) >= 0;
-
 #endif
-
-    public static bool Contains(this ReadOnlySpan<string?> @this, ReadOnlySpan<char> value)
-    {
-        foreach (var item in @this)
-        {
-            if (item is not null && value.Equals(item.AsSpan(), StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
 
     public static bool Contains(this List<string> list, ReadOnlySpan<char> value)
     {
@@ -102,42 +80,6 @@ static class StringEx
 
         return false;
     }
-
-#if NO_SPAN_TRIM
-
-    public static ReadOnlySpan<T> TrimStart<T>(this ReadOnlySpan<T> span, T value) where T : IEquatable<T>?
-    {
-        int start = 0;
-
-        if (value is null)
-        {
-            for (; start < span.Length && span[start] is not null; start++) ;
-        }
-        else
-        {
-            for (; start < span.Length && !value.Equals(span[start]); start++) ;
-        }
-
-        return span.Slice(start);
-    }
-
-    public static Span<T> TrimStart<T>(this Span<T> span, T value) where T : IEquatable<T>?
-    {
-        int start = 0;
-
-        if (value is null)
-        {
-            for (; start < span.Length && span[start] is null; start++) ;
-        }
-        else
-        {
-            for (; start < span.Length && value.Equals(span[start]); start++) ;
-        }
-
-        return span.Slice(start);
-    }
-
-#endif
 
     public static ReadOnlySpan<char> AsSpanRemoveFromEnd(this string @this, int toRemove) => @this.AsSpan(0, @this.Length - toRemove);
 
@@ -336,22 +278,41 @@ static class StringEx
     }
 
 #if NO_SPAN_HASHCODE
+
     public static int GetHashCode(ReadOnlySpan<char> value)
     {
-        int hash = 5381;
-        while (value.Length >= 2)
+        var hash = 5381;
+
+        for (var i = 1; i < value.Length; i += 2)
         {
-            hash = unchecked((hash << 5) ^ ((value[1] << 16) + value[0]));
-            value = value.Slice(2);
+            hash = unchecked((hash << 5) ^ ((value[i] << 16) + value[i - 1]));
         }
 
-        if (!value.IsEmpty)
+        if ((value.Length & 1) != 0)
         {
-            hash = unchecked((hash << 5) ^ value[0]);
+            hash = unchecked((hash << 5) ^ value[value.Length - 1]);
         }
 
         return hash;
     }
+
+    public static int GetHashCode(string value)
+    {
+        var hash = 5381;
+
+        for (var i = 1; i < value.Length; i+= 2)
+        {
+            hash = unchecked((hash << 5) ^ ((value[i] << 16) + value[i - 1]));
+        }
+
+        if ((value.Length & 1) != 0)
+        {
+            hash = unchecked((hash << 5) ^ value[value.Length - 1]);
+        }
+
+        return hash;
+    }
+
 #endif
 
     public static string ToStringWithoutChars(this ReadOnlySpan<char> text, char value)

@@ -12,17 +12,17 @@ static class StringBuilderPool
 
     public static StringBuilder Get() => GetClearedBuilder();
 
-    public static StringBuilder Get(string value) =>
-        GetClearedBuilderWithCapacity(value.Length).Append(value);
+    public static StringBuilder Get(int capacity) => GetClearedBuilderWithCapacity(capacity);
 
-    public static StringBuilder Get(string value, int capacity) =>
-        GetClearedBuilderWithCapacity(capacity).Append(value);
+    public static StringBuilder Get(string value)
+    {
+        return GetClearedBuilder().Append(value);
+    }
 
-    public static StringBuilder Get(int capacity) =>
-        GetClearedBuilderWithCapacity(capacity);
-
-    public static StringBuilder Get(ReadOnlySpan<char> value) =>
-        GetClearedBuilderWithCapacity(value.Length).Append(value);
+    public static StringBuilder Get(ReadOnlySpan<char> value)
+    {
+        return GetClearedBuilder().Append(value);
+    }
 
     public static void Return(StringBuilder builder)
     {
@@ -52,6 +52,6 @@ static class StringBuilderPool
         var taken = Interlocked.Exchange(ref Cache, null);
         return taken?.Capacity >= minimumCapacity
             ? taken.Clear()
-            :  new StringBuilder(minimumCapacity);
+            : new StringBuilder(minimumCapacity);
     }
 }
