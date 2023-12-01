@@ -321,7 +321,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
 
         while (true)
         {
-            if (entry.HashCode == hash && CheckKeysEqual(entry.Key, key))
+            if (entry.HashCode == hash && key.Equals(entry.Key))
             {
                 if (isAdd)
                 {
@@ -339,20 +339,15 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
             entry = ref _entries[entry.Next];
         }
 
-        if (Count < _entries.Length)
+        if (Count < _entries.Length && (_collisionIndex = FindNextEmptyCollisionIndex()) >= 0)
         {
-            FindNextEmptyCollisionIndex();
+            entry.Next = _collisionIndex;
 
-            if (_collisionIndex >= 0)
-            {
-                entry.Next = _collisionIndex;
+            entry = ref _entries[_collisionIndex--];
+            entry = new(hash, key);
+            Count++;
 
-                entry = ref _entries[_collisionIndex--];
-                entry = new(hash, key);
-                Count++;
-
-                return ref entry;
-            }
+            return ref entry;
         }
 
         return ref Unsafe.NullRef<Entry>();
@@ -363,9 +358,11 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         static void throwDuplicate() => throw new InvalidOperationException("Duplicate key");
     }
 
-    private void FindNextEmptyCollisionIndex()
+    private int FindNextEmptyCollisionIndex()
     {
-        for (; _collisionIndex >= 0 && _entries[_collisionIndex].Key is not null; _collisionIndex--) ;
+        var i = _collisionIndex;
+        for (; i >= 0 && _entries[i].Key is not null; i--) ;
+        return i;
     }
 
     private ref Entry GetRefByKey(string key) => ref GetRefByKey(CalculateHash(key), key);
@@ -380,7 +377,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         {
             while (true)
             {
-                if (entry.HashCode == hash && CheckKeysEqual(entry.Key, key))
+                if (entry.HashCode == hash && key.Equals(entry.Key))
                 {
                     return ref entry;
                 }
@@ -405,7 +402,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         {
             while (true)
             {
-                if (entry.HashCode == hash && CheckKeysEqual(entry.Key, key))
+                if (entry.HashCode == hash && key.SequenceEqual(entry.Key.AsSpan()))
                 {
                     return ref entry;
                 }
@@ -437,22 +434,22 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         divisor == 0 ? 0 : (ulong.MaxValue / divisor) + 1;
 
 #if NO_SPAN_HASHCODE
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static uint CalculateHash(string key) => unchecked((uint)StringEx.GetHashCode(key));
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static uint CalculateHash(ReadOnlySpan<char> key) => unchecked((uint)StringEx.GetHashCode(key));
+
 #else
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static uint CalculateHash(string key) => unchecked((uint)key.GetHashCode());
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static uint CalculateHash(ReadOnlySpan<char> key) => unchecked((uint)string.GetHashCode(key));
+
 #endif
-
-    private static bool CheckKeysEqual(string a, ReadOnlySpan<char> b) => a.AsSpan().Equals(b, StringComparison.Ordinal);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool CheckKeysEqual(string a, string b) => a.Equals(b, StringComparison.Ordinal);
 
     private static uint CalculateBestCellarIndexForCapacity(int capacity)
     {
