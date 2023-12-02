@@ -30,8 +30,11 @@ public readonly struct BreakSet : IReadOnlyList<string>
     private readonly string[]? _entries;
 
     public int Count => (_entries?.Length).GetValueOrDefault();
+
     public bool IsEmpty => !HasItems;
+
     public bool HasItems => _entries is { Length: > 0 };
+
     public string this[int index]
     {
         get

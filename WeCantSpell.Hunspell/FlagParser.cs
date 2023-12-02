@@ -33,13 +33,13 @@ internal struct FlagParser
         return Mode switch
         {
             FlagParsingMode.Char => FlagValue.TryParseAsChar(text, out value),
-            FlagParsingMode.Uni => TryParseFlagAsUnicode(text, out value),
             FlagParsingMode.Long => FlagValue.TryParseAsLong(text, out value),
             FlagParsingMode.Num => FlagValue.TryParseAsNumber(text, out value),
-            _ => noOp(out value)
+            FlagParsingMode.Uni => TryParseFlagAsUnicode(text, out value),
+            _ => fail(out value)
         };
 
-        static bool noOp(out FlagValue value)
+        static bool fail(out FlagValue value)
         {
             value = default!;
             return false;
@@ -52,9 +52,9 @@ internal struct FlagParser
     public readonly FlagValue[] ParseFlagsInOrder(ReadOnlySpan<char> text) => Mode switch
     {
         FlagParsingMode.Char => FlagValue.ParseAsChars(text),
-        FlagParsingMode.Uni => ParseFlagsInOrderAsUnicode(text),
         FlagParsingMode.Long => FlagValue.ParseAsLongs(text),
         FlagParsingMode.Num => FlagValue.ParseAsNumbers(text),
+        FlagParsingMode.Uni => ParseFlagsInOrderAsUnicode(text),
         _ => ThrowNotSupportedFlagMode<FlagValue[]>()
     };
 
@@ -64,9 +64,9 @@ internal struct FlagParser
     public readonly FlagSet ParseFlagSet(ReadOnlySpan<char> text) => Mode switch
     {
         FlagParsingMode.Char => FlagSet.ParseAsChars(text),
-        FlagParsingMode.Uni => ParseFlagSetAsUnicode(text),
         FlagParsingMode.Long => FlagSet.ParseAsLongs(text),
         FlagParsingMode.Num => FlagSet.ParseAsNumbers(text),
+        FlagParsingMode.Uni => ParseFlagSetAsUnicode(text),
         _ => ThrowNotSupportedFlagMode<FlagSet>()
     };
 

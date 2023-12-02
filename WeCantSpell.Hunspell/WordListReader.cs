@@ -448,25 +448,29 @@ public sealed class WordListReader
         {
             _morphs = morphs;
             _index = 0;
-            Current = null!;
+            Current = default!;
         }
 
-        private string[] _morphs;
-        private int _index;
-
+        private readonly string[] _morphs;
         public string Current;
+        private int _index;
 
         public bool MoveNext()
         {
-            while (_index < _morphs.Length)
+            var i = _index;
+            while (i < _morphs.Length)
             {
-                Current = _morphs[_index++];
-                if (Current is not null && Current.StartsWith(MorphologicalTags.Phon))
+                var morph = _morphs[i++];
+                if (morph.StartsWith(MorphologicalTags.Phon))
                 {
+                    Current = morph;
+                    _index = i;
                     return true;
                 }
             }
 
+            Current = default!;
+            _index = i;
             return false;
         }
     }
@@ -545,14 +549,14 @@ public sealed class WordListReader
     {
         private ParsedWordLine(ReadOnlySpan<char> word, ReadOnlySpan<char> flags, string[] morphs)
         {
+            Morphs = morphs;
             Word = word;
             Flags = flags;
-            Morphs = morphs;
         }
 
+        public readonly string[] Morphs;
         public readonly ReadOnlySpan<char> Word;
         public readonly ReadOnlySpan<char> Flags;
-        public readonly string[] Morphs;
 
         public static ParsedWordLine Parse(ReadOnlySpan<char> line)
         {

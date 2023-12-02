@@ -437,10 +437,7 @@ internal sealed class LineReader : IDisposable
                 if (newCharactersCount != newCharacters.Length) throw new InvalidOperationException();
 #endif
 #endif
-                _buffers[bufferIndex] = new TextBufferLine(newCharacters)
-                {
-                    PreventRecycle = true
-                };
+                _buffers[bufferIndex] = new TextBufferLine(newCharacters, preventRecycle: true);
 
             }
 
@@ -462,22 +459,27 @@ internal sealed class LineReader : IDisposable
     {
         public TextBufferLine(int rawBufferSize)
         {
-            Raw = new char[rawBufferSize];
+            _raw = new char[rawBufferSize];
+            Memory = ReadOnlyMemory<char>.Empty;
+            _preventRecycle = false;
         }
 
-        public TextBufferLine(char[] raw)
+        public TextBufferLine(char[] raw, bool preventRecycle)
         {
-            Raw = raw;
+            _raw = raw;
             Memory = raw.AsMemory();
+            _preventRecycle = preventRecycle;
         }
 
-        public char[] Raw;
-        public ReadOnlyMemory<char> Memory = ReadOnlyMemory<char>.Empty;
-        public bool PreventRecycle = false;
+        private readonly char[] _raw;
+        public ReadOnlyMemory<char> Memory;
+        private readonly bool _preventRecycle;
 
         public readonly int Length => Memory.Length;
 
-        public readonly Span<char> WriteSpan => Raw.AsSpan();
+        public readonly bool PreventRecycle => _preventRecycle;
+
+        public readonly Span<char> WriteSpan => _raw.AsSpan();
 
         public readonly ReadOnlySpan<char> ReadSpan => Memory.Span;
 
@@ -487,7 +489,7 @@ internal sealed class LineReader : IDisposable
 
         public void PrepareMemoryForUse(int valueSize)
         {
-            Memory = Raw.AsMemory(0, valueSize);
+            Memory = _raw.AsMemory(0, valueSize);
         }
 
         public void ResetMemory()

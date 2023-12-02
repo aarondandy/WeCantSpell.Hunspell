@@ -5,7 +5,16 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class ArrayEx
 {
-    public static bool Contains<T>(this T[] values, T value) => Array.IndexOf(values, value) >= 0;
+
+#if NO_SPAN_CONTAINS
+
+    public static bool Contains<T>(this T[] values, T value) where T : IEquatable<T> => Array.IndexOf(values, value) >= 0;
+
+#else
+
+    public static bool Contains<T>(this T[] values, T value) where T : IEquatable<T> => values.AsSpan().Contains(value)!;
+
+#endif
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool Any<T>(this T[] array) => array.Length != 0;

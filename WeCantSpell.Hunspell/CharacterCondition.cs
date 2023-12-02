@@ -35,14 +35,16 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
     private CharacterCondition(char[] characters, ModeKind mode)
     {
         _characters = characters;
-        Mode = mode;
+        _mode = mode;
     }
 
-    public char[]? _characters { get; }
+    private readonly char[]? _characters;
+
+    private readonly ModeKind _mode;
 
     public IReadOnlyList<char> Characters => GetInternalArray();
 
-    public ModeKind Mode { get; }
+    public ModeKind Mode => _mode;
 
     public int Count => (_characters?.Length).GetValueOrDefault();
 
@@ -76,7 +78,7 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
             return false;
         }
 
-        if (_characters!.Length <= 8 || Mode == ModeKind.MatchSequence)
+        if (_characters!.Length <= 8 || _mode == ModeKind.MatchSequence)
         {
             return _characters.Contains(c);
         }
@@ -84,18 +86,18 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
         return Array.BinarySearch(_characters, c) >= 0;
     }
 
-    public bool MatchesAnySingleCharacter => Mode == ModeKind.RestrictChars && IsEmpty;
+    public bool MatchesAnySingleCharacter => _mode == ModeKind.RestrictChars && IsEmpty;
 
     public string GetEncoded()
     {
-        if (IsEmpty && Mode == ModeKind.RestrictChars)
+        if (IsEmpty && _mode == ModeKind.RestrictChars)
         {
             return ".";
         }
 
         var stringValue = GetInternalArray().AsSpan().ToString();
 
-        return Mode switch
+        return _mode switch
         {
             ModeKind.MatchSequence => stringValue,
             ModeKind.RestrictChars => "[^" + stringValue + "]",
@@ -115,12 +117,12 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
     public override string ToString() => GetEncoded();
 
     public bool Equals(CharacterCondition other) =>
-        Mode == other.Mode
+        _mode == other._mode
         && GetInternalArray().SequenceEqual(other.GetInternalArray());
 
     public override bool Equals(object? obj) => obj is CharacterCondition cc && Equals(cc);
 
-    public override int GetHashCode() => HashCode.Combine((_characters?.Length).GetValueOrDefault(), Mode);
+    public override int GetHashCode() => HashCode.Combine((_characters?.Length).GetValueOrDefault(), _mode);
 
     internal char[] GetInternalArray() => _characters ?? [];
 
@@ -133,7 +135,7 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
             return false;
         }
 
-        switch (Mode)
+        switch (_mode)
         {
             case ModeKind.PermitChars:
                 return Contains(text[0]);
@@ -161,7 +163,7 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
             return false;
         }
 
-        switch (Mode)
+        switch (_mode)
         {
             case ModeKind.PermitChars:
                 return Contains(text[text.Length - 1]);
@@ -189,7 +191,7 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
             return false;
         }
 
-        switch (Mode)
+        switch (_mode)
         {
             case ModeKind.RestrictChars:
                 return false;

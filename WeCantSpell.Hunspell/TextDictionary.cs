@@ -158,9 +158,9 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
 
     private IEnumerable<Entry> FilledEntries => _entries.Where(static e => e.Key is not null);
 
-    ICollection<string> IDictionary<string, TValue>.Keys => new KeysCollection(this);
+    ICollection<string> IDictionary<string, TValue>.Keys => Keys;
 
-    ICollection<TValue> IDictionary<string, TValue>.Values => new ValuesCollection(this);
+    ICollection<TValue> IDictionary<string, TValue>.Values => Values;
 
     public bool IsReadOnly => false;
 
@@ -494,7 +494,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         }
     }
 
-    public class KeysCollection : ICollection<string>
+    public sealed class KeysCollection : ICollection<string>
     {
         internal KeysCollection(TextDictionary<TValue> dictionary)
         {
@@ -515,7 +515,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 
-    public class ValuesCollection : ICollection<TValue>
+    public sealed class ValuesCollection : ICollection<TValue>
     {
         internal ValuesCollection(TextDictionary<TValue> dictionary)
         {
@@ -546,7 +546,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
             _current = default;
         }
 
-        private Entry[] _entries;
+        private readonly Entry[] _entries;
         private int _index;
         private KeyValuePair<string, TValue> _current;
 
@@ -577,16 +577,16 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
 #endif
 
             _entries = dictionary._entries;
-            _index = 0;
             _minKeyLength = minKeyLength;
             _maxKeyLength = maxKeyLength;
+            _index = 0;
             _current = default;
         }
 
-        private Entry[] _entries;
+        private readonly Entry[] _entries;
+        private readonly int _minKeyLength;
+        private readonly int _maxKeyLength;
         private int _index;
-        private int _minKeyLength;
-        private int _maxKeyLength;
         private KeyValuePair<string, TValue> _current;
 
         public readonly KeyValuePair<string, TValue> Current => _current;
@@ -621,7 +621,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
             _leftovers = new((int)(Entries.Length - CellarStartIndex));
         }
 
-        private List<(uint hash, string key, TValue value)> _leftovers;
+        private readonly List<(uint hash, string key, TValue value)> _leftovers;
 
         public Entry[] Entries;
         public ulong FastmodMultiplier;

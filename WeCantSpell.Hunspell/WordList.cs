@@ -221,16 +221,14 @@ public sealed partial class WordList
     {
         public NGramAllowedEntriesEnumerator(WordList wordList, int minKeyLength, int maxKeyLength)
         {
-            _coreEnumerator = new(wordList.EntriesByRoot, minKeyLength, maxKeyLength);
             _nGramRestrictedDetails = wordList.NGramRestrictedDetails;
-            _checkRestrictedDetails = _nGramRestrictedDetails.Count != 0;
+            _coreEnumerator = new(wordList.EntriesByRoot, minKeyLength, maxKeyLength);
             _current = default;
         }
 
+        private readonly TextDictionary<WordEntryDetail[]> _nGramRestrictedDetails;
         private TextDictionary<WordEntryDetail[]>.KeyLengthEnumerator _coreEnumerator;
-        private TextDictionary<WordEntryDetail[]> _nGramRestrictedDetails;
         private KeyValuePair<string, WordEntryDetail[]> _current;
-        private bool _checkRestrictedDetails;
 
         public readonly KeyValuePair<string, WordEntryDetail[]> Current => _current;
 
@@ -238,7 +236,7 @@ public sealed partial class WordList
 
         public bool MoveNext()
         {
-            if (_checkRestrictedDetails)
+            if (_nGramRestrictedDetails.Count != 0)
             {
                 return MoveNextWithRestrictedDetails();
             }

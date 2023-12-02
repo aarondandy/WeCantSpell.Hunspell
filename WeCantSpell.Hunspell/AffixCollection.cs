@@ -382,19 +382,19 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         public AffixesByFlagsEnumerator(FlagSet flags, Dictionary<FlagValue, AffixGroup<TAffixEntry>> affixesByFlag)
         {
             _flags = flags.GetInternalArray();
-            _flagsIndex = 0;
             _byFlag = affixesByFlag;
             _group = null!;
+            _flagsIndex = 0;
             _groupIndex = 0;
             _current = default!;
         }
 
+        private readonly char[] _flags;
+        private readonly Dictionary<FlagValue, AffixGroup<TAffixEntry>> _byFlag;
         private AffixGroup<TAffixEntry> _group;
-        private Dictionary<FlagValue, AffixGroup<TAffixEntry>> _byFlag;
-        private char[] _flags;
-        private TAffixEntry _current;
         private int _flagsIndex;
         private int _groupIndex;
+        private TAffixEntry _current;
 
         public readonly TAffixEntry Current => _current;
 
@@ -434,14 +434,14 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         public GroupsByFlagsEnumerator(FlagSet flags, Dictionary<FlagValue, AffixGroup<TAffixEntry>> byFlag)
         {
             _flags = flags.GetInternalArray();
-            _flagsIndex = 0;
             _byFlag = byFlag;
             _current = default!;
+            _flagsIndex = 0;
         }
 
-        private Dictionary<FlagValue, AffixGroup<TAffixEntry>> _byFlag;
+        private readonly char[] _flags;
+        private readonly Dictionary<FlagValue, AffixGroup<TAffixEntry>> _byFlag;
         private AffixGroup<TAffixEntry> _current;
-        private char[] _flags;
         private int _flagsIndex;
 
         public readonly AffixGroup<TAffixEntry> Current => _current;
@@ -468,13 +468,14 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         {
             _word = word;
             _node = node;
-            Current = default!;
+            _current = default!;
         }
 
+        private readonly ReadOnlySpan<char> _word;
         private EntryTreeNode? _node;
-        private ReadOnlySpan<char> _word;
+        private TAffixEntry _current;
 
-        public TAffixEntry Current { get; private set; }
+        public readonly TAffixEntry Current => _current;
 
         public readonly WordEnumerator GetEnumerator() => this;
 
@@ -484,7 +485,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
             {
                 if (_node.Affix.IsWordSubset(_word))
                 {
-                    Current = _node.Affix;
+                    _current = _node.Affix;
                     _node = _node.NextEqual;
                     return true;
                 }

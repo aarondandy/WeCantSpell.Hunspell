@@ -18,7 +18,7 @@ public partial class WordList
 
         internal QueryCheck(in Query source)
         {
-            _query = new(in source);
+            _query = new(source);
         }
 
         private Query _query;
@@ -37,7 +37,7 @@ public partial class WordList
 
         public bool Check(ReadOnlySpan<char> word) => CheckDetails(word).Correct;
 
-        private readonly bool CheckNested(ReadOnlySpan<char> word) => new QueryCheck(in _query).Check(word);
+        private readonly bool CheckNested(ReadOnlySpan<char> word) => new QueryCheck(_query).Check(word);
 
         public SpellCheckResult CheckDetails(string word)
         {

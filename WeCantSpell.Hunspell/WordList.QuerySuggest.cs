@@ -23,7 +23,7 @@ public partial class WordList
 
         internal QuerySuggest(in QuerySuggest source)
         {
-            _query = new(in source._query);
+            _query = new(source._query);
             _testSimpleSuggestion = source._testSimpleSuggestion;
             _suggestCandidateStack = source._suggestCandidateStack;
         }
@@ -552,11 +552,11 @@ public partial class WordList
             return slst;
         }
 
-        private readonly List<string> SuggestNested(ReadOnlySpan<char> word) => new QuerySuggest(in this).Suggest(word);
+        private readonly List<string> SuggestNested(ReadOnlySpan<char> word) => new QuerySuggest(this).Suggest(word);
 
-        private readonly bool Check(string word) => new QueryCheck(in _query).Check(word);
+        private readonly bool Check(string word) => new QueryCheck(_query).Check(word);
 
-        private readonly bool Check(ReadOnlySpan<char> word) => new QueryCheck(in _query).Check(word);
+        private readonly bool Check(ReadOnlySpan<char> word) => new QueryCheck(_query).Check(word);
 
         private readonly WordEntryDetail? LookupFirstDetail(ReadOnlySpan<char> word) => WordList.FindFirstEntryDetailByRootWord(word);
         
@@ -568,22 +568,22 @@ public partial class WordList
         {
             public SuggestState(string word, List<string> slst)
             {
-                Word = word.AsSpan();
                 _rawCandidateBuffer = ArrayPool<char>.Shared.Rent(word.Length + 2);
-                CandidateBuffer = _rawCandidateBuffer.AsSpan(0, word.Length + 2);
                 SuggestionList = slst;
-                CpdSuggest = 0;
+                Word = word.AsSpan();
+                CandidateBuffer = _rawCandidateBuffer.AsSpan(0, word.Length + 2);
                 Info = SpellCheckResultType.None;
+                CpdSuggest = 0;
                 GoodSuggestion = false;
             }
 
+            private char[] _rawCandidateBuffer;
+            public List<string> SuggestionList;
             public ReadOnlySpan<char> Word;
             public Span<char> CandidateBuffer;
-            public byte CpdSuggest;
             public SpellCheckResultType Info;
+            public byte CpdSuggest;
             public bool GoodSuggestion;
-            public List<string> SuggestionList;
-            private char[] _rawCandidateBuffer;
 
             public readonly bool IsCpdSuggest => CpdSuggest != 0;
 
@@ -654,7 +654,7 @@ public partial class WordList
                 if (slst.Count < MaxSuggestions)
                 {
                     var i = slst.Count;
-                    CapChars(slst, word, ref state);
+                    CapChars(word, ref state);
                     if (slst.Count > i)
                     {
                         state.GoodSuggestion = true;
@@ -665,7 +665,7 @@ public partial class WordList
                 if (slst.Count < MaxSuggestions && (!state.IsCpdSuggest || slst.Count < sugLimit))
                 {
                     var i = slst.Count;
-                    ReplChars(slst, word, ref state);
+                    ReplChars(word, ref state);
                     if (slst.Count > i)
                     {
                         state.GoodSuggestion = true;
@@ -682,7 +682,7 @@ public partial class WordList
                 // perhaps we made chose the wrong char from a related set
                 if (slst.Count < MaxSuggestions && (!state.IsCpdSuggest || slst.Count < sugLimit))
                 {
-                    MapChars(slst, word, in state);
+                    MapChars(word, ref state);
                 }
 
                 if (opLimiter.QueryForCancellation()) goto timerExit;
@@ -821,7 +821,7 @@ public partial class WordList
             return state.GoodSuggestion;
         }
 
-        private readonly SpellCheckResult CheckDetails(string word) => new QueryCheck(in _query).CheckDetails(word);
+        private readonly SpellCheckResult CheckDetails(string word) => new QueryCheck(_query).CheckDetails(word);
 
         /// <summary>
         /// perhaps we doubled two characters (pattern aba -> ababa, for example vacation -> vacacation)
@@ -851,7 +851,7 @@ public partial class WordList
                         word.Slice(0, i - 1).CopyTo(candidate);
                         word.Slice(i + 1).CopyTo(candidate.Slice(i - 1));
 
-                        TestSug(sugState.SuggestionList, candidate, ref sugState);
+                        TestSug(candidate, ref sugState);
                         state = 0;
                     }
                 }
@@ -886,7 +886,7 @@ public partial class WordList
                         }
 
                         candidate[i] = tryString[j];
-                        TestSug(state.SuggestionList, candidate, ref state, ref timer);
+                        TestSug(candidate, ref state, ref timer);
                         candidate[i] = tmpc;
 
                         if (timer.HasBeenCanceled)
@@ -926,7 +926,7 @@ public partial class WordList
                         continue; // omit swap char
                     }
 
-                    TestSug(state.SuggestionList, candidate, ref state);
+                    TestSug(candidate, ref state);
                 }
             }
 
@@ -944,7 +944,7 @@ public partial class WordList
                         continue;  // omit swap char
                     }
 
-                    TestSug(state.SuggestionList, candidate, ref state);
+                    TestSug(candidate, ref state);
                 }
             }
         }
@@ -967,7 +967,7 @@ public partial class WordList
                     word.CopyTo(candidate);
                     candidate[word.Length] = tryChar;
 
-                    TestSug(state.SuggestionList, candidate, ref state, ref timer);
+                    TestSug(candidate, ref state, ref timer);
 
                     if (timer.HasBeenCanceled)
                     {
@@ -979,7 +979,7 @@ public partial class WordList
                         candidate[index] = tryChar;
                         word.Slice(index).CopyTo(candidate.Slice(index + 1));
 
-                        TestSug(state.SuggestionList, candidate, ref state, ref timer);
+                        TestSug(candidate, ref state, ref timer);
 
                         if (timer.HasBeenCanceled)
                         {
@@ -1002,15 +1002,15 @@ public partial class WordList
                 var buffer = state.CandidateBuffer.Slice(0, word.Length - 1);
                 word.Slice(0, word.Length - 1).CopyTo(buffer);
 
-                TestSug(state.SuggestionList, buffer, ref state);
+                TestSug(buffer, ref state);
 
                 for (var index = word.Length - 2; index > 0; index--)
                 {
                     word.Slice(index + 1).CopyTo(buffer.Slice(index));
-                    TestSug(state.SuggestionList, buffer, ref state);
+                    TestSug(buffer, ref state);
                 }
 
-                TestSug(state.SuggestionList, word.Slice(1), ref state);
+                TestSug(word.Slice(1), ref state);
             }
         }
 
@@ -1031,7 +1031,7 @@ public partial class WordList
                 candidate[i] = TextInfo.ToUpper(tmpc);
                 if (tmpc != candidate[i])
                 {
-                    TestSug(state.SuggestionList, candidate, ref state);
+                    TestSug(candidate, ref state);
                     candidate[i] = tmpc;
                 }
 
@@ -1042,13 +1042,13 @@ public partial class WordList
                     if (loc > 0 && keyString[loc - 1] != '|')
                     {
                         candidate[i] = keyString[loc - 1];
-                        TestSug(state.SuggestionList, candidate, ref state);
+                        TestSug(candidate, ref state);
                     }
 
                     if ((loc + 1) < keyString.Length && keyString[loc + 1] != '|')
                     {
                         candidate[i] = keyString[loc + 1];
-                        TestSug(state.SuggestionList, candidate, ref state);
+                        TestSug(candidate, ref state);
                     }
 
                     loc = keyString.IndexOf(tmpc, loc + 1);
@@ -1080,7 +1080,7 @@ public partial class WordList
                         candidate[p] = oldq;
                         candidate[q] = oldp;
 
-                        TestSug(state.SuggestionList, candidate, ref state);
+                        TestSug(candidate, ref state);
 
                         candidate[q] = oldq;
                         candidate[p] = oldp;
@@ -1109,7 +1109,7 @@ public partial class WordList
                 var c = candidate[i];
                 candidate[i] = candidate[i - 1];
                 candidate[i - 1] = c;
-                TestSug(state.SuggestionList, candidate, ref state);
+                TestSug(candidate, ref state);
                 candidate[i - 1] = candidate[i];
                 candidate[i] = c;
 #pragma warning restore IDE0180 // Use tuple to swap values
@@ -1125,7 +1125,7 @@ public partial class WordList
                 candidate[candidate.Length - 2] = word[word.Length - 1];
                 candidate[candidate.Length - 1] = word[word.Length - 2];
 
-                TestSug(state.SuggestionList, candidate, ref state);
+                TestSug(candidate, ref state);
 
                 if (candidate.Length == 5)
                 {
@@ -1133,15 +1133,15 @@ public partial class WordList
                     candidate[1] = word[2];
                     candidate[2] = word[1];
 
-                    TestSug(state.SuggestionList, candidate, ref state);
+                    TestSug(candidate, ref state);
                 }
             }
         }
 
-        private void CapChars(List<string> wlst, string word, ref SuggestState state) =>
-            TestSug(wlst, HunspellTextFunctions.MakeAllCap(word, TextInfo), ref state);
+        private void CapChars(string word, ref SuggestState state) =>
+            TestSug(HunspellTextFunctions.MakeAllCap(word, TextInfo), ref state);
 
-        private void MapChars(List<string> wlst, string word, in SuggestState state)
+        private void MapChars(string word, ref SuggestState state)
         {
             if (word.Length < 2 || Affix.RelatedCharacterMap.IsEmpty)
             {
@@ -1150,11 +1150,12 @@ public partial class WordList
 
             var candidate = string.Empty;
             var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, _query.CancellationToken);
-            MapRelated(word, ref candidate, wn: 0, wlst, in state, ref timer, depth: 0);
+            MapRelated(word, ref candidate, wn: 0, ref state, ref timer, depth: 0);
         }
 
-        private void MapRelated(string word, ref string candidate, int wn, List<string> wlst, in SuggestState state, ref OperationTimedCountLimiter timer, int depth)
+        private void MapRelated(string word, ref string candidate, int wn, ref SuggestState state, ref OperationTimedCountLimiter timer, int depth)
         {
+            var wlst = state.SuggestionList;
             if (word.Length == wn)
             {
                 if (
@@ -1188,7 +1189,7 @@ public partial class WordList
                         foreach (var otherMapEntryValue in mapEntry.GetInternalArray())
                         {
                             candidate = candidatePrefix + otherMapEntryValue;
-                            MapRelated(word, ref candidate, wn + mapEntryValue.Length, wlst, in state, ref timer, depth + 1);
+                            MapRelated(word, ref candidate, wn + mapEntryValue.Length, ref state, ref timer, depth + 1);
 
                             if (timer.HasBeenCanceled)
                             {
@@ -1202,12 +1203,13 @@ public partial class WordList
             if (!inMap)
             {
                 candidate += word[wn];
-                MapRelated(word, ref candidate, wn + 1, wlst, in state, ref timer, depth + 1);
+                MapRelated(word, ref candidate, wn + 1, ref state, ref timer, depth + 1);
             }
         }
 
-        private void TestSug(List<string> wlst, ReadOnlySpan<char> candidate, ref SuggestState state, ref OperationTimedCountLimiter timer)
+        private void TestSug(ReadOnlySpan<char> candidate, ref SuggestState state, ref OperationTimedCountLimiter timer)
         {
+            var wlst = state.SuggestionList;
             if (wlst.Count < MaxSuggestions && !wlst.Contains(candidate))
             {
                 var result = CheckWord(candidate, state.CpdSuggest, ref timer);
@@ -1224,8 +1226,9 @@ public partial class WordList
             }
         }
 
-        private void TestSug(List<string> wlst, string candidate, ref SuggestState state)
+        private void TestSug(string candidate, ref SuggestState state)
         {
+            var wlst = state.SuggestionList;
             if (wlst.Count < MaxSuggestions && !wlst.Contains(candidate))
             {
                 var result = CheckWord(candidate, state.CpdSuggest);
@@ -1242,8 +1245,9 @@ public partial class WordList
             }
         }
 
-        private void TestSug(List<string> wlst, ReadOnlySpan<char> candidate, ref SuggestState state)
+        private void TestSug(ReadOnlySpan<char> candidate, ref SuggestState state)
         {
+            var wlst = state.SuggestionList;
             if (wlst.Count < MaxSuggestions && !wlst.Contains(candidate))
             {
                 var result = CheckWord(candidate, state.CpdSuggest);
@@ -1262,22 +1266,12 @@ public partial class WordList
 
         private byte CheckWord(string word, byte cpdSuggest, ref OperationTimedCountLimiter timer)
         {
-            if (timer.QueryForCancellation())
-            {
-                return 0;
-            }
-
-            return CheckWord(word, cpdSuggest);
+            return timer.QueryForCancellation() ? (byte)0 : CheckWord(word, cpdSuggest);
         }
 
         private byte CheckWord(ReadOnlySpan<char> word, byte cpdSuggest, ref OperationTimedCountLimiter timer)
         {
-            if (timer.QueryForCancellation())
-            {
-                return 0;
-            }
-
-            return CheckWord(word, cpdSuggest);
+            return timer.QueryForCancellation() ? (byte)0 : CheckWord(word, cpdSuggest);
         }
 
         private static WordEntry? CheckWordHomonymPortion(string word, WordEntryDetail[] rvDetails, AffixConfig affix)
@@ -1443,8 +1437,10 @@ public partial class WordList
         /// Suggestions for a typical fault of spelling, that
         /// differs with more, than 1 letter from the right form.
         /// </summary>
-        private void ReplChars(List<string> wlst, string word, ref SuggestState state)
+        private void ReplChars(string word, ref SuggestState state)
         {
+            var wlst = state.SuggestionList;
+
             if (word.Length < 2 || WordList.AllReplacements.IsEmpty)
             {
                 return;
@@ -1483,7 +1479,7 @@ public partial class WordList
                         var sp = candidate.IndexOf(' ');
 
                         var oldNs = wlst.Count;
-                        TestSug(wlst, candidate, ref state);
+                        TestSug(candidate, ref state);
                         if (oldNs < wlst.Count)
                         {
                             // REP suggestions are the best, don't search other type of suggestions
@@ -1497,7 +1493,7 @@ public partial class WordList
                             if (CheckWord(candidate.AsSpan(prev, sp - prev), cpdSuggest: 0) != 0)
                             {
                                 oldNs = wlst.Count;
-                                TestSug(wlst, candidate.AsSpan(sp + 1), ref state);
+                                TestSug(candidate.AsSpan(sp + 1), ref state);
                                 if (oldNs < wlst.Count)
                                 {
                                     wlst[wlst.Count - 1] = candidate;

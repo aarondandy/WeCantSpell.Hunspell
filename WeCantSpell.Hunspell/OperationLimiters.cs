@@ -3,7 +3,7 @@ using System.Threading;
 
 namespace WeCantSpell.Hunspell;
 
-ref struct OperationTimedLimiter
+struct OperationTimedLimiter
 {
     public OperationTimedLimiter(TimeSpan timeLimit, CancellationToken cancellationToken)
     {
@@ -32,7 +32,7 @@ ref struct OperationTimedLimiter
     }
 }
 
-ref struct OperationTimedCountLimiter
+struct OperationTimedCountLimiter
 {
     /// <summary>
     /// This is the number of operations that are added to a limiter if it runs out of operations before the time limit has expired.
