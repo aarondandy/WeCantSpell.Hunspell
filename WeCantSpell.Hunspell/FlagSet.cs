@@ -16,7 +16,46 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     public static bool operator !=(FlagSet left, FlagSet right) => !(left == right);
 
-    public static FlagSet Create(FlagValue value) => new(value);
+    public static FlagSet Create(FlagValue value) => value.IsZero ? Empty : new(value);
+
+    public static FlagSet Create(FlagValue value0, FlagValue value1)
+    {
+        if (value0.IsZero)
+        {
+            return Create(value1);
+        }
+
+        if (value1.IsZero)
+        {
+            return Create(value0);
+        }
+
+        char[] values = [value0, value1];
+        Array.Sort(values);
+        CollectionsEx.RemoveSortedDuplicates(ref values);
+        return new(values);
+    }
+
+    public static FlagSet Create(FlagValue value0, FlagValue value1, FlagValue value2)
+    {
+        Span<char> values = [value0, value1, value2];
+        values.Sort();
+        values = values.TrimStart(FlagValue.ZeroValue);
+
+        if (values.Length == 0)
+        {
+            return Empty;
+        }
+
+        if (values.Length == 1)
+        {
+            return new(values[0]);
+        }
+
+        var flags = values.ToArray();
+        CollectionsEx.RemoveSortedDuplicates(ref flags);
+        return new(flags);
+    }
 
     public static FlagSet Create(IEnumerable<FlagValue> values)
     {

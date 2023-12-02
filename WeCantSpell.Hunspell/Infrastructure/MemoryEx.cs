@@ -95,4 +95,40 @@ static class MemoryEx
 
 #endif
 
+#if NO_SPAN_TRIM
+
+    public static ReadOnlySpan<T> TrimStart<T>(this ReadOnlySpan<T> span, T value) where T : IEquatable<T>?
+    {
+        var start = 0;
+
+        if (value is null)
+        {
+            for (; start < span.Length && span[start] is not null; start++) ;
+        }
+        else
+        {
+            for (; start < span.Length && !value.Equals(span[start]); start++) ;
+        }
+
+        return span.Slice(start);
+    }
+
+    public static Span<T> TrimStart<T>(this Span<T> span, T value) where T : IEquatable<T>?
+    {
+        var start = 0;
+
+        if (value is null)
+        {
+            for (; start < span.Length && span[start] is null; start++) ;
+        }
+        else
+        {
+            for (; start < span.Length && value.Equals(span[start]); start++) ;
+        }
+
+        return span.Slice(start);
+    }
+
+#endif
+
 }

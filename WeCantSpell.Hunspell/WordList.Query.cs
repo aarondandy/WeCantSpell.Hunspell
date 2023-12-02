@@ -212,9 +212,9 @@ public partial class WordList
                     he is not null
                     &&
                     (
-                        he.ContainsFlag(Affix.OnlyInCompound)
-                        ||
-                        HasSpecialInitCap(info, he.Detail)
+                        info.HasFlagEx(SpellCheckResultType.InitCap)
+                            ? he.Detail.ContainsAnyFlags(Affix.OnlyInCompound, SpecialFlags.OnlyUpcaseFlag)
+                            : he.Detail.ContainsFlag(Affix.OnlyInCompound)
                     )
                 )
                 {
@@ -270,7 +270,7 @@ public partial class WordList
                 return false;
             }
 
-            var heDetails = details[0];
+            ref readonly var heDetails = ref details[0];
 
             // check forbidden and onlyincompound words
             if (heDetails.ContainsFlag(Affix.ForbiddenWord))
@@ -285,22 +285,18 @@ public partial class WordList
                 return true;
             }
 
+            var heFlags = info.HasFlagEx(SpellCheckResultType.InitCap)
+                ? FlagSet.Create(Affix.NeedAffix, Affix.OnlyInCompound, SpecialFlags.OnlyUpcaseFlag)
+                : FlagSet.Create(Affix.NeedAffix, Affix.OnlyInCompound);
+
             // he = next not needaffix, onlyincompound homonym or onlyupcase word
             var heIndex = 0;
-            while (
-                heDetails.Flags.HasItems
-                &&
-                (
-                    heDetails.ContainsAnyFlags(Affix.NeedAffix, Affix.OnlyInCompound)
-                    ||
-                    HasSpecialInitCap(info, heDetails)
-                )
-            )
+            while (heDetails.ContainsAnyFlags(heFlags))
             {
                 heIndex++;
                 if (heIndex < details.Length)
                 {
-                    heDetails = details[heIndex];
+                    heDetails = ref details[heIndex];
                 }
                 else
                 {
@@ -359,9 +355,6 @@ public partial class WordList
 
             IncrementalWordList.ReturnRoot(ref rwords);
         }
-
-        private static bool HasSpecialInitCap(SpellCheckResultType info, in WordEntryDetail he) =>
-            info.HasFlagEx(SpellCheckResultType.InitCap) && he.ContainsFlag(SpecialFlags.OnlyUpcaseFlag);
 
         private readonly WordEntry? HomonymWordSearch(ReadOnlySpan<char> homonymWord, IncrementalWordList? words, FlagValue condition2, bool scpdIsZero)
         {

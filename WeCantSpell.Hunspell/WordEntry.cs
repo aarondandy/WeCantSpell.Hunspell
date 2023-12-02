@@ -12,7 +12,7 @@ sealed class WordEntry : IEquatable<WordEntry>
 
     public static bool operator !=(WordEntry? a, WordEntry? b) => !(a == b);
 
-    public WordEntry(string word, WordEntryDetail detail)
+    public WordEntry(string word, in WordEntryDetail detail)
     {
         Word = word ?? string.Empty;
         Detail = detail;
