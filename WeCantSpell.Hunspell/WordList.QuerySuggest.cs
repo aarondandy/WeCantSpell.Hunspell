@@ -36,7 +36,7 @@ public partial class WordList
         /// For testing compound words formed from 3 or more words.
         /// </summary>
         /// <remarks>
-        /// When <c>true</c>, don't suggest compound words, and <see cref="Suggest(List{string}, string, ref bool)"/> returns <c>true</c> when the first suggestion is found.
+        /// When <c>true</c>, don't suggest compound words, and <see cref="Suggest(SuggestionList, string, ref bool)"/> returns <c>true</c> when the first suggestion is found.
         /// </remarks>
         private readonly bool _testSimpleSuggestion;
 
@@ -164,7 +164,7 @@ public partial class WordList
 
         private List<string> SuggestInternal(ReadOnlySpan<char> word, string scw, CapitalizationType capType, int abbv)
         {
-            var slst = new List<string>();
+            var slst = new SuggestionList();
 
             var opLimiter = new OperationTimedLimiter(Options.TimeLimitSuggestGlobal, _query.CancellationToken);
 
@@ -564,12 +564,84 @@ public partial class WordList
 
         private readonly bool TryLookupFirstDetail(string word, out WordEntryDetail wordEntryDetail) => WordList.TryFindFirstEntryDetailByRootWord(word, out wordEntryDetail);
 
+        internal sealed class SuggestionList : List<string>
+        {
+            public SuggestionList() : base()
+            {
+            }
+
+            public void Add(ReadOnlySpan<char> suggestion)
+            {
+                base.Add(suggestion.ToString());
+            }
+
+            public void Insert(ReadOnlySpan<char> suggestion)
+            {
+                Insert(suggestion.ToString());
+            }
+
+            public void Insert(string suggestion)
+            {
+                Insert(0, suggestion);
+            }
+
+            public void ReplaceLast(string suggestion)
+            {
+                var lastIndex = Count - 1;
+                if (lastIndex >= 0)
+                {
+                    this[lastIndex] = suggestion;
+                }
+                else
+                {
+                    Add(suggestion);
+                }
+            }
+
+            public bool CanAccept(QueryOptions options)
+            {
+                return Count < options.MaxSuggestions;
+            }
+
+            public bool CanAccept(string suggestion, QueryOptions options)
+            {
+                return CanAccept(options) && !Contains(suggestion);
+            }
+
+            public bool CanAccept(ReadOnlySpan<char> suggestion, QueryOptions options)
+            {
+                return CanAccept(options) && !this.Contains(suggestion);
+            }
+
+            public bool AddIfAcceptable(string suggestion, QueryOptions options)
+            {
+                if (CanAccept(suggestion, options))
+                {
+                    Add(suggestion);
+                    return true;
+                }
+
+                return false;
+            }
+
+            public bool AddIfAcceptable(ReadOnlySpan<char> suggestion, QueryOptions options)
+            {
+                if (CanAccept(suggestion, options))
+                {
+                    Add(suggestion);
+                    return true;
+                }
+
+                return false;
+            }
+        }
+
         private ref struct SuggestState
         {
-            public SuggestState(string word, List<string> slst)
+            public SuggestState(string word, SuggestionList slst)
             {
-                _rawCandidateBuffer = ArrayPool<char>.Shared.Rent(word.Length + 2);
                 SuggestionList = slst;
+                _rawCandidateBuffer = ArrayPool<char>.Shared.Rent(word.Length + 2);
                 Word = word.AsSpan();
                 CandidateBuffer = _rawCandidateBuffer.AsSpan(0, word.Length + 2);
                 Info = SpellCheckResultType.None;
@@ -577,8 +649,8 @@ public partial class WordList
                 GoodSuggestion = false;
             }
 
+            public SuggestionList SuggestionList;
             private char[] _rawCandidateBuffer;
-            public List<string> SuggestionList;
             public ReadOnlySpan<char> Word;
             public Span<char> CandidateBuffer;
             public SpellCheckResultType Info;
@@ -612,7 +684,7 @@ public partial class WordList
         /// <param name="word">The word to base suggestions on.</param>
         /// <param name="onlyCompoundSug">Indicates there may be bad suggestions.</param>
         /// <returns>True when there may be a good suggestion.</returns>
-        internal bool Suggest(List<string> slst, string word, ref bool onlyCompoundSug)
+        internal bool Suggest(SuggestionList slst, string word, ref bool onlyCompoundSug)
         {
             var noCompoundTwoWords = false; // no second or third loops, see below
             var nSugOrig = slst.Count;
@@ -632,10 +704,7 @@ public partial class WordList
             // - no ~good suggestion in the first loop
             // - not for testing compound words with 3 or more words (test_simplesug == false)
 
-            var state = new SuggestState(word, slst)
-            {
-                Info = SpellCheckResultType.None
-            };
+            var state = new SuggestState(word, slst);
 
             for (state.CpdSuggest = 0; state.CpdSuggest < 3 && !noCompoundTwoWords; state.CpdSuggest++)
             {
@@ -1155,18 +1224,15 @@ public partial class WordList
 
         private void MapRelated(string word, ref string candidate, int wn, ref SuggestState state, ref OperationTimedCountLimiter timer, int depth)
         {
-            var wlst = state.SuggestionList;
             if (word.Length == wn)
             {
                 if (
-                    wlst.Count < MaxSuggestions
-                    &&
-                    !wlst.Contains(candidate)
+                    state.SuggestionList.CanAccept(candidate, Options)
                     &&
                     CheckWord(candidate, state.CpdSuggest, ref timer) != 0
                 )
                 {
-                    wlst.Add(candidate);
+                    state.SuggestionList.Add(candidate);
                 }
 
                 return;
@@ -1202,15 +1268,14 @@ public partial class WordList
 
             if (!inMap)
             {
-                candidate += word[wn];
+                candidate = StringEx.ConcatString(candidate, word[wn]);
                 MapRelated(word, ref candidate, wn + 1, ref state, ref timer, depth + 1);
             }
         }
 
-        private void TestSug(ReadOnlySpan<char> candidate, ref SuggestState state, ref OperationTimedCountLimiter timer)
+        private bool TestSug(ReadOnlySpan<char> candidate, ref SuggestState state, ref OperationTimedCountLimiter timer)
         {
-            var wlst = state.SuggestionList;
-            if (wlst.Count < MaxSuggestions && !wlst.Contains(candidate))
+            if (state.SuggestionList.CanAccept(candidate, Options))
             {
                 var result = CheckWord(candidate, state.CpdSuggest, ref timer);
                 if (result != 0)
@@ -1221,15 +1286,17 @@ public partial class WordList
                         state.Info |= SpellCheckResultType.Compound;
                     }
 
-                    wlst.Add(candidate.ToString());
+                    state.SuggestionList.Add(candidate);
+                    return true;
                 }
             }
+
+            return false;
         }
 
-        private void TestSug(string candidate, ref SuggestState state)
+        private bool TestSug(string candidate, ref SuggestState state)
         {
-            var wlst = state.SuggestionList;
-            if (wlst.Count < MaxSuggestions && !wlst.Contains(candidate))
+            if (state.SuggestionList.CanAccept(candidate, Options))
             {
                 var result = CheckWord(candidate, state.CpdSuggest);
                 if (result != 0)
@@ -1240,15 +1307,17 @@ public partial class WordList
                         state.Info |= SpellCheckResultType.Compound;
                     }
 
-                    wlst.Add(candidate);
+                    state.SuggestionList.Add(candidate);
+                    return true;
                 }
             }
+
+            return false;
         }
 
-        private void TestSug(ReadOnlySpan<char> candidate, ref SuggestState state)
+        private bool TestSug(ReadOnlySpan<char> candidate, ref SuggestState state)
         {
-            var wlst = state.SuggestionList;
-            if (wlst.Count < MaxSuggestions && !wlst.Contains(candidate))
+            if (state.SuggestionList.CanAccept(candidate, Options))
             {
                 var result = CheckWord(candidate, state.CpdSuggest);
                 if (result != 0)
@@ -1259,9 +1328,12 @@ public partial class WordList
                         state.Info |= SpellCheckResultType.Compound;
                     }
 
-                    wlst.Add(candidate.ToString());
+                    state.SuggestionList.Add(candidate);
+                    return true;
                 }
             }
+
+            return false;
         }
 
         private byte CheckWord(string word, byte cpdSuggest, ref OperationTimedCountLimiter timer)
@@ -1439,8 +1511,6 @@ public partial class WordList
         /// </summary>
         private void ReplChars(string word, ref SuggestState state)
         {
-            var wlst = state.SuggestionList;
-
             if (word.Length < 2 || WordList.AllReplacements.IsEmpty)
             {
                 return;
@@ -1478,9 +1548,7 @@ public partial class WordList
                         var candidate = StringEx.ConcatString(word.AsSpan(0, r), replacementValue, word.AsSpan(r + replacement.Pattern.Length));
                         var sp = candidate.IndexOf(' ');
 
-                        var oldNs = wlst.Count;
-                        TestSug(candidate, ref state);
-                        if (oldNs < wlst.Count)
+                        if (TestSug(candidate, ref state))
                         {
                             // REP suggestions are the best, don't search other type of suggestions
                             state.Info |= SpellCheckResultType.BestSug;
@@ -1492,11 +1560,9 @@ public partial class WordList
                         {
                             if (CheckWord(candidate.AsSpan(prev, sp - prev), cpdSuggest: 0) != 0)
                             {
-                                oldNs = wlst.Count;
-                                TestSug(candidate.AsSpan(sp + 1), ref state);
-                                if (oldNs < wlst.Count)
+                                if (TestSug(candidate.AsSpan(sp + 1), ref state))
                                 {
-                                    wlst[wlst.Count - 1] = candidate;
+                                    state.SuggestionList.ReplaceLast(candidate);
                                 }
                             }
 
@@ -2265,22 +2331,19 @@ public partial class WordList
         private void TwoWords(ref SuggestState state)
         {
             ref var good = ref state.GoodSuggestion;
-            var word = state.Word;
-            var wlst = state.SuggestionList;
-            var cpdSuggest = state.CpdSuggest;
 
-            if (word.Length < 3)
+            if (state.Word.Length < 3)
             {
                 good = false;
                 return;
             }
 
-            var isHungarianAndNotForbidden = Affix.IsHungarian && !CheckForbidden(word);
+            var isHungarianAndNotForbidden = Affix.IsHungarian && !CheckForbidden(state.Word);
 
-            var candidate = new SimulatedCString(word.Length + 2);
+            var candidate = new SimulatedCString(state.Word.Length + 2);
             candidate[0] = '\0';
-            candidate.WriteChars(word, 1);
-            candidate[word.Length + 1] = '\0';
+            candidate.WriteChars(state.Word, 1);
+            candidate[state.Word.Length + 1] = '\0';
 
             // split the string into two pieces after every char
             // if both pieces are good words make them a suggestion
@@ -2297,7 +2360,7 @@ public partial class WordList
                 // a lot ph:alot
                 // alot -> a lot, alto, slot...
                 candidate[p] = ' ';
-                if (cpdSuggest == 0 && CheckWord(candidate.TerminatedSpan, cpdSuggest) != 0)
+                if (state.CpdSuggest == 0 && CheckWord(candidate.TerminatedSpan, state.CpdSuggest) != 0)
                 {
                     // best solution
                     state.Info |= SpellCheckResultType.BestSug;
@@ -2306,17 +2369,17 @@ public partial class WordList
                     if (!good)
                     {
                         good = true;
-                        wlst.Clear();
+                        state.SuggestionList.Clear();
                     }
 
-                    InsertSuggestion(wlst, candidate.TerminatedSpan.ToString());
+                    state.SuggestionList.Insert(candidate.TerminatedSpan);
                 }
 
                 // word pairs with dash?
                 if (Affix.IsLanguageWithDashUsage)
                 {
                     candidate[p] = '-';
-                    if (cpdSuggest == 0 && CheckWord(candidate.TerminatedSpan, cpdSuggest) != 0)
+                    if (state.CpdSuggest == 0 && CheckWord(candidate.TerminatedSpan, state.CpdSuggest) != 0)
                     {
                         // best solution
                         state.Info |= SpellCheckResultType.BestSug;
@@ -2325,21 +2388,21 @@ public partial class WordList
                         if (!good)
                         {
                             good = true;
-                            wlst.Clear();
+                            state.SuggestionList.Clear();
                         }
 
-                        InsertSuggestion(wlst, candidate.TerminatedSpan.ToString());
+                        state.SuggestionList.Insert(candidate.TerminatedSpan);
                     }
                 }
 
-                if (wlst.Count < MaxSuggestions && !Affix.NoSplitSuggestions && !good)
+                if (!good && !Affix.NoSplitSuggestions && state.SuggestionList.CanAccept(Options))
                 {
                     candidate[p] = '\0';
 
-                    var c1 = CheckWord(candidate.TerminatedSpan, cpdSuggest);
+                    var c1 = CheckWord(candidate.TerminatedSpan, state.CpdSuggest);
                     if (c1 != 0)
                     {
-                        var c2 = CheckWord(candidate.SliceToTerminator(p + 1), cpdSuggest);
+                        var c2 = CheckWord(candidate.SliceToTerminator(p + 1), state.CpdSuggest);
                         if (c2 != 0)
                         {
                             // spec. Hungarian code (need a better compound word support)
@@ -2372,21 +2435,7 @@ public partial class WordList
                                     )
                                 ) ? '-' : ' ';
 
-                            var cwrd = true;
-                            var currentCandidateString = candidate.TerminatedSpan.ToString();
-                            for (var k = 0; k < wlst.Count; k++)
-                            {
-                                if (string.Equals(wlst[k], currentCandidateString, StringComparison.Ordinal))
-                                {
-                                    cwrd = false;
-                                    break;
-                                }
-                            }
-
-                            if (cwrd && wlst.Count < MaxSuggestions)
-                            {
-                                wlst.Add(currentCandidateString);
-                            }
+                            state.SuggestionList.AddIfAcceptable(candidate.TerminatedSpan, Options);
 
                             // add two word suggestion with dash, depending on the language
                             // Note that cwrd doesn't modified for REP twoword sugg.
@@ -2401,21 +2450,8 @@ public partial class WordList
                             )
                             {
                                 candidate[p] = '-';
-                                currentCandidateString = candidate.TerminatedSpan.ToString();
 
-                                for (var k = 0; k < wlst.Count; k++)
-                                {
-                                    if (string.Equals(wlst[k], currentCandidateString, StringComparison.Ordinal))
-                                    {
-                                        cwrd = false;
-                                        break;
-                                    }
-                                }
-
-                                if (cwrd && wlst.Count < MaxSuggestions)
-                                {
-                                    wlst.Add(currentCandidateString);
-                                }
+                                state.SuggestionList.AddIfAcceptable(candidate.TerminatedSpan, Options);
                             }
                         }
                     }

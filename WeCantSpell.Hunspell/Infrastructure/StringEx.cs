@@ -71,7 +71,7 @@ static class StringEx
     {
         foreach (var item in list)
         {
-            if (item is not null && value.Equals(item.AsSpan(), StringComparison.Ordinal))
+            if (item is not null && item.AsSpan().SequenceEqual(value))
             {
                 return true;
             }
@@ -197,6 +197,14 @@ static class StringEx
     }
 
     public static string ConcatString(this ReadOnlySpan<char> @this, char value)
+    {
+        var builder = StringBuilderPool.Get(@this.Length + 1);
+        builder.Append(@this);
+        builder.Append(value);
+        return StringBuilderPool.GetStringAndReturn(builder);
+    }
+
+    public static string ConcatString(this string @this, char value)
     {
         var builder = StringBuilderPool.Get(@this.Length + 1);
         builder.Append(@this);
