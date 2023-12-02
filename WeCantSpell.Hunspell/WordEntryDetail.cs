@@ -16,25 +16,23 @@ public readonly struct WordEntryDetail : IEquatable<WordEntryDetail>
 
     public WordEntryDetail()
     {
-        Flags = FlagSet.Empty;
         Morphs = MorphSet.Empty;
+        Flags = FlagSet.Empty;
         Options = WordEntryOptions.None;
     }
 
     public WordEntryDetail(FlagSet flags, MorphSet morphs, WordEntryOptions options)
     {
-        Flags = flags;
         Morphs = morphs;
+        Flags = flags;
         Options = options;
     }
 
-    public FlagSet Flags { get; }
-
     public MorphSet Morphs { get; }
 
-    public WordEntryOptions Options { get; }
+    public FlagSet Flags { get; }
 
-    public bool HasFlags => Flags.HasItems;
+    public WordEntryOptions Options { get; }
 
     public bool ContainsFlag(FlagValue flag) => Flags.Contains(flag);
 

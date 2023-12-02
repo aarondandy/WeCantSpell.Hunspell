@@ -54,7 +54,7 @@ sealed class IncrementalWordList
 
     public readonly int WNum;
 
-    public void SetCurrent(WordEntryDetail value)
+    public void SetCurrent(in WordEntryDetail value)
     {
         if (WNum < _words.Count)
         {

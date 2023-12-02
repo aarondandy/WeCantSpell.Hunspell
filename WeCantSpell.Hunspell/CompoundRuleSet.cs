@@ -53,13 +53,13 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
 
     internal CompoundRule[] GetInternalArray() => _rules ?? [];
 
-    internal bool EntryContainsRuleFlags(in WordEntryDetail details)
+    internal bool EntryContainsRuleFlags(in FlagSet flags)
     {
-        if (details.HasFlags && HasItems)
+        if (flags.HasItems && HasItems)
         {
             foreach(var rule in _rules!)
             {
-                if (rule.ContainsRuleFlagForEntry(details))
+                if (rule.ContainsRuleFlagForEntry(flags))
                 {
                     return true;
                 }

@@ -288,7 +288,7 @@ public partial class WordList
             // he = next not needaffix, onlyincompound homonym or onlyupcase word
             var heIndex = 0;
             while (
-                heDetails.HasFlags
+                heDetails.Flags.HasItems
                 &&
                 (
                     heDetails.ContainsAnyFlags(Affix.NeedAffix, Affix.OnlyInCompound)
@@ -1793,7 +1793,7 @@ public partial class WordList
         private readonly bool DefCompoundCheck(IncrementalWordList words, in WordEntryDetail rv, bool all)
         {
             // has the last word COMPOUNDRULE flag?
-            if (Affix.CompoundRules.EntryContainsRuleFlags(rv))
+            if (Affix.CompoundRules.EntryContainsRuleFlags(rv.Flags))
             {
                 words.SetCurrent(rv);
                 if (Affix.CompoundRules.CompoundCheck(words, all))

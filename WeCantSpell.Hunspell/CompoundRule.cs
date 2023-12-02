@@ -55,11 +55,11 @@ public readonly struct CompoundRule : IReadOnlyList<FlagValue>
 
     internal bool IsWildcard(int index) => _values![index].IsWildcard;
 
-    internal bool ContainsRuleFlagForEntry(in WordEntryDetail details)
+    internal bool ContainsRuleFlagForEntry(in FlagSet flags)
     {
         foreach (var flag in GetInternalArray())
         {
-            if (!flag.IsWildcard && details.ContainsFlag(flag))
+            if (!flag.IsWildcard && flags.Contains(flag))
             {
                 return true;
             }

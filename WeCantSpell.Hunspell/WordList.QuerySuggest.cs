@@ -1348,27 +1348,16 @@ public partial class WordList
 
         private static WordEntry? CheckWordHomonymPortion(string word, WordEntryDetail[] rvDetails, AffixConfig affix)
         {
-            WordEntryDetail rvDetail;
-            var rvIndex = 0;
-            do
+            foreach (var rvDetail in rvDetails)
             {
-                rvDetail = rvDetails[rvIndex];
                 if (!rvDetail.ContainsAnyFlags(affix.NeedAffix, SpecialFlags.OnlyUpcaseFlag, affix.OnlyInCompound))
                 {
-                    break;
+                    return new WordEntry(word, rvDetail);
                 }
-
-                rvIndex++;
             }
-            while (rvIndex < rvDetails.Length);
 
-            if (rvIndex >= rvDetails.Length)
-            {
                 return null;
             }
-
-            return new WordEntry(word, rvDetail);
-        }
 
         private byte CheckWordAffixPortion(WordEntry? rv, ReadOnlySpan<char> word)
         {

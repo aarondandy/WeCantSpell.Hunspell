@@ -160,21 +160,23 @@ public sealed partial class WordList
 
     private WordEntry? FindFirstEntryByRootWord(ReadOnlySpan<char> rootWord)
     {
-        return EntriesByRoot.TryGetValue(rootWord, out var key, out var details) && details.Length > 0
+        return EntriesByRoot.TryGetValue(rootWord, out var key, out var details) && details.Length != 0
             ? new WordEntry(key, details[0])
             : null;
     }
 
     private WordEntry? FindFirstEntryByRootWord(string rootWord)
     {
-        return EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length > 0
+        return EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length != 0
             ? new WordEntry(rootWord, details[0])
             : null;
     }
 
     private WordEntryDetail[] FindEntryDetailsByRootWord(string rootWord)
     {
-        return EntriesByRoot.TryGetValue(rootWord, out var details) ? details : [];
+        return EntriesByRoot.TryGetValue(rootWord, out var details)
+            ? details
+            : [];
     }
 
     private WordEntryDetail[] FindEntryDetailsByRootWord(ReadOnlySpan<char> rootWord)
@@ -193,7 +195,7 @@ public sealed partial class WordList
 
     private bool TryFindFirstEntryDetailByRootWord(ReadOnlySpan<char> rootWord, out WordEntryDetail entryDetail)
     {
-        if (EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length > 0)
+        if (EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length != 0)
         {
             entryDetail = details[0];
             return true;
@@ -205,7 +207,7 @@ public sealed partial class WordList
 
     private bool TryFindFirstEntryDetailByRootWord(string rootWord, out WordEntryDetail entryDetail)
     {
-        if (EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length > 0)
+        if (EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length != 0)
         {
             entryDetail = details[0];
             return true;
