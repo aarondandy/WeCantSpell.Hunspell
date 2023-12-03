@@ -30,31 +30,17 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             return Create(value0);
         }
 
-        char[] values = [value0, value1];
-        Array.Sort(values);
-        CollectionsEx.RemoveSortedDuplicates(ref values);
-        return new(values);
+        return CreateUsingMutableBuffer([value0, value1]);
     }
 
     public static FlagSet Create(FlagValue value0, FlagValue value1, FlagValue value2)
     {
-        Span<char> values = [value0, value1, value2];
-        values.Sort();
-        values = values.TrimStart(FlagValue.ZeroValue);
+        return CreateUsingMutableBuffer([value0, value1, value2]);
+    }
 
-        if (values.Length == 0)
-        {
-            return Empty;
-        }
-
-        if (values.Length == 1)
-        {
-            return new(values[0]);
-        }
-
-        var flags = values.ToArray();
-        CollectionsEx.RemoveSortedDuplicates(ref flags);
-        return new(flags);
+    public static FlagSet Create(FlagValue value0, FlagValue value1, FlagValue value2, FlagValue value3)
+    {
+        return CreateUsingMutableBuffer([value0, value1, value2, value3]);
     }
 
     public static FlagSet Create(IEnumerable<FlagValue> values)
@@ -72,20 +58,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     internal static FlagSet ParseAsChars(ReadOnlySpan<char> text)
     {
-        if (text.IsEmpty)
-        {
-            return Empty;
-        }
-
-        if (text.Length == 1)
-        {
-            return new(text[0]);
-        }
-
-        var values = text.ToArray();
-        Array.Sort(values);
-        CollectionsEx.RemoveSortedDuplicates(ref values);
-        return new(values);
+        return text.IsEmpty ? Empty : CreateUsingBuffer(text);
     }
 
     internal static FlagSet ParseAsLongs(ReadOnlySpan<char> text)
@@ -129,6 +102,62 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         }
 
         return flags.MoveToFlagSet();
+    }
+
+    private static void PrepareMutableFlagValuesForUse(ref Span<char> values)
+    {
+        MemoryEx.RemoveAll(ref values, FlagValue.ZeroValue);
+
+        values.Sort();
+
+        MemoryEx.RemoveAdjacentDuplicates(ref values);
+    }
+
+    private static void PrepareMutableFlagValuesForUse(ref char[] values)
+    {
+        var valuesSpan = values.AsSpan();
+
+        PrepareMutableFlagValuesForUse(ref valuesSpan);
+
+        if (valuesSpan.Length < values.Length)
+        {
+            if (valuesSpan.IsEmpty)
+            {
+                values = [];
+            }
+            else
+            {
+                Array.Resize(ref values, valuesSpan.Length);
+            }
+        }
+    }
+
+    internal static FlagSet CreateUsingOwnedBuffer(char[] values)
+    {
+        PrepareMutableFlagValuesForUse(ref values);
+        return values.Length == 0 ? Empty : new(values);
+    }
+
+    private static FlagSet CreateUsingBuffer(ReadOnlySpan<char> values)
+    {
+        return CreateUsingOwnedBuffer(values.Trim(FlagValue.Zero).ToArray());
+    }
+
+    private static FlagSet CreateUsingMutableBuffer(Span<char> values)
+    {
+        PrepareMutableFlagValuesForUse(ref values);
+
+        if (values.IsEmpty)
+        {
+            return Empty;
+        }
+
+        if (values.Length == 1)
+        {
+            return new(values[0]);
+        }
+
+        return new(values.ToArray());
     }
 
     private static char CalculateMask(ReadOnlySpan<char> values)
@@ -316,9 +345,19 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     public bool ContainsAny(FlagValue a, FlagValue b)
     {
-        if (!HasItems)
+        if (IsEmpty)
         {
             return false;
+        }
+
+        if (b.IsZero || a == b)
+        {
+            return Contains(a);
+        }
+
+        if (a.IsZero)
+        {
+            return Contains(b);
         }
 
         if (a > b)
@@ -326,22 +365,22 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             MemoryEx.Swap(ref a, ref b);
         }
 
-        return ContainsAnySorted([(char)a, (char)b]);
+        return ContainsAnyPrepared([a, b]);
     }
 
     public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c)
     {
-        return HasItems && ContainsAnyUnsorted([(char)a, (char)b, (char)c]);
+        return HasItems && ContainsAnyUnpreparedMutable([a, b, c]);
     }
 
     public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c, FlagValue d)
     {
-        return HasItems && ContainsAnyUnsorted([(char)a, (char)b, (char)c, (char)d]);
+        return HasItems && ContainsAnyUnpreparedMutable([a, b, c, d]);
     }
 
     public bool ContainsAny(FlagSet other)
     {
-        if (IsEmpty || other.IsEmpty || (_mask & other._mask) == default)
+        if (IsEmpty || other.IsEmpty || (other._mask & _mask) == default)
         {
             return false;
         }
@@ -357,8 +396,8 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         }
 
         return _values!.Length >= other._values!.Length
-            ? ContainsAnySorted(other._values)
-            : other.ContainsAnySorted(_values);
+            ? ContainsAnyPrepared(other._values)
+            : other.ContainsAnyPrepared(_values);
     }
 
     public FlagSet Union(FlagSet other)
@@ -470,32 +509,29 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         }
     }
 
-    private bool ContainsAnyUnsorted(Span<char> other)
+    private bool ContainsAnyUnpreparedMutable(Span<char> values)
     {
-        other.Sort();
-        return ContainsAnySorted(other);
+        PrepareMutableFlagValuesForUse(ref values);
+        return ContainsAnyPrepared(values);
     }
 
-    private bool ContainsAnySorted(ReadOnlySpan<char> other)
+    private bool ContainsAnyPrepared(ReadOnlySpan<char> other)
     {
+        if (other.IsEmpty || IsEmpty)
+        {
+            return false;
+        }
+
 #if DEBUG
+
+        if (other.Contains(FlagValue.ZeroValue)) throw new ArgumentOutOfRangeException(nameof(other), "Contains zero values");
+
         for (var i = other.Length - 2; i >= 0; i--)
         {
             if (other[i] > other[i + 1]) throw new InvalidOperationException("Values must be sorted in ascending order");
         }
+
 #endif
-
-        if (IsEmpty)
-        {
-            return false;
-        }
-
-        other = TrimUnmatchableSorted(other); // Trim ends that won't match
-
-        if (other.IsEmpty)
-        {
-            return false;
-        }
 
         if (other.Length == 1)
         {
@@ -509,18 +545,6 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         }
 
         return SortedInterectionTest(other, _values);
-    }
-
-    private ReadOnlySpan<char> TrimUnmatchableSorted(ReadOnlySpan<char> span)
-    {
-        // Only trim zero values from the start as the span should be sorted
-        var start = 0;
-        for (; start < span.Length && (span[start] == FlagValue.ZeroValue || (span[start] & _mask) == default); start++) ;
-
-        var end = span.Length - 1;
-        for (; end >= start && (span[end] & _mask) == default; end--) ;
-
-        return span.Slice(start, end - start + 1);
     }
 
     public sealed class Builder

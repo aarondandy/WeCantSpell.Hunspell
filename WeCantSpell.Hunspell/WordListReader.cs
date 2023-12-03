@@ -531,9 +531,9 @@ public sealed class WordListReader
 
         if (
             (
-                capType == CapitalizationType.Huh
-                || capType == CapitalizationType.HuhInit
-                || (capType == CapitalizationType.All && flags.HasItems)
+                capType is (CapitalizationType.Huh or CapitalizationType.HuhInit)
+                ||
+                (capType == CapitalizationType.All && flags.HasItems)
             )
             &&
             !flags.Contains(Affix.ForbiddenWord)

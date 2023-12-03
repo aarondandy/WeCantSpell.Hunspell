@@ -1346,18 +1346,18 @@ public partial class WordList
             return timer.QueryForCancellation() ? (byte)0 : CheckWord(word, cpdSuggest);
         }
 
-        private static WordEntry? CheckWordHomonymPortion(string word, WordEntryDetail[] rvDetails, AffixConfig affix)
+        private readonly WordEntry? CheckWordHomonymPortion(string word, WordEntryDetail[] rvDetails)
         {
             foreach (var rvDetail in rvDetails)
             {
-                if (!rvDetail.ContainsAnyFlags(affix.NeedAffix, SpecialFlags.OnlyUpcaseFlag, affix.OnlyInCompound))
+                if (!rvDetail.ContainsAnyFlags(Affix.Flags_NeedAffix_OnlyInCompound_OnlyUpcase))
                 {
                     return new WordEntry(word, rvDetail);
                 }
             }
 
-                return null;
-            }
+            return null;
+        }
 
         private byte CheckWordAffixPortion(WordEntry? rv, ReadOnlySpan<char> word)
         {
@@ -1374,7 +1374,7 @@ public partial class WordList
             }
 
             // check forbidden words
-            if (rv is not null && rv.Detail.ContainsAnyFlags(Affix.ForbiddenWord, SpecialFlags.OnlyUpcaseFlag, Affix.NoSuggest, Affix.OnlyInCompound))
+            if ((rv?.ContainsAnyFlags(Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest_OnlyInCompound)).GetValueOrDefault())
             {
                 return 0;
             }
@@ -1417,7 +1417,7 @@ public partial class WordList
 
                     // TODO filter 3-word or more compound words, as in spell()
                     // (it's too slow to call suggest() here for all possible compound words)
-                    if (rv is not null && (!TryLookupFirstDetail(word, out var rvDetail) || !rvDetail.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest)))
+                    if (rv is not null && (!TryLookupFirstDetail(word, out var rvDetail) || !rvDetail.ContainsAnyFlags(Affix.Flags_ForbiddenWord_NoSuggest)))
                     {
                         return 3; // XXX obsolote categorisation + only ICONV needs affix flag check?
                     }
@@ -1429,12 +1429,12 @@ public partial class WordList
             // get homonyms
             if (_query.TryLookupDetails(word, out var wordString, out var rvDetails) && rvDetails is { Length: > 0 })
             {
-                if (rvDetails[0].ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest, Affix.SubStandard))
+                if (rvDetails[0].ContainsAnyFlags(Affix.Flags_ForbiddenWord_NoSuggest_SubStandard))
                 {
                     return 0;
                 }
 
-                rv = CheckWordHomonymPortion(wordString, rvDetails, Affix);
+                rv = CheckWordHomonymPortion(wordString, rvDetails);
             }
             else
             {
@@ -1467,7 +1467,7 @@ public partial class WordList
 
                     // TODO filter 3-word or more compound words, as in spell()
                     // (it's too slow to call suggest() here for all possible compound words)
-                    if (rv is not null && (!TryLookupFirstDetail(word, out var rvDetail) || !rvDetail.ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest)))
+                    if (rv is not null && (!TryLookupFirstDetail(word, out var rvDetail) || !rvDetail.ContainsAnyFlags(Affix.Flags_ForbiddenWord_NoSuggest)))
                     {
                         return 3; // XXX obsolote categorisation + only ICONV needs affix flag check?
                     }
@@ -1479,12 +1479,12 @@ public partial class WordList
             // get homonyms
             if (_query.TryLookupDetails(word, out var rvDetails) && rvDetails is { Length: > 0 })
             {
-                if (rvDetails[0].ContainsAnyFlags(Affix.ForbiddenWord, Affix.NoSuggest, Affix.SubStandard))
+                if (rvDetails[0].ContainsAnyFlags(Affix.Flags_ForbiddenWord_NoSuggest_SubStandard))
                 {
                     return 0;
                 }
 
-                rv = CheckWordHomonymPortion(word, rvDetails, Affix);
+                rv = CheckWordHomonymPortion(word, rvDetails);
             }
             else
             {
@@ -1735,7 +1735,7 @@ public partial class WordList
                 if (rp is not null)
                 {
                     var field = string.Empty;
-                    if (!rp.Detail.Options.HasFlagEx(WordEntryOptions.Phon) || !QuerySuggest.CopyField(ref field, rp.Detail.Morphs, MorphologicalTags.Phon))
+                    if (!rp.Options.HasFlagEx(WordEntryOptions.Phon) || !QuerySuggest.CopyField(ref field, rp.Morphs, MorphologicalTags.Phon))
                     {
                         field = null;
                     }
@@ -2143,7 +2143,7 @@ public partial class WordList
 
             var nh = 0;
             // first add root word to list
-            if (nh < wlst.Length && !entry.Detail.ContainsAnyFlags(Affix.NeedAffix, Affix.OnlyInCompound))
+            if (nh < wlst.Length && !entry.ContainsAnyFlags(Affix.Flags_NeedAffix_OnlyInCompound))
             {
                 wlstNh = ref wlst[nh];
 
@@ -2181,7 +2181,7 @@ public partial class WordList
             }
 
             // handle suffixes
-            foreach (var sptr in Affix.Suffixes.GetByFlags(entry.Detail.Flags))
+            foreach (var sptr in Affix.Suffixes.GetByFlags(entry.Flags))
             {
                 if (
                     (
@@ -2194,7 +2194,7 @@ public partial class WordList
                         )
                     )
                     && // check needaffix flag
-                    !sptr.ContainsAnyContClass(Affix.NeedAffix, Affix.Circumfix, Affix.OnlyInCompound)
+                    !sptr.ContainsAnyContClass(Affix.Flags_NeedAffix_OnlyInCompound_Circumfix)
                 )
                 {
                     var newword = Add(sptr, entry.Word);
@@ -2245,7 +2245,7 @@ public partial class WordList
                         continue;
                     }
 
-                    foreach (var pfxGroup in Affix.Prefixes.GetGroupsByFlags(entry.Detail.Flags))
+                    foreach (var pfxGroup in Affix.Prefixes.GetGroupsByFlags(entry.Flags))
                     {
                         if (pfxGroup.Options.HasFlagEx(AffixEntryOptions.CrossProduct))
                         {
@@ -2281,7 +2281,7 @@ public partial class WordList
             // now handle pure prefixes
             if (Affix.Prefixes.HasAffixes)
             {
-                foreach (var ptr in Affix.Prefixes.GetByFlags(entry.Detail.Flags))
+                foreach (var ptr in Affix.Prefixes.GetByFlags(entry.Flags))
                 {
                     if (
                         (
@@ -2294,7 +2294,7 @@ public partial class WordList
                             )
                         )
                         && // check needaffix flag
-                        !ptr.ContainsAnyContClass(Affix.NeedAffix, Affix.Circumfix, Affix.OnlyInCompound)
+                        !ptr.ContainsAnyContClass(Affix.Flags_NeedAffix_OnlyInCompound_Circumfix)
                     )
                     {
                         var newword = Add(ptr, entry.Word);
@@ -2453,7 +2453,7 @@ public partial class WordList
         private bool CheckForbidden(ReadOnlySpan<char> word)
         {
             var rv = LookupFirstDetail(word);
-            if ((rv?.ContainsAnyFlags(Affix.NeedAffix, Affix.OnlyInCompound)).GetValueOrDefault())
+            if ((rv?.ContainsAnyFlags(Affix.Flags_NeedAffix_OnlyInCompound)).GetValueOrDefault())
             {
                 rv = null;
             }

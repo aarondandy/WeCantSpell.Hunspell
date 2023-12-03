@@ -4,6 +4,14 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class MemoryEx
 {
+#if NO_SPAN_CONTAINS
+
+    public static bool Contains<T>(this ReadOnlySpan<T> @this, T value) where T : IEquatable<T> => @this.IndexOf(value) >= 0;
+
+    public static bool Contains<T>(this Span<T> @this, T value) where T : IEquatable<T> => @this.IndexOf(value) >= 0;
+
+#endif
+
     public static int IndexOf<T>(this ReadOnlySpan<T> @this, T value, int startIndex) where T : IEquatable<T>
     {
         var result = @this.Slice(startIndex).IndexOf(value);
@@ -131,4 +139,56 @@ static class MemoryEx
 
 #endif
 
+    public static void RemoveAll<T>(ref Span<T> span, T value) where T : notnull, IEquatable<T>
+    {
+        var writeIndex = 0;
+        var readIndex = 0;
+
+        for (; readIndex < span.Length; readIndex++)
+        {
+            if (!value.Equals(span[readIndex]))
+            {
+                if (readIndex != writeIndex)
+                {
+                    span[writeIndex] = span[readIndex];
+                }
+
+                writeIndex++;
+            }
+        }
+
+        if (writeIndex < span.Length)
+        {
+            span = span.Slice(0, writeIndex);
+        }
+    }
+
+    public static void RemoveAdjacentDuplicates<T>(ref Span<T> span) where T : notnull, IEquatable<T>
+    {
+        if (span.Length < 2)
+        {
+            return;
+        }
+
+        var writeIndex = 1;
+        var readIndex = 1;
+
+        for (; readIndex < span.Length; readIndex++)
+        {
+            if (!span[readIndex].Equals(span[writeIndex - 1]))
+            {
+                if (readIndex != writeIndex)
+                {
+                    span[writeIndex] = span[readIndex];
+                }
+
+                writeIndex++;
+            }
+        }
+
+        if (writeIndex < span.Length)
+        {
+            span = span.Slice(0, writeIndex);
+        }
+    }
 }

@@ -69,9 +69,7 @@ public abstract class AffixEntry
 
     public bool ContainsContClass(FlagValue flag) => ContClass.Contains(flag);
 
-    public bool ContainsAnyContClass(FlagValue a, FlagValue b) => ContClass.ContainsAny(a, b);
-
-    public bool ContainsAnyContClass(FlagValue a, FlagValue b, FlagValue c) => ContClass.ContainsAny(a, b, c);
+    public bool ContainsAnyContClass(FlagSet flags) => ContClass.ContainsAny(flags);
 }
 
 public sealed class PrefixEntry : AffixEntry

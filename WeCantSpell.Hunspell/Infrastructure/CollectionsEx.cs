@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
@@ -62,37 +61,6 @@ static class CollectionsEx
 
             return duplicateCount;
         }
-    }
-
-    public static int RemoveSortedDuplicates<T>(ref T[] values) where T : notnull, IEquatable<T>
-    {
-        var shiftSpan = values.AsSpan();
-
-        var removed = 0;
-        while (shiftSpan.Length > 1)
-        {
-            if (shiftSpan[0].Equals(shiftSpan[1]))
-            {
-                for (var shiftIndex = 1; shiftIndex < shiftSpan.Length; shiftIndex++)
-                {
-                    shiftSpan[shiftIndex - 1] = shiftSpan[shiftIndex];
-                }
-
-                removed++;
-                shiftSpan = shiftSpan.Slice(0, shiftSpan.Length - 1);
-            }
-            else
-            {
-                shiftSpan = shiftSpan.Slice(1);
-            }
-        }
-
-        if (removed > 0)
-        {
-            Array.Resize(ref values, values.Length - removed);
-        }
-
-        return removed;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -56,14 +56,14 @@ public partial class WordList
 
         public WordList ToImmutable(bool allowDestructive)
         {
-            var result = new WordList(Affix, FlagSet.Create(new[]
-            {
+            var result = new WordList(Affix, nGramRestrictedFlags: FlagSet.CreateUsingOwnedBuffer(
+            [
                 Affix.ForbiddenWord,
                 Affix.NoSuggest,
                 Affix.NoNgramSuggest,
                 Affix.OnlyInCompound,
                 SpecialFlags.OnlyUpcaseFlag
-            }));
+            ]));
 
             if (allowDestructive)
             {

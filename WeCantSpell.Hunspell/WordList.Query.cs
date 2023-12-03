@@ -146,31 +146,10 @@ public partial class WordList
         private readonly bool AffixContainsContClass(FlagValue value) =>
             value.HasValue
             &&
-            (
-                (_prefix?.ContainsContClass(value)).GetValueOrDefault()
-                ||
-                (_suffix?.ContainsContClass(value)).GetValueOrDefault()
-            );
+            ((_prefix?.ContainsContClass(value)).GetValueOrDefault() || (_suffix?.ContainsContClass(value)).GetValueOrDefault());
 
-        private readonly bool AffixContainsAnyContClass(FlagValue value0, FlagValue value1) =>
-            (_prefix?.ContainsAnyContClass(value0, value1)).GetValueOrDefault()
-            ||
-            (_suffix?.ContainsAnyContClass(value0, value1)).GetValueOrDefault();
-
-        private readonly bool AffixContainsAnyContClass(FlagValue value0, FlagValue value1, FlagValue value2) =>
-            (_prefix?.ContainsAnyContClass(value0, value1, value2)).GetValueOrDefault()
-            ||
-            (_suffix?.ContainsAnyContClass(value0, value1, value2)).GetValueOrDefault();
-
-        private readonly bool ContainFlagsOrBlockSuggest(in WordEntryDetail rv, bool isSug, FlagValue a, FlagValue b) =>
-            isSug
-                ? rv.ContainsAnyFlags(a, b, Affix.NoSuggest)
-                : rv.ContainsAnyFlags(a, b);
-
-        private readonly bool ContainFlagsOrBlockSuggest(in WordEntryDetail rv, bool isSug, FlagValue a, FlagValue b, FlagValue c) =>
-            isSug
-                ? rv.ContainsAnyFlags(a, b, c, Affix.NoSuggest)
-                : rv.ContainsAnyFlags(a, b, c);
+        private readonly bool AffixContainsAnyContClass(FlagSet values) =>
+            (_prefix?.ContainsAnyContClass(values)).GetValueOrDefault() || (_suffix?.ContainsAnyContClass(values)).GetValueOrDefault();
 
         public WordEntry? CheckWord(string word, ref SpellCheckResultType info, out string? root)
         {
@@ -213,8 +192,8 @@ public partial class WordList
                     &&
                     (
                         info.HasFlagEx(SpellCheckResultType.InitCap)
-                            ? he.Detail.ContainsAnyFlags(Affix.OnlyInCompound, SpecialFlags.OnlyUpcaseFlag)
-                            : he.Detail.ContainsFlag(Affix.OnlyInCompound)
+                            ? he.ContainsAnyFlags(Affix.Flags_OnlyInCompound_OnlyUpcase)
+                            : he.ContainsFlag(Affix.OnlyInCompound)
                     )
                 )
                 {
@@ -285,9 +264,7 @@ public partial class WordList
                 return true;
             }
 
-            var heFlags = info.HasFlagEx(SpellCheckResultType.InitCap)
-                ? FlagSet.Create(Affix.NeedAffix, Affix.OnlyInCompound, SpecialFlags.OnlyUpcaseFlag)
-                : FlagSet.Create(Affix.NeedAffix, Affix.OnlyInCompound);
+            var heFlags = info.HasFlagEx(SpellCheckResultType.InitCap) ? Affix.Flags_NeedAffix_OnlyInCompound_OnlyUpcase : Affix.Flags_NeedAffix_OnlyInCompound;
 
             // he = next not needaffix, onlyincompound homonym or onlyupcase word
             var heIndex = 0;
@@ -369,15 +346,8 @@ public partial class WordList
                         &&
                         (
                             words is null
-                            ? (
-                                homonymCandidate.ContainsFlag(Affix.CompoundFlag)
-                                ||
-                                homonymCandidate.ContainsFlag(Affix.CompoundEnd)
-                            )
-                            : (
-                                Affix.CompoundRules.HasItems
-                                && DefCompoundCheck(words.CreateIncremented(), homonymCandidate, true)
-                            )
+                            ? homonymCandidate.ContainsAnyFlags(Affix.Flags_CompoundFlag_CompoundEnd)
+                            : (Affix.CompoundRules.HasItems && DefCompoundCheck(words.CreateIncremented(), homonymCandidate, true))
                         )
                         &&
                         (
@@ -429,8 +399,6 @@ public partial class WordList
             var cmax = word.Length - cmin + 1;
 
             var st = new SimulatedCString(word);
-
-            var movCompoundOptions = huMovRule ? CompoundOptions.Other : CompoundOptions.Begin;
 
             for (var i = cmin; i < cmax; i++)
             {
@@ -601,7 +569,7 @@ public partial class WordList
 
                             if (Affix.CompoundFlag.HasValue)
                             {
-                                rv = CompoundCheckWordSearch_AffixCheckCompoundFlag(st.TerminatedSpan, movCompoundOptions, huMovRule);
+                                rv = CompoundCheckWordSearch_AffixCheckCompoundFlag(st.TerminatedSpan, huMovRule);
                             }
 
                             if (rv is not null)
@@ -610,18 +578,21 @@ public partial class WordList
                             }
                             else if (wordNum == 0 && Affix.CompoundBegin.HasValue)
                             {
-                                rv = CompoundCheckWordSearch_AffixCheckCompoundBegin(st.TerminatedSpan, movCompoundOptions, ref checkedPrefix);
+                                rv = CompoundCheckWordSearch_AffixCheckCompoundBegin(st.TerminatedSpan, huMovRule);
+                                checkedPrefix |= rv is not null;
                             }
                             else if (wordNum > 0 && Affix.CompoundMiddle.HasValue)
                             {
-                                rv = CompoundCheckWordSearch_AffixCheckCompoundMiddle(st.TerminatedSpan, movCompoundOptions, ref checkedPrefix);
+                                rv = CompoundCheckWordSearch_AffixCheckCompoundMiddle(st.TerminatedSpan, huMovRule);
+                                checkedPrefix |= rv is not null;
                             }
                         }
                         else
                         {
                             affixed = false;
-
-                            if (ContainFlagsOrBlockSuggest(rv.Detail, isSug, Affix.ForbiddenWord, Affix.NeedAffix, SpecialFlags.OnlyUpcaseFlag))
+                            if (
+                                rv.ContainsAnyFlags(isSug ? Affix.Flags_NeedAffix_ForbiddenWord_OnlyUpcase_NoSuggest : Affix.Flags_NeedAffix_ForbiddenWord_OnlyUpcase)
+                            )
                             {
                                 // else check forbiddenwords and needaffix
                                 st[i] = ch;
@@ -636,13 +607,13 @@ public partial class WordList
                                 checkedPrefix
                                     ? AffixContainsContClass(Affix.CompoundForbidFlag) // check non_compound flag in suffix and prefix
                                     : wordNum == 0
-                                        ? AffixContainsAnyContClass(
-                                                Affix.CompoundForbidFlag, // check non_compound flag in suffix and prefix
-                                                Affix.CompoundEnd, // check compoundend flag in suffix and prefix
-                                                Affix.CompoundMiddle) // check compoundmiddle flag in suffix and prefix
-                                        : AffixContainsAnyContClass(
-                                                Affix.CompoundForbidFlag, // check non_compound flag in suffix and prefix
-                                                Affix.CompoundEnd) // check compoundend flag in suffix and prefix
+                                        // check non_compound flag in suffix and prefix
+                                        // check compoundend flag in suffix and prefix
+                                        // check compoundmiddle flag in suffix and prefix
+                                        ? AffixContainsAnyContClass(Affix.Flags_CompoundForbid_CompoundMiddle_CompoundEnd)
+                                        // check non_compound flag in suffix and prefix
+                                        // check compoundend flag in suffix and prefix
+                                        : AffixContainsAnyContClass(Affix.Flags_CompoundForbid_CompoundEnd)
                             )
                             {
                                 rv = null;
@@ -652,7 +623,7 @@ public partial class WordList
                         if (rv is not null)
                         {
                             // check forbiddenwords
-                            if (ContainFlagsOrBlockSuggest(rv.Detail, isSug, Affix.ForbiddenWord, SpecialFlags.OnlyUpcaseFlag))
+                            if (rv.ContainsAnyFlags(isSug ? Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest : Affix.Flags_ForbiddenWord_OnlyUpcase))
                             {
                                 st.Destroy();
                                 return null;
@@ -670,16 +641,14 @@ public partial class WordList
                                     &&
                                     !(words?.CheckIfCurrentIsNotNull()).GetValueOrDefault()
                                     &&
-                                    !rv.Detail.ContainsAnyFlags(
-                                        Affix.CompoundFlag,
-                                        oldwordnum == 0 ? Affix.CompoundBegin : Affix.CompoundMiddle)
+                                    !rv.ContainsAnyFlags(oldwordnum == 0 ? Affix.Flags_CompoundFlag_CompoundBegin : Affix.Flags_CompoundFlag_CompoundMiddle)
                                     &&
                                     (
                                         !huMovRule
                                         || // LANG_hu section: spec. Hungarian rule
                                         !Affix.IsHungarian
                                         || // XXX hardwired Hungarian dictionary codes
-                                        !rv.Detail.ContainsAnyFlags(SpecialFlags.LetterF, SpecialFlags.LetterG, SpecialFlags.LetterH)
+                                        !rv.ContainsAnyFlags(SpecialFlags.SetFGH)
                                     ) // END of LANG_hu section
                                 )
                                 || // test CHECKCOMPOUNDPATTERN conditions
@@ -735,7 +704,7 @@ public partial class WordList
                                 rv is not null
                                 // XXX hardwired Hungarian dic. codes
                                 &&
-                                (_suffix?.ContainsAnyContClass(SpecialFlags.LetterXLower, SpecialFlags.LetterPercent)).GetValueOrDefault()
+                                (_suffix?.ContainsAnyContClass(SpecialFlags.SetXPercent)).GetValueOrDefault()
                             )
                             {
                                 rv = null;
@@ -769,8 +738,12 @@ public partial class WordList
                                 }
                             }
 
+#pragma warning disable IDE0007 // Use implicit type
+
                             // NEXT WORD(S)
                             WordEntry rvFirst = rv;
+
+#pragma warning restore IDE0007 // Use implicit type
 
                             st[i] = ch;
 
@@ -832,7 +805,7 @@ public partial class WordList
                                     }
 
                                     // check forbiddenwords
-                                    if (ContainFlagsOrBlockSuggest(rv.Detail, isSug, Affix.ForbiddenWord, SpecialFlags.OnlyUpcaseFlag))
+                                    if (rv.ContainsAnyFlags(isSug ? Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest : Affix.Flags_ForbiddenWord_OnlyUpcase))
                                     {
                                         st.Destroy();
                                         return null;
@@ -846,7 +819,7 @@ public partial class WordList
                                     if (
                                         rv is not null
                                         &&
-                                        rv.Detail.ContainsAnyFlags(Affix.CompoundFlag, Affix.CompoundEnd)
+                                        rv.ContainsAnyFlags(Affix.Flags_CompoundFlag_CompoundEnd)
                                         &&
                                         (
                                             !Affix.CompoundWordMax.HasValue
@@ -970,11 +943,7 @@ public partial class WordList
                                 }
 
                                 // check forbiddenwords
-                                if (
-                                    rv is not null
-                                    &&
-                                    ContainFlagsOrBlockSuggest(rv.Detail, isSug, Affix.ForbiddenWord, SpecialFlags.OnlyUpcaseFlag)
-                                )
+                                if ((rv?.ContainsAnyFlags(isSug ? Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest : Affix.Flags_ForbiddenWord_OnlyUpcase)).GetValueOrDefault())
                                 {
                                     st.Destroy();
                                     return null;
@@ -1025,8 +994,8 @@ public partial class WordList
                                             ||
                                             (
                                                 _suffixFlag == SpecialFlags.LetterI
-                                                && rv is not null
-                                                && rv.ContainsFlag(SpecialFlags.LetterJ)
+                                                &&
+                                                (rv?.ContainsFlag(SpecialFlags.LetterJ)).GetValueOrDefault()
                                             )
                                         )
                                         {
@@ -1232,8 +1201,10 @@ public partial class WordList
             }
         }
 
-        private WordEntry? CompoundCheckWordSearch_AffixCheckCompoundFlag(ReadOnlySpan<char> st, CompoundOptions movCompoundOptions, bool huMovRule)
+        private WordEntry? CompoundCheckWordSearch_AffixCheckCompoundFlag(ReadOnlySpan<char> st, bool huMovRule)
         {
+            var movCompoundOptions = huMovRule ? CompoundOptions.Other : CompoundOptions.Begin;
+
             var rv = PrefixCheck(st, movCompoundOptions, Affix.CompoundFlag);
 
             if (rv is null)
@@ -1250,7 +1221,7 @@ public partial class WordList
                     &&
                     !huMovRule
                     &&
-                    (_suffix?.ContainsAnyContClass(Affix.CompoundForbidFlag, Affix.CompoundEnd)).GetValueOrDefault()
+                    (_suffix?.ContainsAnyContClass(Affix.Flags_CompoundForbid_CompoundEnd)).GetValueOrDefault()
                 )
                 {
                     rv = null;
@@ -1260,8 +1231,10 @@ public partial class WordList
             return rv;
         }
 
-        private WordEntry? CompoundCheckWordSearch_AffixCheckCompoundBegin(ReadOnlySpan<char> st, CompoundOptions movCompoundOptions, ref bool checkedPrefix)
+        private WordEntry? CompoundCheckWordSearch_AffixCheckCompoundBegin(ReadOnlySpan<char> st, bool huMovRule)
         {
+            var movCompoundOptions = huMovRule ? CompoundOptions.Other : CompoundOptions.Begin;
+
             var rv = SuffixCheck(st, AffixEntryOptions.None, null, default, Affix.CompoundBegin, movCompoundOptions);
 
             if (rv is null)
@@ -1269,31 +1242,18 @@ public partial class WordList
                 if (Affix.CompoundMoreSuffixes)
                 {
                     rv = SuffixCheckTwoSfx(st, AffixEntryOptions.None, null, Affix.CompoundBegin);
-                    if (rv is not null)
-                    {
-                        checkedPrefix = true;
-                    }
                 }
 
-                if (rv is null)
-                {
-                    rv = PrefixCheck(st, movCompoundOptions, Affix.CompoundBegin);
-                    if (rv is not null)
-                    {
-                        checkedPrefix = true;
-                    }
-                }
-            }
-            else
-            {
-                checkedPrefix = true;
+                rv ??= PrefixCheck(st, movCompoundOptions, Affix.CompoundBegin);
             }
 
             return rv;
         }
 
-        private WordEntry? CompoundCheckWordSearch_AffixCheckCompoundMiddle(ReadOnlySpan<char> st, CompoundOptions movCompoundOptions, ref bool checkedPrefix)
+        private WordEntry? CompoundCheckWordSearch_AffixCheckCompoundMiddle(ReadOnlySpan<char> st, bool huMovRule)
         {
+            var movCompoundOptions = huMovRule ? CompoundOptions.Other : CompoundOptions.Begin;
+
             var rv = SuffixCheck(st, AffixEntryOptions.None, null, default, Affix.CompoundMiddle, movCompoundOptions);
 
             if (rv is null)
@@ -1301,24 +1261,9 @@ public partial class WordList
                 if (Affix.CompoundMoreSuffixes)
                 {
                     rv = SuffixCheckTwoSfx(st, AffixEntryOptions.None, null, Affix.CompoundMiddle);
-                    if (rv is not null)
-                    {
-                        checkedPrefix = true;
-                    }
                 }
 
-                if (rv is null)
-                {
-                    rv = PrefixCheck(st, movCompoundOptions, Affix.CompoundMiddle);
-                    if (rv is not null)
-                    {
-                        checkedPrefix = true;
-                    }
-                }
-            }
-            else
-            {
-                checkedPrefix = true;
+                rv ??= PrefixCheck(st, movCompoundOptions, Affix.CompoundMiddle);
             }
 
             return rv;
@@ -1373,7 +1318,7 @@ public partial class WordList
                 if (
                     !searchEntryDetail.ContainsFlag(Affix.NeedAffix)
                     &&
-                    searchEntryDetail.ContainsAnyFlags(Affix.CompoundFlag, scpdPatternEntryCondition, compoundPart)
+                    searchEntryDetail.Flags.ContainsAny(Affix.CompoundFlag, scpdPatternEntryCondition, compoundPart)
                 )
                 {
                     return searchEntryDetail;

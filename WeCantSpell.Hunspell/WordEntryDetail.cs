@@ -36,12 +36,6 @@ public readonly struct WordEntryDetail : IEquatable<WordEntryDetail>
 
     public bool ContainsFlag(FlagValue flag) => Flags.Contains(flag);
 
-    public bool ContainsAnyFlags(FlagValue a, FlagValue b) => Flags.ContainsAny(a, b);
-
-    public bool ContainsAnyFlags(FlagValue a, FlagValue b, FlagValue c) => Flags.ContainsAny(a, b, c);
-
-    public bool ContainsAnyFlags(FlagValue a, FlagValue b, FlagValue c, FlagValue d) => Flags.ContainsAny(a, b, c, d);
-
     public bool ContainsAnyFlags(FlagSet set) => Flags.ContainsAny(set);
 
     public bool Equals(WordEntryDetail other) =>

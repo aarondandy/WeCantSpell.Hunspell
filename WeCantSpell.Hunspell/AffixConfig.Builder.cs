@@ -8,6 +8,8 @@ using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
+#pragma warning disable IDE0028 // Simplify collection initialization
+
 public partial class AffixConfig
 {
     public sealed class Builder
@@ -446,6 +448,23 @@ public partial class AffixConfig
             config.Suffixes = Suffixes.BuildCollection(allowDestructive);
 
             config.ContClasses = config.Prefixes.ContClasses.Union(config.Suffixes.ContClasses);
+
+            config.Flags_CompoundFlag_CompoundBegin = FlagSet.Create(config.CompoundFlag, config.CompoundBegin);
+            config.Flags_CompoundFlag_CompoundMiddle = FlagSet.Create(config.CompoundFlag, config.CompoundMiddle);
+            config.Flags_CompoundFlag_CompoundEnd = FlagSet.Create(config.CompoundFlag, config.CompoundEnd);
+            config.Flags_CompoundForbid_CompoundEnd = FlagSet.Create(config.CompoundForbidFlag, config.CompoundEnd);
+            config.Flags_CompoundForbid_CompoundMiddle_CompoundEnd = config.Flags_CompoundForbid_CompoundEnd.Union(config.CompoundMiddle);
+            config.Flags_OnlyInCompound_OnlyUpcase = FlagSet.Create(config.OnlyInCompound, SpecialFlags.OnlyUpcaseFlag);
+            config.Flags_NeedAffix_OnlyInCompound = FlagSet.Create(config.NeedAffix, config.OnlyInCompound);
+            config.Flags_NeedAffix_OnlyInCompound_OnlyUpcase = config.Flags_NeedAffix_OnlyInCompound.Union(SpecialFlags.OnlyUpcaseFlag);
+            config.Flags_NeedAffix_OnlyInCompound_Circumfix = config.Flags_NeedAffix_OnlyInCompound.Union(config.Circumfix);
+            config.Flags_NeedAffix_ForbiddenWord_OnlyUpcase = FlagSet.Create(config.NeedAffix, config.ForbiddenWord, SpecialFlags.OnlyUpcaseFlag);
+            config.Flags_NeedAffix_ForbiddenWord_OnlyUpcase_NoSuggest = config.Flags_NeedAffix_ForbiddenWord_OnlyUpcase.Union(config.NoSuggest);
+            config.Flags_ForbiddenWord_OnlyUpcase = FlagSet.Create(config.ForbiddenWord, SpecialFlags.OnlyUpcaseFlag);
+            config.Flags_ForbiddenWord_OnlyUpcase_NoSuggest = config.Flags_ForbiddenWord_OnlyUpcase.Union(config.NoSuggest);
+            config.Flags_ForbiddenWord_OnlyUpcase_NoSuggest_OnlyInCompound = config.Flags_ForbiddenWord_OnlyUpcase_NoSuggest.Union(config.OnlyInCompound);
+            config.Flags_ForbiddenWord_NoSuggest = FlagSet.Create(config.ForbiddenWord, config.NoSuggest);
+            config.Flags_ForbiddenWord_NoSuggest_SubStandard = config.Flags_ForbiddenWord_NoSuggest.Union(config.SubStandard);
 
             config.Warnings = Warnings.ToImmutable();
 
