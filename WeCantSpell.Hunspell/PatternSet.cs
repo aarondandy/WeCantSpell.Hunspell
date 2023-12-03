@@ -59,7 +59,7 @@ public readonly struct PatternSet : IReadOnlyList<PatternEntry>
     /// <summary>
     /// Forbid compoundings when there are special patterns at word bound.
     /// </summary>
-    internal bool Check(ReadOnlySpan<char> word, int pos, in WordEntry r1, in WordEntry r2, bool affixed)
+    internal bool Check(ReadOnlySpan<char> word, int pos, WordEntry r1, WordEntry r2, bool affixed)
     {
         var wordAfterPos = word.Slice(pos);
 
