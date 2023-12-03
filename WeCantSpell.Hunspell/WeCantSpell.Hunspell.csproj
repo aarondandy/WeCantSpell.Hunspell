@@ -48,7 +48,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
-    <DefineConstants>$(DefineConstants);HAS_SEARCHVALUES;HAS_THROWNULL;HAS_THROWNULLWS;HAS_THROWOOR;HAS_SPANCULTUREPARSE_INT;HAS_INLINEARRAY</DefineConstants>
+    <DefineConstants>$(DefineConstants);HAS_SEARCHVALUES;HAS_THROWNULL;HAS_THROWNULLWS;HAS_THROWOOR;HAS_SPANCULTUREPARSE_INT;HAS_INLINEARRAY;HAS_FROZENSET;HAS_FROZENDICTIONARY</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
