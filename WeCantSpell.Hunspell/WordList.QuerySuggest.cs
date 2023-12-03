@@ -1422,8 +1422,9 @@ public partial class WordList
                 if (Affix.HasCompound)
                 {
                     var rwords = IncrementalWordList.GetRoot(); // buffer for COMPOUND pattern checking
-                    var info = cpdSuggest == 1 ? SpellCheckResultType.Compound2 : SpellCheckResultType.None;
-                    rv = _query.CompoundCheck(word, 0, 0, 100, rwords, huMovRule: false, isSug: true, ref info); // EXT
+                    rv = _query.CompoundCheck(
+                        word, 0, 0, 100, rwords, huMovRule: false, isSug: true,
+                        info: cpdSuggest == 1 ? SpellCheckResultType.Compound2 : SpellCheckResultType.None); // EXT
                     IncrementalWordList.ReturnRoot(ref rwords);
 
                     // TODO filter 3-word or more compound words, as in spell()
@@ -1472,8 +1473,9 @@ public partial class WordList
                 if (Affix.HasCompound)
                 {
                     var rwords = IncrementalWordList.GetRoot(); // buffer for COMPOUND pattern checking
-                    var info = cpdSuggest == 1 ? SpellCheckResultType.Compound2 : SpellCheckResultType.None;
-                    rv = _query.CompoundCheck(word.AsSpan(), 0, 0, 100, rwords, huMovRule: false, isSug: true, ref info); // EXT
+                    rv = _query.CompoundCheck(
+                        word.AsSpan(), 0, 0, 100, rwords, huMovRule: false, isSug: true,
+                        info: cpdSuggest == 1 ? SpellCheckResultType.Compound2 : SpellCheckResultType.None); // EXT
                     IncrementalWordList.ReturnRoot(ref rwords);
 
                     // TODO filter 3-word or more compound words, as in spell()
