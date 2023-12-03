@@ -49,10 +49,10 @@ Check the hunspell-origin submodule to see how up to date this library is compar
 
 This port will likely perform slower relative to the original binaries and [NHunspell](https://www.nuget.org/packages/NHunspell/) but it should be acceptable. It is worth considering that while NHunspell is faster, it hasn't been updated in a long while and may be missing important fixes and changes.
 
-| Benchmark     | .NET 8       | .NET 4.8     | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
-|---------------|------------- |--------------|--------------|
-| Check test    | 🐢 7,593 μs | 🐌 18,339 μs | 🐇 6,149 μs |
-| Suggest test  | 🐇 371 ms   | 🐢 738 ms    | 🐌 1,905 ms |
+| Benchmark | .NET 8       | .NET 4.8     | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
+|-----------|------------- |--------------|--------------|
+| Check     | 🐢 7,376 μs | 🐌 19,496 μs | 🐇 6,324 μs |
+| Suggest   | 🐇 367 ms   | 🐢 758 ms    | 🐌 1,904 ms |
 
 _Note: Measurements taken on an AMD 5800H._
 

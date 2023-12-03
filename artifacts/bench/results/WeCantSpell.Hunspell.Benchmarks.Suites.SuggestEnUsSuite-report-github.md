@@ -11,5 +11,5 @@ Job=Suggest en-US
 ```
 | Method          | Runtime  | Mean     | Error   | StdDev  | Min      | Median   | Ratio |
 |---------------- |--------- |---------:|--------:|--------:|---------:|---------:|------:|
-| &#39;Suggest words&#39; | .NET 6.0 | 436.1 ms | 2.66 ms | 2.49 ms | 433.0 ms | 435.6 ms |  1.17 |
-| &#39;Suggest words&#39; | .NET 8.0 | 371.7 ms | 2.12 ms | 1.98 ms | 368.1 ms | 371.3 ms |  1.00 |
+| &#39;Suggest words&#39; | .NET 6.0 | 423.4 ms | 2.19 ms | 2.05 ms | 419.8 ms | 423.1 ms |  1.15 |
+| &#39;Suggest words&#39; | .NET 8.0 | 367.2 ms | 1.71 ms | 1.52 ms | 364.5 ms | 367.2 ms |  1.00 |
