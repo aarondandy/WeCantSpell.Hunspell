@@ -176,20 +176,21 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     private static bool SortedInterectionTest(ReadOnlySpan<char> aSet, ReadOnlySpan<char> bSet)
     {
-        if (aSet.Length <= 4 && bSet.Length <= 4)
-        {
-            return SortedInterectionTestLinear(aSet, bSet);
-        }
-
-        return SortedInterectionTestBinary(aSet, bSet);
+        return (aSet![aSet.Length - 1] >= bSet[0] && bSet[bSet.Length - 1] >= aSet[0])
+            &&
+            (
+                (aSet.Length <= 4 && bSet.Length <= 4)
+                ? SortedInterectionTestLinear(aSet, bSet)
+                : SortedInterectionTestBinary(aSet, bSet)
+            );
     }
 
     private static bool SortedInterectionTestLinear(ReadOnlySpan<char> aSet, ReadOnlySpan<char> bSet)
     {
-        if (aSet.IsEmpty || bSet.IsEmpty)
-        {
-            return false;
-        }
+
+#if DEBUG
+        if (aSet.IsEmpty || bSet.IsEmpty) throw new InvalidOperationException();
+#endif
 
         var aIndex = 0;
         var bIndex = 0;
@@ -227,10 +228,10 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     private static bool SortedInterectionTestBinary(ReadOnlySpan<char> aSet, ReadOnlySpan<char> bSet)
     {
-        if (aSet.IsEmpty || bSet.IsEmpty)
-        {
-            return false;
-        }
+
+#if DEBUG
+        if (aSet.IsEmpty || bSet.IsEmpty) throw new InvalidOperationException();
+#endif
 
         do
         {
@@ -264,6 +265,31 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         while (true);
 
         return false;
+    }
+
+    private static bool SortedContains(ReadOnlySpan<char> sorted, char value)
+    {
+        return sorted.Length <= 8
+            ? checkIterative(sorted, value)
+            : (sorted.BinarySearch(value) >= 0);
+
+        static bool checkIterative(ReadOnlySpan<char> searchSpace, char target)
+        {
+            foreach (var value in searchSpace)
+            {
+                if (value == target)
+                {
+                    return true;
+                }
+
+                if (value > target)
+                {
+                    break;
+                }
+            }
+
+            return false;
+        }
     }
 
     private FlagSet(FlagValue value) : this((char)value)
@@ -380,24 +406,18 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     public bool ContainsAny(FlagSet other)
     {
-        if (IsEmpty || other.IsEmpty || (other._mask & _mask) == default)
-        {
-            return false;
-        }
-
-        if (other._values!.Length == 1)
-        {
-            return Contains(other._values[0]);
-        }
-
-        if (_values!.Length == 1)
-        {
-            return other.Contains(_values[0]);
-        }
-
-        return _values!.Length >= other._values!.Length
-            ? ContainsAnyPrepared(other._values)
-            : other.ContainsAnyPrepared(_values);
+        return HasItems
+            && other.HasItems
+            &&
+            (
+                other._values!.Length == 1
+                ? Contains(other._values[0])
+                : (
+                    _values!.Length == 1
+                    ? other.Contains(_values[0])
+                    : ((other._mask & _mask) != default && SortedInterectionTest(other._values, _values))
+                )
+            );
     }
 
     public FlagSet Union(FlagSet other)
@@ -430,12 +450,12 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     public FlagSet Union(FlagValue value)
     {
-        if (!value.HasValue)
+        if (value.IsZero)
         {
             return this;
         }
 
-        if (!HasItems)
+        if (IsEmpty)
         {
             return new(value);
         }
@@ -473,40 +493,22 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     internal bool Contains(char value)
     {
-        if (HasItems)
+        if (value != FlagValue.ZeroValue || HasItems)
         {
-            if (_values!.Length == 1)
+            ReadOnlySpan<char> searchSpace = _values!;
+
+            if (searchSpace.Length == 1)
             {
-                return _values[0].Equals(value);
+                return searchSpace[0].Equals(value);
             }
 
             if (unchecked(value & _mask) == value)
             {
-                return _values.Length <= 8
-                    ? checkIterative(_values, value)
-                    : Array.BinarySearch(_values, value) >= 0;
+                return SortedContains(searchSpace, value);
             }
         }
 
         return false;
-
-        static bool checkIterative(char[] searchSpace, char target)
-        {
-            foreach (var value in searchSpace)
-            {
-                if (value == target)
-                {
-                    return true;
-                }
-
-                if (value > target)
-                {
-                    break;
-                }
-            }
-
-            return false;
-        }
     }
 
     private bool ContainsAnyUnpreparedMutable(Span<char> values)
@@ -517,12 +519,12 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     private bool ContainsAnyPrepared(ReadOnlySpan<char> other)
     {
-        if (other.IsEmpty || IsEmpty)
-        {
-            return false;
-        }
 
 #if DEBUG
+
+        if (IsEmpty) throw new InvalidOperationException();
+
+        if (other.IsEmpty) throw new ArgumentOutOfRangeException(nameof(other));
 
         if (other.Contains(FlagValue.ZeroValue)) throw new ArgumentOutOfRangeException(nameof(other), "Contains zero values");
 
@@ -533,18 +535,21 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
 #endif
 
+        ReadOnlySpan<char> values = _values!;
+
         if (other.Length == 1)
         {
-            return Contains(other[0]);
+            return values.Length == 1
+                ? values[0] == other[0]
+                : SortedContains(values, other[0]);
         }
 
-        if (other[0] > _values![_values.Length - 1] || other[other.Length - 1] < _values[0])
+        if (values.Length == 1)
         {
-            // If the sets are disjoint then a match is impossible
-            return false;
+            return SortedContains(other, values[0]);
         }
 
-        return SortedInterectionTest(other, _values);
+        return SortedInterectionTest(values, other);
     }
 
     public sealed class Builder
@@ -589,13 +594,11 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
         public void AddRange(FlagSet values)
         {
-            if (values.IsEmpty)
+            if (values.HasItems)
             {
-                return;
+                AddRange(values._values!);
+                UnionMask(values._mask);
             }
-
-            AddRange(values._values!);
-            UnionMask(values._mask);
         }
 
         public FlagSet Create() => new(_builder.MakeArray(), _mask);
@@ -607,13 +610,8 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             return result;
         }
 
-        private void AddRange(char[] values)
+        private void AddRange(ReadOnlySpan<char> values)
         {
-            if (values is not { Length: > 0 })
-            {
-                return;
-            }
-
             if (_builder.Count == 0)
             {
                 _builder.AddRange(values);
