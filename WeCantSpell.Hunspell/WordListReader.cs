@@ -340,7 +340,7 @@ public sealed class WordListReader
         if (Affix.IsAliasM)
         {
             options |= WordEntryOptions.AliasM;
-            var morphBuilder = ArrayBuilderPool<string>.Get();
+            var morphBuilder = ArrayBuilder<string>.Pool.Get();
             foreach (var originalValue in morphs)
             {
                 if (IntEx.TryParseInvariant(originalValue, out var morphNumber) && Affix.TryGetAliasM(morphNumber, out var aliasedMorph))
@@ -353,7 +353,7 @@ public sealed class WordListReader
                 }
             }
 
-            morphs = ArrayBuilderPool<string>.ExtractAndReturn(morphBuilder);
+            morphs = ArrayBuilder<string>.Pool.ExtractAndReturn(morphBuilder);
         }
 
         var morphPhonEnumerator = new AddWordMorphFilterEnumerator(morphs);
@@ -615,14 +615,14 @@ public sealed class WordListReader
             }
             else
             {
-                var morphsBuilder = ArrayBuilderPool<string>.Get();
+                var morphsBuilder = ArrayBuilder<string>.Pool.Get();
 
                 foreach (var morph in morphPart.SplitOnTabOrSpace())
                 {
                     morphsBuilder.Add(morph.ToString());
                 }
 
-                morphs = ArrayBuilderPool<string>.ExtractAndReturn(morphsBuilder);
+                morphs = ArrayBuilder<string>.Pool.ExtractAndReturn(morphsBuilder);
             }
 
             return new ParsedWordLine(

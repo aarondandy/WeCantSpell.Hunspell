@@ -144,7 +144,7 @@ public readonly struct FlagValue :
             }
         }
 
-        return ArrayBuilder<FlagValue>.Pool.GetArrayAndReturn(builder);
+        return ArrayBuilder<FlagValue>.Pool.ExtractAndReturn(builder);
     }
 
     public FlagValue(char value)

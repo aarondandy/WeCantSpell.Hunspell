@@ -160,7 +160,14 @@ sealed class ArrayBuilder<T> : IList<T>
 
         if (_values.Length < requiredLength)
         {
-            Array.Resize(ref _values, requiredLength);
+            if (Count == 0)
+            {
+                _values = new T[requiredLength];
+            }
+            else
+            {
+                Array.Resize(ref _values, requiredLength);
+            }
         }
     }
 
@@ -174,7 +181,7 @@ sealed class ArrayBuilder<T> : IList<T>
 
         if (_values.Length < requiredLength)
         {
-            Array.Resize(ref _values, CalculateBestCapacity(requiredLength));
+            GrowToCapacity(CalculateBestCapacity(requiredLength));
         }
     }
 
@@ -303,7 +310,7 @@ sealed class ArrayBuilder<T> : IList<T>
 
     internal static class Pool
     {
-        private const int MaxCapacity = 20;
+        private const int MaxCapacity = 32; // NOTE: Because of the growth values, this should be a power of two
 
         private static ArrayBuilder<T>? Cache;
 
@@ -338,15 +345,15 @@ sealed class ArrayBuilder<T> : IList<T>
 
         public static void Return(ArrayBuilder<T> builder)
         {
-            if (builder.Capacity > 0 && builder.Capacity <= MaxCapacity)
+            if (builder is { Capacity: <= MaxCapacity })
             {
                 Volatile.Write(ref Cache, builder);
             }
         }
 
-        public static T[] GetArrayAndReturn(ArrayBuilder<T> builder)
+        public static T[] ExtractAndReturn(ArrayBuilder<T> builder)
         {
-            var result = builder.MakeArray();
+            var result = builder.Extract();
             Return(builder);
             return result;
         }

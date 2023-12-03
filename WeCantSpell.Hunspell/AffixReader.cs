@@ -695,7 +695,7 @@ public sealed partial class AffixReader
 
     private bool TryParseAliasM(ReadOnlySpan<char> parameterText, ImmutableArray<MorphSet>.Builder entries)
     {
-        var parts = ArrayBuilderPool<string>.Get((parameterText.Length + 1) / 2);
+        var parts = ArrayBuilder<string>.Pool.Get((parameterText.Length + 1) / 2);
 
         if (_builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes))
         {
@@ -714,7 +714,7 @@ public sealed partial class AffixReader
             }
         }
 
-        entries.Add(new MorphSet(ArrayBuilderPool<string>.ExtractAndReturn(parts)));
+        entries.Add(new MorphSet(ArrayBuilder<string>.Pool.ExtractAndReturn(parts)));
 
         return true;
     }

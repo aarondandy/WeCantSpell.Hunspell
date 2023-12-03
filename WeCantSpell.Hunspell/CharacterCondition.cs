@@ -18,14 +18,14 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 
     public static CharacterCondition CreateCharSet(ReadOnlySpan<char> chars, bool restricted)
     {
-        var builder = ArrayBuilderPool<char>.Get(chars.Length);
+        var builder = ArrayBuilder<char>.Pool.Get(chars.Length);
 
         foreach (var c in chars)
         {
             builder.AddAsSortedSet(c);
         }
 
-        return new(ArrayBuilderPool<char>.ExtractAndReturn(builder), restricted ? ModeKind.RestrictChars : ModeKind.PermitChars);
+        return new(ArrayBuilder<char>.Pool.ExtractAndReturn(builder), restricted ? ModeKind.RestrictChars : ModeKind.PermitChars);
     }
 
     public static CharacterCondition CreateSequence(char c) => new([c], ModeKind.MatchSequence);

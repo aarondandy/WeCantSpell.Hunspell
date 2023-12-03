@@ -269,7 +269,7 @@ public sealed partial class WordList
                     _current = new(_current.Key, filterNonMatching(_current.Value, restrictedDetails));
                     static WordEntryDetail[] filterNonMatching(WordEntryDetail[] source, WordEntryDetail[] check)
                     {
-                        var builder = ArrayBuilderPool<WordEntryDetail>.Get(source.Length);
+                        var builder = ArrayBuilder<WordEntryDetail>.Pool.Get(source.Length);
 
                         foreach (var item in source)
                         {
@@ -279,7 +279,7 @@ public sealed partial class WordList
                             }
                         }
 
-                        return ArrayBuilderPool<WordEntryDetail>.ExtractAndReturn(builder);
+                        return ArrayBuilder<WordEntryDetail>.Pool.ExtractAndReturn(builder);
                     }
                 }
 

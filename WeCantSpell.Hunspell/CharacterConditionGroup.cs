@@ -50,7 +50,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
         }
 
         ReadOnlySpan<char> span;
-        var conditions = ArrayBuilderPool<CharacterCondition>.Get();
+        var conditions = ArrayBuilder<CharacterCondition>.Pool.Get();
 
         do
         {
@@ -100,7 +100,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
         }
         while (!text.IsEmpty);
 
-        return new(ArrayBuilderPool<CharacterCondition>.ExtractAndReturn(conditions));
+        return new(ArrayBuilder<CharacterCondition>.Pool.ExtractAndReturn(conditions));
     }
 
     internal CharacterConditionGroup(CharacterCondition[] items)

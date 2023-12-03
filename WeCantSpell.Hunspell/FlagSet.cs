@@ -605,7 +605,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
         internal FlagSet MoveToFlagSet()
         {
-            var result = new FlagSet(ArrayBuilder<char>.Pool.GetArrayAndReturn(_builder), _mask);
+            var result = new FlagSet(ArrayBuilder<char>.Pool.ExtractAndReturn(_builder), _mask);
             _builder = null!; // This should operate as a very crude dispose
             return result;
         }
