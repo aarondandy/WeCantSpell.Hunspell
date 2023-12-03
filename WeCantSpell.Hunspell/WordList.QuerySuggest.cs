@@ -170,186 +170,196 @@ public partial class WordList
 
             var textInfo = _query.TextInfo;
 
-            // check capitalized form for FORCEUCASE
-            if (capType == CapitalizationType.None && Affix.ForceUpperCase.HasValue)
-            {
-                var info = SpellCheckResultType.OrigCap;
-                if (_query.CheckWord(scw, ref info, out _) is not null)
-                {
-                    slst.Add(HunspellTextFunctions.MakeInitCap(scw, textInfo));
-                    return slst;
-                }
-            }
-
             var onlyCompoundSuggest = false;
             var capWords = false;
             var good = false;
+            string? wspace;
 
-            if (capType == CapitalizationType.None)
+            switch (capType)
             {
-                good |= Suggest(slst, scw, ref onlyCompoundSuggest);
+                case CapitalizationType.None:
 
-                if (opLimiter.QueryForCancellation())
-                {
-                    return slst;
-                }
+                    // check capitalized form for FORCEUCASE
+                    if (Affix.ForceUpperCase.HasValue)
+                    {
+                        var info = SpellCheckResultType.OrigCap;
+                        if (_query.CheckWord(scw, ref info, out _) is not null)
+                        {
+                            slst.Add(HunspellTextFunctions.MakeInitCap(scw, textInfo));
+                            return slst;
+                        }
+                    }
 
-                if (abbv != 0)
-                {
-                    var wspace = scw + ".";
-                    good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
+                    good |= Suggest(slst, scw, ref onlyCompoundSuggest);
 
                     if (opLimiter.QueryForCancellation())
                     {
                         return slst;
                     }
-                }
-            }
-            else if (capType == CapitalizationType.Init)
-            {
-                capWords = true;
-                good |= Suggest(slst, scw, ref onlyCompoundSuggest);
 
-                if (opLimiter.QueryForCancellation())
-                {
-                    return slst;
-                }
+                    if (abbv != 0)
+                    {
+                        wspace = scw + ".";
+                        good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
-                good |= Suggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), ref onlyCompoundSuggest);
+                        if (opLimiter.QueryForCancellation())
+                        {
+                            return slst;
+                        }
+                    }
 
-                if (opLimiter.QueryForCancellation())
-                {
-                    return slst;
-                }
-            }
-            else if (capType == CapitalizationType.Huh || capType == CapitalizationType.HuhInit)
-            {
-                capWords = capType == CapitalizationType.HuhInit;
+                    break;
 
-                good |= Suggest(slst, scw, ref onlyCompoundSuggest);
-
-                if (opLimiter.QueryForCancellation())
-                {
-                    return slst;
-                }
-
-                // something.The -> something. The
-                var dotPos = scw.IndexOf('.');
-                if (
-                    dotPos >= 0
-                    &&
-                    HunspellTextFunctions.GetCapitalizationType(scw.AsSpan(dotPos + 1), textInfo) == CapitalizationType.Init
-                )
-                {
-                    InsertSuggestion(slst, scw.Insert(dotPos + 1, " "));
-                }
-
-                if (capType == CapitalizationType.HuhInit)
-                {
-                    // TheOpenOffice.org -> The OpenOffice.org
-                    good |= Suggest(slst, HunspellTextFunctions.MakeInitSmall(scw, textInfo), ref onlyCompoundSuggest);
+                case CapitalizationType.Init:
+                    capWords = true;
+                    good |= Suggest(slst, scw, ref onlyCompoundSuggest);
 
                     if (opLimiter.QueryForCancellation())
                     {
                         return slst;
                     }
-                }
 
-                var wspace = HunspellTextFunctions.MakeAllSmall(scw, textInfo);
-                if (Check(wspace))
-                {
-                    InsertSuggestion(slst, wspace);
-                }
+                    good |= Suggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), ref onlyCompoundSuggest);
 
-                var prevns = slst.Count;
-                good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
+                    if (opLimiter.QueryForCancellation())
+                    {
+                        return slst;
+                    }
 
-                if (opLimiter.QueryForCancellation())
-                {
-                    return slst;
-                }
+                    break;
 
-                if (capType == CapitalizationType.HuhInit)
-                {
-                    wspace = HunspellTextFunctions.MakeInitCap(wspace, textInfo);
+                case CapitalizationType.HuhInit:
+                    capWords = true;
+                    goto case CapitalizationType.Huh;
+                case CapitalizationType.Huh:
+
+                    good |= Suggest(slst, scw, ref onlyCompoundSuggest);
+
+                    if (opLimiter.QueryForCancellation())
+                    {
+                        return slst;
+                    }
+
+                    // something.The -> something. The
+                    var dotPos = scw.IndexOf('.');
+                    if (
+                        dotPos >= 0
+                        &&
+                        HunspellTextFunctions.GetCapitalizationType(scw.AsSpan(dotPos + 1), textInfo) == CapitalizationType.Init
+                    )
+                    {
+                        InsertSuggestion(slst, scw.Insert(dotPos + 1, " "));
+                    }
+
+                    if (capWords)
+                    {
+                        // TheOpenOffice.org -> The OpenOffice.org
+                        good |= Suggest(slst, HunspellTextFunctions.MakeInitSmall(scw, textInfo), ref onlyCompoundSuggest);
+
+                        if (opLimiter.QueryForCancellation())
+                        {
+                            return slst;
+                        }
+                    }
+
+                    wspace = HunspellTextFunctions.MakeAllSmall(scw, textInfo);
                     if (Check(wspace))
                     {
                         InsertSuggestion(slst, wspace);
                     }
 
+                    var prevns = slst.Count;
                     good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
                     if (opLimiter.QueryForCancellation())
                     {
                         return slst;
                     }
-                }
 
-                // aNew -> "a New" (instead of "a new")
-                for (var j = prevns; j < slst.Count; j++)
-                {
-                    var toRemove = slst[j];
-                    var spaceIndex = toRemove.IndexOf(' ');
-                    if (spaceIndex >= 0)
+                    if (capWords)
                     {
-                        var slen = toRemove.Length - spaceIndex - 1;
-
-                        // different case after space (need capitalisation)
-                        if (slen < scw.Length && !scw.AsSpan(scw.Length - slen).EqualsOrdinal(toRemove.AsSpan(spaceIndex + 1)))
+                        wspace = HunspellTextFunctions.MakeInitCap(wspace, textInfo);
+                        if (Check(wspace))
                         {
-                            // set as first suggestion
-                            removeFromIndexThenInsertAtFront(
-                                slst,
-                                j,
-                                StringEx.ConcatString(
-                                    toRemove.AsSpan(0, spaceIndex + 1),
-                                    HunspellTextFunctions.MakeInitCap(toRemove.AsSpan(spaceIndex + 1), textInfo)));
+                            InsertSuggestion(slst, wspace);
+                        }
 
-                            static void removeFromIndexThenInsertAtFront(List<string> list, int removeIndex, string insertValue)
+                        good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
+
+                        if (opLimiter.QueryForCancellation())
+                        {
+                            return slst;
+                        }
+                    }
+
+                    // aNew -> "a New" (instead of "a new")
+                    for (var j = prevns; j < slst.Count; j++)
+                    {
+                        var toRemove = slst[j];
+                        var spaceIndex = toRemove.IndexOf(' ');
+                        if (spaceIndex >= 0)
+                        {
+                            var slen = toRemove.Length - spaceIndex - 1;
+
+                            // different case after space (need capitalisation)
+                            if (slen < scw.Length && !scw.AsSpan(scw.Length - slen).EqualsOrdinal(toRemove.AsSpan(spaceIndex + 1)))
                             {
-                                if (list.Count != 0)
-                                {
-                                    while (removeIndex > 0)
-                                    {
-                                        var sourceIndex = removeIndex - 1;
-                                        list[removeIndex] = list[sourceIndex];
-                                        removeIndex = sourceIndex;
-                                    }
+                                // set as first suggestion
+                                removeFromIndexThenInsertAtFront(
+                                    slst,
+                                    j,
+                                    StringEx.ConcatString(
+                                        toRemove.AsSpan(0, spaceIndex + 1),
+                                        HunspellTextFunctions.MakeInitCap(toRemove.AsSpan(spaceIndex + 1), textInfo)));
 
-                                    list[0] = insertValue;
+                                static void removeFromIndexThenInsertAtFront(List<string> list, int removeIndex, string insertValue)
+                                {
+                                    if (list.Count != 0)
+                                    {
+                                        while (removeIndex > 0)
+                                        {
+                                            var sourceIndex = removeIndex - 1;
+                                            list[removeIndex] = list[sourceIndex];
+                                            removeIndex = sourceIndex;
+                                        }
+
+                                        list[0] = insertValue;
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            }
-            else if (capType == CapitalizationType.All)
-            {
-                var wspace = HunspellTextFunctions.MakeAllSmall(scw, textInfo);
-                good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
-                if (opLimiter.QueryForCancellation())
-                {
-                    return slst;
-                }
+                    break;
 
-                if (Affix.KeepCase.HasValue && Check(wspace))
-                {
-                    InsertSuggestion(slst, wspace);
-                }
+                case CapitalizationType.All:
+                    wspace = HunspellTextFunctions.MakeAllSmall(scw, textInfo);
+                    good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
-                wspace = HunspellTextFunctions.MakeInitCap(wspace, textInfo);
-                good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
+                    if (opLimiter.QueryForCancellation())
+                    {
+                        return slst;
+                    }
 
-                if (opLimiter.QueryForCancellation())
-                {
-                    return slst;
-                }
+                    if (Affix.KeepCase.HasValue && Check(wspace))
+                    {
+                        InsertSuggestion(slst, wspace);
+                    }
 
-                for (var j = 0; j < slst.Count; j++)
-                {
-                    slst[j] = HunspellTextFunctions.MakeAllCap(slst[j], textInfo).Replace("ß", "SS");
-                }
+                    wspace = HunspellTextFunctions.MakeInitCap(wspace, textInfo);
+                    good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
+
+                    if (opLimiter.QueryForCancellation())
+                    {
+                        return slst;
+                    }
+
+                    for (var j = 0; j < slst.Count; j++)
+                    {
+                        slst[j] = HunspellTextFunctions.MakeAllCap(slst[j], textInfo).Replace("ß", "SS");
+                    }
+
+                    break;
             }
 
             // LANG_hu section: replace '-' with ' ' in Hungarian
@@ -377,33 +387,34 @@ public partial class WordList
             // try ngram approach since found nothing good suggestion
             if (!good && Affix.MaxNgramSuggestions != 0 && (slst.Count == 0 || onlyCompoundSuggest))
             {
-                if (capType == CapitalizationType.None)
+                switch (capType)
                 {
-                    NGramSuggest(slst, scw, capType);
-                }
-                else if (capType == CapitalizationType.Huh || capType == CapitalizationType.HuhInit)
-                {
-                    if (capType == CapitalizationType.HuhInit)
-                    {
+                    case CapitalizationType.None:
+                        NGramSuggest(slst, scw, capType);
+                        break;
+
+                    case CapitalizationType.HuhInit:
                         capWords = true;
-                    }
+                        goto case CapitalizationType.Huh;
+                    case CapitalizationType.Huh:
+                        NGramSuggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), CapitalizationType.Huh);
+                        break;
 
-                    NGramSuggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), CapitalizationType.Huh);
-                }
-                else if (capType == CapitalizationType.Init)
-                {
-                    capWords = true;
-                    NGramSuggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), capType);
-                }
-                else if (capType == CapitalizationType.All)
-                {
-                    var oldns = slst.Count;
-                    NGramSuggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), capType);
+                    case CapitalizationType.Init:
+                        capWords = true;
+                        NGramSuggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), capType);
+                        break;
 
-                    for (var j = oldns; j < slst.Count; j++)
-                    {
-                        slst[j] = HunspellTextFunctions.MakeAllCap(slst[j], textInfo);
-                    }
+                    case CapitalizationType.All:
+                        var oldns = slst.Count;
+                        NGramSuggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), capType);
+
+                        for (var j = oldns; j < slst.Count; j++)
+                        {
+                            slst[j] = HunspellTextFunctions.MakeAllCap(slst[j], textInfo);
+                        }
+
+                        break;
                 }
 
                 if (opLimiter.QueryForCancellation())
@@ -448,7 +459,7 @@ public partial class WordList
 
                         foreach (var j in nlst)
                         {
-                            var wspace = last
+                            wspace = last
                                 ? scw.AsSpan(0, prevPos).ConcatString(j)
                                 : StringEx.ConcatString(scw.AsSpan(0, prevPos), j, '-', scw.AsSpan(dashPos + 1));
 
@@ -511,7 +522,7 @@ public partial class WordList
             if (
                 (Affix.KeepCase.HasValue || Affix.ForbiddenWord.HasValue)
                 &&
-                (capType == CapitalizationType.Init || capType == CapitalizationType.All)
+                (capType is (CapitalizationType.Init or CapitalizationType.All))
             )
             {
                 var l = 0;

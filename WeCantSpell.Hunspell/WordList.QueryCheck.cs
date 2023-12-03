@@ -144,27 +144,34 @@ public partial class WordList
             string? root = null;
             WordEntry? rv = null;
 
-            if (capType == CapitalizationType.Huh || capType == CapitalizationType.HuhInit || capType == CapitalizationType.None)
+            switch (capType)
             {
-                if (capType == CapitalizationType.HuhInit)
-                {
+                case CapitalizationType.HuhInit:
                     resultType |= SpellCheckResultType.OrigCap;
-                }
+                    goto case CapitalizationType.Huh;
 
-                rv = _query.CheckWord(scw, ref resultType, out root);
-                if (abbv && rv is null)
-                {
-                    rv = _query.CheckWord(scw + ".", ref resultType, out root);
-                }
-            }
-            else if (capType == CapitalizationType.All)
-            {
-                rv = CheckDetailsAllCap(abbv, ref scw, ref resultType, out root);
-            }
+                case CapitalizationType.Huh:
+                case CapitalizationType.None:
+                    rv = _query.CheckWord(scw, ref resultType, out root);
+                    if (abbv && rv is null)
+                    {
+                        rv = _query.CheckWord(scw + ".", ref resultType, out root);
+                    }
 
-            if (capType == CapitalizationType.Init || (capType == CapitalizationType.All && rv is null))
-            {
-                rv = CheckDetailsInitCap(abbv, capType, ref scw, ref resultType, out root);
+                    break;
+
+                case CapitalizationType.All:
+                    rv = CheckDetailsAllCap(abbv, ref scw, ref resultType, out root);
+                    if (rv is null)
+                    {
+                        goto case CapitalizationType.Init;
+                    }
+
+                    break;
+
+                case CapitalizationType.Init:
+                    rv = CheckDetailsInitCap(abbv, capType, ref scw, ref resultType, out root);
+                    break;
             }
 
             if (rv is not null)
