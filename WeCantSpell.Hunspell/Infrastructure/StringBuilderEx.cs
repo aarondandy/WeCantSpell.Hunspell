@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
@@ -8,11 +7,6 @@ static class StringBuilderEx
 {
     public static void Swap(this StringBuilder @this, int indexA, int indexB)
     {
-#if DEBUG
-        if (indexA < 0 || indexA > @this.Length) throw new ArgumentOutOfRangeException(nameof(indexA));
-        if (indexB < 0 || indexB > @this.Length) throw new ArgumentOutOfRangeException(nameof(indexB));
-#endif
-
         (@this[indexB], @this[indexA]) = (@this[indexA], @this[indexB]);
     }
 
@@ -45,20 +39,16 @@ static class StringBuilderEx
         }
     }
 
-    public static bool EndsWith(this StringBuilder builder, char c) => builder.Length > 0 && builder[builder.Length - 1] == c;
+    public static bool EndsWith(this StringBuilder builder, char c) => builder.Length != 0 && builder[builder.Length - 1] == c;
 
 #if NO_SB_SPANS
     public static StringBuilder Append(this StringBuilder builder, ReadOnlySpan<char> value)
     {
-#if DEBUG
-        if (builder is null) throw new ArgumentNullException(nameof(builder));
-#endif
-
         if (!value.IsEmpty)
         {
             unsafe
             {
-                fixed (char* start = &MemoryMarshal.GetReference(value))
+                fixed (char* start = &System.Runtime.InteropServices.MemoryMarshal.GetReference(value))
                 {
                     builder.Append(start, value.Length);
                 }

@@ -6,30 +6,26 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class StringBuilderPool
 {
-    private const int MaxCachedBuilderCapacity = WordList.MaxWordLen;
+    private const int MaxCachedBuilderCapacity = 100;
 
     private static StringBuilder? Cache;
 
     public static StringBuilder Get() => GetClearedBuilder();
 
-    public static StringBuilder Get(string value) =>
-        GetClearedBuilderWithCapacity(value.Length).Append(value);
+    public static StringBuilder Get(int capacity) => GetClearedBuilderWithCapacity(capacity);
 
-    public static StringBuilder Get(string value, int capacity) =>
-        GetClearedBuilderWithCapacity(capacity).Append(value);
+    public static StringBuilder Get(string value)
+    {
+        return GetClearedBuilder().Append(value);
+    }
 
-    public static StringBuilder Get(int capacity) =>
-        GetClearedBuilderWithCapacity(capacity);
-
-    public static StringBuilder Get(ReadOnlySpan<char> value) =>
-        GetClearedBuilderWithCapacity(value.Length).Append(value);
+    public static StringBuilder Get(ReadOnlySpan<char> value)
+    {
+        return GetClearedBuilder().Append(value);
+    }
 
     public static void Return(StringBuilder builder)
     {
-#if DEBUG
-        if (builder is null) throw new ArgumentNullException(nameof(builder));
-#endif
-
         if (builder.Capacity <= MaxCachedBuilderCapacity)
         {
             Volatile.Write(ref Cache, builder);
@@ -56,6 +52,6 @@ static class StringBuilderPool
         var taken = Interlocked.Exchange(ref Cache, null);
         return taken?.Capacity >= minimumCapacity
             ? taken.Clear()
-            :  new StringBuilder(minimumCapacity);
+            : new StringBuilder(minimumCapacity);
     }
 }

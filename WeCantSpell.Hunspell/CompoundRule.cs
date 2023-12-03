@@ -7,35 +7,59 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct CompoundRule : IReadOnlyList<FlagValue>
 {
-    public static CompoundRule Empty { get; } = new(Array.Empty<FlagValue>());
+    public static CompoundRule Empty { get; } = new([]);
 
-    public static CompoundRule Create(IEnumerable<FlagValue> values) =>
-        new((values ?? throw new ArgumentNullException(nameof(values))).ToArray());
+    public static CompoundRule Create(IEnumerable<FlagValue> values)
+    {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(values);
+#else
+        if (values is null) throw new ArgumentNullException(nameof(values));
+#endif
+
+        return new(values.ToArray());
+    }
 
     internal CompoundRule(FlagValue[] items)
     {
-#if DEBUG
-        if (items is null) throw new ArgumentNullException(nameof(items));
-#endif
         _values = items;
     }
 
-    private readonly FlagValue[] _values;
+    private readonly FlagValue[]? _values;
 
-    public int Count => _values.Length;
+    public int Count => (_values?.Length).GetValueOrDefault();
+
     public bool IsEmpty => !HasItems;
+
     public bool HasItems => _values is { Length: > 0 };
-    public FlagValue this[int index] => _values[index];
-    public IEnumerator<FlagValue> GetEnumerator() => ((IEnumerable<FlagValue>)_values).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => _values.GetEnumerator();
 
-    internal bool IsWildcard(int index) => (char)_values[index] is '*' or '?';
-
-    internal bool ContainsRuleFlagForEntry(in WordEntryDetail details)
+    public FlagValue this[int index]
     {
-        foreach (var flag in _values)
+        get
         {
-            if (!flag.IsWildcard && details.ContainsFlag(flag))
+#if HAS_THROWOOR
+            ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
+#else
+            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+#endif
+            return _values![index];
+        }
+    }
+
+    public IEnumerator<FlagValue> GetEnumerator() => ((IEnumerable<FlagValue>)GetInternalArray()).GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    internal FlagValue[] GetInternalArray() => _values ?? [];
+
+    internal bool IsWildcard(int index) => _values![index].IsWildcard;
+
+    internal bool ContainsRuleFlagForEntry(in FlagSet flags)
+    {
+        foreach (var flag in GetInternalArray())
+        {
+            if (!flag.IsWildcard && flags.Contains(flag))
             {
                 return true;
             }

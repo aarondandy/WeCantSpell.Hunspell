@@ -17,17 +17,19 @@ public partial class WordList
         public Builder(AffixConfig affix)
         {
             Affix = affix;
-            EntryDetailsByRoot = new(1);
+            _entryDetailsByRoot = new(1);
         }
 
-        internal TextDictionary<WordEntryDetail[]> EntryDetailsByRoot;
+        internal TextDictionary<WordEntryDetail[]> _entryDetailsByRoot;
 
         public readonly AffixConfig Affix;
 
         /// <summary>
         /// Spelling replacement suggestions based on phonetics.
         /// </summary>
-        public ArrayBuilder<SingleReplacement> PhoneticReplacements { get; } = new();
+        public IList<SingleReplacement> PhoneticReplacements => _phoneticReplacements;
+
+        internal ArrayBuilder<SingleReplacement> _phoneticReplacements { get; } = [];
 
         public void Add(string word)
         {
@@ -36,10 +38,10 @@ public partial class WordList
 
         public void Add(string word, WordEntryDetail detail)
         {
-            ref var details = ref EntryDetailsByRoot.GetOrAdd(word);
+            ref var details = ref _entryDetailsByRoot.GetOrAdd(word);
             if (details is null)
             {
-                details = new[] { detail };
+                details = [detail];
             }
             else
             {
@@ -54,41 +56,41 @@ public partial class WordList
 
         public WordList ToImmutable(bool allowDestructive)
         {
-            var result = new WordList(Affix, FlagSet.Create(new[]
-            {
+            var result = new WordList(Affix, nGramRestrictedFlags: FlagSet.CreateUsingOwnedBuffer(
+            [
                 Affix.ForbiddenWord,
                 Affix.NoSuggest,
                 Affix.NoNgramSuggest,
                 Affix.OnlyInCompound,
                 SpecialFlags.OnlyUpcaseFlag
-            }));
+            ]));
 
             if (allowDestructive)
             {
-                result.EntriesByRoot = EntryDetailsByRoot;
-                EntryDetailsByRoot = new(1);
+                result.EntriesByRoot = _entryDetailsByRoot;
+                _entryDetailsByRoot = new(1);
             }
             else
             {
-                result.EntriesByRoot = TextDictionary<WordEntryDetail[]>.Clone(EntryDetailsByRoot, static v => v.ToArray());
+                result.EntriesByRoot = TextDictionary<WordEntryDetail[]>.Clone(_entryDetailsByRoot, static v => v.ToArray());
             }
 
             result.AllReplacements = Affix.Replacements;
-            if (PhoneticReplacements is { Count: > 0 })
+            if (_phoneticReplacements is { Count: > 0 })
             {
                 // store ph: field of a morphological description in reptable
                 if (result.AllReplacements.IsEmpty)
                 {
-                    result.AllReplacements = new(PhoneticReplacements.MakeOrExtractArray(allowDestructive));
+                    result.AllReplacements = new(_phoneticReplacements.MakeOrExtractArray(allowDestructive));
                 }
                 else if (allowDestructive)
                 {
-                    PhoneticReplacements.AddRange(result.AllReplacements);
-                    result.AllReplacements = new(PhoneticReplacements.Extract());
+                    _phoneticReplacements.AddRange(result.AllReplacements);
+                    result.AllReplacements = new(_phoneticReplacements.Extract());
                 }
                 else
                 {
-                    result.AllReplacements = SingleReplacementSet.Create(PhoneticReplacements.MakeArray().Concat(result.AllReplacements));
+                    result.AllReplacements = SingleReplacementSet.Create(_phoneticReplacements.MakeArray().Concat(result.AllReplacements));
                 }
             }
 
@@ -119,15 +121,7 @@ public partial class WordList
         {
             // PERF: because we add more entries than we are told about, we add a bit more to the expected size
             var expectedCapacity = (expectedSize / 100) + expectedSize;
-
-#if NO_HASHSET_CAPACITY
-            if (EntryDetailsByRoot.Count == 0)
-            {
-                EntryDetailsByRoot = new(expectedCapacity);
-            }
-#else
-            EntryDetailsByRoot.EnsureCapacity(expectedCapacity);
-#endif
+            _entryDetailsByRoot.EnsureCapacity(expectedCapacity);
         }
     }
 }

@@ -5,9 +5,7 @@ using WeCantSpell.Hunspell.Benchmarks.Helpers;
 namespace WeCantSpell.Hunspell.Benchmarks.NHunspell.Suites;
 
 [SimpleJob(id: "Check en-US")]
-[MinColumn, MaxColumn, MeanColumn, MedianColumn]
-[MinWarmupCount(1), MaxWarmupCount(5)]
-[MinIterationCount(1), MaxIterationCount(20), MinInvokeCount(1), IterationTime(1000)]
+[MinColumn, MeanColumn, MedianColumn]
 public class CheckEnUsSuite
 {
     private CategorizedWordData WordData => EnUsTestData.Data;

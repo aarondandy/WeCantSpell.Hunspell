@@ -2,7 +2,7 @@
 <html lang='en'>
 <head>
 <meta charset='utf-8' />
-<title>WeCantSpell.Hunspell.Benchmarks.NHunspell.Suites.SuggestEnUsSuite-20231123-134508</title>
+<title>WeCantSpell.Hunspell.Benchmarks.NHunspell.Suites.SuggestEnUsSuite-20231203-164200</title>
 
 <style type="text/css">
 	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
@@ -15,18 +15,17 @@
 <pre><code>
 BenchmarkDotNet v0.13.10, Windows 11 (10.0.22631.2715/23H2/2023Update/SunValley3)
 AMD Ryzen 7 5800H with Radeon Graphics, 1 CPU, 16 logical and 8 physical cores
-  [Host]     : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
-  Job-TPWOKF : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
+  [Host]        : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
+  Suggest en-US : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
 </code></pre>
-<pre><code>MinInvokeCount=1  IterationTime=1.0000 s  MaxIterationCount=20  
-MaxWarmupIterationCount=5  MinIterationCount=1  MinWarmupIterationCount=1  
+<pre><code>Job=Suggest en-US  
 </code></pre>
 
 <table>
-<thead><tr><th>Method                </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Min </th><th>Max </th><th>Median</th><th>Ratio</th>
+<thead><tr><th>Method                </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Min </th><th>Median</th><th>Ratio</th>
 </tr>
-</thead><tbody><tr><td>&#39;Suggest words: WeCantSpell&#39;</td><td>750.4 ms</td><td>9.09 ms</td><td>2.36 ms</td><td>748.3 ms</td><td>753.4 ms</td><td>749.4 ms</td><td>1.00</td>
-</tr><tr><td>&#39;Suggest words: NHunspell&#39;</td><td>1,913.3 ms</td><td>29.95 ms</td><td>1.64 ms</td><td>1,911.7 ms</td><td>1,915.0 ms</td><td>1,913.1 ms</td><td>2.55</td>
+</thead><tbody><tr><td>&#39;Suggest words: WeCantSpell&#39;</td><td>758.7 ms</td><td>4.25 ms</td><td>3.98 ms</td><td>753.4 ms</td><td>758.9 ms</td><td>1.00</td>
+</tr><tr><td>&#39;Suggest words: NHunspell&#39;</td><td>1,904.8 ms</td><td>9.40 ms</td><td>8.33 ms</td><td>1,880.1 ms</td><td>1,907.3 ms</td><td>2.51</td>
 </tr></tbody></table>
 </body>
 </html>

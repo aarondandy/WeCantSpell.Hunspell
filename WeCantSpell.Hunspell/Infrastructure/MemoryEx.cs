@@ -4,23 +4,8 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class MemoryEx
 {
-    public static int CountMatchesFromLeft<T>(this ReadOnlySpan<T> a, ReadOnlySpan<T> b) where T : notnull, IEquatable<T>
-    {
-        var minLength = Math.Min(a.Length, b.Length);
-        var count = 0;
-        for (; count < minLength && a[count].Equals(b[count]); count++) ;
-        return count;
-    }
 
-    public static int CountMatchesFromRight<T>(this ReadOnlySpan<T> a, ReadOnlySpan<T> b) where T : notnull, IEquatable<T>
-    {
-        var minLength = Math.Min(a.Length, b.Length);
-        var count = 0;
-        for (; count < minLength && a[a.Length - 1 - count].Equals(b[b.Length - 1 - count]); count++) ;
-        return count;
-    }
-
-    public static int IndexOf<T>(this ReadOnlySpan<T> @this, T value, int startIndex) where T:IEquatable<T>
+    public static int IndexOf<T>(this ReadOnlySpan<T> @this, T value, int startIndex) where T : IEquatable<T>
     {
         var result = @this.Slice(startIndex).IndexOf(value);
         return result >= 0 ? result + startIndex : result;
@@ -34,14 +19,133 @@ static class MemoryEx
 
     public static ReadOnlySpan<T> Limit<T>(this ReadOnlySpan<T> @this, int maxLength)
     {
-#if DEBUG
-        if (maxLength < 0) throw new ArgumentOutOfRangeException(nameof(maxLength));
-#endif
         return @this.Length > maxLength ? @this.Slice(0, maxLength) : @this;
     }
 
-    public static void Swap<T>(this Span<T> span, int a, int b)
+    public static void Swap<T>(ref T value0, ref T value1)
     {
-        (span[b], span[a]) = (span[a], span[b]);
+        (value1, value0) = (value0, value1);
+    }
+
+    public static void Swap<T>(this Span<T> span, int index0, int index1)
+    {
+        (span[index1], span[index0]) = (span[index0], span[index1]);
+    }
+
+#if NO_SPAN_SORT
+
+    public static void Sort<T>(this Span<T> span) where T : IComparable<T>
+    {
+        // This should be called on small collections and I'm lazy, so it's bubblesort.
+
+        while (span.Length >= 2)
+        {
+            var hasSwapped = false;
+
+            for (var i = span.Length - 2; i >= 0; i--)
+            {
+                ref var value0 = ref span[i];
+                ref var value1 = ref span[i + 1];
+                if (value0.CompareTo(value1) > 0)
+                {
+                    Swap(ref value0, ref value1);
+                    hasSwapped = true;
+                }
+            }
+
+            if (!hasSwapped)
+            {
+                break;
+            }
+
+            span = span.Slice(1);
+        }
+    }
+
+#endif
+
+#if NO_SPAN_COMPARISON_SORT
+
+    public static void Sort<T>(this Span<T> span, Comparison<T> comparer)
+    {
+        // This should be called on small collections and I'm lazy, so it's bubblesort.
+
+        while (span.Length >= 2)
+        {
+            var hasSwapped = false;
+
+            for (var i = span.Length - 2; i >= 0; i--)
+            {
+                ref var value0 = ref span[i];
+                ref var value1 = ref span[i + 1];
+                if (comparer(value0, value1) > 0)
+                {
+                    Swap(ref value0, ref value1);
+                    hasSwapped = true;
+                }
+            }
+
+            if (!hasSwapped)
+            {
+                break;
+            }
+
+            span = span.Slice(1);
+        }
+    }
+
+#endif
+
+    public static void RemoveAll<T>(ref Span<T> span, T value) where T : notnull, IEquatable<T>
+    {
+        var writeIndex = 0;
+        var readIndex = 0;
+
+        for (; readIndex < span.Length; readIndex++)
+        {
+            if (!value.Equals(span[readIndex]))
+            {
+                if (readIndex != writeIndex)
+                {
+                    span[writeIndex] = span[readIndex];
+                }
+
+                writeIndex++;
+            }
+        }
+
+        if (writeIndex < span.Length)
+        {
+            span = span.Slice(0, writeIndex);
+        }
+    }
+
+    public static void RemoveAdjacentDuplicates<T>(ref Span<T> span) where T : notnull, IEquatable<T>
+    {
+        if (span.Length < 2)
+        {
+            return;
+        }
+
+        var writeIndex = 1;
+        var readIndex = 1;
+
+        for (; readIndex < span.Length; readIndex++)
+        {
+            if (!span[readIndex].Equals(span[writeIndex - 1]))
+            {
+                if (readIndex != writeIndex)
+                {
+                    span[writeIndex] = span[readIndex];
+                }
+
+                writeIndex++;
+            }
+        }
+
+        if (writeIndex < span.Length)
+        {
+            span = span.Slice(0, writeIndex);
+        }
     }
 }

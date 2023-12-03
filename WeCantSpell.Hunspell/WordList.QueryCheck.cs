@@ -18,26 +18,30 @@ public partial class WordList
 
         internal QueryCheck(in Query source)
         {
-            _query = new(in source);
+            _query = new(source);
         }
 
         private Query _query;
 
-        public WordList WordList => _query.WordList;
-        public AffixConfig Affix => _query.Affix;
-        public TextInfo TextInfo => _query.TextInfo;
-        public QueryOptions Options => _query.Options;
-        public int MaxSharps => Options.MaxSharps;
+        public readonly WordList WordList => _query.WordList;
+
+        public readonly AffixConfig Affix => _query.Affix;
+
+        public readonly TextInfo TextInfo => _query.TextInfo;
+
+        public readonly QueryOptions Options => _query.Options;
+
+        public readonly int MaxSharps => Options.MaxSharps;
 
         public bool Check(string word) => CheckDetails(word).Correct;
 
         public bool Check(ReadOnlySpan<char> word) => CheckDetails(word).Correct;
 
-        private bool CheckNested(ReadOnlySpan<char> word) => new QueryCheck(in _query).Check(word);
+        private readonly bool CheckNested(ReadOnlySpan<char> word) => new QueryCheck(_query).Check(word);
 
         public SpellCheckResult CheckDetails(string word)
         {
-            if (string.IsNullOrEmpty(word) || word.Length >= MaxWordUtf8Len || !WordList.HasEntries)
+            if (string.IsNullOrEmpty(word) || word.Length >= Options.MaxWordLen || !WordList.HasEntries)
             {
                 return SpellCheckResult.DefaultWrong;
             }
@@ -55,13 +59,13 @@ public partial class WordList
             }
 
             // something very broken if spell ends up calling itself with the same word
-            if (_query.SpellCandidateStack.Contains(word))
+            if (_query._spellCandidateStack.Contains(word))
             {
                 return SpellCheckResult.DefaultWrong;
             }
 
             // input conversion
-            if (!Affix.InputConversions.HasReplacements || !Affix.InputConversions.TryConvert(word, out var scw))
+            if (!Affix.InputConversions.TryConvert(word, out var scw))
             {
                 scw = word;
             }
@@ -73,18 +77,18 @@ public partial class WordList
                 return SpellCheckResult.DefaultWrong;
             }
 
-            _query.SpellCandidateStack.Push(word);
+            CandidateStack.Push(ref _query._spellCandidateStack, word);
 
-            var result = CheckDetailsInternal(scw, capType, abbv);
+            var result = CheckDetailsInternal(scw, capType, abbv != 0);
 
-            _query.SpellCandidateStack.Pop();
+            CandidateStack.Pop(ref _query._spellCandidateStack);
 
             return result;
         }
 
         public SpellCheckResult CheckDetails(ReadOnlySpan<char> word)
         {
-            if (word.IsEmpty || word.Length >= MaxWordUtf8Len || !WordList.HasEntries)
+            if (word.IsEmpty || word.Length >= Options.MaxWordLen || !WordList.HasEntries)
             {
                 return SpellCheckResult.DefaultWrong;
             }
@@ -102,7 +106,7 @@ public partial class WordList
             }
 
             // something very broken if spell ends up calling itself with the same word
-            if (_query.SpellCandidateStack.Contains(word))
+            if (_query._spellCandidateStack.Contains(word))
             {
                 return SpellCheckResult.DefaultWrong;
             }
@@ -110,7 +114,7 @@ public partial class WordList
             // input conversion
             CapitalizationType capType;
             int abbv;
-            if (Affix.InputConversions.HasReplacements && Affix.InputConversions.TryConvert(word, out var scw))
+            if (Affix.InputConversions.TryConvert(word, out var scw))
             {
                 scw = _query.CleanWord2(scw, out capType, out abbv);
             }
@@ -119,48 +123,55 @@ public partial class WordList
                 scw = _query.CleanWord2(word, out capType, out abbv);
             }
 
-            if (string.IsNullOrEmpty(scw))
+            if (scw.Length == 0)
             {
                 return SpellCheckResult.DefaultWrong;
             }
 
             // NOTE: because a string isn't formed until this point, scw is pushed instead. It isn't the same, but might be good enough.
-            _query.SpellCandidateStack.Push(scw);
+            CandidateStack.Push(ref _query._spellCandidateStack, scw);
 
-            var result = CheckDetailsInternal(scw, capType, abbv);
+            var result = CheckDetailsInternal(scw, capType, abbv != 0);
 
-            _query.SpellCandidateStack.Pop();
+            CandidateStack.Pop(ref _query._spellCandidateStack);
 
             return result;
         }
 
-        private SpellCheckResult CheckDetailsInternal(string scw, CapitalizationType capType, int abbv)
+        private SpellCheckResult CheckDetailsInternal(string scw, CapitalizationType capType, bool abbv)
         {
             var resultType = SpellCheckResultType.None;
             string? root = null;
             WordEntry? rv = null;
 
-            if (capType == CapitalizationType.Huh || capType == CapitalizationType.HuhInit || capType == CapitalizationType.None)
+            switch (capType)
             {
-                if (capType == CapitalizationType.HuhInit)
-                {
+                case CapitalizationType.HuhInit:
                     resultType |= SpellCheckResultType.OrigCap;
-                }
+                    goto case CapitalizationType.Huh;
 
-                rv = _query.CheckWord(scw, ref resultType, out root);
-                if (abbv != 0 && rv is null)
-                {
-                    rv = _query.CheckWord(scw + ".", ref resultType, out root);
-                }
-            }
-            else if (capType == CapitalizationType.All)
-            {
-                rv = CheckDetailsAllCap(abbv, ref scw, ref resultType, out root);
-            }
+                case CapitalizationType.Huh:
+                case CapitalizationType.None:
+                    rv = _query.CheckWord(scw, ref resultType, out root);
+                    if (abbv && rv is null)
+                    {
+                        rv = _query.CheckWord(scw + ".", ref resultType, out root);
+                    }
 
-            if (capType == CapitalizationType.Init || (capType == CapitalizationType.All && rv is null))
-            {
-                rv = CheckDetailsInitCap(abbv, capType, ref scw, ref resultType, out root);
+                    break;
+
+                case CapitalizationType.All:
+                    rv = CheckDetailsAllCap(abbv, ref scw, ref resultType, out root);
+                    if (rv is null)
+                    {
+                        goto case CapitalizationType.Init;
+                    }
+
+                    break;
+
+                case CapitalizationType.Init:
+                    rv = CheckDetailsInitCap(abbv, capType, ref scw, ref resultType, out root);
+                    break;
             }
 
             if (rv is not null)
@@ -179,7 +190,7 @@ public partial class WordList
             }
 
             // recursive breaking at break points
-            if (Affix.BreakPoints.HasItems && !EnumEx.HasFlag(resultType, SpellCheckResultType.Forbidden))
+            if (Affix.BreakPoints.HasItems && !resultType.HasFlagEx(SpellCheckResultType.Forbidden))
             {
                 // calculate break points for recursion limit
                 if (Affix.BreakPoints.FindRecursionLimit(scw) >= 10)
@@ -227,7 +238,7 @@ public partial class WordList
                         var found = scw.IndexOf(breakEntry, 1, scw.Length - 2, StringComparison.Ordinal);
                         if (found >= 0)
                         {
-                            (reSearch ??= new()).Add((breakEntry, found));
+                            (reSearch ??= []).Add((breakEntry, found));
 
                             // try to break at the second occurance
                             // to recognize dictionary words with wordbreak
@@ -286,7 +297,7 @@ public partial class WordList
             return new SpellCheckResult(root, resultType, false);
         }
 
-        private WordEntry? CheckDetailsAllCap(int abbv, ref string scw, ref SpellCheckResultType resultType, out string? root)
+        private WordEntry? CheckDetailsAllCap(bool abbv, ref string scw, ref SpellCheckResultType resultType, out string? root)
         {
             resultType |= SpellCheckResultType.OrigCap;
             var rv = _query.CheckWord(scw, ref resultType, out root);
@@ -295,7 +306,7 @@ public partial class WordList
                 return rv;
             }
 
-            if (abbv != 0)
+            if (abbv)
             {
                 rv = _query.CheckWord(scw + ".", ref resultType, out root);
                 if (rv is not null)
@@ -342,7 +353,7 @@ public partial class WordList
                     rv = SpellSharps(ref scw, ref resultType, out root);
                 }
 
-                if (abbv != 0 && rv is null)
+                if (abbv && rv is null)
                 {
                     u8buffer += ".";
                     rv = SpellSharps(ref u8buffer, ref resultType, out root);
@@ -357,7 +368,7 @@ public partial class WordList
             return rv;
         }
 
-        private WordEntry? CheckDetailsInitCap(int abbv, CapitalizationType capType, ref string scw, ref SpellCheckResultType resultType, out string? root)
+        private WordEntry? CheckDetailsInitCap(bool abbv, CapitalizationType capType, ref string scw, ref SpellCheckResultType resultType, out string? root)
         {
             var u8buffer = HunspellTextFunctions.MakeAllSmall(scw, TextInfo);
             scw = HunspellTextFunctions.MakeInitCap(u8buffer, TextInfo);
@@ -379,7 +390,7 @@ public partial class WordList
             // (for example, ijs -> Ijs instead of IJs in Dutch)
             // use explicit forms in dic: Ijs/F (F = FORBIDDENWORD flag)
 
-            if (EnumEx.HasFlag(resultType, SpellCheckResultType.Forbidden))
+            if (resultType.HasFlagEx(SpellCheckResultType.Forbidden))
             {
                 rv = null;
                 return rv;
@@ -397,7 +408,7 @@ public partial class WordList
 
             rv = _query.CheckWord(u8buffer, ref resultType, out root);
 
-            if (abbv != 0 && rv is null)
+            if (abbv && rv is null)
             {
                 u8buffer += ".";
                 rv = _query.CheckWord(u8buffer, ref resultType, out root);
@@ -458,7 +469,7 @@ public partial class WordList
             var pos = @base.IndexOf("ss", nPos, StringComparison.Ordinal);
             if (pos >= 0 && n < MaxSharps)
             {
-                var baseBuilder = StringBuilderPool.Get(@base, @base.Length);
+                var baseBuilder = StringBuilderPool.Get(@base);
                 baseBuilder[pos] = 'ß';
                 baseBuilder.Remove(pos + 1, 1);
                 @base = baseBuilder.ToString();
@@ -490,6 +501,6 @@ public partial class WordList
             return null;
         }
 
-        private bool IsKeepCase(WordEntry rv) => rv.ContainsFlag(Affix.KeepCase);
+        private readonly bool IsKeepCase(WordEntry rv) => rv.ContainsFlag(Affix.KeepCase);
     }
 }

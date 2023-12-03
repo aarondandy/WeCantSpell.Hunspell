@@ -1,11 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;netstandard2.0</TargetFrameworks>
-    <LangVersion>10.0</LangVersion>
+    <TargetFrameworks>net8.0;net6.0;netstandard2.0</TargetFrameworks>
+    <LangVersion>12.0</LangVersion>
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
@@ -40,11 +39,16 @@
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-    <DefineConstants>$(DefineConstants);NO_SB_SPANS;NO_HASHCODE;NO_ENCODING_SPANS;NO_DICTIONARY_GETVALUE;NO_HASHSET_CAPACITY;NO_EXPOSED_NULLANNOTATIONS;NO_SPAN_DECODE;NO_VALUETASK;NO_STREAM_SYSMEM;NO_SPAN_HASHCODE;NO_STRING_SPAN;NO_STRING_CONTAINS;NO_KVP_DECONSTRUCT;NO_STATIC_STRINGCHAR_METHODS; NO_SPAN_COMPARISON_SORT</DefineConstants>
+    <DefineConstants>$(DefineConstants);NO_SB_SPANS;NO_HASHCODE;NO_ENCODING_SPANS;NO_DICTIONARY_GETVALUE;NO_HASHSET_CAPACITY;NO_EXPOSED_NULLANNOTATIONS;NO_SPAN_DECODE;NO_VALUETASK;NO_STREAM_SYSMEM;NO_SPAN_HASHCODE;NO_STRING_SPAN;NO_SPAN_TRIM;NO_STRING_CONTAINS;NO_SPAN_CONTAINS;NO_SPAN_CONTAINSANY;NO_KVP_DECONSTRUCT;NO_STATIC_STRINGCHAR_METHODS;NO_SPAN_COMPARISON_SORT;NO_SPAN_SORT</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
-    <DefineConstants>$(DefineConstants);</DefineConstants>
+    <DefineConstants>$(DefineConstants);NO_SPAN_CONTAINSANY</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
+    <DefineConstants>$(DefineConstants);HAS_SEARCHVALUES;HAS_THROWNULL;HAS_THROWNULLWS;HAS_THROWOOR;HAS_SPANCULTUREPARSE_INT;HAS_INLINEARRAY;HAS_FROZENSET;HAS_FROZENDICTIONARY</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">

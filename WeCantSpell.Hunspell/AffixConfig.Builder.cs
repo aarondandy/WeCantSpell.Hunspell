@@ -8,6 +8,8 @@ using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
+#pragma warning disable IDE0028 // Simplify collection initialization
+
 public partial class AffixConfig
 {
     public sealed class Builder
@@ -206,7 +208,9 @@ public partial class AffixConfig
         /// Specifies modifications to try first.
         /// </summary>
         /// <seealso cref="AffixConfig.Replacements"/>
-        public ArrayBuilder<SingleReplacement> Replacements { get; } = new();
+        public IList<SingleReplacement> Replacements => _replacements;
+
+        internal ArrayBuilder<SingleReplacement> _replacements { get; } = new();
 
         /// <summary>
         /// Suffixes attached to root words to make other words.
@@ -236,44 +240,58 @@ public partial class AffixConfig
         /// Defines custom compound patterns with a regex-like syntax.
         /// </summary>
         /// <seealso cref="AffixConfig.CompoundRules"/>
-        public ArrayBuilder<CompoundRule> CompoundRules { get; } = new();
+        public IList<CompoundRule> CompoundRules => _compoundRules;
+
+        internal ArrayBuilder<CompoundRule> _compoundRules { get; } = new();
 
         /// <summary>
         /// Forbid compounding, if the first word in the compound ends with endchars, and
         /// next word begins with beginchars and(optionally) they have the requested flags.
         /// </summary>
         /// <seealso cref="AffixConfig.CompoundPatterns"/>
-        public ArrayBuilder<PatternEntry> CompoundPatterns { get; } = new();
+        public IList<PatternEntry> CompoundPatterns => _compoundPatterns;
+
+        internal ArrayBuilder<PatternEntry> _compoundPatterns { get; } = new();
 
         /// <summary>
         /// Defines new break points for breaking words and checking word parts separately.
         /// </summary>
         /// <seealso cref="AffixConfig.BreakPoints"/>
-        public ArrayBuilder<string> BreakPoints { get; } = new();
+        public IList<string> BreakPoints => _breakPoints;
+
+        internal ArrayBuilder<string> _breakPoints { get; } = new();
 
         /// <summary>
         /// Input conversion entries.
         /// </summary>
         /// <seealso cref="AffixConfig.InputConversions"/>
-        internal TextDictionary<MultiReplacementEntry>? InputConversions;
+        internal TextDictionary<MultiReplacementEntry> _inputConversions = new(0);
+
+        public IDictionary<string, MultiReplacementEntry> InputConversions => _inputConversions;
 
         /// <summary>
         /// Output conversion entries.
         /// </summary>
         /// <seealso cref="AffixConfig.OutputConversions"/>
-        internal TextDictionary<MultiReplacementEntry>? OutputConversions;
+        internal TextDictionary<MultiReplacementEntry> _outputConversions = new(0);
+
+        public IDictionary<string, MultiReplacementEntry> OutputConversions => _outputConversions;
 
         /// <summary>
         /// Mappings between related characters.
         /// </summary>
         /// <seealso cref="AffixConfig.RelatedCharacterMap"/>
-        public ArrayBuilder<MapEntry> RelatedCharacterMap { get; } = new();
+        public IList<MapEntry> RelatedCharacterMap => _relatedCharacterMap;
+
+        internal ArrayBuilder<MapEntry> _relatedCharacterMap { get; } = new();
 
         /// <summary>
         /// Phonetic transcription entries.
         /// </summary>
         /// <seealso cref="AffixConfig.Phone"/>
-        public ArrayBuilder<PhoneticEntry> Phone { get; } = new();
+        public IList<PhoneticEntry> Phone => _phone;
+
+        internal ArrayBuilder<PhoneticEntry> _phone { get; } = new();
 
         /// <summary>
         /// Maximum syllable number, that may be in a
@@ -357,7 +375,7 @@ public partial class AffixConfig
                 Culture = culture,
                 IsHungarian = string.Equals(culture.TwoLetterISOLanguageName, "HU", StringComparison.OrdinalIgnoreCase),
                 IsGerman = string.Equals(culture.TwoLetterISOLanguageName, "DE", StringComparison.OrdinalIgnoreCase),
-                IsLanguageWithDashUsage = !string.IsNullOrEmpty(TryString) && TryString.AsSpan().ContainsAny('-', 'a'),
+                IsLanguageWithDashUsage = !string.IsNullOrEmpty(TryString) && TryString!.ContainsAny('-', 'a'),
                 CultureUsesDottedI =
                     "AZ".Equals(culture.TwoLetterISOLanguageName, StringComparison.OrdinalIgnoreCase)
                     || "TR".Equals(culture.TwoLetterISOLanguageName, StringComparison.OrdinalIgnoreCase)
@@ -398,38 +416,55 @@ public partial class AffixConfig
 
             if (allowDestructive)
             {
-                config.InputConversions = InputConversions is null
-                    ? MultiReplacementTable.Empty
-                    : MultiReplacementTable.TakeDictionary(InputConversions);
-                InputConversions = null;
-                config.OutputConversions = OutputConversions is null
-                    ? MultiReplacementTable.Empty
-                    : MultiReplacementTable.TakeDictionary(OutputConversions);
-                OutputConversions = null;
+                config.InputConversions = _inputConversions is { Count: > 0 }
+                    ? MultiReplacementTable.TakeDictionary(_inputConversions)
+                    : MultiReplacementTable.Empty;
+                _inputConversions = new(0);
+                config.OutputConversions = _outputConversions is { Count: > 0 }
+                    ? MultiReplacementTable.TakeDictionary(_outputConversions)
+                    : MultiReplacementTable.Empty;
+                _outputConversions = new(0);
             }
             else
             {
-                config.InputConversions = config.InputConversions = InputConversions is null
-                    ? MultiReplacementTable.Empty
-                    : MultiReplacementTable.Create(InputConversions);
-                config.OutputConversions = OutputConversions is null
-                    ? MultiReplacementTable.Empty
-                    : MultiReplacementTable.Create(OutputConversions);
+                config.InputConversions = config.InputConversions = _inputConversions is { Count: > 0 }
+                    ? MultiReplacementTable.Create(_inputConversions)
+                    : MultiReplacementTable.Empty;
+                config.OutputConversions = _outputConversions is { Count: > 0 }
+                    ? MultiReplacementTable.Create(_outputConversions)
+                    : MultiReplacementTable.Empty;
             }
 
             config.AliasF = AliasF.ToImmutable(allowDestructive);
             config.AliasM = AliasM.ToImmutable(allowDestructive);
-            config.BreakPoints = new(BreakPoints.MakeOrExtractArray(allowDestructive));
-            config.Replacements = new(Replacements.MakeOrExtractArray(allowDestructive));
-            config.CompoundRules = new(CompoundRules.MakeOrExtractArray(allowDestructive));
-            config.CompoundPatterns = new(CompoundPatterns.MakeOrExtractArray(allowDestructive));
-            config.RelatedCharacterMap = new(RelatedCharacterMap.MakeOrExtractArray(allowDestructive));
-            config.Phone = new(Phone.MakeOrExtractArray(allowDestructive));
+            config.BreakPoints = new(_breakPoints.MakeOrExtractArray(allowDestructive));
+            config.Replacements = new(_replacements.MakeOrExtractArray(allowDestructive));
+            config.CompoundRules = new(_compoundRules.MakeOrExtractArray(allowDestructive));
+            config.CompoundPatterns = new(_compoundPatterns.MakeOrExtractArray(allowDestructive));
+            config.RelatedCharacterMap = new(_relatedCharacterMap.MakeOrExtractArray(allowDestructive));
+            config.Phone = new(_phone.MakeOrExtractArray(allowDestructive));
 
             config.Prefixes = Prefixes.BuildCollection(allowDestructive);
             config.Suffixes = Suffixes.BuildCollection(allowDestructive);
 
             config.ContClasses = config.Prefixes.ContClasses.Union(config.Suffixes.ContClasses);
+
+            config.Flags_CompoundFlag_CompoundBegin = FlagSet.Create(config.CompoundFlag, config.CompoundBegin);
+            config.Flags_CompoundFlag_CompoundMiddle = FlagSet.Create(config.CompoundFlag, config.CompoundMiddle);
+            config.Flags_CompoundFlag_CompoundEnd = FlagSet.Create(config.CompoundFlag, config.CompoundEnd);
+            config.Flags_CompoundForbid_CompoundEnd = FlagSet.Create(config.CompoundForbidFlag, config.CompoundEnd);
+            config.Flags_CompoundForbid_CompoundMiddle_CompoundEnd = config.Flags_CompoundForbid_CompoundEnd.Union(config.CompoundMiddle);
+            config.Flags_OnlyInCompound_OnlyUpcase = FlagSet.Create(config.OnlyInCompound, SpecialFlags.OnlyUpcaseFlag);
+            config.Flags_NeedAffix_OnlyInCompound = FlagSet.Create(config.NeedAffix, config.OnlyInCompound);
+            config.Flags_NeedAffix_OnlyInCompound_OnlyUpcase = config.Flags_NeedAffix_OnlyInCompound.Union(SpecialFlags.OnlyUpcaseFlag);
+            config.Flags_NeedAffix_OnlyInCompound_Circumfix = config.Flags_NeedAffix_OnlyInCompound.Union(config.Circumfix);
+            config.Flags_NeedAffix_ForbiddenWord_OnlyUpcase = FlagSet.Create(config.NeedAffix, config.ForbiddenWord, SpecialFlags.OnlyUpcaseFlag);
+            config.Flags_NeedAffix_ForbiddenWord_OnlyUpcase_NoSuggest = config.Flags_NeedAffix_ForbiddenWord_OnlyUpcase.Union(config.NoSuggest);
+            config.Flags_ForbiddenWord_OnlyUpcase = FlagSet.Create(config.ForbiddenWord, SpecialFlags.OnlyUpcaseFlag);
+            config.Flags_ForbiddenWord_OnlyUpcase_NoSuggest = config.Flags_ForbiddenWord_OnlyUpcase.Union(config.NoSuggest);
+            config.Flags_ForbiddenWord_OnlyUpcase_NoSuggest_OnlyInCompound = config.Flags_ForbiddenWord_OnlyUpcase_NoSuggest.Union(config.OnlyInCompound);
+            config.Flags_ForbiddenWord_NoSuggest = FlagSet.Create(config.ForbiddenWord, config.NoSuggest);
+            config.Flags_ForbiddenWord_NoSuggest_SubStandard = config.Flags_ForbiddenWord_NoSuggest.Union(config.SubStandard);
 
             config.Warnings = Warnings.ToImmutable();
 

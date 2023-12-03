@@ -12,7 +12,7 @@ sealed class WordEntry : IEquatable<WordEntry>
 
     public static bool operator !=(WordEntry? a, WordEntry? b) => !(a == b);
 
-    public WordEntry(string word, WordEntryDetail detail)
+    public WordEntry(string word, in WordEntryDetail detail)
     {
         Word = word ?? string.Empty;
         Detail = detail;
@@ -22,7 +22,15 @@ sealed class WordEntry : IEquatable<WordEntry>
 
     public WordEntryDetail Detail { get; }
 
-    public bool ContainsFlag(FlagValue flag) => Detail.ContainsFlag(flag);
+    public MorphSet Morphs => Detail.Morphs;
+
+    public FlagSet Flags => Detail.Flags;
+
+    public WordEntryOptions Options => Detail.Options;
+
+    public bool ContainsFlag(FlagValue flag) => Flags.Contains(flag);
+
+    public bool ContainsAnyFlags(FlagSet flags) => Flags.ContainsAny(flags);
 
     public bool Equals(WordEntry? other)
     {

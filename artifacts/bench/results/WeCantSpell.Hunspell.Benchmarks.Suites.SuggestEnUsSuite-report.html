@@ -2,7 +2,7 @@
 <html lang='en'>
 <head>
 <meta charset='utf-8' />
-<title>WeCantSpell.Hunspell.Benchmarks.Suites.SuggestEnUsSuite-20231123-134415</title>
+<title>WeCantSpell.Hunspell.Benchmarks.Suites.SuggestEnUsSuite-20231203-164034</title>
 
 <style type="text/css">
 	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
@@ -15,21 +15,18 @@
 <pre><code>
 BenchmarkDotNet v0.13.10, Windows 11 (10.0.22631.2715/23H2/2023Update/SunValley3)
 AMD Ryzen 7 5800H with Radeon Graphics, 1 CPU, 16 logical and 8 physical cores
-  [Host]     : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
-  Job-MAJNXI : .NET Framework 4.8.1 (4.8.9181.0), X64 RyuJIT VectorSize=256
-  Job-GTHRWI : .NET 6.0.25 (6.0.2523.51912), X64 RyuJIT AVX2
-  Job-YRAWZO : .NET 8.0.0 (8.0.23.53103), X64 RyuJIT AVX2
+.NET SDK 8.0.100
+  [Host]        : .NET 8.0.0 (8.0.23.53103), X64 RyuJIT AVX2
+  Suggest en-US : .NET 6.0.25 (6.0.2523.51912), X64 RyuJIT AVX2
 </code></pre>
-<pre><code>MinInvokeCount=1  IterationTime=250.0000 ms  MaxIterationCount=20  
-MaxWarmupIterationCount=5  MinIterationCount=1  MinWarmupIterationCount=1  
+<pre><code>Job=Suggest en-US  
 </code></pre>
 
 <table>
-<thead><tr><th>Method   </th><th>Runtime     </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Ratio</th>
+<thead><tr><th>Method   </th><th>Runtime</th><th>Mean</th><th>Error</th><th>StdDev</th><th>Min</th><th>Median</th><th>Ratio</th>
 </tr>
-</thead><tbody><tr><td>&#39;Suggest words&#39;</td><td>.NET Framework 4.8</td><td>762.0 ms</td><td>13.50 ms</td><td>0.74 ms</td><td>1.82</td>
-</tr><tr><td>&#39;Suggest words&#39;</td><td>.NET 6.0</td><td>419.0 ms</td><td>4.79 ms</td><td>0.74 ms</td><td>1.00</td>
-</tr><tr><td>&#39;Suggest words&#39;</td><td>.NET 8.0</td><td>370.3 ms</td><td>6.81 ms</td><td>1.77 ms</td><td>0.88</td>
+</thead><tbody><tr><td>&#39;Suggest words&#39;</td><td>.NET 6.0</td><td>423.4 ms</td><td>2.19 ms</td><td>2.05 ms</td><td>419.8 ms</td><td>423.1 ms</td><td>1.15</td>
+</tr><tr><td>&#39;Suggest words&#39;</td><td>.NET 8.0</td><td>367.2 ms</td><td>1.71 ms</td><td>1.52 ms</td><td>364.5 ms</td><td>367.2 ms</td><td>1.00</td>
 </tr></tbody></table>
 </body>
 </html>

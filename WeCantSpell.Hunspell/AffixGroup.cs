@@ -35,11 +35,17 @@ public sealed class AffixGroup<TAffixEntry> where TAffixEntry : AffixEntry
         {
         }
 
-        public Builder(FlagValue aFlag, AffixEntryOptions options, ImmutableArray<TAffixEntry>.Builder entries)
+        private Builder(FlagValue aFlag, AffixEntryOptions options, ImmutableArray<TAffixEntry>.Builder entries)
         {
+#if HAS_THROWNULL
+            ArgumentNullException.ThrowIfNull(entries);
+#else
+            if (entries is null) throw new ArgumentNullException(nameof(entries));
+#endif
+
             AFlag = aFlag;
             Options = options;
-            Entries = entries ?? throw new ArgumentNullException(nameof(entries));
+            Entries = entries;
         }
 
         /// <summary>

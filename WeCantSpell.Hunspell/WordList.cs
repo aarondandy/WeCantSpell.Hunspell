@@ -11,10 +11,6 @@ namespace WeCantSpell.Hunspell;
 
 public sealed partial class WordList
 {
-    internal const int MaxWordLen = 100;
-    internal const int MaxWordUtf8Len = MaxWordLen * 3;
-    internal const int RecursiveDepthLimit = 0x3F00;
-
     public static WordList CreateFromStreams(Stream dictionaryStream, Stream affixStream) =>
         WordListReader.Read(dictionaryStream, affixStream);
 
@@ -33,15 +29,26 @@ public sealed partial class WordList
     public static Task<WordList> CreateFromFilesAsync(string dictionaryFilePath, string affixFilePath, CancellationToken cancellationToken = default) =>
         WordListReader.ReadFileAsync(dictionaryFilePath, affixFilePath, cancellationToken);
 
-    public static WordList CreateFromWords(IEnumerable<string> words) =>
-        CreateFromWords(
-            words ?? throw new ArgumentNullException(nameof(words)),
-            new AffixConfig.Builder().MoveToImmutable());
+    public static WordList CreateFromWords(IEnumerable<string> words)
+    {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(words);
+#else
+        if (words is null) throw new ArgumentNullException(nameof(words));
+#endif
+
+        return CreateFromWords(words, new AffixConfig.Builder().MoveToImmutable());
+    }
 
     public static WordList CreateFromWords(IEnumerable<string> words, AffixConfig affix)
     {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(words);
+        ArgumentNullException.ThrowIfNull(affix);
+#else
         if (words is null) throw new ArgumentNullException(nameof(words));
         if (affix is null) throw new ArgumentNullException(nameof(affix));
+#endif
 
         var wordListBuilder = new Builder(affix);
 
@@ -76,9 +83,7 @@ public sealed partial class WordList
     public bool ContainsEntriesForRootWord(ReadOnlySpan<char> rootWord) => EntriesByRoot.ContainsKey(rootWord);
 
     public WordEntryDetail[] this[string rootWord] =>
-        rootWord is not null
-            ? FindEntryDetailsByRootWord(rootWord).ToArray()
-            : Array.Empty<WordEntryDetail>();
+        rootWord is not null ? FindEntryDetailsByRootWord(rootWord).ToArray() : [];
 
     private TextDictionary<WordEntryDetail[]> EntriesByRoot { get; set; }
 
@@ -131,7 +136,7 @@ public sealed partial class WordList
     private void ApplyRootOutputConversions(ref SpellCheckResult result)
     {
         // output conversion
-        if (result.Correct && Affix.OutputConversions.HasReplacements && Affix.OutputConversions.TryConvert(result.Root, out var converted) && !string.Equals(result.Root, converted, StringComparison.Ordinal))
+        if (result.Correct && Affix.OutputConversions.TryConvert(result.Root, out var converted) && !string.Equals(result.Root, converted, StringComparison.Ordinal))
         {
             result = new SpellCheckResult(converted, result.Info, true);
         }
@@ -155,34 +160,30 @@ public sealed partial class WordList
 
     private WordEntry? FindFirstEntryByRootWord(ReadOnlySpan<char> rootWord)
     {
-        return EntriesByRoot.TryGetValue(rootWord, out var key, out var details) && details.Length > 0
+        return EntriesByRoot.TryGetValue(rootWord, out var key, out var details) && details.Length != 0
             ? new WordEntry(key, details[0])
             : null;
     }
 
     private WordEntry? FindFirstEntryByRootWord(string rootWord)
     {
-        return EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length > 0
+        return EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length != 0
             ? new WordEntry(rootWord, details[0])
             : null;
     }
 
     private WordEntryDetail[] FindEntryDetailsByRootWord(string rootWord)
     {
-#if DEBUG
-        if (rootWord is null) throw new ArgumentNullException(nameof(rootWord));
-#endif
-
         return EntriesByRoot.TryGetValue(rootWord, out var details)
             ? details
-            : Array.Empty<WordEntryDetail>();
+            : [];
     }
 
     private WordEntryDetail[] FindEntryDetailsByRootWord(ReadOnlySpan<char> rootWord)
     {
         return EntriesByRoot.TryGetValue(rootWord, out var details)
             ? details
-            : Array.Empty<WordEntryDetail>();
+            : [];
     }
 
     private WordEntryDetail? FindFirstEntryDetailByRootWord(ReadOnlySpan<char> rootWord)
@@ -194,7 +195,7 @@ public sealed partial class WordList
 
     private bool TryFindFirstEntryDetailByRootWord(ReadOnlySpan<char> rootWord, out WordEntryDetail entryDetail)
     {
-        if (EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length > 0)
+        if (EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length != 0)
         {
             entryDetail = details[0];
             return true;
@@ -206,7 +207,7 @@ public sealed partial class WordList
 
     private bool TryFindFirstEntryDetailByRootWord(string rootWord, out WordEntryDetail entryDetail)
     {
-        if (EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length > 0)
+        if (EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length != 0)
         {
             entryDetail = details[0];
             return true;
@@ -222,28 +223,22 @@ public sealed partial class WordList
     {
         public NGramAllowedEntriesEnumerator(WordList wordList, int minKeyLength, int maxKeyLength)
         {
-#if DEBUG
-            if (minKeyLength > maxKeyLength) throw new ArgumentOutOfRangeException(nameof(maxKeyLength));
-#endif
-
-            _coreEnumerator = new(wordList.EntriesByRoot, minKeyLength, maxKeyLength);
             _nGramRestrictedDetails = wordList.NGramRestrictedDetails;
-            _checkRestrictedDetails = _nGramRestrictedDetails.Count != 0;
+            _coreEnumerator = new(wordList.EntriesByRoot, minKeyLength, maxKeyLength);
             _current = default;
         }
 
+        private readonly TextDictionary<WordEntryDetail[]> _nGramRestrictedDetails;
         private TextDictionary<WordEntryDetail[]>.KeyLengthEnumerator _coreEnumerator;
-        private TextDictionary<WordEntryDetail[]> _nGramRestrictedDetails;
         private KeyValuePair<string, WordEntryDetail[]> _current;
-        private bool _checkRestrictedDetails;
 
-        public KeyValuePair<string, WordEntryDetail[]> Current => _current;
+        public readonly KeyValuePair<string, WordEntryDetail[]> Current => _current;
 
-        public NGramAllowedEntriesEnumerator GetEnumerator() => this;
+        public readonly NGramAllowedEntriesEnumerator GetEnumerator() => this;
 
         public bool MoveNext()
         {
-            if (_checkRestrictedDetails)
+            if (_nGramRestrictedDetails.Count != 0)
             {
                 return MoveNextWithRestrictedDetails();
             }
@@ -274,7 +269,8 @@ public sealed partial class WordList
                     _current = new(_current.Key, filterNonMatching(_current.Value, restrictedDetails));
                     static WordEntryDetail[] filterNonMatching(WordEntryDetail[] source, WordEntryDetail[] check)
                     {
-                        var builder = new ArrayBuilder<WordEntryDetail>(source.Length);
+                        var builder = ArrayBuilder<WordEntryDetail>.Pool.Get(source.Length);
+
                         foreach (var item in source)
                         {
                             if (!check.Contains(item))
@@ -283,7 +279,7 @@ public sealed partial class WordList
                             }
                         }
 
-                        return builder.Extract();
+                        return ArrayBuilder<WordEntryDetail>.Pool.ExtractAndReturn(builder);
                     }
                 }
 

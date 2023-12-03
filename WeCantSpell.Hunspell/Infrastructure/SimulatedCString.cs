@@ -30,19 +30,15 @@ struct SimulatedCString
     private int _bufferLength;
     private int _terminatedLength;
 
-    public int BufferLength => _bufferLength;
+    public readonly int BufferLength => _bufferLength;
 
     public ReadOnlySpan<char> TerminatedSpan
     {
         get
         {
-            if (_terminatedLength < 0)
+            if (_terminatedLength < 0 && (_terminatedLength = Array.IndexOf(_rawBuffer, '\0', 0, _bufferLength)) < 0)
             {
-                _terminatedLength = Array.IndexOf(_rawBuffer, '\0', 0, _bufferLength);
-                if (_terminatedLength < 0)
-                {
-                    _terminatedLength = _bufferLength;
-                }
+                _terminatedLength = _bufferLength;
             }
 
             return _rawBuffer.AsSpan(0, _terminatedLength);
@@ -51,20 +47,17 @@ struct SimulatedCString
 
     public char this[int index]
     {
-        get
-        {
-            return index >= 0 && index < _bufferLength ? _rawBuffer[index] : '\0';
-        }
+        readonly get => index < _bufferLength ? _rawBuffer[index] : '\0';
         set
         {
 #if DEBUG
-            if (index < 0 || index >= _bufferLength) throw new ArgumentOutOfRangeException(nameof(index));
+            if (index >= _bufferLength) throw new ArgumentOutOfRangeException(nameof(index));
 #endif
             _rawBuffer[index] = value;
 
             if (value == '\0')
             {
-                if (index < _terminatedLength)
+                if (index == 0 || index < _terminatedLength)
                 {
                     _terminatedLength = index;
                 }
@@ -76,7 +69,7 @@ struct SimulatedCString
         }
     }
 
-    public ReadOnlySpan<char> SliceToTerminator(int startIndex)
+    public readonly ReadOnlySpan<char> SliceToTerminator(int startIndex)
     {
         if (startIndex <= _terminatedLength)
         {
@@ -95,10 +88,6 @@ struct SimulatedCString
 
     public char Exchange(int index, char value)
     {
-#if DEBUG
-        if (index < 0) throw new ArgumentOutOfRangeException(nameof(index));
-#endif
-
         if (index >= _bufferLength)
         {
             return '\0';
@@ -123,10 +112,6 @@ struct SimulatedCString
 
     public void Assign(ReadOnlySpan<char> text)
     {
-#if DEBUG
-        if (text.Length > _bufferLength) throw new ArgumentOutOfRangeException(nameof(text));
-#endif
-
         var buffer = _rawBuffer.AsSpan(0, _bufferLength);
         text.CopyTo(buffer);
 
@@ -143,7 +128,7 @@ struct SimulatedCString
         if (_rawBuffer.Length != 0)
         {
             ArrayPool<char>.Shared.Return(_rawBuffer);
-            _rawBuffer = Array.Empty<char>();
+            _rawBuffer = [];
             _bufferLength = 0;
         }
     }

@@ -10,18 +10,34 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterCondition>
 {
-    public static readonly CharacterConditionGroup Empty = new(Array.Empty<CharacterCondition>());
+#if HAS_SEARCHVALUES
+    private static readonly System.Buffers.SearchValues<char> ConditionParseStopCharacters = System.Buffers.SearchValues.Create(".[");
+#endif
+
+    public static readonly CharacterConditionGroup Empty = new([]);
 
     public static readonly CharacterConditionGroup AllowAnySingleCharacter = Create(CharacterCondition.AllowAny);
 
-    public static CharacterConditionGroup Create(CharacterCondition condition) => new(new[] { condition });
+    public static CharacterConditionGroup Create(CharacterCondition condition) => new([condition]);
 
-    public static CharacterConditionGroup Create(IEnumerable<CharacterCondition> conditions) =>
-        new((conditions ?? throw new ArgumentNullException(nameof(conditions))).ToArray());
+    public static CharacterConditionGroup Create(IEnumerable<CharacterCondition> conditions)
+    {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(conditions);
+#else
+        if (conditions is null) throw new ArgumentNullException(nameof(conditions));
+#endif
+
+        return new(conditions.ToArray());
+    }
 
     public static CharacterConditionGroup Parse(string text)
     {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(text);
+#else
         if (text is null) throw new ArgumentNullException(nameof(text));
+#endif
 
         return Parse(text.AsSpan());
     }
@@ -34,7 +50,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
         }
 
         ReadOnlySpan<char> span;
-        var conditions = ArrayBuilderPool<CharacterCondition>.Get();
+        var conditions = ArrayBuilder<CharacterCondition>.Pool.Get();
 
         do
         {
@@ -56,7 +72,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
                     }
                     else
                     {
-                        text = ReadOnlySpan<char>.Empty;
+                        text = [];
                     }
 
                     var restricted = span.Length > 0 && span[0] == '^';
@@ -69,7 +85,11 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
                     break;
 
                 default:
+#if HAS_SEARCHVALUES
+                    var stopIndex = text.IndexOfAny(ConditionParseStopCharacters);
+#else
                     var stopIndex = text.IndexOfAny('.', '[');
+#endif
                     span = stopIndex < 0 ? text : text.Slice(0, stopIndex);
                     text = text.Slice(span.Length);
 
@@ -80,29 +100,42 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
         }
         while (!text.IsEmpty);
 
-        return new(ArrayBuilderPool<CharacterCondition>.ExtractAndReturn(conditions));
+        return new(ArrayBuilder<CharacterCondition>.Pool.ExtractAndReturn(conditions));
     }
 
     internal CharacterConditionGroup(CharacterCondition[] items)
     {
-#if DEBUG
-        if (items is null) throw new ArgumentNullException(nameof(items));
-#endif
         _items = items;
     }
 
-    private readonly CharacterCondition[] _items;
+    private readonly CharacterCondition[]? _items;
 
-    public int Count => _items.Length;
+    public int Count => (_items?.Length).GetValueOrDefault();
     public bool IsEmpty => !HasItems;
     public bool HasItems => _items is { Length: > 0 };
-    public CharacterCondition this[int index] => _items[index];
-    public IEnumerator<CharacterCondition> GetEnumerator() => ((IEnumerable<CharacterCondition>)_items).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => _items.GetEnumerator();
+    public CharacterCondition this[int index]
+    {
+        get
+        {
+#if HAS_THROWOOR
+            ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
+#else
+            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+#endif
+            return _items![index];
+        }
+    }
 
-    public bool MatchesAnySingleCharacter => HasItems && _items.Length == 1 && _items[0].MatchesAnySingleCharacter;
+    public IEnumerator<CharacterCondition> GetEnumerator() => ((IEnumerable<CharacterCondition>)GetInternalArray()).GetEnumerator();
 
-    public string GetEncoded() => string.Concat(_items.Select(c => c.GetEncoded()));
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    internal CharacterCondition[] GetInternalArray() => _items ?? [];
+
+    public bool MatchesAnySingleCharacter => _items is { Length: 1 } && _items[0].MatchesAnySingleCharacter;
+
+    public string GetEncoded() => string.Concat(GetInternalArray().Select(c => c.GetEncoded()));
 
     public override string ToString() => GetEncoded();
 
@@ -118,7 +151,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
             return false;
         }
 
-        foreach (var condition in _items)
+        foreach (var condition in _items!)
         {
             if (!condition.FullyMatchesFromStart(text, out var matchLength))
             {
@@ -143,7 +176,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
             return false;
         }
 
-        for (var conditionIndex = _items.Length - 1; conditionIndex >= 0; conditionIndex--)
+        for (var conditionIndex = _items!.Length - 1; conditionIndex >= 0; conditionIndex--)
         {
             if (!_items[conditionIndex].FullyMatchesFromEnd(text, out var matchLength))
             {
@@ -158,7 +191,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
 
     public bool IsOnlyPossibleMatch(ReadOnlySpan<char> text)
     {
-        foreach (var condition in _items)
+        foreach (var condition in GetInternalArray())
         {
             if (!condition.IsOnlyPossibleMatch(text, out var matchLength))
             {

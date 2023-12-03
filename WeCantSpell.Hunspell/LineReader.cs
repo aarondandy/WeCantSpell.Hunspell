@@ -21,14 +21,13 @@ internal sealed class LineReader : IDisposable
     {
         // NOTE: the order of these encodings must be preserved
         PreambleEncodings =
-            new Encoding[]
-            {
-                new UnicodeEncoding(true, true),
-                new UnicodeEncoding(false, true),
-                new UTF32Encoding(false, true),
-                Encoding.UTF8,
-                new UTF32Encoding(true, true)
-            };
+        [
+            new UnicodeEncoding(true, true),
+            new UnicodeEncoding(false, true),
+            new UTF32Encoding(false, true),
+            Encoding.UTF8,
+            new UTF32Encoding(true, true)
+        ];
     }
 
     internal LineReader(Stream stream, Encoding encoding, bool allowEncodingChanges = false, bool ownsStream = false)
@@ -137,13 +136,6 @@ internal sealed class LineReader : IDisposable
         TextBufferLine buffer;
         if (_position.BufferIndex == lineTerminalPosition.BufferIndex)
         {
-#if DEBUG
-            if (_position.SubIndex > lineTerminalPosition.SubIndex)
-            {
-                throw new InvalidOperationException();
-            }
-#endif
-
             buffer = _buffers[_position.BufferIndex];
             Current = buffer.Memory.Slice(_position.SubIndex, lineTerminalPosition.SubIndex - _position.SubIndex);
         }
@@ -201,7 +193,7 @@ internal sealed class LineReader : IDisposable
                     return span.Slice(startIndex, endIndex - startIndex + 1);
                 }
 
-                return ReadOnlySpan<char>.Empty;
+                return [];
             }
         }
 
@@ -338,10 +330,7 @@ internal sealed class LineReader : IDisposable
                 out _);
 
 #if DEBUG
-            if (bytesConsumed == 0)
-            {
-                throw new InvalidOperationException();
-            }
+            if (bytesConsumed == 0) throw new InvalidOperationException();
 #endif
 
             fileReadByteBuffer = fileReadByteBuffer.Slice(bytesConsumed);
@@ -445,16 +434,10 @@ internal sealed class LineReader : IDisposable
                 var newCharactersCount = newEncoding.GetChars(restoredBytes, newCharacters.AsSpan());
 
 #if DEBUG
-                if (newCharactersCount != newCharacters.Length)
-                {
-                    throw new InvalidOperationException();
-                }
+                if (newCharactersCount != newCharacters.Length) throw new InvalidOperationException();
 #endif
 #endif
-                _buffers[bufferIndex] = new TextBufferLine(newCharacters)
-                {
-                    PreventRecycle = true
-                };
+                _buffers[bufferIndex] = new TextBufferLine(newCharacters, preventRecycle: true);
 
             }
 
@@ -476,32 +459,37 @@ internal sealed class LineReader : IDisposable
     {
         public TextBufferLine(int rawBufferSize)
         {
-            Raw = new char[rawBufferSize];
+            _raw = new char[rawBufferSize];
+            Memory = ReadOnlyMemory<char>.Empty;
+            _preventRecycle = false;
         }
 
-        public TextBufferLine(char[] raw)
+        public TextBufferLine(char[] raw, bool preventRecycle)
         {
-            Raw = raw;
+            _raw = raw;
             Memory = raw.AsMemory();
+            _preventRecycle = preventRecycle;
         }
 
-        public char[] Raw;
-        public ReadOnlyMemory<char> Memory = ReadOnlyMemory<char>.Empty;
-        public bool PreventRecycle = false;
+        private readonly char[] _raw;
+        public ReadOnlyMemory<char> Memory;
+        private readonly bool _preventRecycle;
 
-        public int Length => Memory.Length;
+        public readonly int Length => Memory.Length;
 
-        public Span<char> WriteSpan => Raw.AsSpan();
+        public readonly bool PreventRecycle => _preventRecycle;
 
-        public ReadOnlySpan<char> ReadSpan => Memory.Span;
+        public readonly Span<char> WriteSpan => _raw.AsSpan();
 
-        public int FindLineBreak() => Memory.Span.IndexOf(CharacterLf);
+        public readonly ReadOnlySpan<char> ReadSpan => Memory.Span;
 
-        public int FindLineBreak(int startIndex) => Memory.Span.IndexOf(CharacterLf, startIndex);
+        public readonly int FindLineBreak() => Memory.Span.IndexOf(CharacterLf);
+
+        public readonly int FindLineBreak(int startIndex) => Memory.Span.IndexOf(CharacterLf, startIndex);
 
         public void PrepareMemoryForUse(int valueSize)
         {
-            Memory = Raw.AsMemory(0, valueSize);
+            Memory = _raw.AsMemory(0, valueSize);
         }
 
         public void ResetMemory()
@@ -521,7 +509,7 @@ internal sealed class LineReader : IDisposable
         public int BufferIndex;
         public int SubIndex;
 
-        public void Deconstruct(out int bufferIndex, out int subIndex)
+        public readonly void Deconstruct(out int bufferIndex, out int subIndex)
         {
             bufferIndex = BufferIndex;
             subIndex = SubIndex;

@@ -21,8 +21,8 @@ public class EnUsWordsTests
 
         await Task.WhenAll(wordsTask, spellTask);
 
-        var words = wordsTask.Result;
-        var spell = spellTask.Result;
+        var words = await wordsTask;
+        var spell = await spellTask;
 
         var negativeCases = new ConcurrentBag<CommonSpellingMistake>();
         Parallel.ForEach(words, word =>
@@ -44,8 +44,8 @@ public class EnUsWordsTests
 
         await Task.WhenAll(wordsTask, spellTask);
 
-        var words = wordsTask.Result;
-        var spell = spellTask.Result;
+        var words = await wordsTask;
+        var spell = await spellTask;
 
         var negativeCases = new ConcurrentBag<CommonSpellingMistake>();
         Parallel.ForEach(words, word =>
@@ -67,8 +67,8 @@ public class EnUsWordsTests
 
         await Task.WhenAll(wordsTask, spellTask);
 
-        var words = wordsTask.Result.Where((_,i) => i % 11 == 0).Take(10).ToList();
-        var spell = spellTask.Result;
+        var words = (await wordsTask).Where(static (_,i) => i % 11 == 0).Take(10).ToList();
+        var spell = await spellTask;
 
         var negativeCases = new ConcurrentBag<CommonSpellingMistake>();
         Parallel.ForEach(words, word =>

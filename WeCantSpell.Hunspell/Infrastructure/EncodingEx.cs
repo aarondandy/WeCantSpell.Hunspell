@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
@@ -14,7 +13,7 @@ static class EncodingEx
 
     private static Encoding? GetUtf8EncodingOrDefault(ReadOnlySpan<char> encodingName)
     {
-        if (!encodingName.IsEmpty && (encodingName.EqualsOrdinal("UTF8") || encodingName.EqualsOrdinal("UTF-8")))
+        if (encodingName.EqualsOrdinal("UTF8") || encodingName.EqualsOrdinal("UTF-8"))
         {
             return Encoding.UTF8;
         }
@@ -55,8 +54,8 @@ static class EncodingEx
     {
         unsafe
         {
-            fixed (byte* bytesPointer = &MemoryMarshal.GetReference(bytes))
-            fixed (char* charsPointer = &MemoryMarshal.GetReference(chars))
+            fixed (byte* bytesPointer = &System.Runtime.InteropServices.MemoryMarshal.GetReference(bytes))
+            fixed (char* charsPointer = &System.Runtime.InteropServices.MemoryMarshal.GetReference(chars))
             {
                 decoder.Convert(
                     bytesPointer,
@@ -71,4 +70,5 @@ static class EncodingEx
         }
     }
 #endif
+
 }

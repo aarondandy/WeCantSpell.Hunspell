@@ -1,23 +1,22 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class StringEx
 {
+#if HAS_SEARCHVALUES
+    private static readonly System.Buffers.SearchValues<char> TabOrSpace = System.Buffers.SearchValues.Create("\t ");
+#endif
+
 #if NO_STATIC_STRINGCHAR_METHODS
     public static bool StartsWith(this string @this, char character) => @this.Length != 0 && @this[0] == character;
 #endif
 
-    public static bool StartsWith(this string @this, ReadOnlySpan<char> value) => @this.AsSpan().StartsWith(value);
-
     public static bool StartsWith(this ReadOnlySpan<char> @this, string value, StringComparison comparison) => @this.StartsWith(value.AsSpan(), comparison);
 
     public static bool StartsWith(this ReadOnlySpan<char> @this, char value) => !@this.IsEmpty && @this[0] == value;
-
-    public static bool EndsWith(this string @this, ReadOnlySpan<char> value) => @this.AsSpan().EndsWith(value);
-
-    public static bool EndsWith(this ReadOnlySpan<char> @this, string value, StringComparison comparison) => @this.EndsWith(value.AsSpan(), comparison);
 
     public static bool EndsWith(this string @this, char character) => @this.Length > 0 && @this[@this.Length - 1] == character;
 
@@ -29,18 +28,20 @@ static class StringEx
 
     public static bool EqualsOrdinal(this ReadOnlySpan<char> @this, string value) => @this.Equals(value, StringComparison.Ordinal);
 
+    public static bool EqualsOrdinal(this string @this, ReadOnlySpan<char> value) => value.Equals(@this, StringComparison.Ordinal);
+
     public static bool EqualsOrdinal(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value) => @this.Equals(value, StringComparison.Ordinal);
 
-    public static bool IsTabOrSpace(this char c) => c is ' ' or '\t';
+    public static bool IsTabOrSpace(this char c) => c is '\t' or ' ';
 
-    public static int IndexOfTabOrSpace(this ReadOnlySpan<char> span) => span.IndexOfAny(' ', '\t');
+#if HAS_SEARCHVALUES
+    public static int IndexOfTabOrSpace(this ReadOnlySpan<char> span) => span.IndexOfAny(TabOrSpace);
+#else
+    public static int IndexOfTabOrSpace(this ReadOnlySpan<char> span) => span.IndexOfAny('\t', ' ');
+#endif
 
     public static int IndexOf(this ReadOnlySpan<char> @this, string value, int startIndex, StringComparison comparisonType)
     {
-#if DEBUG
-        if (value is null) throw new ArgumentNullException(nameof(value));
-#endif
-
         return @this.IndexOf(value.AsSpan(), startIndex, comparisonType);
     }
 
@@ -50,14 +51,35 @@ static class StringEx
         return result < 0 ? result : result + startIndex;
     }
 
-
 #if NO_STRING_CONTAINS
+
     public static bool Contains(this string @this, char value) => @this.IndexOf(value) >= 0;
 
     public static bool Contains(this ReadOnlySpan<char> @this, char value) => @this.IndexOf(value) >= 0;
+
 #endif
 
+    public static bool ContainsAny(this string @this, char value0, char value1) => @this.AsSpan().ContainsAny(value0, value1);
+
+#if NO_SPAN_CONTAINSANY
+
     public static bool ContainsAny(this ReadOnlySpan<char> @this, char value0, char value1) => @this.IndexOfAny(value0, value1) >= 0;
+
+#endif
+
+    public static bool Contains(this List<string> list, ReadOnlySpan<char> value)
+    {
+        foreach (var item in list)
+        {
+            if (item is not null && item.AsSpan().SequenceEqual(value))
+            {
+                return true;
+            }
+
+        }
+
+        return false;
+    }
 
     public static ReadOnlySpan<char> AsSpanRemoveFromEnd(this string @this, int toRemove) => @this.AsSpan(0, @this.Length - toRemove);
 
@@ -125,18 +147,25 @@ static class StringEx
 
     public static char GetCharOrTerminator(this string @this, int index)
     {
-#if DEBUG
-        if (index < 0) throw new ArgumentOutOfRangeException(nameof(index));
-#endif
         return index < @this.Length ? @this[index] : '\0';
     }
 
     public static char GetCharOrTerminator(this Span<char> @this, int index)
     {
-#if DEBUG
-        if (index < 0) throw new ArgumentOutOfRangeException(nameof(index));
-#endif
         return index < @this.Length ? @this[index] : '\0';
+    }
+
+    public static string ConcatString(char c, ReadOnlySpan<char> span)
+    {
+        var builder = StringBuilderPool.Get(span.Length + 1);
+        builder.Append(c);
+
+        if (!span.IsEmpty)
+        {
+            builder.Append(span);
+        }
+
+        return StringBuilderPool.GetStringAndReturn(builder);
     }
 
     public static string ConcatString(ReadOnlySpan<char> str0, string str1, char char2, ReadOnlySpan<char> str3)
@@ -175,6 +204,14 @@ static class StringEx
         return StringBuilderPool.GetStringAndReturn(builder);
     }
 
+    public static string ConcatString(this string @this, char value)
+    {
+        var builder = StringBuilderPool.Get(@this.Length + 1);
+        builder.Append(@this);
+        builder.Append(value);
+        return StringBuilderPool.GetStringAndReturn(builder);
+    }
+
 #if NO_STRING_SPAN
     public static string ConcatString(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value)
     {
@@ -200,9 +237,6 @@ static class StringEx
 
     public static string ConcatString(this ReadOnlySpan<char> @this, string value)
     {
-#if DEBUG
-        if (value is null) throw new ArgumentNullException(nameof(value));
-#endif
         if (@this.IsEmpty)
         {
             return value;
@@ -223,9 +257,6 @@ static class StringEx
 
     public static ReadOnlySpan<char> ConcatSpan(this ReadOnlySpan<char> @this, string value)
     {
-#if DEBUG
-        if (value is null) throw new ArgumentNullException(nameof(value));
-#endif
         if (@this.IsEmpty)
         {
             return value.AsSpan();
@@ -255,22 +286,41 @@ static class StringEx
     }
 
 #if NO_SPAN_HASHCODE
+
     public static int GetHashCode(ReadOnlySpan<char> value)
     {
-        int hash = 5381;
-        while (value.Length >= 2)
+        var hash = 5381;
+
+        for (var i = 1; i < value.Length; i += 2)
         {
-            hash = unchecked((hash << 5) ^ ((value[1] << 16) + value[0]));
-            value = value.Slice(2);
+            hash = unchecked((hash << 5) ^ ((value[i] << 16) + value[i - 1]));
         }
 
-        if (!value.IsEmpty)
+        if ((value.Length & 1) != 0)
         {
-            hash = unchecked((hash << 5) ^ value[0]);
+            hash = unchecked((hash << 5) ^ value[value.Length - 1]);
         }
 
         return hash;
     }
+
+    public static int GetHashCode(string value)
+    {
+        var hash = 5381;
+
+        for (var i = 1; i < value.Length; i+= 2)
+        {
+            hash = unchecked((hash << 5) ^ ((value[i] << 16) + value[i - 1]));
+        }
+
+        if ((value.Length & 1) != 0)
+        {
+            hash = unchecked((hash << 5) ^ value[value.Length - 1]);
+        }
+
+        return hash;
+    }
+
 #endif
 
     public static string ToStringWithoutChars(this ReadOnlySpan<char> text, char value)
@@ -339,15 +389,11 @@ static class StringEx
 
     public static SpanSeparatorSplitEnumerator<char> SplitOnComma(this ReadOnlySpan<char> @this, StringSplitOptions options = StringSplitOptions.None) => new(@this, options, static span => span.IndexOf(','));
 
-    public static SpanSeparatorSplitEnumerator<char> SplitOnTabOrSpace(this ReadOnlySpan<char> @this) => new(@this, StringSplitOptions.RemoveEmptyEntries, static span => span.IndexOfAny(' ', '\t'));
+    public static SpanSeparatorSplitEnumerator<char> SplitOnTabOrSpace(this ReadOnlySpan<char> @this) => new(@this, StringSplitOptions.RemoveEmptyEntries, static span => span.IndexOfTabOrSpace());
 
 #if NO_STATIC_STRINGCHAR_METHODS
     public static string Join(char seperator, string[] items)
     {
-#if DEBUG
-        if (items is null) throw new ArgumentNullException(nameof(items));
-#endif
-
         if (items.Length == 0)
         {
             return string.Empty;

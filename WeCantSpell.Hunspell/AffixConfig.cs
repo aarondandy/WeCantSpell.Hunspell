@@ -7,6 +7,8 @@ using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
+#pragma warning disable IDE0301 // Simplify collection initialization
+
 public sealed partial class AffixConfig
 {
     private const string DefaultKeyString = "qwertyuiop|asdfghjkl|zxcvbnm";
@@ -41,21 +43,21 @@ public sealed partial class AffixConfig
         private set
         {
             _options = value;
-            ComplexPrefixes = EnumEx.HasFlag(_options, AffixConfigOptions.ComplexPrefixes);
-            CompoundMoreSuffixes = EnumEx.HasFlag(_options, AffixConfigOptions.CompoundMoreSuffixes);
-            CheckCompoundDup = EnumEx.HasFlag(_options, AffixConfigOptions.CheckCompoundDup);
-            CheckCompoundRep = EnumEx.HasFlag(_options, AffixConfigOptions.CheckCompoundRep);
-            CheckCompoundTriple = EnumEx.HasFlag(_options, AffixConfigOptions.CheckCompoundTriple);
-            SimplifiedTriple = EnumEx.HasFlag(_options, AffixConfigOptions.SimplifiedTriple);
-            CheckCompoundCase = EnumEx.HasFlag(_options, AffixConfigOptions.CheckCompoundCase);
-            CheckNum = EnumEx.HasFlag(_options, AffixConfigOptions.CheckNum);
-            OnlyMaxDiff = EnumEx.HasFlag(_options, AffixConfigOptions.OnlyMaxDiff);
-            NoSplitSuggestions = EnumEx.HasFlag(_options, AffixConfigOptions.NoSplitSuggestions);
-            FullStrip = EnumEx.HasFlag(_options, AffixConfigOptions.FullStrip);
-            SuggestWithDots = EnumEx.HasFlag(_options, AffixConfigOptions.SuggestWithDots);
-            ForbidWarn = EnumEx.HasFlag(_options, AffixConfigOptions.ForbidWarn);
-            CheckSharps = EnumEx.HasFlag(_options, AffixConfigOptions.CheckSharps);
-            SimplifiedCompound = EnumEx.HasFlag(_options, AffixConfigOptions.SimplifiedCompound);
+            ComplexPrefixes = _options.HasFlagEx(AffixConfigOptions.ComplexPrefixes);
+            CompoundMoreSuffixes = _options.HasFlagEx(AffixConfigOptions.CompoundMoreSuffixes);
+            CheckCompoundDup = _options.HasFlagEx(AffixConfigOptions.CheckCompoundDup);
+            CheckCompoundRep = _options.HasFlagEx(AffixConfigOptions.CheckCompoundRep);
+            CheckCompoundTriple = _options.HasFlagEx(AffixConfigOptions.CheckCompoundTriple);
+            SimplifiedTriple = _options.HasFlagEx(AffixConfigOptions.SimplifiedTriple);
+            CheckCompoundCase = _options.HasFlagEx(AffixConfigOptions.CheckCompoundCase);
+            CheckNum = _options.HasFlagEx(AffixConfigOptions.CheckNum);
+            OnlyMaxDiff = _options.HasFlagEx(AffixConfigOptions.OnlyMaxDiff);
+            NoSplitSuggestions = _options.HasFlagEx(AffixConfigOptions.NoSplitSuggestions);
+            FullStrip = _options.HasFlagEx(AffixConfigOptions.FullStrip);
+            SuggestWithDots = _options.HasFlagEx(AffixConfigOptions.SuggestWithDots);
+            ForbidWarn = _options.HasFlagEx(AffixConfigOptions.ForbidWarn);
+            CheckSharps = _options.HasFlagEx(AffixConfigOptions.CheckSharps);
+            SimplifiedCompound = _options.HasFlagEx(AffixConfigOptions.SimplifiedCompound);
         }
     }
 
@@ -827,6 +829,24 @@ public sealed partial class AffixConfig
     public ImmutableList<string> Warnings { get; private set; } = ImmutableList<string>.Empty;
 
     public bool HasCompound => CompoundFlag.HasValue || CompoundBegin.HasValue || CompoundRules.HasItems;
+
+    internal FlagSet Flags_CompoundFlag_CompoundBegin { get; private set; } = FlagSet.Empty;
+    internal FlagSet Flags_CompoundFlag_CompoundMiddle { get; private set; } = FlagSet.Empty;
+    internal FlagSet Flags_CompoundFlag_CompoundEnd { get; private set; } = FlagSet.Empty;
+    internal FlagSet Flags_CompoundForbid_CompoundEnd { get; private set; } = FlagSet.Empty;
+    internal FlagSet Flags_CompoundForbid_CompoundMiddle_CompoundEnd { get; private set; } = FlagSet.Empty;
+    internal FlagSet Flags_OnlyInCompound_OnlyUpcase { get; private set; } = FlagSet.Empty;
+    internal FlagSet Flags_NeedAffix_OnlyInCompound { get; private set; } = FlagSet.Empty;
+    internal FlagSet Flags_NeedAffix_OnlyInCompound_OnlyUpcase { get; private set; } = FlagSet.Empty;
+    internal FlagSet Flags_NeedAffix_OnlyInCompound_Circumfix { get; private set; } = FlagSet.Empty;
+    internal FlagSet Flags_NeedAffix_ForbiddenWord_OnlyUpcase { get; private set; } = FlagSet.Empty;
+    internal FlagSet Flags_NeedAffix_ForbiddenWord_OnlyUpcase_NoSuggest { get; private set; } = FlagSet.Empty;
+    internal FlagSet Flags_ForbiddenWord_OnlyUpcase { get; private set; } = FlagSet.Empty;
+    internal FlagSet Flags_ForbiddenWord_OnlyUpcase_NoSuggest { get; private set; } = FlagSet.Empty;
+    internal FlagSet Flags_ForbiddenWord_OnlyUpcase_NoSuggest_OnlyInCompound { get; private set; } = FlagSet.Empty;
+    internal FlagSet Flags_ForbiddenWord_NoSuggest { get; private set; } = FlagSet.Empty;
+    internal FlagSet Flags_ForbiddenWord_NoSuggest_SubStandard { get; private set; } = FlagSet.Empty;
+
 
     public bool TryGetAliasF(int number, out FlagSet result)
     {

@@ -23,4 +23,8 @@ public static class SpecialFlags
     public static FlagValue LetterCLower { get; } = new FlagValue('c');
 
     public static FlagValue LetterPercent { get; } = new FlagValue('%');
+
+    public static FlagSet SetFGH { get; } = FlagSet.CreateUsingOwnedBuffer([LetterF, LetterG, LetterH]);
+
+    public static FlagSet SetXPercent { get; } = FlagSet.CreateUsingOwnedBuffer([LetterXLower, LetterPercent]);
 }

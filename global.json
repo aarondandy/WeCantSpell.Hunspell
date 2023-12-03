@@ -1,7 +1,7 @@
 {
   "scripts": {
     "bench": "dotnet r bench:*",
-    "bench:main": "dotnet run --project WeCantSpell.Hunspell.Benchmarks/ -c Release --framework net48 -- -f \"**\" -a artifacts/bench/ --runtimes net6.0 net8.0",
-    "bench:nhunspell": "dotnet run --project WeCantSpell.Hunspell.Benchmarks.NHunspell/ -c Release -- -f \"**\" -a artifacts/bench/"
+    "bench:core": "dotnet run --project WeCantSpell.Hunspell.Benchmarks/ -c Release --framework net8.0 -- --filter \"**\" -a artifacts/bench/",
+    "bench:net48": "dotnet run --project WeCantSpell.Hunspell.Benchmarks.NHunspell/ -c Release -- --filter \"**\" -a artifacts/bench/"
   }
 }

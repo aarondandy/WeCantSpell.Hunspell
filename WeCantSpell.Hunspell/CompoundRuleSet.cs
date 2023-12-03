@@ -3,41 +3,63 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
 {
-    public static CompoundRuleSet Empty { get; } = new(Array.Empty<CompoundRule>());
+    public static CompoundRuleSet Empty { get; } = new([]);
 
-    public static CompoundRuleSet Create(IEnumerable<CompoundRule> rules) =>
-        new((rules ?? throw new ArgumentNullException(nameof(rules))).ToArray());
+    public static CompoundRuleSet Create(IEnumerable<CompoundRule> rules)
+    {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(rules);
+#else
+        if (rules is null) throw new ArgumentNullException(nameof(rules));
+#endif
+        return new(rules.ToArray());
+    }
 
     internal CompoundRuleSet(CompoundRule[] rules)
     {
-#if DEBUG
-        if (rules is null) throw new ArgumentNullException(nameof(rules));
-#endif
         _rules = rules;
     }
 
-    private readonly CompoundRule[] _rules;
+    private readonly CompoundRule[]? _rules;
 
-    public int Count => _rules.Length;
+    public int Count => (_rules?.Length).GetValueOrDefault();
+
     public bool IsEmpty => !HasItems;
-    public bool HasItems => _rules is { Length: > 0 };
-    public CompoundRule this[int index] => _rules[index];
-    public IEnumerator<CompoundRule> GetEnumerator() => ((IEnumerable<CompoundRule>)_rules).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => _rules.GetEnumerator();
 
-    internal bool EntryContainsRuleFlags(in WordEntryDetail details)
+    public bool HasItems => _rules is { Length: > 0 };
+
+    public CompoundRule this[int index]
     {
-        if (details.HasFlags)
+        get
         {
-            foreach(var rule in _rules)
+#if HAS_THROWOOR
+            ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
+#else
+            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+#endif
+
+            return _rules![index];
+        }
+    }
+
+    public IEnumerator<CompoundRule> GetEnumerator() => ((IEnumerable<CompoundRule>)GetInternalArray()).GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    internal CompoundRule[] GetInternalArray() => _rules ?? [];
+
+    internal bool EntryContainsRuleFlags(in FlagSet flags)
+    {
+        if (flags.HasItems && HasItems)
+        {
+            foreach(var rule in _rules!)
             {
-                if (rule.ContainsRuleFlagForEntry(details))
+                if (rule.ContainsRuleFlagForEntry(flags))
                 {
                     return true;
                 }
@@ -55,7 +77,7 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
             new MetacharData()
         };
 
-        foreach (var compoundRule in _rules)
+        foreach (var compoundRule in GetInternalArray())
         {
             var pp = 0; // pattern position
             var wp = 0; // "words" position

@@ -38,7 +38,7 @@ struct HashCode
         _hash = unchecked((_hash * 31) + value.GetHashCode());
     }
 
-    public int ToHashCode() => _hash;
+    public readonly int ToHashCode() => _hash;
 }
 
 #endif

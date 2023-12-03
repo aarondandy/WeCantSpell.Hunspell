@@ -61,6 +61,12 @@ public sealed class QueryOptions
     /// </remarks>
     public int MinTimer { get; set; } = 100;
 
+    public int MaxWordLen { get; set; } = 100;
+
+    public int MaxPhoneTLen { get; set; } = 256;
+
+    public int RecursiveDepthLimit { get; set; } = 0x3F00;
+
     /// <summary>
     /// The time limit for some long running steps during suggestion generation.
     /// </summary>

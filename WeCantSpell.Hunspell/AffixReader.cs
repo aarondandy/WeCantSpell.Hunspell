@@ -23,8 +23,8 @@ public sealed partial class AffixReader
 
     static AffixReader()
     {
-        BitFlagCommandMap = TextDictionary<AffixConfigOptions>.MapFromPairs(new KeyValuePair<string, AffixConfigOptions>[]
-        {
+        BitFlagCommandMap = TextDictionary<AffixConfigOptions>.MapFromPairs(
+        [
             new("CHECKCOMPOUNDDUP", AffixConfigOptions.CheckCompoundDup),
             new("CHECKCOMPOUNDREP", AffixConfigOptions.CheckCompoundRep),
             new("CHECKCOMPOUNDTRIPLE", AffixConfigOptions.CheckCompoundTriple),
@@ -39,10 +39,10 @@ public sealed partial class AffixReader
             new("ONLYMAXDIFF", AffixConfigOptions.OnlyMaxDiff),
             new("SIMPLIFIEDTRIPLE", AffixConfigOptions.SimplifiedTriple),
             new("SUGSWITHDOTS", AffixConfigOptions.SuggestWithDots),
-        });
+        ]);
 
-        CommandMap = TextDictionary<AffixReaderCommandKind>.MapFromPairs(new KeyValuePair<string, AffixReaderCommandKind>[]
-        {
+        CommandMap = TextDictionary<AffixReaderCommandKind>.MapFromPairs(
+        [
             new("AF", AffixReaderCommandKind.AliasF),
             new("AM", AffixReaderCommandKind.AliasM),
             new("BREAK", AffixReaderCommandKind.Break),
@@ -89,7 +89,7 @@ public sealed partial class AffixReader
             new("VERSION", AffixReaderCommandKind.Version),
             new("WORDCHARS", AffixReaderCommandKind.WordChars),
             new("WARN", AffixReaderCommandKind.Warn),
-        });
+        ]);
     }
 
     public AffixReader(AffixConfig.Builder? builder)
@@ -111,12 +111,18 @@ public sealed partial class AffixReader
 
     private Encoding Encoding => _builder.Encoding ?? DefaultEncoding;
 
-    public static Task<AffixConfig> ReadFileAsync(string filePath, CancellationToken cancellationToken = default) =>
-        ReadFileAsync(filePath, builder: null, cancellationToken);
+    public static Task<AffixConfig> ReadFileAsync(string filePath, CancellationToken cancellationToken = default)
+    {
+        return ReadFileAsync(filePath, builder: null, cancellationToken);
+    }
 
     public static async Task<AffixConfig> ReadFileAsync(string filePath, AffixConfig.Builder? builder, CancellationToken cancellationToken = default)
     {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(filePath);
+#else
         if (filePath is null) throw new ArgumentNullException(nameof(filePath));
+#endif
 
         using var stream = StreamEx.OpenAsyncReadFileStream(filePath);
         return await ReadAsync(stream, builder, cancellationToken).ConfigureAwait(false);
@@ -127,12 +133,20 @@ public sealed partial class AffixReader
 
     public static async Task<AffixConfig> ReadAsync(Stream stream, AffixConfig.Builder? builder, CancellationToken cancellationToken = default)
     {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(stream);
+#else
         if (stream is null) throw new ArgumentNullException(nameof(stream));
+#endif
 
         return await ReadInternalAsync(stream, builder, cancellationToken).ConfigureAwait(false);
     }
 
+#if NO_VALUETASK
     private static async Task<AffixConfig> ReadInternalAsync(Stream stream, AffixConfig.Builder? builder, CancellationToken cancellationToken)
+#else
+    private static async ValueTask<AffixConfig> ReadInternalAsync(Stream stream, AffixConfig.Builder? builder, CancellationToken cancellationToken)
+#endif
     {
         var readerInstance = new AffixReader(builder);
 
@@ -147,19 +161,27 @@ public sealed partial class AffixReader
         return readerInstance.BuildConfig(allowDestructive: true);
     }
 
-    public static AffixConfig ReadFile(string filePath) =>
-        ReadFile(filePath, builder: null);
+    public static AffixConfig ReadFile(string filePath)
+    {
+        return ReadFile(filePath, builder: null);
+    }
 
     public static AffixConfig ReadFile(string filePath, AffixConfig.Builder? builder)
     {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(filePath);
+#else
         if (filePath is null) throw new ArgumentNullException(nameof(filePath));
+#endif
 
         using var stream = StreamEx.OpenReadFileStream(filePath);
         return Read(stream, builder);
     }
 
-    public static AffixConfig ReadFromString(string contents) =>
-        ReadFromString(contents, builder: null);
+    public static AffixConfig ReadFromString(string contents)
+    {
+        return ReadFromString(contents, builder: null);
+    }
 
     public static AffixConfig ReadFromString(string contents, AffixConfig.Builder? builder)
     {
@@ -176,12 +198,18 @@ public sealed partial class AffixReader
         return readerInstance.BuildConfig(allowDestructive: true);
     }
 
-    public static AffixConfig Read(Stream stream) =>
-        Read(stream, builder: null);
+    public static AffixConfig Read(Stream stream)
+    {
+        return Read(stream, builder: null);
+    }
 
     public static AffixConfig Read(Stream stream, AffixConfig.Builder? builder)
     {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(stream);
+#else
         if (stream is null) throw new ArgumentNullException(nameof(stream));
+#endif
 
         var readerInstance = new AffixReader(builder);
 
@@ -251,9 +279,9 @@ public sealed partial class AffixReader
     {
         if (!IsInitialized(EntryListType.Break))
         {
-            if (_builder.BreakPoints.Count == 0)
+            if (_builder._breakPoints.Count == 0)
             {
-                _builder.BreakPoints.AddRange(DefaultBreakTableEntries);
+                _builder._breakPoints.AddRange(DefaultBreakTableEntries);
             }
         }
 
@@ -262,10 +290,6 @@ public sealed partial class AffixReader
 
     private bool TryHandleParameterizedCommand(ReadOnlySpan<char> commandName, ReadOnlySpan<char> parameters)
     {
-#if DEBUG
-        if (parameters.IsEmpty) throw new ArgumentOutOfRangeException(nameof(parameters));
-#endif
-
         if (!CommandMap.TryGetValue(commandName, out var command))
         {
             LogWarning($"Unknown command {commandName.ToString()} with params: {parameters.ToString()}");
@@ -310,11 +334,11 @@ public sealed partial class AffixReader
             case AffixReaderCommandKind.CompoundMiddle:
                 return _flagParser.TryParseFlag(parameters, out _builder.CompoundMiddle);
             case AffixReaderCommandKind.CompoundBegin:
-                return EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes)
+                return _builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes)
                     ? _flagParser.TryParseFlag(parameters, out _builder.CompoundEnd)
                     : _flagParser.TryParseFlag(parameters, out _builder.CompoundBegin);
             case AffixReaderCommandKind.CompoundEnd:
-                return EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes)
+                return _builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes)
                     ? _flagParser.TryParseFlag(parameters, out _builder.CompoundBegin)
                     : _flagParser.TryParseFlag(parameters, out _builder.CompoundEnd);
             case AffixReaderCommandKind.CompoundWordMax:
@@ -358,21 +382,21 @@ public sealed partial class AffixReader
             case AffixReaderCommandKind.NeedAffix:
                 return _flagParser.TryParseFlag(parameters, out _builder.NeedAffix);
             case AffixReaderCommandKind.Replacement:
-                return TryParseStandardListItem(EntryListType.Replacements, parameters, _builder.Replacements, TryParseReplacements);
+                return TryParseStandardListItem(EntryListType.Replacements, parameters, _builder._replacements, TryParseReplacements);
             case AffixReaderCommandKind.InputConversions:
-                return TryParseConv(parameters, EntryListType.Iconv, ref _builder.InputConversions);
+                return TryParseConv(parameters, EntryListType.Iconv, ref _builder._inputConversions);
             case AffixReaderCommandKind.OutputConversions:
-                return TryParseConv(parameters, EntryListType.Oconv, ref _builder.OutputConversions);
+                return TryParseConv(parameters, EntryListType.Oconv, ref _builder._outputConversions);
             case AffixReaderCommandKind.Phone:
-                return TryParseStandardListItem(EntryListType.Phone, parameters, _builder.Phone, TryParsePhone);
+                return TryParseStandardListItem(EntryListType.Phone, parameters, _builder._phone, TryParsePhone);
             case AffixReaderCommandKind.CheckCompoundPattern:
-                return TryParseStandardListItem(EntryListType.CompoundPatterns, parameters, _builder.CompoundPatterns, TryParseCheckCompoundPatternIntoCompoundPatterns);
+                return TryParseStandardListItem(EntryListType.CompoundPatterns, parameters, _builder._compoundPatterns, TryParseCheckCompoundPatternIntoCompoundPatterns);
             case AffixReaderCommandKind.CompoundRule:
-                return TryParseStandardListItem(EntryListType.CompoundRules, parameters, _builder.CompoundRules, TryParseCompoundRuleIntoList);
+                return TryParseStandardListItem(EntryListType.CompoundRules, parameters, _builder._compoundRules, TryParseCompoundRuleIntoList);
             case AffixReaderCommandKind.Map:
-                return TryParseStandardListItem(EntryListType.Map, parameters, _builder.RelatedCharacterMap, TryParseMapEntry);
+                return TryParseStandardListItem(EntryListType.Map, parameters, _builder._relatedCharacterMap, TryParseMapEntry);
             case AffixReaderCommandKind.Break:
-                return TryParseStandardListItem(EntryListType.Break, parameters, _builder.BreakPoints, TryParseBreak);
+                return TryParseStandardListItem(EntryListType.Break, parameters, _builder._breakPoints, TryParseBreak);
             case AffixReaderCommandKind.Version:
                 _builder.Version = parameters.ToString();
                 return true;
@@ -397,7 +421,7 @@ public sealed partial class AffixReader
             case AffixReaderCommandKind.Suffix:
                 var parseAsPrefix = AffixReaderCommandKind.Prefix == command;
 
-                if (EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes))
+                if (_builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes))
                 {
                     parseAsPrefix = !parseAsPrefix;
                 }
@@ -576,7 +600,7 @@ public sealed partial class AffixReader
         return true;
     }
 
-    private bool TryParseConv(ReadOnlySpan<char> parameterText, EntryListType entryListType, ref TextDictionary<MultiReplacementEntry>? entries)
+    private bool TryParseConv(ReadOnlySpan<char> parameterText, EntryListType entryListType, ref TextDictionary<MultiReplacementEntry> entries)
     {
         if (!IsInitialized(entryListType))
         {
@@ -611,7 +635,7 @@ public sealed partial class AffixReader
             }
             else
             {
-                throw new InvalidOperationException();
+                handleInvalidConv();
             }
         }
 
@@ -647,6 +671,14 @@ public sealed partial class AffixReader
 
         entry.Set(type, pattern2.ReplaceIntoString('_', ' '));
         return true;
+
+#if !NO_EXPOSED_NULLANNOTATIONS
+        [System.Diagnostics.CodeAnalysis.DoesNotReturn]
+#endif
+        static void handleInvalidConv()
+        {
+            throw new InvalidOperationException();
+        }
     }
 
     private bool TryParseBreak(ReadOnlySpan<char> parameterText, ArrayBuilder<string> entries)
@@ -663,9 +695,9 @@ public sealed partial class AffixReader
 
     private bool TryParseAliasM(ReadOnlySpan<char> parameterText, ImmutableArray<MorphSet>.Builder entries)
     {
-        var parts = ArrayBuilderPool<string>.Get();
+        var parts = ArrayBuilder<string>.Pool.Get((parameterText.Length + 1) / 2);
 
-        if (EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes))
+        if (_builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes))
         {
             foreach (var part in parameterText.SplitOnTabOrSpace())
             {
@@ -682,7 +714,7 @@ public sealed partial class AffixReader
             }
         }
 
-        entries.Add(new MorphSet(ArrayBuilderPool<string>.ExtractAndReturn(parts)));
+        entries.Add(new MorphSet(ArrayBuilder<string>.Pool.ExtractAndReturn(parts)));
 
         return true;
     }
@@ -692,7 +724,7 @@ public sealed partial class AffixReader
         FlagValue[] values;
         if (parameterText.Contains('('))
         {
-            var entryBuilder = new List<FlagValue>();
+            var entryBuilder = new ArrayBuilder<FlagValue>();
             for (var index = 0; index < parameterText.Length; index++)
             {
                 var indexBegin = index;
@@ -715,7 +747,7 @@ public sealed partial class AffixReader
                 }
             }
 
-            values = entryBuilder.ToArray();
+            values = entryBuilder.Extract();
         }
         else
         {
@@ -779,7 +811,7 @@ public sealed partial class AffixReader
             // In some special cases it seems as if the group 2 is blank but groups 1 and 3 have values in them.
             // I think this is a way to make a blank affix value.
             group3 = group2;
-            group2 = ReadOnlySpan<char>.Empty;
+            group2 = [];
         }
 
         // piece 3 - is string to strip or 0 for null
@@ -788,7 +820,7 @@ public sealed partial class AffixReader
         {
             strip = string.Empty;
         }
-        else if (EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes))
+        else if (_builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes))
         {
             strip = group1.ToStringReversed();
         }
@@ -839,7 +871,7 @@ public sealed partial class AffixReader
         }
         else
         {
-            if (EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes))
+            if (_builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes))
             {
                 affixTextBuilder.Reverse();
             }
@@ -849,7 +881,7 @@ public sealed partial class AffixReader
 
         // piece 5 - is the conditions descriptions
         var conditionText = group3;
-        if (EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes))
+        if (_builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes))
         {
             conditionText = ReverseCondition(conditionText).AsSpan();
         }
@@ -887,7 +919,7 @@ public sealed partial class AffixReader
             {
                 var morphSetBuilder = new List<string>();
 
-                if (EnumEx.HasFlag(_builder.Options, AffixConfigOptions.ComplexPrefixes))
+                if (_builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes))
                 {
                     foreach (var morphValue in morphAffixText.SplitOnTabOrSpace())
                     {

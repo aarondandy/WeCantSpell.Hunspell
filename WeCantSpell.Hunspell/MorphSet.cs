@@ -9,14 +9,22 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
 {
-    public static MorphSet Empty { get; } = new(Array.Empty<string>());
+    public static MorphSet Empty { get; } = new([]);
 
     public static bool operator ==(MorphSet left, MorphSet right) => left.Equals(right);
 
     public static bool operator !=(MorphSet left, MorphSet right) => !(left == right);
 
-    public static MorphSet Create(IEnumerable<string> morphs) =>
-        new((morphs ?? throw new ArgumentNullException(nameof(morphs))).ToArray());
+    public static MorphSet Create(IEnumerable<string> morphs)
+    {
+#if HAS_THROWNULL
+        ArgumentNullException.ThrowIfNull(morphs);
+#else
+        if (morphs is null) throw new ArgumentNullException(nameof(morphs));
+#endif
+
+        return new(morphs.ToArray());
+    }
 
     internal static string[] CreateReversedStrings(string[] oldMorphs)
     {
@@ -33,38 +41,52 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
 
     internal MorphSet(string[] morphs)
     {
-#if DEBUG
-        if (morphs is null) throw new ArgumentNullException(nameof(morphs));
-#endif
         _morphs = morphs;
     }
 
-    private readonly string[] _morphs;
+    private readonly string[]? _morphs;
 
-    public int Count => _morphs.Length;
+    public int Count => (_morphs?.Length).GetValueOrDefault();
+
     public bool IsEmpty => !HasItems;
+
     public bool HasItems => _morphs is { Length: > 0 };
-    public string this[int index] => _morphs[index];
 
-    public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)_morphs).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => _morphs.GetEnumerator();
+    public string this[int index]
+    {
+        get
+        {
+#if HAS_THROWOOR
+            ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
+#else
+            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+#endif
 
-    public bool Equals(MorphSet other) => other._morphs.SequenceEqual(_morphs, StringComparer.Ordinal);
+            return _morphs![index];
+        }
+    }
+
+    public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)GetInternalArray()).GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    public bool Equals(MorphSet other) => GetInternalArray().AsSpan().SequenceEqual(GetInternalArray().AsSpan());
 
     public override bool Equals(object? obj) => obj is MorphSet set && Equals(set);
 
-    public override int GetHashCode() => ((IStructuralEquatable)_morphs).GetHashCode(StringComparer.Ordinal);
+    public override int GetHashCode() => ((IStructuralEquatable)GetInternalArray()).GetHashCode(StringComparer.Ordinal);
 
     public override string ToString() => Join(' ');
 
-    internal string Join(string seperator) => string.Join(seperator, _morphs);
+    internal string Join(string seperator) => string.Join(seperator, GetInternalArray());
 
     internal string Join(char seperator) =>
 #if NO_STATIC_STRINGCHAR_METHODS
-        StringEx.Join(seperator, _morphs);
+        StringEx.Join(seperator, GetInternalArray());
 #else
-        string.Join(seperator, _morphs);
+        string.Join(seperator, GetInternalArray());
 #endif
 
-    internal string[] GetInternalArray() => _morphs;
+    internal string[] GetInternalArray() => _morphs ?? [];
 }

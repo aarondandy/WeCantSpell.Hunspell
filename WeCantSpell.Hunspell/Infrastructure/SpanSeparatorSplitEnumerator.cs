@@ -2,32 +2,34 @@
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
-internal ref struct SpanSeparatorSplitEnumerator<T> where T : IEquatable<T>
+ref struct SpanSeparatorSplitEnumerator<T> where T : IEquatable<T>
 {
     public delegate int FindNextSeparator(ReadOnlySpan<T> text);
 
     public SpanSeparatorSplitEnumerator(ReadOnlySpan<T> span, StringSplitOptions options, FindNextSeparator findNextSeparator)
     {
 #if DEBUG
-        if (options != StringSplitOptions.None && options != StringSplitOptions.RemoveEmptyEntries)
+        if (options is not (StringSplitOptions.None or StringSplitOptions.RemoveEmptyEntries))
         {
             throw new ArgumentOutOfRangeException(nameof(options));
         }
 #endif
 
-        _span = span;
-        _options = options;
         _findNextSeparator = findNextSeparator;
+        _options = options;
+        _span = span;
+        _done = false;
     }
 
-    private ReadOnlySpan<T> _span;
-    private readonly StringSplitOptions _options;
     private readonly FindNextSeparator _findNextSeparator;
-    private bool _done = false;
+    private readonly StringSplitOptions _options;
+    private ReadOnlySpan<T> _span;
+    private ReadOnlySpan<T> _current;
+    private bool _done;
 
-    public ReadOnlySpan<T> Current { get; private set; } = ReadOnlySpan<T>.Empty;
+    public readonly ReadOnlySpan<T> Current => _current;
 
-    public SpanSeparatorSplitEnumerator<T> GetEnumerator() => this;
+    public readonly SpanSeparatorSplitEnumerator<T> GetEnumerator() => this;
 
     public bool MoveNext()
     {
@@ -62,16 +64,14 @@ internal ref struct SpanSeparatorSplitEnumerator<T> where T : IEquatable<T>
         var separatorIndex = _findNextSeparator(_span);
         if (separatorIndex >= 0)
         {
-            Current = _span.Slice(0, separatorIndex);
+            _current = _span.Slice(0, separatorIndex);
 
             var nextStartIndex = separatorIndex + 1;
-            _span = _span.Length > nextStartIndex
-                ? _span.Slice(nextStartIndex)
-                : ReadOnlySpan<T>.Empty;
+            _span = _span.Length > nextStartIndex ? _span.Slice(nextStartIndex) : [];
         }
         else
         {
-            Current = _span;
+            _current = _span;
             _done = true;
         }
 

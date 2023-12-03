@@ -4,7 +4,7 @@ public sealed class SingleReplacement : ReplacementEntry
 {
     public SingleReplacement(string pattern, string outString, ReplacementValueType type) : base(pattern)
     {
-        OutString = outString;
+        OutString = outString ?? string.Empty;
         Type = type;
     }
 

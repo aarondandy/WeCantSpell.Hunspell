@@ -4,6 +4,10 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
+#if HAS_FROZENDICTIONARY || HAS_FROZENSET
+using System.Collections.Frozen;
+#endif
+
 using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
@@ -103,12 +107,21 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 {
     protected AffixCollection()
     {
-        _affixesByFlag = null!;
     }
 
-    private Dictionary<FlagValue, AffixGroup<TAffixEntry>> _affixesByFlag;
-    private TAffixEntry[] _affixesWithEmptyKeys = Array.Empty<TAffixEntry>();
-    private Dictionary<char, EntryTreeNode> _affixTreeRootsByFirstKeyChar = new();
+#if HAS_FROZENDICTIONARY
+
+    private FrozenDictionary<FlagValue, AffixGroup<TAffixEntry>> _affixesByFlag = null!; // implementing types are expected to initialize
+    private FrozenDictionary<char, EntryTreeNode> _affixTreeRootsByFirstKeyChar = FrozenDictionary<char, EntryTreeNode>.Empty;
+
+#else
+
+    private Dictionary<FlagValue, AffixGroup<TAffixEntry>> _affixesByFlag = null!; // implementing types are expected to initialize
+    private Dictionary<char, EntryTreeNode> _affixTreeRootsByFirstKeyChar = [];
+
+#endif
+
+    private TAffixEntry[] _affixesWithEmptyKeys = [];
 
     public FlagSet ContClasses { get; protected set; } = FlagSet.Empty;
 
@@ -116,7 +129,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
     public IEnumerable<FlagValue> FlagValues => _affixesByFlag.Keys;
 
-    public IEnumerator<AffixGroup<TAffixEntry>> GetEnumerator() => _affixesByFlag.Values.GetEnumerator();
+    public IEnumerator<AffixGroup<TAffixEntry>> GetEnumerator() => _affixesByFlag.Values.AsEnumerable().GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -146,10 +159,10 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         {
         }
 
-        protected Dictionary<FlagValue, GroupBuilder> _byFlag = new();
-        protected ArrayBuilder<TAffixEntry> _emptyKeys = new();
+        protected Dictionary<FlagValue, GroupBuilder> _byFlag = [];
+        private protected ArrayBuilder<TAffixEntry> _emptyKeys = [];
         protected FlagSet.Builder _contClassesBuilder = new();
-        protected Dictionary<char, List<TAffixEntry>> _byFirstKeyChar = new();
+        protected Dictionary<char, List<TAffixEntry>> _byFirstKeyChar = [];
 
         public GroupBuilder ForGroup(FlagValue aFlag)
         {
@@ -164,19 +177,37 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
         protected void ApplyToCollection(AffixCollection<TAffixEntry> target, bool allowDestructive)
         {
-            target.ContClasses = allowDestructive ? _contClassesBuilder.MoveToFlagSet() : _contClassesBuilder.Create();
-            target._affixesByFlag = _byFlag.ToDictionary(static x => x.Key, x => x.Value.ToImmutable(allowDestructive: allowDestructive));
-            target._affixesWithEmptyKeys = _emptyKeys.MakeOrExtractArray(allowDestructive);
-            target._affixTreeRootsByFirstKeyChar = new();
+            Dictionary<char, EntryTreeNode> affixTreeRootsByFirstKeyCharBuilder = [];
 
             // loop through each prefix list starting point
             foreach (var (firstChar, affixes) in _byFirstKeyChar)
             {
                 if (BuildTree(affixes, allowDestructive: allowDestructive) is { } root)
                 {
-                    target._affixTreeRootsByFirstKeyChar.Add(firstChar, root);
+                    affixTreeRootsByFirstKeyCharBuilder.Add(firstChar, root);
                 }
             }
+
+            target.ContClasses = allowDestructive ? _contClassesBuilder.MoveToFlagSet() : _contClassesBuilder.Create();
+            target._affixesWithEmptyKeys = _emptyKeys.MakeOrExtractArray(allowDestructive);
+
+#if HAS_FROZENDICTIONARY
+
+            target._affixesByFlag = _byFlag.ToFrozenDictionary(static x => x.Key, x => x.Value.ToImmutable(allowDestructive: allowDestructive));
+            target._affixTreeRootsByFirstKeyChar = affixTreeRootsByFirstKeyCharBuilder.ToFrozenDictionary();
+
+#else
+
+            target._affixesByFlag = _byFlag.ToDictionary(static x => x.Key, x => x.Value.ToImmutable(allowDestructive: allowDestructive));
+            target._affixTreeRootsByFirstKeyChar = affixTreeRootsByFirstKeyCharBuilder;
+
+#endif
+
+            if (allowDestructive)
+            {
+                _byFlag.Clear();
+            }
+
         }
 
         private static EntryTreeNode? BuildTree(List<TAffixEntry> affixes, bool allowDestructive)
@@ -201,9 +232,10 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
                 while (--i >= 0)
                 {
-                    ref var node = ref allNodes[i];
-                    node = new(affixes[i]);
-                    node.Next = allNodes[i + 1];
+                    allNodes[i] = new(affixes[i])
+                    {
+                        Next = allNodes[i + 1]
+                    };
                 }
             }
             else
@@ -334,7 +366,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
                     var firstChar = entry.Key[0];
                     if (!_parent._byFirstKeyChar.TryGetValue(firstChar, out var byKeyGroup))
                     {
-                        byKeyGroup = new();
+                        byKeyGroup = [];
                         _parent._byFirstKeyChar.Add(firstChar, byKeyGroup);
                     }
 
@@ -379,26 +411,35 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
     internal struct AffixesByFlagsEnumerator
     {
+#if HAS_FROZENDICTIONARY
+        public AffixesByFlagsEnumerator(FlagSet flags, FrozenDictionary<FlagValue, AffixGroup<TAffixEntry>> affixesByFlag)
+#else
         public AffixesByFlagsEnumerator(FlagSet flags, Dictionary<FlagValue, AffixGroup<TAffixEntry>> affixesByFlag)
+#endif
         {
-            _flags = flags.GetInternalArray() ?? Array.Empty<FlagValue>();
-            _flagsIndex = 0;
+            _flags = flags.GetInternalArray();
             _byFlag = affixesByFlag;
             _group = null!;
+            _flagsIndex = 0;
             _groupIndex = 0;
             _current = default!;
         }
 
+#if HAS_FROZENDICTIONARY
+        private readonly FrozenDictionary<FlagValue, AffixGroup<TAffixEntry>> _byFlag;
+#else
+        private readonly Dictionary<FlagValue, AffixGroup<TAffixEntry>> _byFlag;
+#endif
+
+        private readonly char[] _flags;
         private AffixGroup<TAffixEntry> _group;
-        private Dictionary<FlagValue, AffixGroup<TAffixEntry>> _byFlag;
-        private FlagValue[] _flags;
-        private TAffixEntry _current;
         private int _flagsIndex;
         private int _groupIndex;
+        private TAffixEntry _current;
 
-        public TAffixEntry Current => _current;
+        public readonly TAffixEntry Current => _current;
 
-        public AffixesByFlagsEnumerator GetEnumerator() => this;
+        public readonly AffixesByFlagsEnumerator GetEnumerator() => this;
 
         public bool MoveNext()
         {
@@ -418,7 +459,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         {
             while (_flagsIndex < _flags.Length)
             {
-                if (_byFlag.TryGetValue(_flags[_flagsIndex++], out _group!) && _group.Entries.Length != 0)
+                if (_byFlag.TryGetValue((FlagValue)_flags[_flagsIndex++], out _group!) && _group.Entries.Length != 0)
                 {
                     _groupIndex = 0;
                     return true;
@@ -431,28 +472,36 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
     internal struct GroupsByFlagsEnumerator
     {
+#if HAS_FROZENDICTIONARY
+        public GroupsByFlagsEnumerator(FlagSet flags, FrozenDictionary<FlagValue, AffixGroup<TAffixEntry>> byFlag)
+#else
         public GroupsByFlagsEnumerator(FlagSet flags, Dictionary<FlagValue, AffixGroup<TAffixEntry>> byFlag)
+#endif
         {
-            _flags = flags.GetInternalArray() ?? Array.Empty<FlagValue>();
-            _flagsIndex = 0;
+            _flags = flags.GetInternalArray();
             _byFlag = byFlag;
             _current = default!;
+            _flagsIndex = 0;
         }
 
-        private Dictionary<FlagValue, AffixGroup<TAffixEntry>> _byFlag;
+#if HAS_FROZENDICTIONARY
+        private readonly FrozenDictionary<FlagValue, AffixGroup<TAffixEntry>> _byFlag;
+#else
+        private readonly Dictionary<FlagValue, AffixGroup<TAffixEntry>> _byFlag;
+#endif
+        private readonly char[] _flags;
         private AffixGroup<TAffixEntry> _current;
-        private FlagValue[] _flags;
         private int _flagsIndex;
 
-        public AffixGroup<TAffixEntry> Current => _current;
+        public readonly AffixGroup<TAffixEntry> Current => _current;
 
-        public GroupsByFlagsEnumerator GetEnumerator() => this;
+        public readonly GroupsByFlagsEnumerator GetEnumerator() => this;
 
         public bool MoveNext()
         {
             while (_flagsIndex < _flags.Length)
             {
-                if (_byFlag.TryGetValue(_flags[_flagsIndex++], out _current!))
+                if (_byFlag.TryGetValue((FlagValue)_flags[_flagsIndex++], out _current!))
                 {
                     return true;
                 }
@@ -468,15 +517,16 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         {
             _word = word;
             _node = node;
-            Current = default!;
+            _current = default!;
         }
 
+        private readonly ReadOnlySpan<char> _word;
         private EntryTreeNode? _node;
-        private ReadOnlySpan<char> _word;
+        private TAffixEntry _current;
 
-        public TAffixEntry Current { get; private set; }
+        public readonly TAffixEntry Current => _current;
 
-        public WordEnumerator GetEnumerator() => this;
+        public readonly WordEnumerator GetEnumerator() => this;
 
         public bool MoveNext()
         {
@@ -484,7 +534,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
             {
                 if (_node.Affix.IsWordSubset(_word))
                 {
-                    Current = _node.Affix;
+                    _current = _node.Affix;
                     _node = _node.NextEqual;
                     return true;
                 }

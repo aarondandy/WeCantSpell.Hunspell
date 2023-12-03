@@ -32,22 +32,11 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
 
     private readonly TextDictionary<MultiReplacementEntry> _replacements;
 
-    public MultiReplacementEntry this[string key]
-    {
-        get
-        {
-            if (_replacements.TryGetValue(key, out var result))
-            {
-                return result;
-            }
-
-            throw new InvalidOperationException();
-        }
-    }
+    public MultiReplacementEntry this[string key] => _replacements[key];
 
     public int Count => _replacements.Count;
 
-    public bool HasReplacements => _replacements.Count > 0;
+    public bool HasReplacements => _replacements.Count != 0;
 
     public IEnumerable<string> Keys => _replacements.Keys;
 
@@ -69,11 +58,7 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
 
     internal bool TryConvert(string text, out string converted)
     {
-#if DEBUG
-        if (text is null) throw new ArgumentNullException(nameof(text));
-#endif
-
-        if (!string.IsNullOrEmpty(text))
+        if (text.Length != 0 && HasReplacements)
         {
             var appliedConversion = false;
             var convertedBuilder = StringBuilderPool.Get(text.Length);
@@ -150,6 +135,22 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
 
         converted = string.Empty;
         return false;
+    }
+
+    internal void ConvertAll(List<string> slst)
+    {
+        if (!HasReplacements)
+        {
+            return;
+        }
+
+        for (var j = 0; j < slst.Count; j++)
+        {
+            if (TryConvert(slst[j], out var wspace))
+            {
+                slst[j] = wspace;
+            }
+        }
     }
 
     /// <summary>
