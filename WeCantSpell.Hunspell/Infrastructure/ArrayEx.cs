@@ -16,6 +16,4 @@ static class ArrayEx
 
 #endif
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool Any<T>(this T[] array) => array.Length != 0;
 }

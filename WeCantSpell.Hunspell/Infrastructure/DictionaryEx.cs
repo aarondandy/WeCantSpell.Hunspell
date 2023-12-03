@@ -2,8 +2,11 @@
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
+#if NO_DICTIONARY_GETVALUE || NO_KVP_DECONSTRUCT
+
 static class DictionaryEx
 {
+
 #if NO_DICTIONARY_GETVALUE
 
     public static TValue? GetValueOrDefault<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary, TKey key) =>
@@ -23,4 +26,7 @@ static class DictionaryEx
     }
 
 #endif
+
 }
+
+#endif

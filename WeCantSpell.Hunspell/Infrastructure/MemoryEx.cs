@@ -4,13 +4,6 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class MemoryEx
 {
-#if NO_SPAN_CONTAINS
-
-    public static bool Contains<T>(this ReadOnlySpan<T> @this, T value) where T : IEquatable<T> => @this.IndexOf(value) >= 0;
-
-    public static bool Contains<T>(this Span<T> @this, T value) where T : IEquatable<T> => @this.IndexOf(value) >= 0;
-
-#endif
 
     public static int IndexOf<T>(this ReadOnlySpan<T> @this, T value, int startIndex) where T : IEquatable<T>
     {
@@ -99,42 +92,6 @@ static class MemoryEx
 
             span = span.Slice(1);
         }
-    }
-
-#endif
-
-#if NO_SPAN_TRIM
-
-    public static ReadOnlySpan<T> TrimStart<T>(this ReadOnlySpan<T> span, T value) where T : IEquatable<T>?
-    {
-        var start = 0;
-
-        if (value is null)
-        {
-            for (; start < span.Length && span[start] is not null; start++) ;
-        }
-        else
-        {
-            for (; start < span.Length && !value.Equals(span[start]); start++) ;
-        }
-
-        return span.Slice(start);
-    }
-
-    public static Span<T> TrimStart<T>(this Span<T> span, T value) where T : IEquatable<T>?
-    {
-        var start = 0;
-
-        if (value is null)
-        {
-            for (; start < span.Length && span[start] is null; start++) ;
-        }
-        else
-        {
-            for (; start < span.Length && value.Equals(span[start]); start++) ;
-        }
-
-        return span.Slice(start);
     }
 
 #endif
