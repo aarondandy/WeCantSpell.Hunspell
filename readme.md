@@ -94,7 +94,7 @@ class Program
 
 ## Development
 
-This port wouldn't be feasible for me to produce or maintain without the live testing functionality in [NCrunch](https://www.ncrunch.net/). Being able to get actual near instant feedback from tests saved me from so many typos, bugs due to porting, and even bugs from upstream. I was very relieved to see that NCrunch was survived the release of "Live Unit Testing" in Visual Studio. If you want to try live testing but have been dissatisfied with the native implementation in Visual Studio, please give NCrunch a try. Without NCrunch I will likely stop maintaining this port, it really is that critical to my workflow here.
+This port wouldn't be feasible for me to produce or maintain without the live testing functionality in [NCrunch](https://www.ncrunch.net/). Being able to get actual near instant feedback from tests saved me from so many typos, bugs due to porting, and even bugs from upstream. I was very relieved to see that NCrunch had survived the release of "Live Unit Testing" in Visual Studio. If you want to try live testing but have been dissatisfied with the native implementation in Visual Studio, please give NCrunch a try. Without NCrunch I will likely stop maintaining this port, it really is that critical to my workflow.
 
 I initially started this port so I could revive my old C# spell check tool but I ended up so distracted and burnt out from this port I never got around to writing the Roslyn analyzer. Eventually, Visual Studio got it's own spell checker and vscode has a plethora of them too, so I doubt I will be developing such an analyzer in the future. Some others have taken up that task, so give them a look:
 
