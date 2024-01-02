@@ -40,6 +40,53 @@ static class StringEx
     public static int IndexOfTabOrSpace(this ReadOnlySpan<char> span) => span.IndexOfAny('\t', ' ');
 #endif
 
+#if HAS_SEARCHVALUES
+    public static int IndexOfNonTabOrSpace(this ReadOnlySpan<char> span) => span.IndexOfAnyExcept(TabOrSpace);
+
+    public static int IndexOfNonTabOrSpace(this ReadOnlySpan<char> span, int startIndex)
+    {
+        var index = span.Slice(startIndex).IndexOfAnyExcept(TabOrSpace);
+        if (index >= 0)
+        {
+            index += startIndex;
+        }
+
+        return index;
+    }
+
+#else
+    public static int IndexOfNonTabOrSpace(this ReadOnlySpan<char> span)
+    {
+        var i = 0;
+        for (; i < span.Length && span[i].IsTabOrSpace(); ++i) ;
+
+        return i < span.Length ? i : -1;
+    }
+
+    public static int IndexOfNonTabOrSpace(this ReadOnlySpan<char> span, int startIndex)
+    {
+        var index = span.Slice(startIndex).IndexOfNonTabOrSpace();
+        if (index >= 0)
+        {
+            index += startIndex;
+        }
+
+        return index;
+    }
+#endif
+
+#if HAS_SEARCHVALUES
+    public static int LastIndexOfNonTabOrSpace(this ReadOnlySpan<char> span) => span.LastIndexOfAnyExcept(TabOrSpace);
+#else
+    public static int LastIndexOfNonTabOrSpace(this ReadOnlySpan<char> span)
+    {
+        var i = span.Length - 1;
+        for (; i >= 0 && span[i].IsTabOrSpace(); --i) ;
+
+        return i;
+    }
+#endif
+
     public static int IndexOf(this ReadOnlySpan<char> @this, string value, int startIndex, StringComparison comparisonType)
     {
         return @this.IndexOf(value.AsSpan(), startIndex, comparisonType);
@@ -48,7 +95,12 @@ static class StringEx
     public static int IndexOf(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value, int startIndex, StringComparison comparisonType)
     {
         var result = @this.Slice(startIndex).IndexOf(value, comparisonType);
-        return result < 0 ? result : result + startIndex;
+        if (result >= 0)
+        {
+            result += startIndex;
+        }
+
+        return result;
     }
 
 #if NO_STRING_CONTAINS
@@ -390,6 +442,23 @@ static class StringEx
     public static SpanSeparatorSplitEnumerator<char> SplitOnComma(this ReadOnlySpan<char> @this, StringSplitOptions options = StringSplitOptions.None) => new(@this, options, static span => span.IndexOf(','));
 
     public static SpanSeparatorSplitEnumerator<char> SplitOnTabOrSpace(this ReadOnlySpan<char> @this) => new(@this, StringSplitOptions.RemoveEmptyEntries, static span => span.IndexOfTabOrSpace());
+
+    public static ReadOnlySpan<char> TrimTabOrSpace(this ReadOnlySpan<char> span)
+    {
+        var index = span.IndexOfNonTabOrSpace();
+        if (index > 0)
+        {
+            span = span.Slice(index);
+        }
+
+        index = span.LastIndexOfNonTabOrSpace();
+        if (span.Length - 1 > index)
+        {
+            span = span.Slice(0, Math.Max(index, -1) + 1);
+        }
+
+        return span;
+    }
 
 #if NO_STATIC_STRINGCHAR_METHODS
     public static string Join(char seperator, string[] items)

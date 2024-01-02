@@ -81,8 +81,7 @@ public partial class AffixReader
 
         private void AdvanceThroughWhiteSpace()
         {
-            var i = 0;
-            for (; i < _text.Length && _text[i].IsTabOrSpace(); i++) ;
+            var i = _text.IndexOfNonTabOrSpace();
 
             if (i > 0)
             {

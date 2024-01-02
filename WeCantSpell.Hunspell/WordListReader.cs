@@ -294,7 +294,10 @@ public sealed class WordListReader
         // read through any leading spaces
         int i;
         for (i = 0; i < text.Length && char.IsWhiteSpace(text[i]); i++) ;
-        text = text.Slice(i);
+        if (i > 0)
+        {
+            text = text.Slice(i);
+        }
 
         // find the possible value
         for (i = 0; i < text.Length && !char.IsWhiteSpace(text[i]); i++) ;
@@ -560,11 +563,8 @@ public sealed class WordListReader
 
         public static ParsedWordLine Parse(ReadOnlySpan<char> line)
         {
-            int i;
-
             // read past any leading tabs or spaces
-            for (i = 0; i < line.Length && line[i].IsTabOrSpace(); ++i) ;
-
+            var i = line.IndexOfNonTabOrSpace();
             if (i > 0)
             {
                 line = line.Slice(i);
@@ -579,17 +579,27 @@ public sealed class WordListReader
             var endOfWordAndFlagsPosition = findIndexOfFirstMorphByColonCharAndSpacingHints(line);
             if (endOfWordAndFlagsPosition <= 0)
             {
-                endOfWordAndFlagsPosition = line.IndexOf('\t');
+                endOfWordAndFlagsPosition = line.IndexOf('\t'); // For some reason, this does not include space
                 if (endOfWordAndFlagsPosition < 0)
                 {
                     endOfWordAndFlagsPosition = line.Length;
                 }
             }
 
-            for(; endOfWordAndFlagsPosition > 0 && line[endOfWordAndFlagsPosition - 1].IsTabOrSpace(); --endOfWordAndFlagsPosition) ;
+            for (; endOfWordAndFlagsPosition > 0 && line[endOfWordAndFlagsPosition - 1].IsTabOrSpace(); --endOfWordAndFlagsPosition) ;
 
-            var wordPart = line.Slice(0, endOfWordAndFlagsPosition);
-            var morphPart = line.Slice(endOfWordAndFlagsPosition);
+            ReadOnlySpan<char> wordPart;
+            ReadOnlySpan<char> morphPart;
+            if (endOfWordAndFlagsPosition < line.Length)
+            {
+                wordPart = line.Slice(0, endOfWordAndFlagsPosition);
+                morphPart = line.Slice(endOfWordAndFlagsPosition);
+            }
+            else
+            {
+                wordPart = line;
+                morphPart = [];
+            }
 
             ReadOnlySpan<char> flagsPart;
             var flagsDelimiterPosition = indexOfFlagsDelimiter(wordPart);
@@ -650,12 +660,15 @@ public sealed class WordListReader
             static int indexOfFlagsDelimiter(ReadOnlySpan<char> text)
             {
                 // NOTE: the first character is ignored as a single slash should be treated as a word
-                for (var i = 1; i < text.Length; i++)
+                var i = text.IndexOf('/', 1);
+                while (i > 0)
                 {
-                    if (text[i] == '/' && text[i - 1] != '\\')
+                    if (text[i - 1] != '\\')
                     {
                         return i;
                     }
+
+                    i = text.IndexOf('/', i + 1);
                 }
 
                 return -1;

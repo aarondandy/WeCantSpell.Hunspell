@@ -225,33 +225,40 @@ public sealed partial class AffixReader
     private bool ParseLine(ReadOnlySpan<char> line)
     {
         // read through the initial ^[ \t]*
-        var commandStartIndex = 0;
-        for (; commandStartIndex < line.Length && line[commandStartIndex].IsTabOrSpace(); commandStartIndex++) ;
-
-        if (commandStartIndex == line.Length || isCommentPrefix(line[commandStartIndex]))
+        var index = line.IndexOfNonTabOrSpace();
+        if (index < 0 || index == line.Length || isCommentPrefix(line[index]))
         {
             return true; // empty, whitespace, or comment
         }
 
+        if (index > 0)
+        {
+            line = line.Slice(index);
+        }
+
         // read through the final [ \t]*$
-        var lineEndIndex = line.Length - 1;
-        for (; lineEndIndex > commandStartIndex && line[lineEndIndex].IsTabOrSpace(); lineEndIndex--) ;
+        index = line.LastIndexOfNonTabOrSpace();
+        if (line.Length - 1 > index)
+        {
+            line = line.Slice(0, Math.Max(index, -1) + 1);
+        }
 
         // find the end of the command
-        var commandEndIndex = commandStartIndex;
-        for (; commandEndIndex <= lineEndIndex && !line[commandEndIndex].IsTabOrSpace(); commandEndIndex++) ;
-
-        // first command exists between [lineStartIndex,commandEndIndex)
-        var parameterStartIndex = commandEndIndex;
-        for (; parameterStartIndex <= lineEndIndex && line[parameterStartIndex].IsTabOrSpace(); parameterStartIndex++) ;
-
-        var command = line.Slice(commandStartIndex, commandEndIndex - commandStartIndex);
-
-        if (parameterStartIndex <= lineEndIndex)
+        index = line.IndexOfTabOrSpace();
+        ReadOnlySpan<char> command;
+        if (index < 0)
         {
-            if (TryHandleParameterizedCommand(
-                command,
-                line.Slice(parameterStartIndex, lineEndIndex - parameterStartIndex + 1)))
+            command = line;
+        }
+        else
+        {
+            command = line.Slice(0, index);
+            index = line.IndexOfNonTabOrSpace(index);
+        }
+
+        if (index >= 0)
+        {
+            if (TryHandleParameterizedCommand(command, line.Slice(index)))
             {
                 return true;
             }

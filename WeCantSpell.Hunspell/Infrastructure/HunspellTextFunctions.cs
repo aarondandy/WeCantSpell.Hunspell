@@ -80,34 +80,52 @@ static class HunspellTextFunctions
 
     public static int CountMatchingFromLeft(string text, char character)
     {
+#if HAS_SEARCHVALUES
+        return CountMatchingFromLeft(text.AsSpan(), character);
+#else
         var count = 0;
         for (; count < text.Length && text[count] == character; count++) ;
 
         return count;
+#endif
     }
 
     public static int CountMatchingFromLeft(ReadOnlySpan<char> text, char character)
     {
+#if HAS_SEARCHVALUES
+        var count = text.IndexOfAnyExcept(character);
+        return count < 0 ? text.Length : count;
+#else
         var count = 0;
         for (; count < text.Length && text[count] == character; count++) ;
 
         return count;
+#endif
     }
 
     public static int CountMatchingFromRight(string text, char character)
     {
+#if HAS_SEARCHVALUES
+        return CountMatchingFromRight(text.AsSpan(), character);
+#else
         var searchIndex = text.Length - 1;
         for (; searchIndex >= 0 && text[searchIndex] == character; searchIndex--) ;
 
         return text.Length - searchIndex - 1;
+#endif
     }
 
     public static int CountMatchingFromRight(ReadOnlySpan<char> text, char character)
     {
+#if HAS_SEARCHVALUES
+        var searchIndex = text.LastIndexOfAnyExcept(character);
+        return text.Length - Math.Max(searchIndex, -1) - 1;
+#else
         var searchIndex = text.Length - 1;
         for (; searchIndex >= 0 && text[searchIndex] == character; searchIndex--) ;
 
         return text.Length - searchIndex - 1;
+#endif
     }
 
     public static int CountMatchesFromLeft<T>(this ReadOnlySpan<T> a, ReadOnlySpan<T> b) where T : notnull, IEquatable<T>

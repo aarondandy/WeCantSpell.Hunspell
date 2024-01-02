@@ -171,12 +171,10 @@ internal sealed class LineReader : IDisposable
 
             static ReadOnlySpan<char> readSetEncoding(ReadOnlySpan<char> span)
             {
-                var startIndex = 0;
-                for (; startIndex < span.Length && span[startIndex].IsTabOrSpace(); startIndex++) ;
-
-                if (startIndex > 0)
+                var index = span.IndexOfNonTabOrSpace();
+                if (index > 0)
                 {
-                    span = span.Slice(startIndex);
+                    span = span.Slice(index);
                 }
 
                 if (span.Length >= 5
@@ -185,12 +183,7 @@ internal sealed class LineReader : IDisposable
                     && span[2] is 'T' or 't'
                     && span[3].IsTabOrSpace())
                 {
-                    for (startIndex = 4; startIndex < span.Length && span[startIndex].IsTabOrSpace(); startIndex++) ;
-
-                    var endIndex = span.Length - 1;
-                    for (; endIndex > startIndex && span[endIndex].IsTabOrSpace(); endIndex--) ;
-
-                    return span.Slice(startIndex, endIndex - startIndex + 1);
+                    return span.Slice(4).TrimTabOrSpace();
                 }
 
                 return [];
