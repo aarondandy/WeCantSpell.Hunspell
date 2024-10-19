@@ -22,7 +22,7 @@ struct OperationTimedLimiter
     {
         if (!_hasTriggeredCancellation)
         {
-            if (_cancellationToken.IsCancellationRequested || _timer.CheckForExpiration())
+            if (_cancellationToken.IsCancellationRequested || _timer.QueryForExpiration())
             {
                 _hasTriggeredCancellation = true;
             }
@@ -37,6 +37,9 @@ struct OperationTimedCountLimiter
     /// <summary>
     /// This is the number of operations that are added to a limiter if it runs out of operations before the time limit has expired.
     /// </summary>
+    /// <remarks>
+    /// The prupose of this mechanism seems to be a reduction in the number of slow queries made against the clock.
+    /// </remarks>
     private const int MaxPlusTimer = 100;
 
     public OperationTimedCountLimiter(TimeSpan timeLimit, int countLimit, CancellationToken cancellationToken)
@@ -66,14 +69,14 @@ struct OperationTimedCountLimiter
             {
                 _counter--;
             }
-            else if (_timer.CheckForExpiration())
-            {
-                _counter = MaxPlusTimer;
-            }
-            else
+            else if (_timer.QueryForExpiration())
             {
                 _counter = 0;
                 _hasTriggeredCancellation = true;
+            }
+            else
+            {
+                _counter = MaxPlusTimer;
             }
         }
 
@@ -83,28 +86,25 @@ struct OperationTimedCountLimiter
 
 readonly struct ExpirationTimer
 {
-    private const long DisabledSentinelValue = long.MinValue;
-
-    private static long GetCurrentTicks() => DateTime.UtcNow.Ticks;
+    private static readonly DateTime DisabledSentinelValue = DateTime.MinValue;
 
     internal ExpirationTimer(TimeSpan timeLimit)
     {
-        var limitTicks = timeLimit.Ticks;
-        if (limitTicks < 0)
+        if (timeLimit < TimeSpan.Zero)
         {
             _expiresAt = DisabledSentinelValue;
         }
         else
         {
-            _expiresAt = GetCurrentTicks() + limitTicks;
-            if (_expiresAt < DateTime.MinValue.Ticks || _expiresAt > DateTime.MaxValue.Ticks)
+            _expiresAt = DateTime.UtcNow + timeLimit;
+            if (DateTime.MinValue >= _expiresAt || DateTime.MaxValue <= _expiresAt)
             {
                 _expiresAt = DisabledSentinelValue;
             }
         }
     }
 
-    private readonly long _expiresAt;
+    private readonly DateTime _expiresAt;
 
-    public readonly bool CheckForExpiration() => _expiresAt != DisabledSentinelValue && _expiresAt <= GetCurrentTicks();
+    public readonly bool QueryForExpiration() => _expiresAt != DisabledSentinelValue && DateTime.UtcNow >= _expiresAt;
 }
