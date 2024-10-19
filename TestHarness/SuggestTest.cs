@@ -34,7 +34,8 @@ public class SuggestTest
 
         foreach (var word in checkWords)
         {
-            _ = wordList.Suggest(word);
+            var suggestions = wordList.Suggest(word);
+            Console.WriteLine($"{word}: {string.Join(", ", suggestions)}");
         }
     }
 }

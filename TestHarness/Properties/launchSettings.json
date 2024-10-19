@@ -27,6 +27,11 @@
       "commandName": "Project",
       "commandLineArgs": "suggest-word --dic-file \"../temp-data/fr-toutesvariantes.dic\" --word Systemes",
       "workingDirectory": "./"
+    },
+    "Issue #86": {
+      "commandName": "Project",
+      "commandLineArgs": "suggest --dic-file \"../temp-data/issue86/en.dic\" --word-file \"../temp-data/issue86/words.txt\"",
+      "workingDirectory": "./"
     }
   }
 }
