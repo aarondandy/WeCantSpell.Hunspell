@@ -2,7 +2,7 @@
 
 namespace WeCantSpell.Hunspell.TestHarness;
 
-public class SuggestTest
+public static class SuggestTest
 {
     public static void Run(string dicFilePath, string wordFilePath)
     {

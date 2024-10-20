@@ -32,6 +32,11 @@
       "commandName": "Project",
       "commandLineArgs": "suggest --dic-file \"../temp-data/issue86/en.dic\" --word-file \"../temp-data/issue86/words.txt\"",
       "workingDirectory": "./"
+    },
+    "Issue #88": {
+      "commandName": "Project",
+      "commandLineArgs": "issue88",
+      "workingDirectory": "./"
     }
   }
 }

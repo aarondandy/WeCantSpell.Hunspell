@@ -1,6 +1,6 @@
 ﻿namespace WeCantSpell.Hunspell.TestHarness;
 
-public class SuggestWordTest
+public static class SuggestWordTest
 {
     public static void Run(string dicFilePath, string word)
     {

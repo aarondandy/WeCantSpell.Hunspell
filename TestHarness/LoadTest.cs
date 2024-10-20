@@ -1,6 +1,6 @@
 ﻿namespace WeCantSpell.Hunspell.TestHarness;
 
-public class LoadTest
+public static class LoadTest
 {
     public static void LoadDictionary(string filePath)
     {
