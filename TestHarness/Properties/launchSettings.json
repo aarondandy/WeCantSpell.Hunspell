@@ -37,6 +37,11 @@
       "commandName": "Project",
       "commandLineArgs": "issue88",
       "workingDirectory": "./"
+    },
+    "Issue #91": {
+      "commandName": "Project",
+      "commandLineArgs": "issue91",
+      "workingDirectory": "./"
     }
   }
 }
