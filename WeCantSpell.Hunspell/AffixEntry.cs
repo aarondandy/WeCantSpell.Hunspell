@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Diagnostics;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
+[DebuggerDisplay("Key = {Key}, Conditions = {Conditions}")]
 public abstract class AffixEntry
 {
     protected AffixEntry(
@@ -72,6 +74,7 @@ public abstract class AffixEntry
     public bool ContainsAnyContClass(FlagSet flags) => ContClass.ContainsAny(flags);
 }
 
+[DebuggerDisplay("Key = {Key}, Conditions = {Conditions}")]
 public sealed class PrefixEntry : AffixEntry
 {
     public PrefixEntry(
@@ -93,6 +96,7 @@ public sealed class PrefixEntry : AffixEntry
     public override bool IsWordSubset(ReadOnlySpan<char> s2) => HunspellTextFunctions.IsSubset(Key, s2);
 }
 
+[DebuggerDisplay("Key = {Key}, Conditions = {Conditions}")]
 public sealed class SuffixEntry : AffixEntry
 {
     public SuffixEntry(
