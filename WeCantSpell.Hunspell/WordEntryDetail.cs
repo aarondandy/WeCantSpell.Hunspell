@@ -12,14 +12,7 @@ public readonly struct WordEntryDetail : IEquatable<WordEntryDetail>
 
     public static bool operator !=(WordEntryDetail a, WordEntryDetail b) => !(a == b);
 
-    public static WordEntryDetail Default { get; } = new WordEntryDetail();
-
-    public WordEntryDetail()
-    {
-        Morphs = MorphSet.Empty;
-        Flags = FlagSet.Empty;
-        Options = WordEntryOptions.None;
-    }
+    public static WordEntryDetail Default { get; } = new WordEntryDetail(FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None);
 
     public WordEntryDetail(FlagSet flags, MorphSet morphs, WordEntryOptions options)
     {
