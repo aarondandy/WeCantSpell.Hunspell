@@ -67,7 +67,7 @@ public abstract class AffixEntry
 
     public abstract bool IsWordSubset(ReadOnlySpan<char> word);
 
-    internal bool TestCondition(ReadOnlySpan<char> word) => Conditions.IsStartingMatch(word);
+    internal abstract bool TestCondition(ReadOnlySpan<char> word);
 
     public bool ContainsContClass(FlagValue flag) => ContClass.Contains(flag);
 
@@ -94,6 +94,8 @@ public sealed class PrefixEntry : AffixEntry
     public override bool IsKeySubset(ReadOnlySpan<char> s2) => HunspellTextFunctions.IsSubset(Key, s2);
 
     public override bool IsWordSubset(ReadOnlySpan<char> s2) => HunspellTextFunctions.IsSubset(Key, s2);
+
+    internal override bool TestCondition(ReadOnlySpan<char> word) => Conditions.IsStartingMatch(word);
 }
 
 [DebuggerDisplay("Key = {Key}, Conditions = {Conditions}")]
@@ -134,4 +136,6 @@ public sealed class SuffixEntry : AffixEntry
             return true;
         }
     }
+
+    internal override bool TestCondition(ReadOnlySpan<char> word) => Conditions.IsEndingMatch(word);
 }

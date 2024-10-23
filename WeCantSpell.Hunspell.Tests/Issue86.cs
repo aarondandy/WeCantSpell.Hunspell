@@ -33,4 +33,22 @@ public class Issue86  : IAsyncLifetime
         });
         suggestions.Should().Contain(expected);
     }
+
+    [Theory]
+    [InlineData("poiseed")]
+    [InlineData("jewelrys")]
+    [InlineData("squabblees")]
+    public void wrong_words_are_wrong(string given)
+    {
+        _wordList.Check(given).Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData("epoxied")]
+    [InlineData("jewelries")]
+    [InlineData("squabbles")]
+    public void correct_words_are_correct(string given)
+    {
+        _wordList.Check(given).Should().BeTrue();
+    }
 }
