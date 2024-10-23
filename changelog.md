@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 5.0.1 - 2024-10
+
+- Fixes timing bug [PR #93](https://github.com/aarondandy/WeCantSpell.Hunspell/pull/93)
+- Fixes suggest suffix bug [PR #94](https://github.com/aarondandy/WeCantSpell.Hunspell/pull/94)
+
 ## 5.0.0 - 2023-12
 
 - Removes usages of `Environment.TickCount`: [PR #83](https://github.com/aarondandy/WeCantSpell.Hunspell/pull/83)
