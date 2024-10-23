@@ -36,9 +36,14 @@ struct SimulatedCString
     {
         get
         {
-            if (_terminatedLength < 0 && (_terminatedLength = Array.IndexOf(_rawBuffer, '\0', 0, _bufferLength)) < 0)
+            if (_terminatedLength < 0)
             {
-                _terminatedLength = _bufferLength;
+                _terminatedLength = Array.IndexOf(_rawBuffer, '\0', 0, _bufferLength);
+
+                if (_terminatedLength < 0)
+                {
+                    _terminatedLength = _bufferLength;
+                }
             }
 
             return _rawBuffer.AsSpan(0, _terminatedLength);
@@ -88,13 +93,14 @@ struct SimulatedCString
 
     public char Exchange(int index, char value)
     {
-        if (index >= _bufferLength)
+        var result = '\0';
+
+        if (index < _bufferLength)
         {
-            return '\0';
+            result = _rawBuffer[index];
+            this[index] = value;
         }
 
-        var result = _rawBuffer[index];
-        this[index] = value;
         return result;
     }
 
