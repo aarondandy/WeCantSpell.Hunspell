@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # The value of 0 may be important to include tags for MinVer
           submodules: true
@@ -26,7 +26,7 @@ jobs:
 
       - run: dotnet pack WeCantSpell.Hunspell/WeCantSpell.Hunspell.csproj -c Release --output ./artifacts --include-symbols -p:SymbolPackageFormat=snupkg
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: nuget-packages
           path: |
