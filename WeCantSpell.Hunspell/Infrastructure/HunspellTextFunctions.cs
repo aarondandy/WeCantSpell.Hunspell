@@ -110,7 +110,7 @@ static class HunspellTextFunctions
         return text.Length - searchIndex - 1;
     }
 
-    public static int CountMatchesFromLeft<T>(this ReadOnlySpan<T> a, ReadOnlySpan<T> b) where T : notnull, IEquatable<T>
+    public static int CountMatchesFromLeft(this ReadOnlySpan<char> a, ReadOnlySpan<char> b)
     {
         var minLength = Math.Min(a.Length, b.Length);
         var count = 0;
@@ -118,7 +118,7 @@ static class HunspellTextFunctions
         return count;
     }
 
-    public static int CountMatchesFromRight<T>(this ReadOnlySpan<T> a, ReadOnlySpan<T> b) where T : notnull, IEquatable<T>
+    public static int CountMatchesFromRight(this ReadOnlySpan<char> a, ReadOnlySpan<char> b)
     {
         var minLength = Math.Min(a.Length, b.Length);
         var count = 0;
