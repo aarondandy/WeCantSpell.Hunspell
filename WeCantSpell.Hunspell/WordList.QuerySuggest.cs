@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -3063,6 +3064,7 @@ public partial class WordList
             slst.Insert(0, word);
         }
 
+        [DebuggerDisplay("Score = {Score}, {Root}")]
         private struct NGramSuggestSearchRoot
         {
             public static int ScorePhoneComparison(NGramSuggestSearchRoot x, NGramSuggestSearchRoot y) => y.ScorePhone.CompareTo(x.ScorePhone);
@@ -3084,6 +3086,7 @@ public partial class WordList
             public int ScorePhone;
         }
 
+        [DebuggerDisplay("Score = {Score}, Guess = {Guess}")]
         private struct NGramGuess
         {
             public static int ScoreComparison(NGramGuess x, NGramGuess y) => y.Score.CompareTo(x.Score);
@@ -3108,6 +3111,7 @@ public partial class WordList
             }
         }
 
+        [DebuggerDisplay("Word = {Word}")]
         private struct GuessWord
         {
             public string? Word;

@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Diagnostics;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
+[DebuggerDisplay("AFlag = {AFlag}, Entries = {Entries}")]
 public sealed class AffixGroup<TAffixEntry> where TAffixEntry : AffixEntry
 {
     private AffixGroup(FlagValue aFlag, AffixEntryOptions options, ImmutableArray<TAffixEntry> entries)

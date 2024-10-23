@@ -2,7 +2,7 @@
 
 namespace WeCantSpell.Hunspell.TestHarness;
 
-public class SuggestTest
+public static class SuggestTest
 {
     public static void Run(string dicFilePath, string wordFilePath)
     {
@@ -34,7 +34,8 @@ public class SuggestTest
 
         foreach (var word in checkWords)
         {
-            _ = wordList.Suggest(word);
+            var suggestions = wordList.Suggest(word);
+            Console.WriteLine($"{word}: {string.Join(", ", suggestions)}");
         }
     }
 }
