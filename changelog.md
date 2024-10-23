@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 5.1.0 - 2024-10
+
+- (breaking-ish) Fixes UWP issue with structs [PR #95](https://github.com/aarondandy/WeCantSpell.Hunspell/pull/95)
+
 ## 5.0.1 - 2024-10
 
 - Fixes timing bug [PR #93](https://github.com/aarondandy/WeCantSpell.Hunspell/pull/93)
