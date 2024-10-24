@@ -879,7 +879,7 @@ public sealed partial class AffixReader
         var conditionText = group3;
         if (_builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes))
         {
-            conditionText = ReverseCondition(conditionText).AsSpan();
+            conditionText = ReverseCondition(conditionText);
         }
 
         var conditions = CharacterConditionGroup.Parse(conditionText);
@@ -953,73 +953,71 @@ public sealed partial class AffixReader
         return true;
     }
 
-    private static string ReverseCondition(ReadOnlySpan<char> conditionText)
+    private static ReadOnlySpan<char> ReverseCondition(ReadOnlySpan<char> conditionText)
     {
-        // TODO: Would it be better to reverse the conditions after parsing?
-        //       Instead of reversing a string it could reverse a CharacterConditionGroup.
+        return conditionText.Length <= 1 ? conditionText : reverseCharacters(conditionText);
 
-        if (conditionText.IsEmpty)
+        static ReadOnlySpan<char> reverseCharacters(ReadOnlySpan<char> conditionText)
         {
-            return string.Empty;
-        }
+            var chars = conditionText.ToArray().AsSpan();
+            chars.Reverse();
 
-        var chars = StringBuilderPool.Get(conditionText);
-        chars.Reverse();
-        var neg = false;
-        var lastIndex = chars.Length - 1;
+            var neg = false;
+            var lastIndex = chars.Length - 1;
 
-        for (var k = lastIndex; k >= 0; k--)
-        {
-            switch (chars[k])
+            for (var k = lastIndex; k >= 0; k--)
             {
-                case '[':
-                    if (neg)
-                    {
+                switch (chars[k])
+                {
+                    case '[':
+                        if (neg)
+                        {
+                            if (k < lastIndex)
+                            {
+                                chars[k + 1] = '[';
+                            }
+                        }
+                        else
+                        {
+                            chars[k] = ']';
+                        }
+
+                        break;
+                    case ']':
+                        chars[k] = '[';
+                        if (neg && k < lastIndex)
+                        {
+                            chars[k + 1] = '^';
+                        }
+
+                        neg = false;
+
+                        break;
+                    case '^':
                         if (k < lastIndex)
                         {
-                            chars[k + 1] = '[';
+                            if (chars[k + 1] == ']')
+                            {
+                                neg = true;
+                            }
+                            else if (neg)
+                            {
+                                chars[k + 1] = chars[k];
+                            }
                         }
-                    }
-                    else
-                    {
-                        chars[k] = ']';
-                    }
 
-                    break;
-                case ']':
-                    chars[k] = '[';
-                    if (neg && k < lastIndex)
-                    {
-                        chars[k + 1] = '^';
-                    }
-
-                    neg = false;
-
-                    break;
-                case '^':
-                    if (k < lastIndex)
-                    {
-                        if (chars[k + 1] == ']')
-                        {
-                            neg = true;
-                        }
-                        else if (neg)
+                        break;
+                    default:
+                        if (neg && k < lastIndex)
                         {
                             chars[k + 1] = chars[k];
                         }
-                    }
-
-                    break;
-                default:
-                    if (neg && k < lastIndex)
-                    {
-                        chars[k + 1] = chars[k];
-                    }
-                    break;
+                        break;
+                }
             }
-        }
 
-        return StringBuilderPool.GetStringAndReturn(chars);
+            return chars;
+        }
     }
 
     private bool TryParseReplacements(ReadOnlySpan<char> parameterText, ArrayBuilder<SingleReplacement> entries)
