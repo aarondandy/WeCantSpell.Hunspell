@@ -94,8 +94,7 @@ static class HunspellTextFunctions
 
     public static int CountMatchingFromRight(ReadOnlySpan<char> text, char character)
     {
-        var searchIndex = text.LastIndexOfAnyExcept(character);
-        return text.Length - Math.Max(searchIndex, -1) - 1;
+        return text.Length - text.LastIndexOfAnyExcept(character) - 1;
     }
 
 #else
@@ -136,18 +135,26 @@ static class HunspellTextFunctions
 
     public static int CountMatchesFromLeft(this ReadOnlySpan<char> a, ReadOnlySpan<char> b)
     {
-        var minLength = Math.Min(a.Length, b.Length);
-        var count = 0;
-        for (; count < minLength && a[count].Equals(b[count]); count++) ;
-        return count;
+        return a.Length > b.Length ? countMatches(b, a) : countMatches(a, b);
+
+        static int countMatches(ReadOnlySpan<char> a, ReadOnlySpan<char> b)
+        {
+            var count = 0;
+            for (; count < a.Length && a[count] == b[count]; count++) ;
+            return count;
+        }
     }
 
     public static int CountMatchesFromRight(this ReadOnlySpan<char> a, ReadOnlySpan<char> b)
     {
-        var minLength = Math.Min(a.Length, b.Length);
-        var count = 0;
-        for (; count < minLength && a[a.Length - 1 - count].Equals(b[b.Length - 1 - count]); count++) ;
-        return count;
+        return a.Length > b.Length ? countMatches(b, a) : countMatches(a, b);
+
+        static int countMatches(ReadOnlySpan<char> a, ReadOnlySpan<char> b)
+        {
+            var count = 0;
+            for (; count < a.Length && a[a.Length - 1 - count] == b[b.Length - 1 - count]; count++) ;
+            return count;
+        }
     }
 
     /// <summary>
@@ -159,13 +166,13 @@ static class HunspellTextFunctions
 
     public static string MakeInitCap(string s, TextInfo textInfo)
     {
-        if (s.Length > 0)
+        if (s.Length != 0)
         {
             var actualFirstLetter = s[0];
             var expectedFirstLetter = textInfo.ToUpper(actualFirstLetter);
             if (expectedFirstLetter != actualFirstLetter)
             {
-                return StringEx.ConcatString(expectedFirstLetter, s.AsSpan(1));
+                s = StringEx.ConcatString(expectedFirstLetter, s.AsSpan(1));
             }
         }
 
@@ -180,7 +187,7 @@ static class HunspellTextFunctions
             var expectedFirstLetter = textInfo.ToUpper(actualFirstLetter);
             if (expectedFirstLetter != actualFirstLetter)
             {
-                return StringEx.ConcatString(expectedFirstLetter, s.Slice(1)).AsSpan();
+                s = StringEx.ConcatString(expectedFirstLetter, s.Slice(1)).AsSpan();
             }
         }
 
@@ -200,7 +207,7 @@ static class HunspellTextFunctions
             var expectedFirstLetter = textInfo.ToLower(actualFirstLetter);
             if (expectedFirstLetter != actualFirstLetter)
             {
-                return StringEx.ConcatString(expectedFirstLetter, s.AsSpan(1));
+                s = StringEx.ConcatString(expectedFirstLetter, s.AsSpan(1));
             }
         }
 
@@ -232,8 +239,8 @@ static class HunspellTextFunctions
             s = string.Create(s.Length, (s, cultureInfo), static (span, state) =>
             {
                 var sourceSpan = state.s.AsSpan();
-                sourceSpan.ToLower(span, state.cultureInfo);
                 span[0] = state.cultureInfo.TextInfo.ToUpper(sourceSpan[0]);
+                sourceSpan.Slice(1).ToLower(span.Slice(1), state.cultureInfo);
             });
         }
 

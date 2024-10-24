@@ -275,17 +275,17 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
         return ToStringWithRemoval(text, index).AsSpan();
     }
 
-    private string ToStringWithRemoval(ReadOnlySpan<char> text, int index)
+    private string ToStringWithRemoval(ReadOnlySpan<char> text, int matchIndex)
     {
         var builder = StringBuilderPool.Get(text.Length - 1);
 
         do
         {
-            builder.Append(text.Slice(0, index));
-            text = text.Slice(index + 1);
-            index = FindIndexOfMatch(text);
+            builder.Append(text.Slice(0, matchIndex));
+            text = text.Slice(matchIndex + 1);
+            matchIndex = FindIndexOfMatch(text);
         }
-        while (index >= 0);
+        while (matchIndex >= 0);
 
         builder.Append(text);
 
