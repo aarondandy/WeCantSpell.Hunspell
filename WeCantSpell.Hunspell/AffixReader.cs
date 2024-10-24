@@ -830,13 +830,9 @@ public sealed partial class AffixReader
         }
 
         // piece 4 - is affix string or 0 for null
-        StringBuilder affixTextBuilder;
-        string affixText;
 
         if (group2.IndexOf('/') is int affixSlashIndex and >= 0)
         {
-            affixTextBuilder = StringBuilderPool.Get(group2.Slice(0, affixSlashIndex));
-
             if (_builder.AliasF is { Count: > 0 } aliasF)
             {
                 if (IntEx.TryParseInvariant(group2.Slice(affixSlashIndex + 1), out var aliasNumber) && aliasNumber > 0 && aliasNumber <= aliasF.Count)
@@ -845,7 +841,7 @@ public sealed partial class AffixReader
                 }
                 else
                 {
-                    LogWarning($"Failed to parse contclasses from : {parameterText.ToString()}");
+                    LogWarning(StringEx.ConcatString("Failed to parse contclasses from : ", parameterText));
                     return false;
                 }
             }
@@ -853,30 +849,30 @@ public sealed partial class AffixReader
             {
                 contClass = _flagParser.ParseFlagSet(group2.Slice(affixSlashIndex + 1));
             }
-        }
-        else
-        {
-            affixTextBuilder = StringBuilderPool.Get(group2);
+
+            group2 = group2.Slice(0, affixSlashIndex);
         }
 
-        if (_builder.IgnoredChars.HasItems)
+        string affixText;
+        if (group2.IsEmpty || group2.EqualsOrdinal('0'))
         {
-            affixTextBuilder.RemoveChars(_builder.IgnoredChars);
-        }
-
-        if (affixTextBuilder.Length == 1 && affixTextBuilder[0] == '0')
-        {
-            StringBuilderPool.Return(affixTextBuilder);
             affixText = string.Empty;
         }
         else
         {
-            if (_builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes))
-            {
-                affixTextBuilder.Reverse();
-            }
+            affixText = _builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes)
+                ? group2.ToStringReversed()
+                : group2.ToString();
 
-            affixText = StringBuilderPool.GetStringAndReturn(affixTextBuilder);
+            if (_builder.IgnoredChars.HasItems)
+            {
+                affixText = _builder.IgnoredChars.RemoveChars(affixText);
+
+                if (affixText.EqualsOrdinal('0'))
+                {
+                    affixText = string.Empty; // This should be re-checked after characters are removed
+                }
+            }
         }
 
         // piece 5 - is the conditions descriptions

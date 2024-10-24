@@ -207,23 +207,34 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
             return text;
         }
 
-        if (index == textSpan.Length - 1)
-        {
-            return text.Substring(0, index);
-        }
-
-        var builder = StringBuilderPool.Get(textSpan.Length - 1);
-
         do
         {
-            builder.Append(textSpan.Slice(0, index));
-            textSpan = textSpan.Slice(index + 1);
+            if (index == textSpan.Length - 1)
+            {
+                return textSpan.Slice(0, index).ToString();
+            }
+
+            if (index != 0)
+            {
+                break;
+            }
+
+            if (textSpan.Length <= 1)
+            {
+                return string.Empty;
+            }
+
+            textSpan = textSpan.Slice(1);
+
+            index = FindIndexOfMatch(textSpan);
+            if (index < 0)
+            {
+                return textSpan.ToString();
+            }
         }
-        while ((index = FindIndexOfMatch(textSpan)) >= 0);
+        while (true);
 
-        builder.Append(textSpan);
-
-        return StringBuilderPool.GetStringAndReturn(builder);
+        return ToStringWithRemoval(textSpan, index);
     }
 
     public ReadOnlySpan<char> RemoveChars(ReadOnlySpan<char> text)
@@ -233,19 +244,40 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
             return text;
         }
 
-        var index = FindIndexOfMatch(text);
-        if (index < 0)
+        int index;
+        do
         {
-            return text;
-        }
+            index = FindIndexOfMatch(text);
+            if (index < 0)
+            {
+                return text;
+            }
 
-        if (index == text.Length - 1)
-        {
-            return text.Slice(0, index);
-        }
+            if (index == text.Length - 1)
+            {
+                return text.Slice(0, index);
+            }
 
+            if (index != 0)
+            {
+                break;
+            }
+
+            if (text.Length <= 1)
+            {
+                return [];
+            }
+
+            text = text.Slice(1);
+        }
+        while (true);
+
+        return ToStringWithRemoval(text, index).AsSpan();
+    }
+
+    private string ToStringWithRemoval(ReadOnlySpan<char> text, int index)
+    {
         var builder = StringBuilderPool.Get(text.Length - 1);
-
         do
         {
             builder.Append(text.Slice(0, index));
@@ -255,7 +287,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
         builder.Append(text);
 
-        return StringBuilderPool.GetStringAndReturn(builder).AsSpan();
+        return StringBuilderPool.GetStringAndReturn(builder);
     }
 
     public override string ToString() => new(GetInternalArray());

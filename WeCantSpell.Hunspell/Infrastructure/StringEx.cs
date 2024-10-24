@@ -28,7 +28,11 @@ static class StringEx
 
     public static bool EqualsOrdinal(this ReadOnlySpan<char> @this, string value) => @this.Equals(value, StringComparison.Ordinal);
 
+    public static bool EqualsOrdinal(this ReadOnlySpan<char> @this, char value) => @this.Length == 1 && @this[0] == value;
+
     public static bool EqualsOrdinal(this string @this, ReadOnlySpan<char> value) => value.Equals(@this, StringComparison.Ordinal);
+
+    public static bool EqualsOrdinal(this string @this, char value) => @this.Length == 1 && @this[0] == value;
 
     public static bool EqualsOrdinal(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value) => @this.Equals(value, StringComparison.Ordinal);
 
@@ -256,25 +260,9 @@ static class StringEx
     public static string ConcatString(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value) => string.Concat(@this, value);
 #endif
 
-    public static string ConcatString(this ReadOnlySpan<char> @this, string value)
-    {
-        if (@this.IsEmpty)
-        {
-            return value;
-        }
+    public static string ConcatString(this ReadOnlySpan<char> @this, string value) => @this.IsEmpty ? value : ConcatString(@this, value.AsSpan());
 
-        return ConcatString(@this, value.AsSpan());
-    }
-
-    public static string ConcatString(this string @this, ReadOnlySpan<char> value)
-    {
-        if (value.IsEmpty)
-        {
-            return @this;
-        }
-
-        return ConcatString(@this.AsSpan(), value);
-    }
+    public static string ConcatString(this string @this, ReadOnlySpan<char> value) => value.IsEmpty ? @this : ConcatString(@this.AsSpan(), value);
 
     public static ReadOnlySpan<char> ConcatSpan(this ReadOnlySpan<char> @this, string value)
     {
