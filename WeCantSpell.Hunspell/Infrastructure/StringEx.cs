@@ -187,6 +187,34 @@ static class StringEx
 #endif
 
 #if NO_STRING_SPAN
+    public static string ConcatString(string str0, ReadOnlySpan<char> str1, string str2, ReadOnlySpan<char> str3)
+    {
+        var builder = StringBuilderPool.Get(str0.Length + str1.Length + str2.Length + str3.Length);
+        builder.Append(str0);
+        builder.Append(str1);
+        builder.Append(str2);
+        builder.Append(str3);
+        return StringBuilderPool.GetStringAndReturn(builder);
+    }
+#else
+    public static string ConcatString(string str0, ReadOnlySpan<char> str1, string str2, ReadOnlySpan<char> str3) => string.Concat(str0, str1, str2, str3);
+#endif
+
+#if NO_STRING_SPAN
+    public static string ConcatString(string str0, string str1, string str2, ReadOnlySpan<char> str3)
+    {
+        var builder = StringBuilderPool.Get(str0.Length + str1.Length + str2.Length + str3.Length);
+        builder.Append(str0);
+        builder.Append(str1);
+        builder.Append(str2);
+        builder.Append(str3);
+        return StringBuilderPool.GetStringAndReturn(builder);
+    }
+#else
+    public static string ConcatString(string str0, string str1, string str2, ReadOnlySpan<char> str3) => string.Concat(str0, str1, str2, str3);
+#endif
+
+#if NO_STRING_SPAN
     public static string ConcatString(ReadOnlySpan<char> str0, string str1, ReadOnlySpan<char> str2)
     {
         var builder = StringBuilderPool.Get(str0.Length + str1.Length + str2.Length);

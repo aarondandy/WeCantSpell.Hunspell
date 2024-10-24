@@ -292,7 +292,7 @@ public sealed partial class AffixReader
     {
         if (!CommandMap.TryGetValue(commandName, out var command))
         {
-            LogWarning($"Unknown command {commandName.ToString()} with params: {parameters.ToString()}");
+            LogWarning(StringEx.ConcatString("Unknown command ", commandName, " with params: ", parameters));
             return false;
         }
 
@@ -434,7 +434,7 @@ public sealed partial class AffixReader
             case AffixReaderCommandKind.AliasM:
                 return TryParseStandardListItem(EntryListType.AliasM, parameters, _builder.AliasM, TryParseAliasM);
             default:
-                LogWarning($"Unknown parsed command {command}");
+                LogWarning(string.Concat("Unknown parsed command ", command.ToString()));
                 return false;
         }
     }
@@ -641,7 +641,7 @@ public sealed partial class AffixReader
 
         if (state < 2)
         {
-            LogWarning($"Bad {entryListType}: {parameterText.ToString()}");
+            LogWarning(StringEx.ConcatString("Bad ", entryListType.ToString(), ": ", parameterText));
             return false;
         }
 
@@ -907,7 +907,7 @@ public sealed partial class AffixReader
                 }
                 else
                 {
-                    LogWarning($"Failed to parse morph {morphAffixText.ToString()} from: {parameterText.ToString()}");
+                    LogWarning(StringEx.ConcatString("Failed to parse morph ", morphAffixText, " from: ", parameterText));
                     return false;
                 }
             }
@@ -1047,7 +1047,7 @@ public sealed partial class AffixReader
 
         if (state < 1)
         {
-            LogWarning("Failed to parse replacements from: " + parameterText.ToString());
+            LogWarning(StringEx.ConcatString("Failed to parse replacements from: ", parameterText));
             return false;
         }
 
@@ -1160,15 +1160,15 @@ public sealed partial class AffixReader
         {
             if (state == ParseCheckCompoundPatternState.FailCondition1)
             {
-                LogWarning($"Failed to parse pattern condition 1 from: {parameterText.ToString()}");
+                LogWarning(StringEx.ConcatString("Failed to parse pattern condition 1 from: ", parameterText));
             }
             else if (state == ParseCheckCompoundPatternState.FailCondition2)
             {
-                LogWarning($"Failed to parse pattern condition 2 from: {parameterText.ToString()}");
+                LogWarning(StringEx.ConcatString("Failed to parse pattern condition 2 from: ", parameterText));
             }
             else
             {
-                LogWarning($"Failed to parse compound pattern from: {parameterText.ToString()}");
+                LogWarning(StringEx.ConcatString("Failed to parse compound pattern from: ", parameterText));
             }
 
             return false;
@@ -1194,13 +1194,13 @@ public sealed partial class AffixReader
 
         if (TryParseFlagMode(modeText) is not { } mode)
         {
-            LogWarning($"Unknown FlagMode: {modeText.ToString()}");
+            LogWarning(StringEx.ConcatString("Unknown FlagMode: ", modeText));
             return false;
         }
 
         if (_builder.FlagMode == mode)
         {
-            LogWarning($"Redundant FlagMode: {modeText.ToString()}");
+            LogWarning(StringEx.ConcatString("Redundant FlagMode: ", modeText));
             return false;
         }
 
