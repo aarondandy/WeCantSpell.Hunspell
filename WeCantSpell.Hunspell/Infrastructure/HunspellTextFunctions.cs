@@ -185,17 +185,35 @@ static class HunspellTextFunctions
 
     public static string MakeAllCap(string s, TextInfo textInfo) => textInfo.ToUpper(s);
 
+#if NO_STRING_SPAN
+
     public static string MakeTitleCase(string s, CultureInfo cultureInfo)
     {
         if (s.Length != 0)
         {
             var builder = StringBuilderPool.Get(cultureInfo.TextInfo.ToLower(s));
             builder[0] = cultureInfo.TextInfo.ToUpper(s[0]);
-            return StringBuilderPool.GetStringAndReturn(builder);
+            s = StringBuilderPool.GetStringAndReturn(builder);
         }
 
         return s;
     }
+#else
+    public static string MakeTitleCase(string s, CultureInfo cultureInfo)
+    {
+        if (s.Length != 0)
+        {
+            s = string.Create(s.Length, (s, cultureInfo), static (span, state) =>
+            {
+                var sourceSpan = state.s.AsSpan();
+                sourceSpan.ToLower(span, state.cultureInfo);
+                span[0] = state.cultureInfo.TextInfo.ToUpper(sourceSpan[0]);
+            });
+        }
+
+        return s;
+    }
+#endif
 
     public static CapitalizationType GetCapitalizationType(string word, TextInfo textInfo) =>
         GetCapitalizationType(word.AsSpan(), textInfo);
