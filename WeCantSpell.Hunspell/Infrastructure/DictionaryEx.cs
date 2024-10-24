@@ -12,9 +12,6 @@ static class DictionaryEx
     public static TValue? GetValueOrDefault<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary, TKey key) =>
         dictionary.TryGetValue(key, out var result) ? result : default;
 
-    public static TValue GetValueOrDefault<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue) =>
-        dictionary.TryGetValue(key, out var result) ? result : defaultValue;
-
 #endif
 
 #if NO_KVP_DECONSTRUCT

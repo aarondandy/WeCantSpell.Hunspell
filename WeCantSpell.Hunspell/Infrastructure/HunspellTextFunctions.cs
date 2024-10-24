@@ -8,6 +8,7 @@ static class HunspellTextFunctions
 {
 
 #if false // This isn't used anymore but I want to keep it around as it was tricky to port
+
     public static bool IsReverseSubset(string s1, ReadOnlySpan<char> s2)
     {
         return s1.Length <= s2.Length && check(s1.AsSpan(), s2);
@@ -29,6 +30,7 @@ static class HunspellTextFunctions
             return true;
         }
     }
+
 #endif
 
     public static bool IsSubset(string s1, ReadOnlySpan<char> s2)
@@ -198,7 +200,9 @@ static class HunspellTextFunctions
 
         return s;
     }
+
 #else
+
     public static string MakeTitleCase(string s, CultureInfo cultureInfo)
     {
         if (s.Length != 0)
@@ -213,6 +217,7 @@ static class HunspellTextFunctions
 
         return s;
     }
+
 #endif
 
     public static CapitalizationType GetCapitalizationType(string word, TextInfo textInfo) =>

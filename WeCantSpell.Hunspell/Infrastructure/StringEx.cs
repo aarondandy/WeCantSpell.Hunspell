@@ -378,18 +378,23 @@ static class StringEx
             return text.Slice(0, index).ToString();
         }
 
-        var builder = StringBuilderPool.Get(text.Length - 1);
+        return buildWithPool(text, index, value);
 
-        do
+        static string buildWithPool(ReadOnlySpan<char> text, int index, char value)
         {
-            builder.Append(text.Slice(0, index));
-            text = text.Slice(index + 1);
+            var builder = StringBuilderPool.Get(text.Length - 1);
+
+            do
+            {
+                builder.Append(text.Slice(0, index));
+                text = text.Slice(index + 1);
+            }
+            while ((index = text.IndexOf(value)) >= 0);
+
+            builder.Append(text);
+
+            return StringBuilderPool.GetStringAndReturn(builder);
         }
-        while ((index = text.IndexOf(value)) >= 0);
-
-        builder.Append(text);
-
-        return StringBuilderPool.GetStringAndReturn(builder);
     }
 
     public static string ToStringReversed(this ReadOnlySpan<char> @this)

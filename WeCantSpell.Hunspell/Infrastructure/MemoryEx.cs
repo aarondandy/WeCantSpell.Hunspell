@@ -4,30 +4,27 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class MemoryEx
 {
-
-    public static int IndexOf<T>(this ReadOnlySpan<T> @this, T value, int startIndex) where T : IEquatable<T>
+    public static int IndexOf(this ReadOnlySpan<char> @this, char value, int startIndex)
     {
         var result = @this.Slice(startIndex).IndexOf(value);
         return result >= 0 ? result + startIndex : result;
     }
 
-    public static int IndexOf<T>(this ReadOnlySpan<T> @this, ReadOnlySpan<T> value, int startIndex) where T : IEquatable<T>
+    public static int IndexOf(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value, int startIndex)
     {
         var result = @this.Slice(startIndex).IndexOf(value);
         return result >= 0 ? result + startIndex : result;
     }
 
-    public static ReadOnlySpan<T> Limit<T>(this ReadOnlySpan<T> @this, int maxLength)
-    {
-        return @this.Length > maxLength ? @this.Slice(0, maxLength) : @this;
-    }
+    public static ReadOnlySpan<char> Limit(this ReadOnlySpan<char> @this, int maxLength) =>
+        @this.Length > maxLength ? @this.Slice(0, maxLength) : @this;
 
     public static void Swap<T>(ref T value0, ref T value1)
     {
         (value1, value0) = (value0, value1);
     }
 
-    public static void Swap<T>(this Span<T> span, int index0, int index1)
+    public static void Swap(this Span<char> span, int index0, int index1)
     {
         (span[index1], span[index0]) = (span[index0], span[index1]);
     }
@@ -98,8 +95,13 @@ static class MemoryEx
 
     public static void RemoveAll<T>(ref Span<T> span, T value) where T : notnull, IEquatable<T>
     {
-        var writeIndex = 0;
-        var readIndex = 0;
+        var readIndex = span.IndexOf(value);
+        if (readIndex < 0)
+        {
+            return;
+        }
+
+        var writeIndex = readIndex;
 
         for (; readIndex < span.Length; readIndex++)
         {
