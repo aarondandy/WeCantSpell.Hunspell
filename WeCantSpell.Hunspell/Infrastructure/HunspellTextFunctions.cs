@@ -80,6 +80,26 @@ static class HunspellTextFunctions
         return state == 1;
     }
 
+#if HAS_SEARCHVALUES
+
+    public static int CountMatchingFromLeft(string text, char character) => CountMatchingFromLeft(text.AsSpan(), character);
+
+    public static int CountMatchingFromLeft(ReadOnlySpan<char> text, char character)
+    {
+        var count = text.IndexOfAnyExcept(character);
+        return count < 0 ? text.Length : count;
+    }
+
+    public static int CountMatchingFromRight(string text, char character) => CountMatchingFromRight(text.AsSpan(), character);
+
+    public static int CountMatchingFromRight(ReadOnlySpan<char> text, char character)
+    {
+        var searchIndex = text.LastIndexOfAnyExcept(character);
+        return text.Length - Math.Max(searchIndex, -1) - 1;
+    }
+
+#else
+
     public static int CountMatchingFromLeft(string text, char character)
     {
         var count = 0;
@@ -111,6 +131,8 @@ static class HunspellTextFunctions
 
         return text.Length - searchIndex - 1;
     }
+
+#endif
 
     public static int CountMatchesFromLeft(this ReadOnlySpan<char> a, ReadOnlySpan<char> b)
     {
