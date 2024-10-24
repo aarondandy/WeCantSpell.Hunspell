@@ -1749,7 +1749,7 @@ public partial class WordList
                 if (rp is not null)
                 {
                     var field = string.Empty;
-                    if (!rp.Options.HasFlagEx(WordEntryOptions.Phon) || !QuerySuggest.CopyField(ref field, rp.Morphs, MorphologicalTags.Phon))
+                    if (!rp.Options.HasFlagEx(WordEntryOptions.Phon) || !CopyField(ref field, rp.Morphs, MorphologicalTags.Phon))
                     {
                         field = null;
                     }
@@ -2178,10 +2178,12 @@ public partial class WordList
                     wlstNh = ref wlst[nh];
 
                     wlstNh.Word = phon;
-                    if (wlstNh.Word is null)
-                    {
-                        return nh - 1;
-                    }
+
+                    // It should be impossible for wlstNh.Word to be null as phon is already checked
+                    // if (wlstNh.Word is null)
+                    // {
+                    //     return nh - 1;
+                    // }
 
                     wlstNh.Allow = false;
                     wlstNh.Orig = entry.Word;
@@ -2536,40 +2538,28 @@ public partial class WordList
 
         private static bool CopyField(ref string dest, MorphSet morphs, string var)
         {
-            if (morphs.Count == 0)
+            if (morphs.Count != 0)
             {
-                return false;
-            }
-
-            var morph = morphs.Join(' ');
-
-            if (morph.Length == 0)
-            {
-                return false;
-            }
-
-            var pos = morph.IndexOf(var, StringComparison.Ordinal);
-            if (pos < 0)
-            {
-                return false;
-            }
-
-            var begOffset = pos + MorphologicalTags.Stem.Length;
-            var builder = StringBuilderPool.Get(morph.Length - begOffset);
-
-            for (var i = begOffset; i < morph.Length; i++)
-            {
-                var c = morph[i];
-                if (c is ' ' or '\t' or '\n')
+                var morph = morphs.Join(' ').AsSpan();
+                if (morph.Length != 0)
                 {
-                    break;
-                }
+                    var pos = morph.IndexOf(var.AsSpan(), StringComparison.Ordinal);
+                    if (pos >= 0)
+                    {
+                        morph = morph.Slice(pos + var.Length);
+                        pos = morph.IndexOfAny(' ', '\t', '\n');
+                        if (pos >= 0)
+                        {
+                            morph = morph.Slice(0, pos);
+                        }
 
-                builder.Append(c);
+                        dest = morph.ToString();
+                        return true;
+                    }
+                }
             }
 
-            dest = StringBuilderPool.GetStringAndReturn(builder);
-            return true;
+            return false;
         }
 
         /// <summary>
