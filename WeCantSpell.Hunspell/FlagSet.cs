@@ -344,16 +344,9 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             return string.Empty;
         }
 
-        if (Array.TrueForAll(_values!, static v => v < 256))
+        if (Array.TrueForAll(_values!, static v => v <= 128))
         {
-            var builder = StringBuilderPool.Get(_values!.Length);
-
-            foreach (var value in _values)
-            {
-                builder.Append(value);
-            }
-
-            return StringBuilderPool.GetStringAndReturn(builder);
+            return new string(_values);
         }
         else
         {
