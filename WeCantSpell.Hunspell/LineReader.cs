@@ -286,7 +286,7 @@ internal sealed class LineReader : IDisposable
 #if NO_VALUETASK || NO_STREAM_SYSMEM
     private async Task<int> ReadNewTextBufferLinesAsync(CancellationToken ct)
     {
-        var fileBytesRead = await _stream.ReadAsync(_reusableFileReadBuffer, 0, _reusableFileReadBuffer.Length, ct);
+        var fileBytesRead = await _stream.ReadAsync(_reusableFileReadBuffer, 0, _reusableFileReadBuffer.Length, ct).ConfigureAwait(false);
         if (fileBytesRead == 0)
         {
             return 0;
@@ -298,7 +298,7 @@ internal sealed class LineReader : IDisposable
     private async ValueTask<int> ReadNewTextBufferLinesAsync(CancellationToken ct)
     {
         var fileReadBuffer = _reusableFileReadBuffer.AsMemory();
-        var fileBytesRead = await _stream.ReadAsync(fileReadBuffer, ct);
+        var fileBytesRead = await _stream.ReadAsync(fileReadBuffer, ct).ConfigureAwait(false);
         if (fileBytesRead == 0)
         {
             return 0;

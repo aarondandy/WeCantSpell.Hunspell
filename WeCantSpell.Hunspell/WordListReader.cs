@@ -106,14 +106,6 @@ public sealed class WordListReader
         if (affix is null) throw new ArgumentNullException(nameof(affix));
 #endif
 
-        return await ReadInternalAsync(dictionaryStream, affix, builder, cancellationToken).ConfigureAwait(false);
-    }
-#if NO_VALUETASK
-    private static async Task<WordList> ReadInternalAsync(Stream dictionaryStream, AffixConfig affix, WordList.Builder? builder, CancellationToken cancellationToken)
-#else
-    private static async ValueTask<WordList> ReadInternalAsync(Stream dictionaryStream, AffixConfig affix, WordList.Builder? builder, CancellationToken cancellationToken)
-#endif
-    {
         var readerInstance = new WordListReader(builder, affix);
 
         using (var lineReader = new LineReader(dictionaryStream, affix.Encoding))

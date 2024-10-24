@@ -139,15 +139,6 @@ public sealed partial class AffixReader
         if (stream is null) throw new ArgumentNullException(nameof(stream));
 #endif
 
-        return await ReadInternalAsync(stream, builder, cancellationToken).ConfigureAwait(false);
-    }
-
-#if NO_VALUETASK
-    private static async Task<AffixConfig> ReadInternalAsync(Stream stream, AffixConfig.Builder? builder, CancellationToken cancellationToken)
-#else
-    private static async ValueTask<AffixConfig> ReadInternalAsync(Stream stream, AffixConfig.Builder? builder, CancellationToken cancellationToken)
-#endif
-    {
         var readerInstance = new AffixReader(builder);
 
         using (var lineReader = new LineReader(stream, readerInstance.Encoding, allowEncodingChanges: true))
