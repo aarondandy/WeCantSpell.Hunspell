@@ -16,7 +16,7 @@ ref struct StringBuilderSpan
         _chars = [];
     }
 
-    public StringBuilderSpan(scoped ReadOnlySpan<char> text)
+    public StringBuilderSpan(ReadOnlySpan<char> text)
     {
         _rawBuffer = ArrayPool<char>.Shared.Rent(text.Length);
         _chars = _rawBuffer.AsSpan(0, text.Length);
@@ -54,33 +54,6 @@ ref struct StringBuilderSpan
         _chars = [];
     }
 
-    public void Append(string value)
-    {
-        if (value is not { Length: > 0 })
-        {
-            return;
-        }
-
-        Append(value.AsSpan());
-    }
-
-    public void Append(scoped ReadOnlySpan<char> value)
-    {
-        if (value.IsEmpty)
-        {
-            return;
-        }
-
-        var newSize = _chars.Length + value.Length;
-        if (_rawBuffer.Length < newSize)
-        {
-            GrowBufferToCapacity(newSize);
-        }
-
-        value.CopyTo(_rawBuffer.AsSpan(_chars.Length));
-        _chars = _rawBuffer.AsSpan(0, newSize);
-    }
-
     public void Set(string value)
     {
         if (value is not { Length: > 0 })
@@ -93,7 +66,7 @@ ref struct StringBuilderSpan
         }
     }
 
-    public void Set(scoped ReadOnlySpan<char> value)
+    public void Set(ReadOnlySpan<char> value)
     {
         if (value.IsEmpty)
         {
@@ -111,16 +84,31 @@ ref struct StringBuilderSpan
         }
     }
 
-    public void AppendLower(ReadOnlySpan<char> value, CultureInfo cultureInfo)
+    public void Append(string value)
     {
-        var space = AppendSpaceForImmediateWrite(value.Length);
-        value.ToLower(space, cultureInfo);
+        if (value is not { Length: > 0 })
+        {
+            return;
+        }
+
+        Append(value.AsSpan());
     }
 
-    public void AppendUpper(ReadOnlySpan<char> value, CultureInfo cultureInfo)
+    public void Append(ReadOnlySpan<char> value)
     {
-        var space = AppendSpaceForImmediateWrite(value.Length);
-        value.ToUpper(space, cultureInfo);
+        if (value.IsEmpty)
+        {
+            return;
+        }
+
+        var newSize = _chars.Length + value.Length;
+        if (_rawBuffer.Length < newSize)
+        {
+            GrowBufferToCapacity(newSize);
+        }
+
+        value.CopyTo(_rawBuffer.AsSpan(_chars.Length));
+        _chars = _rawBuffer.AsSpan(0, newSize);
     }
 
     public void Append(char value)
@@ -133,6 +121,75 @@ ref struct StringBuilderSpan
 
         _rawBuffer[_chars.Length] = value;
         _chars = _rawBuffer.AsSpan(0, newSize);
+    }
+
+    public void AppendLower(ReadOnlySpan<char> value, CultureInfo cultureInfo)
+    {
+        var space = AppendSpaceForImmediateWrite(value.Length);
+        value.ToLower(space, cultureInfo);
+    }
+
+    public void AppendUpper(ReadOnlySpan<char> value, CultureInfo cultureInfo)
+    {
+        var space = AppendSpaceForImmediateWrite(value.Length);
+        value.ToUpper(space, cultureInfo);
+    }
+
+    public void AppendReversed(ReadOnlySpan<char> value)
+    {
+        var space = AppendSpaceForImmediateWrite(value.Length);
+        value.CopyToReversed(space);
+    }
+
+    public void Replace(char oldChar, char newChar, int startIndex, int count)
+    {
+        _chars.Slice(startIndex, count).Replace(oldChar, newChar);
+    }
+
+    public void Replace(string oldText, string newText, int startIndex, int count)
+    {
+        Replace(oldText.AsSpan(), newText.AsSpan(), startIndex, count);
+    }
+
+    public void Replace(ReadOnlySpan<char> oldText, ReadOnlySpan<char> newText, int startIndex, int count)
+    {
+        if (_chars.IsEmpty || oldText.IsEmpty)
+        {
+            return;
+        }
+
+        do
+        {
+            if (startIndex >= _chars.Length)
+            {
+                return;
+            }
+
+            startIndex = _chars.IndexOf(oldText, startIndex);
+            if (startIndex < 0)
+            {
+                return;
+            }
+
+            // This isn't very optimal but it should be good enough
+            if (oldText.Length == newText.Length)
+            {
+                newText.CopyTo(_chars.Slice(startIndex));
+            }
+            else if (newText.Length < oldText.Length)
+            {
+                newText.CopyTo(_chars.Slice(startIndex));
+                Remove(startIndex + newText.Length, oldText.Length - newText.Length);
+            }
+            else
+            {
+                Remove(startIndex, oldText.Length);
+                Insert(startIndex, newText);
+            }
+
+            startIndex += newText.Length;
+        }
+        while (true);
     }
 
     public void Remove(int startIndex, int count)
@@ -176,6 +233,30 @@ ref struct StringBuilderSpan
         }
 
         newChars[index] = value;
+
+        _chars = newChars;
+    }
+
+    public void Insert(int index, ReadOnlySpan<char> value)
+    {
+#if DEBUG
+        if (index < 0 || index > (_chars.Length + 1)) throw new ArgumentOutOfRangeException(nameof(index));
+#endif
+
+        var newSize = _chars.Length + value.Length;
+        if (_rawBuffer.Length < newSize)
+        {
+            GrowBufferToCapacity(newSize);
+        }
+
+        var newChars = _rawBuffer.AsSpan(0, newSize);
+
+        if (index < _chars.Length)
+        {
+            newChars.Slice(index, newChars.Length - index - value.Length).CopyTo(newChars.Slice(index + value.Length));
+        }
+
+        value.CopyTo(newChars.Slice(index));
 
         _chars = newChars;
     }

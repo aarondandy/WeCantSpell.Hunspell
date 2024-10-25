@@ -16,6 +16,12 @@ static class MemoryEx
         return result >= 0 ? result + startIndex : result;
     }
 
+    public static int IndexOf(this Span<char> @this, ReadOnlySpan<char> value, int startIndex)
+    {
+        var result = @this.Slice(startIndex).IndexOf(value);
+        return result >= 0 ? result + startIndex : result;
+    }
+
     public static ReadOnlySpan<char> Limit(this ReadOnlySpan<char> @this, int maxLength) =>
         @this.Length > maxLength ? @this.Slice(0, maxLength) : @this;
 
@@ -28,6 +34,43 @@ static class MemoryEx
     {
         (span[index1], span[index0]) = (span[index0], span[index1]);
     }
+
+    public static void CopyToReversed(this ReadOnlySpan<char> source, Span<char> target)
+    {
+#if DEBUG
+        if (source.Length > target.Length) throw new ArgumentOutOfRangeException(nameof(target));
+#endif
+
+        for (var index = 0; index < source.Length; index++)
+        {
+            target[target.Length - index - 1] = source[index];
+        }
+    }
+
+#if NO_SPAN_REPLACE
+
+    public static void Replace(this Span<char> span, char oldValue, char newValue)
+    {
+        do
+        {
+            if (span.IsEmpty)
+            {
+                return;
+            }
+
+            var index = span.IndexOf(oldValue);
+            if (index < 0)
+            {
+                return;
+            }
+
+            span[index] = newValue;
+            span = span.Slice(index + 1);
+        }
+        while (true);
+    }
+
+#endif
 
 #if NO_SPAN_SORT
 
