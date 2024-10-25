@@ -61,7 +61,7 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
         if (text.Length != 0 && HasReplacements)
         {
             var appliedConversion = false;
-            var convertedBuilder = StringBuilderPool.Get(text.Length);
+            var convertedBuilder = new StringBuilderSpan(text.Length);
 
             for (var i = 0; i < text.Length; i++)
             {
@@ -81,12 +81,12 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
 
             if (appliedConversion)
             {
-                converted = StringBuilderPool.GetStringAndReturn(convertedBuilder);
+                converted = convertedBuilder.GetStringAndDispose();
                 return true;
             }
             else
             {
-                StringBuilderPool.Return(convertedBuilder);
+                convertedBuilder.Dispose();
             }
         }
 
@@ -99,7 +99,7 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
         if (!text.IsEmpty)
         {
             var appliedConversion = false;
-            var convertedBuilder = StringBuilderPool.Get(text.Length);
+            var convertedBuilder = new StringBuilderSpan(text.Length);
 
             for (var i = 0; i < text.Length; i++)
             {
@@ -124,12 +124,12 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
 
             if (appliedConversion)
             {
-                converted = StringBuilderPool.GetStringAndReturn(convertedBuilder);
+                converted = convertedBuilder.GetStringAndDispose();
                 return true;
             }
             else
             {
-                StringBuilderPool.Return(convertedBuilder);
+                convertedBuilder.Dispose();
             }
         }
 

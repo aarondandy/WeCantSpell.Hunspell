@@ -483,7 +483,7 @@ public partial class WordList
             var pos = @base.IndexOf("ss", nPos, StringComparison.Ordinal);
             if (pos >= 0 && n < MaxSharps)
             {
-                var baseBuilder = StringBuilderPool.Get(@base);
+                var baseBuilder = new StringBuilderSpan(@base);
                 baseBuilder[pos] = 'ß';
                 baseBuilder.Remove(pos + 1, 1);
                 @base = baseBuilder.ToString();
@@ -498,7 +498,7 @@ public partial class WordList
                 baseBuilder.Append(@base);
                 baseBuilder[pos] = 's';
                 baseBuilder.Insert(pos + 1, 's');
-                @base = StringBuilderPool.GetStringAndReturn(baseBuilder);
+                @base = baseBuilder.GetStringAndDispose();
 
                 h = SpellSharps(ref @base, pos + 2, n + 1, repNum, ref info, out root);
                 if (h is not null)

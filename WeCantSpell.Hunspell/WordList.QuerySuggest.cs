@@ -1711,21 +1711,23 @@ public partial class WordList
             // mangle original word three differnt ways
             // and score them to generate a minimum acceptable score
             var thresh = 0;
-            var mw = StringBuilderPool.Get(word.Length);
-            for (var sp = 1; sp < 4; sp++)
-            {
-                mw.Clear();
-                mw.Append(word);
 
-                for (var k = sp; k < mw.Length; k += 4)
+            {
+                var mw = new StringBuilderSpan(word.Length);
+                for (var sp = 1; sp < 4; sp++)
                 {
-                    mw[k] = '*';
+                    mw.Set(word);
+
+                    for (var k = sp; k < mw.Length; k += 4)
+                    {
+                        mw[k] = '*';
+                    }
+
+                    thresh += NGram(word.Length, word, mw.ToString(), NGramOptions.AnyMismatch | NGramOptions.Lowering);
                 }
 
-                thresh += NGram(word.Length, word, mw.ToString(), NGramOptions.AnyMismatch | NGramOptions.Lowering);
+                mw.Dispose();
             }
-
-            StringBuilderPool.Return(mw);
 
             thresh = (thresh / 3) - 1;
 
@@ -2753,7 +2755,7 @@ public partial class WordList
             }
 
             var word = inword.ToCharArray().AsSpan();
-            var target = StringBuilderPool.Get();
+            var target = new StringBuilderSpan(1);
 
             // check word
             var i = 0;
@@ -3031,7 +3033,7 @@ public partial class WordList
                 }
             }
 
-            return StringBuilderPool.GetStringAndReturn(target);
+            return target.GetStringAndDispose();
 
             static bool notConditionMarkup(char c) => c is not '(' or '-' or '<' or '^' or '$';
         }

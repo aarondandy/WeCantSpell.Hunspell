@@ -222,9 +222,10 @@ static class HunspellTextFunctions
     {
         if (s.Length != 0)
         {
-            var builder = StringBuilderPool.Get(cultureInfo.TextInfo.ToLower(s));
-            builder[0] = cultureInfo.TextInfo.ToUpper(s[0]);
-            s = StringBuilderPool.GetStringAndReturn(builder);
+            var builder = new StringBuilderSpan(s.Length);
+            builder.Append(cultureInfo.TextInfo.ToUpper(s[0]));
+            builder.AppendLower(s.AsSpan(1), cultureInfo);
+            s = builder.GetStringAndDispose();
         }
 
         return s;

@@ -277,7 +277,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
     private string ToStringWithRemoval(ReadOnlySpan<char> text, int matchIndex)
     {
-        var builder = StringBuilderPool.Get(text.Length - 1);
+        var builder = new StringBuilderSpan(text.Length - 1);
 
         do
         {
@@ -289,7 +289,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
         builder.Append(text);
 
-        return StringBuilderPool.GetStringAndReturn(builder);
+        return builder.GetStringAndDispose();
     }
 
     public override string ToString() => new(GetInternalArray());
