@@ -281,7 +281,11 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
         do
         {
-            builder.Append(text.Slice(0, matchIndex));
+            if (matchIndex > 0)
+            {
+                builder.Append(text.Slice(0, matchIndex));
+            }
+
             text = text.Slice(matchIndex + 1);
             matchIndex = FindIndexOfMatch(text);
         }

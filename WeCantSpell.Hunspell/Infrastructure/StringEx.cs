@@ -121,7 +121,7 @@ static class StringEx
         static string buildReplaced(int replaceIndex, ReadOnlySpan<char> text, char oldChar, char newChar)
         {
             var builder = new StringBuilderSpan(text);
-            builder.Replace(oldChar, newChar, replaceIndex, builder.Length - replaceIndex);
+            builder.Replace(oldChar, newChar, replaceIndex);
             return builder.GetStringAndDispose();
         }
     }
@@ -144,7 +144,7 @@ static class StringEx
         static string buildReplaced(int replaceIndex, ReadOnlySpan<char> text, string oldText, string newText)
         {
             var builder = new StringBuilderSpan(text);
-            builder.Replace(oldText, newText, replaceIndex, builder.Length - replaceIndex);
+            builder.Replace(oldText, newText, replaceIndex);
             return builder.GetStringAndDispose();
         }
     }
@@ -164,12 +164,7 @@ static class StringEx
     {
         var builder = new StringBuilderSpan(span.Length + 1);
         builder.Append(c);
-
-        if (!span.IsEmpty)
-        {
-            builder.Append(span);
-        }
-
+        builder.Append(span);
         return builder.GetStringAndDispose();
     }
 #else
@@ -409,11 +404,7 @@ static class StringEx
         }
 
         var builder = new StringBuilderSpan(@this.Length);
-        for (var i = @this.Length - 1; i >= 0; i--)
-        {
-            builder.Append(@this[i]);
-        }
-
+        builder.AppendReversed(@this);
         return builder.GetStringAndDispose();
     }
 

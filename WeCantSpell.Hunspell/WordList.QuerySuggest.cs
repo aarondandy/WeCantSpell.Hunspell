@@ -2755,7 +2755,7 @@ public partial class WordList
             }
 
             var word = inword.ToCharArray().AsSpan();
-            var target = new StringBuilderSpan(1);
+            var target = new StringBuilderSpan(word.Length);
 
             // check word
             var i = 0;

@@ -494,8 +494,7 @@ public partial class WordList
                     return h;
                 }
 
-                baseBuilder.Clear();
-                baseBuilder.Append(@base);
+                baseBuilder.Set(@base);
                 baseBuilder[pos] = 's';
                 baseBuilder.Insert(pos + 1, 's');
                 @base = baseBuilder.GetStringAndDispose();
