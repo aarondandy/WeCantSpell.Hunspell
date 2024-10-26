@@ -177,7 +177,6 @@ public partial class WordList
                 word = word.GetReversed();
             }
 
-
             // look word in hash table
             if (!TryCheckWord_HashTable(word, ref info, out var he))
             {

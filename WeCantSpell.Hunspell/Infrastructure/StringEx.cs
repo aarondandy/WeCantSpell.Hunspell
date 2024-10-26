@@ -65,6 +65,8 @@ static class StringEx
 
     public static bool Contains(this ReadOnlySpan<char> @this, char value) => @this.IndexOf(value) >= 0;
 
+    public static bool Contains(this Span<char> @this, char value) => @this.IndexOf(value) >= 0;
+
 #endif
 
     public static bool ContainsAny(this string @this, char value0, char value1) => @this.AsSpan().ContainsAny(value0, value1);

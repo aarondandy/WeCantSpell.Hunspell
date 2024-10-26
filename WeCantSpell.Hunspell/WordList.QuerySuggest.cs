@@ -311,7 +311,8 @@ public partial class WordList
                                     j,
                                     StringEx.ConcatString(
                                         toRemove.AsSpan(0, spaceIndex + 1),
-                                        HunspellTextFunctions.MakeInitCap(toRemove.AsSpan(spaceIndex + 1), textInfo)));
+                                        textInfo.ToUpper(toRemove[spaceIndex + 1]),
+                                        toRemove.AsSpan(spaceIndex + 2)));
 
                                 static void removeFromIndexThenInsertAtFront(List<string> list, int removeIndex, string insertValue)
                                 {

@@ -340,7 +340,7 @@ public partial class WordList
                 // conversion may result in string with different len than before MakeAllSmall2 so re-scan
                 if (apos < scw.Length - 1)
                 {
-                    scw = StringEx.ConcatString(scw.AsSpan(0, apos + 1), HunspellTextFunctions.MakeInitCap(scw.AsSpan(apos + 1), textInfo));
+                    scw = StringEx.ConcatString(scw.AsSpan(0, apos + 1), textInfo.ToUpper(scw[apos + 1]), scw.AsSpan(apos + 2));
                     rv = _query.CheckWord(scw, ref resultType, out root);
                     if (rv is not null)
                     {
@@ -384,8 +384,10 @@ public partial class WordList
 
         private WordEntry? CheckDetailsInitCap(bool abbv, CapitalizationType capType, ref string scw, ref SpellCheckResultType resultType, out string? root)
         {
-            var u8buffer = HunspellTextFunctions.MakeAllSmall(scw, TextInfo);
-            scw = HunspellTextFunctions.MakeInitCap(u8buffer, TextInfo);
+            using var u8buffer = new StringBuilderSpan(scw.Length);
+            u8buffer.AppendLower(scw.AsSpan(), Affix.Culture);
+
+            scw = u8buffer.ToStringInitCap(TextInfo);
 
             resultType |= SpellCheckResultType.OrigCap;
             if (capType == CapitalizationType.Init)
@@ -420,21 +422,22 @@ public partial class WordList
                 return rv;
             }
 
-            rv = _query.CheckWord(u8buffer, ref resultType, out root);
+            rv = _query.CheckWord(u8buffer.ToString(), ref resultType, out root);
 
             if (abbv && rv is null)
             {
-                u8buffer += ".";
-                rv = _query.CheckWord(u8buffer, ref resultType, out root);
+                u8buffer.Append('.');
+                rv = _query.CheckWord(u8buffer.ToString(), ref resultType, out root);
                 if (rv is null)
                 {
-                    u8buffer = scw + ".";
+                    u8buffer.Set(scw);
+                    u8buffer.Append('.');
                     if (capType == CapitalizationType.Init)
                     {
                         resultType |= SpellCheckResultType.InitCap;
                     }
 
-                    rv = _query.CheckWord(u8buffer, ref resultType, out root);
+                    rv = _query.CheckWord(u8buffer.ToString(), ref resultType, out root);
 
                     if (capType == CapitalizationType.Init)
                     {
@@ -483,21 +486,25 @@ public partial class WordList
             var pos = @base.IndexOf("ss", nPos, StringComparison.Ordinal);
             if (pos >= 0 && n < MaxSharps)
             {
-                var baseBuilder = new StringBuilderSpan(@base);
-                baseBuilder[pos] = 'ß';
-                baseBuilder.Remove(pos + 1, 1);
-                @base = baseBuilder.ToString();
+                WordEntry? h;
 
-                var h = SpellSharps(ref @base, pos + 1, n + 1, repNum + 1, ref info, out root);
-                if (h is not null)
+                using (var baseBuilder = new StringBuilderSpan(@base))
                 {
-                    return h;
-                }
+                    baseBuilder[pos] = 'ß';
+                    baseBuilder.Remove(pos + 1, 1);
+                    @base = baseBuilder.ToString();
 
-                baseBuilder.Set(@base);
-                baseBuilder[pos] = 's';
-                baseBuilder.Insert(pos + 1, 's');
-                @base = baseBuilder.GetStringAndDispose();
+                    h = SpellSharps(ref @base, pos + 1, n + 1, repNum + 1, ref info, out root);
+                    if (h is not null)
+                    {
+                        return h;
+                    }
+
+                    baseBuilder.Set(@base);
+                    baseBuilder[pos] = 's';
+                    baseBuilder.Insert(pos + 1, 's');
+                    @base = baseBuilder.ToString();
+                }
 
                 h = SpellSharps(ref @base, pos + 2, n + 1, repNum, ref info, out root);
                 if (h is not null)

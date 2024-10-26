@@ -480,11 +480,38 @@ ref struct StringBuilderSpan
         _length = newSize;
     }
 
+    public string ToStringInitCap(TextInfo textInfo)
+    {
+        if (_length == 0)
+        {
+            return string.Empty;
+        }
+
+        var backup = _bufferSpan[0];
+        var initial = textInfo.ToUpper(backup);
+
+        string result;
+        if (initial == backup)
+        {
+            result = ToString();
+        }
+        else
+        {
+            _bufferSpan[0] = initial;
+            result = ToString();
+            _bufferSpan[0] = backup;
+        }
+
+        return result;
+    }
+
     public override readonly string ToString() => _length == 0 ? string.Empty : _bufferSpan.Slice(0, _length).ToString();
 
     public readonly bool StartsWith(char value) => _length != 0 && _bufferSpan[0] == value;
 
     public readonly bool EndsWith(char value) => _length != 0 && _bufferSpan[_length - 1] == (value);
+
+    public readonly bool Contains(char value) => CurrentSpan.Contains(value);
 
     public string GetStringAndDispose()
     {
