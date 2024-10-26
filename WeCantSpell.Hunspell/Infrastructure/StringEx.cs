@@ -162,6 +162,11 @@ static class StringEx
 #if NO_STRING_SPAN
     public static string ConcatString(char c, ReadOnlySpan<char> span)
     {
+        if (span.IsEmpty)
+        {
+            return c.ToString();
+        }
+
         var builder = new StringBuilderSpan(span.Length + 1);
         builder.Append(c);
         builder.Append(span);
@@ -243,6 +248,11 @@ static class StringEx
 #if NO_STRING_SPAN
     public static string ConcatString(this ReadOnlySpan<char> @this, char value)
     {
+        if (@this.IsEmpty)
+        {
+            return value.ToString();
+        }
+
         var builder = new StringBuilderSpan(@this.Length + 1);
         builder.Append(@this);
         builder.Append(value);
@@ -255,6 +265,11 @@ static class StringEx
 #if NO_STRING_SPAN
     public static string ConcatString(this string @this, char value)
     {
+        if (@this.Length == 0)
+        {
+            return value.ToString();
+        }
+
         var builder = new StringBuilderSpan(@this.Length + 1);
         builder.Append(@this);
         builder.Append(value);
@@ -291,35 +306,9 @@ static class StringEx
 
     public static string ConcatString(this string @this, ReadOnlySpan<char> value) => value.IsEmpty ? @this : ConcatString(@this.AsSpan(), value);
 
-    public static ReadOnlySpan<char> ConcatSpan(this ReadOnlySpan<char> @this, string value)
-    {
-        if (@this.IsEmpty)
-        {
-            return value.AsSpan();
-        }
+    public static ReadOnlySpan<char> ConcatSpan(this ReadOnlySpan<char> @this, string value) => value.Length == 0 ? @this : ConcatString(@this, value).AsSpan();
 
-        if (value.Length == 0)
-        {
-            return @this;
-        }
-
-        return ConcatString(@this, value.AsSpan()).AsSpan();
-    }
-
-    public static ReadOnlySpan<char> ConcatSpan(this string @this, ReadOnlySpan<char> value)
-    {
-        if (value.IsEmpty)
-        {
-            return @this.AsSpan();
-        }
-
-        if (@this.Length == 0)
-        {
-            return value;
-        }
-
-        return ConcatString(@this.AsSpan(), value).AsSpan();
-    }
+    public static ReadOnlySpan<char> ConcatSpan(this string @this, ReadOnlySpan<char> value) => @this.Length == 0 ? value : ConcatString(@this, value).AsSpan();
 
 #if NO_SPAN_HASHCODE
 
@@ -398,7 +387,12 @@ static class StringEx
 
     public static string ToStringReversed(this ReadOnlySpan<char> @this)
     {
-        if (@this.Length <= 1)
+        if (@this.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        if (@this.Length == 1)
         {
             return @this.ToString();
         }
@@ -444,6 +438,7 @@ static class StringEx
     public static SpanSeparatorSplitEnumerator<char> SplitOnTabOrSpace(this ReadOnlySpan<char> @this) => new(@this, StringSplitOptions.RemoveEmptyEntries, static span => span.IndexOfTabOrSpace());
 
 #if NO_STATIC_STRINGCHAR_METHODS
+
     public static string Join(char seperator, string[] items)
     {
         if (items.Length == 0)
@@ -479,6 +474,7 @@ static class StringEx
             return builder.GetStringAndDispose();
         }
     }
+
 #endif
 
 }
