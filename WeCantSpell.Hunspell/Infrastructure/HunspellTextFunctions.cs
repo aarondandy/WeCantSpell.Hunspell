@@ -197,6 +197,7 @@ static class HunspellTextFunctions
     /// <summary>
     /// Convert to all little.
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string MakeAllSmall(string s, TextInfo textInfo) => textInfo.ToLower(s);
 
     public static string MakeInitSmall(string s, TextInfo textInfo)
@@ -214,9 +215,8 @@ static class HunspellTextFunctions
         return s;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string MakeAllCap(string s, TextInfo textInfo) => textInfo.ToUpper(s);
-
-#if NO_STRING_SPAN
 
     public static string MakeTitleCase(string s, CultureInfo cultureInfo)
     {
@@ -230,25 +230,6 @@ static class HunspellTextFunctions
 
         return s;
     }
-
-#else
-
-    public static string MakeTitleCase(string s, CultureInfo cultureInfo)
-    {
-        if (s.Length != 0)
-        {
-            s = string.Create(s.Length, (s, cultureInfo), static (span, state) =>
-            {
-                var sourceSpan = state.s.AsSpan();
-                span[0] = state.cultureInfo.TextInfo.ToUpper(sourceSpan[0]);
-                sourceSpan.Slice(1).ToLower(span.Slice(1), state.cultureInfo);
-            });
-        }
-
-        return s;
-    }
-
-#endif
 
     public static CapitalizationType GetCapitalizationType(string word, TextInfo textInfo) =>
         GetCapitalizationType(word.AsSpan(), textInfo);

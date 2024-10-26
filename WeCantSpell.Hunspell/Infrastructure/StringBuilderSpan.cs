@@ -79,6 +79,8 @@ ref struct StringBuilderSpan
         }
     }
 
+    internal readonly Span<char> CurrentSpan => _bufferSpan.Slice(0, _length);
+
     public void Clear()
     {
         _length = 0;
@@ -179,13 +181,23 @@ ref struct StringBuilderSpan
     public void AppendLower(scoped ReadOnlySpan<char> value, CultureInfo cultureInfo)
     {
         var space = AppendSpaceForImmediateWrite(value.Length);
-        value.ToLower(space, cultureInfo);
-    }
+        var written = value.ToLower(space, cultureInfo);
+        if (written < 0)
+        {
+            Append(value.ToString().ToLower(cultureInfo));
+        }
+        else if (written != space.Length)
+        {
+            failSafe();
+        }
 
-    public void AppendUpper(scoped ReadOnlySpan<char> value, CultureInfo cultureInfo)
-    {
-        var space = AppendSpaceForImmediateWrite(value.Length);
-        value.ToUpper(space, cultureInfo);
+#if !NO_EXPOSED_NULLANNOTATIONS
+        [System.Diagnostics.CodeAnalysis.DoesNotReturn]
+#endif
+        static void failSafe()
+        {
+            throw new InvalidOperationException("Failed to change case");
+        }
     }
 
     public void AppendReversed(scoped ReadOnlySpan<char> value)

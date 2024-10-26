@@ -1617,9 +1617,8 @@ public partial class WordList
             }
 
             var hasPhoneEntries = Affix.Phone.HasItems;
-            var textInfo = TextInfo;
             var target = hasPhoneEntries
-                ? Phonet(HunspellTextFunctions.MakeAllCap(word, textInfo))
+                ? Phonet(HunspellTextFunctions.MakeAllCap(word, TextInfo))
                 : string.Empty;
             var isNonGermanLowercase = !Affix.IsGerman && capType == CapitalizationType.None;
 
@@ -1645,14 +1644,14 @@ public partial class WordList
                         continue;
                     }
 
-                    sc = NGram(3, word, hpSet.Key, NGramOptions.LongerWorse | NGramOptions.Lowering)
+                    sc = NGramWithLowering(3, word, hpSet.Key, NGramOptions.LongerWorse)
                         + LeftCommonSubstring(word, hpSet.Key);
 
                     // check special pronunciation
                     var f = string.Empty;
                     if (hpDetail.Options.HasFlagEx(WordEntryOptions.Phon) && CopyField(ref f, hpDetail.Morphs, MorphologicalTags.Phon))
                     {
-                        var sc2 = NGram(3, word, f, NGramOptions.LongerWorse | NGramOptions.Lowering)
+                        var sc2 = NGramWithLowering(3, word, f, NGramOptions.LongerWorse)
                             + LeftCommonSubstring(word, f);
 
                         if (sc2 > sc)
@@ -1664,7 +1663,7 @@ public partial class WordList
                     var scphon = -20000;
                     if (hasPhoneEntries && sc > 2 && wordKeyLengthDifference <= 3)
                     {
-                        scphon = NGram(3, target, Phonet(HunspellTextFunctions.MakeAllCap(hpSet.Key, textInfo)), NGramOptions.LongerWorse) * 2;
+                        scphon = NGramNoLowering(3, target, Phonet(HunspellTextFunctions.MakeAllCap(hpSet.Key, TextInfo)), NGramOptions.LongerWorse) * 2;
                     }
 
                     if (sc > roots[lp].Score)
@@ -1713,17 +1712,18 @@ public partial class WordList
             var thresh = 0;
 
             {
-                var mw = new StringBuilderSpan(word.Length);
+                var wordLowered = HunspellTextFunctions.MakeAllSmall(word, TextInfo);
+                var mw = new StringBuilderSpan(wordLowered.Length);
                 for (var sp = 1; sp < 4; sp++)
                 {
-                    mw.Set(word);
+                    mw.Set(wordLowered);
 
                     for (var k = sp; k < mw.Length; k += 4)
                     {
                         mw[k] = '*';
                     }
 
-                    thresh += NGram(word.Length, word, mw.ToString(), NGramOptions.AnyMismatch | NGramOptions.Lowering);
+                    thresh += NGramNoLowering(word.Length, word.AsSpan(), mw.CurrentSpan, NGramOptions.AnyMismatch);
                 }
 
                 mw.Dispose();
@@ -1764,7 +1764,7 @@ public partial class WordList
 
                         if (guessWordK.Word is { Length: > 0 })
                         {
-                            sc = NGram(word.Length, word, guessWordK.Word, NGramOptions.AnyMismatch | NGramOptions.Lowering)
+                            sc = NGramWithLowering(word.Length, word, guessWordK.Word, NGramOptions.AnyMismatch)
                                 + LeftCommonSubstring(word, guessWordK.Word);
 
                             if (sc > thresh)
@@ -1827,7 +1827,7 @@ public partial class WordList
                 if (guess.Guess is not null)
                 {
                     // lowering guess[i]
-                    var gl = textInfo.ToLower(guess.Guess);
+                    var gl = TextInfo.ToLower(guess.Guess);
                     var len = guess.Guess.Length;
 
                     var lcsLength = LcsLen(word.AsSpan(), gl.AsSpan());
@@ -1840,8 +1840,8 @@ public partial class WordList
                     }
 
                     // using 2-gram instead of 3, and other weightening
-                    var re = NGram(2, word, gl, NGramOptions.AnyMismatch | NGramOptions.Weighted) // gl has already been lowered
-                        + NGram(2, gl, word, NGramOptions.AnyMismatch | NGramOptions.Weighted | NGramOptions.Lowering);
+                    var re = NGramNoLowering(2, word, gl, NGramOptions.AnyMismatch | NGramOptions.Weighted) // gl has already been lowered
+                        + NGramWithLowering(2, gl, word, NGramOptions.AnyMismatch | NGramOptions.Weighted);
 
                     guesses[i].Score =
                         // length of longest common subsequent minus length difference
@@ -1853,7 +1853,7 @@ public partial class WordList
                         // swap character (not neighboring)
                         + (isSwap ? 10 : 0)
                         // ngram
-                        + NGram(4, word, gl, NGramOptions.AnyMismatch) // gl has already been lowered
+                        + NGramNoLowering(4, word, gl, NGramOptions.AnyMismatch) // gl has already been lowered
                         // weighted ngrams
                         + re
                         // different limit for dictionaries with PHONE rules
@@ -1872,7 +1872,7 @@ public partial class WordList
                     if (root.RootPhon is not null)
                     {
                         // lowering rootphon[i]
-                        var gl = HunspellTextFunctions.MakeAllSmall(root.RootPhon, textInfo);
+                        var gl = HunspellTextFunctions.MakeAllSmall(root.RootPhon, TextInfo);
                         var len = root.RootPhon.Length;
 
                         // heuristic weigthing of ngram scores
@@ -2595,24 +2595,30 @@ public partial class WordList
                 (s1[s1.Length - 1] == s2[s2.Length - 1]) ? 1 : 0;
         }
 
-        /// <summary>
-        /// Generate an n-gram score comparing s1 and s2.
-        /// </summary>
-        private readonly int NGram(int n, string s1, string s2, NGramOptions opt)
+        private readonly int NGramWithLowering(int n, string s1, string s2, NGramOptions opt)
         {
             if (s1.Length == 0)
             {
                 return 0;
             }
 
-            if (HasFlag(opt, NGramOptions.Lowering))
-            {
-                s2 = HunspellTextFunctions.MakeAllSmall(s2, TextInfo);
-            }
+            return NGramNoLowering(
+                n,
+                s1,
+                HunspellTextFunctions.MakeAllSmall(s2, TextInfo),
+                opt);
+        }
 
+        private static int NGramNoLowering(int n, string s1, string s2, NGramOptions opt)
+        {
+            return NGramNoLowering(n, s1.AsSpan(), s2.AsSpan(), opt);
+        }
+
+        private static int NGramNoLowering(int n, ReadOnlySpan<char> s1, ReadOnlySpan<char> s2, NGramOptions opt)
+        {
             var nscore = HasFlag(opt, NGramOptions.Weighted)
-                ? NGramWeightedSearch(n, s1.AsSpan(), s2.AsSpan())
-                : NGramNonWeightedSearch(n, s1.AsSpan(), s2.AsSpan());
+                ? NGramWeightedSearch(n, s1, s2)
+                : NGramNonWeightedSearch(n, s1, s2);
 
             int ns;
             if (HasFlag(opt, NGramOptions.AnyMismatch))
@@ -3128,6 +3134,7 @@ public partial class WordList
             None = 0,
             LongerWorse = 1 << 0,
             AnyMismatch = 1 << 1,
+            [Obsolete("Use specialized methods instead")]
             Lowering = 1 << 2,
             Weighted = 1 << 3
         }
