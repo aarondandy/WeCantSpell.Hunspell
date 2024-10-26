@@ -25,9 +25,32 @@ ref struct StringBuilderSpan
         text.CopyTo(_bufferSpan);
     }
 
+#if NO_STRING_SPAN
+
     public StringBuilderSpan(string text) : this(text is null ? [] : text.AsSpan())
     {
     }
+
+#else
+
+    public StringBuilderSpan(string text)
+    {
+        if (text is not { Length: > 0 })
+        {
+            _bufferRental = ArrayPool<char>.Shared.Rent(0);
+            _bufferSpan = _bufferRental.AsSpan();
+            _length = 0;
+        }
+        else
+        {
+            _bufferRental = ArrayPool<char>.Shared.Rent(text.Length);
+            _bufferSpan = _bufferRental.AsSpan();
+            _length = text.Length;
+            text.CopyTo(_bufferSpan);
+        }
+    }
+
+#endif
 
     private char[] _bufferRental;
     private Span<char> _bufferSpan;
@@ -37,7 +60,15 @@ ref struct StringBuilderSpan
 
     public readonly char this[int index]
     {
-        get => _bufferSpan[index];
+        get
+        {
+#if DEBUG
+            if (index < 0 || index >= _length) throw new ArgumentOutOfRangeException(nameof(index));
+#endif
+
+            return _bufferSpan[index];
+        }
+
         set
         {
 #if DEBUG
@@ -53,6 +84,9 @@ ref struct StringBuilderSpan
         _length = 0;
     }
 
+
+#if NO_STRING_SPAN
+
     public void Set(string value)
     {
         if (value is not { Length: > 0 })
@@ -65,6 +99,28 @@ ref struct StringBuilderSpan
         }
     }
 
+#else
+
+    public void Set(string value)
+    {
+        if (value is not { Length: > 0 })
+        {
+            _length = 0;
+        }
+        else
+        {
+            if (_bufferSpan.Length < value.Length)
+            {
+                ResetAndReallocateBuffer(value.Length);
+            }
+
+            value.CopyTo(_bufferSpan);
+            _length = value.Length;
+        }
+    }
+
+#endif
+
     public void Set(scoped ReadOnlySpan<char> value)
     {
         if (value.IsEmpty)
@@ -75,8 +131,7 @@ ref struct StringBuilderSpan
         {
             if (_bufferSpan.Length < value.Length)
             {
-                // TODO: for a set operation, skip the the copy that happens from the old buffer
-                GrowBufferToCapacity(value.Length);
+                ResetAndReallocateBuffer(value.Length);
             }
 
             value.CopyTo(_bufferSpan);
@@ -112,7 +167,7 @@ ref struct StringBuilderSpan
 
     public void Append(char value)
     {
-        if (_bufferSpan.Length < _length + 1)
+        if (_length + 1 > _bufferSpan.Length)
         {
             GrowBufferToCapacity(_length + 1);
         }
@@ -156,11 +211,6 @@ ref struct StringBuilderSpan
         if (startIndex + count > _length) throw new ArgumentOutOfRangeException(nameof(count));
 #endif
 
-        if (_length == 0 || count == 0)
-        {
-            return;
-        }
-
         _bufferSpan.Slice(startIndex, count).Replace(oldChar, newChar);
     }
 
@@ -200,20 +250,20 @@ ref struct StringBuilderSpan
         {
             if (oldText.Length == newText.Length)
             {
-                ReplaceEqualSize(oldText, newText, startIndex, count);
+                ReplaceEqualSizeInternal(oldText, newText, startIndex, count);
             }
             else if (oldText.Length < newText.Length)
             {
-                ReplaceIncreasingSize(oldText, newText, startIndex, count);
+                ReplaceIncreasingSizeInternal(oldText, newText, startIndex, count);
             }
             else
             {
-                ReplaceDecreasingSize(oldText, newText, startIndex, count);
+                ReplaceDecreasingSizeInternal(oldText, newText, startIndex, count);
             }
         }
     }
 
-    private readonly void ReplaceEqualSize(scoped ReadOnlySpan<char> oldText, scoped ReadOnlySpan<char> newText, int startIndex, int count)
+    private readonly void ReplaceEqualSizeInternal(scoped ReadOnlySpan<char> oldText, scoped ReadOnlySpan<char> newText, int startIndex, int count)
     {
 #if DEBUG
         if (count == 0) throw new ArgumentOutOfRangeException(nameof(count));
@@ -249,7 +299,7 @@ ref struct StringBuilderSpan
         while (true);
     }
 
-    private void ReplaceIncreasingSize(scoped ReadOnlySpan<char> oldText, scoped ReadOnlySpan<char> newText, int startIndex, int count)
+    private void ReplaceIncreasingSizeInternal(scoped ReadOnlySpan<char> oldText, scoped ReadOnlySpan<char> newText, int startIndex, int count)
     {
 #if DEBUG
         if (count == 0) throw new ArgumentOutOfRangeException(nameof(count));
@@ -291,7 +341,7 @@ ref struct StringBuilderSpan
         while (true);
     }
 
-    private void ReplaceDecreasingSize(scoped ReadOnlySpan<char> oldText, scoped ReadOnlySpan<char> newText, int startIndex, int count)
+    private void ReplaceDecreasingSizeInternal(scoped ReadOnlySpan<char> oldText, scoped ReadOnlySpan<char> newText, int startIndex, int count)
     {
 #if DEBUG
         if (count == 0) throw new ArgumentOutOfRangeException(nameof(count));
@@ -353,22 +403,20 @@ ref struct StringBuilderSpan
         if (startIndex + count > _length) throw new ArgumentOutOfRangeException(nameof(count));
 #endif
 
-        if (count == 0)
+        if (count != 0)
         {
-            return;
-        }
-
-        if (count == 1)
-        {
-            RemoveAt(startIndex);
-        }
-        else
-        {
-            RemoveRange(startIndex, count);
+            if (count == 1)
+            {
+                RemoveAt(startIndex);
+            }
+            else
+            {
+                RemoveRangeInternal(startIndex, count);
+            }
         }
     }
 
-    private void RemoveRange(int startIndex, int count)
+    private void RemoveRangeInternal(int startIndex, int count)
     {
         var endIndex = startIndex + count;
         if (_length > endIndex)
@@ -466,13 +514,27 @@ ref struct StringBuilderSpan
         if (_bufferSpan.Length >= capacity) throw new InvalidOperationException();
 #endif
 
+        var oldBuffer = _bufferRental;
         var newBuffer = ArrayPool<char>.Shared.Rent(capacity);
         var newSpan = newBuffer.AsSpan();
-        var oldBuffer = _bufferRental;
 
         _bufferSpan.Slice(0, _length).CopyTo(newSpan);
         _bufferRental = newBuffer;
         _bufferSpan = newSpan;
+
+        if (oldBuffer is not null)
+        {
+            ArrayPool<char>.Shared.Return(oldBuffer);
+        }
+    }
+
+    private void ResetAndReallocateBuffer(int capacity)
+    {
+        var oldBuffer = _bufferRental;
+
+        _bufferRental = ArrayPool<char>.Shared.Rent(capacity);
+        _bufferSpan = _bufferRental.AsSpan();
+        _length = 0;
 
         if (oldBuffer is not null)
         {
