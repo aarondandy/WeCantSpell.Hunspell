@@ -447,11 +447,16 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         ref _entries[GetIndexByHash(hash, _cellarStartIndex, _fastmodMul)];
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint GetIndexByHash(uint hash, uint divisor, ulong multiplier) =>
+    private static uint GetIndexByHash(uint hash, uint divisor, ulong multiplier)
+    {
+        unchecked
+        {
         // I barely understand this algorithm, but it's how the .NET dictionary works on 64-bit platforms. Sources:
         // - https://lemire.me/blog/2019/02/08/faster-remainders-when-the-divisor-is-a-constant-beating-compilers-and-libdivide/
         // - https://github.com/dotnet/runtime/pull/406
-        (uint)(((((multiplier * hash) >> 32) + 1) * divisor) >> 32);
+            return (uint)(((((multiplier * hash) >> 32) + 1u) * divisor) >> 32);
+        }
+    }
 
     private static ulong CalculateFastmodMultiplier(uint divisor) =>
         divisor == 0 ? 0 : (ulong.MaxValue / divisor) + 1;
