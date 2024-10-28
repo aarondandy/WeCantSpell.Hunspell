@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -36,7 +35,7 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
 
     public int Count => _replacements.Count;
 
-    public bool HasReplacements => _replacements.Count != 0;
+    public bool HasReplacements => _replacements.HasItems;
 
     public IEnumerable<string> Keys => _replacements.Keys;
 
@@ -51,7 +50,7 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
     public bool TryGetValue(
         string key,
 #if !NO_EXPOSED_NULLANNOTATIONS
-        [MaybeNullWhen(false)]
+        [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)]
 #endif
         out MultiReplacementEntry value
     ) => _replacements.TryGetValue(key, out value);

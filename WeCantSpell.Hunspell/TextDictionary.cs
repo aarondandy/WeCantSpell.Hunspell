@@ -129,6 +129,10 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
 
     public int Count { get; private set; }
 
+    public bool HasItems => Count != 0;
+
+    public bool IsEmpty => Count == 0;
+
     public TValue this[string key]
     {
         get
@@ -179,7 +183,12 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
     public bool Contains(KeyValuePair<string, TValue> item) =>
         TryGetValue(item.Key, out var value) && EqualityComparer<TValue>.Default.Equals(value, item.Value);
 
-    public bool TryGetValue(string key, out TValue value)
+    public bool TryGetValue(
+        string key,
+#if !NO_EXPOSED_NULLANNOTATIONS
+        [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)]
+#endif
+        out TValue value)
     {
         ref var entry = ref GetRefByKey(key);
         if (Unsafe.IsNullRef(ref entry))
@@ -192,7 +201,12 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         return true;
     }
 
-    public bool TryGetValue(ReadOnlySpan<char> key, out TValue value)
+    public bool TryGetValue(
+        ReadOnlySpan<char> key,
+#if !NO_EXPOSED_NULLANNOTATIONS
+        [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)]
+#endif
+        out TValue value)
     {
         ref var entry = ref GetRefByKey(key);
         if (Unsafe.IsNullRef(ref entry))
@@ -205,7 +219,16 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         return true;
     }
 
-    public bool TryGetValue(ReadOnlySpan<char> key, out string actualKey, out TValue value)
+    public bool TryGetValue(
+        ReadOnlySpan<char> key,
+#if !NO_EXPOSED_NULLANNOTATIONS
+        [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)]
+#endif
+        out string actualKey,
+#if !NO_EXPOSED_NULLANNOTATIONS
+        [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)]
+#endif
+        out TValue value)
     {
         ref var entry = ref GetRefByKey(key);
         if (Unsafe.IsNullRef(ref entry))

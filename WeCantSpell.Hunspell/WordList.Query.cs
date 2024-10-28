@@ -1718,10 +1718,24 @@ public partial class WordList
 
         private readonly WordEntry? LookupFirst(string word) => WordList.FindFirstEntryByRootWord(word);
 
-        public readonly bool TryLookupDetails(ReadOnlySpan<char> word, out string actualKey, out WordEntryDetail[] details) =>
+        public readonly bool TryLookupDetails(
+            ReadOnlySpan<char> word,
+#if !NO_EXPOSED_NULLANNOTATIONS
+            [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)]
+#endif
+            out string actualKey,
+#if !NO_EXPOSED_NULLANNOTATIONS
+            [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)]
+#endif
+            out WordEntryDetail[] details) =>
             WordList.EntriesByRoot.TryGetValue(word, out actualKey, out details);
 
-        public readonly bool TryLookupDetails(string word, out WordEntryDetail[] details) =>
+        public readonly bool TryLookupDetails(
+            string word,
+#if !NO_EXPOSED_NULLANNOTATIONS
+            [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)]
+#endif
+            out WordEntryDetail[] details) =>
             WordList.EntriesByRoot.TryGetValue(word, out details);
 
         /// <summary>

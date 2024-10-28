@@ -76,7 +76,7 @@ public sealed partial class WordList
 
     public IEnumerable<string> RootWords => EntriesByRoot.Keys;
 
-    public bool HasEntries => EntriesByRoot.Count > 0;
+    public bool HasEntries => EntriesByRoot.HasItems;
 
     public bool ContainsEntriesForRootWord(string rootWord) => rootWord is not null && EntriesByRoot.ContainsKey(rootWord);
 
@@ -238,7 +238,7 @@ public sealed partial class WordList
 
         public bool MoveNext()
         {
-            if (_nGramRestrictedDetails.Count != 0)
+            if (_nGramRestrictedDetails.HasItems)
             {
                 return MoveNextWithRestrictedDetails();
             }
