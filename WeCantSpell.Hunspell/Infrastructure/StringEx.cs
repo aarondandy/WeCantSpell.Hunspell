@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
-static class StringEx
+static partial class StringEx
 {
 #if HAS_SEARCHVALUES
     private static readonly System.Buffers.SearchValues<char> TabOrSpace = System.Buffers.SearchValues.Create("\t ");
@@ -311,44 +311,6 @@ static class StringEx
     public static ReadOnlySpan<char> ConcatSpan(this ReadOnlySpan<char> @this, string value) => value.Length == 0 ? @this : ConcatString(@this, value).AsSpan();
 
     public static ReadOnlySpan<char> ConcatSpan(this string @this, ReadOnlySpan<char> value) => @this.Length == 0 ? value : ConcatString(@this, value).AsSpan();
-
-#if NO_SPAN_HASHCODE
-
-    public static int GetHashCode(ReadOnlySpan<char> value)
-    {
-        var hash = 5381;
-
-        for (var i = 1; i < value.Length; i += 2)
-        {
-            hash = unchecked((hash << 5) ^ ((value[i] << 16) + value[i - 1]));
-        }
-
-        if ((value.Length & 1) != 0)
-        {
-            hash = unchecked((hash << 5) ^ value[value.Length - 1]);
-        }
-
-        return hash;
-    }
-
-    public static int GetHashCode(string value)
-    {
-        var hash = 5381;
-
-        for (var i = 1; i < value.Length; i+= 2)
-        {
-            hash = unchecked((hash << 5) ^ ((value[i] << 16) + value[i - 1]));
-        }
-
-        if ((value.Length & 1) != 0)
-        {
-            hash = unchecked((hash << 5) ^ value[value.Length - 1]);
-        }
-
-        return hash;
-    }
-
-#endif
 
     public static string ToStringWithoutChars(this ReadOnlySpan<char> text, char value)
     {

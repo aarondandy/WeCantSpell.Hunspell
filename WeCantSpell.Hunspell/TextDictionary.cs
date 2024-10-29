@@ -461,23 +461,11 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
     private static ulong CalculateFastmodMultiplier(uint divisor) =>
         divisor == 0 ? 0 : (ulong.MaxValue / divisor) + 1;
 
-#if NO_SPAN_HASHCODE
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static uint CalculateHash(string key) => StringEx.GetStableOrdinalHashCode(key);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint CalculateHash(string key) => unchecked((uint)StringEx.GetHashCode(key));
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint CalculateHash(ReadOnlySpan<char> key) => unchecked((uint)StringEx.GetHashCode(key));
-
-#else
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint CalculateHash(string key) => unchecked((uint)key.GetHashCode());
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint CalculateHash(ReadOnlySpan<char> key) => unchecked((uint)string.GetHashCode(key));
-
-#endif
+    private static uint CalculateHash(ReadOnlySpan<char> key) => StringEx.GetStableOrdinalHashCode(key);
 
     private static uint CalculateBestCellarIndexForCapacity(int capacity)
     {
