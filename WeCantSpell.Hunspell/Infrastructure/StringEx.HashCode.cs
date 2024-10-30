@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
@@ -7,6 +8,7 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 static partial class StringEx
 {
     private const uint Hash1Start = (5381 << 16) + 5381;
+    private const uint Hash1StartRotated =  ((Hash1Start << 5) | (Hash1Start >> (32 - 5))) + Hash1Start;
     private const uint Factor = 1_566_083_941;
 
     public static uint GetStableOrdinalHashCode(string value) => value is null ? 0 : GetStableOrdinalHashCode(value.AsSpan());
@@ -17,7 +19,6 @@ static partial class StringEx
         // TODO: replace with non-randomized hashing when that is available
 
         uint hash1, hash2;
-        int i;
 
         switch (value.Length)
         {
@@ -25,27 +26,61 @@ static partial class StringEx
                 return (Hash1Start + unchecked(Hash1Start * Factor));
 
             case 1:
-                hash2 = (BitOperations.RotateLeft(Hash1Start, 5) + Hash1Start) ^ value[0];
-                goto sub4Result;
+                hash2 = value[0] ^ Hash1StartRotated;
+                goto tinyResult;
 
             case 2:
-                hash2 = (BitOperations.RotateLeft(Hash1Start, 5) + Hash1Start) ^ value[0];
+                hash2 = value[0] ^ Hash1StartRotated;
                 hash2 = (BitOperations.RotateLeft(hash2, 5) + hash2) ^ value[1];
-                goto sub4Result;
+                goto tinyResult;
 
             case 3:
-                hash2 = (BitOperations.RotateLeft(Hash1Start, 5) + Hash1Start) ^ value[0];
+                hash2 = value[0] ^ Hash1StartRotated;
                 hash2 = (BitOperations.RotateLeft(hash2, 5) + hash2) ^ value[1];
                 hash2 = (BitOperations.RotateLeft(hash2, 5) + hash2) ^ value[2];
-            sub4Result:
-                return (Hash1Start + (hash2 * Factor));
+
+            tinyResult:
+                return Hash1Start + (hash2 * Factor);
+
+            case 4:
+                hash1 = readDualCharAsUint(value, 0) ^ Hash1StartRotated;
+                hash2 = readDualCharAsUint(value, 2) ^ Hash1StartRotated;
+                goto largeResult;
+
+            case 5:
+                hash1 = readDualCharAsUint(value, 0) ^ Hash1StartRotated;
+                hash2 = readDualCharAsUint(value, 2) ^ Hash1StartRotated;
+                hash2 = (BitOperations.RotateLeft(hash2, 5) + hash2) ^ value[4];
+                goto largeResult;
+
+            case 6:
+                hash1 = readDualCharAsUint(value, 0) ^ Hash1StartRotated;
+                hash2 = readDualCharAsUint(value, 2) ^ Hash1StartRotated;
+                hash1 = (BitOperations.RotateLeft(hash1, 5) + hash1) ^ readDualCharAsUint(value, 4);
+                goto largeResult;
+
+            case 7:
+                hash1 = readDualCharAsUint(value, 0) ^ Hash1StartRotated;
+                hash2 = readDualCharAsUint(value, 2) ^ Hash1StartRotated;
+                hash1 = (BitOperations.RotateLeft(hash1, 5) + hash1) ^ readDualCharAsUint(value, 4);
+                hash2 = (BitOperations.RotateLeft(hash2, 5) + hash2) ^ value[6];
+                goto largeResult;
+
+            case 8:
+                hash1 = readDualCharAsUint(value, 0) ^ Hash1StartRotated;
+                hash2 = readDualCharAsUint(value, 2) ^ Hash1StartRotated;
+                hash1 = (BitOperations.RotateLeft(hash1, 5) + hash1) ^ readDualCharAsUint(value, 4);
+                hash2 = (BitOperations.RotateLeft(hash2, 5) + hash2) ^ readDualCharAsUint(value, 6);
+                goto largeResult;
 
             default:
-                var valueInts = MemoryMarshal.Cast<char, uint>(value.Slice(0, value.Length));
-                hash1 = Hash1Start;
-                hash2 = hash1;
+                var valueInts = MemoryMarshal.Cast<char, uint>(value);
+                int i;
 
-                for (i = 0; (i + 1) < valueInts.Length; i += 2)
+                hash1 = valueInts[0] ^ Hash1StartRotated;
+                hash2 = valueInts[1] ^ Hash1StartRotated;
+
+                for (i = 2; (i + 1) < valueInts.Length; i += 2)
                 {
                     hash1 = (BitOperations.RotateLeft(hash1, 5) + hash1) ^ valueInts[i];
                     hash2 = (BitOperations.RotateLeft(hash2, 5) + hash2) ^ valueInts[i + 1];
@@ -56,12 +91,26 @@ static partial class StringEx
                     hash1 = (BitOperations.RotateLeft(hash1, 5) + hash1) ^ valueInts[i];
                 }
 
-                if ((value.Length & 0x01) == 0x01)
+                if ((value.Length & 0x01) != 0)
                 {
                     hash2 = (BitOperations.RotateLeft(hash2, 5) + hash2) ^ value[value.Length - 1];
                 }
 
-                return (hash1 + (hash2 * Factor));
+            largeResult:
+                return hash1 + (hash2 * Factor);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static uint readDualCharAsUint(ReadOnlySpan<char> value, int offset)
+        {
+            if (BitConverter.IsLittleEndian)
+            {
+                return (uint)((value[offset + 1] << 16) | value[offset]);
+            }
+            else
+            {
+                return (uint)((value[offset] << 16) | value[offset + 1]);
+            }
         }
     }
 }
