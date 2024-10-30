@@ -176,7 +176,12 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     private static bool SortedInterectionTest(ReadOnlySpan<char> aSet, ReadOnlySpan<char> bSet)
     {
-        return (aSet![aSet.Length - 1] >= bSet[0] && bSet[bSet.Length - 1] >= aSet[0])
+
+#if DEBUG
+        if (aSet.IsEmpty || bSet.IsEmpty) throw new InvalidOperationException();
+#endif
+
+        return (aSet[aSet.Length - 1] >= bSet[0] && bSet[bSet.Length - 1] >= aSet[0])
             &&
             (
                 (aSet.Length <= 4 && bSet.Length <= 4)
@@ -269,9 +274,15 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     private static bool SortedContains(ReadOnlySpan<char> sorted, char value)
     {
-        return sorted.Length <= 8
-            ? checkIterative(sorted, value)
-            : (sorted.BinarySearch(value) >= 0);
+        return sorted.Length switch
+        {
+            0 => false,
+            1 => sorted[0] == value,
+            2 => sorted[0] == value || sorted[1] == value,
+            3 => sorted[0] == value || sorted[1] == value || sorted[2] == value,
+            <= 8 => checkIterative(sorted, value),
+            _ => sorted.BinarySearch(value) >= 0
+        };
 
         static bool checkIterative(ReadOnlySpan<char> searchSpace, char target)
         {
@@ -408,7 +419,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
                 : (
                     _values!.Length == 1
                     ? other.Contains(_values[0])
-                    : ((other._mask & _mask) != default && SortedInterectionTest(other._values, _values))
+                    : ((other._mask & _mask) != default && SortedInterectionTest(other._values.AsSpan(), _values.AsSpan()))
                 )
             );
     }
@@ -486,22 +497,17 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     internal bool Contains(char value)
     {
-        if (value != FlagValue.ZeroValue || HasItems)
-        {
-            ReadOnlySpan<char> searchSpace = _values!;
-
-            if (searchSpace.Length == 1)
+        return
+            (value != FlagValue.ZeroValue && _values is not null)
+            &&
+            _values.Length switch
             {
-                return searchSpace[0].Equals(value);
-            }
-
-            if (unchecked(value & _mask) == value)
-            {
-                return SortedContains(searchSpace, value);
-            }
-        }
-
-        return false;
+                0 => false,
+                1 => _values[0].Equals(value),
+                2 => _values[0].Equals(value) || _values[1].Equals(value),
+                3 => _values[0].Equals(value) || _values[1].Equals(value) || _values[2].Equals(value),
+                _ => (unchecked(value & _mask) == value) && SortedContains(_values.AsSpan(), value),
+            };
     }
 
     private bool ContainsAnyUnpreparedMutable(Span<char> values)
@@ -528,21 +534,17 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
 #endif
 
-        ReadOnlySpan<char> values = _values!;
-
-        if (other.Length == 1)
+        if (_values!.Length == 1)
         {
-            return values.Length == 1
-                ? values[0] == other[0]
-                : SortedContains(values, other[0]);
+            return other.Length == 1
+                ? _values[0] == other[0]
+                : SortedContains(other, _values[0]);
         }
 
-        if (values.Length == 1)
-        {
-            return SortedContains(other, values[0]);
-        }
-
-        return SortedInterectionTest(values, other);
+        var values = _values.AsSpan();
+        return other.Length == 1
+            ? SortedContains(values, other[0])
+            : SortedInterectionTest(values, other);
     }
 
     public sealed class Builder
