@@ -411,15 +411,35 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     public bool ContainsAny(FlagSet other)
     {
         return HasItems
-            && other.HasItems
+            &&
+            other.HasItems
             &&
             (
                 other._values!.Length == 1
                 ? Contains(other._values[0])
                 : (
                     _values!.Length == 1
-                    ? other.Contains(_values[0])
-                    : ((other._mask & _mask) != default && SortedInterectionTest(other._values.AsSpan(), _values.AsSpan()))
+                        ? other.Contains(_values[0])
+                        : ((other._mask & _mask) != default && SortedInterectionTest(other._values.AsSpan(), _values.AsSpan()))
+                )
+            );
+    }
+
+    public bool DoesNotContain(FlagValue value) => DoesNotContain((char)value);
+
+    public bool DoesNotContainAny(FlagSet other)
+    {
+        return IsEmpty
+            ||
+            other.IsEmpty
+            ||
+            (
+                other._values!.Length == 1
+                ? DoesNotContain(other._values[0])
+                : (
+                    _values!.Length == 1
+                        ? other.DoesNotContain(_values[0])
+                        : ((other._mask & _mask) == default || !SortedInterectionTest(other._values.AsSpan(), _values.AsSpan()))
                 )
             );
     }
@@ -498,15 +518,34 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     internal bool Contains(char value)
     {
         return
-            (value != FlagValue.ZeroValue && _values is not null)
+            value != FlagValue.ZeroValue
+            &&
+            _values is not null
             &&
             _values.Length switch
             {
                 0 => false,
-                1 => _values[0].Equals(value),
-                2 => _values[0].Equals(value) || _values[1].Equals(value),
-                3 => _values[0].Equals(value) || _values[1].Equals(value) || _values[2].Equals(value),
-                _ => (unchecked(value & _mask) == value) && SortedContains(_values.AsSpan(), value),
+                1 => _values[0] == value,
+                2 => _values[0] == value || _values[1] == value,
+                3 => _values[0] == value || _values[1] == value || _values[2] == value,
+                _ => (value & _mask) == value && SortedContains(_values.AsSpan(), value),
+            };
+    }
+
+    internal bool DoesNotContain(char value)
+    {
+        return
+            value == FlagValue.ZeroValue
+            ||
+            _values is null
+            ||
+            _values.Length switch
+            {
+                0 => true,
+                1 => _values[0] != value,
+                2 => _values[0] != value && _values[1] != value,
+                3 => _values[0] != value && _values[1] != value && _values[2] != value,
+                _ => (value & _mask) != value || !SortedContains(_values.AsSpan(), value),
             };
     }
 

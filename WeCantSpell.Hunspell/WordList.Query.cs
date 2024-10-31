@@ -304,7 +304,7 @@ public partial class WordList
 
             // if not 2-word compoud word, try with 3 or more words
             // (only if original info didn't forbid it)
-            if (he is null && !info.HasFlagEx(SpellCheckResultType.Compound2))
+            if (he is null && info.IsMissingFlag(SpellCheckResultType.Compound2))
             {
                 info &= ~SpellCheckResultType.Compound2;
                 he = CompoundCheck(word.AsSpan(), 0, 0, 100, rwords, huMovRule: false, isSug: false, info);
@@ -341,7 +341,7 @@ public partial class WordList
                 foreach (var homonymCandidate in details)
                 {
                     if (
-                        !homonymCandidate.ContainsFlag(Affix.NeedAffix)
+                        homonymCandidate.DoesNotContainFlag(Affix.NeedAffix)
                         &&
                         (
                             words is null
@@ -472,12 +472,16 @@ public partial class WordList
                         {
                             // perhaps without prefix
                             if (
-                                // NOTE: st.TerminatedSpan should have a length of i
-                                TryLookupDetails(st.TerminatedSpan, out var searchEntryWord, out var searchEntryDetails)
-                                && searchEntryDetails.Length > 0
+                                TryLookupDetails(st.TerminatedSpan, out var searchEntryWord, out var searchEntryDetails) // NOTE: st.TerminatedSpan should have a length of i
+                                &&
+                                searchEntryDetails.Length != 0
                             )
                             {
-                                if (!huMovRule)
+                                if (huMovRule)
+                                {
+                                    rv = searchEntryDetails[0].ToEntry(searchEntryWord);
+                                }
+                                else
                                 {
                                     // forbid dictionary stems with COMPOUNDFORBIDFLAG in
                                     // compound words, overriding the effect of COMPOUNDPERMITFLAG
@@ -510,11 +514,11 @@ public partial class WordList
                                         if (Affix.CompoundRules.HasItems && (wordNum == 0 || words is not null))
                                         {
                                             rv = CompoundCheckWordSearch_OnlyCpdRule(
+                                                searchEntryWord,
                                                 searchEntryDetails,
                                                 scpdPatternEntryCondition,
                                                 ref words,
-                                                rwords)
-                                                ?.ToEntry(searchEntryWord);
+                                                rwords);
                                         }
                                         else
                                         {
@@ -530,27 +534,23 @@ public partial class WordList
                                         if (words is null)
                                         {
                                             rv = CompoundCheckWordSearch_NormalNoWordList(
+                                                searchEntryWord,
                                                 searchEntryDetails,
                                                 scpdPatternEntryCondition,
-                                                wordNum == 0 ? Affix.CompoundBegin : Affix.CompoundMiddle)
-                                                ?.ToEntry(searchEntryWord);
+                                                wordNum == 0 ? Affix.CompoundBegin : Affix.CompoundMiddle);
                                         }
                                         else if (wordNum == 0)
                                         {
                                             rv = CompoundCheckWordSearch_NormalWithExistingWordList(
+                                                searchEntryWord,
                                                 searchEntryDetails,
-                                                scpdPatternEntryCondition)
-                                                ?.ToEntry(searchEntryWord);
+                                                scpdPatternEntryCondition);
                                         }
                                         else
                                         {
                                             rv = null;
                                         }
                                     }
-                                }
-                                else
-                                {
-                                    rv = searchEntryDetails[0].ToEntry(searchEntryWord);
                                 }
                             }
                             else
@@ -589,9 +589,10 @@ public partial class WordList
                         else
                         {
                             affixed = false;
-                            if (
-                                rv.ContainsAnyFlags(isSug ? Affix.Flags_NeedAffix_ForbiddenWord_OnlyUpcase_NoSuggest : Affix.Flags_NeedAffix_ForbiddenWord_OnlyUpcase)
-                            )
+
+                            if (rv.ContainsAnyFlags(isSug
+                                ? Affix.Flags_NeedAffix_ForbiddenWord_OnlyUpcase_NoSuggest
+                                : Affix.Flags_NeedAffix_ForbiddenWord_OnlyUpcase))
                             {
                                 // else check forbiddenwords and needaffix
                                 st[i] = ch;
@@ -638,16 +639,16 @@ public partial class WordList
                                 (
                                     !checkedPrefix
                                     &&
-                                    !(words?.CheckIfCurrentIsNotNull()).GetValueOrDefault()
+                                    words?.CheckIfCurrentIsNotNull() is not true
                                     &&
-                                    !rv.ContainsAnyFlags(oldwordnum == 0 ? Affix.Flags_CompoundFlag_CompoundBegin : Affix.Flags_CompoundFlag_CompoundMiddle)
+                                    rv.DoesNotContainAnyFlags(oldwordnum == 0 ? Affix.Flags_CompoundFlag_CompoundBegin : Affix.Flags_CompoundFlag_CompoundMiddle)
                                     &&
                                     (
-                                        !huMovRule
-                                        || // LANG_hu section: spec. Hungarian rule
-                                        !Affix.IsHungarian
-                                        || // XXX hardwired Hungarian dictionary codes
-                                        !rv.ContainsAnyFlags(SpecialFlags.SetFGH)
+                                        !huMovRule // LANG_hu section: spec. Hungarian rule
+                                        ||
+                                        !Affix.IsHungarian // XXX hardwired Hungarian dictionary codes
+                                        || 
+                                        rv.DoesNotContainAnyFlags(SpecialFlags.SetFGH)
                                     ) // END of LANG_hu section
                                 )
                                 || // test CHECKCOMPOUNDPATTERN conditions
@@ -656,7 +657,7 @@ public partial class WordList
                                     &&
                                     scpdPatternEntryCondition.HasValue
                                     &&
-                                    !rv.ContainsFlag(scpdPatternEntryCondition)
+                                    rv.DoesNotContainFlag(scpdPatternEntryCondition)
                                 )
                                 ||
                                 (
@@ -703,7 +704,7 @@ public partial class WordList
                                 rv is not null
                                 // XXX hardwired Hungarian dic. codes
                                 &&
-                                (_suffix?.ContainsAnyContClass(SpecialFlags.SetXPercent)).GetValueOrDefault()
+                                _suffix?.ContainsAnyContClass(SpecialFlags.SetXPercent) is true
                             )
                             {
                                 rv = null;
@@ -770,7 +771,7 @@ public partial class WordList
                                 if (rv is not null)
                                 {
                                     // check FORCEUCASE
-                                    if (!info.HasFlagEx(SpellCheckResultType.OrigCap) && rv.ContainsFlag(Affix.ForceUpperCase))
+                                    if (info.IsMissingFlag(SpellCheckResultType.OrigCap) && rv.ContainsFlag(Affix.ForceUpperCase))
                                     {
                                         rv = null;
                                     }
@@ -791,7 +792,7 @@ public partial class WordList
                                         &&
                                         rv.ContainsFlag(SpecialFlags.LetterI)
                                         &&
-                                        !rv.ContainsFlag(SpecialFlags.LetterJ)
+                                        rv.DoesNotContainFlag(SpecialFlags.LetterJ)
                                     )
                                     {
                                         numSyllable--;
@@ -912,7 +913,7 @@ public partial class WordList
                                     (
                                         // check FORCEUCASE
                                         (
-                                            !info.HasFlagEx(SpellCheckResultType.OrigCap)
+                                            info.IsMissingFlag(SpellCheckResultType.OrigCap)
                                             &&
                                             rv.ContainsFlag(Affix.ForceUpperCase)
                                         )
@@ -926,7 +927,7 @@ public partial class WordList
                                             ? (
                                                 scpdPatternEntryCondition2.HasValue
                                                 &&
-                                                !rv.ContainsFlag(scpdPatternEntryCondition2)
+                                                rv.DoesNotContainFlag(scpdPatternEntryCondition2)
                                             )
                                             // test CHECKCOMPOUNDPATTERN conditions (forbidden compounds)
                                             : (
@@ -1051,7 +1052,7 @@ public partial class WordList
                                 // perhaps second word is a compound word (recursive call)
                                 // (only if SPELL_COMPOUND_2 is not set and maxwordnum is not exceeded)
                                 if (
-                                    !info.HasFlagEx(SpellCheckResultType.Compound2)
+                                    info.IsMissingFlag(SpellCheckResultType.Compound2)
                                     &&
                                     (wordNum + 2) < maxwordnum
                                 )
@@ -1065,7 +1066,7 @@ public partial class WordList
                                         &&
                                         i < word.Length
                                         &&
-                                        (scpd != 0 ^ Affix.CompoundPatterns.Check(word, i, rvFirst, rv, affixed))
+                                        ((scpd != 0) ^ Affix.CompoundPatterns.Check(word, i, rvFirst, rv, affixed))
                                     )
                                     {
                                         rv = null;
@@ -1268,7 +1269,8 @@ public partial class WordList
             return rv;
         }
 
-        private readonly WordEntryDetail? CompoundCheckWordSearch_OnlyCpdRule(
+        private readonly WordEntry? CompoundCheckWordSearch_OnlyCpdRule(
+            string searchEntryWord,
             WordEntryDetail[] searchEntryDetails,
             FlagValue scpdPatternEntryCondition,
             ref IncrementalWordList? words,
@@ -1276,7 +1278,7 @@ public partial class WordList
         {
             foreach (var searchEntryDetail in searchEntryDetails)
             {
-                if (!searchEntryDetail.ContainsFlag(Affix.NeedAffix))
+                if (searchEntryDetail.DoesNotContainFlag(Affix.NeedAffix))
                 {
                     // NOTE: do not reorder DefCompoundCheck calls or other conditions due to side effects
 
@@ -1299,7 +1301,7 @@ public partial class WordList
 
                     if (defCpdCheck && (scpdPatternEntryCondition.IsZero || searchEntryDetail.ContainsFlag(scpdPatternEntryCondition)))
                     {
-                        return searchEntryDetail;
+                        return searchEntryDetail.ToEntry(searchEntryWord);
                     }
                 }
             }
@@ -1307,7 +1309,8 @@ public partial class WordList
             return null;
         }
 
-        private readonly WordEntryDetail? CompoundCheckWordSearch_NormalNoWordList(
+        private readonly WordEntry? CompoundCheckWordSearch_NormalNoWordList(
+            string searchEntryWord,
             WordEntryDetail[] searchEntryDetails,
             FlagValue scpdPatternEntryCondition,
             FlagValue compoundPart)
@@ -1315,33 +1318,34 @@ public partial class WordList
             foreach (var searchEntryDetail in searchEntryDetails)
             {
                 if (
-                    !searchEntryDetail.ContainsFlag(Affix.NeedAffix)
+                    searchEntryDetail.DoesNotContainFlag(Affix.NeedAffix)
                     &&
                     searchEntryDetail.Flags.ContainsAny(Affix.CompoundFlag, scpdPatternEntryCondition, compoundPart)
                 )
                 {
-                    return searchEntryDetail;
+                    return searchEntryDetail.ToEntry(searchEntryWord);
                 }
             }
 
             return null;
         }
 
-        private readonly WordEntryDetail? CompoundCheckWordSearch_NormalWithExistingWordList(
+        private readonly WordEntry? CompoundCheckWordSearch_NormalWithExistingWordList(
+            string searchEntryWord,
             WordEntryDetail[] searchEntryDetails,
             FlagValue scpdPatternEntryCondition)
         {
             foreach (var searchEntryDetail in searchEntryDetails)
             {
                 if (
-                    !searchEntryDetail.ContainsFlag(Affix.NeedAffix)
+                    searchEntryDetail.DoesNotContainFlag(Affix.NeedAffix)
                     &&
                     searchEntryDetail.ContainsFlag(Affix.CompoundBegin)
                     &&
                     (scpdPatternEntryCondition.IsZero || searchEntryDetail.ContainsFlag(scpdPatternEntryCondition))
                 )
                 {
-                    return searchEntryDetail;
+                    return searchEntryDetail.ToEntry(searchEntryWord);
                 }
             }
 
@@ -1971,7 +1975,7 @@ public partial class WordList
                     (
                         pfx is null // enabled by prefix is impossible
                         ||
-                        !affix.Options.HasFlagEx(AffixEntryOptions.CrossProduct)
+                        affix.Options.IsMissingFlag(AffixEntryOptions.CrossProduct)
                     )
                 )
                 ||
@@ -2036,7 +2040,7 @@ public partial class WordList
                                     )
                                 )
                                 && // check only in compound homonyms (bad flags)
-                                !heDetail.ContainsFlag(badFlag)
+                                heDetail.DoesNotContainFlag(badFlag)
                                 && // handle required flag
                                 (
                                     needFlag.IsZero
@@ -2065,7 +2069,7 @@ public partial class WordList
             // if this suffix is being cross checked with a prefix
             // but it does not support cross products skip it
 
-            if (optflags.HasFlagEx(AffixEntryOptions.CrossProduct) && !se.Options.HasFlagEx(AffixEntryOptions.CrossProduct))
+            if (optflags.HasFlagEx(AffixEntryOptions.CrossProduct) && se.Options.IsMissingFlag(AffixEntryOptions.CrossProduct))
             {
                 return null;
             }

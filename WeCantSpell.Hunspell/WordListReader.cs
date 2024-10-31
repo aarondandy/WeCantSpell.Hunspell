@@ -528,7 +528,7 @@ public sealed class WordListReader
                 (capType == CapitalizationType.All && flags.HasItems)
             )
             &&
-            !flags.Contains(Affix.ForbiddenWord)
+            flags.DoesNotContain(Affix.ForbiddenWord)
         )
         {
             flags = flags.Union(SpecialFlags.OnlyUpcaseFlag);

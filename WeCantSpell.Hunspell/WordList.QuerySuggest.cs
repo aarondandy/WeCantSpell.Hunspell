@@ -471,7 +471,7 @@ public partial class WordList
                                 _ = _query.CheckWord(wspace, ref info, out _);
                             }
 
-                            if (!info.HasFlagEx(SpellCheckResultType.Forbidden))
+                            if (info.IsMissingFlag(SpellCheckResultType.Forbidden))
                             {
                                 InsertSuggestion(slst, wspace);
                             }
@@ -1752,7 +1752,7 @@ public partial class WordList
                 if (rp is not null)
                 {
                     var field = string.Empty;
-                    if (!rp.Options.HasFlagEx(WordEntryOptions.Phon) || !CopyField(ref field, rp.Morphs, MorphologicalTags.Phon))
+                    if (rp.Options.IsMissingFlag(WordEntryOptions.Phon) || !CopyField(ref field, rp.Morphs, MorphologicalTags.Phon))
                     {
                         field = null;
                     }
@@ -2160,7 +2160,7 @@ public partial class WordList
 
             var nh = 0;
             // first add root word to list
-            if (nh < wlst.Length && !entry.ContainsAnyFlags(Affix.Flags_NeedAffix_OnlyInCompound))
+            if (nh < wlst.Length && entry.DoesNotContainAnyFlags(Affix.Flags_NeedAffix_OnlyInCompound))
             {
                 wlstNh = ref wlst[nh];
 

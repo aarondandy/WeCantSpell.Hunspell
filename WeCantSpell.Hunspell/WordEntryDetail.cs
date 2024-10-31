@@ -29,7 +29,11 @@ public readonly struct WordEntryDetail : IEquatable<WordEntryDetail>
 
     public bool ContainsFlag(FlagValue flag) => Flags.Contains(flag);
 
-    public bool ContainsAnyFlags(FlagSet set) => Flags.ContainsAny(set);
+    public bool ContainsAnyFlags(FlagSet flags) => Flags.ContainsAny(flags);
+
+    public bool DoesNotContainFlag(FlagValue flag) => Flags.DoesNotContain(flag);
+
+    public bool DoesNotContainAnyFlags(FlagSet flags) => Flags.DoesNotContainAny(flags);
 
     public bool Equals(WordEntryDetail other) =>
         other.Options == Options

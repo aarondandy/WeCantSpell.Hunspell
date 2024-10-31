@@ -197,7 +197,7 @@ public partial class WordList
             }
 
             // recursive breaking at break points
-            if (Affix.BreakPoints.HasItems && !resultType.HasFlagEx(SpellCheckResultType.Forbidden))
+            if (Affix.BreakPoints.HasItems && resultType.IsMissingFlag(SpellCheckResultType.Forbidden))
             {
                 return CheckDetailsInternalBreakPoints(scw, root, resultType);
             }
