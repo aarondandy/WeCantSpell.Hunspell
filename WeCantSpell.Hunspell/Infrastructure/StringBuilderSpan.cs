@@ -1,4 +1,7 @@
-﻿using System;
+﻿#pragma warning disable IDE0079 // prevents the complaint from disable CA1512
+#pragma warning disable CA1512
+
+using System;
 using System.Buffers;
 using System.Globalization;
 
@@ -37,8 +40,8 @@ ref struct StringBuilderSpan
     {
         if (text is not { Length: > 0 })
         {
-            _bufferRental = ArrayPool<char>.Shared.Rent(0);
-            _bufferSpan = _bufferRental.AsSpan();
+            _bufferRental = [];
+            _bufferSpan = [];
             _length = 0;
         }
         else
@@ -526,7 +529,7 @@ ref struct StringBuilderSpan
 
         this = default;
 
-        if (toReturn is not null)
+        if (toReturn.Length != 0)
         {
             ArrayPool<char>.Shared.Return(toReturn);
         }
@@ -553,7 +556,7 @@ ref struct StringBuilderSpan
         if (_bufferSpan.Length >= capacity) throw new InvalidOperationException();
 #endif
 
-        var oldBuffer = _bufferRental;
+        var toReturn = _bufferRental;
         var newBuffer = ArrayPool<char>.Shared.Rent(capacity);
         var newSpan = newBuffer.AsSpan();
 
@@ -561,23 +564,21 @@ ref struct StringBuilderSpan
         _bufferRental = newBuffer;
         _bufferSpan = newSpan;
 
-        if (oldBuffer is not null)
+        if (toReturn.Length != 0)
         {
-            ArrayPool<char>.Shared.Return(oldBuffer);
+            ArrayPool<char>.Shared.Return(toReturn);
         }
     }
 
     private void ResetAndReallocateBuffer(int capacity)
     {
-        var oldBuffer = _bufferRental;
+        if (_bufferRental.Length != 0)
+        {
+            ArrayPool<char>.Shared.Return(_bufferRental);
+        }
 
         _bufferRental = ArrayPool<char>.Shared.Rent(capacity);
         _bufferSpan = _bufferRental.AsSpan();
         _length = 0;
-
-        if (oldBuffer is not null)
-        {
-            ArrayPool<char>.Shared.Return(oldBuffer);
-        }
     }
 }

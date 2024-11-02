@@ -2466,7 +2466,7 @@ public partial class WordList
                 }
             }
 
-            candidate.Destroy();
+            candidate.Dispose();
         }
 
         private bool CheckForbidden(ReadOnlySpan<char> word)

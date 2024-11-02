@@ -1,4 +1,7 @@
-﻿using System;
+﻿#pragma warning disable IDE0079 // prevents the complaint from disable CA1512
+#pragma warning disable CA1512
+
+using System;
 using System.Buffers;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
@@ -7,21 +10,18 @@ struct SimulatedCString
 {
     public SimulatedCString(int capacity)
     {
-        if (capacity <= 0)
-        {
-            capacity = 1;
-        }
-
+#if DEBUG
+        if (capacity < 0) throw new ArgumentOutOfRangeException(nameof(capacity));
+#endif
         _rawBuffer = ArrayPool<char>.Shared.Rent(capacity);
         _bufferLength = capacity;
-        _rawBuffer[0] = '\0';
         _terminatedLength = 0;
     }
 
     public SimulatedCString(ReadOnlySpan<char> text)
     {
         _rawBuffer = ArrayPool<char>.Shared.Rent(text.Length + 3); // 3 extra characters seems to be enough to prevent most reallocations
-        text.CopyTo(_rawBuffer.AsSpan(0, text.Length));
+        text.CopyTo(_rawBuffer);
         _bufferLength = text.Length;
         _terminatedLength = -1;
     }
@@ -76,6 +76,11 @@ struct SimulatedCString
 
     public readonly ReadOnlySpan<char> SliceToTerminator(int startIndex)
     {
+#if DEBUG
+        if (startIndex < 0) throw new ArgumentOutOfRangeException(nameof(startIndex));
+        if (startIndex > _bufferLength) throw new ArgumentOutOfRangeException(nameof(startIndex));
+#endif
+
         if (startIndex <= _terminatedLength)
         {
             return _rawBuffer.AsSpan(startIndex, _terminatedLength - startIndex);
@@ -118,6 +123,10 @@ struct SimulatedCString
 
     public void Assign(ReadOnlySpan<char> text)
     {
+#if DEBUG
+        if (text.Length > _bufferLength) throw new ArgumentOutOfRangeException(nameof(text));
+#endif
+
         var buffer = _rawBuffer.AsSpan(0, _bufferLength);
         text.CopyTo(buffer);
 
@@ -129,13 +138,12 @@ struct SimulatedCString
         _terminatedLength = -1;
     }
 
-    public void Destroy()
+    public void Dispose()
     {
         if (_rawBuffer.Length != 0)
         {
             ArrayPool<char>.Shared.Return(_rawBuffer);
             _rawBuffer = [];
-            _bufferLength = 0;
         }
     }
 
@@ -147,7 +155,12 @@ struct SimulatedCString
             {
                 var newBuffer = ArrayPool<char>.Shared.Rent(neededLength);
                 Array.Copy(_rawBuffer, newBuffer, _bufferLength);
-                ArrayPool<char>.Shared.Return(_rawBuffer);
+
+                if (_rawBuffer.Length != 0)
+                {
+                    ArrayPool<char>.Shared.Return(_rawBuffer);
+                }
+
                 _rawBuffer = newBuffer;
             }
 

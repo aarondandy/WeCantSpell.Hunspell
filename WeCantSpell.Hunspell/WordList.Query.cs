@@ -414,6 +414,7 @@ public partial class WordList
                     {
                         if (opLimiter.HasBeenCanceled)
                         {
+                            st.Dispose();
                             return null;
                         }
 
@@ -458,6 +459,7 @@ public partial class WordList
                         if (i > st.BufferLength)
                         {
                             // abandon early on dubious pattern replacement outcome
+                            st.Dispose();
                             return null;
                         }
 
@@ -625,7 +627,7 @@ public partial class WordList
                             // check forbiddenwords
                             if (rv.ContainsAnyFlags(isSug ? Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest : Affix.Flags_ForbiddenWord_OnlyUpcase))
                             {
-                                st.Destroy();
+                                st.Dispose();
                                 return null;
                             }
 
@@ -777,7 +779,7 @@ public partial class WordList
                                     }
                                     else if ((words?.CheckIfNextIsNotNull()).GetValueOrDefault())
                                     {
-                                        st.Destroy();
+                                        st.Dispose();
                                         return rvFirst;
                                     }
                                 }
@@ -807,7 +809,7 @@ public partial class WordList
                                     // check forbiddenwords
                                     if (rv.ContainsAnyFlags(isSug ? Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest : Affix.Flags_ForbiddenWord_OnlyUpcase))
                                     {
-                                        st.Destroy();
+                                        st.Dispose();
                                         return null;
                                     }
 
@@ -860,7 +862,7 @@ public partial class WordList
                                         )
                                     )
                                     {
-                                        st.Destroy();
+                                        st.Dispose();
 
                                         // forbid compound word, if it is a non compound word with typical fault
                                         var wordLenPrefix = word.Limit(len);
@@ -895,7 +897,7 @@ public partial class WordList
 
                                         if (rv is not null && DefCompoundCheck(words.CreateIncremented(), rv.Detail, true))
                                         {
-                                            st.Destroy();
+                                            st.Dispose();
                                             return rvFirst;
                                         }
 
@@ -945,7 +947,7 @@ public partial class WordList
                                 // check forbiddenwords
                                 if ((rv?.ContainsAnyFlags(isSug ? Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest : Affix.Flags_ForbiddenWord_OnlyUpcase)).GetValueOrDefault())
                                 {
-                                    st.Destroy();
+                                    st.Dispose();
                                     return null;
                                 }
 
@@ -1036,7 +1038,7 @@ public partial class WordList
                                         )
                                     )
                                     {
-                                        st.Destroy();
+                                        st.Dispose();
 
                                         // forbid compound word, if it is a non compound word with typical fault
                                         var wordLenPrefix = word.Limit(len);
@@ -1092,7 +1094,7 @@ public partial class WordList
                                     {
                                         if (Affix.CheckCompoundRep && CompoundReplacementCheck(wordLenPrefix))
                                         {
-                                            st.Destroy();
+                                            st.Dispose();
                                             return null;
                                         }
 
@@ -1123,7 +1125,7 @@ public partial class WordList
                                                     && equalsOrdinalLimited(rv2.Word.AsSpan(), st.TerminatedSpan, i + rv.Word.Length)
                                                 )
                                                 {
-                                                    st.Destroy();
+                                                    st.Dispose();
                                                     return null;
                                                 }
                                             }
@@ -1132,7 +1134,7 @@ public partial class WordList
                                         }
                                     }
 
-                                    st.Destroy();
+                                    st.Dispose();
                                     return rvFirst;
                                 }
                             }
@@ -1181,7 +1183,7 @@ public partial class WordList
                 while (Affix.CompoundRules.HasItems && oldwordnum == 0 && inversePostfixIncrement(ref onlycpdrule)); // end of onlycpd loop
             }
 
-            st.Destroy();
+            st.Dispose();
             return null;
 
             static bool equalsOrdinalLimited(ReadOnlySpan<char> a, ReadOnlySpan<char> b, int lengthLimit) =>
