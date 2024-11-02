@@ -865,8 +865,7 @@ public partial class WordList
                                         st.Dispose();
 
                                         // forbid compound word, if it is a non compound word with typical fault
-                                        var wordLenPrefix = word.Limit(len);
-                                        return ((Affix.CheckCompoundRep && CompoundReplacementCheck(wordLenPrefix)) || CompoundWordPairCheck(wordLenPrefix))
+                                        return CompoundReplacementOrWordPairCheck(word.Limit(len))
                                             ? null
                                             : rvFirst;
                                     }
@@ -1041,8 +1040,7 @@ public partial class WordList
                                         st.Dispose();
 
                                         // forbid compound word, if it is a non compound word with typical fault
-                                        var wordLenPrefix = word.Limit(len);
-                                        return ((Affix.CheckCompoundRep && CompoundReplacementCheck(wordLenPrefix)) || CompoundWordPairCheck(wordLenPrefix))
+                                        return CompoundReplacementOrWordPairCheck(word.Limit(len))
                                             ? null
                                             : rvFirst;
                                     }
@@ -1083,7 +1081,7 @@ public partial class WordList
                                 {
                                     // forbid compound word, if it is a non-compound word with typical
                                     // fault, or a dictionary word pair
-                                    switch (CompoundCheckDecideForbid(word, len, i, st, rv))
+                                    switch (CompoundCheckDecideForbidFinal(word, len, i, st, rv))
                                     {
                                         case CompoundCheckForbidOutcomes.Fail:
                                             st.Dispose();
@@ -1789,11 +1787,10 @@ public partial class WordList
             return GetSyllable(word);
         }
 
-        private bool CompoundReplacementOrWordPairCheck(SimulatedCString st)
+        private bool CompoundReplacementOrWordPairCheck(ReadOnlySpan<char> word)
         {
-            var stString = st.TerminatedSpan;
-            return (Affix.CheckCompoundRep && CompoundReplacementCheck(stString))
-                || CompoundWordPairCheck(stString);
+            return (Affix.CheckCompoundRep && CompoundReplacementCheck(word))
+                || CompoundWordPairCheck(word);
         }
 
         /// <summary>
@@ -1865,7 +1862,7 @@ public partial class WordList
             ContinueNextIteration
         }
 
-        private CompoundCheckForbidOutcomes CompoundCheckDecideForbid(ReadOnlySpan<char> word, int len, int i, SimulatedCString st, WordEntry rv)
+        private CompoundCheckForbidOutcomes CompoundCheckDecideForbidFinal(ReadOnlySpan<char> word, int len, int i, SimulatedCString st, WordEntry rv)
         {
             // forbid compound word, if it is a non-compound word with typical
             // fault, or a dictionary word pair
@@ -1889,7 +1886,7 @@ public partial class WordList
                     var exchangeIndex = rv.Word.Length + i;
                     var characterBackup = st.Exchange(exchangeIndex, '\0');
 
-                    if (CompoundReplacementOrWordPairCheck(st))
+                    if (CompoundReplacementOrWordPairCheck(st.TerminatedSpan))
                     {
                         st[exchangeIndex] = characterBackup;
                         return CompoundCheckForbidOutcomes.ContinueNextIteration;
