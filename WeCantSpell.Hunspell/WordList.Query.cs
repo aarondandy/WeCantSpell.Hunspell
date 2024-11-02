@@ -1103,8 +1103,7 @@ public partial class WordList
                                         {
                                             var r = st.Exchange(i + rv.Word.Length, '\0');
 
-                                            var stString = st.TerminatedSpan;
-                                            if ((Affix.CheckCompoundRep && CompoundReplacementCheck(stString)) || CompoundWordPairCheck(stString))
+                                            if (CompoundReplacementOrWordPairCheck(st))
                                             {
                                                 st[i + rv.Word.Length] = r;
 
@@ -1833,6 +1832,13 @@ public partial class WordList
         {
             // Because the code is effectively the same, forward and reverse searches can use the same algorithm
             return GetSyllable(word);
+        }
+
+        private bool CompoundReplacementOrWordPairCheck(SimulatedCString st)
+        {
+            var stString = st.TerminatedSpan;
+            return (Affix.CheckCompoundRep && CompoundReplacementCheck(stString))
+                || CompoundWordPairCheck(stString);
         }
 
         /// <summary>
