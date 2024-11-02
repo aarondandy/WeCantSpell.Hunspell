@@ -23,7 +23,7 @@ sealed class ArrayBuilder<T> : IList<T>
 #if HAS_THROWOOR
         ArgumentOutOfRangeException.ThrowIfLessThan(initialCapacity, 0);
 #else
-        if (initialCapacity < 0) throw new ArgumentOutOfRangeException(nameof(initialCapacity));
+        ExceptionEx.ThrowIfArgumentLessThan(initialCapacity, 0, nameof(initialCapacity));
 #endif
 
         _values = initialCapacity == 0 ? [] : new T[initialCapacity];
@@ -50,7 +50,8 @@ sealed class ArrayBuilder<T> : IList<T>
             ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
 #else
-            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
             return _values[index];
         }
@@ -60,7 +61,8 @@ sealed class ArrayBuilder<T> : IList<T>
             ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
 #else
-            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
             _values[index] = value;
         }
@@ -97,7 +99,7 @@ sealed class ArrayBuilder<T> : IList<T>
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(values);
 #else
-        if (values is null) throw new ArgumentNullException(nameof(values));
+        ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
         foreach (var value in values)
@@ -111,7 +113,7 @@ sealed class ArrayBuilder<T> : IList<T>
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(values);
 #else
-        if (values is null) throw new ArgumentNullException(nameof(values));
+        ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
         var futureSize = Count + values.Count;
@@ -133,7 +135,7 @@ sealed class ArrayBuilder<T> : IList<T>
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(values);
 #else
-        if (values is null) throw new ArgumentNullException(nameof(values));
+        ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
         var futureSize = Count + values.Length;
@@ -155,7 +157,7 @@ sealed class ArrayBuilder<T> : IList<T>
 #if HAS_THROWOOR
         ArgumentOutOfRangeException.ThrowIfLessThan(requiredLength, 0);
 #else
-        if (requiredLength < 0) throw new ArgumentOutOfRangeException(nameof(requiredLength));
+        ExceptionEx.ThrowIfArgumentLessThan(requiredLength, 0, nameof(requiredLength));
 #endif
 
         if (_values.Length < requiredLength)
@@ -176,7 +178,7 @@ sealed class ArrayBuilder<T> : IList<T>
 #if HAS_THROWOOR
         ArgumentOutOfRangeException.ThrowIfLessThan(requiredLength, 0);
 #else
-        if (requiredLength < 0) throw new ArgumentOutOfRangeException(nameof(requiredLength));
+        ExceptionEx.ThrowIfArgumentLessThan(requiredLength, 0, nameof(requiredLength));
 #endif
 
         if (_values.Length < requiredLength)
@@ -245,7 +247,8 @@ sealed class ArrayBuilder<T> : IList<T>
         ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
 #else
-        if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+        ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+        ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
 
         if (Count > 0)
@@ -278,7 +281,7 @@ sealed class ArrayBuilder<T> : IList<T>
     public T[] Extract()
     {
 #if DEBUG
-        if (Count > _values.Length) throw new InvalidOperationException();
+        if (Count > _values.Length) ExceptionEx.ThrowInvalidOperation();
 #endif
 
         var result = Count == _values.Length

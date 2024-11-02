@@ -1,7 +1,4 @@
-﻿#pragma warning disable IDE0079 // prevents the complaint from disable CA1512
-#pragma warning disable CA1512
-
-using System;
+﻿using System;
 using System.Buffers;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
@@ -11,7 +8,7 @@ struct SimulatedCString
     public SimulatedCString(int capacity)
     {
 #if DEBUG
-        if (capacity < 0) throw new ArgumentOutOfRangeException(nameof(capacity));
+        ExceptionEx.ThrowIfArgumentLessThan(capacity, 0, nameof(capacity));
 #endif
         _rawBuffer = ArrayPool<char>.Shared.Rent(capacity);
         _bufferLength = capacity;
@@ -56,7 +53,7 @@ struct SimulatedCString
         set
         {
 #if DEBUG
-            if (index >= _bufferLength) throw new ArgumentOutOfRangeException(nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, _bufferLength, nameof(index));
 #endif
             _rawBuffer[index] = value;
 
@@ -77,8 +74,8 @@ struct SimulatedCString
     public readonly ReadOnlySpan<char> SliceToTerminator(int startIndex)
     {
 #if DEBUG
-        if (startIndex < 0) throw new ArgumentOutOfRangeException(nameof(startIndex));
-        if (startIndex > _bufferLength) throw new ArgumentOutOfRangeException(nameof(startIndex));
+        ExceptionEx.ThrowIfArgumentLessThan(startIndex, 0, nameof(startIndex));
+        ExceptionEx.ThrowIfArgumentGreaterThan(startIndex, _bufferLength, nameof(startIndex));
 #endif
 
         if (startIndex <= _terminatedLength)
@@ -124,7 +121,7 @@ struct SimulatedCString
     public void Assign(ReadOnlySpan<char> text)
     {
 #if DEBUG
-        if (text.Length > _bufferLength) throw new ArgumentOutOfRangeException(nameof(text));
+        ExceptionEx.ThrowIfArgumentGreaterThan(text.Length, _bufferLength, nameof(text));
 #endif
 
         var buffer = _rawBuffer.AsSpan(0, _bufferLength);

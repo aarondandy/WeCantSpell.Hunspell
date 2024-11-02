@@ -34,7 +34,7 @@ public sealed partial class WordList
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(words);
 #else
-        if (words is null) throw new ArgumentNullException(nameof(words));
+        ExceptionEx.ThrowIfArgumentNull(words, nameof(words));
 #endif
 
         return CreateFromWords(words, new AffixConfig.Builder().MoveToImmutable());
@@ -46,8 +46,8 @@ public sealed partial class WordList
         ArgumentNullException.ThrowIfNull(words);
         ArgumentNullException.ThrowIfNull(affix);
 #else
-        if (words is null) throw new ArgumentNullException(nameof(words));
-        if (affix is null) throw new ArgumentNullException(nameof(affix));
+        ExceptionEx.ThrowIfArgumentNull(words, nameof(words));
+        ExceptionEx.ThrowIfArgumentNull(affix, nameof(affix));
 #endif
 
         var wordListBuilder = new Builder(affix);

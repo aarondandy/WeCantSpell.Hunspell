@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell;
 
@@ -54,6 +55,7 @@ public sealed class MultiReplacementEntry : ReplacementEntry
 #if !NO_EXPOSED_NULLANNOTATIONS
         [System.Diagnostics.CodeAnalysis.DoesNotReturn]
 #endif
+        [MethodImpl(MethodImplOptions.NoInlining)]
         static void throwOutOfRange() => throw new ArgumentOutOfRangeException(nameof(type));
     }
 }

@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 
+using WeCantSpell.Hunspell.Infrastructure;
+
 namespace WeCantSpell.Hunspell;
 
 sealed class IncrementalWordList
@@ -14,7 +16,7 @@ sealed class IncrementalWordList
         if (Interlocked.Exchange(ref PoolCache, null) is { } rental)
         {
 #if DEBUG
-            if (rental.WNum != 0) throw new System.InvalidOperationException();
+            if (rental.WNum != 0) ExceptionEx.ThrowInvalidOperation();
 #endif
             rental._words.Clear();
         }
@@ -31,7 +33,7 @@ sealed class IncrementalWordList
         if (rental is { _words.Capacity: > 0 and <= MaxCachedCapacity })
         {
 #if DEBUG
-            if (rental.WNum != 0) throw new System.InvalidOperationException();
+            if (rental.WNum != 0) ExceptionEx.ThrowInvalidOperation();
 #endif
 
             Volatile.Write(ref PoolCache, rental);

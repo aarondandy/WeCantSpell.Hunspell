@@ -28,7 +28,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(values);
 #else
-        if (values is null) throw new ArgumentNullException(nameof(values));
+        ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
         var builder = new Builder();
@@ -41,7 +41,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(values);
 #else
-        if (values is null) throw new ArgumentNullException(nameof(values));
+        ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
         return Create(values.AsSpan());
@@ -102,7 +102,8 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
             ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
 #else
-            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
             return _values![index];
         }
@@ -383,7 +384,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 #if HAS_THROWNULL
             ArgumentNullException.ThrowIfNull(values);
 #else
-            if (values is null) throw new ArgumentNullException(nameof(values));
+            ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
             foreach (var value in values)

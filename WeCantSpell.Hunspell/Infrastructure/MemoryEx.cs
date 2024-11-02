@@ -38,7 +38,7 @@ static class MemoryEx
     public static void CopyToReversed(this ReadOnlySpan<char> source, Span<char> target)
     {
 #if DEBUG
-        if (source.Length > target.Length) throw new ArgumentOutOfRangeException(nameof(target));
+        ExceptionEx.ThrowIfArgumentLessThan(target.Length, source.Length, nameof(target));
 #endif
 
         for (var index = 0; index < source.Length; index++)

@@ -330,7 +330,7 @@ internal sealed class LineReader : IDisposable
                 out _);
 
 #if DEBUG
-            if (bytesConsumed == 0) throw new InvalidOperationException();
+            if (bytesConsumed == 0) ExceptionEx.ThrowInvalidOperation();
 #endif
 
             fileReadByteBuffer = fileReadByteBuffer.Slice(bytesConsumed);
@@ -434,7 +434,7 @@ internal sealed class LineReader : IDisposable
                 var newCharactersCount = newEncoding.GetChars(restoredBytes, newCharacters.AsSpan());
 
 #if DEBUG
-                if (newCharactersCount != newCharacters.Length) throw new InvalidOperationException();
+                if (newCharactersCount != newCharacters.Length) ExceptionEx.ThrowInvalidOperation();
 #endif
 #endif
                 _buffers[bufferIndex] = new TextBufferLine(newCharacters, preventRecycle: true);

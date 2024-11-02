@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -121,7 +122,7 @@ public sealed partial class AffixReader
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(filePath);
 #else
-        if (filePath is null) throw new ArgumentNullException(nameof(filePath));
+        ExceptionEx.ThrowIfArgumentNull(filePath, nameof(filePath));
 #endif
 
         using var stream = StreamEx.OpenAsyncReadFileStream(filePath);
@@ -136,7 +137,7 @@ public sealed partial class AffixReader
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(stream);
 #else
-        if (stream is null) throw new ArgumentNullException(nameof(stream));
+        ExceptionEx.ThrowIfArgumentNull(stream, nameof(stream));
 #endif
 
         var readerInstance = new AffixReader(builder);
@@ -162,7 +163,7 @@ public sealed partial class AffixReader
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(filePath);
 #else
-        if (filePath is null) throw new ArgumentNullException(nameof(filePath));
+        ExceptionEx.ThrowIfArgumentNull(filePath, nameof(filePath));
 #endif
 
         using var stream = StreamEx.OpenReadFileStream(filePath);
@@ -199,7 +200,7 @@ public sealed partial class AffixReader
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(stream);
 #else
-        if (stream is null) throw new ArgumentNullException(nameof(stream));
+        ExceptionEx.ThrowIfArgumentNull(stream, nameof(stream));
 #endif
 
         var readerInstance = new AffixReader(builder);
@@ -626,7 +627,7 @@ public sealed partial class AffixReader
             }
             else
             {
-                handleInvalidConv();
+                ExceptionEx.ThrowInvalidOperation("Invalid CONV");
             }
         }
 
@@ -662,14 +663,6 @@ public sealed partial class AffixReader
 
         entry.Set(type, pattern2.ReplaceIntoString('_', ' '));
         return true;
-
-#if !NO_EXPOSED_NULLANNOTATIONS
-        [System.Diagnostics.CodeAnalysis.DoesNotReturn]
-#endif
-        static void handleInvalidConv()
-        {
-            throw new InvalidOperationException();
-        }
     }
 
     private bool TryParseBreak(ReadOnlySpan<char> parameterText, ArrayBuilder<string> entries)

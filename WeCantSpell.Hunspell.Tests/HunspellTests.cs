@@ -307,7 +307,7 @@ public class HunspellTests
                 var wrongFilePath = Path.ChangeExtension(suggestionFilePath, "wrong");
                 if (!File.Exists(wrongFilePath))
                 {
-                    throw new InvalidOperationException();
+                    throw new InvalidOperationException($"File {wrongFilePath} not found");
                 }
 
                 var dictionaryFilePath = Path.ChangeExtension(wrongFilePath, "dic");

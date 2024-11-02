@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
+using WeCantSpell.Hunspell.Infrastructure;
+
 namespace WeCantSpell.Hunspell;
 
 public readonly struct MapTable : IReadOnlyList<MapEntry>
@@ -14,7 +16,7 @@ public readonly struct MapTable : IReadOnlyList<MapEntry>
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(entries);
 #else
-        if (entries is null) throw new ArgumentNullException(nameof(entries));
+        ExceptionEx.ThrowIfArgumentNull(entries, nameof(entries));
 #endif
 
         return new(entries.ToArray());
@@ -41,7 +43,8 @@ public readonly struct MapTable : IReadOnlyList<MapEntry>
             ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
 #else
-            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
 
             return _entries![index];

@@ -11,7 +11,7 @@ ref struct SpanSeparatorSplitEnumerator<T> where T : IEquatable<T>
 #if DEBUG
         if (options is not (StringSplitOptions.None or StringSplitOptions.RemoveEmptyEntries))
         {
-            throw new ArgumentOutOfRangeException(nameof(options));
+            ExceptionEx.ThrowArgumentOutOfRange(nameof(options));
         }
 #endif
 

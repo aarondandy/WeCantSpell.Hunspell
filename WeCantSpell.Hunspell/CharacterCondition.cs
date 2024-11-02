@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -60,7 +61,8 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
             ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
 #else
-            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
 
             return _characters![index];
@@ -104,10 +106,8 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 #if !NO_EXPOSED_NULLANNOTATIONS
         [System.Diagnostics.CodeAnalysis.DoesNotReturn]
 #endif
-        static string handleUnsupportedMode()
-        {
-            throw new NotSupportedException();
-        }
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static string handleUnsupportedMode() => throw new NotSupportedException($"Character condition mode not supported");
     }
 
     public override string ToString() => GetEncoded();

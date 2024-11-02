@@ -25,7 +25,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(conditions);
 #else
-        if (conditions is null) throw new ArgumentNullException(nameof(conditions));
+        ExceptionEx.ThrowIfArgumentNull(conditions, nameof(conditions));
 #endif
 
         return new(conditions.ToArray());
@@ -36,7 +36,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(text);
 #else
-        if (text is null) throw new ArgumentNullException(nameof(text));
+        ExceptionEx.ThrowIfArgumentNull(text, nameof(text));
 #endif
 
         return Parse(text.AsSpan());
@@ -121,7 +121,8 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
             ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
 #else
-            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
             return _items![index];
         }

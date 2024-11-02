@@ -48,7 +48,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(values);
 #else
-        if (values is null) throw new ArgumentNullException(nameof(values));
+        ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
         var builder = values is ICollection collection ? new Builder(collection.Count) : new Builder();
@@ -178,7 +178,8 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     {
 
 #if DEBUG
-        if (aSet.IsEmpty || bSet.IsEmpty) throw new InvalidOperationException();
+        ExceptionEx.ThrowIfArgumentEmpty(aSet, nameof(aSet));
+        ExceptionEx.ThrowIfArgumentEmpty(bSet, nameof(bSet));
 #endif
 
         return (aSet[aSet.Length - 1] >= bSet[0] && bSet[bSet.Length - 1] >= aSet[0])
@@ -194,7 +195,8 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     {
 
 #if DEBUG
-        if (aSet.IsEmpty || bSet.IsEmpty) throw new InvalidOperationException();
+        ExceptionEx.ThrowIfArgumentEmpty(aSet, nameof(aSet));
+        ExceptionEx.ThrowIfArgumentEmpty(bSet, nameof(bSet));
 #endif
 
         var aIndex = 0;
@@ -235,7 +237,8 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     {
 
 #if DEBUG
-        if (aSet.IsEmpty || bSet.IsEmpty) throw new InvalidOperationException();
+        ExceptionEx.ThrowIfArgumentEmpty(aSet, nameof(aSet));
+        ExceptionEx.ThrowIfArgumentEmpty(bSet, nameof(bSet));
 #endif
 
         do
@@ -338,7 +341,8 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
 #else
-            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
             return (FlagValue)_values![index];
         }
@@ -560,15 +564,13 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
 #if DEBUG
 
-        if (IsEmpty) throw new InvalidOperationException();
-
-        if (other.IsEmpty) throw new ArgumentOutOfRangeException(nameof(other));
-
-        if (other.Contains(FlagValue.ZeroValue)) throw new ArgumentOutOfRangeException(nameof(other), "Contains zero values");
+        if (IsEmpty) ExceptionEx.ThrowInvalidOperation();
+        ExceptionEx.ThrowIfArgumentEmpty(other, nameof(other));
+        if (other.Contains(FlagValue.ZeroValue)) ExceptionEx.ThrowArgumentOutOfRange(nameof(other), "Contains zero values");
 
         for (var i = other.Length - 2; i >= 0; i--)
         {
-            if (other[i] > other[i + 1]) throw new InvalidOperationException("Values must be sorted in ascending order");
+            if (other[i] > other[i + 1]) ExceptionEx.ThrowInvalidOperation("Values must be sorted in ascending order");
         }
 
 #endif
@@ -617,7 +619,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 #if HAS_THROWNULL
             ArgumentNullException.ThrowIfNull(values);
 #else
-            if (values is null) throw new ArgumentNullException(nameof(values));
+            ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
             foreach (var value in values)

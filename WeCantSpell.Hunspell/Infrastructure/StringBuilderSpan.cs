@@ -1,9 +1,7 @@
-﻿#pragma warning disable IDE0079 // prevents the complaint from disable CA1512
-#pragma warning disable CA1512
-
-using System;
+﻿using System;
 using System.Buffers;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
@@ -12,7 +10,7 @@ ref struct StringBuilderSpan
     public StringBuilderSpan(int capacity)
     {
 #if DEBUG
-        if (capacity < 0) throw new ArgumentOutOfRangeException(nameof(capacity));
+        ExceptionEx.ThrowIfArgumentLessThan(capacity, 0, nameof(capacity));
 #endif
 
         _bufferRental = ArrayPool<char>.Shared.Rent(capacity);
@@ -66,7 +64,8 @@ ref struct StringBuilderSpan
         get
         {
 #if DEBUG
-            if (index < 0 || index >= _length) throw new ArgumentOutOfRangeException(nameof(index));
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, _length, nameof(index));
 #endif
 
             return _bufferSpan[index];
@@ -75,7 +74,8 @@ ref struct StringBuilderSpan
         set
         {
 #if DEBUG
-            if (index < 0 || index >= _length) throw new ArgumentOutOfRangeException(nameof(index));
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, _length, nameof(index));
 #endif
 
             _bufferSpan[index] = value;
@@ -191,15 +191,7 @@ ref struct StringBuilderSpan
         }
         else if (written != space.Length)
         {
-            failSafe();
-        }
-
-#if !NO_EXPOSED_NULLANNOTATIONS
-        [System.Diagnostics.CodeAnalysis.DoesNotReturn]
-#endif
-        static void failSafe()
-        {
-            throw new InvalidOperationException("Failed to change case");
+            ExceptionEx.ThrowInvalidOperation("Failed to change case safely");
         }
     }
 
@@ -222,8 +214,8 @@ ref struct StringBuilderSpan
     public readonly void Replace(char oldChar, char newChar, int startIndex, int count)
     {
 #if DEBUG
-        if (startIndex >= _length) throw new ArgumentOutOfRangeException(nameof(startIndex));
-        if (startIndex + count > _length) throw new ArgumentOutOfRangeException(nameof(count));
+        ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(startIndex, _length, nameof(startIndex));
+        ExceptionEx.ThrowIfArgumentGreaterThan(startIndex + count, _length, nameof(count));
 #endif
 
         _bufferSpan.Slice(startIndex, count).Replace(oldChar, newChar);
@@ -257,8 +249,8 @@ ref struct StringBuilderSpan
     public void Replace(scoped ReadOnlySpan<char> oldText, scoped ReadOnlySpan<char> newText, int startIndex, int count)
     {
 #if DEBUG
-        if (startIndex >= _length) throw new ArgumentOutOfRangeException(nameof(startIndex));
-        if (startIndex + count > _length) throw new ArgumentOutOfRangeException(nameof(count));
+        ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(startIndex, _length, nameof(startIndex));
+        ExceptionEx.ThrowIfArgumentGreaterThan(startIndex + count, _length, nameof(count));
 #endif
 
         if (_length != 0 && count != 0 && !oldText.IsEmpty)
@@ -281,10 +273,10 @@ ref struct StringBuilderSpan
     private readonly void ReplaceEqualSizeInternal(scoped ReadOnlySpan<char> oldText, scoped ReadOnlySpan<char> newText, int startIndex, int count)
     {
 #if DEBUG
-        if (count == 0) throw new ArgumentOutOfRangeException(nameof(count));
-        if (oldText.IsEmpty) throw new ArgumentOutOfRangeException(nameof(oldText));
-        if (oldText.Length != newText.Length) throw new ArgumentOutOfRangeException(nameof(newText));
-        if (_length == 0) throw new InvalidOperationException();
+        ExceptionEx.ThrowIfArgumentEqual(count, 0, nameof(count));
+        ExceptionEx.ThrowIfArgumentEmpty(oldText, nameof(oldText));
+        ExceptionEx.ThrowIfArgumentNotEqual(newText.Length, oldText.Length, nameof(newText));
+        if (_length == 0) ExceptionEx.ThrowInvalidOperation();
 #endif
 
         var editableArea = _bufferSpan.Slice(startIndex, count);
@@ -317,10 +309,10 @@ ref struct StringBuilderSpan
     private void ReplaceIncreasingSizeInternal(scoped ReadOnlySpan<char> oldText, scoped ReadOnlySpan<char> newText, int startIndex, int count)
     {
 #if DEBUG
-        if (count == 0) throw new ArgumentOutOfRangeException(nameof(count));
-        if (oldText.IsEmpty) throw new ArgumentOutOfRangeException(nameof(oldText));
-        if (oldText.Length >= newText.Length) throw new ArgumentOutOfRangeException(nameof(newText));
-        if (_length == 0) throw new InvalidOperationException();
+        ExceptionEx.ThrowIfArgumentEqual(count, 0, nameof(count));
+        ExceptionEx.ThrowIfArgumentEmpty(oldText, nameof(oldText));
+        ExceptionEx.ThrowIfArgumentLessThanOrEqual(newText.Length, oldText.Length, nameof(newText));
+        if (_length == 0) ExceptionEx.ThrowInvalidOperation();
 #endif
 
         var searchIgnoreSize = _length - startIndex - count;
@@ -359,10 +351,10 @@ ref struct StringBuilderSpan
     private void ReplaceDecreasingSizeInternal(scoped ReadOnlySpan<char> oldText, scoped ReadOnlySpan<char> newText, int startIndex, int count)
     {
 #if DEBUG
-        if (count == 0) throw new ArgumentOutOfRangeException(nameof(count));
-        if (oldText.IsEmpty) throw new ArgumentOutOfRangeException(nameof(oldText));
-        if (oldText.Length <= newText.Length) throw new ArgumentOutOfRangeException(nameof(newText));
-        if (_length == 0) throw new InvalidOperationException();
+        ExceptionEx.ThrowIfArgumentEqual(count, 0, nameof(count));
+        ExceptionEx.ThrowIfArgumentEmpty(oldText, nameof(oldText));
+        ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(newText.Length, oldText.Length, nameof(newText));
+        if (_length == 0) ExceptionEx.ThrowInvalidOperation();
 #endif
 
         var searchIgnoreSize = _length - startIndex - count;
@@ -399,7 +391,8 @@ ref struct StringBuilderSpan
     public void RemoveAt(int index)
     {
 #if DEBUG
-        if (index < 0 || index >= _length) throw new ArgumentOutOfRangeException(nameof(index));
+        ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+        ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, _length, nameof(index));
 #endif
 
         if ((index + 1) < _length)
@@ -413,9 +406,10 @@ ref struct StringBuilderSpan
     public void Remove(int startIndex, int count)
     {
 #if DEBUG
-        if (startIndex < 0 || startIndex >= _length) throw new ArgumentOutOfRangeException(nameof(startIndex));
-        if (count < 0) throw new ArgumentOutOfRangeException(nameof(count));
-        if (startIndex + count > _length) throw new ArgumentOutOfRangeException(nameof(count));
+        ExceptionEx.ThrowIfArgumentLessThan(startIndex, 0, nameof(startIndex));
+        ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(startIndex, _length, nameof(startIndex));
+        ExceptionEx.ThrowIfArgumentLessThan(count, 0, nameof(count));
+        ExceptionEx.ThrowIfArgumentGreaterThan(startIndex + count, _length, nameof(count));
 #endif
 
         if (count != 0)
@@ -445,7 +439,8 @@ ref struct StringBuilderSpan
     public void Insert(int index, char value)
     {
 #if DEBUG
-        if (index < 0 || index > (_length + 1)) throw new ArgumentOutOfRangeException(nameof(index));
+        ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+        ExceptionEx.ThrowIfArgumentGreaterThan(index, _length + 1, nameof(index));
 #endif
 
         if (_length + 1 > _bufferSpan.Length)
@@ -465,7 +460,8 @@ ref struct StringBuilderSpan
     public void Insert(int index, scoped ReadOnlySpan<char> value)
     {
 #if DEBUG
-        if (index < 0 || index > (_length + 1)) throw new ArgumentOutOfRangeException(nameof(index));
+        ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+        ExceptionEx.ThrowIfArgumentGreaterThan(index, _length + 1, nameof(index));
 #endif
 
         var newSize = value.Length + _length;
@@ -553,7 +549,7 @@ ref struct StringBuilderSpan
     private void GrowBufferToCapacity(int capacity)
     {
 #if DEBUG
-        if (_bufferSpan.Length >= capacity) throw new InvalidOperationException();
+        ExceptionEx.ThrowIfArgumentLessThanOrEqual(capacity, _bufferSpan.Length, nameof(capacity));
 #endif
 
         var toReturn = _bufferRental;

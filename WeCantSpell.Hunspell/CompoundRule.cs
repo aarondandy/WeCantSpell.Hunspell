@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
+using WeCantSpell.Hunspell.Infrastructure;
+
 namespace WeCantSpell.Hunspell;
 
 public readonly struct CompoundRule : IReadOnlyList<FlagValue>
@@ -14,7 +16,7 @@ public readonly struct CompoundRule : IReadOnlyList<FlagValue>
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(values);
 #else
-        if (values is null) throw new ArgumentNullException(nameof(values));
+        ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
         return new(values.ToArray());
@@ -41,7 +43,8 @@ public readonly struct CompoundRule : IReadOnlyList<FlagValue>
             ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
 #else
-            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
             return _values![index];
         }
