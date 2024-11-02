@@ -613,7 +613,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
             {
                 ref var entry = ref _entries[_index++];
 
-                if (entry.Key?.Length is { } keyLength && keyLength <= _maxKeyLength && keyLength >= _minKeyLength)
+                if (entry.Key is not null && CheckMatchingKeyLength(entry.Key.Length))
                 {
                     _current = new(entry.Key, entry.Value);
                     return true;
@@ -622,6 +622,9 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
 
             return false;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private readonly bool CheckMatchingKeyLength(int length) => length <= _maxKeyLength && length >= _minKeyLength;
     }
 
     private struct Builder

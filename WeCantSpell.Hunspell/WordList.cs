@@ -52,7 +52,7 @@ public sealed partial class WordList
 
         var wordListBuilder = new Builder(affix);
 
-        wordListBuilder.InitializeEntriesByRoot((words as ICollection<string>)?.Count ?? 0);
+        wordListBuilder.InitializeEntriesByRoot(words.GetNonEnumeratedCountOrDefault());
 
         foreach (var word in words)
         {

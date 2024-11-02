@@ -1380,20 +1380,20 @@ public partial class WordList
                 rv = _query.SuffixCheck(word, AffixEntryOptions.None, null, default, default, CompoundOptions.Not); // only suffix
             }
 
-            if (Affix.ContClasses.HasItems && rv is null)
+            if (rv is null && Affix.ContClasses.HasItems)
             {
                 rv = _query.SuffixCheckTwoSfx(word, AffixEntryOptions.None, null, default)
                     ?? _query.PrefixCheckTwoSfx(word, CompoundOptions.Not, default);
             }
 
-            // check forbidden words
-            if ((rv?.ContainsAnyFlags(Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest_OnlyInCompound)).GetValueOrDefault())
-            {
-                return 0;
-            }
-
             if (rv is not null)
             {
+                // check forbidden words
+                if (rv.ContainsAnyFlags(Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest_OnlyInCompound))
+                {
+                    return 0;
+                }
+
                 // XXX obsolete
                 if (rv.ContainsFlag(Affix.CompoundFlag))
                 {
@@ -2472,7 +2472,7 @@ public partial class WordList
         private bool CheckForbidden(ReadOnlySpan<char> word)
         {
             var rv = LookupFirstDetail(word);
-            if ((rv?.ContainsAnyFlags(Affix.Flags_NeedAffix_OnlyInCompound)).GetValueOrDefault())
+            if (rv.HasValue && rv.GetValueOrDefault().ContainsAnyFlags(Affix.Flags_NeedAffix_OnlyInCompound))
             {
                 rv = null;
             }
@@ -2483,7 +2483,7 @@ public partial class WordList
             }
 
             // check forbidden words
-            return (rv?.ContainsFlag(Affix.ForbiddenWord)).GetValueOrDefault();
+            return (rv.HasValue && rv.GetValueOrDefault().ContainsFlag(Affix.ForbiddenWord));
         }
 
         /// <summary>

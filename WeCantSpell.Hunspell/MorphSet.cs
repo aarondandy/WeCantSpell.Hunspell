@@ -46,9 +46,9 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
 
     private readonly string[]? _morphs;
 
-    public int Count => (_morphs?.Length).GetValueOrDefault();
+    public int Count => _morphs is null ? 0 : _morphs.Length;
 
-    public bool IsEmpty => !HasItems;
+    public bool IsEmpty => _morphs is not { Length: > 0 };
 
     public bool HasItems => _morphs is { Length: > 0 };
 

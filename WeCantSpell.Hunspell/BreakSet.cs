@@ -29,9 +29,9 @@ public readonly struct BreakSet : IReadOnlyList<string>
 
     private readonly string[]? _entries;
 
-    public int Count => (_entries?.Length).GetValueOrDefault();
+    public int Count => _entries is null ? 0 : _entries.Length;
 
-    public bool IsEmpty => !HasItems;
+    public bool IsEmpty => _entries is not { Length: > 0 };
 
     public bool HasItems => _entries is { Length: > 0 };
 

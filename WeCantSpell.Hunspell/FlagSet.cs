@@ -324,9 +324,9 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     private readonly char[]? _values;
     private readonly char _mask;
 
-    public int Count => (_values?.Length).GetValueOrDefault();
+    public int Count => _values is null ? 0 : _values.Length;
 
-    public bool IsEmpty => !HasItems;
+    public bool IsEmpty => _values is not { Length: > 0 };
 
     public bool HasItems => _values is { Length: > 0 };
 

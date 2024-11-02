@@ -91,8 +91,8 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
 #endif
 
-    public int Count => (_values?.Length).GetValueOrDefault();
-    public bool IsEmpty => !HasItems;
+    public int Count => _values is null ? 0 : _values.Length;
+    public bool IsEmpty => _values is not { Length: > 0 };
     public bool HasItems => _values is { Length: > 0 };
     public char this[int index]
     {
@@ -116,7 +116,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
 #if HAS_SEARCHVALUES
 
-    public bool Contains(char value) => (_searchValues?.Contains(value)).GetValueOrDefault();
+    public bool Contains(char value) => _searchValues is not null && _searchValues.Contains(value);
 
     public int FindIndexOfMatch(ReadOnlySpan<char> text) => _searchValues is not null ? text.IndexOfAny(_searchValues) : -1;
 

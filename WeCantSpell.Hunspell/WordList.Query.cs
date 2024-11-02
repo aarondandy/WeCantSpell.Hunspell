@@ -146,10 +146,16 @@ public partial class WordList
         private readonly bool AffixContainsContClass(FlagValue value) =>
             value.HasValue
             &&
-            ((_prefix?.ContainsContClass(value)).GetValueOrDefault() || (_suffix?.ContainsContClass(value)).GetValueOrDefault());
+            (
+                (_prefix is not null && _prefix.ContainsContClass(value))
+                ||
+                (_suffix is not null && _suffix.ContainsContClass(value))
+            );
 
         private readonly bool AffixContainsAnyContClass(FlagSet values) =>
-            (_prefix?.ContainsAnyContClass(values)).GetValueOrDefault() || (_suffix?.ContainsAnyContClass(values)).GetValueOrDefault();
+            (_prefix is not null && _prefix.ContainsAnyContClass(values))
+            ||
+            (_suffix is not null && _suffix.ContainsAnyContClass(values));
 
         public WordEntry? CheckWord(string word, ref SpellCheckResultType info, out string? root)
         {
@@ -641,7 +647,7 @@ public partial class WordList
                                 (
                                     !checkedPrefix
                                     &&
-                                    words?.CheckIfCurrentIsNotNull() is not true
+                                    (words is null || !words.CheckIfCurrentIsNotNull())
                                     &&
                                     rv.DoesNotContainAnyFlags(oldwordnum == 0 ? Affix.Flags_CompoundFlag_CompoundBegin : Affix.Flags_CompoundFlag_CompoundMiddle)
                                     &&
@@ -706,7 +712,9 @@ public partial class WordList
                                 rv is not null
                                 // XXX hardwired Hungarian dic. codes
                                 &&
-                                _suffix?.ContainsAnyContClass(SpecialFlags.SetXPercent) is true
+                                _suffix is not null
+                                &&
+                                _suffix.ContainsAnyContClass(SpecialFlags.SetXPercent)
                             )
                             {
                                 rv = null;
@@ -777,7 +785,7 @@ public partial class WordList
                                     {
                                         rv = null;
                                     }
-                                    else if ((words?.CheckIfNextIsNotNull()).GetValueOrDefault())
+                                    else if (words is not null && words.CheckIfNextIsNotNull())
                                     {
                                         st.Dispose();
                                         return rvFirst;
@@ -826,12 +834,12 @@ public partial class WordList
                                         (
                                             !Affix.CompoundWordMax.HasValue
                                             ||
-                                            wordNum + 1 < Affix.CompoundWordMax
+                                            (wordNum + 1) < Affix.CompoundWordMax
                                             ||
                                             (
                                                 Affix.CompoundMaxSyllable != 0
                                                 &&
-                                                numSyllable + GetSyllable(rv.Word.AsSpan()) <= Affix.CompoundMaxSyllable
+                                                GetSyllable(rv.Word.AsSpan()) + numSyllable <= Affix.CompoundMaxSyllable
                                             )
                                         )
                                         &&
@@ -865,9 +873,7 @@ public partial class WordList
                                         st.Dispose();
 
                                         // forbid compound word, if it is a non compound word with typical fault
-                                        return CompoundReplacementOrWordPairCheck(word.Limit(len))
-                                            ? null
-                                            : rvFirst;
+                                        return CompoundReplacementOrWordPairCheck(word.Limit(len)) ? null : rvFirst;
                                     }
                                 }
 
@@ -944,7 +950,7 @@ public partial class WordList
                                 }
 
                                 // check forbiddenwords
-                                if ((rv?.ContainsAnyFlags(isSug ? Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest : Affix.Flags_ForbiddenWord_OnlyUpcase)).GetValueOrDefault())
+                                if (rv is not null && rv.ContainsAnyFlags(isSug ? Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest : Affix.Flags_ForbiddenWord_OnlyUpcase))
                                 {
                                     st.Dispose();
                                     return null;
@@ -969,6 +975,7 @@ public partial class WordList
                                     {
                                         numSyllable -= GetSyllableReversed(_suffixAppend.AsSpan());
                                     }
+
                                     if (_suffixExtra)
                                     {
                                         numSyllable -= 1;
@@ -996,7 +1003,9 @@ public partial class WordList
                                             (
                                                 _suffixFlag == SpecialFlags.LetterI
                                                 &&
-                                                (rv?.ContainsFlag(SpecialFlags.LetterJ)).GetValueOrDefault()
+                                                rv is not null
+                                                &&
+                                                rv.ContainsFlag(SpecialFlags.LetterJ)
                                             )
                                         )
                                         {
@@ -1040,9 +1049,7 @@ public partial class WordList
                                         st.Dispose();
 
                                         // forbid compound word, if it is a non compound word with typical fault
-                                        return CompoundReplacementOrWordPairCheck(word.Limit(len))
-                                            ? null
-                                            : rvFirst;
+                                        return CompoundReplacementOrWordPairCheck(word.Limit(len)) ? null : rvFirst;
                                     }
                                 }
 
@@ -1175,7 +1182,9 @@ public partial class WordList
                     &&
                     !huMovRule
                     &&
-                    (_suffix?.ContainsAnyContClass(Affix.Flags_CompoundForbid_CompoundEnd)).GetValueOrDefault()
+                    _suffix is not null
+                    &&
+                    _suffix.ContainsAnyContClass(Affix.Flags_CompoundForbid_CompoundEnd)
                 )
                 {
                     rv = null;
@@ -2055,7 +2064,7 @@ public partial class WordList
                                 (
                                     heDetail.ContainsFlag(affix.AFlag)
                                     ||
-                                    (pfx?.ContainsContClass(affix.AFlag)).GetValueOrDefault()
+                                    (pfx is not null && pfx.ContainsContClass(affix.AFlag))
                                 )
                                 &&
                                 (

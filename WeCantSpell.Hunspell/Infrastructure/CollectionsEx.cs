@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
@@ -8,6 +10,22 @@ namespace WeCantSpell.Hunspell.Infrastructure;
 static class CollectionsEx
 {
     internal const int CollectionPreallocationLimit = 16384;
+
+#if NO_NONENUMERATED_COUNT
+
+    public static int GetNonEnumeratedCountOrDefault<T>(this IEnumerable<T> enumerable) => enumerable switch
+    {
+        ICollection<T> collectionGeneric => collectionGeneric.Count,
+        ICollection collectionOld => collectionOld.Count,
+        _ => 0
+    };
+
+#else
+
+    public static int GetNonEnumeratedCountOrDefault<T>(this IEnumerable<T> enumerable) =>
+        enumerable.TryGetNonEnumeratedCount(out var count) ? count : 0;
+
+#endif
 
     public static int RemoveDuplicates<T>(this List<T> list, IEqualityComparer<T> comparer)
     {

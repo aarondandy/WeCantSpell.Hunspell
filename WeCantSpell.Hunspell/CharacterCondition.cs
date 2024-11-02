@@ -46,9 +46,9 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 
     public ModeKind Mode => _mode;
 
-    public int Count => (_characters?.Length).GetValueOrDefault();
+    public int Count => _characters is null ? 0 : _characters.Length;
 
-    public bool IsEmpty => !HasItems;
+    public bool IsEmpty => _characters is not { Length: > 0 };
 
     public bool HasItems => _characters is { Length: > 0 };
 
@@ -73,17 +73,13 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 
     public bool Contains(char c)
     {
-        if (!HasItems)
-        {
-            return false;
-        }
-
-        if (_characters!.Length <= 8 || _mode == ModeKind.MatchSequence)
-        {
-            return _characters.Contains(c);
-        }
-
-        return Array.BinarySearch(_characters, c) >= 0;
+        return _characters is { Length: > 0 }
+            &&
+            (
+                (_characters.Length <= 8 || _mode == ModeKind.MatchSequence)
+                ? _characters.Contains(c)
+                : Array.BinarySearch(_characters, c) >= 0
+            );
     }
 
     public bool MatchesAnySingleCharacter => _mode == ModeKind.RestrictChars && IsEmpty;
@@ -122,7 +118,7 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 
     public override bool Equals(object? obj) => obj is CharacterCondition cc && Equals(cc);
 
-    public override int GetHashCode() => HashCode.Combine((_characters?.Length).GetValueOrDefault(), _mode);
+    public override int GetHashCode() => HashCode.Combine(Count, _mode, StringEx.GetStableOrdinalHashCode(GetInternalArray()));
 
     internal char[] GetInternalArray() => _characters ?? [];
 

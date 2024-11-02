@@ -85,8 +85,12 @@ sealed class IncrementalWordList
 
     private bool CheckIfNotNull(int index) => index < _words.Count && _words[index] is not null;
 
-    public bool ContainsFlagAt(int index, FlagValue flag) =>
-        index < _words.Count && (_words[index]?.ContainsFlag(flag)).GetValueOrDefault();
+    public bool ContainsFlagAt(int index, FlagValue flag)
+    {
+        return index < _words.Count
+            && _words[index] is { } word
+            && word.ContainsFlag(flag);
+    }
 
     public IncrementalWordList CreateIncremented() => new(_words, WNum + 1);
 }
