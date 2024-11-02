@@ -1083,58 +1083,16 @@ public partial class WordList
                                 {
                                     // forbid compound word, if it is a non-compound word with typical
                                     // fault, or a dictionary word pair
-
-                                    var wordLenPrefix = word.Limit(len);
-                                    if (CompoundWordPairCheck(wordLenPrefix))
+                                    switch (CompoundCheckDecideForbid(word, len, i, st, rv))
                                     {
-                                        return null;
-                                    }
-
-                                    if (Affix.CheckCompoundRep || Affix.ForbiddenWord.HasValue)
-                                    {
-                                        if (Affix.CheckCompoundRep && CompoundReplacementCheck(wordLenPrefix))
-                                        {
+                                        case CompoundCheckForbidOutcomes.Fail:
                                             st.Dispose();
                                             return null;
-                                        }
 
-                                        // check first part
-                                        if (i < word.Length && word.Slice(i).StartsWith(rv.Word.AsSpan()))
-                                        {
-                                            var r = st.Exchange(i + rv.Word.Length, '\0');
-
-                                            if (CompoundReplacementOrWordPairCheck(st))
-                                            {
-                                                st[i + rv.Word.Length] = r;
-
-                                                continue;
-                                            }
-
-                                            if (Affix.ForbiddenWord.HasValue)
-                                            {
-                                                var rv2 = LookupFirst(word);
-                                                if (rv2 is null && len <= word.Length)
-                                                {
-                                                    rv2 = AffixCheck(word.Slice(0, len), default, CompoundOptions.Not);
-                                                }
-
-                                                if (
-                                                    rv2 is not null
-                                                    && rv2.ContainsFlag(Affix.ForbiddenWord)
-                                                    && equalsOrdinalLimited(rv2.Word.AsSpan(), st.TerminatedSpan, i + rv.Word.Length)
-                                                )
-                                                {
-                                                    st.Dispose();
-                                                    return null;
-                                                }
-                                            }
-
-                                            st[i + rv.Word.Length] = r;
-                                        }
+                                        case CompoundCheckForbidOutcomes.Permit:
+                                            st.Dispose();
+                                            return rvFirst;
                                     }
-
-                                    st.Dispose();
-                                    return rvFirst;
                                 }
                             }
                             while (simplifiedTripple && !checkedSimplifiedTriple);  // end of striple loop
@@ -1184,9 +1142,6 @@ public partial class WordList
 
             st.Dispose();
             return null;
-
-            static bool equalsOrdinalLimited(ReadOnlySpan<char> a, ReadOnlySpan<char> b, int lengthLimit) =>
-                a.Limit(lengthLimit).EqualsOrdinal(b.Limit(lengthLimit));
 
             static bool inversePostfixIncrement(ref bool b)
             {
@@ -1901,6 +1856,78 @@ public partial class WordList
             }
 
             return ok;
+        }
+
+        private enum CompoundCheckForbidOutcomes : byte
+        {
+            Fail,
+            Permit,
+            ContinueNextIteration
+        }
+
+        private CompoundCheckForbidOutcomes CompoundCheckDecideForbid(ReadOnlySpan<char> word, int len, int i, SimulatedCString st, WordEntry rv)
+        {
+            // forbid compound word, if it is a non-compound word with typical
+            // fault, or a dictionary word pair
+
+            var wordLenPrefix = word.Limit(len);
+            if (CompoundWordPairCheck(wordLenPrefix))
+            {
+                return CompoundCheckForbidOutcomes.Fail;
+            }
+
+            if (Affix.CheckCompoundRep || Affix.ForbiddenWord.HasValue)
+            {
+                if (Affix.CheckCompoundRep && CompoundReplacementCheck(wordLenPrefix))
+                {
+                    return CompoundCheckForbidOutcomes.Fail;
+                }
+
+                // check first part
+                if (i < word.Length && word.Slice(i).StartsWith(rv.Word.AsSpan()))
+                {
+                    var exchangeIndex = rv.Word.Length + i;
+                    var characterBackup = st.Exchange(exchangeIndex, '\0');
+
+                    if (CompoundReplacementOrWordPairCheck(st))
+                    {
+                        st[exchangeIndex] = characterBackup;
+                        return CompoundCheckForbidOutcomes.ContinueNextIteration;
+                    }
+
+                    if (Affix.ForbiddenWord.HasValue && CompoundCheckExplicitlyForbidden(word, len, i, st, rv))
+                    {
+                        return CompoundCheckForbidOutcomes.Fail;
+                    }
+
+                    st[exchangeIndex] = characterBackup;
+                }
+            }
+
+            return CompoundCheckForbidOutcomes.Permit;
+        }
+
+        private bool CompoundCheckExplicitlyForbidden(ReadOnlySpan<char> word, int len, int i, SimulatedCString st, WordEntry rv)
+        {
+            var rv2 = LookupFirst(word);
+            if (rv2 is null && len <= word.Length)
+            {
+                rv2 = AffixCheck(word.Slice(0, len), default, CompoundOptions.Not);
+            }
+
+            if (
+                rv2 is not null
+                && rv2.ContainsFlag(Affix.ForbiddenWord)
+                && equalsOrdinalLimited(rv2.Word.AsSpan(), st.TerminatedSpan, i + rv.Word.Length)
+            )
+            {
+                return true;
+            }
+
+            return false;
+
+            static bool equalsOrdinalLimited(ReadOnlySpan<char> a, ReadOnlySpan<char> b, int lengthLimit) =>
+                a.Limit(lengthLimit).EqualsOrdinal(b.Limit(lengthLimit));
         }
 
         private WordEntry? CheckWordPrefix(PrefixEntry affix, ReadOnlySpan<char> word, CompoundOptions inCompound, FlagValue needFlag)
