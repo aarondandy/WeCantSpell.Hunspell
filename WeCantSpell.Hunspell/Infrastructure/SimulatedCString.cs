@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
@@ -49,10 +50,19 @@ struct SimulatedCString
 
     public char this[int index]
     {
-        readonly get => index < _bufferLength ? _rawBuffer[index] : '\0';
+        readonly get
+        {
+#if DEBUG
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, _bufferLength, nameof(index));
+#endif
+            return index < _bufferLength ? _rawBuffer[index] : '\0';
+        }
+
         set
         {
 #if DEBUG
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
             ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, _bufferLength, nameof(index));
 #endif
             _rawBuffer[index] = value;
@@ -93,21 +103,36 @@ struct SimulatedCString
         return result;
     }
 
-    public char Exchange(int index, char value)
+    public char ExchangeWithNull(int index)
     {
-        var result = '\0';
+#if DEBUG
+        ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+        ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, _bufferLength, nameof(index));
+#endif
 
-        if (index < _bufferLength)
+        if (index == 0 || index < _terminatedLength)
         {
-            result = _rawBuffer[index];
-            this[index] = value;
+            _terminatedLength = index;
         }
 
-        return result;
+        return performExchange(ref _rawBuffer[index]);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static char performExchange(ref char target)
+        {
+            var previous = target;
+            target = '\0';
+            return previous;
+        }
     }
 
     public void WriteChars(ReadOnlySpan<char> text, int destinationIndex)
     {
+#if DEBUG
+        ExceptionEx.ThrowIfArgumentLessThan(destinationIndex, 0, nameof(destinationIndex));
+        ExceptionEx.ThrowIfArgumentGreaterThan(destinationIndex, _bufferLength, nameof(destinationIndex));
+#endif
+
         EnsureBufferCapacity(text.Length + destinationIndex);
 
         text.CopyTo(_rawBuffer.AsSpan(destinationIndex));

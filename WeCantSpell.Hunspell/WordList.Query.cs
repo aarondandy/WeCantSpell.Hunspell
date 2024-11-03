@@ -469,7 +469,7 @@ public partial class WordList
                             return null;
                         }
 
-                        ch = st.Exchange(i, '\0');
+                        ch = st.ExchangeWithNull(i);
 
                         ClearSuffix();
                         ClearPrefix();
@@ -480,7 +480,7 @@ public partial class WordList
                         {
                             // perhaps without prefix
                             if (
-                                TryLookupDetails(st.TerminatedSpan, out var searchEntryWord, out var searchEntryDetails) // NOTE: st.TerminatedSpan should have a length of i
+                                TryLookupDetails(st.TerminatedSpan, out var searchEntryWord, out var searchEntryDetails)
                                 &&
                                 searchEntryDetails.Length != 0
                             )
@@ -1893,7 +1893,7 @@ public partial class WordList
                 if (i < word.Length && word.Slice(i).StartsWith(rv.Word.AsSpan()))
                 {
                     var exchangeIndex = rv.Word.Length + i;
-                    var characterBackup = st.Exchange(exchangeIndex, '\0');
+                    var characterBackup = st.ExchangeWithNull(exchangeIndex);
 
                     if (CompoundReplacementOrWordPairCheck(st.TerminatedSpan))
                     {
