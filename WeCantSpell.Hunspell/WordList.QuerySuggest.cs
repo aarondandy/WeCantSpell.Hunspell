@@ -2410,7 +2410,7 @@ public partial class WordList
                     var c1 = CheckWord(candidate.TerminatedSpan, state.CpdSuggest);
                     if (c1 != 0)
                     {
-                        var c2 = CheckWord(candidate.SliceToTerminator(p + 1), state.CpdSuggest);
+                        var c2 = CheckWord(candidate.SliceToTerminatorFromOffset(p + 1), state.CpdSuggest);
                         if (c2 != 0)
                         {
                             // spec. Hungarian code (need a better compound word support)

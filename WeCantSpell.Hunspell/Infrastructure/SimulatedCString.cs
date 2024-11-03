@@ -30,24 +30,6 @@ struct SimulatedCString
 
     public readonly int BufferLength => _bufferLength;
 
-    public ReadOnlySpan<char> TerminatedSpan
-    {
-        get
-        {
-            if (_terminatedLength < 0)
-            {
-                _terminatedLength = Array.IndexOf(_rawBuffer, '\0', 0, _bufferLength);
-
-                if (_terminatedLength < 0)
-                {
-                    _terminatedLength = _bufferLength;
-                }
-            }
-
-            return _rawBuffer.AsSpan(0, _terminatedLength);
-        }
-    }
-
     public char this[int index]
     {
         readonly get
@@ -81,26 +63,34 @@ struct SimulatedCString
         }
     }
 
-    public readonly ReadOnlySpan<char> SliceToTerminator(int startIndex)
+    public ReadOnlySpan<char> TerminatedSpan
+    {
+        get
+        {
+            if (_terminatedLength < 0)
+            {
+                _terminatedLength = Array.IndexOf(_rawBuffer, '\0', 0, _bufferLength);
+
+                if (_terminatedLength < 0)
+                {
+                    _terminatedLength = _bufferLength;
+                }
+            }
+
+            return _rawBuffer.AsSpan(0, _terminatedLength);
+        }
+    }
+
+    public readonly ReadOnlySpan<char> SliceToTerminatorFromOffset(int startIndex)
     {
 #if DEBUG
         ExceptionEx.ThrowIfArgumentLessThan(startIndex, 0, nameof(startIndex));
         ExceptionEx.ThrowIfArgumentGreaterThan(startIndex, _bufferLength, nameof(startIndex));
 #endif
 
-        if (startIndex <= _terminatedLength)
-        {
-            return _rawBuffer.AsSpan(startIndex, _terminatedLength - startIndex);
-        }
-
         var result = _rawBuffer.AsSpan(startIndex, _bufferLength - startIndex);
         var index = result.IndexOf('\0');
-        if (index >= 0)
-        {
-            result = result.Slice(0, index);
-        }
-
-        return result;
+        return index >= 0 ? result.Slice(0, index) : result;
     }
 
     public char ExchangeWithNull(int index)

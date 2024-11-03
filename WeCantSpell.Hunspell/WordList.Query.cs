@@ -710,11 +710,10 @@ public partial class WordList
 
                             if(
                                 rv is not null
-                                // XXX hardwired Hungarian dic. codes
                                 &&
                                 _suffix is not null
                                 &&
-                                _suffix.ContainsAnyContClass(SpecialFlags.SetXPercent)
+                                _suffix.ContainsAnyContClass(SpecialFlags.SetXPercent) // XXX hardwired Hungarian dic. codes
                             )
                             {
                                 rv = null;
@@ -728,7 +727,7 @@ public partial class WordList
                             if (Affix.IsHungarian)
                             {
                                 // calculate syllable number of the word
-                                numSyllable += GetSyllable(st.TerminatedSpan.Slice(0, i));
+                                numSyllable += GetSyllable(st.TerminatedSpan.Limit(i));
 
                                 // - affix syllable num.
                                 // XXX only second suffix (inflections, not derivations)
@@ -776,7 +775,7 @@ public partial class WordList
                                 }
 
                                 // NOTE: st.TerminatedSpan should terminate at its full length, but we can't know that for sure
-                                rv = HomonymWordSearch(st.TerminatedSpan.Slice(i), words, scpdPatternEntryCondition2, scpd == 0);
+                                rv = HomonymWordSearch(st.SliceToTerminatorFromOffset(i), words, scpdPatternEntryCondition2, scpd == 0);
 
                                 if (rv is not null)
                                 {
@@ -1064,7 +1063,7 @@ public partial class WordList
                                     (wordNum + 2) < maxwordnum
                                 )
                                 {
-                                    rv = CompoundCheck(st.TerminatedSpan.Slice(i), wordNum + 1, numSyllable, maxwordnum, words?.CreateIncremented(), rwords.CreateIncremented(), false, isSug, info, ref opLimiter);
+                                    rv = CompoundCheck(st.SliceToTerminatorFromOffset(i), wordNum + 1, numSyllable, maxwordnum, words?.CreateIncremented(), rwords.CreateIncremented(), false, isSug, info, ref opLimiter);
 
                                     if (
                                         rv is not null
@@ -1890,7 +1889,7 @@ public partial class WordList
                 }
 
                 // check first part
-                if (i < word.Length && word.Slice(i).StartsWith(rv.Word.AsSpan()))
+                if (word.Length > i && word.Slice(i).StartsWith(rv.Word.AsSpan()))
                 {
                     var exchangeIndex = rv.Word.Length + i;
                     var characterBackup = st.ExchangeWithNull(exchangeIndex);
@@ -1901,7 +1900,7 @@ public partial class WordList
                         return CompoundCheckForbidOutcomes.ContinueNextIteration;
                     }
 
-                    if (Affix.ForbiddenWord.HasValue && CompoundCheckExplicitlyForbidden(word, len, i, st, rv))
+                    if (Affix.ForbiddenWord.HasValue && CompoundCheckExplicitlyForbidden(word, len, i, rv, st))
                     {
                         return CompoundCheckForbidOutcomes.Fail;
                     }
@@ -1913,27 +1912,22 @@ public partial class WordList
             return CompoundCheckForbidOutcomes.Permit;
         }
 
-        private bool CompoundCheckExplicitlyForbidden(ReadOnlySpan<char> word, int len, int i, SimulatedCString st, WordEntry rv)
+        private bool CompoundCheckExplicitlyForbidden(ReadOnlySpan<char> word, int len, int i, WordEntry rv, SimulatedCString st)
         {
             var rv2 = LookupFirst(word);
+
             if (rv2 is null && len <= word.Length)
             {
                 rv2 = AffixCheck(word.Slice(0, len), default, CompoundOptions.Not);
             }
 
-            if (
-                rv2 is not null
+            return rv2 is not null
                 && rv2.ContainsFlag(Affix.ForbiddenWord)
-                && equalsOrdinalLimited(rv2.Word.AsSpan(), st.TerminatedSpan, i + rv.Word.Length)
-            )
-            {
-                return true;
-            }
+                && equalsOrdinalLimited(rv2.Word, st.TerminatedSpan, rv.Word.Length);
 
-            return false;
+            static bool equalsOrdinalLimited(string a, ReadOnlySpan<char> b, int limit) =>
+                a.AsSpan(0, Math.Min(a.Length, limit)).EqualsOrdinal(b.Limit(limit));
 
-            static bool equalsOrdinalLimited(ReadOnlySpan<char> a, ReadOnlySpan<char> b, int lengthLimit) =>
-                a.Limit(lengthLimit).EqualsOrdinal(b.Limit(lengthLimit));
         }
 
         private WordEntry? CheckWordPrefix(PrefixEntry affix, ReadOnlySpan<char> word, CompoundOptions inCompound, FlagValue needFlag)
