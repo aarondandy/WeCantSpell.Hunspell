@@ -58,9 +58,9 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
 
     internal bool EntryContainsRuleFlags(in FlagSet flags)
     {
-        if (flags.HasItems && HasItems)
+        if (flags.HasItems && _rules is not null)
         {
-            foreach(var rule in _rules!)
+            foreach(var rule in _rules)
             {
                 if (rule.ContainsRuleFlagForEntry(flags))
                 {

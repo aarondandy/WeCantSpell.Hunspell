@@ -25,9 +25,25 @@ public readonly struct CompoundRule : IReadOnlyList<FlagValue>
     internal CompoundRule(FlagValue[] items)
     {
         _values = items;
+        _nonWildcardRuleFlags = prepareNonWildcardValues(items);
+
+        static FlagSet prepareNonWildcardValues(FlagValue[] values)
+        {
+            var builder = new ArrayBuilder<char>(values.Length);
+            foreach (var value in values)
+            {
+                if (value.IsNotWildcard)
+                {
+                    builder.AddAsSortedSet(value);
+                }
+            }
+
+            return FlagSet.CreateUsingOwnedBuffer(builder.MakeOrExtractArray(extract: true));
+        }
     }
 
     private readonly FlagValue[]? _values;
+    private readonly FlagSet _nonWildcardRuleFlags;
 
     public int Count => _values is null ? 0 : _values.Length;
 
@@ -50,24 +66,11 @@ public readonly struct CompoundRule : IReadOnlyList<FlagValue>
         }
     }
 
-    public IEnumerator<FlagValue> GetEnumerator() => ((IEnumerable<FlagValue>)GetInternalArray()).GetEnumerator();
+    public IEnumerator<FlagValue> GetEnumerator() => (_values is null ? Enumerable.Empty<FlagValue>() : _values).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    internal FlagValue[] GetInternalArray() => _values ?? [];
-
     internal bool IsWildcard(int index) => _values![index].IsWildcard;
 
-    internal bool ContainsRuleFlagForEntry(in FlagSet flags)
-    {
-        foreach (var flag in GetInternalArray())
-        {
-            if (!flag.IsWildcard && flags.Contains(flag))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    internal bool ContainsRuleFlagForEntry(in FlagSet flags) => _nonWildcardRuleFlags.ContainsAny(flags);
 }
