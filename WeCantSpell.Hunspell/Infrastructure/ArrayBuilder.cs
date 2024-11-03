@@ -284,9 +284,19 @@ sealed class ArrayBuilder<T> : IList<T>
         if (Count > _values.Length) ExceptionEx.ThrowInvalidOperation();
 #endif
 
-        var result = Count == _values.Length
-            ? Interlocked.Exchange(ref _values, Array.Empty<T>())
-            : MakeArray();
+        T[] result;
+        if (Count == 0)
+        {
+            result = [];
+        }
+        else if (Count == _values.Length)
+        {
+            result = Interlocked.Exchange(ref _values, []);
+        }
+        else
+        {
+            result = MakeArray();
+        }
 
         Clear();
 
