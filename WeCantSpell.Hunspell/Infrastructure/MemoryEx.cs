@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
@@ -33,6 +34,14 @@ static class MemoryEx
     public static void Swap(this Span<char> span, int index0, int index1)
     {
         (span[index1], span[index0]) = (span[index0], span[index1]);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Swap(ref ReadOnlySpan<char> a, ref ReadOnlySpan<char> b)
+    {
+        var tmp = a;
+        a = b;
+        b = tmp;
     }
 
     public static void CopyToReversed(this ReadOnlySpan<char> source, Span<char> target)

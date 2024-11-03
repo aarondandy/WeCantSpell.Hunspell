@@ -182,97 +182,88 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         ExceptionEx.ThrowIfArgumentEmpty(bSet, nameof(bSet));
 #endif
 
-        return (aSet[aSet.Length - 1] >= bSet[0] && bSet[bSet.Length - 1] >= aSet[0])
+        return (aSet[aSet.Length - 1] >= bSet[0] && bSet[bSet.Length - 1] >= aSet[0]) // Check for disjoint sets
             &&
             (
                 (aSet.Length <= 4 && bSet.Length <= 4)
-                ? SortedInterectionTestLinear(aSet, bSet)
-                : SortedInterectionTestBinary(aSet, bSet)
+                ? sortedInterectionTestLinear(aSet, bSet)
+                : sortedInterectionTestBinary(aSet, bSet)
             );
-    }
 
-    private static bool SortedInterectionTestLinear(ReadOnlySpan<char> aSet, ReadOnlySpan<char> bSet)
-    {
-
-#if DEBUG
-        ExceptionEx.ThrowIfArgumentEmpty(aSet, nameof(aSet));
-        ExceptionEx.ThrowIfArgumentEmpty(bSet, nameof(bSet));
-#endif
-
-        var aIndex = 0;
-        var bIndex = 0;
-
-        do
+        static bool sortedInterectionTestLinear(ReadOnlySpan<char> aSet, ReadOnlySpan<char> bSet)
         {
-            var cmp = aSet[aIndex].CompareTo(bSet[bIndex]);
-            if (cmp == 0)
-            {
-                return true;
-            }
-            else if (cmp < 0)
-            {
-                aIndex++;
+            var aIndex = 0;
+            var bIndex = 0;
 
-                if (aIndex >= aSet.Length)
+            do
+            {
+                switch (aSet[aIndex].CompareTo(bSet[bIndex]))
                 {
-                    break; // disjoint or empty can't match
+                    case 0:
+                        return true;
+
+                    case < 0:
+                        aIndex++;
+
+                        if (aIndex >= aSet.Length)
+                        {
+                            goto disjointOrEmptyCantMatch;
+                        }
+
+                        break;
+
+                    default:
+                        bIndex++;
+
+                        if (bIndex >= bSet.Length)
+                        {
+                            goto disjointOrEmptyCantMatch;
+                        }
+
+                        break;
                 }
             }
-            else
-            {
-                bIndex++;
+            while (true);
 
-                if (bIndex >= bSet.Length)
-                {
-                    break; // disjoint or empty can't match
-                }
-            }
+        disjointOrEmptyCantMatch:
+
+            return false;
         }
-        while (true);
 
-        return false;
-    }
-
-    private static bool SortedInterectionTestBinary(ReadOnlySpan<char> aSet, ReadOnlySpan<char> bSet)
-    {
-
-#if DEBUG
-        ExceptionEx.ThrowIfArgumentEmpty(aSet, nameof(aSet));
-        ExceptionEx.ThrowIfArgumentEmpty(bSet, nameof(bSet));
-#endif
-
-        do
+        static bool sortedInterectionTestBinary(ReadOnlySpan<char> aSet, ReadOnlySpan<char> bSet)
         {
-            if (aSet.Length > bSet.Length)
+            do
             {
-                var tmp = aSet;
-                aSet = bSet;
-                bSet = tmp;
-            }
+                if (aSet.Length > bSet.Length)
+                {
+                    MemoryEx.Swap(ref aSet, ref bSet);
+                }
 
-            var flagValuesIndex = bSet.BinarySearch(aSet[0]);
-            if (flagValuesIndex >= 0)
-            {
-                return true;
-            }
-            else
-            {
+                var flagValuesIndex = bSet.BinarySearch(aSet[0]);
+                if (flagValuesIndex >= 0)
+                {
+                    return true;
+                }
+
+                if (aSet.Length <= 1)
+                {
+                    break;
+                }
+
+                flagValuesIndex = ~flagValuesIndex;
+
+                if (bSet.Length <= flagValuesIndex)
+                {
+                    break;
+                }
+
                 aSet = aSet.Slice(1);
-                if (aSet.IsEmpty)
-                {
-                    break;
-                }
-
-                bSet = bSet.Slice(~flagValuesIndex);
-                if (bSet.IsEmpty)
-                {
-                    break;
-                }
+                bSet = bSet.Slice(flagValuesIndex);
             }
-        }
-        while (true);
+            while (true);
 
-        return false;
+            return false;
+        }
     }
 
     private static bool SortedContains(ReadOnlySpan<char> sorted, char value)
