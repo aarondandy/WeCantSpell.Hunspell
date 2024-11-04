@@ -160,16 +160,30 @@ public sealed partial class WordList
 
     private WordEntry? FindFirstEntryByRootWord(ReadOnlySpan<char> rootWord)
     {
-        return EntriesByRoot.TryGetValue(rootWord, out var key, out var details) && details.Length != 0
-            ? new WordEntry(key, details[0])
-            : null;
+        if (EntriesByRoot.TryGetValue(rootWord, out var key, out var details))
+        {
+#if DEBUG
+            if (details.Length == 0) ExceptionEx.ThrowInvalidOperation();
+#endif
+
+            return (WordEntry?)new WordEntry(key, details[0]);
+        }
+
+        return null;
     }
 
     private WordEntry? FindFirstEntryByRootWord(string rootWord)
     {
-        return EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length != 0
-            ? new WordEntry(rootWord, details[0])
-            : null;
+        if (EntriesByRoot.TryGetValue(rootWord, out var details))
+        {
+#if DEBUG
+            if (details.Length == 0) ExceptionEx.ThrowInvalidOperation();
+#endif
+
+            return (WordEntry?)new WordEntry(rootWord, details[0]);
+        }
+
+        return null;
     }
 
     private WordEntryDetail[] FindEntryDetailsByRootWord(string rootWord)
@@ -188,15 +202,26 @@ public sealed partial class WordList
 
     private WordEntryDetail? FindFirstEntryDetailByRootWord(ReadOnlySpan<char> rootWord)
     {
-        return EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length != 0
-            ? details[0]
-            : null;
+        if (EntriesByRoot.TryGetValue(rootWord, out var details))
+        {
+#if DEBUG
+            if (details.Length == 0) ExceptionEx.ThrowInvalidOperation();
+#endif
+
+            return details[0];
+        }
+
+        return null;
     }
 
     private bool TryFindFirstEntryDetailByRootWord(ReadOnlySpan<char> rootWord, out WordEntryDetail entryDetail)
     {
-        if (EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length != 0)
+        if (EntriesByRoot.TryGetValue(rootWord, out var details))
         {
+#if DEBUG
+            if (details.Length == 0) ExceptionEx.ThrowInvalidOperation();
+#endif
+
             entryDetail = details[0];
             return true;
         }
@@ -207,8 +232,12 @@ public sealed partial class WordList
 
     private bool TryFindFirstEntryDetailByRootWord(string rootWord, out WordEntryDetail entryDetail)
     {
-        if (EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length != 0)
+        if (EntriesByRoot.TryGetValue(rootWord, out var details))
         {
+#if DEBUG
+            if (details.Length == 0) ExceptionEx.ThrowInvalidOperation();
+#endif
+
             entryDetail = details[0];
             return true;
         }

@@ -479,12 +479,12 @@ public partial class WordList
 
                         {
                             // perhaps without prefix
-                            if (
-                                TryLookupDetails(st.TerminatedSpan, out var searchEntryWord, out var searchEntryDetails)
-                                &&
-                                searchEntryDetails.Length != 0
-                            )
+                            if (TryLookupDetails(st.TerminatedSpan, out var searchEntryWord, out var searchEntryDetails))
                             {
+#if DEBUG
+                                if (searchEntryDetails.Length == 0) ExceptionEx.ThrowInvalidOperation();
+#endif
+
                                 if (huMovRule)
                                 {
                                     rv = searchEntryDetails[0].ToEntry(searchEntryWord);
