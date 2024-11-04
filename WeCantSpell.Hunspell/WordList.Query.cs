@@ -690,6 +690,8 @@ public partial class WordList
                                     &&
                                     words is null
                                     &&
+                                    !word.IsEmpty
+                                    &&
                                     (
                                         (
                                             Affix.CheckCompoundTriple
@@ -709,8 +711,6 @@ public partial class WordList
                                         ||
                                         (
                                             Affix.CheckCompoundCase
-                                            &&
-                                            !word.IsEmpty
                                             &&
                                             CompoundCaseCheck(word, i)
                                         )
