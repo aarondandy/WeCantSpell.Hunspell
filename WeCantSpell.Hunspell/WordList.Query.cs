@@ -304,15 +304,30 @@ public partial class WordList
             var rwords = IncrementalWordList.GetRoot();
 
             // first allow only 2 words in the compound
-            var setinfo = SpellCheckResultType.Compound2 | info;
-            he = CompoundCheck(word.AsSpan(), 0, 0, 100, rwords, huMovRule: false, isSug: false, setinfo);
-            info = setinfo & ~SpellCheckResultType.Compound2; // unset Compound2
+            he = CompoundCheck(word.AsSpan(), 0, 0, 100, rwords, huMovRule: false, isSug: false, info | SpellCheckResultType.Compound2);
+
+            // NOTE: This unset is left in case the input has Compound2
+            info &= ~SpellCheckResultType.Compound2; // unset Compound2
+
+#if DEBUG
+            // NOTE: A lot of the code around the Compound2 seems redundant and might be a bug in origin
+            // These debug checks might help alert to any issues if implementations change or bugs get fixed
+            if (info.HasFlag(SpellCheckResultType.Compound2)) ExceptionEx.ThrowInvalidOperation();
+#endif
 
             // if not 2-word compoud word, try with 3 or more words
             // (only if original info didn't forbid it)
-            if (he is null && info.IsMissingFlag(SpellCheckResultType.Compound2))
+            if (he is null)
             {
-                info &= ~SpellCheckResultType.Compound2;
+                // NOTE: This full condition should never be needed because Compound2 is always unset above
+                // if (!he && info && !(*info & SPELL_COMPOUND_2))
+
+#if DEBUG
+                // NOTE: This line was skipped in the port as it seems redundant considering the check
+                // *info &= ~SPELL_COMPOUND_2;
+                if (info.HasFlag(SpellCheckResultType.Compound2)) ExceptionEx.ThrowInvalidOperation();
+#endif
+
                 he = CompoundCheck(word.AsSpan(), 0, 0, 100, rwords, huMovRule: false, isSug: false, info);
                 // accept the compound with 3 or more words only if it is
                 // - not a dictionary word with a typo and
