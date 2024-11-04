@@ -385,12 +385,12 @@ public partial class WordList
             var ch = '\0';
             var simplifiedTripple = false;
             var scpd = 0;
-            var soldi = 0;
-            var oldcmin = 0;
-            var oldcmax = 0;
-            var oldlen = 0;
+            var oldIndex = 0;
+            var oldCMin = 0;
+            var oldCMax = 0;
+            var oldLen = 0;
             var checkedSimplifiedTriple = false;
-            var oldwords = words;
+            var oldWords = words;
             var len = word.Length;
 
             if (wordNum != 0)
@@ -400,15 +400,15 @@ public partial class WordList
             }
 
             // setcminmax
-            var cmin = Affix.CompoundMin;
-            var cmax = word.Length - cmin + 1;
+            var cMin = Affix.CompoundMin;
+            var cMax = word.Length - cMin + 1;
 
             var st = new SimulatedCString(word);
 
-            for (var i = cmin; i < cmax; i++)
+            for (var i = cMin; i < cMax; i++)
             {
-                words = oldwords;
-                var onlycpdrule = words is not null;
+                words = oldWords;
+                var onlyCpdRule = words is not null;
                 do // onlycpdrule loop
                 {
 
@@ -439,19 +439,20 @@ public partial class WordList
 
                             st.WriteChars(scpdPatternEntry.Pattern.AsSpan(), i);
 
-                            soldi = i;
+                            oldIndex = i;
                             i += scpdPatternEntry.Pattern.Length;
 
                             st.WriteChars(scpdPatternEntry.Pattern2.AsSpan(), i);
 
-                            st.WriteChars(word.Slice(soldi + scpdPatternEntry.Pattern3.Length), i + scpdPatternEntry.Pattern2.Length);
+                            st.WriteChars(word.Slice(oldIndex + scpdPatternEntry.Pattern3.Length), i + scpdPatternEntry.Pattern2.Length);
 
-                            oldlen = len;
+                            oldLen = len;
                             len += scpdPatternEntry.Pattern.Length + scpdPatternEntry.Pattern2.Length + scpdPatternEntry.Pattern3.Length;
-                            oldcmin = cmin;
-                            oldcmax = cmax;
-                            cmin = Affix.CompoundMin;
-                            cmax = len - cmin + 1;
+
+                            oldCMin = cMin;
+                            oldCMax = cMax;
+                            cMin = Affix.CompoundMin;
+                            cMax = len - cMin + 1;
 
                             scpdPatternEntryCondition = scpdPatternEntry.Condition;
                             scpdPatternEntryCondition2 = scpdPatternEntry.Condition2;
@@ -462,7 +463,7 @@ public partial class WordList
                             scpdPatternEntryCondition2 = default;
                         }
 
-                        if (i > st.BufferLength)
+                        if (st.BufferLength < i)
                         {
                             // abandon early on dubious pattern replacement outcome
                             st.Dispose();
@@ -476,7 +477,6 @@ public partial class WordList
 
                         // FIRST WORD
 
-                        var affixed = true;
                         {
                             // perhaps without prefix
                             if (
@@ -495,7 +495,7 @@ public partial class WordList
                                     // compound words, overriding the effect of COMPOUNDPERMITFLAG
                                     if (searchEntryDetails[0].ContainsFlag(Affix.CompoundForbidFlag))
                                     {
-                                        if (!onlycpdrule && Affix.SimplifiedCompound) // would_continue
+                                        if (!onlyCpdRule && Affix.SimplifiedCompound) // would_continue
                                         {
                                             if (scpd == 0)
                                             {
@@ -509,15 +509,15 @@ public partial class WordList
                                                 // under these conditions we loop again, but the assumption above
                                                 // appears to be that cmin and cmax are the original values they
                                                 // had in the outside loop
-                                                cmin = oldcmin;
-                                                cmax = oldcmax;
+                                                cMin = oldCMin;
+                                                cMax = oldCMax;
                                             }
                                         }
 
                                         continue;
                                     }
 
-                                    if (onlycpdrule)
+                                    if (onlyCpdRule)
                                     {
                                         if (Affix.CompoundRules.HasItems && (wordNum == 0 || words is not null))
                                         {
@@ -567,9 +567,11 @@ public partial class WordList
                             }
                         }
 
+                        var affixed = true;
+
                         if (rv is null)
                         {
-                            if (onlycpdrule)
+                            if (onlyCpdRule)
                             {
                                 break;
                             }
@@ -884,11 +886,11 @@ public partial class WordList
 
                                 if (i < word.Length)
                                 {
-                                    rv = (!onlycpdrule && Affix.CompoundFlag.HasValue)
+                                    rv = (!onlyCpdRule && Affix.CompoundFlag.HasValue)
                                          ? AffixCheck(word.Slice(i), Affix.CompoundFlag, CompoundOptions.End)
                                          : null;
 
-                                    if (rv is null && Affix.CompoundEnd.HasValue && !onlycpdrule)
+                                    if (rv is null && Affix.CompoundEnd.HasValue && !onlyCpdRule)
                                     {
                                         ClearSuffix();
                                         ClearPrefix();
@@ -1110,38 +1112,39 @@ public partial class WordList
 
                         } // first word is ok condition
 
-                        if (soldi != 0)
+                        if (oldIndex != 0)
                         {
-                            i = soldi;
-                            soldi = 0;
-                            len = oldlen;
-                            cmin = oldcmin;
-                            cmax = oldcmax;
+                            i = oldIndex;
+                            oldIndex = 0;
+                            len = oldLen;
+                            cMin = oldCMin;
+                            cMax = oldCMax;
                         }
 
                         scpd++;
                     }
-                    while (!onlycpdrule && Affix.SimplifiedCompound && scpd <= Affix.CompoundPatterns.Count); // end of simplifiedcpd loop
+                    while (!onlyCpdRule && Affix.SimplifiedCompound && scpd <= Affix.CompoundPatterns.Count); // end of simplifiedcpd loop
 
                     scpd = 0;
                     wordNum = oldwordnum;
                     numSyllable = oldnumsyllable;
 
-                    if (soldi != 0)
+                    if (oldIndex != 0)
                     {
-                        i = soldi;
                         st.Assign(word); // XXX add more optim.
-                        soldi = 0;
-                        len = oldlen;
-                        cmin = oldcmin;
-                        cmax = oldcmax;
+
+                        i = oldIndex;
+                        oldIndex = 0;
+                        len = oldLen;
+                        cMin = oldCMin;
+                        cMax = oldCMax;
                     }
                     else
                     {
                         st[i] = ch;
                     }
                 }
-                while (Affix.CompoundRules.HasItems && oldwordnum == 0 && inversePostfixIncrement(ref onlycpdrule)); // end of onlycpd loop
+                while (Affix.CompoundRules.HasItems && oldwordnum == 0 && inversePostfixIncrement(ref onlyCpdRule)); // end of onlycpd loop
             }
 
             st.Dispose();
@@ -1927,7 +1930,6 @@ public partial class WordList
 
             static bool equalsOrdinalLimited(string a, ReadOnlySpan<char> b, int limit) =>
                 a.AsSpan(0, Math.Min(a.Length, limit)).EqualsOrdinal(b.Limit(limit));
-
         }
 
         private WordEntry? CheckWordPrefix(PrefixEntry affix, ReadOnlySpan<char> word, CompoundOptions inCompound, FlagValue needFlag)
