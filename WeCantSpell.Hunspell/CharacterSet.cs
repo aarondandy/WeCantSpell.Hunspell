@@ -10,12 +10,7 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterSet>
 {
-    public static readonly CharacterSet Empty =
-#if HAS_SEARCHVALUES
-        new([]);
-#else
-        new([], default);
-#endif
+    public static readonly CharacterSet Empty = new([]);
 
     public static bool operator ==(CharacterSet left, CharacterSet right) => left.Equals(right);
 
@@ -76,18 +71,16 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
 #else
 
-    private CharacterSet(char value) : this([value], value)
+    private CharacterSet(char value) : this([value])
     {
     }
 
-    private CharacterSet(char[] values, char mask)
+    private CharacterSet(char[] values)
     {
         _values = values;
-        _mask = mask;
     }
 
     private readonly char[]? _values;
-    private readonly char _mask;
 
 #endif
 
@@ -132,12 +125,9 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
                 return _values[0].Equals(value);
             }
 
-            if (unchecked((value & _mask) == value))
-            {
-                return _values.Length <= 8
-                    ? checkIterative(_values, value)
-                    : Array.BinarySearch(_values, value) >= 0;
-            }
+            return _values.Length <= 8
+                ? checkIterative(_values, value)
+                : Array.BinarySearch(_values, value) >= 0;
         }
 
         return false;
@@ -307,7 +297,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 #if HAS_SEARCHVALUES
         HashCode.Combine(Count, HasItems ? _values![0] : default);
 #else
-        HashCode.Combine(Count, _mask);
+        (int)StringEx.GetStableOrdinalHashCode(_values);
 #endif
 
     public sealed class Builder
@@ -350,31 +340,16 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
 #else
 
-        private char _mask = default;
-
         public void Add(char value)
         {
             _builder.AddAsSortedSet(value);
-            unchecked
-            {
-                _mask |= value;
-            }
         }
 
         internal CharacterSet Create(bool allowDestructive)
         {
-            CharacterSet result;
-            if (allowDestructive)
-            {
-                result = new(_builder.Extract(), _mask);
-                _mask = default;
-            }
-            else
-            {
-                result = new(_builder.MakeArray(), _mask);
-            }
-
-            return result;
+            return allowDestructive
+                ? new(_builder.Extract())
+                : new(_builder.MakeArray());
         }
 
 #endif
