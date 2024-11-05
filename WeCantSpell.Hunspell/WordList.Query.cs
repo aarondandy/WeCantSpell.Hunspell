@@ -1705,22 +1705,22 @@ public partial class WordList
         public readonly bool TryLookupDetails(
             ReadOnlySpan<char> word,
 #if !NO_EXPOSED_NULLANNOTATIONS
-            [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)]
+            [System.Diagnostics.CodeAnalysis.NotNullWhen(true)]
 #endif
             out string actualKey,
 #if !NO_EXPOSED_NULLANNOTATIONS
-            [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)]
+            [System.Diagnostics.CodeAnalysis.NotNullWhen(true)]
 #endif
             out WordEntryDetail[] details) =>
-            WordList.EntriesByRoot.TryGetValue(word, out actualKey, out details);
+            WordList.EntriesByRoot.TryGetValue(word, out actualKey!, out details!);
 
         public readonly bool TryLookupDetails(
             string word,
 #if !NO_EXPOSED_NULLANNOTATIONS
-            [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)]
+            [System.Diagnostics.CodeAnalysis.NotNullWhen(true)]
 #endif
             out WordEntryDetail[] details) =>
-            WordList.EntriesByRoot.TryGetValue(word, out details);
+            WordList.EntriesByRoot.TryGetValue(word, out details!);
 
         /// <summary>
         /// Compound check patterns.
