@@ -94,13 +94,13 @@ ref struct StringBuilderSpan
 
     public void Set(string value)
     {
-        if (value is not { Length: > 0 })
+        if (value is { Length: > 0 })
         {
-            _length = 0;
+            Set(value.AsSpan());
         }
         else
         {
-            Set(value.AsSpan());
+            _length = 0;
         }
     }
 
@@ -108,11 +108,7 @@ ref struct StringBuilderSpan
 
     public void Set(string value)
     {
-        if (value is not { Length: > 0 })
-        {
-            _length = 0;
-        }
-        else
+        if (value is { Length: > 0 })
         {
             if (_bufferSpan.Length < value.Length)
             {
@@ -121,6 +117,10 @@ ref struct StringBuilderSpan
 
             value.CopyTo(_bufferSpan);
             _length = value.Length;
+        }
+        else
+        {
+            _length = 0;
         }
     }
 
@@ -146,28 +146,34 @@ ref struct StringBuilderSpan
 
     public void Append(string value)
     {
-        if (value is not { Length: > 0 })
+        if (value is { Length: > 0 })
         {
-            return;
-        }
+#if NO_STRING_SPAN
+            Append(value.AsSpan());
+#else
+            if (value.Length + _length > _bufferSpan.Length)
+            {
+                GrowBufferToCapacity(value.Length + _length);
+            }
 
-        Append(value.AsSpan());
+            value.CopyTo(_bufferSpan.Slice(_length));
+            _length += value.Length;
+#endif
+        }
     }
 
     public void Append(scoped ReadOnlySpan<char> value)
     {
-        if (value.IsEmpty)
+        if (!value.IsEmpty)
         {
-            return;
-        }
+            if (value.Length + _length > _bufferSpan.Length)
+            {
+                GrowBufferToCapacity(value.Length + _length);
+            }
 
-        if (value.Length + _length > _bufferSpan.Length)
-        {
-            GrowBufferToCapacity(value.Length + _length);
+            value.CopyTo(_bufferSpan.Slice(_length));
+            _length += value.Length;
         }
-
-        value.CopyTo(_bufferSpan.Slice(_length));
-        _length += value.Length;
     }
 
     public void Append(char value)
@@ -525,7 +531,7 @@ ref struct StringBuilderSpan
 
         this = default;
 
-        if (toReturn.Length != 0)
+        if (toReturn is { Length: not 0 })
         {
             ArrayPool<char>.Shared.Return(toReturn);
         }
