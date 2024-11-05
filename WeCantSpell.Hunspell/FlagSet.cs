@@ -160,20 +160,6 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         return new(values.ToArray());
     }
 
-    private static char CalculateMask(ReadOnlySpan<char> values)
-    {
-        char mask = default;
-        foreach (var value in values)
-        {
-            unchecked
-            {
-                mask |= value;
-            }
-        }
-
-        return mask;
-    }
-
     private static bool SortedInterectionTest(ReadOnlySpan<char> aSet, ReadOnlySpan<char> bSet)
     {
 
@@ -301,22 +287,16 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     {
     }
 
-    private FlagSet(char value) : this([value], mask: value)
+    private FlagSet(char value) : this([value])
     {
     }
 
-    private FlagSet(char[] values) : this(values, mask: CalculateMask(values))
-    {
-    }
-
-    private FlagSet(char[] values, char mask)
+    private FlagSet(char[] values)
     {
         _values = values;
-        _mask = mask;
     }
 
     private readonly char[]? _values;
-    private readonly char _mask;
 
     public int Count => _values is null ? 0 : _values.Length;
 
@@ -360,7 +340,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         }
     }
 
-    public override int GetHashCode() => HashCode.Combine(Count, _mask);
+    public override int GetHashCode() => (int)StringEx.GetStableOrdinalHashCode(_values);
 
     public bool Equals(FlagSet other) => GetInternalArray().SequenceEqual(other.GetInternalArray());
 
@@ -415,7 +395,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
                 : (
                     _values!.Length == 1
                         ? other.Contains(_values[0])
-                        : ((other._mask & _mask) != default && SortedInterectionTest(other._values.AsSpan(), _values.AsSpan()))
+                        : SortedInterectionTest(other._values, _values)
                 )
             );
     }
@@ -434,7 +414,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
                 : (
                     _values!.Length == 1
                         ? other.DoesNotContain(_values[0])
-                        : ((other._mask & _mask) == default || !SortedInterectionTest(other._values.AsSpan(), _values.AsSpan()))
+                        : !SortedInterectionTest(other._values, _values)
                 )
             );
     }
@@ -505,7 +485,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             newValues[valueIndex] = value;
         }
 
-        return new(newValues, unchecked((char)(_mask | value)));
+        return new(newValues);
     }
 
     internal char[] GetInternalArray() => _values ?? [];
@@ -523,7 +503,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
                 1 => _values[0] == value,
                 2 => _values[0] == value || _values[1] == value,
                 3 => _values[0] == value || _values[1] == value || _values[2] == value,
-                _ => (value & _mask) == value && SortedContains(_values.AsSpan(), value),
+                _ => SortedContains(_values, value),
             };
     }
 
@@ -540,7 +520,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
                 1 => _values[0] != value,
                 2 => _values[0] != value && _values[1] != value,
                 3 => _values[0] != value && _values[1] != value && _values[2] != value,
-                _ => (value & _mask) != value || !SortedContains(_values.AsSpan(), value),
+                _ => !SortedContains(_values, value),
             };
     }
 
@@ -594,14 +574,12 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         }
 
         private ArrayBuilder<char> _builder;
-        private char _mask = default;
 
         public void Add(FlagValue value)
         {
             if (value.HasValue)
             {
                 _builder.AddAsSortedSet(value);
-                UnionMask(value);
             }
         }
 
@@ -624,15 +602,14 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             if (values.HasItems)
             {
                 AddRange(values._values!);
-                UnionMask(values._mask);
             }
         }
 
-        public FlagSet Create() => new(_builder.MakeArray(), _mask);
+        public FlagSet Create() => new(_builder.MakeArray());
 
         internal FlagSet MoveToFlagSet()
         {
-            var result = new FlagSet(ArrayBuilder<char>.Pool.ExtractAndReturn(_builder), _mask);
+            var result = new FlagSet(ArrayBuilder<char>.Pool.ExtractAndReturn(_builder));
             _builder = null!; // This should operate as a very crude dispose
             return result;
         }
@@ -651,8 +628,6 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
                 var valueIndex = _builder.BinarySearch(lowBoundIndex, _builder.Count - lowBoundIndex, value);
                 if (valueIndex < 0)
                 {
-                    UnionMask(value);
-
                     valueIndex = ~valueIndex; // locate the best insertion point
 
                     if (valueIndex >= _builder.Count)
@@ -666,14 +641,6 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
                 }
 
                 lowBoundIndex = valueIndex;
-            }
-        }
-
-        private void UnionMask(char value)
-        {
-            unchecked
-            {
-                _mask |= value;
             }
         }
     }
