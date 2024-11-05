@@ -694,12 +694,25 @@ public partial class WordList
                                     &&
                                     words is null
                                     &&
-                                    !word.IsEmpty
-                                    &&
-                                    (
                                         (
-                                            Affix.CheckCompoundTriple
-                                            && // test triple letters
+                                        (Affix.CheckCompoundTriple && compoundTripleCheck(word, i))
+                                        ||
+                                        (Affix.CheckCompoundCase && compoundCaseCheck(word, i))
+                                    )
+                                )
+                            )
+                            {
+                                rv = null;
+                            }
+
+                            static bool compoundTripleCheck(ReadOnlySpan<char> word, int i)
+                            {
+#if DEBUG
+                                ExceptionEx.ThrowIfArgumentEmpty(word, nameof(word));
+#endif
+
+                                // test triple letters
+                                return
                                             i > 0
                                             &&
                                             i < word.Length
@@ -710,19 +723,52 @@ public partial class WordList
                                                 (i >= 2 && word[i - 1] == word[i - 2])
                                                 ||
                                                 (i + 1 < word.Length && word[i - 1] == word[i + 1]) // may be word[i+1] == '\0'
-                                            )
-                                        )
-                                        ||
-                                        (
-                                            Affix.CheckCompoundCase
-                                            &&
-                                            CompoundCaseCheck(word, i)
-                                        )
-                                    )
-                                )
-                            )
+                                    );
+                            }
+
+                            static bool compoundCaseCheck(ReadOnlySpan<char> word, int pos)
                             {
-                                rv = null;
+#if DEBUG
+                                ExceptionEx.ThrowIfArgumentEmpty(word, nameof(word));
+#endif
+
+                                // Forbid compounding with neighbouring upper and lower case characters at word bounds.
+                                // NOTE: this implementation could be much simpler but an attempt is made here
+                                // to preserve the same result when indexes may be out of bounds
+                                var hasUpper = false;
+                                char c;
+
+                                if (pos < word.Length)
+                                {
+                                    if (pos > 0)
+                                    {
+                                        c = word[pos - 1];
+
+                                        if (c == '-')
+                                        {
+                                            return false;
+                                        }
+
+                                        if (char.IsUpper(c))
+                                        {
+                                            hasUpper = true;
+                                        }
+                                    }
+
+                                    c = word[pos];
+
+                                    if (c == '-')
+                                    {
+                                        return false;
+                                    }
+
+                                    if (!hasUpper && char.IsUpper(c))
+                                    {
+                                        hasUpper = true;
+                                    }
+                                }
+
+                                return hasUpper;
                             }
                         }
                         else if (huMovRule && Affix.IsHungarian)
@@ -1749,49 +1795,6 @@ public partial class WordList
 
             words.ClearCurrent();
             return false;
-        }
-
-        /// <summary>
-        /// Forbid compounding with neighbouring upper and lower case characters at word bounds.
-        /// </summary>
-        private static bool CompoundCaseCheck(ReadOnlySpan<char> word, int pos)
-        {
-            // NOTE: this implementation could be much simpler but an attempt is made here
-            // to preserve the same result when indexes may be out of bounds
-            var hasUpper = false;
-            char c;
-
-            if (pos < word.Length)
-            {
-                if (pos > 0)
-                {
-                    c = word[pos - 1];
-
-                    if (c == '-')
-                    {
-                        return false;
-                    }
-
-                    if (char.IsUpper(c))
-                    {
-                        hasUpper = true;
-                    }
-                }
-
-                c = word[pos];
-
-                if (c == '-')
-                {
-                    return false;
-                }
-
-                if (!hasUpper && char.IsUpper(c))
-                {
-                    hasUpper = true;
-                }
-            }
-
-            return hasUpper;
         }
 
         /// <summary>
