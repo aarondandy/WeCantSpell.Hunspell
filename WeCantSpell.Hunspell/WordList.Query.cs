@@ -1926,7 +1926,7 @@ public partial class WordList
 
             return rv2 is not null
                 && rv2.ContainsFlag(Affix.ForbiddenWord)
-                && equalsOrdinalLimited(rv2.Word, st.TerminatedSpan, rv.Word.Length);
+                && equalsOrdinalLimited(rv2.Word, st.TerminatedSpan, rv.Word.Length + i);
 
             static bool equalsOrdinalLimited(string a, ReadOnlySpan<char> b, int limit) =>
                 a.AsSpan(0, Math.Min(a.Length, limit)).EqualsOrdinal(b.Limit(limit));
