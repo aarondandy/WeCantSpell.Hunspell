@@ -694,7 +694,7 @@ public partial class WordList
                                     &&
                                     words is null
                                     &&
-                                        (
+                                    (
                                         (Affix.CheckCompoundTriple && compoundTripleCheck(word, i))
                                         ||
                                         (Affix.CheckCompoundCase && compoundCaseCheck(word, i))
@@ -713,16 +713,16 @@ public partial class WordList
 
                                 // test triple letters
                                 return
-                                            i > 0
-                                            &&
-                                            i < word.Length
-                                            &&
-                                            word[i - 1] == word[i]
-                                            &&
-                                            (
-                                                (i >= 2 && word[i - 1] == word[i - 2])
-                                                ||
-                                                (i + 1 < word.Length && word[i - 1] == word[i + 1]) // may be word[i+1] == '\0'
+                                    i > 0
+                                    &&
+                                    i < word.Length
+                                    &&
+                                    word[i - 1] == word[i]
+                                    &&
+                                    (
+                                        (i >= 2 && word[i - 1] == word[i - 2])
+                                        ||
+                                        (i + 1 < word.Length && word[i - 1] == word[i + 1]) // may be word[i+1] == '\0'
                                     );
                             }
 
@@ -914,25 +914,25 @@ public partial class WordList
                                             ||
                                             rv != rvFirst
                                         )
-                                        && // test CHECKCOMPOUNDPATTERN
+                                        &&
                                         (
                                             scpd != 0
-                                            ||
-                                            Affix.CompoundPatterns.IsEmpty
-                                            ||
-                                            (
-                                                i < word.Length
-                                                &&
-                                                !Affix.CompoundPatterns.Check(word, i, rvFirst, rv, false)
+                                            // test CHECKCOMPOUNDPATTERN conditions
+                                            ? (
+                                                scpdPatternEntryCondition2.IsZero
+                                                ||
+                                                rv.ContainsFlag(scpdPatternEntryCondition2)
                                             )
-                                        )
-                                        && // test CHECKCOMPOUNDPATTERN conditions
-                                        (
-                                            scpd == 0
-                                            ||
-                                            scpdPatternEntryCondition2.IsZero
-                                            ||
-                                            rv.ContainsFlag(scpdPatternEntryCondition2)
+                                            // test CHECKCOMPOUNDPATTERN
+                                            : (
+                                                Affix.CompoundPatterns.IsEmpty
+                                                ||
+                                                (
+                                                    i < word.Length
+                                                    &&
+                                                    !Affix.CompoundPatterns.Check(word, i, rvFirst, rv, false)
+                                                )
+                                            )
                                         )
                                     )
                                     {
@@ -1074,7 +1074,7 @@ public partial class WordList
                                             )
                                         )
                                         {
-                                            numSyllable += 1;
+                                            numSyllable++;
                                         }
                                     }
                                 }
