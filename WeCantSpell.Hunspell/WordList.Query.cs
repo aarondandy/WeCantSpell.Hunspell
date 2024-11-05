@@ -905,7 +905,7 @@ public partial class WordList
                                             (
                                                 Affix.CompoundMaxSyllable != 0
                                                 &&
-                                                GetSyllable(rv.Word.AsSpan()) + numSyllable <= Affix.CompoundMaxSyllable
+                                                (GetSyllable(rv.Word.AsSpan()) + numSyllable) <= Affix.CompoundMaxSyllable
                                             )
                                         )
                                         &&
@@ -916,9 +916,9 @@ public partial class WordList
                                         )
                                         && // test CHECKCOMPOUNDPATTERN
                                         (
-                                            Affix.CompoundPatterns.IsEmpty
-                                            ||
                                             scpd != 0
+                                            ||
+                                            Affix.CompoundPatterns.IsEmpty
                                             ||
                                             (
                                                 i < word.Length
