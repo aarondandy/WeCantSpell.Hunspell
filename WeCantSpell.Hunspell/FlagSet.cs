@@ -370,15 +370,13 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
 #if HAS_SEARCHVALUES
 
-    public bool Contains(FlagValue value) =>
-        value != FlagValue.ZeroValue && _searchValues!.Contains(value);
+    public bool Contains(FlagValue value) => value != FlagValue.Zero && _searchValues!.Contains(value);
 
-    public bool Contains(char value) => _searchValues!.Contains(value);
+    public bool Contains(char value) => value != FlagValue.ZeroValue && _searchValues!.Contains(value);
 
-    public bool DoesNotContain(FlagValue value) => !Contains(value);
+    public bool DoesNotContain(FlagValue value) => value == FlagValue.Zero || !_searchValues!.Contains(value);
 
-    private bool DoesNotContain(char value) =>
-        value == FlagValue.Zero || !_searchValues!.Contains(value);
+    private bool DoesNotContain(char value) => value == FlagValue.ZeroValue || !_searchValues!.Contains(value);
 
     public bool ContainsAny(FlagValue a, FlagValue b) =>
         ((ReadOnlySpan<char>)[a, b]).ContainsAny(_searchValues!);
