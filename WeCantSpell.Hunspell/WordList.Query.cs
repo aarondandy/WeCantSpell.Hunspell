@@ -1222,9 +1222,13 @@ public partial class WordList
                 if (Affix.CompoundMoreSuffixes)
                 {
                     rv = SuffixCheckTwoSfx(st, AffixEntryOptions.None, null, Affix.CompoundBegin);
+                    if (rv is not null)
+                    {
+                        return rv;
+                    }
                 }
 
-                rv ??= PrefixCheck(st, movCompoundOptions, Affix.CompoundBegin);
+                rv = PrefixCheck(st, movCompoundOptions, Affix.CompoundBegin);
             }
 
             return rv;
@@ -1241,9 +1245,13 @@ public partial class WordList
                 if (Affix.CompoundMoreSuffixes)
                 {
                     rv = SuffixCheckTwoSfx(st, AffixEntryOptions.None, null, Affix.CompoundMiddle);
+                    if (rv is not null)
+                    {
+                        return rv;
+                    }
                 }
 
-                rv ??= PrefixCheck(st, movCompoundOptions, Affix.CompoundMiddle);
+                rv = PrefixCheck(st, movCompoundOptions, Affix.CompoundMiddle);
             }
 
             return rv;

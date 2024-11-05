@@ -1237,7 +1237,7 @@ public sealed partial class AffixReader
             }
         }
 
-        return default;
+        return null;
     }
 
     [Flags]
