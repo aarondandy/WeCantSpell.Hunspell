@@ -89,6 +89,12 @@ public partial class WordList
         /// </summary>
         private string? _suffixAppend;
 
+        private void ClearAffixes()
+        {
+            _prefix = null;
+            _suffix = null;
+        }
+
         private void ClearPrefix()
         {
             _prefix = null;
@@ -101,7 +107,7 @@ public partial class WordList
 
         private void ClearSuffixAndFlag()
         {
-            ClearSuffix();
+            _suffix = null;
             _suffixFlag = default;
         }
 
@@ -114,8 +120,7 @@ public partial class WordList
         private void ClearAllAppendAndExtra()
         {
             //PrefixAppend = null;
-            _suffixAppend = null;
-            _suffixExtra = false;
+            ClearSuffixAppendAndExtra();
         }
 
         private void SetPrefix(PrefixEntry prefix)
@@ -487,8 +492,7 @@ public partial class WordList
 
                         ch = st.ExchangeWithNull(i);
 
-                        ClearSuffix();
-                        ClearPrefix();
+                        ClearAffixes();
 
                         // FIRST WORD
 
@@ -907,8 +911,7 @@ public partial class WordList
 
                                     if (rv is null && Affix.CompoundEnd.HasValue && !onlyCpdRule)
                                     {
-                                        ClearSuffix();
-                                        ClearPrefix();
+                                        ClearAffixes();
                                         rv = AffixCheck(word.Slice(i), Affix.CompoundEnd, CompoundOptions.End);
                                     }
 
@@ -1354,8 +1357,7 @@ public partial class WordList
 
                 if (Affix.ContClasses.HasItems)
                 {
-                    ClearSuffix();
-                    ClearPrefix();
+                    ClearAffixes();
 
                     rv ??=
                         // if still not found check all two-level suffixes
