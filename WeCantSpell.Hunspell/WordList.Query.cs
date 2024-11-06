@@ -457,17 +457,14 @@ public partial class WordList
 
                             var scpdPatternEntry = Affix.CompoundPatterns[scpd - 1];
 
-                            st.WriteChars(scpdPatternEntry.Pattern.AsSpan(), i);
-
                             oldIndex = i;
                             i += scpdPatternEntry.Pattern.Length;
-
-                            st.WriteChars(scpdPatternEntry.Pattern2.AsSpan(), i);
-
-                            st.WriteChars(word.Slice(oldIndex + scpdPatternEntry.Pattern3.Length), i + scpdPatternEntry.Pattern2.Length);
-
                             oldLen = len;
                             len += scpdPatternEntry.Pattern.Length + scpdPatternEntry.Pattern2.Length + scpdPatternEntry.Pattern3.Length;
+
+                            st.WriteChars(scpdPatternEntry.Pattern.AsSpan(), oldIndex);
+                            st.WriteChars(scpdPatternEntry.Pattern2.AsSpan(), i);
+                            st.WriteChars(word.Slice(oldIndex + scpdPatternEntry.Pattern3.Length), i + scpdPatternEntry.Pattern2.Length);
 
                             oldCMin = cMin;
                             oldCMax = cMax;
