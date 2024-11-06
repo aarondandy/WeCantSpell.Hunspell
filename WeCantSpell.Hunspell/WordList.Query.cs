@@ -586,7 +586,7 @@ public partial class WordList
                             }
                         }
 
-                        var affixed = true;
+                        var affixed = false;
 
                         if (rv is null)
                         {
@@ -594,6 +594,8 @@ public partial class WordList
                             {
                                 break;
                             }
+
+                            affixed = true;
 
                             if (Affix.CompoundFlag.HasValue)
                             {
@@ -604,21 +606,25 @@ public partial class WordList
                             {
                                 checkedPrefix = true;
                             }
-                            else if (wordNum == 0 && Affix.CompoundBegin.HasValue)
+                            else if (wordNum == 0)
                             {
-                                rv = CompoundCheckWordSearch_AffixCheckCompoundBegin(st.TerminatedSpan, huMovRule);
-                                checkedPrefix |= rv is not null;
+                                if (Affix.CompoundBegin.HasValue)
+                                {
+                                    rv = CompoundCheckWordSearch_AffixCheckCompoundBegin(st.TerminatedSpan, huMovRule);
+                                    checkedPrefix |= rv is not null;
+                                }
                             }
-                            else if (wordNum > 0 && Affix.CompoundMiddle.HasValue)
+                            else if (wordNum > 0)
                             {
-                                rv = CompoundCheckWordSearch_AffixCheckCompoundMiddle(st.TerminatedSpan, huMovRule);
-                                checkedPrefix |= rv is not null;
+                                if (Affix.CompoundMiddle.HasValue)
+                                {
+                                    rv = CompoundCheckWordSearch_AffixCheckCompoundMiddle(st.TerminatedSpan, huMovRule);
+                                    checkedPrefix |= rv is not null;
+                                }
                             }
                         }
                         else
                         {
-                            affixed = false;
-
                             if (rv.ContainsAnyFlags(isSug
                                 ? Affix.Flags_NeedAffix_ForbiddenWord_OnlyUpcase_NoSuggest
                                 : Affix.Flags_NeedAffix_ForbiddenWord_OnlyUpcase))
@@ -630,9 +636,12 @@ public partial class WordList
                             }
                         }
 
-                        if (rv is not null && !huMovRule)
-                        {
-                            if (
+                        if (
+                            rv is not null
+                            &&
+                            !huMovRule
+                            &&
+                            (
                                 checkedPrefix
                                     ? AffixContainsContClass(Affix.CompoundForbidFlag) // check non_compound flag in suffix and prefix
                                     : wordNum == 0
@@ -644,9 +653,9 @@ public partial class WordList
                                         // check compoundend flag in suffix and prefix
                                         : AffixContainsAnyContClass(Affix.Flags_CompoundForbid_CompoundEnd)
                             )
-                            {
-                                rv = null;
-                            }
+                        )
+                        {
+                            rv = null;
                         }
 
                         if (rv is not null)
