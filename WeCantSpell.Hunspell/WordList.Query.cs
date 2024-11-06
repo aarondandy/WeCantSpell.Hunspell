@@ -444,8 +444,8 @@ public partial class WordList
                             return null;
                         }
 
-                        FlagValue scpdPatternEntryCondition;
-                        FlagValue scpdPatternEntryCondition2;
+                        FlagValue scpdPatternEntryCondition = default;
+                        FlagValue scpdPatternEntryCondition2 = default;
                         if (scpd > 0)
                         {
                             for (; scpd <= Affix.CompoundPatterns.Count && Affix.CompoundPatterns[scpd - 1].Pattern3DoesNotMatch(word, i); scpd++) ;
@@ -476,11 +476,6 @@ public partial class WordList
 
                             scpdPatternEntryCondition = scpdPatternEntry.Condition;
                             scpdPatternEntryCondition2 = scpdPatternEntry.Condition2;
-                        }
-                        else
-                        {
-                            scpdPatternEntryCondition = default;
-                            scpdPatternEntryCondition2 = default;
                         }
 
                         if (st.BufferLength < i)
@@ -960,9 +955,9 @@ public partial class WordList
 
                                 if (i < word.Length)
                                 {
-                                    rv = (!onlyCpdRule && Affix.CompoundFlag.HasValue)
-                                         ? AffixCheck(word.Slice(i), Affix.CompoundFlag, CompoundOptions.End)
-                                         : null;
+                                    rv = onlyCpdRule || Affix.CompoundFlag.IsZero
+                                        ? null
+                                        : AffixCheck(word.Slice(i), Affix.CompoundFlag, CompoundOptions.End);
 
                                     if (rv is null && Affix.CompoundEnd.HasValue && !onlyCpdRule)
                                     {
@@ -974,13 +969,17 @@ public partial class WordList
                                     {
                                         rv = AffixCheck(word.Slice(i), default, CompoundOptions.End);
 
-                                        if (rv is not null && DefCompoundCheck(words.CreateIncremented(), rv.Detail, true))
+                                        if (rv is not null)
                                         {
-                                            st.Dispose();
-                                            return rvFirst;
+                                            if (DefCompoundCheck(words.CreateIncremented(), rv.Detail, true))
+                                            {
+                                                st.Dispose();
+                                                return rvFirst;
+                                            }
+
+                                            rv = null;
                                         }
 
-                                        rv = null;
                                     }
                                 }
                                 else
@@ -988,10 +987,9 @@ public partial class WordList
                                     rv = null;
                                 }
 
-                                if (
-                                    rv is not null
-                                    &&
-                                    (
+                                if (rv is not null)
+                                {
+                                    if (
                                         // check FORCEUCASE
                                         (
                                             info.IsMissingFlag(SpellCheckResultType.OrigCap)
@@ -1018,16 +1016,15 @@ public partial class WordList
                                             )
                                         )
                                     )
-                                )
-                                {
-                                    rv = null;
-                                }
-
-                                // check forbiddenwords
-                                if (rv is not null && rv.ContainsAnyFlags(isSug ? Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest : Affix.Flags_ForbiddenWord_OnlyUpcase))
-                                {
-                                    st.Dispose();
-                                    return null;
+                                    {
+                                        rv = null;
+                                    }
+                                    else if (rv.ContainsAnyFlags(isSug ? Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest : Affix.Flags_ForbiddenWord_OnlyUpcase))
+                                    {
+                                        // check forbiddenwords
+                                        st.Dispose();
+                                        return null;
+                                    }
                                 }
 
                                 // pfxappnd = prefix of word+i, or NULL
