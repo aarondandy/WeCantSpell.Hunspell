@@ -1137,34 +1137,27 @@ public partial class WordList
                                     if (
                                         rv is not null
                                         &&
-                                        Affix.CompoundPatterns.HasItems
-                                        &&
-                                        i < word.Length
-                                        &&
-                                        ((scpd != 0) ^ Affix.CompoundPatterns.Check(word, i, rvFirst, rv, affixed))
+                                        (
+                                            Affix.CompoundPatterns.IsEmpty
+                                            ||
+                                            i >= word.Length
+                                            ||
+                                            ((scpd != 0) == Affix.CompoundPatterns.Check(word, i, rvFirst, rv, affixed))
+                                        )
                                     )
                                     {
-                                        rv = null;
-                                    }
-                                }
-                                else
-                                {
-                                    rv = null;
-                                }
+                                        // forbid compound word, if it is a non-compound word with typical
+                                        // fault, or a dictionary word pair
+                                        switch (CompoundCheckDecideForbidFinal(word, len, i, st, rv))
+                                        {
+                                            case CompoundCheckForbidOutcomes.Fail:
+                                                st.Dispose();
+                                                return null;
 
-                                if (rv is not null)
-                                {
-                                    // forbid compound word, if it is a non-compound word with typical
-                                    // fault, or a dictionary word pair
-                                    switch (CompoundCheckDecideForbidFinal(word, len, i, st, rv))
-                                    {
-                                        case CompoundCheckForbidOutcomes.Fail:
-                                            st.Dispose();
-                                            return null;
-
-                                        case CompoundCheckForbidOutcomes.Permit:
-                                            st.Dispose();
-                                            return rvFirst;
+                                            case CompoundCheckForbidOutcomes.Permit:
+                                                st.Dispose();
+                                                return rvFirst;
+                                        }
                                     }
                                 }
                             }
