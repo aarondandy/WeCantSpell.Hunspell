@@ -123,6 +123,27 @@ struct SimulatedCString
         _terminatedLength = -1;
     }
 
+    public void RemoveRange(int startIndex, int count)
+    {
+#if DEBUG
+        if (startIndex >= _bufferLength) throw new ArgumentOutOfRangeException(nameof(startIndex));
+        if (startIndex + count >= _bufferLength) throw new ArgumentOutOfRangeException(nameof(count));
+        if (count < 0) throw new ArgumentOutOfRangeException(nameof(count));
+#endif
+
+        if (count > 0)
+        {
+            if (_terminatedLength >= startIndex)
+            {
+                _terminatedLength = -1;
+            }
+
+            var buffer = _rawBuffer.AsSpan(0, _bufferLength);
+            buffer.Slice(startIndex + count).CopyTo(buffer.Slice(startIndex)); // shift everything down
+            buffer.Slice(buffer.Length - count).Clear(); // zero the freed space at the end
+        }
+    }
+
     public void Destroy()
     {
         if (_rawBuffer.Length != 0)
