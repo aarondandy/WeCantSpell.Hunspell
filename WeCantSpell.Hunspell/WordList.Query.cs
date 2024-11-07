@@ -683,22 +683,20 @@ public partial class WordList
                                 )
                                 || // test CHECKCOMPOUNDPATTERN conditions
                                 (
-                                    scpd != 0
-                                    &&
-                                    scpdPatternEntryCondition.HasValue
-                                    &&
-                                    rv.DoesNotContainFlag(scpdPatternEntryCondition)
-                                )
-                                ||
-                                (
                                     scpd == 0
-                                    &&
-                                    words is null
-                                    &&
-                                    (
-                                        (Affix.CheckCompoundTriple && compoundTripleCheck(word, i))
-                                        ||
-                                        (Affix.CheckCompoundCase && compoundCaseCheck(word, i))
+                                    ? (
+                                        words is null
+                                        &&
+                                        (
+                                            (Affix.CheckCompoundTriple && compoundTripleCheck(word, i))
+                                            ||
+                                            (Affix.CheckCompoundCase && compoundCaseCheck(word, i))
+                                        )
+                                    )
+                                    : (
+                                        scpdPatternEntryCondition.HasValue
+                                        &&
+                                        rv.DoesNotContainFlag(scpdPatternEntryCondition)
                                     )
                                 )
                             )
