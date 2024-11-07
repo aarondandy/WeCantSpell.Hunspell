@@ -794,25 +794,7 @@ public partial class WordList
                             // first word is ok condition
                             if (Affix.IsHungarian)
                             {
-                                // calculate syllable number of the word
-                                numSyllable += GetSyllable(st.TerminatedSpan.Limit(i));
-
-                                // - affix syllable num.
-                                // XXX only second suffix (inflections, not derivations)
-                                if (_suffixAppend is not null)
-                                {
-                                    numSyllable -= GetSyllableReversed(_suffixAppend.AsSpan());
-                                }
-                                if (_suffixExtra)
-                                {
-                                    numSyllable -= 1;
-                                }
-
-                                // + 1 word, if syllable number of the prefix > 1 (hungarian convention)
-                                if (_prefix is not null && GetSyllable(_prefix.Key.AsSpan()) > 1)
-                                {
-                                    wordNum++;
-                                }
+                                CompoundCheckHungarianAffix1(st.TerminatedSpan.Limit(i), ref wordNum, ref numSyllable);
                             }
 
 #pragma warning disable IDE0007 // Use implicit type
@@ -1024,62 +1006,9 @@ public partial class WordList
                                     }
                                 }
 
-                                // pfxappnd = prefix of word+i, or NULL
-                                // calculate syllable number of prefix.
-                                // hungarian convention: when syllable number of prefix is more,
-                                // than 1, the prefix+word counts as two words.
-
                                 if (Affix.IsHungarian)
                                 {
-                                    if (i < word.Length)
-                                    {
-                                        // calculate syllable number of the word
-                                        numSyllable += GetSyllable(word.Slice(0, i));
-                                    }
-
-                                    // - affix syllable num.
-                                    // XXX only second suffix (inflections, not derivations)
-                                    if (_suffixAppend is not null)
-                                    {
-                                        numSyllable -= GetSyllableReversed(_suffixAppend.AsSpan());
-                                    }
-
-                                    if (_suffixExtra)
-                                    {
-                                        numSyllable -= 1;
-                                    }
-
-                                    // + 1 word, if syllable number of the prefix > 1 (hungarian
-                                    // convention)
-                                    if (_prefix is not null && GetSyllable(_prefix.Key.AsSpan()) > 1)
-                                    {
-                                        wordNum++;
-                                    }
-
-                                    // increment syllable num, if last word has a SYLLABLENUM flag
-                                    // and the suffix is beginning `s'
-
-                                    if (!string.IsNullOrEmpty(Affix.CompoundSyllableNum))
-                                    {
-                                        if (_suffixFlag == SpecialFlags.LetterCLower)
-                                        {
-                                            numSyllable += 2;
-                                        }
-                                        else if (
-                                            _suffixFlag == SpecialFlags.LetterJ
-                                            ||
-                                            (
-                                                _suffixFlag == SpecialFlags.LetterI
-                                                &&
-                                                rv is not null
-                                                &&
-                                                rv.ContainsFlag(SpecialFlags.LetterJ)
-                                            )
-                                        )
-                                        {
-                                            numSyllable++;
-                                        }
-                                    }
+                                    CompoundCheckHungarianAffix2(word, i, rv, ref wordNum, ref numSyllable);
                                 }
 
                                 if (rv is not null)
@@ -1142,7 +1071,7 @@ public partial class WordList
                                             ||
                                             i >= word.Length
                                             ||
-                                            ((scpd != 0) == Affix.CompoundPatterns.Check(word, i, rvFirst, rv, affixed))
+                                            (scpd != 0) == Affix.CompoundPatterns.Check(word, i, rvFirst, rv, affixed)
                                         )
                                     )
                                     {
@@ -1810,6 +1739,87 @@ public partial class WordList
             }
 
             return num;
+        }
+
+        private readonly void CompoundCheckHungarianAffix1(ReadOnlySpan<char> word, ref int wordNum, ref int numSyllable)
+        {
+            // calculate syllable number of the word
+            numSyllable += GetSyllable(word);
+
+            // - affix syllable num.
+            // XXX only second suffix (inflections, not derivations)
+            if (_suffixAppend is not null)
+            {
+                numSyllable -= GetSyllableReversed(_suffixAppend.AsSpan());
+            }
+            if (_suffixExtra)
+            {
+                numSyllable -= 1;
+            }
+
+            // + 1 word, if syllable number of the prefix > 1 (hungarian convention)
+            if (_prefix is not null && GetSyllable(_prefix.Key.AsSpan()) > 1)
+            {
+                wordNum++;
+            }
+        }
+
+        private readonly void CompoundCheckHungarianAffix2(ReadOnlySpan<char> word, int i, WordEntry? rv, ref int wordNum, ref int numSyllable)
+        {
+            // pfxappnd = prefix of word+i, or NULL
+            // calculate syllable number of prefix.
+            // hungarian convention: when syllable number of prefix is more,
+            // than 1, the prefix+word counts as two words.
+
+            if (i < word.Length)
+            {
+                // calculate syllable number of the word
+                numSyllable += GetSyllable(word.Slice(0, i));
+            }
+
+            // - affix syllable num.
+            // XXX only second suffix (inflections, not derivations)
+            if (_suffixAppend is not null)
+            {
+                numSyllable -= GetSyllableReversed(_suffixAppend.AsSpan());
+            }
+
+            if (_suffixExtra)
+            {
+                numSyllable -= 1;
+            }
+
+            // + 1 word, if syllable number of the prefix > 1 (hungarian
+            // convention)
+            if (_prefix is not null && GetSyllable(_prefix.Key.AsSpan()) > 1)
+            {
+                wordNum++;
+            }
+
+            // increment syllable num, if last word has a SYLLABLENUM flag
+            // and the suffix is beginning `s'
+
+            if (Affix.CompoundSyllableNum is { Length: > 0 })
+            {
+                if (_suffixFlag == SpecialFlags.LetterCLower)
+                {
+                    numSyllable += 2;
+                }
+                else if (
+                    _suffixFlag == SpecialFlags.LetterJ
+                    ||
+                    (
+                        _suffixFlag == SpecialFlags.LetterI
+                        &&
+                        rv is not null
+                        &&
+                        rv.ContainsFlag(SpecialFlags.LetterJ)
+                    )
+                )
+                {
+                    numSyllable++;
+                }
+            }
         }
 
         /// <summary>
