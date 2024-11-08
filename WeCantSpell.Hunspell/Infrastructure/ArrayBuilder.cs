@@ -122,14 +122,6 @@ sealed class ArrayBuilder<T> : IList<T>
         Count = futureSize;
     }
 
-    public void AddRange(System.Collections.Immutable.ImmutableArray<T> values)
-    {
-        var futureSize = Count + values.Length;
-        EnsureCapacityAtLeast(futureSize);
-        values.CopyTo(_values, Count);
-        Count = futureSize;
-    }
-
     public void AddRange(T[] values)
     {
 #if HAS_THROWNULL

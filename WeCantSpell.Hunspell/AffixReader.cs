@@ -17,7 +17,6 @@ public sealed partial class AffixReader
 {
     public static readonly Encoding DefaultEncoding = EncodingEx.GetEncodingByName("ISO8859-1") ?? Encoding.UTF8;
 
-    private static readonly ImmutableArray<string> DefaultBreakTableEntries = ImmutableArray.Create("-", "^-", "-$");
     private static readonly CharacterSet DefaultCompoundVowels = CharacterSet.Create("AEIOUaeiou");
     private static readonly TextDictionary<AffixConfigOptions> BitFlagCommandMap;
     private static readonly TextDictionary<AffixReaderCommandKind> CommandMap;
@@ -273,7 +272,7 @@ public sealed partial class AffixReader
         {
             if (_builder._breakPoints.Count == 0)
             {
-                _builder._breakPoints.AddRange(DefaultBreakTableEntries);
+                _builder._breakPoints.AddRange(["-", "^-", "-$"]);
             }
         }
 
@@ -432,6 +431,7 @@ public sealed partial class AffixReader
     }
 
     private delegate bool EntryParserForImmutableArray<T>(ReadOnlySpan<char> parameterText, ImmutableArray<T>.Builder entries);
+
     private bool TryParseStandardListItem<T>(EntryListType entryListType, ReadOnlySpan<char> parameterText, ImmutableArray<T>.Builder entries, EntryParserForImmutableArray<T> parse)
     {
         if (!IsInitialized(entryListType))
