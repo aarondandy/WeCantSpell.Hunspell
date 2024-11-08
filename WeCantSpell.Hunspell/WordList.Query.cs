@@ -440,8 +440,7 @@ public partial class WordList
                     {
                         if (opLimiter.HasBeenCanceled)
                         {
-                            st.Dispose();
-                            return null;
+                            goto resultNull;
                         }
 
                         FlagValue scpdPatternEntryCondition = default;
@@ -478,8 +477,7 @@ public partial class WordList
                         if (st.BufferLength < i)
                         {
                             // abandon early on dubious pattern replacement outcome
-                            st.Dispose();
-                            return null;
+                            goto resultNull;
                         }
 
                         ch = st.ExchangeWithNull(i);
@@ -655,8 +653,7 @@ public partial class WordList
                                 // check forbiddenwords
                                 if (rv.ContainsAnyFlags(isSug ? Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest : Affix.Flags_ForbiddenWord_OnlyUpcase))
                                 {
-                                    st.Dispose();
-                                    return null;
+                                    goto resultNull;
                                 }
 
                                 // increment word number, if the second root has a compoundroot flag
@@ -835,20 +832,19 @@ public partial class WordList
                                     }
                                     else if (words is not null && words.CheckIfNextIsNotNull())
                                     {
-                                        st.Dispose();
-                                        return rvFirst;
+                                        rv = rvFirst;
+                                        goto resultRv;
                                     }
                                     else
                                     {
                                         switch (CompoundCheck_TrySecondRoot(rvFirst, rv, word, i, len, tmpNumSyllable: numSyllable, tmpWordNum: wordNum, scpd: scpd, scpdPatternEntryCondition2, isSug))
                                         {
                                             case CompoundCheckOutcomes.Fail:
-                                                st.Dispose();
-                                                return null;
+                                                goto resultNull;
 
                                             case CompoundCheckOutcomes.Permit:
-                                                st.Dispose();
-                                                return rvFirst;
+                                                rv = rvFirst;
+                                                goto resultRv;
                                         }
                                     }
                                 }
@@ -876,8 +872,8 @@ public partial class WordList
                                         {
                                             if (DefCompoundCheck(words.CreateIncremented(), rv.Detail, true))
                                             {
-                                                st.Dispose();
-                                                return rvFirst;
+                                                rv = rvFirst;
+                                                goto resultRv;
                                             }
 
                                             rv = null;
@@ -925,20 +921,18 @@ public partial class WordList
                                     else if (rv.ContainsAnyFlags(isSug ? Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest : Affix.Flags_ForbiddenWord_OnlyUpcase))
                                     {
                                         // check forbiddenwords
-                                        st.Dispose();
-                                        return null;
+                                        goto resultNull;
                                     }
                                 }
 
                                 switch (CompoundCheck_TrySecondAffix(rvFirst, rv, word, i, len, tmpWordNum: wordNum, tmpNumSyllable: numSyllable))
                                 {
                                     case CompoundCheckOutcomes.Fail:
-                                        st.Dispose();
-                                        return null;
+                                        goto resultNull;
 
                                     case CompoundCheckOutcomes.Permit:
-                                        st.Dispose();
-                                        return rvFirst;
+                                        rv = rvFirst;
+                                        goto resultRv;
                                 }
 
                                 // perhaps second word is a compound word (recursive call)
@@ -968,12 +962,11 @@ public partial class WordList
                                         switch (CompoundCheckDecideForbidFinal(word, len, i, st, rv))
                                         {
                                             case CompoundCheckOutcomes.Fail:
-                                                st.Dispose();
-                                                return null;
+                                                goto resultNull;
 
                                             case CompoundCheckOutcomes.Permit:
-                                                st.Dispose();
-                                                return rvFirst;
+                                                rv = rvFirst;
+                                                goto resultRv;
                                         }
                                     }
                                 }
@@ -1024,8 +1017,13 @@ public partial class WordList
                 while (Affix.CompoundRules.HasItems && oldWordNum == 0 && inversePostfixIncrement(ref onlyCpdRule)); // end of onlycpd loop
             }
 
+        resultNull:
             st.Dispose();
             return null;
+
+        resultRv:
+            st.Dispose();
+            return rv;
 
             static bool inversePostfixIncrement(ref bool b)
             {
