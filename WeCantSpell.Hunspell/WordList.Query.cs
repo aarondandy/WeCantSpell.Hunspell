@@ -406,22 +406,25 @@ public partial class WordList
                 opLimiter.QueryForCancellation();
             }
 
-            int oldNumSyllable = numSyllable;
-            int oldWordNum = wordNum;
             WordEntry? rv;
-            var ch = '\0';
-            var scpd = 0;
-            var oldIndex = 0;
-            var oldCMin = 0;
-            var oldCMax = 0;
-            var oldLen = 0;
-            var checkedSimplifiedTriple = false;
-            var oldWords = words;
-            var len = word.Length;
+            IncrementalWordList? oldWords = words;
+            int len = word.Length;
+            int scpd = 0;
 
             // setcminmax
-            var cMin = Affix.CompoundMin;
-            var cMax = len - cMin + 1;
+            int cMin = Affix.CompoundMin;
+            int cMax = len - cMin + 1;
+
+            int oldNumSyllable = numSyllable;
+            int oldWordNum = wordNum;
+            int oldIndex = 0;
+            int oldCMin = 0;
+            int oldCMax = 0;
+            int oldLen = 0;
+
+            char ch = '\0';
+
+            bool checkedSimplifiedTriple = false;
 
             var st = new SimulatedCString(word);
 
@@ -429,6 +432,7 @@ public partial class WordList
             {
                 words = oldWords;
                 var onlyCpdRule = words is not null;
+
                 do // onlycpdrule loop
                 {
                     var checkedPrefix = false;
