@@ -406,7 +406,8 @@ public partial class WordList
                 opLimiter.QueryForCancellation();
             }
 
-            int oldNumSyllable, oldWordNum;
+            int oldNumSyllable = numSyllable;
+            int oldWordNum = wordNum;
             WordEntry? rv;
             var ch = '\0';
             var scpd = 0;
@@ -430,9 +431,6 @@ public partial class WordList
                 var onlyCpdRule = words is not null;
                 do // onlycpdrule loop
                 {
-
-                    oldNumSyllable = numSyllable;
-                    oldWordNum = wordNum;
                     var checkedPrefix = false;
 
                     do // simplified checkcompoundpattern loop
