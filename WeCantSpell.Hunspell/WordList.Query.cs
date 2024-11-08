@@ -400,10 +400,15 @@ public partial class WordList
 
         public WordEntry? CompoundCheck(ReadOnlySpan<char> word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, bool isSug, SpellCheckResultType info, ref OperationTimedLimiter opLimiter)
         {
+            if (wordNum != 0)
+            {
+                // Reduce the number of clock checks by querying for cancellation once per method invocation
+                opLimiter.QueryForCancellation();
+            }
+
             int oldNumSyllable, oldWordNum;
             WordEntry? rv;
             var ch = '\0';
-            var simplifiedTripple = false;
             var scpd = 0;
             var oldIndex = 0;
             var oldCMin = 0;
@@ -413,15 +418,9 @@ public partial class WordList
             var oldWords = words;
             var len = word.Length;
 
-            if (wordNum != 0)
-            {
-                // Reduce the number of clock checks by querying for cancellation once per method invocation
-                opLimiter.QueryForCancellation();
-            }
-
             // setcminmax
             var cMin = Affix.CompoundMin;
-            var cMax = word.Length - cMin + 1;
+            var cMax = len - cMin + 1;
 
             var st = new SimulatedCString(word);
 
@@ -797,6 +796,7 @@ public partial class WordList
 
                             // NEXT WORD(S)
                             WordEntry rvFirst = rv;
+                            var simplifiedTripple = false;
 
 #pragma warning restore IDE0007 // Use implicit type
 
