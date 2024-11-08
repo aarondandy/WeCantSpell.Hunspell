@@ -407,24 +407,24 @@ public partial class WordList
             }
 
             WordEntry? rv;
-            IncrementalWordList? oldWords = words;
-            int len = word.Length;
-            int scpd = 0;
+            var oldWords = words;
+            var len = word.Length;
 
             // setcminmax
-            int cMin = Affix.CompoundMin;
-            int cMax = len - cMin + 1;
+            var cMin = Affix.CompoundMin;
+            var cMax = len - cMin + 1;
+            var scpd = 0;
 
-            int oldNumSyllable = numSyllable;
-            int oldWordNum = wordNum;
-            int oldIndex = 0;
-            int oldCMin = 0;
-            int oldCMax = 0;
-            int oldLen = 0;
+            var oldWordNum = wordNum;
+            var oldNumSyllable = numSyllable;
+            var oldIndex = 0;
+            var oldCMin = 0;
+            var oldCMax = 0;
+            var oldLen = 0;
 
-            char ch = '\0';
+            var ch = '\0';
 
-            bool checkedSimplifiedTriple = false;
+            var checkedSimplifiedTriple = false;
 
             var st = new SimulatedCString(word);
 
