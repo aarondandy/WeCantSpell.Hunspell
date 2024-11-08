@@ -400,7 +400,8 @@ public partial class WordList
 
         public WordEntry? CompoundCheck(ReadOnlySpan<char> word, int wordNum, int numSyllable, int maxwordnum, IncrementalWordList? words, IncrementalWordList rwords, bool huMovRule, bool isSug, SpellCheckResultType info, ref OperationTimedLimiter opLimiter)
         {
-            int oldnumsyllable, oldnumsyllable2, oldwordnum, oldwordnum2;
+            int oldNumSyllable, oldWordNum;
+            int tmpNumSyllable, tmpWordNum;
             WordEntry? rv;
             var ch = '\0';
             var simplifiedTripple = false;
@@ -432,8 +433,8 @@ public partial class WordList
                 do // onlycpdrule loop
                 {
 
-                    oldnumsyllable = numSyllable;
-                    oldwordnum = wordNum;
+                    oldNumSyllable = numSyllable;
+                    oldWordNum = wordNum;
                     var checkedPrefix = false;
 
                     do // simplified checkcompoundpattern loop
@@ -671,7 +672,7 @@ public partial class WordList
                                         &&
                                         (words is null || !words.CheckIfCurrentIsNotNull())
                                         &&
-                                        rv.DoesNotContainAnyFlags(oldwordnum == 0 ? Affix.Flags_CompoundFlag_CompoundBegin : Affix.Flags_CompoundFlag_CompoundMiddle)
+                                        rv.DoesNotContainAnyFlags(oldWordNum == 0 ? Affix.Flags_CompoundFlag_CompoundBegin : Affix.Flags_CompoundFlag_CompoundMiddle)
                                         &&
                                         (
                                             !huMovRule // LANG_hu section: spec. Hungarian rule
@@ -840,11 +841,11 @@ public partial class WordList
                                     }
                                 }
 
-                                oldnumsyllable2 = numSyllable;
-                                oldwordnum2 = wordNum;
-
                                 if (rv is not null)
                                 {
+                                    tmpNumSyllable = numSyllable;
+                                    tmpWordNum = wordNum;
+
                                     if (
                                         Affix.IsHungarian
                                         &&
@@ -853,13 +854,13 @@ public partial class WordList
                                         rv.DoesNotContainFlag(SpecialFlags.LetterJ)
                                     )
                                     {
-                                        numSyllable--;
+                                        tmpNumSyllable--;
                                     }
 
                                     // increment word number, if the second root has a compoundroot flag
                                     if (rv.ContainsFlag(Affix.CompoundRoot))
                                     {
-                                        wordNum++;
+                                        tmpWordNum++;
                                     }
 
                                     // check forbiddenwords
@@ -882,12 +883,12 @@ public partial class WordList
                                         (
                                             !Affix.CompoundWordMax.HasValue
                                             ||
-                                            (wordNum + 1) < Affix.CompoundWordMax
+                                            (tmpWordNum + 1) < Affix.CompoundWordMax
                                             ||
                                             (
                                                 Affix.CompoundMaxSyllable != 0
                                                 &&
-                                                (GetSyllable(rv.Word.AsSpan()) + numSyllable) <= Affix.CompoundMaxSyllable
+                                                (GetSyllable(rv.Word.AsSpan()) + tmpNumSyllable) <= Affix.CompoundMaxSyllable
                                             )
                                         )
                                         &&
@@ -924,9 +925,6 @@ public partial class WordList
                                         return CompoundReplacementOrWordPairCheck(word.Limit(len)) ? null : rvFirst;
                                     }
                                 }
-
-                                numSyllable = oldnumsyllable2;
-                                wordNum = oldwordnum2;
 
                                 // perhaps second word has prefix or/and suffix
                                 ClearSuffixAndFlag();
@@ -1005,52 +1003,54 @@ public partial class WordList
                                     }
                                 }
 
-                                if (Affix.IsHungarian)
                                 {
-                                    CompoundCheckHungarianAffix2(word, i, rv, ref wordNum, ref numSyllable);
-                                }
+                                    tmpNumSyllable = numSyllable;
+                                    tmpWordNum = wordNum;
 
-                                if (rv is not null)
-                                {
-                                    // increment word number, if the second word has a compoundroot flag
-                                    if (rv.ContainsFlag(Affix.CompoundRoot))
+                                    if (Affix.IsHungarian)
                                     {
-                                        wordNum++;
+                                        CompoundCheckHungarianAffix2(word, i, rv, ref tmpWordNum, ref tmpNumSyllable);
                                     }
 
-                                    // second word is acceptable, as a word with prefix or/and suffix?
-                                    // hungarian conventions: compounding is acceptable,
-                                    // when compound forms consist 2 word, otherwise
-                                    // the syllable number of root words is 6, or lesser.
-                                    if (
-                                        (
-                                            !Affix.CompoundWordMax.HasValue
-                                            ||
-                                            wordNum + 1 < Affix.CompoundWordMax.GetValueOrDefault()
-                                            ||
+                                    if (rv is not null)
+                                    {
+                                        // increment word number, if the second word has a compoundroot flag
+                                        if (rv.ContainsFlag(Affix.CompoundRoot))
+                                        {
+                                            tmpWordNum++;
+                                        }
+
+                                        // second word is acceptable, as a word with prefix or/and suffix?
+                                        // hungarian conventions: compounding is acceptable,
+                                        // when compound forms consist 2 word, otherwise
+                                        // the syllable number of root words is 6, or lesser.
+                                        if (
                                             (
-                                                Affix.CompoundMaxSyllable != 0
-                                                &&
-                                                numSyllable <= Affix.CompoundMaxSyllable
+                                                !Affix.CompoundWordMax.HasValue
+                                                ||
+                                                tmpWordNum + 1 < Affix.CompoundWordMax.GetValueOrDefault()
+                                                ||
+                                                (
+                                                    Affix.CompoundMaxSyllable != 0
+                                                    &&
+                                                    tmpNumSyllable <= Affix.CompoundMaxSyllable
+                                                )
+                                            )
+                                            &&
+                                            (
+                                                !Affix.CheckCompoundDup
+                                                ||
+                                                rv != rvFirst
                                             )
                                         )
-                                        &&
-                                        (
-                                            !Affix.CheckCompoundDup
-                                            ||
-                                            rv != rvFirst
-                                        )
-                                    )
-                                    {
-                                        st.Dispose();
+                                        {
+                                            st.Dispose();
 
-                                        // forbid compound word, if it is a non compound word with typical fault
-                                        return CompoundReplacementOrWordPairCheck(word.Limit(len)) ? null : rvFirst;
+                                            // forbid compound word, if it is a non compound word with typical fault
+                                            return CompoundReplacementOrWordPairCheck(word.Limit(len)) ? null : rvFirst;
+                                        }
                                     }
                                 }
-
-                                numSyllable = oldnumsyllable2;
-                                wordNum = oldwordnum2;
 
                                 // perhaps second word is a compound word (recursive call)
                                 // (only if SPELL_COMPOUND_2 is not set and maxwordnum is not exceeded)
@@ -1114,8 +1114,8 @@ public partial class WordList
                     while (!onlyCpdRule && Affix.SimplifiedCompound && scpd <= Affix.CompoundPatterns.Count); // end of simplifiedcpd loop
 
                     scpd = 0;
-                    wordNum = oldwordnum;
-                    numSyllable = oldnumsyllable;
+                    wordNum = oldWordNum;
+                    numSyllable = oldNumSyllable;
 
                     if (oldIndex != 0)
                     {
@@ -1132,7 +1132,7 @@ public partial class WordList
                         st[i] = ch;
                     }
                 }
-                while (Affix.CompoundRules.HasItems && oldwordnum == 0 && inversePostfixIncrement(ref onlyCpdRule)); // end of onlycpd loop
+                while (Affix.CompoundRules.HasItems && oldWordNum == 0 && inversePostfixIncrement(ref onlyCpdRule)); // end of onlycpd loop
             }
 
             st.Dispose();
