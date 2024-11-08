@@ -628,146 +628,147 @@ public partial class WordList
                             }
                         }
 
-                        if (
-                            rv is not null
-                            &&
-                            !huMovRule
-                            &&
-                            (
-                                checkedPrefix
-                                    ? AffixContainsContClass(Affix.CompoundForbidFlag) // check non_compound flag in suffix and prefix
-                                    : wordNum == 0
-                                        // check non_compound flag in suffix and prefix
-                                        // check compoundend flag in suffix and prefix
-                                        // check compoundmiddle flag in suffix and prefix
-                                        ? AffixContainsAnyContClass(Affix.Flags_CompoundForbid_CompoundMiddle_CompoundEnd)
-                                        // check non_compound flag in suffix and prefix
-                                        // check compoundend flag in suffix and prefix
-                                        : AffixContainsAnyContClass(Affix.Flags_CompoundForbid_CompoundEnd)
-                            )
-                        )
-                        {
-                            rv = null;
-                        }
-
                         if (rv is not null)
                         {
-                            // check forbiddenwords
-                            if (rv.ContainsAnyFlags(isSug ? Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest : Affix.Flags_ForbiddenWord_OnlyUpcase))
-                            {
-                                st.Dispose();
-                                return null;
-                            }
-
-                            // increment word number, if the second root has a compoundroot flag
-                            if (rv.ContainsFlag(Affix.CompoundRoot))
-                            {
-                                wordNum++;
-                            }
-
                             if (
+                                !huMovRule
+                                &&
                                 (
-                                    !checkedPrefix
-                                    &&
-                                    (words is null || !words.CheckIfCurrentIsNotNull())
-                                    &&
-                                    rv.DoesNotContainAnyFlags(oldwordnum == 0 ? Affix.Flags_CompoundFlag_CompoundBegin : Affix.Flags_CompoundFlag_CompoundMiddle)
-                                    &&
-                                    (
-                                        !huMovRule // LANG_hu section: spec. Hungarian rule
-                                        ||
-                                        !Affix.IsHungarian // XXX hardwired Hungarian dictionary codes
-                                        || 
-                                        rv.DoesNotContainAnyFlags(SpecialFlags.SetFGH)
-                                    ) // END of LANG_hu section
-                                )
-                                || // test CHECKCOMPOUNDPATTERN conditions
-                                (
-                                    scpd == 0
-                                    ? (
-                                        words is null
-                                        &&
-                                        (
-                                            (Affix.CheckCompoundTriple && compoundTripleCheck(word, i))
-                                            ||
-                                            (Affix.CheckCompoundCase && compoundCaseCheck(word, i))
-                                        )
-                                    )
-                                    : (
-                                        scpdPatternEntryCondition.HasValue
-                                        &&
-                                        rv.DoesNotContainFlag(scpdPatternEntryCondition)
-                                    )
+                                    checkedPrefix
+                                        ? AffixContainsContClass(Affix.CompoundForbidFlag) // check non_compound flag in suffix and prefix
+                                        : wordNum == 0
+                                            // check non_compound flag in suffix and prefix
+                                            // check compoundend flag in suffix and prefix
+                                            // check compoundmiddle flag in suffix and prefix
+                                            ? AffixContainsAnyContClass(Affix.Flags_CompoundForbid_CompoundMiddle_CompoundEnd)
+                                            // check non_compound flag in suffix and prefix
+                                            // check compoundend flag in suffix and prefix
+                                            : AffixContainsAnyContClass(Affix.Flags_CompoundForbid_CompoundEnd)
                                 )
                             )
                             {
                                 rv = null;
                             }
-
-                            static bool compoundTripleCheck(ReadOnlySpan<char> word, int i)
+                            else
                             {
-#if DEBUG
-                                ExceptionEx.ThrowIfArgumentEmpty(word, nameof(word));
-#endif
 
-                                // test triple letters
-                                return
-                                    i > 0
-                                    &&
-                                    i < word.Length
-                                    &&
-                                    word[i - 1] == word[i]
-                                    &&
-                                    (
-                                        (i >= 2 && word[i - 1] == word[i - 2])
-                                        ||
-                                        (i + 1 < word.Length && word[i - 1] == word[i + 1]) // may be word[i+1] == '\0'
-                                    );
-                            }
-
-                            static bool compoundCaseCheck(ReadOnlySpan<char> word, int pos)
-                            {
-#if DEBUG
-                                ExceptionEx.ThrowIfArgumentEmpty(word, nameof(word));
-#endif
-
-                                // Forbid compounding with neighbouring upper and lower case characters at word bounds.
-                                // NOTE: this implementation could be much simpler but an attempt is made here
-                                // to preserve the same result when indexes may be out of bounds
-                                var hasUpper = false;
-                                char c;
-
-                                if (pos < word.Length)
+                                // check forbiddenwords
+                                if (rv.ContainsAnyFlags(isSug ? Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest : Affix.Flags_ForbiddenWord_OnlyUpcase))
                                 {
-                                    if (pos > 0)
+                                    st.Dispose();
+                                    return null;
+                                }
+
+                                // increment word number, if the second root has a compoundroot flag
+                                if (rv.ContainsFlag(Affix.CompoundRoot))
+                                {
+                                    wordNum++;
+                                }
+
+                                if (
+                                    (
+                                        !checkedPrefix
+                                        &&
+                                        (words is null || !words.CheckIfCurrentIsNotNull())
+                                        &&
+                                        rv.DoesNotContainAnyFlags(oldwordnum == 0 ? Affix.Flags_CompoundFlag_CompoundBegin : Affix.Flags_CompoundFlag_CompoundMiddle)
+                                        &&
+                                        (
+                                            !huMovRule // LANG_hu section: spec. Hungarian rule
+                                            ||
+                                            !Affix.IsHungarian // XXX hardwired Hungarian dictionary codes
+                                            ||
+                                            rv.DoesNotContainAnyFlags(SpecialFlags.SetFGH)
+                                        ) // END of LANG_hu section
+                                    )
+                                    || // test CHECKCOMPOUNDPATTERN conditions
+                                    (
+                                        scpd == 0
+                                        ? (
+                                            words is null
+                                            &&
+                                            (
+                                                (Affix.CheckCompoundTriple && compoundTripleCheck(word, i))
+                                                ||
+                                                (Affix.CheckCompoundCase && compoundCaseCheck(word, i))
+                                            )
+                                        )
+                                        : (
+                                            scpdPatternEntryCondition.HasValue
+                                            &&
+                                            rv.DoesNotContainFlag(scpdPatternEntryCondition)
+                                        )
+                                    )
+                                )
+                                {
+                                    rv = null;
+                                }
+
+                                static bool compoundTripleCheck(ReadOnlySpan<char> word, int i)
+                                {
+#if DEBUG
+                                    ExceptionEx.ThrowIfArgumentEmpty(word, nameof(word));
+#endif
+
+                                    // test triple letters
+                                    return
+                                        i > 0
+                                        &&
+                                        i < word.Length
+                                        &&
+                                        word[i - 1] == word[i]
+                                        &&
+                                        (
+                                            (i >= 2 && word[i - 1] == word[i - 2])
+                                            ||
+                                            (i + 1 < word.Length && word[i - 1] == word[i + 1]) // may be word[i+1] == '\0'
+                                        );
+                                }
+
+                                static bool compoundCaseCheck(ReadOnlySpan<char> word, int pos)
+                                {
+#if DEBUG
+                                    ExceptionEx.ThrowIfArgumentEmpty(word, nameof(word));
+#endif
+
+                                    // Forbid compounding with neighbouring upper and lower case characters at word bounds.
+                                    // NOTE: this implementation could be much simpler but an attempt is made here
+                                    // to preserve the same result when indexes may be out of bounds
+                                    var hasUpper = false;
+                                    char c;
+
+                                    if (pos < word.Length)
                                     {
-                                        c = word[pos - 1];
+                                        if (pos > 0)
+                                        {
+                                            c = word[pos - 1];
+
+                                            if (c == '-')
+                                            {
+                                                return false;
+                                            }
+
+                                            if (char.IsUpper(c))
+                                            {
+                                                hasUpper = true;
+                                            }
+                                        }
+
+                                        c = word[pos];
 
                                         if (c == '-')
                                         {
                                             return false;
                                         }
 
-                                        if (char.IsUpper(c))
+                                        if (!hasUpper && char.IsUpper(c))
                                         {
                                             hasUpper = true;
                                         }
                                     }
 
-                                    c = word[pos];
-
-                                    if (c == '-')
-                                    {
-                                        return false;
-                                    }
-
-                                    if (!hasUpper && char.IsUpper(c))
-                                    {
-                                        hasUpper = true;
-                                    }
+                                    return hasUpper;
                                 }
-
-                                return hasUpper;
                             }
                         }
                         else if (huMovRule && Affix.IsHungarian)
