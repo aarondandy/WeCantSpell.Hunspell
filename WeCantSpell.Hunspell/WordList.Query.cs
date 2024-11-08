@@ -838,19 +838,18 @@ public partial class WordList
                                         st.Dispose();
                                         return rvFirst;
                                     }
-                                }
-
-                                if (rv is not null)
-                                {
-                                    switch (CompoundCheck_TrySecondRoot(rvFirst, rv, word, i, len, tmpNumSyllable: numSyllable, tmpWordNum: wordNum, scpd: scpd, scpdPatternEntryCondition2, isSug))
+                                    else
                                     {
-                                        case CompoundCheckOutcomes.Fail:
-                                            st.Dispose();
-                                            return null;
+                                        switch (CompoundCheck_TrySecondRoot(rvFirst, rv, word, i, len, tmpNumSyllable: numSyllable, tmpWordNum: wordNum, scpd: scpd, scpdPatternEntryCondition2, isSug))
+                                        {
+                                            case CompoundCheckOutcomes.Fail:
+                                                st.Dispose();
+                                                return null;
 
-                                        case CompoundCheckOutcomes.Permit:
-                                            st.Dispose();
-                                            return rvFirst;
+                                            case CompoundCheckOutcomes.Permit:
+                                                st.Dispose();
+                                                return rvFirst;
+                                        }
                                     }
                                 }
 
