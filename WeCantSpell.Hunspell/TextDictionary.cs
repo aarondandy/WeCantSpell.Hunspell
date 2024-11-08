@@ -374,17 +374,14 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         return i;
     }
 
-    private ref Entry GetRefByKey(string key) => ref GetRefByKey(CalculateHash(key), key);
-
-    private ref Entry GetRefByKey(ReadOnlySpan<char> key) => ref GetRefByKey(CalculateHash(key), key);
-
-    private ref Entry GetRefByKey(uint hash, string key)
+    private ref Entry GetRefByKey(string key)
     {
+        var hash = CalculateHash(key);
         ref var entry = ref GetRefByHash(hash);
 
         if (entry.Key is not null)
         {
-            while (true)
+            do
             {
                 if (entry.HashCode == hash && key.Equals(entry.Key))
                 {
@@ -393,23 +390,26 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
 
                 if (entry.Next < 0)
                 {
-                    break;
+                    goto fail;
                 }
 
                 entry = ref _entries[entry.Next];
             }
+            while (true);
         }
 
+    fail:
         return ref Unsafe.NullRef<Entry>();
     }
 
-    private ref Entry GetRefByKey(uint hash, ReadOnlySpan<char> key)
+    private ref Entry GetRefByKey(ReadOnlySpan<char> key)
     {
+        var hash = CalculateHash(key);
         ref var entry = ref GetRefByHash(hash);
 
         if (entry.Key is not null)
         {
-            while (true)
+            do
             {
                 if (entry.HashCode == hash && key.SequenceEqual(entry.Key.AsSpan()))
                 {
@@ -418,13 +418,15 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
 
                 if (entry.Next < 0)
                 {
-                    break;
+                    goto fail;
                 }
 
                 entry = ref _entries[entry.Next];
             }
+            while (true);
         }
 
+    fail:
         return ref Unsafe.NullRef<Entry>();
     }
 
@@ -435,13 +437,10 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static uint GetIndexByHash(uint hash, uint divisor, ulong multiplier)
     {
-        unchecked
-        {
         // I barely understand this algorithm, but it's how the .NET dictionary works on 64-bit platforms. Sources:
         // - https://lemire.me/blog/2019/02/08/faster-remainders-when-the-divisor-is-a-constant-beating-compilers-and-libdivide/
         // - https://github.com/dotnet/runtime/pull/406
-            return (uint)(((((multiplier * hash) >> 32) + 1u) * divisor) >> 32);
-        }
+        return unchecked((uint)(((((multiplier * hash) >> 32) + 1u) * divisor) >> 32));
     }
 
     private static ulong CalculateFastmodMultiplier(uint divisor) =>
