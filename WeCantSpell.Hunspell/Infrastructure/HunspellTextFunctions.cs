@@ -166,7 +166,7 @@ static class HunspellTextFunctions
 
     public static string MakeInitCap(string s, TextInfo textInfo)
     {
-        if (s.Length != 0)
+        if (s.Length > 0)
         {
             var actualFirstLetter = s[0];
             var expectedFirstLetter = textInfo.ToUpper(actualFirstLetter);
@@ -202,7 +202,7 @@ static class HunspellTextFunctions
 
     public static string MakeInitSmall(string s, TextInfo textInfo)
     {
-        if (s.Length != 0)
+        if (s.Length > 0)
         {
             var actualFirstLetter = s[0];
             var expectedFirstLetter = textInfo.ToLower(actualFirstLetter);
@@ -220,7 +220,7 @@ static class HunspellTextFunctions
 
     public static string MakeTitleCase(string s, CultureInfo cultureInfo)
     {
-        if (s.Length != 0)
+        if (s.Length > 0)
         {
             var builder = new StringBuilderSpan(s.Length);
             builder.Append(cultureInfo.TextInfo.ToUpper(s[0]));
