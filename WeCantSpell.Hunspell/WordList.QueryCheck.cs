@@ -140,69 +140,74 @@ public partial class WordList
 
         private SpellCheckResult CheckDetailsInternal(string scw, CapitalizationType capType, bool abbv)
         {
-            var resultType = SpellCheckResultType.None;
             string? root;
+            WordEntry? rv;
+            var resultType = SpellCheckResultType.None;
 
+            switch (capType)
             {
-                WordEntry? rv = null;
+                case CapitalizationType.HuhInit:
+                    resultType |= SpellCheckResultType.OrigCap;
+                    goto case CapitalizationType.Huh;
 
-                switch (capType)
-                {
-                    case CapitalizationType.HuhInit:
-                        resultType |= SpellCheckResultType.OrigCap;
-                        goto case CapitalizationType.Huh;
+                case CapitalizationType.Huh:
+                case CapitalizationType.None:
+                    rv = _query.CheckWord(scw, ref resultType, out root);
 
-                    case CapitalizationType.Huh:
-                    case CapitalizationType.None:
-                        rv = _query.CheckWord(scw, ref resultType, out root);
-                        if (abbv && rv is null)
+                    if (rv is null)
+                    {
+                        if (abbv)
                         {
                             rv = _query.CheckWord(scw + ".", ref resultType, out root);
                         }
-
-                        break;
-
-                    case CapitalizationType.All:
-                        rv = CheckDetailsAllCap(abbv, ref scw, ref resultType, out root);
-                        if (rv is null)
+                        else
                         {
-                            goto case CapitalizationType.Init;
-                        }
-
-                        break;
-
-                    case CapitalizationType.Init:
-                        rv = CheckDetailsInitCap(abbv, capType, ref scw, ref resultType, out root);
-                        break;
-
-                    default:
-                        root = null;
-                        break;
-                }
-
-                if (rv is not null)
-                {
-                    if (rv.ContainsFlag(Affix.Warn))
-                    {
-                        resultType |= SpellCheckResultType.Warn;
-
-                        if (Affix.ForbidWarn)
-                        {
-                            return new SpellCheckResult(root, resultType, false);
+                            goto handleRvNull;
                         }
                     }
 
-                    return new SpellCheckResult(root, resultType, true);
-                }
+                    break;
+
+                case CapitalizationType.All:
+                    rv = CheckDetailsAllCap(abbv, ref scw, ref resultType, out root);
+                    if (rv is null)
+                    {
+                        goto case CapitalizationType.Init;
+                    }
+
+                    break;
+
+                case CapitalizationType.Init:
+                    rv = CheckDetailsInitCap(abbv, capType, ref scw, ref resultType, out root);
+                    break;
+
+                default:
+                    root = null;
+                    rv = null;
+                    break;
             }
+
+            if (rv is not null)
+            {
+                if (rv.ContainsFlag(Affix.Warn))
+                {
+                    resultType |= SpellCheckResultType.Warn;
+
+                    if (Affix.ForbidWarn)
+                    {
+                        return new SpellCheckResult(root, resultType, false);
+                    }
+                }
+
+                return new SpellCheckResult(root, resultType, true);
+            }
+
+        handleRvNull:
 
             // recursive breaking at break points
-            if (Affix.BreakPoints.HasItems && resultType.IsMissingFlag(SpellCheckResultType.Forbidden))
-            {
-                return CheckDetailsInternalBreakPoints(scw, root, resultType);
-            }
-
-            return new SpellCheckResult(root, resultType, false);
+            return (Affix.BreakPoints.HasItems && resultType.IsMissingFlag(SpellCheckResultType.Forbidden))
+                ? CheckDetailsInternalBreakPoints(scw, root, resultType)
+                : new SpellCheckResult(root, resultType, false);
         }
 
         private readonly SpellCheckResult CheckDetailsInternalBreakPoints(string scw, string? root, SpellCheckResultType resultType)
