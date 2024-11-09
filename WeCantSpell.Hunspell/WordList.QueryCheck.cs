@@ -389,7 +389,7 @@ public partial class WordList
 
         private WordEntry? CheckDetailsInitCap(bool abbv, CapitalizationType capType, ref string scw, ref SpellCheckResultType resultType, out string? root)
         {
-            var u8buffer = new StringBuilderSpan(scw.Length);
+            var u8buffer = new StringBuilderSpan(scw.Length + 1);
             u8buffer.AppendLower(scw.AsSpan(), Affix.Culture);
 
             scw = u8buffer.ToStringInitCap(TextInfo);
