@@ -2299,9 +2299,9 @@ public partial class WordList
 
     private enum CompoundCheckOutcomes : byte
     {
-        Fail,
-        Permit,
-        Continue,
-        ContinueNextIteration
+        Fail = 0,
+        Permit = 1,
+        Continue = 2,
+        ContinueNextIteration = 3
     }
 }
