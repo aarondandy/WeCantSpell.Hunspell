@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
+using WeCantSpell.Hunspell.Infrastructure;
+
 namespace WeCantSpell.Hunspell;
 
 public readonly struct SingleReplacementSet : IReadOnlyList<SingleReplacement>
@@ -14,7 +16,7 @@ public readonly struct SingleReplacementSet : IReadOnlyList<SingleReplacement>
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(replacements);
 #else
-        if (replacements is null) throw new ArgumentNullException(nameof(replacements));
+        ExceptionEx.ThrowIfArgumentNull(replacements, nameof(replacements));
 #endif
 
         return new(replacements.ToArray());
@@ -27,9 +29,9 @@ public readonly struct SingleReplacementSet : IReadOnlyList<SingleReplacement>
 
     private readonly SingleReplacement[]? _replacements;
 
-    public int Count => (_replacements?.Length).GetValueOrDefault();
+    public int Count => _replacements is null ? 0 : _replacements.Length;
 
-    public bool IsEmpty => !HasItems;
+    public bool IsEmpty => _replacements is not { Length: > 0 };
 
     public bool HasItems => _replacements is { Length: > 0 };
 
@@ -41,7 +43,8 @@ public readonly struct SingleReplacementSet : IReadOnlyList<SingleReplacement>
             ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
 #else
-            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
 
             return _replacements![index];

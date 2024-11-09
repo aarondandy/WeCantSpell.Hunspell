@@ -416,21 +416,21 @@ public partial class AffixConfig
 
             if (allowDestructive)
             {
-                config.InputConversions = _inputConversions is { Count: > 0 }
+                config.InputConversions = _inputConversions.HasItems
                     ? MultiReplacementTable.TakeDictionary(_inputConversions)
                     : MultiReplacementTable.Empty;
                 _inputConversions = new(0);
-                config.OutputConversions = _outputConversions is { Count: > 0 }
+                config.OutputConversions = _outputConversions.HasItems
                     ? MultiReplacementTable.TakeDictionary(_outputConversions)
                     : MultiReplacementTable.Empty;
                 _outputConversions = new(0);
             }
             else
             {
-                config.InputConversions = config.InputConversions = _inputConversions is { Count: > 0 }
+                config.InputConversions = _inputConversions.HasItems
                     ? MultiReplacementTable.Create(_inputConversions)
                     : MultiReplacementTable.Empty;
-                config.OutputConversions = _outputConversions is { Count: > 0 }
+                config.OutputConversions = _outputConversions.HasItems
                     ? MultiReplacementTable.Create(_outputConversions)
                     : MultiReplacementTable.Empty;
             }

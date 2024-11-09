@@ -16,7 +16,7 @@ public readonly struct PatternSet : IReadOnlyList<PatternEntry>
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(entries);
 #else
-        if (entries is null) throw new ArgumentNullException(nameof(entries));
+        ExceptionEx.ThrowIfArgumentNull(entries, nameof(entries));
 #endif
 
         return new(entries.ToArray());
@@ -29,9 +29,9 @@ public readonly struct PatternSet : IReadOnlyList<PatternEntry>
 
     private readonly PatternEntry[]? _patterns;
 
-    public int Count => (_patterns?.Length).GetValueOrDefault();
+    public int Count => _patterns is null ? 0 : _patterns.Length;
 
-    public bool IsEmpty => !HasItems;
+    public bool IsEmpty => _patterns is not { Length: > 0 };
 
     public bool HasItems => _patterns is { Length: > 0 };
 
@@ -43,7 +43,8 @@ public readonly struct PatternSet : IReadOnlyList<PatternEntry>
             ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
 #else
-            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
 
             return _patterns![index];

@@ -32,6 +32,10 @@ sealed class WordEntry : IEquatable<WordEntry>
 
     public bool ContainsAnyFlags(FlagSet flags) => Flags.ContainsAny(flags);
 
+    public bool DoesNotContainFlag(FlagValue flag) => Flags.DoesNotContain(flag);
+
+    public bool DoesNotContainAnyFlags(FlagSet flags) => Flags.DoesNotContainAny(flags);
+
     public bool Equals(WordEntry? other)
     {
         if (other is null)

@@ -165,6 +165,8 @@ public readonly struct FlagValue :
 
     public bool IsWildcard => _value is '*' or '?';
 
+    public bool IsNotWildcard => _value is not '*' or '?';
+
     public bool Equals(FlagValue other) => other._value == _value;
 
     public bool EqualsAny(FlagValue a, FlagValue b) => a._value == _value || b._value == _value;

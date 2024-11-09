@@ -311,7 +311,8 @@ public partial class WordList
                                     j,
                                     StringEx.ConcatString(
                                         toRemove.AsSpan(0, spaceIndex + 1),
-                                        HunspellTextFunctions.MakeInitCap(toRemove.AsSpan(spaceIndex + 1), textInfo)));
+                                        textInfo.ToUpper(toRemove[spaceIndex + 1]),
+                                        toRemove.AsSpan(spaceIndex + 2)));
 
                                 static void removeFromIndexThenInsertAtFront(List<string> list, int removeIndex, string insertValue)
                                 {
@@ -470,7 +471,7 @@ public partial class WordList
                                 _ = _query.CheckWord(wspace, ref info, out _);
                             }
 
-                            if (!info.HasFlagEx(SpellCheckResultType.Forbidden))
+                            if (info.IsMissingFlag(SpellCheckResultType.Forbidden))
                             {
                                 InsertSuggestion(slst, wspace);
                             }
@@ -570,8 +571,6 @@ public partial class WordList
 
         private readonly bool Check(ReadOnlySpan<char> word) => new QueryCheck(_query).Check(word);
 
-        private readonly WordEntryDetail? LookupFirstDetail(ReadOnlySpan<char> word) => WordList.FindFirstEntryDetailByRootWord(word);
-        
         private readonly bool TryLookupFirstDetail(ReadOnlySpan<char> word, out WordEntryDetail wordEntryDetail) => WordList.TryFindFirstEntryDetailByRootWord(word, out wordEntryDetail);
 
         private readonly bool TryLookupFirstDetail(string word, out WordEntryDetail wordEntryDetail) => WordList.TryFindFirstEntryDetailByRootWord(word, out wordEntryDetail);
@@ -1379,20 +1378,25 @@ public partial class WordList
                 rv = _query.SuffixCheck(word, AffixEntryOptions.None, null, default, default, CompoundOptions.Not); // only suffix
             }
 
-            if (Affix.ContClasses.HasItems && rv is null)
+            if (rv is null)
             {
+                if (Affix.ContClasses.IsEmpty)
+                {
+                    goto noResult;
+                }
+
                 rv = _query.SuffixCheckTwoSfx(word, AffixEntryOptions.None, null, default)
                     ?? _query.PrefixCheckTwoSfx(word, CompoundOptions.Not, default);
             }
 
-            // check forbidden words
-            if ((rv?.ContainsAnyFlags(Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest_OnlyInCompound)).GetValueOrDefault())
-            {
-                return 0;
-            }
-
             if (rv is not null)
             {
+                // check forbidden words
+                if (rv.ContainsAnyFlags(Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest_OnlyInCompound))
+                {
+                    goto noResult;
+                }
+
                 // XXX obsolete
                 if (rv.ContainsFlag(Affix.CompoundFlag))
                 {
@@ -1401,6 +1405,8 @@ public partial class WordList
 
                 return 1;
             }
+
+        noResult:
 
             return 0;
         }
@@ -1617,9 +1623,8 @@ public partial class WordList
             }
 
             var hasPhoneEntries = Affix.Phone.HasItems;
-            var textInfo = TextInfo;
             var target = hasPhoneEntries
-                ? Phonet(HunspellTextFunctions.MakeAllCap(word, textInfo))
+                ? Phonet(HunspellTextFunctions.MakeAllCap(word, TextInfo))
                 : string.Empty;
             var isNonGermanLowercase = !Affix.IsGerman && capType == CapitalizationType.None;
 
@@ -1645,14 +1650,14 @@ public partial class WordList
                         continue;
                     }
 
-                    sc = NGram(3, word, hpSet.Key, NGramOptions.LongerWorse | NGramOptions.Lowering)
+                    sc = NGramWithLowering(3, word, hpSet.Key, NGramOptions.LongerWorse)
                         + LeftCommonSubstring(word, hpSet.Key);
 
                     // check special pronunciation
                     var f = string.Empty;
                     if (hpDetail.Options.HasFlagEx(WordEntryOptions.Phon) && CopyField(ref f, hpDetail.Morphs, MorphologicalTags.Phon))
                     {
-                        var sc2 = NGram(3, word, f, NGramOptions.LongerWorse | NGramOptions.Lowering)
+                        var sc2 = NGramWithLowering(3, word, f, NGramOptions.LongerWorse)
                             + LeftCommonSubstring(word, f);
 
                         if (sc2 > sc)
@@ -1664,7 +1669,7 @@ public partial class WordList
                     var scphon = -20000;
                     if (hasPhoneEntries && sc > 2 && wordKeyLengthDifference <= 3)
                     {
-                        scphon = NGram(3, target, Phonet(HunspellTextFunctions.MakeAllCap(hpSet.Key, textInfo)), NGramOptions.LongerWorse) * 2;
+                        scphon = NGramNoLowering(3, target, Phonet(HunspellTextFunctions.MakeAllCap(hpSet.Key, TextInfo)), NGramOptions.LongerWorse) * 2;
                     }
 
                     if (sc > roots[lp].Score)
@@ -1711,21 +1716,24 @@ public partial class WordList
             // mangle original word three differnt ways
             // and score them to generate a minimum acceptable score
             var thresh = 0;
-            var mw = StringBuilderPool.Get(word.Length);
-            for (var sp = 1; sp < 4; sp++)
-            {
-                mw.Clear();
-                mw.Append(word);
 
-                for (var k = sp; k < mw.Length; k += 4)
+            {
+                var wordLowered = HunspellTextFunctions.MakeAllSmall(word, TextInfo);
+                var mw = new StringBuilderSpan(wordLowered.Length);
+                for (var sp = 1; sp < 4; sp++)
                 {
-                    mw[k] = '*';
+                    mw.Set(wordLowered);
+
+                    for (var k = sp; k < mw.Length; k += 4)
+                    {
+                        mw[k] = '*';
+                    }
+
+                    thresh += NGramNoLowering(word.Length, word.AsSpan(), mw.CurrentSpan, NGramOptions.AnyMismatch);
                 }
 
-                thresh += NGram(word.Length, word, mw.ToString(), NGramOptions.AnyMismatch | NGramOptions.Lowering);
+                mw.Dispose();
             }
-
-            StringBuilderPool.Return(mw);
 
             thresh = (thresh / 3) - 1;
 
@@ -1749,7 +1757,7 @@ public partial class WordList
                 if (rp is not null)
                 {
                     var field = string.Empty;
-                    if (!rp.Options.HasFlagEx(WordEntryOptions.Phon) || !QuerySuggest.CopyField(ref field, rp.Morphs, MorphologicalTags.Phon))
+                    if (rp.Options.IsMissingFlag(WordEntryOptions.Phon) || !CopyField(ref field, rp.Morphs, MorphologicalTags.Phon))
                     {
                         field = null;
                     }
@@ -1762,7 +1770,7 @@ public partial class WordList
 
                         if (guessWordK.Word is { Length: > 0 })
                         {
-                            sc = NGram(word.Length, word, guessWordK.Word, NGramOptions.AnyMismatch | NGramOptions.Lowering)
+                            sc = NGramWithLowering(word.Length, word, guessWordK.Word, NGramOptions.AnyMismatch)
                                 + LeftCommonSubstring(word, guessWordK.Word);
 
                             if (sc > thresh)
@@ -1825,7 +1833,7 @@ public partial class WordList
                 if (guess.Guess is not null)
                 {
                     // lowering guess[i]
-                    var gl = textInfo.ToLower(guess.Guess);
+                    var gl = TextInfo.ToLower(guess.Guess);
                     var len = guess.Guess.Length;
 
                     var lcsLength = LcsLen(word.AsSpan(), gl.AsSpan());
@@ -1838,8 +1846,8 @@ public partial class WordList
                     }
 
                     // using 2-gram instead of 3, and other weightening
-                    var re = NGram(2, word, gl, NGramOptions.AnyMismatch | NGramOptions.Weighted) // gl has already been lowered
-                        + NGram(2, gl, word, NGramOptions.AnyMismatch | NGramOptions.Weighted | NGramOptions.Lowering);
+                    var re = NGramNoLowering(2, word, gl, NGramOptions.AnyMismatch | NGramOptions.Weighted) // gl has already been lowered
+                        + NGramWithLowering(2, gl, word, NGramOptions.AnyMismatch | NGramOptions.Weighted);
 
                     guesses[i].Score =
                         // length of longest common subsequent minus length difference
@@ -1851,7 +1859,7 @@ public partial class WordList
                         // swap character (not neighboring)
                         + (isSwap ? 10 : 0)
                         // ngram
-                        + NGram(4, word, gl, NGramOptions.AnyMismatch) // gl has already been lowered
+                        + NGramNoLowering(4, word, gl, NGramOptions.AnyMismatch) // gl has already been lowered
                         // weighted ngrams
                         + re
                         // different limit for dictionaries with PHONE rules
@@ -1870,7 +1878,7 @@ public partial class WordList
                     if (root.RootPhon is not null)
                     {
                         // lowering rootphon[i]
-                        var gl = HunspellTextFunctions.MakeAllSmall(root.RootPhon, textInfo);
+                        var gl = HunspellTextFunctions.MakeAllSmall(root.RootPhon, TextInfo);
                         var len = root.RootPhon.Length;
 
                         // heuristic weigthing of ngram scores
@@ -2157,7 +2165,7 @@ public partial class WordList
 
             var nh = 0;
             // first add root word to list
-            if (nh < wlst.Length && !entry.ContainsAnyFlags(Affix.Flags_NeedAffix_OnlyInCompound))
+            if (nh < wlst.Length && entry.DoesNotContainAnyFlags(Affix.Flags_NeedAffix_OnlyInCompound))
             {
                 wlstNh = ref wlst[nh];
 
@@ -2178,10 +2186,14 @@ public partial class WordList
                     wlstNh = ref wlst[nh];
 
                     wlstNh.Word = phon;
-                    if (wlstNh.Word is null)
-                    {
-                        return nh - 1;
-                    }
+
+#if DEBUG
+                    // It should be impossible for wlstNh.Word to be null as phon is already checked.
+                    // This case used to execute `return nh - 1;`.
+                    // The logic behind removing this check was that phon which is non-null is assigned
+                    // directly to it, meaning it too is non-null.
+                    if (wlstNh.Word is null) ExceptionEx.ThrowInvalidOperation();
+#endif
 
                     wlstNh.Allow = false;
                     wlstNh.Orig = entry.Word;
@@ -2405,7 +2417,7 @@ public partial class WordList
                     var c1 = CheckWord(candidate.TerminatedSpan, state.CpdSuggest);
                     if (c1 != 0)
                     {
-                        var c2 = CheckWord(candidate.SliceToTerminator(p + 1), state.CpdSuggest);
+                        var c2 = CheckWord(candidate.SliceToTerminatorFromOffset(p + 1), state.CpdSuggest);
                         if (c2 != 0)
                         {
                             // spec. Hungarian code (need a better compound word support)
@@ -2461,24 +2473,24 @@ public partial class WordList
                 }
             }
 
-            candidate.Destroy();
+            candidate.Dispose();
         }
 
         private bool CheckForbidden(ReadOnlySpan<char> word)
         {
-            var rv = LookupFirstDetail(word);
-            if ((rv?.ContainsAnyFlags(Affix.Flags_NeedAffix_OnlyInCompound)).GetValueOrDefault())
-            {
-                rv = null;
-            }
+            // check forbidden words
 
             if (_query.PrefixCheck(word, CompoundOptions.Begin, default) is null)
             {
-                rv = _query.SuffixCheck(word, AffixEntryOptions.None, null, default, default, CompoundOptions.Not)?.Detail; // prefix+suffix, suffix
+                var rv = _query.SuffixCheck(word, AffixEntryOptions.None, null, default, default, CompoundOptions.Not); // prefix+suffix, suffix
+                return (rv is not null && rv.ContainsFlag(Affix.ForbiddenWord));
+            }
+            else if (WordList.TryFindFirstEntryDetailByRootWord(word, out var rvDetail) && rvDetail.DoesNotContainAnyFlags(Affix.Flags_NeedAffix_OnlyInCompound))
+            {
+                return rvDetail.ContainsFlag(Affix.ForbiddenWord);
             }
 
-            // check forbidden words
-            return (rv?.ContainsFlag(Affix.ForbiddenWord)).GetValueOrDefault();
+            return false;
         }
 
         /// <summary>
@@ -2536,40 +2548,28 @@ public partial class WordList
 
         private static bool CopyField(ref string dest, MorphSet morphs, string var)
         {
-            if (morphs.Count == 0)
+            if (morphs.Count > 0)
             {
-                return false;
-            }
-
-            var morph = morphs.Join(' ');
-
-            if (morph.Length == 0)
-            {
-                return false;
-            }
-
-            var pos = morph.IndexOf(var, StringComparison.Ordinal);
-            if (pos < 0)
-            {
-                return false;
-            }
-
-            var begOffset = pos + MorphologicalTags.Stem.Length;
-            var builder = StringBuilderPool.Get(morph.Length - begOffset);
-
-            for (var i = begOffset; i < morph.Length; i++)
-            {
-                var c = morph[i];
-                if (c is ' ' or '\t' or '\n')
+                var morph = morphs.Join(' ').AsSpan();
+                if (morph.Length > 0)
                 {
-                    break;
-                }
+                    var pos = morph.IndexOf(var.AsSpan(), StringComparison.Ordinal);
+                    if (pos >= 0)
+                    {
+                        morph = morph.Slice(pos + var.Length);
+                        pos = morph.IndexOfAny(' ', '\t', '\n');
+                        if (pos >= 0)
+                        {
+                            morph = morph.Slice(0, pos);
+                        }
 
-                builder.Append(c);
+                        dest = morph.ToString();
+                        return true;
+                    }
+                }
             }
 
-            dest = StringBuilderPool.GetStringAndReturn(builder);
-            return true;
+            return false;
         }
 
         /// <summary>
@@ -2603,24 +2603,30 @@ public partial class WordList
                 (s1[s1.Length - 1] == s2[s2.Length - 1]) ? 1 : 0;
         }
 
-        /// <summary>
-        /// Generate an n-gram score comparing s1 and s2.
-        /// </summary>
-        private readonly int NGram(int n, string s1, string s2, NGramOptions opt)
+        private readonly int NGramWithLowering(int n, string s1, string s2, NGramOptions opt)
         {
             if (s1.Length == 0)
             {
                 return 0;
             }
 
-            if (HasFlag(opt, NGramOptions.Lowering))
-            {
-                s2 = HunspellTextFunctions.MakeAllSmall(s2, TextInfo);
-            }
+            return NGramNoLowering(
+                n,
+                s1,
+                HunspellTextFunctions.MakeAllSmall(s2, TextInfo),
+                opt);
+        }
 
+        private static int NGramNoLowering(int n, string s1, string s2, NGramOptions opt)
+        {
+            return NGramNoLowering(n, s1.AsSpan(), s2.AsSpan(), opt);
+        }
+
+        private static int NGramNoLowering(int n, ReadOnlySpan<char> s1, ReadOnlySpan<char> s2, NGramOptions opt)
+        {
             var nscore = HasFlag(opt, NGramOptions.Weighted)
-                ? NGramWeightedSearch(n, s1.AsSpan(), s2.AsSpan())
-                : NGramNonWeightedSearch(n, s1.AsSpan(), s2.AsSpan());
+                ? NGramWeightedSearch(n, s1, s2)
+                : NGramNonWeightedSearch(n, s1, s2);
 
             int ns;
             if (HasFlag(opt, NGramOptions.AnyMismatch))
@@ -2763,7 +2769,7 @@ public partial class WordList
             }
 
             var word = inword.ToCharArray().AsSpan();
-            var target = StringBuilderPool.Get();
+            var target = new StringBuilderSpan(word.Length);
 
             // check word
             var i = 0;
@@ -3041,7 +3047,7 @@ public partial class WordList
                 }
             }
 
-            return StringBuilderPool.GetStringAndReturn(target);
+            return target.GetStringAndDispose();
 
             static bool notConditionMarkup(char c) => c is not '(' or '-' or '<' or '^' or '$';
         }
@@ -3136,6 +3142,7 @@ public partial class WordList
             None = 0,
             LongerWorse = 1 << 0,
             AnyMismatch = 1 << 1,
+            [Obsolete("Use specialized methods instead")]
             Lowering = 1 << 2,
             Weighted = 1 << 3
         }

@@ -10,12 +10,7 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterSet>
 {
-    public static readonly CharacterSet Empty =
-#if HAS_SEARCHVALUES
-        new([]);
-#else
-        new([], default);
-#endif
+    public static readonly CharacterSet Empty = new([]);
 
     public static bool operator ==(CharacterSet left, CharacterSet right) => left.Equals(right);
 
@@ -28,7 +23,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(values);
 #else
-        if (values is null) throw new ArgumentNullException(nameof(values));
+        ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
         var builder = new Builder();
@@ -41,7 +36,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(values);
 #else
-        if (values is null) throw new ArgumentNullException(nameof(values));
+        ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
         return Create(values.AsSpan());
@@ -76,23 +71,21 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
 #else
 
-    private CharacterSet(char value) : this([value], value)
+    private CharacterSet(char value) : this([value])
     {
     }
 
-    private CharacterSet(char[] values, char mask)
+    private CharacterSet(char[] values)
     {
         _values = values;
-        _mask = mask;
     }
 
     private readonly char[]? _values;
-    private readonly char _mask;
 
 #endif
 
-    public int Count => (_values?.Length).GetValueOrDefault();
-    public bool IsEmpty => !HasItems;
+    public int Count => _values is null ? 0 : _values.Length;
+    public bool IsEmpty => _values is not { Length: > 0 };
     public bool HasItems => _values is { Length: > 0 };
     public char this[int index]
     {
@@ -102,7 +95,8 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
             ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
 #else
-            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
             return _values![index];
         }
@@ -116,7 +110,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
 #if HAS_SEARCHVALUES
 
-    public bool Contains(char value) => (_searchValues?.Contains(value)).GetValueOrDefault();
+    public bool Contains(char value) => _searchValues is not null && _searchValues.Contains(value);
 
     public int FindIndexOfMatch(ReadOnlySpan<char> text) => _searchValues is not null ? text.IndexOfAny(_searchValues) : -1;
 
@@ -131,12 +125,9 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
                 return _values[0].Equals(value);
             }
 
-            if (unchecked((value & _mask) == value))
-            {
-                return _values.Length <= 8
-                    ? checkIterative(_values, value)
-                    : Array.BinarySearch(_values, value) >= 0;
-            }
+            return _values.Length <= 8
+                ? checkIterative(_values, value)
+                : Array.BinarySearch(_values, value) >= 0;
         }
 
         return false;
@@ -207,23 +198,34 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
             return text;
         }
 
-        if (index == textSpan.Length - 1)
-        {
-            return text.Substring(0, index);
-        }
-
-        var builder = StringBuilderPool.Get(textSpan.Length - 1);
-
         do
         {
-            builder.Append(textSpan.Slice(0, index));
-            textSpan = textSpan.Slice(index + 1);
+            if (index == textSpan.Length - 1)
+            {
+                return textSpan.Slice(0, index).ToString();
+            }
+
+            if (index != 0)
+            {
+                break;
+            }
+
+            if (textSpan.Length <= 1)
+            {
+                return string.Empty;
+            }
+
+            textSpan = textSpan.Slice(1);
+
+            index = FindIndexOfMatch(textSpan);
+            if (index < 0)
+            {
+                return textSpan.ToString();
+            }
         }
-        while ((index = FindIndexOfMatch(textSpan)) >= 0);
+        while (true);
 
-        builder.Append(textSpan);
-
-        return StringBuilderPool.GetStringAndReturn(builder);
+        return ToStringWithRemoval(textSpan, index);
     }
 
     public ReadOnlySpan<char> RemoveChars(ReadOnlySpan<char> text)
@@ -233,29 +235,56 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
             return text;
         }
 
-        var index = FindIndexOfMatch(text);
-        if (index < 0)
+        int index;
+        do
         {
-            return text;
-        }
+            index = FindIndexOfMatch(text);
+            if (index < 0)
+            {
+                return text;
+            }
 
-        if (index == text.Length - 1)
-        {
-            return text.Slice(0, index);
-        }
+            if (index == text.Length - 1)
+            {
+                return text.Slice(0, index);
+            }
 
-        var builder = StringBuilderPool.Get(text.Length - 1);
+            if (index != 0)
+            {
+                break;
+            }
+
+            if (text.Length <= 1)
+            {
+                return [];
+            }
+
+            text = text.Slice(1);
+        }
+        while (true);
+
+        return ToStringWithRemoval(text, index).AsSpan();
+    }
+
+    private string ToStringWithRemoval(ReadOnlySpan<char> text, int matchIndex)
+    {
+        var builder = new StringBuilderSpan(text.Length - 1);
 
         do
         {
-            builder.Append(text.Slice(0, index));
-            text = text.Slice(index + 1);
+            if (matchIndex > 0)
+            {
+                builder.Append(text.Slice(0, matchIndex));
+            }
+
+            text = text.Slice(matchIndex + 1);
+            matchIndex = FindIndexOfMatch(text);
         }
-        while ((index = FindIndexOfMatch(text)) >= 0);
+        while (matchIndex >= 0);
 
         builder.Append(text);
 
-        return StringBuilderPool.GetStringAndReturn(builder).AsSpan();
+        return builder.GetStringAndDispose();
     }
 
     public override string ToString() => new(GetInternalArray());
@@ -268,7 +297,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 #if HAS_SEARCHVALUES
         HashCode.Combine(Count, HasItems ? _values![0] : default);
 #else
-        HashCode.Combine(Count, _mask);
+        (int)StringEx.GetStableOrdinalHashCode(_values);
 #endif
 
     public sealed class Builder
@@ -311,31 +340,16 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
 #else
 
-        private char _mask = default;
-
         public void Add(char value)
         {
             _builder.AddAsSortedSet(value);
-            unchecked
-            {
-                _mask |= value;
-            }
         }
 
         internal CharacterSet Create(bool allowDestructive)
         {
-            CharacterSet result;
-            if (allowDestructive)
-            {
-                result = new(_builder.Extract(), _mask);
-                _mask = default;
-            }
-            else
-            {
-                result = new(_builder.MakeArray(), _mask);
-            }
-
-            return result;
+            return allowDestructive
+                ? new(_builder.Extract())
+                : new(_builder.MakeArray());
         }
 
 #endif
@@ -345,7 +359,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 #if HAS_THROWNULL
             ArgumentNullException.ThrowIfNull(values);
 #else
-            if (values is null) throw new ArgumentNullException(nameof(values));
+            ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
             foreach (var value in values)

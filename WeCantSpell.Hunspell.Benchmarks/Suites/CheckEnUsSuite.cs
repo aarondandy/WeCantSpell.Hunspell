@@ -8,7 +8,6 @@ using WeCantSpell.Hunspell.Benchmarks.Helpers;
 namespace WeCantSpell.Hunspell.Benchmarks.Suites;
 
 [SimpleJob(id: "Check en-US", runtimeMoniker: RuntimeMoniker.Net80, baseline: true)]
-[SimpleJob(id: "Check en-US", runtimeMoniker: RuntimeMoniker.Net60)]
 [MinColumn, MeanColumn, MedianColumn]
 public class CheckEnUsSuite
 {
@@ -23,15 +22,15 @@ public class CheckEnUsSuite
     public IEnumerable<object[]> CheckData()
     {
         var wordData = EnUsTestData.Data;
-        yield return new object[] { "All", wordData.AllWords.ToArray() };
-        yield return new object[] { "Roots", wordData.RootWords.ToArray() };
-        yield return new object[] { "Correct", wordData.CorrectWords.ToArray() };
-        yield return new object[] { "Wrong", wordData.WrongWords.ToArray() };
+        yield return new object[] { "All", wordData.AllWords };
+        yield return new object[] { "Roots", wordData.RootWords };
+        yield return new object[] { "Correct", wordData.CorrectWords };
+        yield return new object[] { "Wrong", wordData.WrongWords };
     }
 
     [Benchmark(Description = "Check words")]
     [ArgumentsSource(nameof(CheckData))]
-    public void CheckWords(string set, string[] words)
+    public void CheckWords(string set, List<string> words)
     {
         foreach (var word in words)
         {

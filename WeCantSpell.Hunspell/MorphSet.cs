@@ -20,7 +20,7 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(morphs);
 #else
-        if (morphs is null) throw new ArgumentNullException(nameof(morphs));
+        ExceptionEx.ThrowIfArgumentNull(morphs, nameof(morphs));
 #endif
 
         return new(morphs.ToArray());
@@ -46,9 +46,9 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
 
     private readonly string[]? _morphs;
 
-    public int Count => (_morphs?.Length).GetValueOrDefault();
+    public int Count => _morphs is null ? 0 : _morphs.Length;
 
-    public bool IsEmpty => !HasItems;
+    public bool IsEmpty => _morphs is not { Length: > 0 };
 
     public bool HasItems => _morphs is { Length: > 0 };
 
@@ -60,7 +60,8 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
             ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
 #else
-            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
 
             return _morphs![index];

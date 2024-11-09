@@ -140,9 +140,9 @@ public partial class WordList
 
         private SpellCheckResult CheckDetailsInternal(string scw, CapitalizationType capType, bool abbv)
         {
+            string? root;
+            WordEntry? rv;
             var resultType = SpellCheckResultType.None;
-            string? root = null;
-            WordEntry? rv = null;
 
             switch (capType)
             {
@@ -153,9 +153,17 @@ public partial class WordList
                 case CapitalizationType.Huh:
                 case CapitalizationType.None:
                     rv = _query.CheckWord(scw, ref resultType, out root);
-                    if (abbv && rv is null)
+
+                    if (rv is null)
                     {
-                        rv = _query.CheckWord(scw + ".", ref resultType, out root);
+                        if (abbv)
+                        {
+                            rv = _query.CheckWord(scw + ".", ref resultType, out root);
+                        }
+                        else
+                        {
+                            goto handleRvNull;
+                        }
                     }
 
                     break;
@@ -171,6 +179,11 @@ public partial class WordList
 
                 case CapitalizationType.Init:
                     rv = CheckDetailsInitCap(abbv, capType, ref scw, ref resultType, out root);
+                    break;
+
+                default:
+                    root = null;
+                    rv = null;
                     break;
             }
 
@@ -189,104 +202,110 @@ public partial class WordList
                 return new SpellCheckResult(root, resultType, true);
             }
 
+        handleRvNull:
+
             // recursive breaking at break points
-            if (Affix.BreakPoints.HasItems && !resultType.HasFlagEx(SpellCheckResultType.Forbidden))
+            return (Affix.BreakPoints.HasItems && resultType.IsMissingFlag(SpellCheckResultType.Forbidden))
+                ? CheckDetailsInternalBreakPoints(scw, root, resultType)
+                : new SpellCheckResult(root, resultType, false);
+        }
+
+        private readonly SpellCheckResult CheckDetailsInternalBreakPoints(string scw, string? root, SpellCheckResultType resultType)
+        {
+            // calculate break points for recursion limit
+            if (Affix.BreakPoints.FindRecursionLimit(scw) >= 10)
             {
-                // calculate break points for recursion limit
-                if (Affix.BreakPoints.FindRecursionLimit(scw) >= 10)
+                return new SpellCheckResult(root, resultType, false);
+            }
+
+            // check boundary patterns (^begin and end$)
+            foreach (var breakEntry in Affix.BreakPoints.GetInternalArray())
+            {
+                if (breakEntry.Length <= 1 || breakEntry.Length > scw.Length)
                 {
-                    return new SpellCheckResult(root, resultType, false);
+                    continue;
                 }
 
-                // check boundary patterns (^begin and end$)
-                foreach (var breakEntry in Affix.BreakPoints.GetInternalArray())
+                var pLastIndex = breakEntry.Length - 1;
+                if (
+                    breakEntry.StartsWith('^')
+                    && scw.AsSpan(0, pLastIndex).EqualsOrdinal(breakEntry.AsSpan(1))
+                    && CheckNested(scw.AsSpan(pLastIndex))
+                )
                 {
-                    if (breakEntry.Length <= 1 || breakEntry.Length > scw.Length)
-                    {
-                        continue;
-                    }
+                    return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true);
+                }
 
-                    var pLastIndex = breakEntry.Length - 1;
+                if (breakEntry.EndsWith('$'))
+                {
+                    var wlLessBreakIndex = scw.Length - breakEntry.Length + 1;
                     if (
-                        breakEntry.StartsWith('^')
-                        && scw.AsSpan(0, pLastIndex).EqualsOrdinal(breakEntry.AsSpan(1))
-                        && CheckNested(scw.AsSpan(pLastIndex))
+                        scw.AsSpan(wlLessBreakIndex).EqualsOrdinal(breakEntry.AsSpan(0, pLastIndex))
+                        && CheckNested(scw.AsSpan(0, wlLessBreakIndex))
                     )
                     {
                         return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true);
                     }
+                }
+            }
 
-                    if (breakEntry.EndsWith('$'))
+            if (scw.Length > 2)
+            {
+                List<(string breakEntry, int found)>? reSearch = null;
+                // other patterns
+                foreach (var breakEntry in Affix.BreakPoints.GetInternalArray())
+                {
+                    var found = scw.IndexOf(breakEntry, 1, scw.Length - 2, StringComparison.Ordinal);
+                    if (found >= 0)
                     {
-                        var wlLessBreakIndex = scw.Length - breakEntry.Length + 1;
-                        if (
-                            scw.AsSpan(wlLessBreakIndex).EqualsOrdinal(breakEntry.AsSpan(0, pLastIndex))
-                            && CheckNested(scw.AsSpan(0, wlLessBreakIndex))
-                        )
+                        (reSearch ??= []).Add((breakEntry, found));
+
+                        // try to break at the second occurance
+                        // to recognize dictionary words with wordbreak
+                        if (scw.Length - found > 2 && scw.IndexOf(breakEntry, found + 1, scw.Length - 2 - found, StringComparison.Ordinal) is int found2 and >= 0)
                         {
-                            return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true);
+                            found = found2;
+                        }
+
+                        if (CheckNested(scw.AsSpan(found + breakEntry.Length)))
+                        {
+                            // examine 2 sides of the break point
+                            if (CheckNested(scw.AsSpan(0, found)))
+                            {
+                                return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true);
+                            }
+
+                            // LANG_hu: spec. dash rule
+                            if (Affix.IsHungarian && "-".Equals(breakEntry, StringComparison.Ordinal))
+                            {
+                                if (CheckNested(scw.AsSpan(0, found + 1)))
+                                {
+                                    return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true); // check the first part with dash
+                                }
+                            }
                         }
                     }
                 }
 
-                if (scw.Length > 2)
+                if (reSearch is not null)
                 {
-                    List<(string breakEntry, int found)>? reSearch = null;
-                    // other patterns
-                    foreach (var breakEntry in Affix.BreakPoints.GetInternalArray())
+                    // other patterns (break at first break point)
+                    foreach (var (breakEntry, found) in reSearch)
                     {
-                        var found = scw.IndexOf(breakEntry, 1, scw.Length - 2, StringComparison.Ordinal);
-                        if (found >= 0)
+                        if (CheckNested(scw.AsSpan(found + breakEntry.Length)))
                         {
-                            (reSearch ??= []).Add((breakEntry, found));
-
-                            // try to break at the second occurance
-                            // to recognize dictionary words with wordbreak
-                            if (scw.Length - found > 2 && scw.IndexOf(breakEntry, found + 1, scw.Length - 2 - found, StringComparison.Ordinal) is int found2 and >= 0)
+                            // examine 2 sides of the break point
+                            if (CheckNested(scw.AsSpan(0, found)))
                             {
-                                found = found2;
+                                return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true);
                             }
 
-                            if (CheckNested(scw.AsSpan(found + breakEntry.Length)))
+                            // LANG_hu: spec. dash rule
+                            if (Affix.IsHungarian && "-".Equals(breakEntry, StringComparison.Ordinal))
                             {
-                                // examine 2 sides of the break point
-                                if (CheckNested(scw.AsSpan(0, found)))
+                                if (CheckNested(scw.AsSpan(0, found + 1)))
                                 {
-                                    return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true);
-                                }
-
-                                // LANG_hu: spec. dash rule
-                                if (Affix.IsHungarian && "-".Equals(breakEntry, StringComparison.Ordinal))
-                                {
-                                    if (CheckNested(scw.AsSpan(0, found + 1)))
-                                    {
-                                        return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true); // check the first part with dash
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    if (reSearch is not null)
-                    {
-                        // other patterns (break at first break point)
-                        foreach (var (breakEntry, found) in reSearch)
-                        {
-                            if (CheckNested(scw.AsSpan(found + breakEntry.Length)))
-                            {
-                                // examine 2 sides of the break point
-                                if (CheckNested(scw.AsSpan(0, found)))
-                                {
-                                    return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true);
-                                }
-
-                                // LANG_hu: spec. dash rule
-                                if (Affix.IsHungarian && "-".Equals(breakEntry, StringComparison.Ordinal))
-                                {
-                                    if (CheckNested(scw.AsSpan(0, found + 1)))
-                                    {
-                                        return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true); // check the first part with dash
-                                    }
+                                    return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true); // check the first part with dash
                                 }
                             }
                         }
@@ -326,7 +345,7 @@ public partial class WordList
                 // conversion may result in string with different len than before MakeAllSmall2 so re-scan
                 if (apos < scw.Length - 1)
                 {
-                    scw = StringEx.ConcatString(scw.AsSpan(0, apos + 1), HunspellTextFunctions.MakeInitCap(scw.AsSpan(apos + 1), textInfo));
+                    scw = StringEx.ConcatString(scw.AsSpan(0, apos + 1), textInfo.ToUpper(scw[apos + 1]), scw.AsSpan(apos + 2));
                     rv = _query.CheckWord(scw, ref resultType, out root);
                     if (rv is not null)
                     {
@@ -370,8 +389,10 @@ public partial class WordList
 
         private WordEntry? CheckDetailsInitCap(bool abbv, CapitalizationType capType, ref string scw, ref SpellCheckResultType resultType, out string? root)
         {
-            var u8buffer = HunspellTextFunctions.MakeAllSmall(scw, TextInfo);
-            scw = HunspellTextFunctions.MakeInitCap(u8buffer, TextInfo);
+            var u8buffer = new StringBuilderSpan(scw.Length + 1);
+            u8buffer.AppendLower(scw.AsSpan(), Affix.Culture);
+
+            scw = u8buffer.ToStringInitCap(TextInfo);
 
             resultType |= SpellCheckResultType.OrigCap;
             if (capType == CapitalizationType.Init)
@@ -392,8 +413,8 @@ public partial class WordList
 
             if (resultType.HasFlagEx(SpellCheckResultType.Forbidden))
             {
-                rv = null;
-                return rv;
+                u8buffer.Dispose();
+                return null;
             }
 
             if (capType == CapitalizationType.All && rv is not null && IsKeepCase(rv))
@@ -403,24 +424,26 @@ public partial class WordList
 
             if (rv is not null || (!Affix.CultureUsesDottedI && scw.StartsWith('İ')))
             {
+                u8buffer.Dispose();
                 return rv;
             }
 
-            rv = _query.CheckWord(u8buffer, ref resultType, out root);
+            rv = _query.CheckWord(u8buffer.ToString(), ref resultType, out root);
 
             if (abbv && rv is null)
             {
-                u8buffer += ".";
-                rv = _query.CheckWord(u8buffer, ref resultType, out root);
+                u8buffer.Append('.');
+                rv = _query.CheckWord(u8buffer.ToString(), ref resultType, out root);
                 if (rv is null)
                 {
-                    u8buffer = scw + ".";
+                    u8buffer.Set(scw);
+                    u8buffer.Append('.');
                     if (capType == CapitalizationType.Init)
                     {
                         resultType |= SpellCheckResultType.InitCap;
                     }
 
-                    rv = _query.CheckWord(u8buffer, ref resultType, out root);
+                    rv = _query.CheckWord(u8buffer.ToString(), ref resultType, out root);
 
                     if (capType == CapitalizationType.Init)
                     {
@@ -432,6 +455,7 @@ public partial class WordList
                         rv = null;
                     }
 
+                    u8buffer.Dispose();
                     return rv;
                 }
             }
@@ -452,6 +476,7 @@ public partial class WordList
                 rv = null;
             }
 
+            u8buffer.Dispose();
             return rv;
         }
 
@@ -469,22 +494,25 @@ public partial class WordList
             var pos = @base.IndexOf("ss", nPos, StringComparison.Ordinal);
             if (pos >= 0 && n < MaxSharps)
             {
-                var baseBuilder = StringBuilderPool.Get(@base);
-                baseBuilder[pos] = 'ß';
-                baseBuilder.Remove(pos + 1, 1);
-                @base = baseBuilder.ToString();
+                WordEntry? h;
 
-                var h = SpellSharps(ref @base, pos + 1, n + 1, repNum + 1, ref info, out root);
-                if (h is not null)
+                using (var baseBuilder = new StringBuilderSpan(@base))
                 {
-                    return h;
-                }
+                    baseBuilder[pos] = 'ß';
+                    baseBuilder.Remove(pos + 1, 1);
+                    @base = baseBuilder.ToString();
 
-                baseBuilder.Clear();
-                baseBuilder.Append(@base);
-                baseBuilder[pos] = 's';
-                baseBuilder.Insert(pos + 1, 's');
-                @base = StringBuilderPool.GetStringAndReturn(baseBuilder);
+                    h = SpellSharps(ref @base, pos + 1, n + 1, repNum + 1, ref info, out root);
+                    if (h is not null)
+                    {
+                        return h;
+                    }
+
+                    baseBuilder.Set(@base);
+                    baseBuilder[pos] = 's';
+                    baseBuilder.Insert(pos + 1, 's');
+                    @base = baseBuilder.ToString();
+                }
 
                 h = SpellSharps(ref @base, pos + 2, n + 1, repNum, ref info, out root);
                 if (h is not null)

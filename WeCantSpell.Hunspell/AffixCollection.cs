@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 
 #if HAS_FROZENDICTIONARY || HAS_FROZENSET
@@ -419,7 +418,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         {
             _flags = flags.GetInternalArray();
             _byFlag = affixesByFlag;
-            _group = null!;
+            _group = null;
             _flagsIndex = 0;
             _groupIndex = 0;
             _current = default!;
@@ -432,7 +431,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 #endif
 
         private readonly char[] _flags;
-        private AffixGroup<TAffixEntry> _group;
+        private AffixGroup<TAffixEntry>? _group;
         private int _flagsIndex;
         private int _groupIndex;
         private TAffixEntry _current;
@@ -443,7 +442,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
         public bool MoveNext()
         {
-            if (!(_groupIndex < _group?.Entries.Length))
+            if (_group is null || _group.Entries.Length <= _groupIndex)
             {
                 if (!MoveNextGroup())
                 {
@@ -459,7 +458,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         {
             while (_flagsIndex < _flags.Length)
             {
-                if (_byFlag.TryGetValue((FlagValue)_flags[_flagsIndex++], out _group!) && _group.Entries.Length != 0)
+                if (_byFlag.TryGetValue((FlagValue)_flags[_flagsIndex++], out _group) && _group.Entries.Length != 0)
                 {
                     _groupIndex = 0;
                     return true;

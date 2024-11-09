@@ -8,6 +8,7 @@ static class HunspellTextFunctions
 {
 
 #if false // This isn't used anymore but I want to keep it around as it was tricky to port
+
     public static bool IsReverseSubset(string s1, ReadOnlySpan<char> s2)
     {
         return s1.Length <= s2.Length && check(s1.AsSpan(), s2);
@@ -29,6 +30,7 @@ static class HunspellTextFunctions
             return true;
         }
     }
+
 #endif
 
     public static bool IsSubset(string s1, ReadOnlySpan<char> s2)
@@ -78,6 +80,25 @@ static class HunspellTextFunctions
         return state == 1;
     }
 
+#if HAS_SEARCHVALUES
+
+    public static int CountMatchingFromLeft(string text, char character) => CountMatchingFromLeft(text.AsSpan(), character);
+
+    public static int CountMatchingFromLeft(ReadOnlySpan<char> text, char character)
+    {
+        var count = text.IndexOfAnyExcept(character);
+        return count < 0 ? text.Length : count;
+    }
+
+    public static int CountMatchingFromRight(string text, char character) => CountMatchingFromRight(text.AsSpan(), character);
+
+    public static int CountMatchingFromRight(ReadOnlySpan<char> text, char character)
+    {
+        return text.Length - text.LastIndexOfAnyExcept(character) - 1;
+    }
+
+#else
+
     public static int CountMatchingFromLeft(string text, char character)
     {
         var count = 0;
@@ -110,20 +131,30 @@ static class HunspellTextFunctions
         return text.Length - searchIndex - 1;
     }
 
-    public static int CountMatchesFromLeft<T>(this ReadOnlySpan<T> a, ReadOnlySpan<T> b) where T : notnull, IEquatable<T>
+#endif
+
+    public static int CountMatchesFromLeft(this ReadOnlySpan<char> a, ReadOnlySpan<char> b)
     {
-        var minLength = Math.Min(a.Length, b.Length);
-        var count = 0;
-        for (; count < minLength && a[count].Equals(b[count]); count++) ;
-        return count;
+        return a.Length > b.Length ? countMatches(b, a) : countMatches(a, b);
+
+        static int countMatches(ReadOnlySpan<char> a, ReadOnlySpan<char> b)
+        {
+            var count = 0;
+            for (; count < a.Length && a[count] == b[count]; count++) ;
+            return count;
+        }
     }
 
-    public static int CountMatchesFromRight<T>(this ReadOnlySpan<T> a, ReadOnlySpan<T> b) where T : notnull, IEquatable<T>
+    public static int CountMatchesFromRight(this ReadOnlySpan<char> a, ReadOnlySpan<char> b)
     {
-        var minLength = Math.Min(a.Length, b.Length);
-        var count = 0;
-        for (; count < minLength && a[a.Length - 1 - count].Equals(b[b.Length - 1 - count]); count++) ;
-        return count;
+        return a.Length > b.Length ? countMatches(b, a) : countMatches(a, b);
+
+        static int countMatches(ReadOnlySpan<char> a, ReadOnlySpan<char> b)
+        {
+            var count = 0;
+            for (; count < a.Length && a[a.Length - 1 - count] == b[b.Length - 1 - count]; count++) ;
+            return count;
+        }
     }
 
     /// <summary>
@@ -141,7 +172,7 @@ static class HunspellTextFunctions
             var expectedFirstLetter = textInfo.ToUpper(actualFirstLetter);
             if (expectedFirstLetter != actualFirstLetter)
             {
-                return StringEx.ConcatString(expectedFirstLetter, s.AsSpan(1));
+                s = StringEx.ConcatString(expectedFirstLetter, s.AsSpan(1));
             }
         }
 
@@ -156,7 +187,7 @@ static class HunspellTextFunctions
             var expectedFirstLetter = textInfo.ToUpper(actualFirstLetter);
             if (expectedFirstLetter != actualFirstLetter)
             {
-                return StringEx.ConcatString(expectedFirstLetter, s.Slice(1)).AsSpan();
+                s = StringEx.ConcatString(expectedFirstLetter, s.Slice(1)).AsSpan();
             }
         }
 
@@ -166,32 +197,35 @@ static class HunspellTextFunctions
     /// <summary>
     /// Convert to all little.
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string MakeAllSmall(string s, TextInfo textInfo) => textInfo.ToLower(s);
 
     public static string MakeInitSmall(string s, TextInfo textInfo)
     {
-        if (s.Length != 0)
+        if (s.Length > 0)
         {
             var actualFirstLetter = s[0];
             var expectedFirstLetter = textInfo.ToLower(actualFirstLetter);
             if (expectedFirstLetter != actualFirstLetter)
             {
-                return StringEx.ConcatString(expectedFirstLetter, s.AsSpan(1));
+                s = StringEx.ConcatString(expectedFirstLetter, s.AsSpan(1));
             }
         }
 
         return s;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string MakeAllCap(string s, TextInfo textInfo) => textInfo.ToUpper(s);
 
     public static string MakeTitleCase(string s, CultureInfo cultureInfo)
     {
-        if (s.Length != 0)
+        if (s.Length > 0)
         {
-            var builder = StringBuilderPool.Get(cultureInfo.TextInfo.ToLower(s));
-            builder[0] = cultureInfo.TextInfo.ToUpper(s[0]);
-            return StringBuilderPool.GetStringAndReturn(builder);
+            var builder = new StringBuilderSpan(s.Length);
+            builder.Append(cultureInfo.TextInfo.ToUpper(s[0]));
+            builder.AppendLower(s.AsSpan(1), cultureInfo);
+            s = builder.GetStringAndDispose();
         }
 
         return s;

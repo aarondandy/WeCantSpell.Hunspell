@@ -34,7 +34,7 @@ public sealed partial class WordList
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(words);
 #else
-        if (words is null) throw new ArgumentNullException(nameof(words));
+        ExceptionEx.ThrowIfArgumentNull(words, nameof(words));
 #endif
 
         return CreateFromWords(words, new AffixConfig.Builder().MoveToImmutable());
@@ -46,13 +46,13 @@ public sealed partial class WordList
         ArgumentNullException.ThrowIfNull(words);
         ArgumentNullException.ThrowIfNull(affix);
 #else
-        if (words is null) throw new ArgumentNullException(nameof(words));
-        if (affix is null) throw new ArgumentNullException(nameof(affix));
+        ExceptionEx.ThrowIfArgumentNull(words, nameof(words));
+        ExceptionEx.ThrowIfArgumentNull(affix, nameof(affix));
 #endif
 
         var wordListBuilder = new Builder(affix);
 
-        wordListBuilder.InitializeEntriesByRoot((words as ICollection<string>)?.Count ?? 0);
+        wordListBuilder.InitializeEntriesByRoot(words.GetNonEnumeratedCountOrDefault());
 
         foreach (var word in words)
         {
@@ -76,7 +76,7 @@ public sealed partial class WordList
 
     public IEnumerable<string> RootWords => EntriesByRoot.Keys;
 
-    public bool HasEntries => EntriesByRoot.Count > 0;
+    public bool HasEntries => EntriesByRoot.HasItems;
 
     public bool ContainsEntriesForRootWord(string rootWord) => rootWord is not null && EntriesByRoot.ContainsKey(rootWord);
 
@@ -158,20 +158,6 @@ public sealed partial class WordList
 
     public IEnumerable<string> Suggest(ReadOnlySpan<char> word, QueryOptions? options, CancellationToken cancellationToken) => new QuerySuggest(this, options, cancellationToken).Suggest(word);
 
-    private WordEntry? FindFirstEntryByRootWord(ReadOnlySpan<char> rootWord)
-    {
-        return EntriesByRoot.TryGetValue(rootWord, out var key, out var details) && details.Length != 0
-            ? new WordEntry(key, details[0])
-            : null;
-    }
-
-    private WordEntry? FindFirstEntryByRootWord(string rootWord)
-    {
-        return EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length != 0
-            ? new WordEntry(rootWord, details[0])
-            : null;
-    }
-
     private WordEntryDetail[] FindEntryDetailsByRootWord(string rootWord)
     {
         return EntriesByRoot.TryGetValue(rootWord, out var details)
@@ -186,17 +172,14 @@ public sealed partial class WordList
             : [];
     }
 
-    private WordEntryDetail? FindFirstEntryDetailByRootWord(ReadOnlySpan<char> rootWord)
-    {
-        return EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length != 0
-            ? details[0]
-            : null;
-    }
-
     private bool TryFindFirstEntryDetailByRootWord(ReadOnlySpan<char> rootWord, out WordEntryDetail entryDetail)
     {
-        if (EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length != 0)
+        if (EntriesByRoot.TryGetValue(rootWord, out var details))
         {
+#if DEBUG
+            if (details.Length == 0) ExceptionEx.ThrowInvalidOperation();
+#endif
+
             entryDetail = details[0];
             return true;
         }
@@ -207,8 +190,12 @@ public sealed partial class WordList
 
     private bool TryFindFirstEntryDetailByRootWord(string rootWord, out WordEntryDetail entryDetail)
     {
-        if (EntriesByRoot.TryGetValue(rootWord, out var details) && details.Length != 0)
+        if (EntriesByRoot.TryGetValue(rootWord, out var details))
         {
+#if DEBUG
+            if (details.Length == 0) ExceptionEx.ThrowInvalidOperation();
+#endif
+
             entryDetail = details[0];
             return true;
         }
@@ -238,7 +225,7 @@ public sealed partial class WordList
 
         public bool MoveNext()
         {
-            if (_nGramRestrictedDetails.Count != 0)
+            if (_nGramRestrictedDetails.HasItems)
             {
                 return MoveNextWithRestrictedDetails();
             }

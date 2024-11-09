@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -25,7 +24,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(conditions);
 #else
-        if (conditions is null) throw new ArgumentNullException(nameof(conditions));
+        ExceptionEx.ThrowIfArgumentNull(conditions, nameof(conditions));
 #endif
 
         return new(conditions.ToArray());
@@ -36,7 +35,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(text);
 #else
-        if (text is null) throw new ArgumentNullException(nameof(text));
+        ExceptionEx.ThrowIfArgumentNull(text, nameof(text));
 #endif
 
         return Parse(text.AsSpan());
@@ -110,8 +109,8 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
 
     private readonly CharacterCondition[]? _items;
 
-    public int Count => (_items?.Length).GetValueOrDefault();
-    public bool IsEmpty => !HasItems;
+    public int Count => _items is null ? 0 : _items.Length;
+    public bool IsEmpty => _items is not { Length: > 0 };
     public bool HasItems => _items is { Length: > 0 };
     public CharacterCondition this[int index]
     {
@@ -121,7 +120,8 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
             ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
 #else
-            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
             return _items![index];
         }

@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
+using WeCantSpell.Hunspell.Infrastructure;
+
 namespace WeCantSpell.Hunspell;
 
 public readonly struct PhoneTable : IReadOnlyList<PhoneticEntry>
@@ -14,7 +16,7 @@ public readonly struct PhoneTable : IReadOnlyList<PhoneticEntry>
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(entries);
 #else
-        if (entries is null) throw new ArgumentNullException(nameof(entries));
+        ExceptionEx.ThrowIfArgumentNull(entries, nameof(entries));
 #endif
 
         return new(entries.ToArray());
@@ -27,9 +29,9 @@ public readonly struct PhoneTable : IReadOnlyList<PhoneticEntry>
 
     private readonly PhoneticEntry[]? _items;
 
-    public int Count => (_items?.Length).GetValueOrDefault();
+    public int Count => _items is null ? 0 : _items.Length;
 
-    public bool IsEmpty => !HasItems;
+    public bool IsEmpty => _items is not { Length: > 0 };
 
     public bool HasItems => _items is { Length: > 0 };
 
@@ -41,7 +43,8 @@ public readonly struct PhoneTable : IReadOnlyList<PhoneticEntry>
             ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
 #else
-            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
 
             return _items![index];

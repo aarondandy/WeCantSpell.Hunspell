@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -46,9 +46,9 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 
     public ModeKind Mode => _mode;
 
-    public int Count => (_characters?.Length).GetValueOrDefault();
+    public int Count => _characters is null ? 0 : _characters.Length;
 
-    public bool IsEmpty => !HasItems;
+    public bool IsEmpty => _characters is not { Length: > 0 };
 
     public bool HasItems => _characters is { Length: > 0 };
 
@@ -60,7 +60,8 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
             ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
 #else
-            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
 
             return _characters![index];
@@ -73,17 +74,13 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 
     public bool Contains(char c)
     {
-        if (!HasItems)
-        {
-            return false;
-        }
-
-        if (_characters!.Length <= 8 || _mode == ModeKind.MatchSequence)
-        {
-            return _characters.Contains(c);
-        }
-
-        return Array.BinarySearch(_characters, c) >= 0;
+        return _characters is { Length: > 0 }
+            &&
+            (
+                (_characters.Length <= 8 || _mode == ModeKind.MatchSequence)
+                ? _characters.Contains(c)
+                : Array.BinarySearch(_characters, c) >= 0
+            );
     }
 
     public bool MatchesAnySingleCharacter => _mode == ModeKind.RestrictChars && IsEmpty;
@@ -108,10 +105,8 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 #if !NO_EXPOSED_NULLANNOTATIONS
         [System.Diagnostics.CodeAnalysis.DoesNotReturn]
 #endif
-        static string handleUnsupportedMode()
-        {
-            throw new NotSupportedException();
-        }
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static string handleUnsupportedMode() => throw new NotSupportedException($"Character condition mode not supported");
     }
 
     public override string ToString() => GetEncoded();
@@ -122,7 +117,7 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 
     public override bool Equals(object? obj) => obj is CharacterCondition cc && Equals(cc);
 
-    public override int GetHashCode() => HashCode.Combine((_characters?.Length).GetValueOrDefault(), _mode);
+    public override int GetHashCode() => HashCode.Combine(StringEx.GetStableOrdinalHashCode(GetInternalArray()), _mode);
 
     internal char[] GetInternalArray() => _characters ?? [];
 

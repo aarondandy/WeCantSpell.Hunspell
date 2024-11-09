@@ -119,9 +119,12 @@ public partial class WordList
 
         public void InitializeEntriesByRoot(int expectedSize)
         {
-            // PERF: because we add more entries than we are told about, we add a bit more to the expected size
-            var expectedCapacity = (expectedSize / 100) + expectedSize;
-            _entryDetailsByRoot.EnsureCapacity(expectedCapacity);
+            if (expectedSize > 0)
+            {
+                // PERF: because we add more entries than we are told about, we add a bit more to the expected size
+                var expectedCapacity = (expectedSize / 100) + expectedSize;
+                _entryDetailsByRoot.EnsureCapacity(expectedCapacity);
+            }
         }
     }
 }

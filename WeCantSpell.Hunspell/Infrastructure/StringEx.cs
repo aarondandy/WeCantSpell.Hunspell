@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
-static class StringEx
+static partial class StringEx
 {
 #if HAS_SEARCHVALUES
     private static readonly System.Buffers.SearchValues<char> TabOrSpace = System.Buffers.SearchValues.Create("\t ");
@@ -18,9 +18,13 @@ static class StringEx
 
     public static bool StartsWith(this ReadOnlySpan<char> @this, char value) => !@this.IsEmpty && @this[0] == value;
 
+    public static bool StartsWith(this Span<char> @this, char value) => !@this.IsEmpty && @this[0] == value;
+
     public static bool EndsWith(this string @this, char character) => @this.Length > 0 && @this[@this.Length - 1] == character;
 
     public static bool EndsWith(this ReadOnlySpan<char> @this, char value) => !@this.IsEmpty && @this[@this.Length - 1] == value;
+
+    public static bool EndsWith(this Span<char> @this, char value) => !@this.IsEmpty && @this[@this.Length - 1] == value;
 
     public static bool EndsWith(this ReadOnlyMemory<char> @this, char value) => !@this.IsEmpty && @this.Span[@this.Length - 1] == value;
 
@@ -28,7 +32,11 @@ static class StringEx
 
     public static bool EqualsOrdinal(this ReadOnlySpan<char> @this, string value) => @this.Equals(value, StringComparison.Ordinal);
 
+    public static bool EqualsOrdinal(this ReadOnlySpan<char> @this, char value) => @this.Length == 1 && @this[0] == value;
+
     public static bool EqualsOrdinal(this string @this, ReadOnlySpan<char> value) => value.Equals(@this, StringComparison.Ordinal);
+
+    public static bool EqualsOrdinal(this string @this, char value) => @this.Length == 1 && @this[0] == value;
 
     public static bool EqualsOrdinal(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value) => @this.Equals(value, StringComparison.Ordinal);
 
@@ -56,6 +64,8 @@ static class StringEx
     public static bool Contains(this string @this, char value) => @this.IndexOf(value) >= 0;
 
     public static bool Contains(this ReadOnlySpan<char> @this, char value) => @this.IndexOf(value) >= 0;
+
+    public static bool Contains(this Span<char> @this, char value) => @this.IndexOf(value) >= 0;
 
 #endif
 
@@ -92,11 +102,7 @@ static class StringEx
                 : ConcatString(replacement, @this.Slice(removeCount));
         }
 
-        var builder = StringBuilderPool.Get(replacement.Length + @this.Length - removeCount);
-        builder.Append(@this.Slice(0, index));
-        builder.Append(replacement);
-        builder.Append(@this.Slice(index + removeCount));
-        return StringBuilderPool.GetStringAndReturn(builder);
+        return ConcatString(@this.Slice(0, index), replacement, @this.Slice(index + removeCount));
     }
 
     public static string ReplaceIntoString(this ReadOnlySpan<char> text, char oldChar, char newChar)
@@ -116,9 +122,9 @@ static class StringEx
 
         static string buildReplaced(int replaceIndex, ReadOnlySpan<char> text, char oldChar, char newChar)
         {
-            var builder = StringBuilderPool.Get(text);
-            builder.Replace(oldChar, newChar, replaceIndex, builder.Length - replaceIndex);
-            return StringBuilderPool.GetStringAndReturn(builder);
+            var builder = new StringBuilderSpan(text);
+            builder.Replace(oldChar, newChar, replaceIndex);
+            return builder.GetStringAndDispose();
         }
     }
 
@@ -139,9 +145,9 @@ static class StringEx
 
         static string buildReplaced(int replaceIndex, ReadOnlySpan<char> text, string oldText, string newText)
         {
-            var builder = StringBuilderPool.Get(text);
-            builder.Replace(oldText, newText, replaceIndex, builder.Length - replaceIndex);
-            return StringBuilderPool.GetStringAndReturn(builder);
+            var builder = new StringBuilderSpan(text);
+            builder.Replace(oldText, newText, replaceIndex);
+            return builder.GetStringAndDispose();
         }
     }
 
@@ -155,62 +161,125 @@ static class StringEx
         return index < @this.Length ? @this[index] : '\0';
     }
 
+#if NO_STRING_SPAN
     public static string ConcatString(char c, ReadOnlySpan<char> span)
     {
-        var builder = StringBuilderPool.Get(span.Length + 1);
-        builder.Append(c);
-
-        if (!span.IsEmpty)
+        if (span.IsEmpty)
         {
-            builder.Append(span);
+            return c.ToString();
         }
 
-        return StringBuilderPool.GetStringAndReturn(builder);
+        var builder = new StringBuilderSpan(span.Length + 1);
+        builder.Append(c);
+        builder.Append(span);
+        return builder.GetStringAndDispose();
     }
+#else
+    public static string ConcatString(char c, ReadOnlySpan<char> span) => string.Concat([c], span);
+#endif
 
+#if NO_STRING_SPAN
     public static string ConcatString(ReadOnlySpan<char> str0, string str1, char char2, ReadOnlySpan<char> str3)
     {
-        var builder = StringBuilderPool.Get(str0.Length + str1.Length + str3.Length + 1);
+        var builder = new StringBuilderSpan(str0.Length + str1.Length + str3.Length + 1);
         builder.Append(str0);
         builder.Append(str1);
         builder.Append(char2);
         builder.Append(str3);
-        return StringBuilderPool.GetStringAndReturn(builder);
+        return builder.GetStringAndDispose();
     }
+#else
+    public static string ConcatString(ReadOnlySpan<char> str0, string str1, char char2, ReadOnlySpan<char> str3) => string.Concat(str0, str1, [char2], str3);
+#endif
 
-    public static string ConcatString(ReadOnlySpan<char> str0, string str1, ReadOnlySpan<char> str2)
+#if NO_STRING_SPAN
+    public static string ConcatString(string str0, ReadOnlySpan<char> str1, string str2, ReadOnlySpan<char> str3)
     {
-        var builder = StringBuilderPool.Get(str0.Length + str1.Length + str2.Length);
+        var builder = new StringBuilderSpan(str0.Length + str1.Length + str2.Length + str3.Length);
         builder.Append(str0);
         builder.Append(str1);
         builder.Append(str2);
-        return StringBuilderPool.GetStringAndReturn(builder);
+        builder.Append(str3);
+        return builder.GetStringAndDispose();
     }
+#else
+    public static string ConcatString(string str0, ReadOnlySpan<char> str1, string str2, ReadOnlySpan<char> str3) => string.Concat(str0, str1, str2, str3);
+#endif
 
+#if NO_STRING_SPAN
+    public static string ConcatString(string str0, string str1, string str2, ReadOnlySpan<char> str3)
+    {
+        var builder = new StringBuilderSpan(str0.Length + str1.Length + str2.Length + str3.Length);
+        builder.Append(str0);
+        builder.Append(str1);
+        builder.Append(str2);
+        builder.Append(str3);
+        return builder.GetStringAndDispose();
+    }
+#else
+    public static string ConcatString(string str0, string str1, string str2, ReadOnlySpan<char> str3) => string.Concat(str0, str1, str2, str3);
+#endif
+
+#if NO_STRING_SPAN
+    public static string ConcatString(ReadOnlySpan<char> str0, string str1, ReadOnlySpan<char> str2)
+    {
+        var builder = new StringBuilderSpan(str0.Length + str1.Length + str2.Length);
+        builder.Append(str0);
+        builder.Append(str1);
+        builder.Append(str2);
+        return builder.GetStringAndDispose();
+    }
+#else
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string ConcatString(ReadOnlySpan<char> str0, string str1, ReadOnlySpan<char> str2) => string.Concat(str0, str1, str2);
+#endif
+
+#if NO_STRING_SPAN
     public static string ConcatString(ReadOnlySpan<char> str0, char char1, ReadOnlySpan<char> str2)
     {
-        var builder = StringBuilderPool.Get(str0.Length + str2.Length + 1);
+        var builder = new StringBuilderSpan(str0.Length + str2.Length + 1);
         builder.Append(str0);
         builder.Append(char1);
         builder.Append(str2);
-        return StringBuilderPool.GetStringAndReturn(builder);
+        return builder.GetStringAndDispose();
     }
+#else
+    public static string ConcatString(ReadOnlySpan<char> str0, char char1, ReadOnlySpan<char> str2) => string.Concat(str0, [char1], str2);
+#endif
 
+#if NO_STRING_SPAN
     public static string ConcatString(this ReadOnlySpan<char> @this, char value)
     {
-        var builder = StringBuilderPool.Get(@this.Length + 1);
+        if (@this.IsEmpty)
+        {
+            return value.ToString();
+        }
+
+        var builder = new StringBuilderSpan(@this.Length + 1);
         builder.Append(@this);
         builder.Append(value);
-        return StringBuilderPool.GetStringAndReturn(builder);
+        return builder.GetStringAndDispose();
     }
+#else
+    public static string ConcatString(this ReadOnlySpan<char> @this, char value) => string.Concat(@this, [value]);
+#endif
 
+#if NO_STRING_SPAN
     public static string ConcatString(this string @this, char value)
     {
-        var builder = StringBuilderPool.Get(@this.Length + 1);
+        if (@this.Length == 0)
+        {
+            return value.ToString();
+        }
+
+        var builder = new StringBuilderSpan(@this.Length + 1);
         builder.Append(@this);
         builder.Append(value);
-        return StringBuilderPool.GetStringAndReturn(builder);
+        return builder.GetStringAndDispose();
     }
+#else
+    public static string ConcatString(this string @this, char value) => string.Concat(@this, [value]);
+#endif
 
 #if NO_STRING_SPAN
     public static string ConcatString(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value)
@@ -225,103 +294,23 @@ static class StringEx
             return @this.ToString();
         }
 
-        var builder = StringBuilderPool.Get(@this.Length + value.Length);
+        var builder = new StringBuilderSpan(@this.Length + value.Length);
         builder.Append(@this);
         builder.Append(value);
-        return StringBuilderPool.GetStringAndReturn(builder);
+        return builder.GetStringAndDispose();
     }
 #else
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string ConcatString(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value) => string.Concat(@this, value);
 #endif
 
-    public static string ConcatString(this ReadOnlySpan<char> @this, string value)
-    {
-        if (@this.IsEmpty)
-        {
-            return value;
-        }
+    public static string ConcatString(this ReadOnlySpan<char> @this, string value) => @this.IsEmpty ? value : ConcatString(@this, value.AsSpan());
 
-        return ConcatString(@this, value.AsSpan());
-    }
+    public static string ConcatString(this string @this, ReadOnlySpan<char> value) => value.IsEmpty ? @this : ConcatString(@this.AsSpan(), value);
 
-    public static string ConcatString(this string @this, ReadOnlySpan<char> value)
-    {
-        if (value.IsEmpty)
-        {
-            return @this;
-        }
+    public static ReadOnlySpan<char> ConcatSpan(this ReadOnlySpan<char> @this, string value) => value.Length == 0 ? @this : ConcatString(@this, value).AsSpan();
 
-        return ConcatString(@this.AsSpan(), value);
-    }
-
-    public static ReadOnlySpan<char> ConcatSpan(this ReadOnlySpan<char> @this, string value)
-    {
-        if (@this.IsEmpty)
-        {
-            return value.AsSpan();
-        }
-
-        if (value.Length == 0)
-        {
-            return @this;
-        }
-
-        return ConcatString(@this, value.AsSpan()).AsSpan();
-    }
-
-    public static ReadOnlySpan<char> ConcatSpan(this string @this, ReadOnlySpan<char> value)
-    {
-        if (value.IsEmpty)
-        {
-            return @this.AsSpan();
-        }
-
-        if (@this.Length == 0)
-        {
-            return value;
-        }
-
-        return ConcatString(@this.AsSpan(), value).AsSpan();
-    }
-
-#if NO_SPAN_HASHCODE
-
-    public static int GetHashCode(ReadOnlySpan<char> value)
-    {
-        var hash = 5381;
-
-        for (var i = 1; i < value.Length; i += 2)
-        {
-            hash = unchecked((hash << 5) ^ ((value[i] << 16) + value[i - 1]));
-        }
-
-        if ((value.Length & 1) != 0)
-        {
-            hash = unchecked((hash << 5) ^ value[value.Length - 1]);
-        }
-
-        return hash;
-    }
-
-    public static int GetHashCode(string value)
-    {
-        var hash = 5381;
-
-        for (var i = 1; i < value.Length; i+= 2)
-        {
-            hash = unchecked((hash << 5) ^ ((value[i] << 16) + value[i - 1]));
-        }
-
-        if ((value.Length & 1) != 0)
-        {
-            hash = unchecked((hash << 5) ^ value[value.Length - 1]);
-        }
-
-        return hash;
-    }
-
-#endif
+    public static ReadOnlySpan<char> ConcatSpan(this string @this, ReadOnlySpan<char> value) => @this.Length == 0 ? value : ConcatString(@this, value).AsSpan();
 
     public static string ToStringWithoutChars(this ReadOnlySpan<char> text, char value)
     {
@@ -341,35 +330,43 @@ static class StringEx
             return text.Slice(0, index).ToString();
         }
 
-        var builder = StringBuilderPool.Get(text.Length - 1);
+        return build(text, index, value);
 
-        do
+        static string build(ReadOnlySpan<char> text, int index, char value)
         {
-            builder.Append(text.Slice(0, index));
-            text = text.Slice(index + 1);
+            var builder = new StringBuilderSpan(text.Length - 1);
+
+            do
+            {
+                builder.Append(text.Slice(0, index));
+                text = text.Slice(index + 1);
+            }
+            while ((index = text.IndexOf(value)) >= 0);
+
+            builder.Append(text);
+
+            return builder.GetStringAndDispose();
         }
-        while ((index = text.IndexOf(value)) >= 0);
-
-        builder.Append(text);
-
-        return StringBuilderPool.GetStringAndReturn(builder);
     }
 
     public static string ToStringReversed(this ReadOnlySpan<char> @this)
     {
-        if (@this.Length <= 1)
+        if (@this.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        if (@this.Length == 1)
         {
             return @this.ToString();
         }
 
-        var builder = StringBuilderPool.Get(@this.Length);
-        for (var i = @this.Length - 1; i >= 0; i--)
-        {
-            builder.Append(@this[i]);
-        }
-
-        return StringBuilderPool.GetStringAndReturn(builder);
+        var builder = new StringBuilderSpan(@this.Length);
+        builder.AppendReversed(@this);
+        return builder.GetStringAndDispose();
     }
+
+#if NO_STRING_SPAN
 
     public static string GetReversed(this string @this)
     {
@@ -378,20 +375,34 @@ static class StringEx
             return @this;
         }
 
-        var builder = StringBuilderPool.Get(@this.Length);
-        for (var i = @this.Length - 1; i >= 0; i--)
+        var builder = new StringBuilderSpan(@this.Length);
+        builder.AppendReversed(@this.AsSpan());
+        return builder.GetStringAndDispose();
+    }
+
+#else
+
+    public static string GetReversed(this string @this)
+    {
+        if (@this is not { Length: > 1 })
         {
-            builder.Append(@this[i]);
+            return @this;
         }
 
-        return StringBuilderPool.GetStringAndReturn(builder);
+        return string.Create(@this.Length, @this, static (span, @this) =>
+        {
+            @this.AsSpan().CopyToReversed(span);
+        });
     }
+
+#endif
 
     public static SpanSeparatorSplitEnumerator<char> SplitOnComma(this ReadOnlySpan<char> @this, StringSplitOptions options = StringSplitOptions.None) => new(@this, options, static span => span.IndexOf(','));
 
     public static SpanSeparatorSplitEnumerator<char> SplitOnTabOrSpace(this ReadOnlySpan<char> @this) => new(@this, StringSplitOptions.RemoveEmptyEntries, static span => span.IndexOfTabOrSpace());
 
 #if NO_STATIC_STRINGCHAR_METHODS
+
     public static string Join(char seperator, string[] items)
     {
         if (items.Length == 0)
@@ -415,7 +426,7 @@ static class StringEx
                 requiredCapacity += items[i].Length;
             }
 
-            var builder = StringBuilderPool.Get(requiredCapacity);
+            var builder = new StringBuilderSpan(requiredCapacity);
             builder.Append(items[0]);
 
             for (i = 1; i < items.Length; i++)
@@ -424,9 +435,10 @@ static class StringEx
                 builder.Append(items[i]);
             }
 
-            return StringBuilderPool.GetStringAndReturn(builder);
+            return builder.GetStringAndDispose();
         }
     }
+
 #endif
 
 }

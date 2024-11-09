@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
+using WeCantSpell.Hunspell.Infrastructure;
+
 namespace WeCantSpell.Hunspell;
 
 public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
@@ -14,7 +16,7 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(rules);
 #else
-        if (rules is null) throw new ArgumentNullException(nameof(rules));
+        ExceptionEx.ThrowIfArgumentNull(rules, nameof(rules));
 #endif
         return new(rules.ToArray());
     }
@@ -26,9 +28,9 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
 
     private readonly CompoundRule[]? _rules;
 
-    public int Count => (_rules?.Length).GetValueOrDefault();
+    public int Count => _rules is null ? 0 : _rules.Length;
 
-    public bool IsEmpty => !HasItems;
+    public bool IsEmpty => _rules is not { Length: > 0 };
 
     public bool HasItems => _rules is { Length: > 0 };
 
@@ -40,7 +42,8 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
             ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
 #else
-            if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
 
             return _rules![index];
@@ -55,9 +58,9 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
 
     internal bool EntryContainsRuleFlags(in FlagSet flags)
     {
-        if (flags.HasItems && HasItems)
+        if (flags.HasItems && _rules is not null)
         {
-            foreach(var rule in _rules!)
+            foreach(var rule in _rules)
             {
                 if (rule.ContainsRuleFlagForEntry(flags))
                 {

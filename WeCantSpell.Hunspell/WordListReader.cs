@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Immutable;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -41,7 +40,7 @@ public sealed class WordListReader
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(dictionaryFilePath);
 #else
-        if (dictionaryFilePath is null) throw new ArgumentNullException(nameof(dictionaryFilePath));
+        ExceptionEx.ThrowIfArgumentNull(dictionaryFilePath, nameof(dictionaryFilePath));
 #endif
 
         var affixFilePath = FindAffixFilePath(dictionaryFilePath);
@@ -54,8 +53,8 @@ public sealed class WordListReader
         ArgumentNullException.ThrowIfNull(dictionaryFilePath);
         ArgumentNullException.ThrowIfNull(affixFilePath);
 #else
-        if (dictionaryFilePath is null) throw new ArgumentNullException(nameof(dictionaryFilePath));
-        if (affixFilePath is null) throw new ArgumentNullException(nameof(affixFilePath));
+        ExceptionEx.ThrowIfArgumentNull(dictionaryFilePath, nameof(dictionaryFilePath));
+        ExceptionEx.ThrowIfArgumentNull(affixFilePath, nameof(affixFilePath));
 #endif
 
         var affix = await AffixReader.ReadFileAsync(affixFilePath, cancellationToken).ConfigureAwait(false);
@@ -71,8 +70,8 @@ public sealed class WordListReader
         ArgumentNullException.ThrowIfNull(dictionaryFilePath);
         ArgumentNullException.ThrowIfNull(affix);
 #else
-        if (dictionaryFilePath is null) throw new ArgumentNullException(nameof(dictionaryFilePath));
-        if (affix is null) throw new ArgumentNullException(nameof(affix));
+        ExceptionEx.ThrowIfArgumentNull(dictionaryFilePath, nameof(dictionaryFilePath));
+        ExceptionEx.ThrowIfArgumentNull(affix, nameof(affix));
 #endif
 
         using var stream = StreamEx.OpenAsyncReadFileStream(dictionaryFilePath);
@@ -85,8 +84,8 @@ public sealed class WordListReader
         ArgumentNullException.ThrowIfNull(dictionaryStream);
         ArgumentNullException.ThrowIfNull(affixStream);
 #else
-        if (dictionaryStream is null) throw new ArgumentNullException(nameof(dictionaryStream));
-        if (affixStream is null) throw new ArgumentNullException(nameof(affixStream));
+        ExceptionEx.ThrowIfArgumentNull(dictionaryStream, nameof(dictionaryStream));
+        ExceptionEx.ThrowIfArgumentNull(affixStream, nameof(affixStream));
 #endif
 
         var affix = await AffixReader.ReadAsync(affixStream, cancellationToken).ConfigureAwait(false);
@@ -102,18 +101,10 @@ public sealed class WordListReader
         ArgumentNullException.ThrowIfNull(dictionaryStream);
         ArgumentNullException.ThrowIfNull(affix);
 #else
-        if (dictionaryStream is null) throw new ArgumentNullException(nameof(dictionaryStream));
-        if (affix is null) throw new ArgumentNullException(nameof(affix));
+        ExceptionEx.ThrowIfArgumentNull(dictionaryStream, nameof(dictionaryStream));
+        ExceptionEx.ThrowIfArgumentNull(affix, nameof(affix));
 #endif
 
-        return await ReadInternalAsync(dictionaryStream, affix, builder, cancellationToken).ConfigureAwait(false);
-    }
-#if NO_VALUETASK
-    private static async Task<WordList> ReadInternalAsync(Stream dictionaryStream, AffixConfig affix, WordList.Builder? builder, CancellationToken cancellationToken)
-#else
-    private static async ValueTask<WordList> ReadInternalAsync(Stream dictionaryStream, AffixConfig affix, WordList.Builder? builder, CancellationToken cancellationToken)
-#endif
-    {
         var readerInstance = new WordListReader(builder, affix);
 
         using (var lineReader = new LineReader(dictionaryStream, affix.Encoding))
@@ -132,7 +123,7 @@ public sealed class WordListReader
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(dictionaryFilePath);
 #else
-        if (dictionaryFilePath is null) throw new ArgumentNullException(nameof(dictionaryFilePath));
+        ExceptionEx.ThrowIfArgumentNull(dictionaryFilePath, nameof(dictionaryFilePath));
 #endif
 
         var affixFilePath = FindAffixFilePath(dictionaryFilePath);
@@ -145,8 +136,8 @@ public sealed class WordListReader
         ArgumentNullException.ThrowIfNull(dictionaryFilePath);
         ArgumentNullException.ThrowIfNull(affixFilePath);
 #else
-        if (dictionaryFilePath is null) throw new ArgumentNullException(nameof(dictionaryFilePath));
-        if (affixFilePath is null) throw new ArgumentNullException(nameof(affixFilePath));
+        ExceptionEx.ThrowIfArgumentNull(dictionaryFilePath, nameof(dictionaryFilePath));
+        ExceptionEx.ThrowIfArgumentNull(affixFilePath, nameof(affixFilePath));
 #endif
 
         var affix = AffixReader.ReadFile(affixFilePath);
@@ -162,8 +153,8 @@ public sealed class WordListReader
         ArgumentNullException.ThrowIfNull(dictionaryFilePath);
         ArgumentNullException.ThrowIfNull(affix);
 #else
-        if (dictionaryFilePath is null) throw new ArgumentNullException(nameof(dictionaryFilePath));
-        if (affix is null) throw new ArgumentNullException(nameof(affix));
+        ExceptionEx.ThrowIfArgumentNull(dictionaryFilePath, nameof(dictionaryFilePath));
+        ExceptionEx.ThrowIfArgumentNull(affix, nameof(affix));
 #endif
 
         using var stream = StreamEx.OpenReadFileStream(dictionaryFilePath);
@@ -176,8 +167,8 @@ public sealed class WordListReader
         ArgumentNullException.ThrowIfNull(dictionaryStream);
         ArgumentNullException.ThrowIfNull(affixStream);
 #else
-        if (dictionaryStream is null) throw new ArgumentNullException(nameof(dictionaryStream));
-        if (affixStream is null) throw new ArgumentNullException(nameof(affixStream));
+        ExceptionEx.ThrowIfArgumentNull(dictionaryStream, nameof(dictionaryStream));
+        ExceptionEx.ThrowIfArgumentNull(affixStream, nameof(affixStream));
 #endif
 
         var affix = AffixReader.Read(affixStream);
@@ -193,8 +184,8 @@ public sealed class WordListReader
         ArgumentNullException.ThrowIfNull(dictionaryStream);
         ArgumentNullException.ThrowIfNull(affix);
 #else
-        if (dictionaryStream is null) throw new ArgumentNullException(nameof(dictionaryStream));
-        if (affix is null) throw new ArgumentNullException(nameof(affix));
+        ExceptionEx.ThrowIfArgumentNull(dictionaryStream, nameof(dictionaryStream));
+        ExceptionEx.ThrowIfArgumentNull(affix, nameof(affix));
 #endif
 
         var readerInstance = new WordListReader(builder, affix);
@@ -218,7 +209,7 @@ public sealed class WordListReader
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(dictionaryFilePath);
 #else
-        if (dictionaryFilePath is null) throw new ArgumentNullException(nameof(dictionaryFilePath));
+        ExceptionEx.ThrowIfArgumentNull(dictionaryFilePath, nameof(dictionaryFilePath));
 #endif
 
         var directoryName = Path.GetDirectoryName(dictionaryFilePath);
@@ -536,7 +527,7 @@ public sealed class WordListReader
                 (capType == CapitalizationType.All && flags.HasItems)
             )
             &&
-            !flags.Contains(Affix.ForbiddenWord)
+            flags.DoesNotContain(Affix.ForbiddenWord)
         )
         {
             flags = flags.Union(SpecialFlags.OnlyUpcaseFlag);

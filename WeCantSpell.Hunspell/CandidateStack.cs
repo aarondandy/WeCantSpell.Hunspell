@@ -46,7 +46,9 @@ struct CandidateStack
     /// </remarks>
     public readonly bool ExceedsArbitraryDepthLimit => Count > MaxCandidateStackDepth;
 
-    public readonly int Count => _s0 is null ? 0 : (_rest?.Count).GetValueOrDefault() + 1;
+    public readonly int Count => _s0 is null
+        ? 0
+        : (_rest is null ? 1 : _rest.Count + 1);
 
     public readonly bool Contains(string value)
     {
@@ -56,7 +58,7 @@ struct CandidateStack
             (
                 _s0.Equals(value)
                 ||
-                (_rest?.Contains(value)).GetValueOrDefault()
+                (_rest is not null && _rest.Contains(value))
             );
     }
 
@@ -68,7 +70,7 @@ struct CandidateStack
             (
                 StringEx.EqualsOrdinal(_s0, value)
                 ||
-                (_rest?.Contains(value)).GetValueOrDefault()
+                (_rest is not null && _rest.Contains(value))
             );
     }
 

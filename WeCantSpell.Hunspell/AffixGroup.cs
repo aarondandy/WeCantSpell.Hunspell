@@ -42,7 +42,7 @@ public sealed class AffixGroup<TAffixEntry> where TAffixEntry : AffixEntry
 #if HAS_THROWNULL
             ArgumentNullException.ThrowIfNull(entries);
 #else
-            if (entries is null) throw new ArgumentNullException(nameof(entries));
+            ExceptionEx.ThrowIfArgumentNull(entries, nameof(entries));
 #endif
 
             AFlag = aFlag;

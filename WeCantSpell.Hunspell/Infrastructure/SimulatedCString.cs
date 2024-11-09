@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
@@ -7,21 +8,18 @@ struct SimulatedCString
 {
     public SimulatedCString(int capacity)
     {
-        if (capacity <= 0)
-        {
-            capacity = 1;
-        }
-
+#if DEBUG
+        ExceptionEx.ThrowIfArgumentLessThan(capacity, 0, nameof(capacity));
+#endif
         _rawBuffer = ArrayPool<char>.Shared.Rent(capacity);
         _bufferLength = capacity;
-        _rawBuffer[0] = '\0';
         _terminatedLength = 0;
     }
 
     public SimulatedCString(ReadOnlySpan<char> text)
     {
         _rawBuffer = ArrayPool<char>.Shared.Rent(text.Length + 3); // 3 extra characters seems to be enough to prevent most reallocations
-        text.CopyTo(_rawBuffer.AsSpan(0, text.Length));
+        text.CopyTo(_rawBuffer);
         _bufferLength = text.Length;
         _terminatedLength = -1;
     }
@@ -32,26 +30,22 @@ struct SimulatedCString
 
     public readonly int BufferLength => _bufferLength;
 
-    public ReadOnlySpan<char> TerminatedSpan
-    {
-        get
-        {
-            if (_terminatedLength < 0 && (_terminatedLength = Array.IndexOf(_rawBuffer, '\0', 0, _bufferLength)) < 0)
-            {
-                _terminatedLength = _bufferLength;
-            }
-
-            return _rawBuffer.AsSpan(0, _terminatedLength);
-        }
-    }
-
     public char this[int index]
     {
-        readonly get => index < _bufferLength ? _rawBuffer[index] : '\0';
+        readonly get
+        {
+#if DEBUG
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, _bufferLength, nameof(index));
+#endif
+            return index < _bufferLength ? _rawBuffer[index] : '\0';
+        }
+
         set
         {
 #if DEBUG
-            if (index >= _bufferLength) throw new ArgumentOutOfRangeException(nameof(index));
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, _bufferLength, nameof(index));
 #endif
             _rawBuffer[index] = value;
 
@@ -69,37 +63,66 @@ struct SimulatedCString
         }
     }
 
-    public readonly ReadOnlySpan<char> SliceToTerminator(int startIndex)
+    public ReadOnlySpan<char> TerminatedSpan
     {
-        if (startIndex <= _terminatedLength)
+        get
         {
-            return _rawBuffer.AsSpan(startIndex, _terminatedLength - startIndex);
+            if (_terminatedLength < 0)
+            {
+                _terminatedLength = Array.IndexOf(_rawBuffer, '\0', 0, _bufferLength);
+
+                if (_terminatedLength < 0)
+                {
+                    _terminatedLength = _bufferLength;
+                }
+            }
+
+            return _rawBuffer.AsSpan(0, _terminatedLength);
         }
+    }
+
+    public readonly ReadOnlySpan<char> SliceToTerminatorFromOffset(int startIndex)
+    {
+#if DEBUG
+        ExceptionEx.ThrowIfArgumentLessThan(startIndex, 0, nameof(startIndex));
+        ExceptionEx.ThrowIfArgumentGreaterThan(startIndex, _bufferLength, nameof(startIndex));
+#endif
 
         var result = _rawBuffer.AsSpan(startIndex, _bufferLength - startIndex);
         var index = result.IndexOf('\0');
-        if (index >= 0)
-        {
-            result = result.Slice(0, index);
-        }
-
-        return result;
+        return index >= 0 ? result.Slice(0, index) : result;
     }
 
-    public char Exchange(int index, char value)
+    public char ExchangeWithNull(int index)
     {
-        if (index >= _bufferLength)
+#if DEBUG
+        ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+        ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, _bufferLength, nameof(index));
+#endif
+
+        if (index == 0 || index < _terminatedLength)
         {
-            return '\0';
+            _terminatedLength = index;
         }
 
-        var result = _rawBuffer[index];
-        this[index] = value;
-        return result;
+        return performExchange(ref _rawBuffer[index]);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static char performExchange(ref char target)
+        {
+            var previous = target;
+            target = '\0';
+            return previous;
+        }
     }
 
     public void WriteChars(ReadOnlySpan<char> text, int destinationIndex)
     {
+#if DEBUG
+        ExceptionEx.ThrowIfArgumentLessThan(destinationIndex, 0, nameof(destinationIndex));
+        ExceptionEx.ThrowIfArgumentGreaterThan(destinationIndex, _bufferLength, nameof(destinationIndex));
+#endif
+
         EnsureBufferCapacity(text.Length + destinationIndex);
 
         text.CopyTo(_rawBuffer.AsSpan(destinationIndex));
@@ -112,6 +135,10 @@ struct SimulatedCString
 
     public void Assign(ReadOnlySpan<char> text)
     {
+#if DEBUG
+        ExceptionEx.ThrowIfArgumentGreaterThan(text.Length, _bufferLength, nameof(text));
+#endif
+
         var buffer = _rawBuffer.AsSpan(0, _bufferLength);
         text.CopyTo(buffer);
 
@@ -123,13 +150,12 @@ struct SimulatedCString
         _terminatedLength = -1;
     }
 
-    public void Destroy()
+    public void Dispose()
     {
         if (_rawBuffer.Length != 0)
         {
             ArrayPool<char>.Shared.Return(_rawBuffer);
             _rawBuffer = [];
-            _bufferLength = 0;
         }
     }
 
@@ -141,7 +167,12 @@ struct SimulatedCString
             {
                 var newBuffer = ArrayPool<char>.Shared.Rent(neededLength);
                 Array.Copy(_rawBuffer, newBuffer, _bufferLength);
-                ArrayPool<char>.Shared.Return(_rawBuffer);
+
+                if (_rawBuffer.Length != 0)
+                {
+                    ArrayPool<char>.Shared.Return(_rawBuffer);
+                }
+
                 _rawBuffer = newBuffer;
             }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace WeCantSpell.Hunspell;
@@ -108,8 +109,6 @@ internal struct FlagParser
 #if !NO_EXPOSED_NULLANNOTATIONS
     [System.Diagnostics.CodeAnalysis.DoesNotReturn]
 #endif
-    private static TResult ThrowNotSupportedFlagMode<TResult>()
-    {
-        throw new NotSupportedException("Flag mode is not supported");
-    }
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static TResult ThrowNotSupportedFlagMode<TResult>() => throw new NotSupportedException("Flag mode is not supported");
 }

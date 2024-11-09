@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
@@ -36,7 +35,7 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
 
     public int Count => _replacements.Count;
 
-    public bool HasReplacements => _replacements.Count != 0;
+    public bool HasReplacements => _replacements.HasItems;
 
     public IEnumerable<string> Keys => _replacements.Keys;
 
@@ -51,7 +50,7 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
     public bool TryGetValue(
         string key,
 #if !NO_EXPOSED_NULLANNOTATIONS
-        [MaybeNullWhen(false)]
+        [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)]
 #endif
         out MultiReplacementEntry value
     ) => _replacements.TryGetValue(key, out value);
@@ -61,7 +60,7 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
         if (text.Length != 0 && HasReplacements)
         {
             var appliedConversion = false;
-            var convertedBuilder = StringBuilderPool.Get(text.Length);
+            var convertedBuilder = new StringBuilderSpan(text.Length);
 
             for (var i = 0; i < text.Length; i++)
             {
@@ -81,12 +80,12 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
 
             if (appliedConversion)
             {
-                converted = StringBuilderPool.GetStringAndReturn(convertedBuilder);
+                converted = convertedBuilder.GetStringAndDispose();
                 return true;
             }
             else
             {
-                StringBuilderPool.Return(convertedBuilder);
+                convertedBuilder.Dispose();
             }
         }
 
@@ -99,7 +98,7 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
         if (!text.IsEmpty)
         {
             var appliedConversion = false;
-            var convertedBuilder = StringBuilderPool.Get(text.Length);
+            var convertedBuilder = new StringBuilderSpan(text.Length);
 
             for (var i = 0; i < text.Length; i++)
             {
@@ -124,12 +123,12 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
 
             if (appliedConversion)
             {
-                converted = StringBuilderPool.GetStringAndReturn(convertedBuilder);
+                converted = convertedBuilder.GetStringAndDispose();
                 return true;
             }
             else
             {
-                StringBuilderPool.Return(convertedBuilder);
+                convertedBuilder.Dispose();
             }
         }
 

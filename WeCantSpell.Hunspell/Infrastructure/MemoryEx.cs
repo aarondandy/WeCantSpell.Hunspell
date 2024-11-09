@@ -1,36 +1,85 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
 
 static class MemoryEx
 {
-
-    public static int IndexOf<T>(this ReadOnlySpan<T> @this, T value, int startIndex) where T : IEquatable<T>
+    public static int IndexOf(this ReadOnlySpan<char> @this, char value, int startIndex)
     {
         var result = @this.Slice(startIndex).IndexOf(value);
         return result >= 0 ? result + startIndex : result;
     }
 
-    public static int IndexOf<T>(this ReadOnlySpan<T> @this, ReadOnlySpan<T> value, int startIndex) where T : IEquatable<T>
+    public static int IndexOf(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value, int startIndex)
     {
         var result = @this.Slice(startIndex).IndexOf(value);
         return result >= 0 ? result + startIndex : result;
     }
 
-    public static ReadOnlySpan<T> Limit<T>(this ReadOnlySpan<T> @this, int maxLength)
+    public static int IndexOf(this Span<char> @this, ReadOnlySpan<char> value, int startIndex)
     {
-        return @this.Length > maxLength ? @this.Slice(0, maxLength) : @this;
+        var result = @this.Slice(startIndex).IndexOf(value);
+        return result >= 0 ? result + startIndex : result;
     }
+
+    public static ReadOnlySpan<char> Limit(this ReadOnlySpan<char> @this, int maxLength) =>
+        @this.Length > maxLength ? @this.Slice(0, maxLength) : @this;
 
     public static void Swap<T>(ref T value0, ref T value1)
     {
         (value1, value0) = (value0, value1);
     }
 
-    public static void Swap<T>(this Span<T> span, int index0, int index1)
+    public static void Swap(this Span<char> span, int index0, int index1)
     {
         (span[index1], span[index0]) = (span[index0], span[index1]);
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Swap(ref ReadOnlySpan<char> a, ref ReadOnlySpan<char> b)
+    {
+        var tmp = a;
+        a = b;
+        b = tmp;
+    }
+
+    public static void CopyToReversed(this ReadOnlySpan<char> source, Span<char> target)
+    {
+#if DEBUG
+        ExceptionEx.ThrowIfArgumentLessThan(target.Length, source.Length, nameof(target));
+#endif
+
+        for (var index = 0; index < source.Length; index++)
+        {
+            target[target.Length - index - 1] = source[index];
+        }
+    }
+
+#if NO_SPAN_REPLACE
+
+    public static void Replace(this Span<char> span, char oldValue, char newValue)
+    {
+        do
+        {
+            if (span.IsEmpty)
+            {
+                return;
+            }
+
+            var index = span.IndexOf(oldValue);
+            if (index < 0)
+            {
+                return;
+            }
+
+            span[index] = newValue;
+            span = span.Slice(index + 1);
+        }
+        while (true);
+    }
+
+#endif
 
 #if NO_SPAN_SORT
 
@@ -98,8 +147,13 @@ static class MemoryEx
 
     public static void RemoveAll<T>(ref Span<T> span, T value) where T : notnull, IEquatable<T>
     {
-        var writeIndex = 0;
-        var readIndex = 0;
+        var readIndex = span.IndexOf(value);
+        if (readIndex < 0)
+        {
+            return;
+        }
+
+        var writeIndex = readIndex;
 
         for (; readIndex < span.Length; readIndex++)
         {

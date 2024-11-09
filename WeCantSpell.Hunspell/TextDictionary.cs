@@ -129,6 +129,10 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
 
     public int Count { get; private set; }
 
+    public bool HasItems => Count != 0;
+
+    public bool IsEmpty => Count == 0;
+
     public TValue this[string key]
     {
         get
@@ -143,6 +147,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
 #if !NO_EXPOSED_NULLANNOTATIONS
             [System.Diagnostics.CodeAnalysis.DoesNotReturn]
 #endif
+            [MethodImpl(MethodImplOptions.NoInlining)]
             static void throwNotFound() => throw new KeyNotFoundException("Given key was not found");
         }
         set
@@ -179,7 +184,12 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
     public bool Contains(KeyValuePair<string, TValue> item) =>
         TryGetValue(item.Key, out var value) && EqualityComparer<TValue>.Default.Equals(value, item.Value);
 
-    public bool TryGetValue(string key, out TValue value)
+    public bool TryGetValue(
+        string key,
+#if !NO_EXPOSED_NULLANNOTATIONS
+        [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)]
+#endif
+        out TValue value)
     {
         ref var entry = ref GetRefByKey(key);
         if (Unsafe.IsNullRef(ref entry))
@@ -192,7 +202,12 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         return true;
     }
 
-    public bool TryGetValue(ReadOnlySpan<char> key, out TValue value)
+    public bool TryGetValue(
+        ReadOnlySpan<char> key,
+#if !NO_EXPOSED_NULLANNOTATIONS
+        [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)]
+#endif
+        out TValue value)
     {
         ref var entry = ref GetRefByKey(key);
         if (Unsafe.IsNullRef(ref entry))
@@ -205,7 +220,16 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         return true;
     }
 
-    public bool TryGetValue(ReadOnlySpan<char> key, out string actualKey, out TValue value)
+    public bool TryGetValue(
+        ReadOnlySpan<char> key,
+#if !NO_EXPOSED_NULLANNOTATIONS
+        [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)]
+#endif
+        out string actualKey,
+#if !NO_EXPOSED_NULLANNOTATIONS
+        [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)]
+#endif
+        out TValue value)
     {
         ref var entry = ref GetRefByKey(key);
         if (Unsafe.IsNullRef(ref entry))
@@ -239,7 +263,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         builder.Flush();
 
 #if DEBUG
-        if (Count != builder.Count) throw new InvalidOperationException();
+        if (Count != builder.Count) ExceptionEx.ThrowInvalidOperation();
 #endif
 
         _entries = builder.Entries;
@@ -260,16 +284,11 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
             entry = ref GetOrAddWithoutGrowth(hash, key, isAdd: true);
             if (Unsafe.IsNullRef(ref entry))
             {
-                throwFailed();
+                ThrowAddFailed();
             }
         }
 
         entry.Value = value;
-
-#if !NO_EXPOSED_NULLANNOTATIONS
-        [System.Diagnostics.CodeAnalysis.DoesNotReturn]
-#endif
-        static void throwFailed() => throw new InvalidOperationException("Failed to add");
     }
 
     public void CopyTo(KeyValuePair<string, TValue>[] array, int arrayIndex)
@@ -280,11 +299,11 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         }
     }
 
-    public void Clear() => throw new NotImplementedException();
+    public void Clear() => ExceptionEx.ThrowNotImplementedYet();
 
-    public bool Remove(string key) => throw new NotImplementedException();
+    public bool Remove(string key) => ExceptionEx.ThrowNotImplementedYet<bool>();
 
-    public bool Remove(KeyValuePair<string, TValue> item) => throw new NotImplementedException();
+    public bool Remove(KeyValuePair<string, TValue> item) => ExceptionEx.ThrowNotImplementedYet<bool>();
 
     internal ref TValue GetOrAdd(string key)
     {
@@ -296,16 +315,11 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
             entry = ref GetOrAddWithoutGrowth(hash, key, isAdd: false);
             if (Unsafe.IsNullRef(ref entry))
             {
-                return ref throwFailed();
+                ThrowAddFailed();
             }
         }
 
         return ref entry.Value;
-
-#if !NO_EXPOSED_NULLANNOTATIONS
-        [System.Diagnostics.CodeAnalysis.DoesNotReturn]
-#endif
-        static ref TValue throwFailed() => throw new InvalidOperationException("Failed to add");
     }
 
     private ref Entry GetOrAddWithoutGrowth(uint hash, string key, bool isAdd)
@@ -325,7 +339,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
             {
                 if (isAdd)
                 {
-                    throwDuplicate();
+                    ThrowDuplicateKey();
                 }
 
                 return ref entry;
@@ -351,11 +365,6 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         }
 
         return ref Unsafe.NullRef<Entry>();
-
-#if !NO_EXPOSED_NULLANNOTATIONS
-        [System.Diagnostics.CodeAnalysis.DoesNotReturn]
-#endif
-        static void throwDuplicate() => throw new InvalidOperationException("Duplicate key");
     }
 
     private int FindNextEmptyCollisionIndex()
@@ -365,17 +374,14 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         return i;
     }
 
-    private ref Entry GetRefByKey(string key) => ref GetRefByKey(CalculateHash(key), key);
-
-    private ref Entry GetRefByKey(ReadOnlySpan<char> key) => ref GetRefByKey(CalculateHash(key), key);
-
-    private ref Entry GetRefByKey(uint hash, string key)
+    private ref Entry GetRefByKey(string key)
     {
+        var hash = CalculateHash(key);
         ref var entry = ref GetRefByHash(hash);
 
         if (entry.Key is not null)
         {
-            while (true)
+            do
             {
                 if (entry.HashCode == hash && key.Equals(entry.Key))
                 {
@@ -384,23 +390,26 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
 
                 if (entry.Next < 0)
                 {
-                    break;
+                    goto fail;
                 }
 
                 entry = ref _entries[entry.Next];
             }
+            while (true);
         }
 
+    fail:
         return ref Unsafe.NullRef<Entry>();
     }
 
-    private ref Entry GetRefByKey(uint hash, ReadOnlySpan<char> key)
+    private ref Entry GetRefByKey(ReadOnlySpan<char> key)
     {
+        var hash = CalculateHash(key);
         ref var entry = ref GetRefByHash(hash);
 
         if (entry.Key is not null)
         {
-            while (true)
+            do
             {
                 if (entry.HashCode == hash && key.SequenceEqual(entry.Key.AsSpan()))
                 {
@@ -409,13 +418,15 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
 
                 if (entry.Next < 0)
                 {
-                    break;
+                    goto fail;
                 }
 
                 entry = ref _entries[entry.Next];
             }
+            while (true);
         }
 
+    fail:
         return ref Unsafe.NullRef<Entry>();
     }
 
@@ -428,28 +439,16 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         // I barely understand this algorithm, but it's how the .NET dictionary works on 64-bit platforms. Sources:
         // - https://lemire.me/blog/2019/02/08/faster-remainders-when-the-divisor-is-a-constant-beating-compilers-and-libdivide/
         // - https://github.com/dotnet/runtime/pull/406
-        (uint)(((((multiplier * hash) >> 32) + 1) * divisor) >> 32);
+        unchecked((uint)(((((multiplier * hash) >> 32) + 1u) * divisor) >> 32));
 
     private static ulong CalculateFastmodMultiplier(uint divisor) =>
         divisor == 0 ? 0 : (ulong.MaxValue / divisor) + 1;
 
-#if NO_SPAN_HASHCODE
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static uint CalculateHash(string key) => StringEx.GetStableOrdinalHashCode(key);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint CalculateHash(string key) => unchecked((uint)StringEx.GetHashCode(key));
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint CalculateHash(ReadOnlySpan<char> key) => unchecked((uint)StringEx.GetHashCode(key));
-
-#else
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint CalculateHash(string key) => unchecked((uint)key.GetHashCode());
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint CalculateHash(ReadOnlySpan<char> key) => unchecked((uint)string.GetHashCode(key));
-
-#endif
+    private static uint CalculateHash(ReadOnlySpan<char> key) => StringEx.GetStableOrdinalHashCode(key);
 
     private static uint CalculateBestCellarIndexForCapacity(int capacity)
     {
@@ -494,6 +493,16 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         }
     }
 
+#if !NO_EXPOSED_NULLANNOTATIONS
+    [System.Diagnostics.CodeAnalysis.DoesNotReturn]
+#endif
+    private static void ThrowAddFailed() => ExceptionEx.ThrowInvalidOperation("Failed to add");
+
+#if !NO_EXPOSED_NULLANNOTATIONS
+    [System.Diagnostics.CodeAnalysis.DoesNotReturn]
+#endif
+    private static void ThrowDuplicateKey() => ExceptionEx.ThrowInvalidOperation("Duplicate key");
+
     public sealed class KeysCollection : ICollection<string>
     {
         internal KeysCollection(TextDictionary<TValue> dictionary)
@@ -506,11 +515,11 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         public int Count => _dictionary.Count;
         public bool IsReadOnly => true;
 
-        public void Add(string item) => throw new NotSupportedException();
-        public void Clear() => throw new NotSupportedException();
+        public void Add(string item) => ExceptionEx.ThrowNotSupported();
+        public void Clear() => ExceptionEx.ThrowNotSupported();
         public bool Contains(string item) => _dictionary.ContainsKey(item);
-        public void CopyTo(string[] array, int arrayIndex) => throw new NotImplementedException();
-        public bool Remove(string item) => throw new NotSupportedException();
+        public void CopyTo(string[] array, int arrayIndex) => ExceptionEx.ThrowNotImplementedYet();
+        public bool Remove(string item) => ExceptionEx.ThrowNotSupported<bool>();
         public IEnumerator<string> GetEnumerator() => _dictionary.FilledEntries.Select(static e => e.Key).GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
@@ -527,11 +536,11 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         public int Count => _dictionary.Count;
         public bool IsReadOnly => true;
 
-        public void Add(TValue item) => throw new NotSupportedException();
-        public void Clear() => throw new NotSupportedException();
+        public void Add(TValue item) => ExceptionEx.ThrowNotSupported();
+        public void Clear() => ExceptionEx.ThrowNotSupported();
         public bool Contains(TValue item) => GetValues().Contains(item);
-        public void CopyTo(TValue[] array, int arrayIndex) => throw new NotImplementedException();
-        public bool Remove(TValue item) => throw new NotSupportedException();
+        public void CopyTo(TValue[] array, int arrayIndex) => ExceptionEx.ThrowNotImplementedYet();
+        public bool Remove(TValue item) => ExceptionEx.ThrowNotSupported<bool>();
         public IEnumerator<TValue> GetEnumerator() => GetValues().GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         private IEnumerable<TValue> GetValues() => _dictionary.FilledEntries.Select(static e => e.Value);
@@ -573,7 +582,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         internal KeyLengthEnumerator(TextDictionary<TValue> dictionary, int minKeyLength, int maxKeyLength)
         {
 #if DEBUG
-            if (minKeyLength > maxKeyLength) throw new ArgumentOutOfRangeException(nameof(maxKeyLength));
+            ExceptionEx.ThrowIfArgumentLessThan(maxKeyLength, minKeyLength, nameof(maxKeyLength));
 #endif
 
             _entries = dictionary._entries;
@@ -597,7 +606,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
             {
                 ref var entry = ref _entries[_index++];
 
-                if (entry.Key?.Length is { } keyLength && keyLength <= _maxKeyLength && keyLength >= _minKeyLength)
+                if (entry.Key is not null && CheckMatchingKeyLength(entry.Key.Length))
                 {
                     _current = new(entry.Key, entry.Value);
                     return true;
@@ -606,6 +615,9 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
 
             return false;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private readonly bool CheckMatchingKeyLength(int length) => length <= _maxKeyLength && length >= _minKeyLength;
     }
 
     private struct Builder
@@ -684,6 +696,7 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
 #if !NO_EXPOSED_NULLANNOTATIONS
             [System.Diagnostics.CodeAnalysis.DoesNotReturn]
 #endif
+            [MethodImpl(MethodImplOptions.NoInlining)]
             static void throwNoRoomForCollision() => throw new NotSupportedException();
         }
 

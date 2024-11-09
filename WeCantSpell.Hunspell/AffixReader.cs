@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,7 +17,6 @@ public sealed partial class AffixReader
 {
     public static readonly Encoding DefaultEncoding = EncodingEx.GetEncodingByName("ISO8859-1") ?? Encoding.UTF8;
 
-    private static readonly ImmutableArray<string> DefaultBreakTableEntries = ImmutableArray.Create("-", "^-", "-$");
     private static readonly CharacterSet DefaultCompoundVowels = CharacterSet.Create("AEIOUaeiou");
     private static readonly TextDictionary<AffixConfigOptions> BitFlagCommandMap;
     private static readonly TextDictionary<AffixReaderCommandKind> CommandMap;
@@ -121,7 +121,7 @@ public sealed partial class AffixReader
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(filePath);
 #else
-        if (filePath is null) throw new ArgumentNullException(nameof(filePath));
+        ExceptionEx.ThrowIfArgumentNull(filePath, nameof(filePath));
 #endif
 
         using var stream = StreamEx.OpenAsyncReadFileStream(filePath);
@@ -136,18 +136,9 @@ public sealed partial class AffixReader
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(stream);
 #else
-        if (stream is null) throw new ArgumentNullException(nameof(stream));
+        ExceptionEx.ThrowIfArgumentNull(stream, nameof(stream));
 #endif
 
-        return await ReadInternalAsync(stream, builder, cancellationToken).ConfigureAwait(false);
-    }
-
-#if NO_VALUETASK
-    private static async Task<AffixConfig> ReadInternalAsync(Stream stream, AffixConfig.Builder? builder, CancellationToken cancellationToken)
-#else
-    private static async ValueTask<AffixConfig> ReadInternalAsync(Stream stream, AffixConfig.Builder? builder, CancellationToken cancellationToken)
-#endif
-    {
         var readerInstance = new AffixReader(builder);
 
         using (var lineReader = new LineReader(stream, readerInstance.Encoding, allowEncodingChanges: true))
@@ -171,7 +162,7 @@ public sealed partial class AffixReader
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(filePath);
 #else
-        if (filePath is null) throw new ArgumentNullException(nameof(filePath));
+        ExceptionEx.ThrowIfArgumentNull(filePath, nameof(filePath));
 #endif
 
         using var stream = StreamEx.OpenReadFileStream(filePath);
@@ -208,7 +199,7 @@ public sealed partial class AffixReader
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(stream);
 #else
-        if (stream is null) throw new ArgumentNullException(nameof(stream));
+        ExceptionEx.ThrowIfArgumentNull(stream, nameof(stream));
 #endif
 
         var readerInstance = new AffixReader(builder);
@@ -281,7 +272,7 @@ public sealed partial class AffixReader
         {
             if (_builder._breakPoints.Count == 0)
             {
-                _builder._breakPoints.AddRange(DefaultBreakTableEntries);
+                _builder._breakPoints.AddRange(["-", "^-", "-$"]);
             }
         }
 
@@ -292,7 +283,7 @@ public sealed partial class AffixReader
     {
         if (!CommandMap.TryGetValue(commandName, out var command))
         {
-            LogWarning($"Unknown command {commandName.ToString()} with params: {parameters.ToString()}");
+            LogWarning(StringEx.ConcatString("Unknown command ", commandName, " with params: ", parameters));
             return false;
         }
 
@@ -434,12 +425,13 @@ public sealed partial class AffixReader
             case AffixReaderCommandKind.AliasM:
                 return TryParseStandardListItem(EntryListType.AliasM, parameters, _builder.AliasM, TryParseAliasM);
             default:
-                LogWarning($"Unknown parsed command {command}");
+                LogWarning(string.Concat("Unknown parsed command ", command.ToString()));
                 return false;
         }
     }
 
     private delegate bool EntryParserForImmutableArray<T>(ReadOnlySpan<char> parameterText, ImmutableArray<T>.Builder entries);
+
     private bool TryParseStandardListItem<T>(EntryListType entryListType, ReadOnlySpan<char> parameterText, ImmutableArray<T>.Builder entries, EntryParserForImmutableArray<T> parse)
     {
         if (!IsInitialized(entryListType))
@@ -635,13 +627,13 @@ public sealed partial class AffixReader
             }
             else
             {
-                handleInvalidConv();
+                ExceptionEx.ThrowInvalidOperation("Invalid CONV");
             }
         }
 
         if (state < 2)
         {
-            LogWarning($"Bad {entryListType}: {parameterText.ToString()}");
+            LogWarning(StringEx.ConcatString("Bad ", entryListType.ToString(), ": ", parameterText));
             return false;
         }
 
@@ -671,14 +663,6 @@ public sealed partial class AffixReader
 
         entry.Set(type, pattern2.ReplaceIntoString('_', ' '));
         return true;
-
-#if !NO_EXPOSED_NULLANNOTATIONS
-        [System.Diagnostics.CodeAnalysis.DoesNotReturn]
-#endif
-        static void handleInvalidConv()
-        {
-            throw new InvalidOperationException();
-        }
     }
 
     private bool TryParseBreak(ReadOnlySpan<char> parameterText, ArrayBuilder<string> entries)
@@ -830,13 +814,9 @@ public sealed partial class AffixReader
         }
 
         // piece 4 - is affix string or 0 for null
-        StringBuilder affixTextBuilder;
-        string affixText;
 
         if (group2.IndexOf('/') is int affixSlashIndex and >= 0)
         {
-            affixTextBuilder = StringBuilderPool.Get(group2.Slice(0, affixSlashIndex));
-
             if (_builder.AliasF is { Count: > 0 } aliasF)
             {
                 if (IntEx.TryParseInvariant(group2.Slice(affixSlashIndex + 1), out var aliasNumber) && aliasNumber > 0 && aliasNumber <= aliasF.Count)
@@ -845,7 +825,7 @@ public sealed partial class AffixReader
                 }
                 else
                 {
-                    LogWarning($"Failed to parse contclasses from : {parameterText.ToString()}");
+                    LogWarning(StringEx.ConcatString("Failed to parse contclasses from : ", parameterText));
                     return false;
                 }
             }
@@ -853,37 +833,37 @@ public sealed partial class AffixReader
             {
                 contClass = _flagParser.ParseFlagSet(group2.Slice(affixSlashIndex + 1));
             }
-        }
-        else
-        {
-            affixTextBuilder = StringBuilderPool.Get(group2);
+
+            group2 = group2.Slice(0, affixSlashIndex);
         }
 
-        if (_builder.IgnoredChars.HasItems)
+        string affixText;
+        if (group2.IsEmpty || group2.EqualsOrdinal('0'))
         {
-            affixTextBuilder.RemoveChars(_builder.IgnoredChars);
-        }
-
-        if (affixTextBuilder.Length == 1 && affixTextBuilder[0] == '0')
-        {
-            StringBuilderPool.Return(affixTextBuilder);
             affixText = string.Empty;
         }
         else
         {
-            if (_builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes))
-            {
-                affixTextBuilder.Reverse();
-            }
+            affixText = _builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes)
+                ? group2.ToStringReversed()
+                : group2.ToString();
 
-            affixText = StringBuilderPool.GetStringAndReturn(affixTextBuilder);
+            if (_builder.IgnoredChars.HasItems)
+            {
+                affixText = _builder.IgnoredChars.RemoveChars(affixText);
+
+                if (affixText.EqualsOrdinal('0'))
+                {
+                    affixText = string.Empty; // This should be re-checked after characters are removed
+                }
+            }
         }
 
         // piece 5 - is the conditions descriptions
         var conditionText = group3;
         if (_builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes))
         {
-            conditionText = ReverseCondition(conditionText).AsSpan();
+            conditionText = ReverseCondition(conditionText);
         }
 
         var conditions = CharacterConditionGroup.Parse(conditionText);
@@ -911,7 +891,7 @@ public sealed partial class AffixReader
                 }
                 else
                 {
-                    LogWarning($"Failed to parse morph {morphAffixText.ToString()} from: {parameterText.ToString()}");
+                    LogWarning(StringEx.ConcatString("Failed to parse morph ", morphAffixText, " from: ", parameterText));
                     return false;
                 }
             }
@@ -957,73 +937,71 @@ public sealed partial class AffixReader
         return true;
     }
 
-    private static string ReverseCondition(ReadOnlySpan<char> conditionText)
+    private static ReadOnlySpan<char> ReverseCondition(ReadOnlySpan<char> conditionText)
     {
-        // TODO: Would it be better to reverse the conditions after parsing?
-        //       Instead of reversing a string it could reverse a CharacterConditionGroup.
+        return conditionText.Length <= 1 ? conditionText : reverseCharacters(conditionText);
 
-        if (conditionText.IsEmpty)
+        static ReadOnlySpan<char> reverseCharacters(ReadOnlySpan<char> conditionText)
         {
-            return string.Empty;
-        }
+            var chars = conditionText.ToArray().AsSpan();
+            chars.Reverse();
 
-        var chars = StringBuilderPool.Get(conditionText);
-        chars.Reverse();
-        var neg = false;
-        var lastIndex = chars.Length - 1;
+            var neg = false;
+            var lastIndex = chars.Length - 1;
 
-        for (var k = lastIndex; k >= 0; k--)
-        {
-            switch (chars[k])
+            for (var k = lastIndex; k >= 0; k--)
             {
-                case '[':
-                    if (neg)
-                    {
+                switch (chars[k])
+                {
+                    case '[':
+                        if (neg)
+                        {
+                            if (k < lastIndex)
+                            {
+                                chars[k + 1] = '[';
+                            }
+                        }
+                        else
+                        {
+                            chars[k] = ']';
+                        }
+
+                        break;
+                    case ']':
+                        chars[k] = '[';
+                        if (neg && k < lastIndex)
+                        {
+                            chars[k + 1] = '^';
+                        }
+
+                        neg = false;
+
+                        break;
+                    case '^':
                         if (k < lastIndex)
                         {
-                            chars[k + 1] = '[';
+                            if (chars[k + 1] == ']')
+                            {
+                                neg = true;
+                            }
+                            else if (neg)
+                            {
+                                chars[k + 1] = chars[k];
+                            }
                         }
-                    }
-                    else
-                    {
-                        chars[k] = ']';
-                    }
 
-                    break;
-                case ']':
-                    chars[k] = '[';
-                    if (neg && k < lastIndex)
-                    {
-                        chars[k + 1] = '^';
-                    }
-
-                    neg = false;
-
-                    break;
-                case '^':
-                    if (k < lastIndex)
-                    {
-                        if (chars[k + 1] == ']')
-                        {
-                            neg = true;
-                        }
-                        else if (neg)
+                        break;
+                    default:
+                        if (neg && k < lastIndex)
                         {
                             chars[k + 1] = chars[k];
                         }
-                    }
-
-                    break;
-                default:
-                    if (neg && k < lastIndex)
-                    {
-                        chars[k + 1] = chars[k];
-                    }
-                    break;
+                        break;
+                }
             }
-        }
 
-        return StringBuilderPool.GetStringAndReturn(chars);
+            return chars;
+        }
     }
 
     private bool TryParseReplacements(ReadOnlySpan<char> parameterText, ArrayBuilder<SingleReplacement> entries)
@@ -1053,7 +1031,7 @@ public sealed partial class AffixReader
 
         if (state < 1)
         {
-            LogWarning("Failed to parse replacements from: " + parameterText.ToString());
+            LogWarning(StringEx.ConcatString("Failed to parse replacements from: ", parameterText));
             return false;
         }
 
@@ -1166,15 +1144,15 @@ public sealed partial class AffixReader
         {
             if (state == ParseCheckCompoundPatternState.FailCondition1)
             {
-                LogWarning($"Failed to parse pattern condition 1 from: {parameterText.ToString()}");
+                LogWarning(StringEx.ConcatString("Failed to parse pattern condition 1 from: ", parameterText));
             }
             else if (state == ParseCheckCompoundPatternState.FailCondition2)
             {
-                LogWarning($"Failed to parse pattern condition 2 from: {parameterText.ToString()}");
+                LogWarning(StringEx.ConcatString("Failed to parse pattern condition 2 from: ", parameterText));
             }
             else
             {
-                LogWarning($"Failed to parse compound pattern from: {parameterText.ToString()}");
+                LogWarning(StringEx.ConcatString("Failed to parse compound pattern from: ", parameterText));
             }
 
             return false;
@@ -1200,13 +1178,13 @@ public sealed partial class AffixReader
 
         if (TryParseFlagMode(modeText) is not { } mode)
         {
-            LogWarning($"Unknown FlagMode: {modeText.ToString()}");
+            LogWarning(StringEx.ConcatString("Unknown FlagMode: ", modeText));
             return false;
         }
 
         if (_builder.FlagMode == mode)
         {
-            LogWarning($"Redundant FlagMode: {modeText.ToString()}");
+            LogWarning(StringEx.ConcatString("Redundant FlagMode: ", modeText));
             return false;
         }
 
@@ -1259,7 +1237,7 @@ public sealed partial class AffixReader
             }
         }
 
-        return default;
+        return null;
     }
 
     [Flags]
