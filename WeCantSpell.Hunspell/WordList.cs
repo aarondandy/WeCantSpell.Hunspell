@@ -166,7 +166,7 @@ public sealed partial class WordList
             if (details.Length == 0) ExceptionEx.ThrowInvalidOperation();
 #endif
 
-            return (WordEntry?)new WordEntry(key, details[0]);
+            return new WordEntry(key, details[0]);
         }
 
         return null;
@@ -180,7 +180,7 @@ public sealed partial class WordList
             if (details.Length == 0) ExceptionEx.ThrowInvalidOperation();
 #endif
 
-            return (WordEntry?)new WordEntry(rootWord, details[0]);
+            return new WordEntry(rootWord, details[0]);
         }
 
         return null;
