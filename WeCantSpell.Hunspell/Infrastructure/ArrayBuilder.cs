@@ -15,7 +15,7 @@ sealed class ArrayBuilder<T> : IList<T>
     internal ArrayBuilder(T[] values)
     {
         _values = values;
-        Count = values.Length;
+        _count = values.Length;
     }
 
     public ArrayBuilder(int initialCapacity)
@@ -30,8 +30,9 @@ sealed class ArrayBuilder<T> : IList<T>
     }
 
     private T[] _values;
+    private int _count;
 
-    public int Count { get; private set; } = 0;
+    public int Count => _count;
 
     public int Capacity => _values.Length;
 
@@ -39,7 +40,7 @@ sealed class ArrayBuilder<T> : IList<T>
 
     public void Clear()
     {
-        Count = 0;
+        _count = 0;
     }
 
     public T this[int index]
@@ -91,7 +92,7 @@ sealed class ArrayBuilder<T> : IList<T>
             EnsureCapacityAtLeast(Count + 1);
         }
 
-        _values[Count++] = value;
+        _values[_count++] = value;
     }
 
     public void AddRange(IEnumerable<T> values)
@@ -119,7 +120,7 @@ sealed class ArrayBuilder<T> : IList<T>
         var futureSize = Count + values.Count;
         EnsureCapacityAtLeast(futureSize);
         values.CopyTo(_values, Count);
-        Count = futureSize;
+        _count = futureSize;
     }
 
     public void AddRange(T[] values)
@@ -133,7 +134,7 @@ sealed class ArrayBuilder<T> : IList<T>
         var futureSize = Count + values.Length;
         EnsureCapacityAtLeast(futureSize);
         values.CopyTo(_values, Count);
-        Count = futureSize;
+        _count = futureSize;
     }
 
     public void AddRange(ReadOnlySpan<T> values)
@@ -141,7 +142,7 @@ sealed class ArrayBuilder<T> : IList<T>
         var futureSize = Count + values.Length;
         EnsureCapacityAtLeast(futureSize);
         values.CopyTo(_values.AsSpan());
-        Count = futureSize;
+        _count = futureSize;
     }
 
     public void GrowToCapacity(int requiredLength)
@@ -230,7 +231,7 @@ sealed class ArrayBuilder<T> : IList<T>
 
         _values[insertionIndex] = value;
 
-        Count++;
+        _count++;
     }
 
     public void RemoveAt(int index)
@@ -254,7 +255,7 @@ sealed class ArrayBuilder<T> : IList<T>
 
             _values[newSize] = default!;
 
-            Count = newSize;
+            _count = newSize;
         }
     }
 
@@ -308,6 +309,8 @@ sealed class ArrayBuilder<T> : IList<T>
     public T[] MakeOrExtractArray(bool extract) => extract ? Extract() : MakeArray();
 
     internal int BinarySearch(int startIndex, int count, T value) => Array.BinarySearch(_values, startIndex, count, value);
+
+    internal Span<T> AsSpan() => _values.AsSpan(0, _count);
 
     private int CalculateBestCapacity(int minCapacity) => Math.Max(CalculateNextCapacity(), minCapacity);
 

@@ -104,4 +104,5 @@ static class CollectionsEx
     public static ImmutableArray<T> ToImmutable<T>(this ImmutableArray<T>.Builder builder, bool allowDestructive) =>
         allowDestructive && builder.Capacity == builder.Count ? builder.MoveToImmutable() : builder.ToImmutable();
 
+    public static string BuildString(this ArrayBuilder<char> builder) => builder.AsSpan().ToString();
 }
