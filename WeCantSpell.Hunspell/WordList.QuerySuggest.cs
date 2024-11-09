@@ -2189,11 +2189,13 @@ public partial class WordList
 
                     wlstNh.Word = phon;
 
-                    // It should be impossible for wlstNh.Word to be null as phon is already checked
-                    // if (wlstNh.Word is null)
-                    // {
-                    //     return nh - 1;
-                    // }
+#if DEBUG
+                    // It should be impossible for wlstNh.Word to be null as phon is already checked.
+                    // This case used to execute `return nh - 1;`.
+                    // The logic behind removing this check was that phon which is non-null is assigned
+                    // directly to it, meaning it too is non-null.
+                    if (wlstNh.Word is null) ExceptionEx.ThrowInvalidOperation();
+#endif
 
                     wlstNh.Allow = false;
                     wlstNh.Orig = entry.Word;
