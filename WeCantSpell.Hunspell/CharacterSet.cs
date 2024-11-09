@@ -15,7 +15,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
     public static bool operator !=(CharacterSet left, CharacterSet right) => !(left == right);
 
-    public static CharacterSet Create(char value) => new(value);
+    public static CharacterSet Create(char value) => new(value.ToString());
 
     public static CharacterSet Create(IEnumerable<char> values)
     {
@@ -38,8 +38,15 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
         ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
-        // TODO: if sorted, just use the string as is
-        return Create(values.AsSpan());
+        var valuesSpan = values.AsSpan();
+        if (valuesSpan.CheckSortedWithoutDuplicates())
+        {
+            return new(values);
+        }
+
+        var builder = new Builder(values.Length);
+        builder.AddRange(valuesSpan);
+        return builder.Create(allowDestructive: true);
     }
 
     public static CharacterSet Create(ReadOnlySpan<char> values)
@@ -49,16 +56,17 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
             return Empty;
         }
 
+        if (values.CheckSortedWithoutDuplicates())
+        {
+            return new(values.ToString());
+        }
+
         var builder = new Builder(values.Length);
         builder.AddRange(values);
         return builder.Create(allowDestructive: true);
     }
 
 #if HAS_SEARCHVALUES
-
-    private CharacterSet(char value) : this(value.ToString())
-    {
-    }
 
     private CharacterSet(string values)
     {
@@ -70,10 +78,6 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
     private readonly SearchValues<char>? _searchValues;
 
 #else
-
-    private CharacterSet(char value) : this(value.ToString())
-    {
-    }
 
     private CharacterSet(string values)
     {
@@ -324,18 +328,12 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
             ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
-            foreach (var value in values)
-            {
-                Add(value);
-            }
+            _builder.AddAsSortedSet(values);
         }
 
         public void AddRange(ReadOnlySpan<char> values)
         {
-            foreach (var value in values)
-            {
-                Add(value);
-            }
+            _builder.AddAsSortedSet(values);
         }
 
         public CharacterSet Create() => Create(allowDestructive: false);

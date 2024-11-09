@@ -145,6 +145,22 @@ static class MemoryEx
 
 #endif
 
+    public static bool CheckSortedWithoutDuplicates(this ReadOnlySpan<char> span)
+    {
+        if (span.Length > 1)
+        {
+            for (var i = 1; i < span.Length; i++)
+            {
+                if (span[i - 1] >= span[i])
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
     public static void RemoveAll<T>(ref Span<T> span, T value) where T : notnull, IEquatable<T>
     {
         var readIndex = span.IndexOf(value);
