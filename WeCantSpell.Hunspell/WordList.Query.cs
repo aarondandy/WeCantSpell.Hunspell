@@ -89,25 +89,27 @@ public partial class WordList
         /// </summary>
         private string? _suffixAppend;
 
-        private void ClearAffixes()
-        {
-            _prefix = null;
-            _suffix = null;
-        }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ClearPrefix()
         {
             _prefix = null;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ClearSuffix()
         {
             _suffix = null;
         }
 
+        private void ClearAffixes()
+        {
+            ClearPrefix();
+            ClearSuffix();
+        }
+
         private void ClearSuffixAndFlag()
         {
-            _suffix = null;
+            ClearSuffix();
             _suffixFlag = default;
         }
 
@@ -117,32 +119,38 @@ public partial class WordList
             _suffixExtra = false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ClearAllAppendAndExtra()
         {
-            //PrefixAppend = null;
+            // _prefixAppend = null;
             ClearSuffixAppendAndExtra();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SetPrefix(PrefixEntry prefix)
         {
             _prefix = prefix;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SetSuffix(SuffixEntry suffix)
         {
             _suffix = suffix;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SetSuffixFlag(FlagValue flag)
         {
             _suffixFlag = flag;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SetSuffixExtra(bool extra)
         {
             _suffixExtra = extra;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SetSuffixAppend(string append)
         {
             _suffixAppend = append;
