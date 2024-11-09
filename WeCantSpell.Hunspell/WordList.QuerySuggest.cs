@@ -2550,10 +2550,10 @@ public partial class WordList
 
         private static bool CopyField(ref string dest, MorphSet morphs, string var)
         {
-            if (morphs.Count != 0)
+            if (morphs.Count > 0)
             {
                 var morph = morphs.Join(' ').AsSpan();
-                if (morph.Length != 0)
+                if (morph.Length > 0)
                 {
                     var pos = morph.IndexOf(var.AsSpan(), StringComparison.Ordinal);
                     if (pos >= 0)
