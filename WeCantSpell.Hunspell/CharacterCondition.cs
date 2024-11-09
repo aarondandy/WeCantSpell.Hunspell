@@ -117,7 +117,7 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 
     public override bool Equals(object? obj) => obj is CharacterCondition cc && Equals(cc);
 
-    public override int GetHashCode() => HashCode.Combine(Count, _mode, StringEx.GetStableOrdinalHashCode(GetInternalArray()));
+    public override int GetHashCode() => HashCode.Combine(StringEx.GetStableOrdinalHashCode(GetInternalArray()), _mode);
 
     internal char[] GetInternalArray() => _characters ?? [];
 
