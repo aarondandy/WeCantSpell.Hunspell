@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
@@ -173,6 +174,20 @@ ref struct StringBuilderSpan
 
             value.CopyTo(_bufferSpan.Slice(_length));
             _length += value.Length;
+        }
+    }
+
+    public void Append(IEnumerable<char> values)
+    {
+        var expectedCount = values.GetNonEnumeratedCountOrDefault();
+        if (_length + expectedCount > _bufferSpan.Length)
+        {
+            GrowBufferToCapacity(_length + expectedCount);
+        }
+
+        foreach (var value in values)
+        {
+            Append(value);
         }
     }
 
@@ -483,6 +498,38 @@ ref struct StringBuilderSpan
 
         value.CopyTo(_bufferSpan.Slice(index));
         _length = newSize;
+    }
+
+    public readonly void Sort()
+    {
+#if NO_SPAN_SORT
+        Array.Sort(_bufferRental, 0, _length);
+#else
+        CurrentSpan.Sort();
+#endif
+    }
+
+    public void RemoveAdjacentDuplicates()
+    {
+        if (_length < 2)
+        {
+            return;
+        }
+
+        var i = 1;
+        do
+        {
+            if (_bufferSpan[i - 1] == _bufferSpan[i])
+            {
+                _bufferSpan.Slice(i + 1, _length - i - 1).CopyTo(_bufferSpan.Slice(i));
+                _length--;
+            }
+            else
+            {
+                i++;
+            }
+        }
+        while (i < _length);
     }
 
     public string ToStringInitCap(TextInfo textInfo)

@@ -25,9 +25,11 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
         ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
-        var builder = ArrayBuilder<char>.Pool.Get();
-        builder.AddAsSortedSet(values);
-        return new(CollectionsEx.BuildStringAndReturn(builder));
+        var builder = new StringBuilderSpan(values.GetNonEnumeratedCountOrDefault());
+        builder.Append(values);
+        builder.Sort();
+        builder.RemoveAdjacentDuplicates();
+        return new(builder.GetStringAndDispose());
     }
 
     public static CharacterSet Create(string values)
@@ -44,9 +46,10 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
             return new(values);
         }
 
-        var builder = ArrayBuilder<char>.Pool.Get(values.Length);
-        builder.AddAsSortedSet(valuesSpan);
-        return new(CollectionsEx.BuildStringAndReturn(builder));
+        var builder = new StringBuilderSpan(values);
+        builder.Sort();
+        builder.RemoveAdjacentDuplicates();
+        return new(builder.GetStringAndDispose());
     }
 
     public static CharacterSet Create(ReadOnlySpan<char> values)
@@ -56,14 +59,10 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
             return Empty;
         }
 
-        if (values.CheckSortedWithoutDuplicates())
-        {
-            return new(values.ToString());
-        }
-
-        var builder = ArrayBuilder<char>.Pool.Get(values.Length);
-        builder.AddAsSortedSet(values);
-        return new(CollectionsEx.BuildStringAndReturn(builder));
+        var builder = new StringBuilderSpan(values);
+        builder.Sort();
+        builder.RemoveAdjacentDuplicates();
+        return new(builder.GetStringAndDispose());
     }
 
 #if HAS_SEARCHVALUES
@@ -102,6 +101,12 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
             ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
             ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
+
+            if (_values is null)
+            {
+                ExceptionEx.ThrowInvalidOperation("CharacterSet is not initialized");
+            }
+
             return _values![index];
         }
     }
@@ -302,14 +307,14 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
     {
         public Builder()
         {
-            _builder = ArrayBuilder<char>.Pool.Get();
+            _builder = new ArrayBuilder<char>();
         }
 
         public Builder(int capacity)
         {
             _builder = capacity is >= 0 and <= CollectionsEx.CollectionPreallocationLimit
-                ? ArrayBuilder<char>.Pool.Get(capacity)
-                : ArrayBuilder<char>.Pool.Get();
+                ? new ArrayBuilder<char>(capacity)
+                : new ArrayBuilder<char>();
         }
 
         private readonly ArrayBuilder<char> _builder;
@@ -318,8 +323,6 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
         {
             _builder.AddAsSortedSet(value);
         }
-
-        internal CharacterSet Create(bool allowDestructive) => new(_builder.BuildString());
 
         public void AddRange(IEnumerable<char> values)
         {
@@ -337,6 +340,6 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
             _builder.AddAsSortedSet(values);
         }
 
-        public CharacterSet Create() => Create(allowDestructive: false);
+        public CharacterSet Create() => new(_builder.BuildString());
     }
 }
