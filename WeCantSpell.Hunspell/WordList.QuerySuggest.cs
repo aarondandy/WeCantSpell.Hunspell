@@ -1380,8 +1380,13 @@ public partial class WordList
                 rv = _query.SuffixCheck(word, AffixEntryOptions.None, null, default, default, CompoundOptions.Not); // only suffix
             }
 
-            if (rv is null && Affix.ContClasses.HasItems)
+            if (rv is null)
             {
+                if (Affix.ContClasses.IsEmpty)
+                {
+                    goto noResult;
+                }
+
                 rv = _query.SuffixCheckTwoSfx(word, AffixEntryOptions.None, null, default)
                     ?? _query.PrefixCheckTwoSfx(word, CompoundOptions.Not, default);
             }
@@ -1391,7 +1396,7 @@ public partial class WordList
                 // check forbidden words
                 if (rv.ContainsAnyFlags(Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest_OnlyInCompound))
                 {
-                    return 0;
+                    goto noResult;
                 }
 
                 // XXX obsolete
@@ -1402,6 +1407,8 @@ public partial class WordList
 
                 return 1;
             }
+
+        noResult:
 
             return 0;
         }
