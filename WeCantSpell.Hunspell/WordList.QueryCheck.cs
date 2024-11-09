@@ -389,7 +389,7 @@ public partial class WordList
 
         private WordEntry? CheckDetailsInitCap(bool abbv, CapitalizationType capType, ref string scw, ref SpellCheckResultType resultType, out string? root)
         {
-            using var u8buffer = new StringBuilderSpan(scw.Length);
+            var u8buffer = new StringBuilderSpan(scw.Length);
             u8buffer.AppendLower(scw.AsSpan(), Affix.Culture);
 
             scw = u8buffer.ToStringInitCap(TextInfo);
@@ -413,8 +413,8 @@ public partial class WordList
 
             if (resultType.HasFlagEx(SpellCheckResultType.Forbidden))
             {
-                rv = null;
-                return rv;
+                u8buffer.Dispose();
+                return null;
             }
 
             if (capType == CapitalizationType.All && rv is not null && IsKeepCase(rv))
@@ -424,6 +424,7 @@ public partial class WordList
 
             if (rv is not null || (!Affix.CultureUsesDottedI && scw.StartsWith('İ')))
             {
+                u8buffer.Dispose();
                 return rv;
             }
 
@@ -454,6 +455,7 @@ public partial class WordList
                         rv = null;
                     }
 
+                    u8buffer.Dispose();
                     return rv;
                 }
             }
@@ -474,6 +476,7 @@ public partial class WordList
                 rv = null;
             }
 
+            u8buffer.Dispose();
             return rv;
         }
 
