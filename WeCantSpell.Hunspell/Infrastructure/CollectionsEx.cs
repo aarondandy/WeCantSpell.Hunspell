@@ -105,4 +105,11 @@ static class CollectionsEx
         allowDestructive && builder.Capacity == builder.Count ? builder.MoveToImmutable() : builder.ToImmutable();
 
     public static string BuildString(this ArrayBuilder<char> builder) => builder.AsSpan().ToString();
+
+    public static string BuildStringAndReturn(ArrayBuilder<char> builder)
+    {
+        var result = builder.BuildString();
+        ArrayBuilder<char>.Pool.Return(builder);
+        return result;
+    }
 }

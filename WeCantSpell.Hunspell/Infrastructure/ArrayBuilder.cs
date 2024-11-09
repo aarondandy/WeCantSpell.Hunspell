@@ -202,6 +202,12 @@ sealed class ArrayBuilder<T> : IList<T>
 
     public void AddAsSortedSet(IEnumerable<T> values)
     {
+        var expectedCount = values.GetNonEnumeratedCountOrDefault();
+        if (expectedCount > 0)
+        {
+            EnsureCapacityAtLeast(_count + expectedCount);
+        }
+
         AddRange(values);
         Array.Sort(_values, 0, _count);
         RemoveAdjacentDuplicates();

@@ -25,9 +25,9 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
         ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
-        var builder = new Builder();
-        builder.AddRange(values);
-        return builder.Create(allowDestructive: true);
+        var builder = ArrayBuilder<char>.Pool.Get();
+        builder.AddAsSortedSet(values);
+        return new(CollectionsEx.BuildStringAndReturn(builder));
     }
 
     public static CharacterSet Create(string values)
@@ -44,9 +44,9 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
             return new(values);
         }
 
-        var builder = new Builder(values.Length);
-        builder.AddRange(valuesSpan);
-        return builder.Create(allowDestructive: true);
+        var builder = ArrayBuilder<char>.Pool.Get(values.Length);
+        builder.AddAsSortedSet(valuesSpan);
+        return new(CollectionsEx.BuildStringAndReturn(builder));
     }
 
     public static CharacterSet Create(ReadOnlySpan<char> values)
@@ -61,9 +61,9 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
             return new(values.ToString());
         }
 
-        var builder = new Builder(values.Length);
-        builder.AddRange(values);
-        return builder.Create(allowDestructive: true);
+        var builder = ArrayBuilder<char>.Pool.Get(values.Length);
+        builder.AddAsSortedSet(values);
+        return new(CollectionsEx.BuildStringAndReturn(builder));
     }
 
 #if HAS_SEARCHVALUES
@@ -297,18 +297,19 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
     public override int GetHashCode() => (int)StringEx.GetStableOrdinalHashCode(ToString());
 
+    [Obsolete("This type may be replaced with CharacterSet.Create factory methods.")]
     public sealed class Builder
     {
         public Builder()
         {
-            _builder = new ArrayBuilder<char>();
+            _builder = ArrayBuilder<char>.Pool.Get();
         }
 
         public Builder(int capacity)
         {
             _builder = capacity is >= 0 and <= CollectionsEx.CollectionPreallocationLimit
-                ? new ArrayBuilder<char>(capacity)
-                : new ArrayBuilder<char>();
+                ? ArrayBuilder<char>.Pool.Get(capacity)
+                : ArrayBuilder<char>.Pool.Get();
         }
 
         private readonly ArrayBuilder<char> _builder;
