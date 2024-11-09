@@ -802,13 +802,13 @@ public partial class WordList
                                 CompoundCheckHungarianAffix1(st.TerminatedSpan.Limit(i), ref wordNum, ref numSyllable);
                             }
 
-#pragma warning disable IDE0007 // Use implicit type
+#if DEBUG
+                            if (rv is null) ExceptionEx.ThrowInvalidOperation();
+#endif
 
                             // NEXT WORD(S)
-                            WordEntry rvFirst = rv;
+                            var rvFirst = rv;
                             var simplifiedTripple = false;
-
-#pragma warning restore IDE0007 // Use implicit type
 
                             st[i] = ch;
 
