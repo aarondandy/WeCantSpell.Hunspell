@@ -1703,10 +1703,6 @@ public partial class WordList
             return null;
         }
 
-        private readonly WordEntry? LookupFirst(ReadOnlySpan<char> word) => WordList.FindFirstEntryByRootWord(word);
-
-        private readonly WordEntry? LookupFirst(string word) => WordList.FindFirstEntryByRootWord(word);
-
         public readonly bool TryLookupDetails(
             ReadOnlySpan<char> word,
 #if !NO_EXPOSED_NULLANNOTATIONS
@@ -1968,19 +1964,23 @@ public partial class WordList
 
         private bool CompoundCheckExplicitlyForbidden(ReadOnlySpan<char> word, int len, int i, WordEntry rv, SimulatedCString st)
         {
-            var rv2 = LookupFirst(word);
-
-            if (rv2 is null && len <= word.Length)
+            if (WordList.TryFindFirstEntryDetailByRootWord(word, out var rv2Details))
             {
-                rv2 = AffixCheck(word.Slice(0, len), default, CompoundOptions.Not);
+                return rv2Details.ContainsFlag(Affix.ForbiddenWord)
+                    && equalsOrdinalLimited(word, st.TerminatedSpan, rv.Word.Length + i);
+            }
+            else if (len <= word.Length)
+            {
+                var rv2 = AffixCheck(word.Slice(0, len), default, CompoundOptions.Not);
+                return rv2 is not null
+                    && rv2.ContainsFlag(Affix.ForbiddenWord)
+                    && equalsOrdinalLimited(rv2.Word.AsSpan(), st.TerminatedSpan, rv.Word.Length + i);
             }
 
-            return rv2 is not null
-                && rv2.ContainsFlag(Affix.ForbiddenWord)
-                && equalsOrdinalLimited(rv2.Word, st.TerminatedSpan, rv.Word.Length + i);
+            return false;
 
-            static bool equalsOrdinalLimited(string a, ReadOnlySpan<char> b, int limit) =>
-                a.AsSpan(0, Math.Min(a.Length, limit)).EqualsOrdinal(b.Limit(limit));
+            static bool equalsOrdinalLimited(ReadOnlySpan<char> a, ReadOnlySpan<char> b, int limit) =>
+                a.Limit(limit).EqualsOrdinal(b.Limit(limit));
         }
 
         private WordEntry? CheckWordPrefix(PrefixEntry affix, ReadOnlySpan<char> word, CompoundOptions inCompound, FlagValue needFlag)

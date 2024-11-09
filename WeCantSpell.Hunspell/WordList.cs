@@ -158,34 +158,6 @@ public sealed partial class WordList
 
     public IEnumerable<string> Suggest(ReadOnlySpan<char> word, QueryOptions? options, CancellationToken cancellationToken) => new QuerySuggest(this, options, cancellationToken).Suggest(word);
 
-    private WordEntry? FindFirstEntryByRootWord(ReadOnlySpan<char> rootWord)
-    {
-        if (EntriesByRoot.TryGetValue(rootWord, out var key, out var details))
-        {
-#if DEBUG
-            if (details.Length == 0) ExceptionEx.ThrowInvalidOperation();
-#endif
-
-            return new WordEntry(key, details[0]);
-        }
-
-        return null;
-    }
-
-    private WordEntry? FindFirstEntryByRootWord(string rootWord)
-    {
-        if (EntriesByRoot.TryGetValue(rootWord, out var details))
-        {
-#if DEBUG
-            if (details.Length == 0) ExceptionEx.ThrowInvalidOperation();
-#endif
-
-            return new WordEntry(rootWord, details[0]);
-        }
-
-        return null;
-    }
-
     private WordEntryDetail[] FindEntryDetailsByRootWord(string rootWord)
     {
         return EntriesByRoot.TryGetValue(rootWord, out var details)
@@ -198,20 +170,6 @@ public sealed partial class WordList
         return EntriesByRoot.TryGetValue(rootWord, out var details)
             ? details
             : [];
-    }
-
-    private WordEntryDetail? FindFirstEntryDetailByRootWord(ReadOnlySpan<char> rootWord)
-    {
-        if (EntriesByRoot.TryGetValue(rootWord, out var details))
-        {
-#if DEBUG
-            if (details.Length == 0) ExceptionEx.ThrowInvalidOperation();
-#endif
-
-            return details[0];
-        }
-
-        return null;
     }
 
     private bool TryFindFirstEntryDetailByRootWord(ReadOnlySpan<char> rootWord, out WordEntryDetail entryDetail)

@@ -571,8 +571,6 @@ public partial class WordList
 
         private readonly bool Check(ReadOnlySpan<char> word) => new QueryCheck(_query).Check(word);
 
-        private readonly WordEntryDetail? LookupFirstDetail(ReadOnlySpan<char> word) => WordList.FindFirstEntryDetailByRootWord(word);
-        
         private readonly bool TryLookupFirstDetail(ReadOnlySpan<char> word, out WordEntryDetail wordEntryDetail) => WordList.TryFindFirstEntryDetailByRootWord(word, out wordEntryDetail);
 
         private readonly bool TryLookupFirstDetail(string word, out WordEntryDetail wordEntryDetail) => WordList.TryFindFirstEntryDetailByRootWord(word, out wordEntryDetail);
@@ -2480,19 +2478,19 @@ public partial class WordList
 
         private bool CheckForbidden(ReadOnlySpan<char> word)
         {
-            var rv = LookupFirstDetail(word);
-            if (rv.HasValue && rv.GetValueOrDefault().ContainsAnyFlags(Affix.Flags_NeedAffix_OnlyInCompound))
-            {
-                rv = null;
-            }
+            // check forbidden words
 
             if (_query.PrefixCheck(word, CompoundOptions.Begin, default) is null)
             {
-                rv = _query.SuffixCheck(word, AffixEntryOptions.None, null, default, default, CompoundOptions.Not)?.Detail; // prefix+suffix, suffix
+                var rv = _query.SuffixCheck(word, AffixEntryOptions.None, null, default, default, CompoundOptions.Not); // prefix+suffix, suffix
+                return (rv is not null && rv.ContainsFlag(Affix.ForbiddenWord));
+            }
+            else if (WordList.TryFindFirstEntryDetailByRootWord(word, out var rvDetail) && rvDetail.DoesNotContainAnyFlags(Affix.Flags_NeedAffix_OnlyInCompound))
+            {
+                return rvDetail.ContainsFlag(Affix.ForbiddenWord);
             }
 
-            // check forbidden words
-            return (rv.HasValue && rv.GetValueOrDefault().ContainsFlag(Affix.ForbiddenWord));
+            return false;
         }
 
         /// <summary>
