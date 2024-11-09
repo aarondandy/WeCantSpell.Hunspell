@@ -97,7 +97,7 @@ static class CollectionsEx
 
 #else
 
-    public static bool Contains<T>(this T[] values, T value) where T : IEquatable<T> => values.AsSpan().Contains(value)!;
+    public static bool Contains<T>(this T[] values, T value) where T : IEquatable<T> => values.AsSpan().Contains(value);
 
 #endif
 
