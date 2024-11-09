@@ -47,8 +47,8 @@ This port will likely perform slower relative to the original binaries and [NHun
 
 | Benchmark | .NET 8       | .NET 4.8     | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
 |-----------|------------- |--------------|--------------|
-| Check     | 🐢 7,376 μs | 🐌 19,496 μs | 🐇 6,324 μs |
-| Suggest   | 🐇 367 ms   | 🐢 758 ms    | 🐌 1,904 ms |
+| Check     | 🐇 5,878 μs | 🐌 18,268 μs | 🐇 6,121 μs |
+| Suggest   | 🐇 365 ms   | 🐢 807 ms    | 🐌 1,903 ms |
 
 _Note: Measurements taken on an AMD 5800H._
 
