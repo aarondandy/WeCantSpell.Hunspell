@@ -8,7 +8,6 @@ using WeCantSpell.Hunspell.Benchmarks.Helpers;
 namespace WeCantSpell.Hunspell.Benchmarks.Suites;
 
 [SimpleJob(id: "Check en-US", runtimeMoniker: RuntimeMoniker.Net80, baseline: true)]
-[SimpleJob(id: "Check en-US", runtimeMoniker: RuntimeMoniker.Net60)]
 [MinColumn, MeanColumn, MedianColumn]
 public class CheckEnUsSuite
 {

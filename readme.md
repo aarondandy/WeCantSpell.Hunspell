@@ -41,14 +41,12 @@ bool ok = dictionary.Check("Colour");
 
 ## Performance
 
-"Good enough"
-
-This port will likely perform slower relative to the original binaries and [NHunspell](https://www.nuget.org/packages/NHunspell/) but it should be acceptable. It is worth considering that while NHunspell is faster, it hasn't been updated in a long while and may be missing important fixes and changes.
+This port performs competitively on newer versions of the .NET framework compared to the original [NHunspell](https://www.nuget.org/packages/NHunspell/) binaries.
 
 | Benchmark | .NET 8       | .NET 4.8     | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
-|-----------|------------- |--------------|--------------|
-| Check     | 🐇 5,878 μs | 🐌 18,268 μs | 🐇 6,121 μs |
-| Suggest   | 🐇 365 ms   | 🐢 807 ms    | 🐌 1,903 ms |
+|-----------|--------------|--------------|--------------|
+| Check     | 🐇 5,980 μs | 🐌 18,268 μs | 🐇 6,121 μs |
+| Suggest   | 🐇 358 ms   | 🐢 807 ms    | 🐌 1,903 ms |
 
 _Note: Measurements taken on an AMD 5800H._
 
