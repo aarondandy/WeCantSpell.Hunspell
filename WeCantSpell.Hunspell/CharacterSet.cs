@@ -2,7 +2,6 @@
 using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -10,7 +9,7 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterSet>
 {
-    public static readonly CharacterSet Empty = new([]);
+    public static readonly CharacterSet Empty = new(string.Empty);
 
     public static bool operator ==(CharacterSet left, CharacterSet right) => left.Equals(right);
 
@@ -39,6 +38,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
         ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
+        // TODO: if sorted, just use the string as is
         return Create(values.AsSpan());
     }
 
@@ -56,31 +56,31 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
 #if HAS_SEARCHVALUES
 
-    private CharacterSet(char value) : this([value])
+    private CharacterSet(char value) : this(value.ToString())
     {
     }
 
-    private CharacterSet(char[] values)
+    private CharacterSet(string values)
     {
         _values = values;
         _searchValues = SearchValues.Create(values);
     }
 
-    private readonly char[]? _values;
+    private readonly string? _values;
     private readonly SearchValues<char>? _searchValues;
 
 #else
 
-    private CharacterSet(char value) : this([value])
+    private CharacterSet(char value) : this(value.ToString())
     {
     }
 
-    private CharacterSet(char[] values)
+    private CharacterSet(string values)
     {
         _values = values;
     }
 
-    private readonly char[]? _values;
+    private readonly string? _values;
 
 #endif
 
@@ -102,11 +102,9 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
         }
     }
 
-    public IEnumerator<char> GetEnumerator() => ((IEnumerable<char>)GetInternalArray()).GetEnumerator();
+    public IEnumerator<char> GetEnumerator() => ToString().GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-    private char[] GetInternalArray() => _values ?? [];
 
 #if HAS_SEARCHVALUES
 
@@ -127,12 +125,12 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
             return _values.Length <= 8
                 ? checkIterative(_values, value)
-                : Array.BinarySearch(_values, value) >= 0;
+                : _values.AsSpan().BinarySearch(value) >= 0;
         }
 
         return false;
 
-        static bool checkIterative(char[] searchSpace, char target)
+        static bool checkIterative(string searchSpace, char target)
         {
             foreach (var value in searchSpace)
             {
@@ -287,18 +285,13 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
         return builder.GetStringAndDispose();
     }
 
-    public override string ToString() => new(GetInternalArray());
+    public override string ToString() => _values ?? string.Empty;
 
-    public bool Equals(CharacterSet obj) => GetInternalArray().SequenceEqual(obj.GetInternalArray());
+    public bool Equals(CharacterSet obj) => ToString().Equals(obj.ToString(), StringComparison.Ordinal);
 
     public override bool Equals(object? obj) => obj is CharacterSet set && Equals(set);
 
-    public override int GetHashCode() =>
-#if HAS_SEARCHVALUES
-        HashCode.Combine(Count, HasItems ? _values![0] : default);
-#else
-        (int)StringEx.GetStableOrdinalHashCode(_values);
-#endif
+    public override int GetHashCode() => (int)StringEx.GetStableOrdinalHashCode(ToString());
 
     public sealed class Builder
     {
@@ -316,43 +309,12 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
         private readonly ArrayBuilder<char> _builder;
 
-#if HAS_SEARCHVALUES
-
         public void Add(char value)
         {
             _builder.AddAsSortedSet(value);
         }
 
-        internal CharacterSet Create(bool allowDestructive)
-        {
-            CharacterSet result;
-            if (allowDestructive)
-            {
-                result = new(_builder.Extract());
-            }
-            else
-            {
-                result = new(_builder.MakeArray());
-            }
-
-            return result;
-        }
-
-#else
-
-        public void Add(char value)
-        {
-            _builder.AddAsSortedSet(value);
-        }
-
-        internal CharacterSet Create(bool allowDestructive)
-        {
-            return allowDestructive
-                ? new(_builder.Extract())
-                : new(_builder.MakeArray());
-        }
-
-#endif
+        internal CharacterSet Create(bool allowDestructive) => new(_builder.BuildString());
 
         public void AddRange(IEnumerable<char> values)
         {
