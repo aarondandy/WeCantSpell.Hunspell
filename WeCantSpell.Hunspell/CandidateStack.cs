@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -24,9 +25,12 @@ struct CandidateStack
 
     public static void Pop(ref CandidateStack stack)
     {
-        if (stack._rest is { Count: > 0 } rest)
+        if (stack._rest is { Count: > 0 })
         {
-            rest.RemoveAt(rest.Count - 1);
+            pop(stack._rest);
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            static void pop(List<string> items) => items.RemoveAt(items.Count - 1);
         }
         else
         {
