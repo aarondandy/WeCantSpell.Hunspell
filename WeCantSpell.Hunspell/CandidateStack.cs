@@ -24,18 +24,13 @@ struct CandidateStack
 
     public static void Pop(ref CandidateStack stack)
     {
-        if (stack._rest is { Count: > 0 })
+        if (stack._rest is { Count: > 0 } rest)
         {
-            pop(stack._rest);
+            rest.RemoveAt(rest.Count - 1);
         }
         else
         {
             stack._s0 = null;
-        }
-
-        static void pop(List<string> values)
-        {
-            values.RemoveAt(values.Count - 1);
         }
     }
 
