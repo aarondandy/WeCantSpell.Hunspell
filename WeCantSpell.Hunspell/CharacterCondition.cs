@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,6 +39,23 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 
     public static CharacterCondition CreateSequence(string chars) => new(chars, ModeKind.MatchSequence);
 
+#if HAS_SEARCHVALUES
+
+    private CharacterCondition(string characters, ModeKind mode)
+    {
+        _characters = characters;
+        _mode = mode;
+        _searchValues = _mode is not ModeKind.MatchSequence
+            ? SearchValues.Create(characters)
+            : null;
+    }
+
+    private readonly string? _characters;
+    private readonly SearchValues<char>? _searchValues;
+    private readonly ModeKind _mode;
+
+#else
+
     private CharacterCondition(string characters, ModeKind mode)
     {
         _characters = characters;
@@ -45,8 +63,9 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
     }
 
     private readonly string? _characters;
-
     private readonly ModeKind _mode;
+
+#endif
 
     public IReadOnlyList<char> Characters => _characters is not null ? _characters.ToCharArray() : [];
 
@@ -83,6 +102,12 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
+#if HAS_SEARCHVALUES
+
+    public bool Contains(char c) => _searchValues is not null ? _searchValues.Contains(c) : _characters!.Contains(c);
+
+#else
+
     public bool Contains(char c) =>
         _characters is not null
         &&
@@ -91,6 +116,8 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
             ? _characters.Contains(c)
             : MemoryEx.SortedContains(_characters.AsSpan(), c)
         );
+
+#endif
 
     public bool MatchesAnySingleCharacter => _mode == ModeKind.RestrictChars && IsEmpty;
 
