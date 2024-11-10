@@ -13,7 +13,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
     public static bool operator ==(CharacterSet left, CharacterSet right) => left.Equals(right);
 
-    public static bool operator !=(CharacterSet left, CharacterSet right) => !(left == right);
+    public static bool operator !=(CharacterSet left, CharacterSet right) => !left.Equals(right);
 
     public static CharacterSet Create(char value) => new(value.ToString());
 
@@ -41,15 +41,9 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 #endif
 
         var valuesSpan = values.AsSpan();
-        if (valuesSpan.CheckSortedWithoutDuplicates())
-        {
-            return new(values);
-        }
-
-        var builder = new StringBuilderSpan(values);
-        builder.Sort();
-        builder.RemoveAdjacentDuplicates();
-        return new(builder.GetStringAndDispose());
+        return valuesSpan.CheckSortedWithoutDuplicates()
+            ? new(values)
+            : Create(valuesSpan);
     }
 
     public static CharacterSet Create(ReadOnlySpan<char> values)
@@ -88,8 +82,11 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 #endif
 
     public int Count => _values is null ? 0 : _values.Length;
+
     public bool IsEmpty => _values is not { Length: > 0 };
+
     public bool HasItems => _values is { Length: > 0 };
+
     public char this[int index]
     {
         get
@@ -104,7 +101,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
             if (_values is null)
             {
-                ExceptionEx.ThrowInvalidOperation("CharacterSet is not initialized");
+                ExceptionEx.ThrowInvalidOperation("Set is not initialized");
             }
 
             return _values![index];
@@ -123,39 +120,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
 #else
 
-    public bool Contains(char value)
-    {
-        if (_values is not null)
-        {
-            if (_values.Length == 1)
-            {
-                return _values[0].Equals(value);
-            }
-
-            return _values.Length <= 8
-                ? checkIterative(_values, value)
-                : _values.AsSpan().BinarySearch(value) >= 0;
-        }
-
-        return false;
-
-        static bool checkIterative(string searchSpace, char target)
-        {
-            foreach (var value in searchSpace)
-            {
-                if (value == target)
-                {
-                    return true;
-                }
-                if (value > target)
-                {
-                    break;
-                }
-            }
-
-            return false;
-        }
-    }
+    public bool Contains(char value) => MemoryEx.SortedContains(_values.AsSpan(), value);
 
     public int FindIndexOfMatch(ReadOnlySpan<char> text)
     {

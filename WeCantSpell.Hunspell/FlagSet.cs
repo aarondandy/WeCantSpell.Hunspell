@@ -255,37 +255,6 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         }
     }
 
-    private static bool SortedContains(ReadOnlySpan<char> sorted, char value)
-    {
-        return sorted.Length switch
-        {
-            0 => false,
-            1 => sorted[0] == value,
-            2 => sorted[0] == value || sorted[1] == value,
-            3 => sorted[0] == value || sorted[1] == value || sorted[2] == value,
-            <= 8 => checkIterative(sorted, value),
-            _ => sorted.BinarySearch(value) >= 0
-        };
-
-        static bool checkIterative(ReadOnlySpan<char> searchSpace, char target)
-        {
-            foreach (var value in searchSpace)
-            {
-                if (value == target)
-                {
-                    return true;
-                }
-
-                if (value > target)
-                {
-                    break;
-                }
-            }
-
-            return false;
-        }
-    }
-
 #endif
 
     private FlagSet(FlagValue value) : this((char)value)
@@ -419,7 +388,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
                 1 => _values[0] == value,
                 2 => _values[0] == value || _values[1] == value,
                 3 => _values[0] == value || _values[1] == value || _values[2] == value,
-                _ => SortedContains(_values, value),
+                _ => MemoryEx.SortedContains(_values, value),
             };
     }
 
@@ -438,7 +407,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
                 1 => _values[0] != value,
                 2 => _values[0] != value && _values[1] != value,
                 3 => _values[0] != value && _values[1] != value && _values[2] != value,
-                _ => !SortedContains(_values, value),
+                _ => !MemoryEx.SortedContains(_values, value),
             };
     }
 
@@ -537,12 +506,12 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         {
             return other.Length == 1
                 ? _values[0] == other[0]
-                : SortedContains(other, _values[0]);
+                : MemoryEx.SortedContains(other, _values[0]);
         }
 
         var values = _values.AsSpan();
         return other.Length == 1
-            ? SortedContains(values, other[0])
+            ? MemoryEx.SortedContains(values, other[0])
             : SortedInterectionTest(values, other);
     }
 
