@@ -202,6 +202,14 @@ ref struct StringBuilderSpan
         _length++;
     }
 
+    public void AppendIfNotNull(char value)
+    {
+        if (value != default)
+        {
+            Append(value);
+        }
+    }
+
     public void AppendLower(scoped ReadOnlySpan<char> value, CultureInfo cultureInfo)
     {
         var space = AppendSpaceForImmediateWrite(value.Length);
@@ -455,6 +463,16 @@ ref struct StringBuilderSpan
         }
 
         _length -= count;
+    }
+
+    public void RemoveAll(char value)
+    {
+        var index = _bufferSpan.Slice(0, _length).IndexOf(value);
+        while (index >= 0 && index < _length)
+        {
+            RemoveAt(index);
+            index = ((ReadOnlySpan<char>)_bufferSpan.Slice(0, _length)).IndexOf(value, index);
+        }
     }
 
     public void Insert(int index, char value)

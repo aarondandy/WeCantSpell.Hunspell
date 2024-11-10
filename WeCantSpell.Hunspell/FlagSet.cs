@@ -11,11 +11,11 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 {
-    public static readonly FlagSet Empty = new([]);
+    public static readonly FlagSet Empty = new(string.Empty);
 
     public static bool operator ==(FlagSet left, FlagSet right) => left.Equals(right);
 
-    public static bool operator !=(FlagSet left, FlagSet right) => !(left == right);
+    public static bool operator !=(FlagSet left, FlagSet right) => !left.Equals(right);
 
     public static FlagSet Create(FlagValue value) => value.IsZero ? Empty : new(value);
 
@@ -52,14 +52,44 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
-        var builder = values is ICollection collection ? new Builder(collection.Count) : new Builder();
-        builder.AddRange(values);
-        return builder.MoveToFlagSet();
+        var builder = new StringBuilderSpan(values.GetNonEnumeratedCountOrDefault());
+
+        foreach (var value in values)
+        {
+            builder.AppendIfNotNull(value);
+        }
+
+        builder.Sort();
+        builder.RemoveAdjacentDuplicates();
+        return new(builder.GetStringAndDispose());
+    }
+
+    public static FlagSet Create(ReadOnlySpan<FlagValue> values)
+    {
+        var builder = new StringBuilderSpan(values.Length);
+
+        foreach (var value in values)
+        {
+            builder.AppendIfNotNull(value);
+        }
+
+        builder.Sort();
+        builder.RemoveAdjacentDuplicates();
+        return new(builder.GetStringAndDispose());
     }
 
     internal static FlagSet ParseAsChars(ReadOnlySpan<char> text)
     {
-        return text.IsEmpty ? Empty : CreateUsingBuffer(text);
+        if (text.IsEmpty)
+        {
+            return Empty;
+        }
+
+        var builder = new StringBuilderSpan(text);
+        builder.RemoveAll('\0');
+        builder.Sort();
+        builder.RemoveAdjacentDuplicates();
+        return new(builder.GetStringAndDispose());
     }
 
     internal static FlagSet ParseAsLongs(ReadOnlySpan<char> text)
@@ -70,19 +100,21 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         }
 
         var lastIndex = text.Length - 1;
-        var builder = new Builder((text.Length + 1) / 2);
+        var builder = new StringBuilderSpan((text.Length + 1) / 2);
 
         for (var i = 0; i < lastIndex; i += 2)
         {
-            builder.Add(FlagValue.CreateAsLong(text[i], text[i + 1]));
+            builder.AppendIfNotNull(FlagValue.CreateAsLong(text[i], text[i + 1]));
         }
 
         if ((lastIndex & 1) == 0)
         {
-            builder.Add(new FlagValue(text[lastIndex]));
+            builder.AppendIfNotNull(new FlagValue(text[lastIndex]));
         }
 
-        return builder.MoveToFlagSet();
+        builder.Sort();
+        builder.RemoveAdjacentDuplicates();
+        return new(builder.GetStringAndDispose());
     }
 
     internal static FlagSet ParseAsNumbers(ReadOnlySpan<char> text)
@@ -92,17 +124,19 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             return Empty;
         }
 
-        var flags = new Builder();
+        var builder = new StringBuilderSpan(text.Length);
 
         foreach (var part in text.SplitOnComma(StringSplitOptions.RemoveEmptyEntries))
         {
             if (FlagValue.TryParseAsNumber(part, out var value))
             {
-                flags.Add(value);
+                builder.AppendIfNotNull(value);
             }
         }
 
-        return flags.MoveToFlagSet();
+        builder.Sort();
+        builder.RemoveAdjacentDuplicates();
+        return new(builder.GetStringAndDispose());
     }
 
     private static void PrepareMutableFlagValuesForUse(ref Span<char> values)
@@ -114,6 +148,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         MemoryEx.RemoveAdjacentDuplicates(ref values);
     }
 
+    [Obsolete]
     private static void PrepareMutableFlagValuesForUse(ref char[] values)
     {
         var valuesSpan = values.AsSpan();
@@ -133,32 +168,16 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         }
     }
 
-    internal static FlagSet CreateUsingOwnedBuffer(char[] values)
-    {
-        PrepareMutableFlagValuesForUse(ref values);
-        return values.Length == 0 ? Empty : new(values);
-    }
-
-    private static FlagSet CreateUsingBuffer(ReadOnlySpan<char> values)
-    {
-        return CreateUsingOwnedBuffer(values.Trim(FlagValue.Zero).ToArray());
-    }
-
     private static FlagSet CreateUsingMutableBuffer(Span<char> values)
     {
-        PrepareMutableFlagValuesForUse(ref values);
-
         if (values.IsEmpty)
         {
             return Empty;
         }
 
-        if (values.Length == 1)
-        {
-            return new(values[0]);
-        }
+        PrepareMutableFlagValuesForUse(ref values);
 
-        return new(values.ToArray());
+        return new(values.ToString());
     }
 
 #if !HAS_SEARCHVALUES
@@ -261,33 +280,33 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     {
     }
 
-    private FlagSet(char value) : this([value])
+    private FlagSet(char value) : this(value.ToString())
     {
     }
 
 #if HAS_SEARCHVALUES
 
-    private FlagSet(char[] values)
+    private FlagSet(string values)
     {
         _values = values;
         _searchValues = SearchValues.Create(values);
     }
 
-    private readonly char[]? _values;
+    private readonly string? _values;
     private readonly SearchValues<char>? _searchValues;
 
 #else
 
-    private FlagSet(char[] values)
+    private FlagSet(string values)
     {
         _values = values;
     }
 
-    private readonly char[]? _values;
+    private readonly string? _values;
 
 #endif
 
-    public int Count => _values is null ? 0 : _values.Length;
+    public int Count => _values is not null ? _values.Length : 0;
 
     public bool IsEmpty => _values is not { Length: > 0 };
 
@@ -304,11 +323,16 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
             ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
+            if (_values is null)
+            {
+                ExceptionEx.ThrowInvalidOperation("Not initialized");
+            }
+
             return (FlagValue)_values![index];
         }
     }
 
-    public IEnumerator<FlagValue> GetEnumerator() => GetInternalArray().Select(static v => (FlagValue)v).GetEnumerator();
+    public IEnumerator<FlagValue> GetEnumerator() => GetInternalText().Select(static v => (FlagValue)v).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -319,19 +343,32 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             return string.Empty;
         }
 
-        if (Array.TrueForAll(_values!, static v => v <= 128))
+        if (isAllAscii(_values!))
         {
-            return new string(_values);
+            return _values!;
         }
         else
         {
             return string.Join(",", _values!.Select(static v => ((int)v).ToString(CultureInfo.InvariantCulture.NumberFormat)));
         }
+
+        static bool isAllAscii(string value)
+        {
+            for (var i = 0; i < value.Length; i++)
+            {
+                if (value[i] >= 128)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 
-    public override int GetHashCode() => (int)StringEx.GetStableOrdinalHashCode(_values);
+    public override int GetHashCode() => (int)StringEx.GetStableOrdinalHashCode(GetInternalText());
 
-    public bool Equals(FlagSet other) => GetInternalArray().SequenceEqual(other.GetInternalArray());
+    public bool Equals(FlagSet other) => GetInternalText().Equals(other.GetInternalText(), StringComparison.Ordinal);
 
     public override bool Equals(object? obj) => obj is FlagSet set && Equals(set);
 
@@ -380,16 +417,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         return
             value != FlagValue.ZeroValue
             &&
-            _values is not null
-            &&
-            _values.Length switch
-            {
-                0 => false,
-                1 => _values[0] == value,
-                2 => _values[0] == value || _values[1] == value,
-                3 => _values[0] == value || _values[1] == value || _values[2] == value,
-                _ => MemoryEx.SortedContains(_values, value),
-            };
+            MemoryEx.SortedContains(_values.AsSpan(), value);
     }
 
     public bool DoesNotContain(FlagValue value) => DoesNotContain((char)value);
@@ -399,16 +427,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         return
             value == FlagValue.ZeroValue
             ||
-            _values is null
-            ||
-            _values.Length switch
-            {
-                0 => true,
-                1 => _values[0] != value,
-                2 => _values[0] != value && _values[1] != value,
-                3 => _values[0] != value && _values[1] != value && _values[2] != value,
-                _ => !MemoryEx.SortedContains(_values, value),
-            };
+            !MemoryEx.SortedContains(_values.AsSpan(), value);
     }
 
     public bool ContainsAny(FlagValue a, FlagValue b)
@@ -458,7 +477,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
                 : (
                     _values!.Length == 1
                         ? other.Contains(_values[0])
-                        : SortedInterectionTest(other._values, _values)
+                        : SortedInterectionTest(other._values.AsSpan(), _values.AsSpan())
                 )
             );
     }
@@ -475,7 +494,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
                 : (
                     _values!.Length == 1
                         ? other.DoesNotContain(_values[0])
-                        : !SortedInterectionTest(other._values, _values)
+                        : !SortedInterectionTest(other._values.AsSpan(), _values.AsSpan())
                 )
             );
     }
@@ -557,7 +576,9 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             return new(value);
         }
 
-        var valueIndex = Array.BinarySearch(_values!, value);
+        var oldValues = _values.AsSpan();
+
+        var valueIndex = oldValues.BinarySearch((char)value);
         if (valueIndex >= 0)
         {
             return this;
@@ -565,28 +586,29 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
         valueIndex = ~valueIndex; // locate the best insertion point
 
-        var newValues = new char[_values!.Length + 1];
-        if (valueIndex >= _values.Length)
+        var builder = new StringBuilderSpan(oldValues.Length + 1);
+
+        if (valueIndex >= oldValues.Length)
         {
-            _values.CopyTo(newValues.AsSpan());
-            newValues[_values.Length] = value;
+            builder.Append(oldValues);
+            builder.Append(value);
         }
         else if (valueIndex == 0)
         {
-            newValues[0] = value;
-            _values.CopyTo(newValues.AsSpan(1));
+            builder.Append(value);
+            builder.Append(oldValues);
         }
         else
         {
-            _values.AsSpan(0, valueIndex).CopyTo(newValues.AsSpan());
-            _values.AsSpan(valueIndex).CopyTo(newValues.AsSpan(valueIndex + 1));
-            newValues[valueIndex] = value;
+            builder.Append(oldValues.Slice(0, valueIndex));
+            builder.Append(value);
+            builder.Append(oldValues.Slice(valueIndex));
         }
 
-        return new(newValues);
+        return new(builder.GetStringAndDispose());
     }
 
-    internal char[] GetInternalArray() => _values ?? [];
+    internal string GetInternalText() => _values ?? string.Empty;
 
     public sealed class Builder
     {
@@ -628,17 +650,18 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
         public void AddRange(FlagSet values)
         {
-            if (values.HasItems)
-            {
-                AddRange(values._values!);
-            }
+            AddRange(values._values.AsSpan());
         }
 
-        public FlagSet Create() => new(_builder.MakeArray());
+        public FlagSet Create()
+        {
+            return new(_builder.BuildString());
+        }
 
         internal FlagSet MoveToFlagSet()
         {
-            var result = new FlagSet(ArrayBuilder<char>.Pool.ExtractAndReturn(_builder));
+            var result = new FlagSet(_builder.BuildString());
+            ArrayBuilder<char>.Pool.Return(_builder);
             _builder = null!; // This should operate as a very crude dispose
             return result;
         }

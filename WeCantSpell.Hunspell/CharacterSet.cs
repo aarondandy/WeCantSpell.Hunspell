@@ -101,7 +101,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
             if (_values is null)
             {
-                ExceptionEx.ThrowInvalidOperation("Set is not initialized");
+                ExceptionEx.ThrowInvalidOperation("Not initialized");
             }
 
             return _values![index];

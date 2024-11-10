@@ -72,7 +72,7 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 
             if (_characters is null)
             {
-                ExceptionEx.ThrowInvalidOperation("Condition is not initialized");
+                ExceptionEx.ThrowInvalidOperation("Not initialized");
             }
 
             return _characters![index];
@@ -116,7 +116,7 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 
     public bool Equals(CharacterCondition other) =>
         other._mode == _mode
-        && other.GetValuesAsText().SequenceEqual(GetValuesAsText());
+        && other.GetValuesAsText().Equals(GetValuesAsText(), StringComparison.Ordinal);
 
     public override bool Equals(object? obj) => obj is CharacterCondition cc && Equals(cc);
 

@@ -29,16 +29,16 @@ public readonly struct CompoundRule : IReadOnlyList<FlagValue>
 
         static FlagSet prepareNonWildcardValues(FlagValue[] values)
         {
-            var builder = new ArrayBuilder<char>(values.Length);
+            var builder = new FlagSet.Builder(values.Length);
             foreach (var value in values)
             {
                 if (value.IsNotWildcard)
                 {
-                    builder.AddAsSortedSet(value);
+                    builder.Add(value);
                 }
             }
 
-            return FlagSet.CreateUsingOwnedBuffer(builder.MakeOrExtractArray(extract: true));
+            return builder.MoveToFlagSet();
         }
     }
 
