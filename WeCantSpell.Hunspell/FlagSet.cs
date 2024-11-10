@@ -78,6 +78,15 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         return new(builder.GetStringAndDispose());
     }
 
+    internal static FlagSet CreateFromPreparedValues(string values)
+    {
+#if DEBUG
+        if (!values.AsSpan().CheckSortedWithoutDuplicates()) ExceptionEx.ThrowInvalidOperation();
+#endif
+
+        return new(values);
+    }
+
     internal static FlagSet ParseAsChars(ReadOnlySpan<char> text)
     {
         if (text.IsEmpty)
@@ -471,30 +480,32 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     public FlagSet Union(FlagSet other)
     {
-        if (other.IsEmpty)
-        {
-            return this;
-        }
-
-        if (IsEmpty)
+        if (_values is not { Length: > 0 })
         {
             return other;
         }
 
-        if (other.Count == 1)
+        if (other._values is not { Length: > 0 })
+        {
+            return this;
+        }
+
+        if (other._values.Length == 1)
         {
             return Union(other[0]);
         }
 
-        if (Count == 1)
+        if (_values.Length == 1)
         {
             return other.Union(this[0]);
         }
 
-        var builder = new Builder();
-        builder.AddRange(this);
-        builder.AddRange(other);
-        return builder.MoveToFlagSet();
+        var builder = new StringBuilderSpan(other.Count + Count);
+        builder.Append(_values);
+        builder.Append(other._values);
+        builder.Sort();
+        builder.RemoveAdjacentDuplicates();
+        return new(builder.GetStringAndDispose());
     }
 
     public FlagSet Union(FlagValue value)
@@ -543,6 +554,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     internal string GetInternalText() => _values ?? string.Empty;
 
+    [Obsolete("This type may be replaced with FlagSet.Create factory methods.")]
     public sealed class Builder
     {
         public Builder()

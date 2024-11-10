@@ -160,7 +160,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
         protected Dictionary<FlagValue, GroupBuilder> _byFlag = [];
         private protected ArrayBuilder<TAffixEntry> _emptyKeys = [];
-        protected FlagSet.Builder _contClassesBuilder = new();
+        protected HashSet<FlagValue> _contClassAccumulator = [];
         protected Dictionary<char, List<TAffixEntry>> _byFirstKeyChar = [];
 
         public GroupBuilder ForGroup(FlagValue aFlag)
@@ -187,7 +187,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
                 }
             }
 
-            target.ContClasses = allowDestructive ? _contClassesBuilder.MoveToFlagSet() : _contClassesBuilder.Create();
+            target.ContClasses = FlagSet.Create(_contClassAccumulator);
             target._affixesWithEmptyKeys = _emptyKeys.MakeOrExtractArray(allowDestructive);
 
 #if HAS_FROZENDICTIONARY
@@ -354,7 +354,10 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
                 Builder.Entries.Add(entry);
 
-                _parent._contClassesBuilder.AddRange(entry.ContClass);
+                if (entry.ContClass.HasItems)
+                {
+                    _parent._contClassAccumulator.UnionWith(entry.ContClass);
+                }
 
                 if (string.IsNullOrEmpty(entry.Key))
                 {
