@@ -70,7 +70,13 @@ sealed class ArrayBuilder<T> : IList<T>
 
     public void CopyTo(T[] array, int arrayIndex) => Array.Copy(_values, 0, array, arrayIndex, _count);
 
-    public IEnumerator<T> GetEnumerator() => _values.AsEnumerable().GetEnumerator();
+    public IEnumerator<T> GetEnumerator()
+    {
+        for (var i = 0; i < _count; i++)
+        {
+            yield return _values[i];
+        }
+    }
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
