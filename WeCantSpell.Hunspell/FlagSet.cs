@@ -323,26 +323,13 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             return string.Empty;
         }
 
-        if (isAllAscii(_values!))
+        if (_values!.All(static v => v < 128))
         {
             return _values!;
         }
         else
         {
             return string.Join(",", _values!.Select(static v => ((int)v).ToString(CultureInfo.InvariantCulture.NumberFormat)));
-        }
-
-        static bool isAllAscii(string value)
-        {
-            for (var i = 0; i < value.Length; i++)
-            {
-                if (value[i] >= 128)
-                {
-                    return false;
-                }
-            }
-
-            return true;
         }
     }
 
