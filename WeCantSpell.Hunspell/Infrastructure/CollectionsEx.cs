@@ -15,8 +15,9 @@ static class CollectionsEx
 
     public static int GetNonEnumeratedCountOrDefault<T>(this IEnumerable<T> enumerable) => enumerable switch
     {
-        ICollection<T> collectionGeneric => collectionGeneric.Count,
-        ICollection collectionOld => collectionOld.Count,
+        ICollection<T> c => c.Count,
+        ICollection c => c.Count,
+        IReadOnlyCollection<T> c => c.Count,
         _ => 0
     };
 
@@ -86,11 +87,6 @@ static class CollectionsEx
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool Any<T>(this List<T> list) => list.Count != 0;
 
-    public static void RemoveLast<T>(this List<T> list)
-    {
-        list.RemoveAt(list.Count - 1);
-    }
-
 #if NO_SPAN_CONTAINS
 
     public static bool Contains<T>(this T[] values, T value) where T : IEquatable<T> => Array.IndexOf(values, value) >= 0;
@@ -103,13 +99,4 @@ static class CollectionsEx
 
     public static ImmutableArray<T> ToImmutable<T>(this ImmutableArray<T>.Builder builder, bool allowDestructive) =>
         allowDestructive && builder.Capacity == builder.Count ? builder.MoveToImmutable() : builder.ToImmutable();
-
-    public static string BuildString(this ArrayBuilder<char> builder) => builder.AsSpan().ToString();
-
-    public static string BuildStringAndReturn(ArrayBuilder<char> builder)
-    {
-        var result = builder.BuildString();
-        ArrayBuilder<char>.Pool.Return(builder);
-        return result;
-    }
 }

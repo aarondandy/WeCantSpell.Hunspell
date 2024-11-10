@@ -148,26 +148,6 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         MemoryEx.RemoveAdjacentDuplicates(ref values);
     }
 
-    [Obsolete]
-    private static void PrepareMutableFlagValuesForUse(ref char[] values)
-    {
-        var valuesSpan = values.AsSpan();
-
-        PrepareMutableFlagValuesForUse(ref valuesSpan);
-
-        if (valuesSpan.Length < values.Length)
-        {
-            if (valuesSpan.IsEmpty)
-            {
-                values = [];
-            }
-            else
-            {
-                Array.Resize(ref values, valuesSpan.Length);
-            }
-        }
-    }
-
     private static FlagSet CreateUsingMutableBuffer(Span<char> values)
     {
         if (values.IsEmpty)
@@ -432,27 +412,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     public bool ContainsAny(FlagValue a, FlagValue b)
     {
-        if (IsEmpty)
-        {
-            return false;
-        }
-
-        if (b.IsZero || a == b)
-        {
-            return Contains(a);
-        }
-
-        if (a.IsZero)
-        {
-            return Contains(b);
-        }
-
-        if (a > b)
-        {
-            MemoryEx.Swap(ref a, ref b);
-        }
-
-        return ContainsAnyPrepared([a, b]);
+        return HasItems && ContainsAnyUnpreparedMutable([a, b]);
     }
 
     public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c)
@@ -499,39 +459,25 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             );
     }
 
-    private bool ContainsAnyUnpreparedMutable(Span<char> values)
+    private bool ContainsAnyUnpreparedMutable(Span<char> other)
     {
-        PrepareMutableFlagValuesForUse(ref values);
-        return ContainsAnyPrepared(values);
-    }
-
-    private bool ContainsAnyPrepared(ReadOnlySpan<char> other)
-    {
-
-#if DEBUG
-
-        if (IsEmpty) ExceptionEx.ThrowInvalidOperation();
-        ExceptionEx.ThrowIfArgumentEmpty(other, nameof(other));
-        if (other.Contains(FlagValue.ZeroValue)) ExceptionEx.ThrowArgumentOutOfRange(nameof(other), "Contains zero values");
-
-        for (var i = other.Length - 2; i >= 0; i--)
+        if (_values is not { Length: > 0 })
         {
-            if (other[i] > other[i + 1]) ExceptionEx.ThrowInvalidOperation("Values must be sorted in ascending order");
+            return false;
         }
 
-#endif
+        PrepareMutableFlagValuesForUse(ref other);
 
-        if (_values!.Length == 1)
+        if (_values.Length == 1)
         {
             return other.Length == 1
                 ? _values[0] == other[0]
                 : MemoryEx.SortedContains(other, _values[0]);
         }
 
-        var values = _values.AsSpan();
         return other.Length == 1
-            ? MemoryEx.SortedContains(values, other[0])
-            : SortedInterectionTest(values, other);
+            ? MemoryEx.SortedContains(_values.AsSpan(), other[0])
+            : SortedInterectionTest(_values.AsSpan(), other);
     }
 
 #endif
@@ -619,7 +565,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
         public Builder(int capacity)
         {
-            _builder = capacity is >= 0 and <= CollectionsEx.CollectionPreallocationLimit
+            _builder = capacity is >= 0 and <= 128
                 ? ArrayBuilder<char>.Pool.Get(capacity)
                 : ArrayBuilder<char>.Pool.Get();
         }
@@ -650,23 +596,23 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
         public void AddRange(FlagSet values)
         {
-            AddRange(values._values.AsSpan());
+            AddRangePreSorted(values._values.AsSpan());
         }
 
         public FlagSet Create()
         {
-            return new(_builder.BuildString());
+            return new(_builder.AsSpan().ToString());
         }
 
         internal FlagSet MoveToFlagSet()
         {
-            var result = new FlagSet(_builder.BuildString());
+            var result = new FlagSet(_builder.AsSpan().ToString());
             ArrayBuilder<char>.Pool.Return(_builder);
             _builder = null!; // This should operate as a very crude dispose
             return result;
         }
 
-        private void AddRange(ReadOnlySpan<char> values)
+        private void AddRangePreSorted(ReadOnlySpan<char> values)
         {
             if (_builder.Count == 0)
             {

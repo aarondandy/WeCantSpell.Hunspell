@@ -277,7 +277,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
         public Builder(int capacity)
         {
-            _builder = capacity is >= 0 and <= CollectionsEx.CollectionPreallocationLimit
+            _builder = capacity is >= 0 and <= 128
                 ? new ArrayBuilder<char>(capacity)
                 : new ArrayBuilder<char>();
         }
@@ -305,6 +305,6 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
             _builder.AddAsSortedSet(values);
         }
 
-        public CharacterSet Create() => new(_builder.BuildString());
+        public CharacterSet Create() => new(_builder.AsSpan().ToString());
     }
 }

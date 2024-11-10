@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
@@ -10,12 +11,6 @@ sealed class ArrayBuilder<T> : IList<T>
     public ArrayBuilder()
     {
         _values = [];
-    }
-
-    internal ArrayBuilder(T[] values)
-    {
-        _values = values;
-        _count = values.Length;
     }
 
     public ArrayBuilder(int initialCapacity)
@@ -36,7 +31,7 @@ sealed class ArrayBuilder<T> : IList<T>
 
     public int Capacity => _values.Length;
 
-    public bool IsReadOnly => false;
+    bool ICollection<T>.IsReadOnly => false;
 
     public void Clear()
     {
@@ -75,13 +70,7 @@ sealed class ArrayBuilder<T> : IList<T>
 
     public void CopyTo(T[] array, int arrayIndex) => Array.Copy(_values, 0, array, arrayIndex, _count);
 
-    public IEnumerator<T> GetEnumerator()
-    {
-        for (var i = 0; i < _count; i++)
-        {
-            yield return _values[i];
-        }
-    }
+    public IEnumerator<T> GetEnumerator() => _values.AsEnumerable().GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -103,24 +92,16 @@ sealed class ArrayBuilder<T> : IList<T>
         ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
+        var expectedSize = values.GetNonEnumeratedCountOrDefault();
+        if (expectedSize > 0)
+        {
+            EnsureCapacityAtLeast(_count + expectedSize);
+        }
+
         foreach (var value in values)
         {
             Add(value);
         }
-    }
-
-    public void AddRange(ICollection<T> values)
-    {
-#if HAS_THROWNULL
-        ArgumentNullException.ThrowIfNull(values);
-#else
-        ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
-#endif
-
-        var futureSize = _count + values.Count;
-        EnsureCapacityAtLeast(futureSize);
-        values.CopyTo(_values, _count);
-        _count = futureSize;
     }
 
     public void AddRange(T[] values)
@@ -348,26 +329,13 @@ sealed class ArrayBuilder<T> : IList<T>
         }
     }
 
-    public T[] MakeArray() => _count == 0 ? [] : _values.AsSpan(0, _count).ToArray();
+    public T[] MakeArray() => _count == 0 ? [] : AsSpan().ToArray();
 
     public T[] MakeOrExtractArray(bool extract) => extract ? Extract() : MakeArray();
 
     internal int BinarySearch(int startIndex, int count, T value) => Array.BinarySearch(_values, startIndex, count, value);
 
     internal Span<T> AsSpan() => _values.AsSpan(0, _count);
-
-    internal Span<T> AsSpan(int start) => _values.AsSpan(start, _count - start);
-
-    internal Span<T> AsSpan(int start, int length)
-    {
-#if DEBUG
-        ExceptionEx.ThrowIfArgumentLessThan(start, 0, nameof(start));
-        ExceptionEx.ThrowIfArgumentGreaterThan(start, _count, nameof(start));
-        ExceptionEx.ThrowIfArgumentLessThan(length, 0, nameof(length));
-        ExceptionEx.ThrowIfArgumentGreaterThan(start + length, _count, nameof(length));
-#endif
-        return _values.AsSpan(start, length);
-    }
 
     private int CalculateBestCapacity(int minCapacity) => Math.Max(CalculateNextCapacity(), minCapacity);
 

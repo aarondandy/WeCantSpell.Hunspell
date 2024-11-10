@@ -17,12 +17,6 @@ static class MemoryEx
         return result >= 0 ? result + startIndex : result;
     }
 
-    public static int IndexOf(this Span<char> @this, ReadOnlySpan<char> value, int startIndex)
-    {
-        var result = @this.Slice(startIndex).IndexOf(value);
-        return result >= 0 ? result + startIndex : result;
-    }
-
     public static bool SortedContains(ReadOnlySpan<char> sorted, char value)
     {
         return sorted.Length switch

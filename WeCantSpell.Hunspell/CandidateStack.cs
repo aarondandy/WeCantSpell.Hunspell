@@ -26,11 +26,16 @@ struct CandidateStack
     {
         if (stack._rest is { Count: > 0 })
         {
-            stack._rest.RemoveLast();
+            pop(stack._rest);
         }
         else
         {
             stack._s0 = null;
+        }
+
+        static void pop(List<string> values)
+        {
+            values.RemoveAt(values.Count - 1);
         }
     }
 
