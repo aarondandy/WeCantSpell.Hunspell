@@ -19,12 +19,13 @@ static class MemoryEx
 
     public static bool SortedLargeSearchSpaceContains(ReadOnlySpan<char> sorted, char value)
     {
-        return (value >= sorted[0] && value <= sorted[sorted.Length - 1])
+        return
+            (value <= sorted[sorted.Length - 1])
             &&
             (
-                sorted.Length <= 8
+                sorted.Length < 8
                 ? checkIterative(sorted, value)
-                : sorted.BinarySearch(value) >= 0
+                : (value >= sorted[0] && sorted.BinarySearch(value) >= 0)
             );
 
         static bool checkIterative(ReadOnlySpan<char> searchSpace, char target)
