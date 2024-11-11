@@ -871,7 +871,7 @@ public partial class WordList
                                     }
                                     else
                                     {
-                                        switch (CompoundCheck_TrySecondRoot(rvFirst, rv, word, i, len, tmpNumSyllable: numSyllable, tmpWordNum: wordNum, scpd: scpd, scpdPatternEntryCondition2, isSug))
+                                        switch (CompoundCheck_TrySecondRoot(rvFirst!, rv, word, i, len, tmpNumSyllable: numSyllable, tmpWordNum: wordNum, scpd: scpd, scpdPatternEntryCondition2, isSug))
                                         {
                                             case CompoundCheckOutcomes.Fail:
                                                 goto resultNull;
@@ -945,7 +945,7 @@ public partial class WordList
                                             : (
                                                 Affix.CompoundPatterns.HasItems
                                                 &&
-                                                Affix.CompoundPatterns.Check(word, i, rvFirst, rv, affixed)
+                                                Affix.CompoundPatterns.Check(word, i, rvFirst!, rv, affixed)
                                             )
                                         )
                                     )
@@ -959,7 +959,7 @@ public partial class WordList
                                     }
                                 }
 
-                                switch (CompoundCheck_TrySecondAffix(rvFirst, rv, word, i, len, tmpWordNum: wordNum, tmpNumSyllable: numSyllable))
+                                switch (CompoundCheck_TrySecondAffix(rvFirst!, rv, word, i, len, tmpWordNum: wordNum, tmpNumSyllable: numSyllable))
                                 {
                                     case CompoundCheckOutcomes.Fail:
                                         goto resultNull;
@@ -987,7 +987,7 @@ public partial class WordList
                                             ||
                                             i >= word.Length
                                             ||
-                                            (scpd != 0) == Affix.CompoundPatterns.Check(word, i, rvFirst, rv, affixed)
+                                            (scpd != 0) == Affix.CompoundPatterns.Check(word, i, rvFirst!, rv, affixed)
                                         )
                                     )
                                     {
