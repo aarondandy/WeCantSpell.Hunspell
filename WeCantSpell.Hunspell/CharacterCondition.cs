@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -39,23 +36,6 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 
     public static CharacterCondition CreateSequence(string chars) => new(chars, ModeKind.MatchSequence);
 
-#if HAS_SEARCHVALUES
-
-    private CharacterCondition(string characters, ModeKind mode)
-    {
-        _characters = characters;
-        _mode = mode;
-        _searchValues = _mode is not ModeKind.MatchSequence
-            ? SearchValues.Create(characters)
-            : null;
-    }
-
-    private readonly string? _characters;
-    private readonly SearchValues<char>? _searchValues;
-    private readonly ModeKind _mode;
-
-#else
-
     private CharacterCondition(string characters, ModeKind mode)
     {
         _characters = characters;
@@ -64,8 +44,6 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 
     private readonly string? _characters;
     private readonly ModeKind _mode;
-
-#endif
 
     public IReadOnlyList<char> Characters => _characters is not null ? _characters.ToCharArray() : [];
 
@@ -102,22 +80,17 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-#if HAS_SEARCHVALUES
-
-    public bool Contains(char c) => _searchValues is not null ? _searchValues.Contains(c) : _characters!.Contains(c);
-
-#else
-
     public bool Contains(char c) =>
         _characters is not null
         &&
-        (
-            (_mode is ModeKind.MatchSequence || _characters.Length <= 8)
-            ? _characters.Contains(c)
-            : MemoryEx.SortedContains(_characters.AsSpan(), c)
-        );
-
-#endif
+        _characters.Length switch
+        {
+            0 => false,
+            1 => _characters[0] == c,
+            _ => (_mode is ModeKind.MatchSequence)
+                ? _characters.Contains(c)
+                : MemoryEx.SortedContains(_characters.AsSpan(), c),
+        };
 
     public bool MatchesAnySingleCharacter => _mode == ModeKind.RestrictChars && IsEmpty;
 
@@ -132,10 +105,9 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 
         return _mode switch
         {
-            ModeKind.MatchSequence => stringValue,
             ModeKind.RestrictChars => "[^" + stringValue + "]",
             ModeKind.PermitChars => "[" + stringValue + "]",
-            _ => ThrowUnsupportedMode(_mode),
+            _ => stringValue,
         };
     }
 
@@ -215,6 +187,10 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
         {
             switch (_mode)
             {
+                // Technically, it could be the only possible match if the set was of size
+                // 65536 - 1 as it would only leave space for one specific character. That
+                // isn't really feasible or practical so just failing for a reistrct case
+                // should work well enough.
                 // case ModeKind.RestrictChars: return false;
 
                 case ModeKind.PermitChars:
@@ -233,12 +209,6 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 
         return false;
     }
-
-#if !NO_EXPOSED_NULLANNOTATIONS
-    [System.Diagnostics.CodeAnalysis.DoesNotReturn]
-#endif
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    static string ThrowUnsupportedMode(ModeKind mode) => throw new NotSupportedException("Character condition mode " + mode.ToString() + " not supported");
 
     public enum ModeKind : byte
     {
