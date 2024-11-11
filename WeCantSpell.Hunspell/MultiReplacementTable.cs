@@ -138,7 +138,7 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
 
     internal void ConvertAll(List<string> slst)
     {
-        if (!HasReplacements)
+        if (_replacements.IsEmpty)
         {
             return;
         }

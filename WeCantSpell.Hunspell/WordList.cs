@@ -79,6 +79,8 @@ public sealed partial class WordList
 
     public bool HasEntries => EntriesByRoot.HasItems;
 
+    public bool IsEmpty => EntriesByRoot.IsEmpty;
+
     public bool ContainsEntriesForRootWord(string rootWord) => rootWord is not null && EntriesByRoot.ContainsKey(rootWord);
 
     public bool ContainsEntriesForRootWord(ReadOnlySpan<char> rootWord) => EntriesByRoot.ContainsKey(rootWord);

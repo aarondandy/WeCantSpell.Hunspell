@@ -41,7 +41,7 @@ public partial class WordList
 
         public SpellCheckResult CheckDetails(string word)
         {
-            if (string.IsNullOrEmpty(word) || word.Length >= Options.MaxWordLen || !WordList.HasEntries)
+            if (word is not { Length: > 0 } || word.Length >= Options.MaxWordLen || WordList.IsEmpty)
             {
                 return SpellCheckResult.DefaultWrong;
             }
@@ -88,7 +88,7 @@ public partial class WordList
 
         public SpellCheckResult CheckDetails(ReadOnlySpan<char> word)
         {
-            if (word.IsEmpty || word.Length >= Options.MaxWordLen || !WordList.HasEntries)
+            if (word.IsEmpty || word.Length >= Options.MaxWordLen || WordList.IsEmpty)
             {
                 return SpellCheckResult.DefaultWrong;
             }

@@ -65,7 +65,7 @@ public partial class WordList
 
         public List<string> Suggest(string word)
         {
-            if (!_query.WordList.HasEntries)
+            if (_query.WordList.IsEmpty)
             {
                 return CreateSuggestFailureResult();
             }
@@ -111,7 +111,7 @@ public partial class WordList
 
         public List<string> Suggest(ReadOnlySpan<char> word)
         {
-            if (!_query.WordList.HasEntries)
+            if (_query.WordList.IsEmpty)
             {
                 return CreateSuggestFailureResult();
             }
