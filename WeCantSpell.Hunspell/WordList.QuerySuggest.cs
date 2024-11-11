@@ -1446,8 +1446,12 @@ public partial class WordList
             }
 
             // get homonyms
-            if (_query.TryLookupDetails(word, out var wordString, out var rvDetails) && rvDetails is { Length: > 0 })
+            if (_query.TryLookupDetails(word, out var wordString, out var rvDetails))
             {
+#if DEBUG
+                if (rvDetails is not { Length: > 0 }) ExceptionEx.ThrowInvalidOperation();
+#endif
+
                 if (rvDetails[0].ContainsAnyFlags(Affix.Flags_ForbiddenWord_NoSuggest_SubStandard))
                 {
                     return 0;
@@ -1497,8 +1501,12 @@ public partial class WordList
             }
 
             // get homonyms
-            if (_query.TryLookupDetails(word, out var rvDetails) && rvDetails is { Length: > 0 })
+            if (_query.TryLookupDetails(word, out var rvDetails))
             {
+#if DEBUG
+                if (rvDetails is not { Length: > 0 }) ExceptionEx.ThrowInvalidOperation();
+#endif
+
                 if (rvDetails[0].ContainsAnyFlags(Affix.Flags_ForbiddenWord_NoSuggest_SubStandard))
                 {
                     return 0;
