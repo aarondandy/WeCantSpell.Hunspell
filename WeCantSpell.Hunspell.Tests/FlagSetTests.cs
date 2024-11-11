@@ -13,7 +13,7 @@ public class FlagSetTests
 
         var actual = set.Union((FlagValue)'z');
 
-        actual.Should().Equal(new FlagValue[] { (FlagValue)'a', (FlagValue)'z' });
+        actual.Should().Equal([(FlagValue)'a', (FlagValue)'z']);
     }
 
     [Fact]
@@ -23,16 +23,16 @@ public class FlagSetTests
 
         var actual = set.Union((FlagValue)'a');
 
-        actual.Should().Equal(new FlagValue[] { (FlagValue)'a', (FlagValue)'z' });
+        actual.Should().Equal([(FlagValue)'a', (FlagValue)'z']);
     }
 
     [Fact]
     public void can_union_flag_to_middle()
     {
-        var set = FlagSet.Create(new[] { (FlagValue)'a', (FlagValue)'z' });
+        var set = FlagSet.Create([(FlagValue)'a', (FlagValue)'z']);
 
         var actual = set.Union((FlagValue)'x');
 
-        actual.Should().Equal(new FlagValue[] { (FlagValue)'a', (FlagValue)'x', (FlagValue)'z' });
+        actual.Should().Equal([(FlagValue)'a', (FlagValue)'x', (FlagValue)'z']);
     }
 }

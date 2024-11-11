@@ -56,7 +56,7 @@ public partial class WordList
 
         public WordList ToImmutable(bool allowDestructive)
         {
-            var result = new WordList(Affix, nGramRestrictedFlags: FlagSet.CreateUsingOwnedBuffer(
+            var result = new WordList(Affix, nGramRestrictedFlags: FlagSet.Create(
             [
                 Affix.ForbiddenWord,
                 Affix.NoSuggest,

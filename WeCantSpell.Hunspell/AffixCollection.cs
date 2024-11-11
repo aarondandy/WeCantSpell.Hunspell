@@ -160,7 +160,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
         protected Dictionary<FlagValue, GroupBuilder> _byFlag = [];
         private protected ArrayBuilder<TAffixEntry> _emptyKeys = [];
-        protected FlagSet.Builder _contClassesBuilder = new();
+        protected HashSet<FlagValue> _contClassAccumulator = [];
         protected Dictionary<char, List<TAffixEntry>> _byFirstKeyChar = [];
 
         public GroupBuilder ForGroup(FlagValue aFlag)
@@ -187,7 +187,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
                 }
             }
 
-            target.ContClasses = allowDestructive ? _contClassesBuilder.MoveToFlagSet() : _contClassesBuilder.Create();
+            target.ContClasses = FlagSet.Create(_contClassAccumulator);
             target._affixesWithEmptyKeys = _emptyKeys.MakeOrExtractArray(allowDestructive);
 
 #if HAS_FROZENDICTIONARY
@@ -354,7 +354,10 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
                 Builder.Entries.Add(entry);
 
-                _parent._contClassesBuilder.AddRange(entry.ContClass);
+                if (entry.ContClass.HasItems)
+                {
+                    _parent._contClassAccumulator.UnionWith(entry.ContClass);
+                }
 
                 if (string.IsNullOrEmpty(entry.Key))
                 {
@@ -416,7 +419,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         public AffixesByFlagsEnumerator(FlagSet flags, Dictionary<FlagValue, AffixGroup<TAffixEntry>> affixesByFlag)
 #endif
         {
-            _flags = flags.GetInternalArray();
+            _flags = flags.GetInternalText();
             _byFlag = affixesByFlag;
             _group = null;
             _flagsIndex = 0;
@@ -430,7 +433,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         private readonly Dictionary<FlagValue, AffixGroup<TAffixEntry>> _byFlag;
 #endif
 
-        private readonly char[] _flags;
+        private readonly string _flags;
         private AffixGroup<TAffixEntry>? _group;
         private int _flagsIndex;
         private int _groupIndex;
@@ -477,7 +480,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         public GroupsByFlagsEnumerator(FlagSet flags, Dictionary<FlagValue, AffixGroup<TAffixEntry>> byFlag)
 #endif
         {
-            _flags = flags.GetInternalArray();
+            _flags = flags.GetInternalText();
             _byFlag = byFlag;
             _current = default!;
             _flagsIndex = 0;
@@ -488,7 +491,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 #else
         private readonly Dictionary<FlagValue, AffixGroup<TAffixEntry>> _byFlag;
 #endif
-        private readonly char[] _flags;
+        private readonly string _flags;
         private AffixGroup<TAffixEntry> _current;
         private int _flagsIndex;
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 namespace WeCantSpell.Hunspell.Infrastructure;
@@ -10,12 +11,6 @@ sealed class ArrayBuilder<T> : IList<T>
     public ArrayBuilder()
     {
         _values = [];
-    }
-
-    internal ArrayBuilder(T[] values)
-    {
-        _values = values;
-        Count = values.Length;
     }
 
     public ArrayBuilder(int initialCapacity)
@@ -30,16 +25,17 @@ sealed class ArrayBuilder<T> : IList<T>
     }
 
     private T[] _values;
+    private int _count;
 
-    public int Count { get; private set; } = 0;
+    public int Count => _count;
 
     public int Capacity => _values.Length;
 
-    public bool IsReadOnly => false;
+    bool ICollection<T>.IsReadOnly => false;
 
     public void Clear()
     {
-        Count = 0;
+        _count = 0;
     }
 
     public T this[int index]
@@ -48,10 +44,10 @@ sealed class ArrayBuilder<T> : IList<T>
         {
 #if HAS_THROWOOR
             ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
-            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, _count);
 #else
             ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
-            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, _count, nameof(index));
 #endif
             return _values[index];
         }
@@ -59,24 +55,24 @@ sealed class ArrayBuilder<T> : IList<T>
         {
 #if HAS_THROWOOR
             ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
-            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, _count);
 #else
             ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
-            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, _count, nameof(index));
 #endif
             _values[index] = value;
         }
     }
 
-    public int IndexOf(T item) => Array.IndexOf(_values, item, 0, Count);
+    public int IndexOf(T item) => Array.IndexOf(_values, item, 0, _count);
 
     public bool Contains(T item) => IndexOf(item) >= 0;
 
-    public void CopyTo(T[] array, int arrayIndex) => Array.Copy(_values, 0, array, arrayIndex, Count);
+    public void CopyTo(T[] array, int arrayIndex) => Array.Copy(_values, 0, array, arrayIndex, _count);
 
     public IEnumerator<T> GetEnumerator()
     {
-        for (var i = 0; i < Count; i++)
+        for (var i = 0; i < _count; i++)
         {
             yield return _values[i];
         }
@@ -86,12 +82,12 @@ sealed class ArrayBuilder<T> : IList<T>
 
     public void Add(T value)
     {
-        if (Count >= _values.Length)
+        if (_count >= _values.Length)
         {
-            EnsureCapacityAtLeast(Count + 1);
+            EnsureCapacityAtLeast(_count + 1);
         }
 
-        _values[Count++] = value;
+        _values[_count++] = value;
     }
 
     public void AddRange(IEnumerable<T> values)
@@ -102,24 +98,16 @@ sealed class ArrayBuilder<T> : IList<T>
         ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
+        var expectedSize = values.GetNonEnumeratedCountOrDefault();
+        if (expectedSize > 0)
+        {
+            EnsureCapacityAtLeast(_count + expectedSize);
+        }
+
         foreach (var value in values)
         {
             Add(value);
         }
-    }
-
-    public void AddRange(ICollection<T> values)
-    {
-#if HAS_THROWNULL
-        ArgumentNullException.ThrowIfNull(values);
-#else
-        ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
-#endif
-
-        var futureSize = Count + values.Count;
-        EnsureCapacityAtLeast(futureSize);
-        values.CopyTo(_values, Count);
-        Count = futureSize;
     }
 
     public void AddRange(T[] values)
@@ -130,18 +118,18 @@ sealed class ArrayBuilder<T> : IList<T>
         ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
-        var futureSize = Count + values.Length;
+        var futureSize = _count + values.Length;
         EnsureCapacityAtLeast(futureSize);
-        values.CopyTo(_values, Count);
-        Count = futureSize;
+        values.CopyTo(_values, _count);
+        _count = futureSize;
     }
 
     public void AddRange(ReadOnlySpan<T> values)
     {
-        var futureSize = Count + values.Length;
+        var futureSize = _count + values.Length;
         EnsureCapacityAtLeast(futureSize);
-        values.CopyTo(_values.AsSpan());
-        Count = futureSize;
+        values.CopyTo(_values.AsSpan(_count));
+        _count = futureSize;
     }
 
     public void GrowToCapacity(int requiredLength)
@@ -154,7 +142,7 @@ sealed class ArrayBuilder<T> : IList<T>
 
         if (_values.Length < requiredLength)
         {
-            if (Count == 0)
+            if (_count == 0)
             {
                 _values = new T[requiredLength];
             }
@@ -181,13 +169,13 @@ sealed class ArrayBuilder<T> : IList<T>
 
     public bool AddAsSortedSet(T value)
     {
-        if (Count == 0)
+        if (_count == 0)
         {
             Add(value);
             return true;
         }
 
-        var insertLocation = Array.BinarySearch(_values, 0, Count, value);
+        var insertLocation = Array.BinarySearch(_values, 0, _count, value);
         if (insertLocation >= 0)
         {
             return false;
@@ -199,17 +187,37 @@ sealed class ArrayBuilder<T> : IList<T>
         return true;
     }
 
+    public void AddAsSortedSet(IEnumerable<T> values)
+    {
+        var expectedCount = values.GetNonEnumeratedCountOrDefault();
+        if (expectedCount > 0)
+        {
+            EnsureCapacityAtLeast(_count + expectedCount);
+        }
+
+        AddRange(values);
+        Array.Sort(_values, 0, _count);
+        RemoveAdjacentDuplicates();
+    }
+
+    public void AddAsSortedSet(ReadOnlySpan<T> values)
+    {
+        AddRange(values);
+        Array.Sort(_values, 0, _count);
+        RemoveAdjacentDuplicates();
+    }
+
     public void Insert(int insertionIndex, T value)
     {
-        if (insertionIndex >= Count)
+        if (insertionIndex >= _count)
         {
             Add(value);
             return;
         }
 
-        if (Count >= _values.Length)
+        if (_count >= _values.Length)
         {
-            var newArray = new T[CalculateBestCapacity(Count + 1)];
+            var newArray = new T[CalculateBestCapacity(_count + 1)];
 
             if (insertionIndex > 0)
             {
@@ -222,7 +230,7 @@ sealed class ArrayBuilder<T> : IList<T>
         }
         else
         {
-            for(var i = Count; i > insertionIndex; i--)
+            for(var i = _count; i > insertionIndex; i--)
             {
                 _values[i] = _values[i - 1];
             }
@@ -230,22 +238,22 @@ sealed class ArrayBuilder<T> : IList<T>
 
         _values[insertionIndex] = value;
 
-        Count++;
+        _count++;
     }
 
     public void RemoveAt(int index)
     {
 #if HAS_THROWOOR
         ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, _count);
 #else
         ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
-        ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
+        ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, _count, nameof(index));
 #endif
 
-        if (Count > 0)
+        if (_count > 0)
         {
-            var newSize = Count - 1;
+            var newSize = _count - 1;
 
             if (index < newSize)
             {
@@ -254,7 +262,7 @@ sealed class ArrayBuilder<T> : IList<T>
 
             _values[newSize] = default!;
 
-            Count = newSize;
+            _count = newSize;
         }
     }
 
@@ -270,18 +278,42 @@ sealed class ArrayBuilder<T> : IList<T>
         return false;
     }
 
+    private void RemoveAdjacentDuplicates()
+    {
+        if (_count < 2)
+        {
+            return;
+        }
+
+        var eq = EqualityComparer<T>.Default;
+        var i = 1;
+        do
+        {
+            if (eq.Equals(_values[i - 1], _values[i]))
+            {
+                _values.AsSpan(i + 1, _count - i - 1).CopyTo(_values.AsSpan(i));
+                _count--;
+            }
+            else
+            {
+                i++;
+            }
+        }
+        while (i < _count);
+    }
+
     public T[] Extract()
     {
 #if DEBUG
-        if (Count > _values.Length) ExceptionEx.ThrowInvalidOperation();
+        if (_count > _values.Length) ExceptionEx.ThrowInvalidOperation();
 #endif
 
         T[] result;
-        if (Count == 0)
+        if (_count == 0)
         {
             result = [];
         }
-        else if (Count == _values.Length)
+        else if (_count == _values.Length)
         {
             result = Interlocked.Exchange(ref _values, []);
         }
@@ -297,17 +329,19 @@ sealed class ArrayBuilder<T> : IList<T>
 
     public void Reverse()
     {
-        if (Count > 0)
+        if (_count > 0)
         {
-            Array.Reverse(_values, 0, Count);
+            Array.Reverse(_values, 0, _count);
         }
     }
 
-    public T[] MakeArray() => Count == 0 ? [] : _values.AsSpan(0, Count).ToArray();
+    public T[] MakeArray() => _count == 0 ? [] : AsSpan().ToArray();
 
     public T[] MakeOrExtractArray(bool extract) => extract ? Extract() : MakeArray();
 
     internal int BinarySearch(int startIndex, int count, T value) => Array.BinarySearch(_values, startIndex, count, value);
+
+    internal Span<T> AsSpan() => _values.AsSpan(0, _count);
 
     private int CalculateBestCapacity(int minCapacity) => Math.Max(CalculateNextCapacity(), minCapacity);
 

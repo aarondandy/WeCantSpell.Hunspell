@@ -17,10 +17,34 @@ static class MemoryEx
         return result >= 0 ? result + startIndex : result;
     }
 
-    public static int IndexOf(this Span<char> @this, ReadOnlySpan<char> value, int startIndex)
+    public static bool SortedLargeSearchSpaceContains(ReadOnlySpan<char> sorted, char value)
     {
-        var result = @this.Slice(startIndex).IndexOf(value);
-        return result >= 0 ? result + startIndex : result;
+        return
+            (value <= sorted[sorted.Length - 1])
+            &&
+            (
+                sorted.Length < 8
+                ? checkIterative(sorted, value)
+                : (value >= sorted[0] && sorted.BinarySearch(value) >= 0)
+            );
+
+        static bool checkIterative(ReadOnlySpan<char> searchSpace, char target)
+        {
+            foreach (var value in searchSpace)
+            {
+                if (value == target)
+                {
+                    return true;
+                }
+
+                if (value > target)
+                {
+                    break;
+                }
+            }
+
+            return false;
+        }
     }
 
     public static ReadOnlySpan<char> Limit(this ReadOnlySpan<char> @this, int maxLength) =>
@@ -144,6 +168,22 @@ static class MemoryEx
     }
 
 #endif
+
+    public static bool CheckSortedWithoutDuplicates(this ReadOnlySpan<char> span)
+    {
+        if (span.Length > 1)
+        {
+            for (var i = 1; i < span.Length; i++)
+            {
+                if (span[i - 1] >= span[i])
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
 
     public static void RemoveAll<T>(ref Span<T> span, T value) where T : notnull, IEquatable<T>
     {

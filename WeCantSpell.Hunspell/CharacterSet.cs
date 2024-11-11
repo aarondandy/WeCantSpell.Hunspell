@@ -2,7 +2,6 @@
 using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
@@ -10,13 +9,13 @@ namespace WeCantSpell.Hunspell;
 
 public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterSet>
 {
-    public static readonly CharacterSet Empty = new([]);
+    public static readonly CharacterSet Empty = new(string.Empty);
 
     public static bool operator ==(CharacterSet left, CharacterSet right) => left.Equals(right);
 
-    public static bool operator !=(CharacterSet left, CharacterSet right) => !(left == right);
+    public static bool operator !=(CharacterSet left, CharacterSet right) => !left.Equals(right);
 
-    public static CharacterSet Create(char value) => new(value);
+    public static CharacterSet Create(char value) => new(value.ToString());
 
     public static CharacterSet Create(IEnumerable<char> values)
     {
@@ -26,9 +25,11 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
         ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
-        var builder = new Builder();
-        builder.AddRange(values);
-        return builder.Create(allowDestructive: true);
+        var builder = new StringBuilderSpan(values.GetNonEnumeratedCountOrDefault());
+        builder.Append(values);
+        builder.Sort();
+        builder.RemoveAdjacentDuplicates();
+        return new(builder.GetStringAndDispose());
     }
 
     public static CharacterSet Create(string values)
@@ -39,7 +40,10 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
         ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
-        return Create(values.AsSpan());
+        var valuesSpan = values.AsSpan();
+        return valuesSpan.CheckSortedWithoutDuplicates()
+            ? new(values)
+            : Create(valuesSpan);
     }
 
     public static CharacterSet Create(ReadOnlySpan<char> values)
@@ -49,44 +53,40 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
             return Empty;
         }
 
-        var builder = new Builder(values.Length);
-        builder.AddRange(values);
-        return builder.Create(allowDestructive: true);
+        var builder = new StringBuilderSpan(values);
+        builder.Sort();
+        builder.RemoveAdjacentDuplicates();
+        return new(builder.GetStringAndDispose());
     }
 
 #if HAS_SEARCHVALUES
 
-    private CharacterSet(char value) : this([value])
-    {
-    }
-
-    private CharacterSet(char[] values)
+    private CharacterSet(string values)
     {
         _values = values;
         _searchValues = SearchValues.Create(values);
     }
 
-    private readonly char[]? _values;
+    private readonly string? _values;
     private readonly SearchValues<char>? _searchValues;
 
 #else
 
-    private CharacterSet(char value) : this([value])
-    {
-    }
-
-    private CharacterSet(char[] values)
+    private CharacterSet(string values)
     {
         _values = values;
     }
 
-    private readonly char[]? _values;
+    private readonly string? _values;
 
 #endif
 
     public int Count => _values is null ? 0 : _values.Length;
+
     public bool IsEmpty => _values is not { Length: > 0 };
+
     public bool HasItems => _values is { Length: > 0 };
+
     public char this[int index]
     {
         get
@@ -98,57 +98,29 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
             ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
             ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
+
+            if (_values is null)
+            {
+                ExceptionEx.ThrowInvalidOperation("Not initialized");
+            }
+
             return _values![index];
         }
     }
 
-    public IEnumerator<char> GetEnumerator() => ((IEnumerable<char>)GetInternalArray()).GetEnumerator();
+    public IEnumerator<char> GetEnumerator() => ToString().GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    private char[] GetInternalArray() => _values ?? [];
-
 #if HAS_SEARCHVALUES
 
-    public bool Contains(char value) => _searchValues is not null && _searchValues.Contains(value);
+    public bool Contains(char value) => _searchValues!.Contains(value);
 
-    public int FindIndexOfMatch(ReadOnlySpan<char> text) => _searchValues is not null ? text.IndexOfAny(_searchValues) : -1;
+    public int FindIndexOfMatch(ReadOnlySpan<char> text) => text.IndexOfAny(_searchValues!);
 
 #else
 
-    public bool Contains(char value)
-    {
-        if (_values is not null)
-        {
-            if (_values.Length == 1)
-            {
-                return _values[0].Equals(value);
-            }
-
-            return _values.Length <= 8
-                ? checkIterative(_values, value)
-                : Array.BinarySearch(_values, value) >= 0;
-        }
-
-        return false;
-
-        static bool checkIterative(char[] searchSpace, char target)
-        {
-            foreach (var value in searchSpace)
-            {
-                if (value == target)
-                {
-                    return true;
-                }
-                if (value > target)
-                {
-                    break;
-                }
-            }
-
-            return false;
-        }
-    }
+    public bool Contains(char value) => MemoryEx.SortedLargeSearchSpaceContains(_values.AsSpan(), value);
 
     public int FindIndexOfMatch(ReadOnlySpan<char> text)
     {
@@ -158,12 +130,13 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
             {
                 case 1:
                     return text.IndexOf(_values[0]);
-                case <= 8:
+                case <= 5: // There are special cases in IndexOfAny for sizes 5 or less
                     return text.IndexOfAny(_values.AsSpan());
                 default:
+                    var values = _values.AsSpan();
                     for (var searchLocation = 0; searchLocation < text.Length; searchLocation++)
                     {
-                        if (Contains(text[searchLocation]))
+                        if (MemoryEx.SortedLargeSearchSpaceContains(values, text[searchLocation]))
                         {
                             return searchLocation;
                         }
@@ -287,19 +260,15 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
         return builder.GetStringAndDispose();
     }
 
-    public override string ToString() => new(GetInternalArray());
+    public override string ToString() => _values ?? string.Empty;
 
-    public bool Equals(CharacterSet obj) => GetInternalArray().SequenceEqual(obj.GetInternalArray());
+    public bool Equals(CharacterSet obj) => ToString().Equals(obj.ToString(), StringComparison.Ordinal);
 
     public override bool Equals(object? obj) => obj is CharacterSet set && Equals(set);
 
-    public override int GetHashCode() =>
-#if HAS_SEARCHVALUES
-        HashCode.Combine(Count, HasItems ? _values![0] : default);
-#else
-        (int)StringEx.GetStableOrdinalHashCode(_values);
-#endif
+    public override int GetHashCode() => (int)StringEx.GetStableOrdinalHashCode(ToString());
 
+    [Obsolete("This type may be replaced with CharacterSet.Create factory methods.")]
     public sealed class Builder
     {
         public Builder()
@@ -309,50 +278,17 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
         public Builder(int capacity)
         {
-            _builder = capacity is >= 0 and <= CollectionsEx.CollectionPreallocationLimit
+            _builder = capacity is >= 0 and <= 128
                 ? new ArrayBuilder<char>(capacity)
                 : new ArrayBuilder<char>();
         }
 
         private readonly ArrayBuilder<char> _builder;
 
-#if HAS_SEARCHVALUES
-
         public void Add(char value)
         {
             _builder.AddAsSortedSet(value);
         }
-
-        internal CharacterSet Create(bool allowDestructive)
-        {
-            CharacterSet result;
-            if (allowDestructive)
-            {
-                result = new(_builder.Extract());
-            }
-            else
-            {
-                result = new(_builder.MakeArray());
-            }
-
-            return result;
-        }
-
-#else
-
-        public void Add(char value)
-        {
-            _builder.AddAsSortedSet(value);
-        }
-
-        internal CharacterSet Create(bool allowDestructive)
-        {
-            return allowDestructive
-                ? new(_builder.Extract())
-                : new(_builder.MakeArray());
-        }
-
-#endif
 
         public void AddRange(IEnumerable<char> values)
         {
@@ -362,20 +298,14 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
             ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
-            foreach (var value in values)
-            {
-                Add(value);
-            }
+            _builder.AddAsSortedSet(values);
         }
 
         public void AddRange(ReadOnlySpan<char> values)
         {
-            foreach (var value in values)
-            {
-                Add(value);
-            }
+            _builder.AddAsSortedSet(values);
         }
 
-        public CharacterSet Create() => Create(allowDestructive: false);
+        public CharacterSet Create() => new(_builder.AsSpan().ToString());
     }
 }
