@@ -449,8 +449,7 @@ public partial class WordList
                     {
                         resultType &= ~SpellCheckResultType.InitCap;
                     }
-
-                    if (capType == CapitalizationType.All && rv is not null && IsKeepCase(rv))
+                    else if (capType == CapitalizationType.All && rv is not null && IsKeepCase(rv))
                     {
                         rv = null;
                     }
