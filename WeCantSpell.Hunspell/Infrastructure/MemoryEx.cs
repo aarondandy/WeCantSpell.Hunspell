@@ -17,17 +17,15 @@ static class MemoryEx
         return result >= 0 ? result + startIndex : result;
     }
 
-    public static bool SortedContains(ReadOnlySpan<char> sorted, char value)
+    public static bool SortedLargeSearchSpaceContains(ReadOnlySpan<char> sorted, char value)
     {
-        return sorted.Length switch
-        {
-            0 => false,
-            1 => sorted[0] == value,
-            2 => sorted[0] == value || sorted[1] == value,
-            3 => sorted[0] == value || sorted[1] == value || sorted[2] == value,
-            <= 8 => checkIterative(sorted, value),
-            _ => sorted.BinarySearch(value) >= 0
-        };
+        return (value >= sorted[0] && value <= sorted[sorted.Length - 1])
+            &&
+            (
+                sorted.Length <= 8
+                ? checkIterative(sorted, value)
+                : sorted.BinarySearch(value) >= 0
+            );
 
         static bool checkIterative(ReadOnlySpan<char> searchSpace, char target)
         {

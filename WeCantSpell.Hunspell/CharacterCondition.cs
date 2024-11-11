@@ -87,9 +87,11 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
         {
             0 => false,
             1 => _characters[0] == c,
-            _ => (_mode is ModeKind.MatchSequence)
+            2 => _characters[0] == c || _characters[1] == c,
+            3 => _characters[0] == c || _characters[1] == c || _characters[2] == c,
+            _ => _mode is ModeKind.MatchSequence
                 ? _characters.Contains(c)
-                : MemoryEx.SortedContains(_characters.AsSpan(), c),
+                : MemoryEx.SortedLargeSearchSpaceContains(_characters.AsSpan(), c),
         };
 
     public bool MatchesAnySingleCharacter => _mode == ModeKind.RestrictChars && IsEmpty;

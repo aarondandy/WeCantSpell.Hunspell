@@ -358,7 +358,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     public bool DoesNotContain(FlagValue value) => value == FlagValue.Zero || !_searchValues!.Contains(value);
 
-    private bool DoesNotContain(char value) => value == FlagValue.ZeroValue || !_searchValues!.Contains(value);
+    public bool DoesNotContain(char value) => value == FlagValue.ZeroValue || !_searchValues!.Contains(value);
 
     public bool ContainsAny(FlagValue a, FlagValue b) =>
         ((ReadOnlySpan<char>)[a, b]).ContainsAny(_searchValues!);
@@ -388,37 +388,129 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     public bool Contains(FlagValue value) => Contains((char)value);
 
-    private bool Contains(char value)
+    public bool Contains(char value)
     {
         return
             value != FlagValue.ZeroValue
             &&
-            MemoryEx.SortedContains(_values.AsSpan(), value);
+            _values is not null
+            &&
+            _values.Length switch
+            {
+                0 => false,
+                1 => _values[0] == value,
+                2 => _values[0] == value || _values[1] == value,
+                3 => _values[0] == value || _values[1] == value || _values[2] == value,
+                _ => MemoryEx.SortedLargeSearchSpaceContains(_values.AsSpan(), value)
+            };
     }
 
     public bool DoesNotContain(FlagValue value) => DoesNotContain((char)value);
 
-    private bool DoesNotContain(char value)
+    public bool DoesNotContain(char value)
     {
         return
             value == FlagValue.ZeroValue
             ||
-            !MemoryEx.SortedContains(_values.AsSpan(), value);
+            _values is null
+            ||
+            _values.Length switch
+            {
+                0 => true,
+                1 => _values[0] != value,
+                2 => _values[0] != value && _values[1] != value,
+                3 => _values[0] != value && _values[1] != value && _values[2] != value,
+                _ => !MemoryEx.SortedLargeSearchSpaceContains(_values.AsSpan(), value)
+            };
     }
 
     public bool ContainsAny(FlagValue a, FlagValue b)
     {
-        return HasItems && ContainsAnyUnpreparedMutable([a, b]);
+        if (a.IsZero)
+        {
+            return Contains(b);
+        }
+
+        if (b.IsZero)
+        {
+            return Contains(a);
+        }
+
+        if (_values is not { Length: > 0 })
+        {
+            return false;
+        }
+
+        if (_values.Length == 1)
+        {
+            return _values[0] == a || _values[0] == b;
+        }
+
+        if (a > b)
+        {
+            MemoryEx.Swap(ref a, ref b);
+        }
+
+        return ContainsAnyPrepared([a, b]);
     }
 
     public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c)
     {
-        return HasItems && ContainsAnyUnpreparedMutable([a, b, c]);
+        if (a.IsZero)
+        {
+            return ContainsAny(b, c);
+        }
+
+        if (b.IsZero)
+        {
+            return ContainsAny(a, c);
+        }
+
+        if (c.IsZero)
+        {
+            return ContainsAny(a, b);
+        }
+
+        if (IsEmpty)
+        {
+            return false;
+        }
+
+        Span<char> other = [a, b, c];
+        other.Sort();
+        return ContainsAnyPrepared(other);
     }
 
     public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c, FlagValue d)
     {
-        return HasItems && ContainsAnyUnpreparedMutable([a, b, c, d]);
+        if (a.IsZero)
+        {
+            return ContainsAny(b, c, d);
+        }
+
+        if (b.IsZero)
+        {
+            return ContainsAny(a, c, d);
+        }
+
+        if (c.IsZero)
+        {
+            return ContainsAny(a, b, d);
+        }
+
+        if (d.IsZero)
+        {
+            return ContainsAny(a, b, c);
+        }
+
+        if (IsEmpty)
+        {
+            return false;
+        }
+
+        Span<char> other = [a, b, c, d];
+        other.Sort();
+        return ContainsAnyPrepared(other);
     }
 
     public bool ContainsAny(FlagSet other)
@@ -455,25 +547,25 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             );
     }
 
-    private bool ContainsAnyUnpreparedMutable(Span<char> other)
+    private bool ContainsAnyPrepared(ReadOnlySpan<char> other)
     {
-        if (_values is not { Length: > 0 })
+#if DEBUG
+        ExceptionEx.ThrowIfArgumentEmpty(other, nameof(other));
+        ExceptionEx.ThrowIfArgumentEqual(other.Length, 1, nameof(other));
+        if (other.Contains('\0')) ExceptionEx.ThrowArgumentOutOfRange(nameof(other));
+        for (var i = 1; i < other.Length; i++)
         {
-            return false;
+            if (other[i - 1] > other[i]) ExceptionEx.ThrowArgumentOutOfRange(nameof(other));
         }
+#endif
 
-        PrepareMutableFlagValuesForUse(ref other);
-
-        if (_values.Length == 1)
-        {
-            return other.Length == 1
-                ? _values[0] == other[0]
-                : MemoryEx.SortedContains(other, _values[0]);
-        }
-
-        return other.Length == 1
-            ? MemoryEx.SortedContains(_values.AsSpan(), other[0])
-            : SortedInterectionTest(_values.AsSpan(), other);
+        return _values is not null
+            &&
+            (
+                _values!.Length == 1
+                ? MemoryEx.SortedLargeSearchSpaceContains(other, _values[0])
+                : SortedInterectionTest(_values.AsSpan(), other)
+            );
     }
 
 #endif
