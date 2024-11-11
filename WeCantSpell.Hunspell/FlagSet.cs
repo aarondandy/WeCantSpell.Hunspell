@@ -171,7 +171,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
 #if !HAS_SEARCHVALUES
 
-    private static bool SortedInterectionTest(ReadOnlySpan<char> aSet, ReadOnlySpan<char> bSet)
+    private static bool SortedIntersectionTest(ReadOnlySpan<char> aSet, ReadOnlySpan<char> bSet)
     {
 
 #if DEBUG
@@ -525,7 +525,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
                 : (
                     _values!.Length == 1
                         ? other.Contains(_values[0])
-                        : SortedInterectionTest(other._values.AsSpan(), _values.AsSpan())
+                        : SortedIntersectionTest(other._values.AsSpan(), _values.AsSpan())
                 )
             );
     }
@@ -542,7 +542,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
                 : (
                     _values!.Length == 1
                         ? other.DoesNotContain(_values[0])
-                        : !SortedInterectionTest(other._values.AsSpan(), _values.AsSpan())
+                        : !SortedIntersectionTest(other._values.AsSpan(), _values.AsSpan())
                 )
             );
     }
@@ -564,7 +564,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             (
                 _values!.Length == 1
                 ? MemoryEx.SortedLargeSearchSpaceContains(other, _values[0])
-                : SortedInterectionTest(_values.AsSpan(), other)
+                : SortedIntersectionTest(_values.AsSpan(), other)
             );
     }
 
