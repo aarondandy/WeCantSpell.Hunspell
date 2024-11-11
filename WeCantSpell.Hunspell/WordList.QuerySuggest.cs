@@ -1361,7 +1361,7 @@ public partial class WordList
         {
             foreach (var rvDetail in rvDetails)
             {
-                if (!rvDetail.ContainsAnyFlags(Affix.Flags_NeedAffix_OnlyInCompound_OnlyUpcase))
+                if (rvDetail.DoesNotContainAnyFlags(Affix.Flags_NeedAffix_OnlyInCompound_OnlyUpcase))
                 {
                     return new WordEntry(word, rvDetail);
                 }
