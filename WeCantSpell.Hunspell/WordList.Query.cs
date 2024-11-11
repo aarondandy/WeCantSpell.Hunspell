@@ -260,16 +260,63 @@ public partial class WordList
         /// <returns><c>true</c> when result should be used</returns>
         private readonly bool TryCheckWord_HashTable(string word, ref SpellCheckResultType info, out WordEntry? result)
         {
-            result = null;
-            var details = WordList.FindEntryDetailsByRootWord(word);
-            if (details.Length == 0)
+            if (WordList.TryGetEntryDetailsByRootWord(word, out var details))
             {
+                // check forbidden and onlyincompound words
+                if (TryCheckWord_HashTableIsForbidden(in details[0], ref info))
+                {
+                    result = null;
+                    return true;
+                }
+
+                return details.Length == 1
+                    ? TryCheckWord_HashTableFoundSingle(word, in details[0], ref info, out result)
+                    : TryCheckWord_HashTableFoundMany(word, details, ref info, out result);
+            }
+
+            result = null;
+            return false;
+        }
+
+        private readonly bool TryCheckWord_HashTableFoundSingle(string word, in WordEntryDetail heDetails, ref SpellCheckResultType info, out WordEntry? result)
+        {
+            // he = next not needaffix, onlyincompound homonym or onlyupcase word
+            if (heDetails.ContainsAnyFlags(info.HasFlagEx(SpellCheckResultType.InitCap) ? Affix.Flags_NeedAffix_OnlyInCompound_OnlyUpcase : Affix.Flags_NeedAffix_OnlyInCompound))
+            {
+                result = null;
                 return false;
             }
 
-            ref readonly var heDetails = ref details[0];
+            result = new WordEntry(word, heDetails);
+            return true;
+        }
 
-            // check forbidden and onlyincompound words
+        private readonly bool TryCheckWord_HashTableFoundMany(string word, WordEntryDetail[] details, ref SpellCheckResultType info, out WordEntry? result)
+        {
+            var heFlags = info.HasFlagEx(SpellCheckResultType.InitCap) ? Affix.Flags_NeedAffix_OnlyInCompound_OnlyUpcase : Affix.Flags_NeedAffix_OnlyInCompound;
+
+            // he = next not needaffix, onlyincompound homonym or onlyupcase word
+            var heIndex = 0;
+            ref readonly var heDetails = ref details[0];
+            while (heDetails.ContainsAnyFlags(heFlags))
+            {
+                heIndex++;
+
+                if (heIndex >= details.Length)
+                {
+                    result = null;
+                    return false;
+                }
+
+                heDetails = ref details[heIndex];
+            }
+
+            result = new WordEntry(word, heDetails);
+            return true;
+        }
+
+        private readonly bool TryCheckWord_HashTableIsForbidden(in WordEntryDetail heDetails, ref SpellCheckResultType info)
+        {
             if (heDetails.ContainsFlag(Affix.ForbiddenWord))
             {
                 info |= SpellCheckResultType.Forbidden;
@@ -279,29 +326,6 @@ public partial class WordList
                     info |= SpellCheckResultType.Compound;
                 }
 
-                return true;
-            }
-
-            var heFlags = info.HasFlagEx(SpellCheckResultType.InitCap) ? Affix.Flags_NeedAffix_OnlyInCompound_OnlyUpcase : Affix.Flags_NeedAffix_OnlyInCompound;
-
-            // he = next not needaffix, onlyincompound homonym or onlyupcase word
-            var heIndex = 0;
-            while (heDetails.ContainsAnyFlags(heFlags))
-            {
-                heIndex++;
-                if (heIndex < details.Length)
-                {
-                    heDetails = ref details[heIndex];
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            if (heIndex < details.Length)
-            {
-                result = new WordEntry(word, heDetails);
                 return true;
             }
 
@@ -1964,7 +1988,7 @@ public partial class WordList
 
         private bool CompoundCheckExplicitlyForbidden(ReadOnlySpan<char> word, int len, int i, WordEntry rv, SimulatedCString st)
         {
-            if (WordList.TryFindFirstEntryDetailByRootWord(word, out var rv2Details))
+            if (WordList.TryGetFirstEntryDetailByRootWord(word, out var rv2Details))
             {
                 return rv2Details.ContainsFlag(Affix.ForbiddenWord)
                     && equalsOrdinalLimited(word, st.TerminatedSpan, rv.Word.Length + i);

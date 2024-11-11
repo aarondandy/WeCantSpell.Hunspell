@@ -571,7 +571,7 @@ public partial class WordList
 
         private readonly bool Check(ReadOnlySpan<char> word) => new QueryCheck(_query).Check(word);
 
-        private readonly bool TryLookupFirstDetail(ReadOnlySpan<char> word, out WordEntryDetail wordEntryDetail) => WordList.TryFindFirstEntryDetailByRootWord(word, out wordEntryDetail);
+        private readonly bool TryLookupFirstDetail(ReadOnlySpan<char> word, out WordEntryDetail wordEntryDetail) => WordList.TryGetFirstEntryDetailByRootWord(word, out wordEntryDetail);
 
         private readonly bool TryLookupFirstDetail(string word, out WordEntryDetail wordEntryDetail) => WordList.TryFindFirstEntryDetailByRootWord(word, out wordEntryDetail);
 
@@ -2485,7 +2485,7 @@ public partial class WordList
                 var rv = _query.SuffixCheck(word, AffixEntryOptions.None, null, default, default, CompoundOptions.Not); // prefix+suffix, suffix
                 return (rv is not null && rv.ContainsFlag(Affix.ForbiddenWord));
             }
-            else if (WordList.TryFindFirstEntryDetailByRootWord(word, out var rvDetail) && rvDetail.DoesNotContainAnyFlags(Affix.Flags_NeedAffix_OnlyInCompound))
+            else if (WordList.TryGetFirstEntryDetailByRootWord(word, out var rvDetail) && rvDetail.DoesNotContainAnyFlags(Affix.Flags_NeedAffix_OnlyInCompound))
             {
                 return rvDetail.ContainsFlag(Affix.ForbiddenWord);
             }
