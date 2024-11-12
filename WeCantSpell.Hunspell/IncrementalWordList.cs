@@ -3,7 +3,7 @@ using System.Threading;
 
 namespace WeCantSpell.Hunspell;
 
-sealed class IncrementalWordList
+internal sealed class IncrementalWordList
 {
     private const int MaxCachedCapacity = 32;
 

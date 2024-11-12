@@ -2,7 +2,7 @@
 
 namespace WeCantSpell.Hunspell;
 
-static class EnumEx
+internal static class EnumEx
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool HasFlagEx(this AffixConfigOptions value, AffixConfigOptions flag) => (value & flag) == flag;

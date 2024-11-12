@@ -4,7 +4,7 @@
 
 namespace System;
 
-struct HashCode
+internal struct HashCode
 {
     public static int Combine<T0, T1>(T0 value0, T1 value1)
         where T0 : notnull

@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace WeCantSpell.Hunspell;
 
-sealed class ArrayBuilder<T> : IList<T>
+internal sealed class ArrayBuilder<T> : IList<T>
 {
     public ArrayBuilder()
     {

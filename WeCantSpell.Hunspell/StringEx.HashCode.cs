@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 
 namespace WeCantSpell.Hunspell;
 
-static partial class StringEx
+internal static partial class StringEx
 {
     private const uint Hash1Start = (5381 << 16) + 5381;
     private const uint Hash1StartRotated = ((Hash1Start << 5) | (Hash1Start >> 27)) + Hash1Start;

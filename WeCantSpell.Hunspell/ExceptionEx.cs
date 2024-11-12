@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell;
 
-static class ExceptionEx
+internal static class ExceptionEx
 {
 
 #if !NO_EXPOSED_NULLANNOTATIONS

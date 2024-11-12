@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell;
 
-struct SimulatedCString
+internal struct SimulatedCString
 {
     public SimulatedCString(int capacity)
     {

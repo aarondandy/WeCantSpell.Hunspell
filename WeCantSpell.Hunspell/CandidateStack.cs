@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell;
 
-struct CandidateStack
+internal struct CandidateStack
 {
     internal const int MaxCandidateStackDepth = 2048;
 

@@ -2,7 +2,7 @@
 
 namespace WeCantSpell.Hunspell;
 
-static class StreamEx
+internal static class StreamEx
 {
     private const int DefaultBufferSize = 4096;
 

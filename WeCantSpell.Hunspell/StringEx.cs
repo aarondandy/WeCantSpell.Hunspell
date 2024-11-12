@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell;
 
-static partial class StringEx
+internal static partial class StringEx
 {
 #if HAS_SEARCHVALUES
     private static readonly System.Buffers.SearchValues<char> TabOrSpace = System.Buffers.SearchValues.Create("\t ");

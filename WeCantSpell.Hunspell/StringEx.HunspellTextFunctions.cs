@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell;
 
-static partial class StringEx
+internal static partial class StringEx
 {
 
 #if false // This isn't used anymore but I want to keep it around as it was tricky to port

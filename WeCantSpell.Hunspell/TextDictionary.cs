@@ -9,7 +9,7 @@ namespace WeCantSpell.Hunspell;
 /// <remarks>
 /// This probably does not need to exist if https://github.com/dotnet/runtime/issues/27229 works out.
 /// </remarks>
-sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>, IDictionary<string, TValue>
+internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>, IDictionary<string, TValue>
 {
     public static TextDictionary<TValue> Clone(TextDictionary<TValue> source)
     {

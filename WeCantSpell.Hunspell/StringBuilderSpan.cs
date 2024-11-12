@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell;
 
-ref struct StringBuilderSpan
+internal ref struct StringBuilderSpan
 {
     public StringBuilderSpan(int capacity)
     {

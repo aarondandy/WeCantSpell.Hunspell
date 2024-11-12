@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell;
 
-static class MemoryEx
+internal static class MemoryEx
 {
     public static int IndexOf(this ReadOnlySpan<char> @this, char value, int startIndex)
     {

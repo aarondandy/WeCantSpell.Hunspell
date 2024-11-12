@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell;
 
-static class CollectionsEx
+internal static class CollectionsEx
 {
     internal const int CollectionPreallocationLimit = 16384;
 
