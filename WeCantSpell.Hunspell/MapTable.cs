@@ -49,6 +49,11 @@ public readonly struct MapTable : IReadOnlyList<MapEntry>
             ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
 
+            if (_entries is null)
+            {
+                ExceptionEx.ThrowInvalidOperation("Not initialized");
+            }
+
             return _entries![index];
         }
     }

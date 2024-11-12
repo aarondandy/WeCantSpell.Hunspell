@@ -49,6 +49,11 @@ public readonly struct PatternSet : IReadOnlyList<PatternEntry>
             ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
 
+            if (_patterns is null)
+            {
+                ExceptionEx.ThrowInvalidOperation("Not initialized");
+            }
+
             return _patterns![index];
         }
     }

@@ -47,6 +47,10 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
             ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
             ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
+            if (_rules is null)
+            {
+                ExceptionEx.ThrowInvalidOperation("Not initialized");
+            }
 
             return _rules![index];
         }

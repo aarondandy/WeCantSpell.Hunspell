@@ -49,6 +49,11 @@ public readonly struct PhoneTable : IReadOnlyList<PhoneticEntry>
             ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
 
+            if (_items is null)
+            {
+                ExceptionEx.ThrowInvalidOperation("Not initialized");
+            }
+
             return _items![index];
         }
     }

@@ -66,6 +66,11 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
             ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
 
+            if (_morphs is null)
+            {
+                ExceptionEx.ThrowInvalidOperation("Not initialized");
+            }
+
             return _morphs![index];
         }
     }

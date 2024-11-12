@@ -49,6 +49,11 @@ public readonly struct SingleReplacementSet : IReadOnlyList<SingleReplacement>
             ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
 
+            if (_replacements is null)
+            {
+                ExceptionEx.ThrowInvalidOperation("Not initialized");
+            }
+
             return _replacements![index];
         }
     }
