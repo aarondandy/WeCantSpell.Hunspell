@@ -167,6 +167,8 @@ public readonly struct FlagValue :
 
     public bool IsNotWildcard => _value is not '*' or '?';
 
+    internal bool IsPrintable => _value < 128;
+
     public bool Equals(FlagValue other) => other._value == _value;
 
     [Obsolete("To be removed")]
@@ -195,5 +197,7 @@ public readonly struct FlagValue :
 
     public int CompareTo(char other) => _value.CompareTo(other);
 
-    public override string ToString() => ((int)_value).ToString(CultureInfo.InvariantCulture);
+    public override string ToString() => IsPrintable
+        ? _value.ToString()
+        : ((int)_value).ToString(CultureInfo.InvariantCulture);
 }

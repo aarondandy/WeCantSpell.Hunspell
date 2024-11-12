@@ -332,7 +332,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             return string.Empty;
         }
 
-        if (_values!.All(static v => v < 128))
+        if (_values!.All(static v => ((FlagValue)v).IsPrintable))
         {
             return _values!;
         }
