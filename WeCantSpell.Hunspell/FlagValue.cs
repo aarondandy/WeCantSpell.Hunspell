@@ -169,8 +169,10 @@ public readonly struct FlagValue :
 
     public bool Equals(FlagValue other) => other._value == _value;
 
+    [Obsolete("To be removed")]
     public bool EqualsAny(FlagValue a, FlagValue b) => a._value == _value || b._value == _value;
 
+    [Obsolete("To be removed")]
     public bool EqualsAny(FlagValue a, FlagValue b, FlagValue c) => a._value == _value || b._value == _value || c._value == _value;
 
     public bool Equals(int other) => other == _value;

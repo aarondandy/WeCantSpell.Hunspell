@@ -80,8 +80,6 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
 
     public override string ToString() => Join(' ');
 
-    internal string Join(string seperator) => string.Join(seperator, GetInternalArray());
-
     internal string Join(char seperator) =>
 #if NO_STATIC_STRINGCHAR_METHODS
         StringEx.Join(seperator, GetInternalArray());

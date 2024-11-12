@@ -79,27 +79,4 @@ public readonly struct BreakSet : IReadOnlyList<string>
 
         return nbr;
     }
-
-    /// <summary>
-    /// Calculate break points for recursion limit.
-    /// </summary>
-    internal int FindRecursionLimit(ReadOnlySpan<char> scw)
-    {
-        var nbr = 0;
-
-        if (scw.Length != 0 && HasItems)
-        {
-            foreach (var breakEntry in _entries!)
-            {
-                var pos = 0;
-                while ((pos = scw.IndexOf(breakEntry, pos, StringComparison.Ordinal)) >= 0)
-                {
-                    nbr++;
-                    pos += breakEntry.Length;
-                }
-            }
-        }
-
-        return nbr;
-    }
 }
