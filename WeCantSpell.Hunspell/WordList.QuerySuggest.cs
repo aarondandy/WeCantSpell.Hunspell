@@ -37,7 +37,7 @@ public partial class WordList
         /// For testing compound words formed from 3 or more words.
         /// </summary>
         /// <remarks>
-        /// When <c>true</c>, don't suggest compound words, and <see cref="Suggest(SuggestionList, string, ref bool)"/> returns <c>true</c> when the first suggestion is found.
+        /// When <c>true</c>, don't suggest compound words, and <see cref="Suggest(List{string}, string, ref bool)"/> returns <c>true</c> when the first suggestion is found.
         /// </remarks>
         private readonly bool _testSimpleSuggestion;
 
