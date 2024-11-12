@@ -45,8 +45,8 @@ This port performs competitively on newer versions of the .NET framework compare
 
 | Benchmark | .NET 8       | .NET 4.8     | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
 |-----------|--------------|--------------|--------------|
-| Check     | 🐇 5,980 μs | 🐌 18,268 μs | 🐇 6,121 μs |
-| Suggest   | 🐇 358 ms   | 🐢 807 ms    | 🐌 1,903 ms |
+| Check     | 🐇 5,939 μs | 🐌 18,874 μs | 🐇 6,094 μs |
+| Suggest   | 🐇 362 ms   | 🐢 819 ms    | 🐌 1,907 ms |
 
 _Note: Measurements taken on an AMD 5800H._
 
