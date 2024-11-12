@@ -271,14 +271,14 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
     {
         public Builder()
         {
-            _builder = new ArrayBuilder<char>();
+            _builder = [];
         }
 
         public Builder(int capacity)
         {
             _builder = capacity is >= 0 and <= 128
                 ? new ArrayBuilder<char>(capacity)
-                : new ArrayBuilder<char>();
+                : [];
         }
 
         private readonly ArrayBuilder<char> _builder;

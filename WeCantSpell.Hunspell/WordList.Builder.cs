@@ -70,7 +70,7 @@ public partial class WordList
             }
             else
             {
-                result.EntriesByRoot = TextDictionary<WordEntryDetail[]>.Clone(_entryDetailsByRoot, static v => v.ToArray());
+                result.EntriesByRoot = TextDictionary<WordEntryDetail[]>.Clone(_entryDetailsByRoot, static v => [.. v]);
             }
 
             result.AllReplacements = Affix.Replacements;

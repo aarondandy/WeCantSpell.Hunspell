@@ -65,7 +65,9 @@ public readonly struct PatternSet : IReadOnlyList<PatternEntry>
     /// <summary>
     /// Forbid compoundings when there are special patterns at word bound.
     /// </summary>
+#pragma warning disable IDE0060 // Remove unused parameter
     internal bool Check(ReadOnlySpan<char> word, int pos, WordEntry r1, WordEntry r2, bool affixed)
+#pragma warning restore IDE0060 // Remove unused parameter
     {
         var wordAfterPos = word.Slice(pos);
 

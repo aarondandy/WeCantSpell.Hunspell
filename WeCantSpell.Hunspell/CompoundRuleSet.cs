@@ -79,10 +79,7 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
     internal bool CompoundCheck(IncrementalWordList words, bool all)
     {
         var bt = 0;
-        var btinfo = new List<MetacharData>
-        {
-            new MetacharData()
-        };
+        var btinfo = new List<MetacharData> { new() };
 
         foreach (var compoundRule in GetInternalArray())
         {
