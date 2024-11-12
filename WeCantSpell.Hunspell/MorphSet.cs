@@ -13,7 +13,7 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
 
     public static bool operator ==(MorphSet left, MorphSet right) => left.Equals(right);
 
-    public static bool operator !=(MorphSet left, MorphSet right) => !(left == right);
+    public static bool operator !=(MorphSet left, MorphSet right) => !left.Equals(right);
 
     public static MorphSet Create(IEnumerable<string> morphs)
     {
