@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 [DebuggerDisplay("Key = {Key}, Conditions = {Conditions}")]
@@ -91,9 +89,9 @@ public sealed class PrefixEntry : AffixEntry
 
     public override string Key => Append;
 
-    public override bool IsKeySubset(ReadOnlySpan<char> s2) => HunspellTextFunctions.IsSubset(Key, s2);
+    public override bool IsKeySubset(ReadOnlySpan<char> s2) => StringEx.IsSubset(Key, s2);
 
-    public override bool IsWordSubset(ReadOnlySpan<char> s2) => HunspellTextFunctions.IsSubset(Key, s2);
+    public override bool IsWordSubset(ReadOnlySpan<char> s2) => StringEx.IsSubset(Key, s2);
 
     internal override bool TestCondition(ReadOnlySpan<char> word) => Conditions.IsStartingMatch(word);
 }
@@ -116,7 +114,7 @@ public sealed class SuffixEntry : AffixEntry
 
     public override string Key { get; }
 
-    public override bool IsKeySubset(ReadOnlySpan<char> s2) => HunspellTextFunctions.IsSubset(Key, s2);
+    public override bool IsKeySubset(ReadOnlySpan<char> s2) => StringEx.IsSubset(Key, s2);
 
     public override bool IsWordSubset(ReadOnlySpan<char> s2)
     {

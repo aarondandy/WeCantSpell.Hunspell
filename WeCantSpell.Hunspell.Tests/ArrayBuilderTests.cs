@@ -4,8 +4,6 @@ using System.Linq;
 
 using FluentAssertions;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 using Xunit;
 
 namespace WeCantSpell.Hunspell.Tests;

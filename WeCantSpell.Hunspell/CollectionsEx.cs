@@ -5,7 +5,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-namespace WeCantSpell.Hunspell.Infrastructure;
+namespace WeCantSpell.Hunspell;
 
 static class CollectionsEx
 {

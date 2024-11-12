@@ -2,9 +2,9 @@
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
-namespace WeCantSpell.Hunspell.Infrastructure;
+namespace WeCantSpell.Hunspell;
 
-static class HunspellTextFunctions
+static partial class StringEx
 {
 
 #if false // This isn't used anymore but I want to keep it around as it was tricky to port

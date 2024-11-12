@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 sealed class IncrementalWordList

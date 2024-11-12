@@ -3,8 +3,6 @@ using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterSet>

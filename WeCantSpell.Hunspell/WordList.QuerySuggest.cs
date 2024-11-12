@@ -7,8 +7,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 public partial class WordList
@@ -192,7 +190,7 @@ public partial class WordList
                         var info = SpellCheckResultType.OrigCap;
                         if (_query.CheckWord(scw, ref info, out _) is not null)
                         {
-                            slst.Add(HunspellTextFunctions.MakeInitCap(scw, textInfo));
+                            slst.Add(StringEx.MakeInitCap(scw, textInfo));
                             goto result;
                         }
                     }
@@ -226,7 +224,7 @@ public partial class WordList
                         goto result;
                     }
 
-                    good |= Suggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), ref onlyCompoundSuggest);
+                    good |= Suggest(slst, StringEx.MakeAllSmall(scw, textInfo), ref onlyCompoundSuggest);
 
                     if (opLimiter.QueryForCancellation())
                     {
@@ -253,7 +251,7 @@ public partial class WordList
                     if (
                         dotPos >= 0
                         &&
-                        HunspellTextFunctions.GetCapitalizationType(scw.AsSpan(dotPos + 1), textInfo) == CapitalizationType.Init
+                        StringEx.GetCapitalizationType(scw.AsSpan(dotPos + 1), textInfo) == CapitalizationType.Init
                     )
                     {
                         InsertSuggestion(slst, scw.Insert(dotPos + 1, " "));
@@ -262,7 +260,7 @@ public partial class WordList
                     if (capWords)
                     {
                         // TheOpenOffice.org -> The OpenOffice.org
-                        good |= Suggest(slst, HunspellTextFunctions.MakeInitSmall(scw, textInfo), ref onlyCompoundSuggest);
+                        good |= Suggest(slst, StringEx.MakeInitSmall(scw, textInfo), ref onlyCompoundSuggest);
 
                         if (opLimiter.QueryForCancellation())
                         {
@@ -270,7 +268,7 @@ public partial class WordList
                         }
                     }
 
-                    wspace = HunspellTextFunctions.MakeAllSmall(scw, textInfo);
+                    wspace = StringEx.MakeAllSmall(scw, textInfo);
                     if (Check(wspace))
                     {
                         InsertSuggestion(slst, wspace);
@@ -286,7 +284,7 @@ public partial class WordList
 
                     if (capWords)
                     {
-                        wspace = HunspellTextFunctions.MakeInitCap(wspace, textInfo);
+                        wspace = StringEx.MakeInitCap(wspace, textInfo);
                         if (Check(wspace))
                         {
                             InsertSuggestion(slst, wspace);
@@ -342,7 +340,7 @@ public partial class WordList
                     break;
 
                 case CapitalizationType.All:
-                    wspace = HunspellTextFunctions.MakeAllSmall(scw, textInfo);
+                    wspace = StringEx.MakeAllSmall(scw, textInfo);
                     good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
                     if (opLimiter.QueryForCancellation())
@@ -355,7 +353,7 @@ public partial class WordList
                         InsertSuggestion(slst, wspace);
                     }
 
-                    wspace = HunspellTextFunctions.MakeInitCap(wspace, textInfo);
+                    wspace = StringEx.MakeInitCap(wspace, textInfo);
                     good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
                     if (opLimiter.QueryForCancellation())
@@ -365,7 +363,7 @@ public partial class WordList
 
                     for (var j = 0; j < slst.Count; j++)
                     {
-                        slst[j] = HunspellTextFunctions.MakeAllCap(slst[j], textInfo).Replace("ß", "SS");
+                        slst[j] = StringEx.MakeAllCap(slst[j], textInfo).Replace("ß", "SS");
                     }
 
                     break;
@@ -407,21 +405,21 @@ public partial class WordList
                         goto case CapitalizationType.Huh;
 
                     case CapitalizationType.Huh:
-                        NGramSuggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), CapitalizationType.Huh);
+                        NGramSuggest(slst, StringEx.MakeAllSmall(scw, textInfo), CapitalizationType.Huh);
                         break;
 
                     case CapitalizationType.Init:
                         capWords = true;
-                        NGramSuggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), capType);
+                        NGramSuggest(slst, StringEx.MakeAllSmall(scw, textInfo), capType);
                         break;
 
                     case CapitalizationType.All:
                         var oldns = slst.Count;
-                        NGramSuggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), capType);
+                        NGramSuggest(slst, StringEx.MakeAllSmall(scw, textInfo), capType);
 
                         for (var j = oldns; j < slst.Count; j++)
                         {
-                            slst[j] = HunspellTextFunctions.MakeAllCap(slst[j], textInfo);
+                            slst[j] = StringEx.MakeAllCap(slst[j], textInfo);
                         }
 
                         break;
@@ -515,7 +513,7 @@ public partial class WordList
             {
                 for (var j = 0; j < slst.Count; j++)
                 {
-                    slst[j] = HunspellTextFunctions.MakeInitCap(slst[j], textInfo);
+                    slst[j] = StringEx.MakeInitCap(slst[j], textInfo);
                 }
             }
 
@@ -541,14 +539,14 @@ public partial class WordList
                     var sitem = slst[j];
                     if (!sitem.Contains(' ') && !Check(sitem))
                     {
-                        var s = HunspellTextFunctions.MakeAllSmall(sitem, textInfo);
+                        var s = StringEx.MakeAllSmall(sitem, textInfo);
                         if (Check(s))
                         {
                             slst[l++] = s;
                         }
                         else
                         {
-                            s = HunspellTextFunctions.MakeInitCap(s, textInfo);
+                            s = StringEx.MakeInitCap(s, textInfo);
                             if (Check(s))
                             {
                                 slst[l++] = s;
@@ -1156,7 +1154,7 @@ public partial class WordList
         }
 
         private void CapChars(string word, ref SuggestState state) =>
-            TestSug(HunspellTextFunctions.MakeAllCap(word, TextInfo), ref state);
+            TestSug(StringEx.MakeAllCap(word, TextInfo), ref state);
 
         private void MapChars(string word, ref SuggestState state)
         {
@@ -1569,7 +1567,7 @@ public partial class WordList
 
             var hasPhoneEntries = Affix.Phone.HasItems;
             var target = hasPhoneEntries
-                ? Phonet(HunspellTextFunctions.MakeAllCap(word, TextInfo))
+                ? Phonet(StringEx.MakeAllCap(word, TextInfo))
                 : string.Empty;
             var isNonGermanLowercase = !Affix.IsGerman && capType == CapitalizationType.None;
 
@@ -1614,7 +1612,7 @@ public partial class WordList
                     var scphon = -20000;
                     if (hasPhoneEntries && sc > 2 && wordKeyLengthDifference <= 3)
                     {
-                        scphon = NGramNoLowering(3, target, Phonet(HunspellTextFunctions.MakeAllCap(hpSet.Key, TextInfo)), NGramOptions.LongerWorse) * 2;
+                        scphon = NGramNoLowering(3, target, Phonet(StringEx.MakeAllCap(hpSet.Key, TextInfo)), NGramOptions.LongerWorse) * 2;
                     }
 
                     if (sc > roots[lp].Score)
@@ -1663,7 +1661,7 @@ public partial class WordList
             var thresh = 0;
 
             {
-                var wordLowered = HunspellTextFunctions.MakeAllSmall(word, TextInfo);
+                var wordLowered = StringEx.MakeAllSmall(word, TextInfo);
                 var mw = new StringBuilderSpan(wordLowered.Length);
                 for (var sp = 1; sp < 4; sp++)
                 {
@@ -1823,7 +1821,7 @@ public partial class WordList
                     if (root.RootPhon is not null)
                     {
                         // lowering rootphon[i]
-                        var gl = HunspellTextFunctions.MakeAllSmall(root.RootPhon, TextInfo);
+                        var gl = StringEx.MakeAllSmall(root.RootPhon, TextInfo);
                         var len = root.RootPhon.Length;
 
                         // heuristic weigthing of ngram scores
@@ -1950,7 +1948,7 @@ public partial class WordList
             // decapitalize dictionary word
             var t = Affix.ComplexPrefixes
                 ? s2.AsSpan(0, s2.Length - 1).ConcatString(TextInfo.ToLower(s2[s2.Length - 1]))
-                : HunspellTextFunctions.MakeAllSmall(s2, TextInfo);
+                : StringEx.MakeAllSmall(s2, TextInfo);
 
             var num = 0;
             var diff = 0;
@@ -2572,7 +2570,7 @@ public partial class WordList
             return NGramNoLowering(
                 n,
                 s1,
-                HunspellTextFunctions.MakeAllSmall(s2, TextInfo),
+                StringEx.MakeAllSmall(s2, TextInfo),
                 opt);
         }
 
@@ -2764,7 +2762,7 @@ public partial class WordList
                     {
                         // check letters in "(..)"
                         if (
-                            HunspellTextFunctions.MyIsAlpha(word.GetCharOrTerminator(i + k)) // NOTE: could be implied?
+                            StringEx.MyIsAlpha(word.GetCharOrTerminator(i + k)) // NOTE: could be implied?
                             &&
                             sString.IndexOf(word.GetCharOrTerminator(i + k), sIndex + 1) >= 0
                         )
@@ -2815,13 +2813,13 @@ public partial class WordList
                             (
                                 i == 0
                                 ||
-                                !HunspellTextFunctions.MyIsAlpha(word.GetCharOrTerminator(i - 1))
+                                !StringEx.MyIsAlpha(word.GetCharOrTerminator(i - 1))
                             )
                             &&
                             (
                                 sString.GetCharOrTerminator(sIndex + 1) != '$'
                                 ||
-                                !HunspellTextFunctions.MyIsAlpha(word.GetCharOrTerminator(i + k0))
+                                !StringEx.MyIsAlpha(word.GetCharOrTerminator(i + k0))
                             )
                         )
                         ||
@@ -2830,9 +2828,9 @@ public partial class WordList
                             &&
                             i > 0
                             &&
-                            HunspellTextFunctions.MyIsAlpha(word.GetCharOrTerminator(i - 1))
+                            StringEx.MyIsAlpha(word.GetCharOrTerminator(i - 1))
                             &&
-                            !HunspellTextFunctions.MyIsAlpha(word.GetCharOrTerminator(i + k0))
+                            !StringEx.MyIsAlpha(word.GetCharOrTerminator(i + k0))
                         )
                     )
                     {
@@ -2861,7 +2859,7 @@ public partial class WordList
                                 if (sChar == '(')
                                 {
                                     // check letters
-                                    if (HunspellTextFunctions.MyIsAlpha(word.GetCharOrTerminator(i + k0)) && sString.IndexOf(word.GetCharOrTerminator(i + k0), sIndex + 1) >= 0)
+                                    if (StringEx.MyIsAlpha(word.GetCharOrTerminator(i + k0)) && sString.IndexOf(word.GetCharOrTerminator(i + k0), sIndex + 1) >= 0)
                                     {
                                         k0++;
                                         while (sChar != ')' && sChar != '\0')
@@ -2899,7 +2897,7 @@ public partial class WordList
                                     (
                                         sChar == '$'
                                         &&
-                                        !HunspellTextFunctions.MyIsAlpha(word.GetCharOrTerminator(i + k0))
+                                        !StringEx.MyIsAlpha(word.GetCharOrTerminator(i + k0))
                                     )
                                 )
                                 {

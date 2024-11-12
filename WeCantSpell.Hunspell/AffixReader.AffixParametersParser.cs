@@ -1,7 +1,5 @@
 ﻿using System;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 public partial class AffixReader

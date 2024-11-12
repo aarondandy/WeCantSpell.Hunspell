@@ -2,8 +2,6 @@
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 public readonly struct FlagValue :

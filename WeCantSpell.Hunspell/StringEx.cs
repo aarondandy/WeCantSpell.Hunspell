@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
-namespace WeCantSpell.Hunspell.Infrastructure;
+namespace WeCantSpell.Hunspell;
 
 static partial class StringEx
 {

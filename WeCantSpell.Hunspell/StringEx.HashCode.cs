@@ -3,7 +3,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace WeCantSpell.Hunspell.Infrastructure;
+namespace WeCantSpell.Hunspell;
 
 static partial class StringEx
 {

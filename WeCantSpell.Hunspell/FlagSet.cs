@@ -5,8 +5,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>

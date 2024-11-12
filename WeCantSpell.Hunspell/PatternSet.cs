@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 [DebuggerDisplay("Count = {Count}")]
@@ -94,7 +92,7 @@ public readonly struct PatternSet : IReadOnlyList<PatternEntry>
                     PatternWordCheck(word, pos, patternEntry.Pattern.StartsWith('0') ? r1.Word : patternEntry.Pattern)
                 )
                 &&
-                HunspellTextFunctions.IsSubset(patternEntry.Pattern2, wordAfterPos)
+                StringEx.IsSubset(patternEntry.Pattern2, wordAfterPos)
             )
             {
                 return true;

@@ -1,10 +1,8 @@
 ﻿using FluentAssertions;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 using Xunit;
 
-namespace WeCantSpell.Hunspell.Tests.Infrastructure;
+namespace WeCantSpell.Hunspell.Tests;
 public class StringBuilderSpanTests
 {
     [Fact]

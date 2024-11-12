@@ -3,10 +3,9 @@ using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
+#pragma warning disable IDE0079 // Remove unnecessary suppression
 #pragma warning disable IDE0301 // Simplify collection initialization
 
 public sealed partial class AffixConfig

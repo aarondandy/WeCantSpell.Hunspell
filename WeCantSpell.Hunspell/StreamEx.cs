@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace WeCantSpell.Hunspell.Infrastructure;
+namespace WeCantSpell.Hunspell;
 
 static class StreamEx
 {

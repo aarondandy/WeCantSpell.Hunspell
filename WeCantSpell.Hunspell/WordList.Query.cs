@@ -4,8 +4,6 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 public partial class WordList
@@ -2263,10 +2261,10 @@ public partial class WordList
             }
 
             // first skip over any leading blanks
-            var qIndex = HunspellTextFunctions.CountMatchingFromLeft(src, ' ');
+            var qIndex = StringEx.CountMatchingFromLeft(src, ' ');
 
             // now strip off any trailing periods (recording their presence)
-            abbv = HunspellTextFunctions.CountMatchingFromRight(src, '.');
+            abbv = StringEx.CountMatchingFromRight(src, '.');
 
             var newLength = src.Length - qIndex - abbv;
             if (newLength <= 0)
@@ -2281,7 +2279,7 @@ public partial class WordList
                 src = src.Substring(qIndex, newLength);
             }
 
-            capType = HunspellTextFunctions.GetCapitalizationType(src, TextInfo);
+            capType = StringEx.GetCapitalizationType(src, TextInfo);
             return src;
         }
 
@@ -2293,10 +2291,10 @@ public partial class WordList
             }
 
             // first skip over any leading blanks
-            var qIndex = HunspellTextFunctions.CountMatchingFromLeft(src, ' ');
+            var qIndex = StringEx.CountMatchingFromLeft(src, ' ');
 
             // now strip off any trailing periods (recording their presence)
-            abbv = HunspellTextFunctions.CountMatchingFromRight(src, '.');
+            abbv = StringEx.CountMatchingFromRight(src, '.');
 
             var newLength = src.Length - qIndex - abbv;
             if (newLength <= 0)
@@ -2311,7 +2309,7 @@ public partial class WordList
                 src = src.Slice(qIndex, newLength);
             }
 
-            capType = HunspellTextFunctions.GetCapitalizationType(src, TextInfo);
+            capType = StringEx.GetCapitalizationType(src, TextInfo);
             return src.ToString();
         }
     }

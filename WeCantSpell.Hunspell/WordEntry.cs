@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 [DebuggerDisplay("Word = {Word}, {Detail}")]

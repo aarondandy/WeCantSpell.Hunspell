@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Globalization;
 
-namespace WeCantSpell.Hunspell.Infrastructure;
+namespace WeCantSpell.Hunspell;
 
 static class IntEx
 {

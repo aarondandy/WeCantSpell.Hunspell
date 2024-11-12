@@ -2,7 +2,7 @@
 using System.Buffers;
 using System.Runtime.CompilerServices;
 
-namespace WeCantSpell.Hunspell.Infrastructure;
+namespace WeCantSpell.Hunspell;
 
 struct SimulatedCString
 {

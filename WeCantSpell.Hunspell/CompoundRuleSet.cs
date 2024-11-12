@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 [DebuggerDisplay("Count = {Count}")]

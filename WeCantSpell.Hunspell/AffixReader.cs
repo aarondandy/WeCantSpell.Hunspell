@@ -8,8 +8,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 public sealed partial class AffixReader
