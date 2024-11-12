@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 
-namespace WeCantSpell.Hunspell.Infrastructure;
+namespace WeCantSpell.Hunspell;
 
-sealed class ArrayBuilder<T> : IList<T>
+internal sealed class ArrayBuilder<T> : IList<T>
 {
     public ArrayBuilder()
     {
@@ -230,7 +229,7 @@ sealed class ArrayBuilder<T> : IList<T>
         }
         else
         {
-            for(var i = _count; i > insertionIndex; i--)
+            for (var i = _count; i > insertionIndex; i--)
             {
                 _values[i] = _values[i - 1];
             }

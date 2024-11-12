@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-
-using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
+[DebuggerDisplay("Count = {Count}")]
 public readonly struct SingleReplacementSet : IReadOnlyList<SingleReplacement>
 {
     public static SingleReplacementSet Empty { get; } = new([]);
@@ -29,7 +29,7 @@ public readonly struct SingleReplacementSet : IReadOnlyList<SingleReplacement>
 
     private readonly SingleReplacement[]? _replacements;
 
-    public int Count => _replacements is null ? 0 : _replacements.Length;
+    public int Count => _replacements is not null ? _replacements.Length : 0;
 
     public bool IsEmpty => _replacements is not { Length: > 0 };
 
@@ -46,6 +46,11 @@ public readonly struct SingleReplacementSet : IReadOnlyList<SingleReplacement>
             ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
             ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
+
+            if (_replacements is null)
+            {
+                ExceptionEx.ThrowInvalidOperation("Not initialized");
+            }
 
             return _replacements![index];
         }

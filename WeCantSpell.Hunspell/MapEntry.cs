@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-
-using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
+[DebuggerDisplay("Count = {Count}")]
 public readonly struct MapEntry : IReadOnlyList<string>
 {
     public static MapEntry Empty { get; } = new([]);
@@ -29,7 +29,7 @@ public readonly struct MapEntry : IReadOnlyList<string>
 
     private readonly string[]? _items;
 
-    public int Count => _items is null ? 0 : _items.Length;
+    public int Count => _items is not null ? _items.Length : 0;
 
     public bool IsEmpty => _items is not { Length: > 0 };
 
@@ -46,6 +46,11 @@ public readonly struct MapEntry : IReadOnlyList<string>
             ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
             ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
+
+            if (_items is null)
+            {
+                ExceptionEx.ThrowInvalidOperation("Not initialized");
+            }
 
             return _items![index];
         }

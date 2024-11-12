@@ -1,19 +1,19 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-
-using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
+[DebuggerDisplay("Count = {Count}")]
 public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
 {
     public static MorphSet Empty { get; } = new([]);
 
     public static bool operator ==(MorphSet left, MorphSet right) => left.Equals(right);
 
-    public static bool operator !=(MorphSet left, MorphSet right) => !(left == right);
+    public static bool operator !=(MorphSet left, MorphSet right) => !left.Equals(right);
 
     public static MorphSet Create(IEnumerable<string> morphs)
     {
@@ -46,7 +46,7 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
 
     private readonly string[]? _morphs;
 
-    public int Count => _morphs is null ? 0 : _morphs.Length;
+    public int Count => _morphs is not null ? _morphs.Length : 0;
 
     public bool IsEmpty => _morphs is not { Length: > 0 };
 
@@ -64,6 +64,11 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
             ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
 
+            if (_morphs is null)
+            {
+                ExceptionEx.ThrowInvalidOperation("Not initialized");
+            }
+
             return _morphs![index];
         }
     }
@@ -79,8 +84,6 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
     public override int GetHashCode() => ((IStructuralEquatable)GetInternalArray()).GetHashCode(StringComparer.Ordinal);
 
     public override string ToString() => Join(' ');
-
-    internal string Join(string seperator) => string.Join(seperator, GetInternalArray());
 
     internal string Join(char seperator) =>
 #if NO_STATIC_STRINGCHAR_METHODS

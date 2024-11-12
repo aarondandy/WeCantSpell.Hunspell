@@ -4,12 +4,9 @@ using System.Collections.Immutable;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-
-using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
@@ -449,6 +446,7 @@ public sealed partial class AffixReader
     }
 
     private delegate bool EntryParserForArray<T>(ReadOnlySpan<char> parameterText, ArrayBuilder<T> entries);
+
     private bool TryParseStandardListItem<T>(EntryListType entryListType, ReadOnlySpan<char> parameterText, ArrayBuilder<T> entries, EntryParserForArray<T> parse)
     {
         if (!IsInitialized(entryListType))
@@ -800,7 +798,7 @@ public sealed partial class AffixReader
 
         // piece 3 - is string to strip or 0 for null
         string strip;
-        if (group1.Equals("0".AsSpan(), StringComparison.Ordinal))
+        if (group1.EqualsOrdinal('0'))
         {
             strip = string.Empty;
         }

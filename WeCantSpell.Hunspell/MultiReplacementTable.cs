@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-
-using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
+[DebuggerDisplay("Count = {Count}")]
 public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacementEntry>
 {
     public static readonly MultiReplacementTable Empty = TakeDictionary(new TextDictionary<MultiReplacementEntry>(0));
@@ -138,7 +138,7 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
 
     internal void ConvertAll(List<string> slst)
     {
-        if (!HasReplacements)
+        if (_replacements.IsEmpty)
         {
             return;
         }

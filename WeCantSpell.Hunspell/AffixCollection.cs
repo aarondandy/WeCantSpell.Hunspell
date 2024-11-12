@@ -7,8 +7,6 @@ using System.Linq;
 using System.Collections.Frozen;
 #endif
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 /// <summary>

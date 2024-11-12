@@ -1,5 +1,8 @@
-﻿namespace WeCantSpell.Hunspell;
+﻿using System.Diagnostics;
 
+namespace WeCantSpell.Hunspell;
+
+[DebuggerDisplay("Type = {Type}, OutString = {OutString}")]
 public sealed class SingleReplacement : ReplacementEntry
 {
     public SingleReplacement(string pattern, string outString, ReplacementValueType type) : base(pattern)

@@ -4,8 +4,6 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 public partial class WordList
@@ -260,16 +258,63 @@ public partial class WordList
         /// <returns><c>true</c> when result should be used</returns>
         private readonly bool TryCheckWord_HashTable(string word, ref SpellCheckResultType info, out WordEntry? result)
         {
-            result = null;
-            var details = WordList.FindEntryDetailsByRootWord(word);
-            if (details.Length == 0)
+            if (WordList.TryGetEntryDetailsByRootWord(word, out var details))
             {
+                // check forbidden and onlyincompound words
+                if (TryCheckWord_HashTableIsForbidden(in details[0], ref info))
+                {
+                    result = null;
+                    return true;
+                }
+
+                return details.Length == 1
+                    ? TryCheckWord_HashTableFoundSingle(word, in details[0], ref info, out result)
+                    : TryCheckWord_HashTableFoundMany(word, details, ref info, out result);
+            }
+
+            result = null;
+            return false;
+        }
+
+        private readonly bool TryCheckWord_HashTableFoundSingle(string word, in WordEntryDetail heDetails, ref SpellCheckResultType info, out WordEntry? result)
+        {
+            // he = next not needaffix, onlyincompound homonym or onlyupcase word
+            if (heDetails.ContainsAnyFlags(info.HasFlagEx(SpellCheckResultType.InitCap) ? Affix.Flags_NeedAffix_OnlyInCompound_OnlyUpcase : Affix.Flags_NeedAffix_OnlyInCompound))
+            {
+                result = null;
                 return false;
             }
 
-            ref readonly var heDetails = ref details[0];
+            result = new WordEntry(word, heDetails);
+            return true;
+        }
 
-            // check forbidden and onlyincompound words
+        private readonly bool TryCheckWord_HashTableFoundMany(string word, WordEntryDetail[] details, ref SpellCheckResultType info, out WordEntry? result)
+        {
+            var heFlags = info.HasFlagEx(SpellCheckResultType.InitCap) ? Affix.Flags_NeedAffix_OnlyInCompound_OnlyUpcase : Affix.Flags_NeedAffix_OnlyInCompound;
+
+            // he = next not needaffix, onlyincompound homonym or onlyupcase word
+            var heIndex = 0;
+            ref readonly var heDetails = ref details[0];
+            while (heDetails.ContainsAnyFlags(heFlags))
+            {
+                heIndex++;
+
+                if (heIndex >= details.Length)
+                {
+                    result = null;
+                    return false;
+                }
+
+                heDetails = ref details[heIndex];
+            }
+
+            result = new WordEntry(word, heDetails);
+            return true;
+        }
+
+        private readonly bool TryCheckWord_HashTableIsForbidden(in WordEntryDetail heDetails, ref SpellCheckResultType info)
+        {
             if (heDetails.ContainsFlag(Affix.ForbiddenWord))
             {
                 info |= SpellCheckResultType.Forbidden;
@@ -279,29 +324,6 @@ public partial class WordList
                     info |= SpellCheckResultType.Compound;
                 }
 
-                return true;
-            }
-
-            var heFlags = info.HasFlagEx(SpellCheckResultType.InitCap) ? Affix.Flags_NeedAffix_OnlyInCompound_OnlyUpcase : Affix.Flags_NeedAffix_OnlyInCompound;
-
-            // he = next not needaffix, onlyincompound homonym or onlyupcase word
-            var heIndex = 0;
-            while (heDetails.ContainsAnyFlags(heFlags))
-            {
-                heIndex++;
-                if (heIndex < details.Length)
-                {
-                    heDetails = ref details[heIndex];
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            if (heIndex < details.Length)
-            {
-                result = new WordEntry(word, heDetails);
                 return true;
             }
 
@@ -847,7 +869,7 @@ public partial class WordList
                                     }
                                     else
                                     {
-                                        switch (CompoundCheck_TrySecondRoot(rvFirst, rv, word, i, len, tmpNumSyllable: numSyllable, tmpWordNum: wordNum, scpd: scpd, scpdPatternEntryCondition2, isSug))
+                                        switch (CompoundCheck_TrySecondRoot(rvFirst!, rv, word, i, len, tmpNumSyllable: numSyllable, tmpWordNum: wordNum, scpd: scpd, scpdPatternEntryCondition2, isSug))
                                         {
                                             case CompoundCheckOutcomes.Fail:
                                                 goto resultNull;
@@ -921,7 +943,7 @@ public partial class WordList
                                             : (
                                                 Affix.CompoundPatterns.HasItems
                                                 &&
-                                                Affix.CompoundPatterns.Check(word, i, rvFirst, rv, affixed)
+                                                Affix.CompoundPatterns.Check(word, i, rvFirst!, rv, affixed)
                                             )
                                         )
                                     )
@@ -935,7 +957,7 @@ public partial class WordList
                                     }
                                 }
 
-                                switch (CompoundCheck_TrySecondAffix(rvFirst, rv, word, i, len, tmpWordNum: wordNum, tmpNumSyllable: numSyllable))
+                                switch (CompoundCheck_TrySecondAffix(rvFirst!, rv, word, i, len, tmpWordNum: wordNum, tmpNumSyllable: numSyllable))
                                 {
                                     case CompoundCheckOutcomes.Fail:
                                         goto resultNull;
@@ -963,7 +985,7 @@ public partial class WordList
                                             ||
                                             i >= word.Length
                                             ||
-                                            (scpd != 0) == Affix.CompoundPatterns.Check(word, i, rvFirst, rv, affixed)
+                                            (scpd != 0) == Affix.CompoundPatterns.Check(word, i, rvFirst!, rv, affixed)
                                         )
                                     )
                                     {
@@ -1964,7 +1986,7 @@ public partial class WordList
 
         private bool CompoundCheckExplicitlyForbidden(ReadOnlySpan<char> word, int len, int i, WordEntry rv, SimulatedCString st)
         {
-            if (WordList.TryFindFirstEntryDetailByRootWord(word, out var rv2Details))
+            if (WordList.TryGetFirstEntryDetailByRootWord(word, out var rv2Details))
             {
                 return rv2Details.ContainsFlag(Affix.ForbiddenWord)
                     && equalsOrdinalLimited(word, st.TerminatedSpan, rv.Word.Length + i);
@@ -2009,14 +2031,17 @@ public partial class WordList
 
                 if (affix.TestCondition(tmpword))
                 {
-                    if (TryLookupDetails(tmpword, out var tmpwordString, out var details))
+                    if (
+                        !affix.ContainsContClass(Affix.NeedAffix) // forbid single prefixes with needaffix flag
+                        &&
+                        TryLookupDetails(tmpword, out var tmpwordString, out var details)
+                    )
                     {
                         foreach (var detail in details)
                         {
                             if (
                                 detail.ContainsFlag(affix.AFlag)
-                                &&
-                                !affix.ContainsContClass(Affix.NeedAffix) // forbid single prefixes with needaffix flag
+                                // && !affix.ContainsContClass(Affix.NeedAffix) // forbid single prefixes with needaffix flag
                                 &&
                                 (
                                     needFlag.IsZero
@@ -2236,10 +2261,10 @@ public partial class WordList
             }
 
             // first skip over any leading blanks
-            var qIndex = HunspellTextFunctions.CountMatchingFromLeft(src, ' ');
+            var qIndex = StringEx.CountMatchingFromLeft(src, ' ');
 
             // now strip off any trailing periods (recording their presence)
-            abbv = HunspellTextFunctions.CountMatchingFromRight(src, '.');
+            abbv = StringEx.CountMatchingFromRight(src, '.');
 
             var newLength = src.Length - qIndex - abbv;
             if (newLength <= 0)
@@ -2254,7 +2279,7 @@ public partial class WordList
                 src = src.Substring(qIndex, newLength);
             }
 
-            capType = HunspellTextFunctions.GetCapitalizationType(src, TextInfo);
+            capType = StringEx.GetCapitalizationType(src, TextInfo);
             return src;
         }
 
@@ -2266,10 +2291,10 @@ public partial class WordList
             }
 
             // first skip over any leading blanks
-            var qIndex = HunspellTextFunctions.CountMatchingFromLeft(src, ' ');
+            var qIndex = StringEx.CountMatchingFromLeft(src, ' ');
 
             // now strip off any trailing periods (recording their presence)
-            abbv = HunspellTextFunctions.CountMatchingFromRight(src, '.');
+            abbv = StringEx.CountMatchingFromRight(src, '.');
 
             var newLength = src.Length - qIndex - abbv;
             if (newLength <= 0)
@@ -2284,7 +2309,7 @@ public partial class WordList
                 src = src.Slice(qIndex, newLength);
             }
 
-            capType = HunspellTextFunctions.GetCapitalizationType(src, TextInfo);
+            capType = StringEx.GetCapitalizationType(src, TextInfo);
             return src.ToString();
         }
     }

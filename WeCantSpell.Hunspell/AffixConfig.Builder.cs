@@ -4,8 +4,6 @@ using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 #pragma warning disable IDE0028 // Simplify collection initialization

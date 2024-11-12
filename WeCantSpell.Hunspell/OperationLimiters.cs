@@ -3,7 +3,7 @@ using System.Threading;
 
 namespace WeCantSpell.Hunspell;
 
-struct OperationTimedLimiter
+internal struct OperationTimedLimiter
 {
     public OperationTimedLimiter(TimeSpan timeLimit, CancellationToken cancellationToken)
     {

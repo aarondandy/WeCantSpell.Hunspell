@@ -5,8 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 public sealed class WordListReader
@@ -321,7 +319,7 @@ public sealed class WordListReader
             }
         }
 
-        var capType = HunspellTextFunctions.GetCapitalizationType(word, TextInfo);
+        var capType = StringEx.GetCapitalizationType(word, TextInfo);
         AddWord(word, flags, morphs, false, capType);
         AddWordCapitalized(word, flags, morphs, capType);
     }
@@ -402,7 +400,7 @@ public sealed class WordListReader
                 // results wendsay -> Wednesday and Wendsay -> Wednesday, too.
                 if (capType == CapitalizationType.Init)
                 {
-                    var phCapitalized = HunspellTextFunctions.MakeInitCap(phString, Affix.Culture.TextInfo);
+                    var phCapitalized = StringEx.MakeInitCap(phString, Affix.Culture.TextInfo);
                     if (phCapitalized.Length != 0)
                     {
                         // add also lowercase word in the case of German or
@@ -417,7 +415,7 @@ public sealed class WordListReader
                         // Hungarian dictionary.)
                         if (Affix.IsGerman || Affix.IsHungarian)
                         {
-                            var wordpartLower = HunspellTextFunctions.MakeAllSmall(wordpartString, Affix.Culture.TextInfo);
+                            var wordpartLower = StringEx.MakeAllSmall(wordpartString, Affix.Culture.TextInfo);
                             Builder._phoneticReplacements.Add(new SingleReplacement(phString, wordpartLower, ReplacementValueType.Med));
                         }
 
@@ -531,7 +529,7 @@ public sealed class WordListReader
         )
         {
             flags = flags.Union(SpecialFlags.OnlyUpcaseFlag);
-            word = HunspellTextFunctions.MakeTitleCase(word, Affix.Culture);
+            word = StringEx.MakeTitleCase(word, Affix.Culture);
             AddWord(word, flags, morphs, true, CapitalizationType.Init);
         }
     }

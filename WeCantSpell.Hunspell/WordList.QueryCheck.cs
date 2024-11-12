@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Threading;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 public partial class WordList
@@ -41,7 +39,7 @@ public partial class WordList
 
         public SpellCheckResult CheckDetails(string word)
         {
-            if (string.IsNullOrEmpty(word) || word.Length >= Options.MaxWordLen || !WordList.HasEntries)
+            if (word is not { Length: > 0 } || word.Length >= Options.MaxWordLen || WordList.IsEmpty)
             {
                 return SpellCheckResult.DefaultWrong;
             }
@@ -52,7 +50,7 @@ public partial class WordList
                 return SpellCheckResult.DefaultCorrect;
             }
 
-            if (HunspellTextFunctions.IsNumericWord(word.AsSpan()))
+            if (StringEx.IsNumericWord(word.AsSpan()))
             {
                 // allow numbers with dots, dashes and commas (but forbid double separators: "..", "--" etc.)
                 return SpellCheckResult.DefaultCorrect;
@@ -88,7 +86,7 @@ public partial class WordList
 
         public SpellCheckResult CheckDetails(ReadOnlySpan<char> word)
         {
-            if (word.IsEmpty || word.Length >= Options.MaxWordLen || !WordList.HasEntries)
+            if (word.IsEmpty || word.Length >= Options.MaxWordLen || WordList.IsEmpty)
             {
                 return SpellCheckResult.DefaultWrong;
             }
@@ -99,7 +97,7 @@ public partial class WordList
                 return SpellCheckResult.DefaultCorrect;
             }
 
-            if (HunspellTextFunctions.IsNumericWord(word))
+            if (StringEx.IsNumericWord(word))
             {
                 // allow numbers with dots, dashes and commas (but forbid double separators: "..", "--" etc.)
                 return SpellCheckResult.DefaultCorrect;
@@ -340,7 +338,7 @@ public partial class WordList
             var apos = scw.IndexOf('\'');
             if (apos >= 0)
             {
-                scw = HunspellTextFunctions.MakeAllSmall(scw, textInfo);
+                scw = StringEx.MakeAllSmall(scw, textInfo);
 
                 // conversion may result in string with different len than before MakeAllSmall2 so re-scan
                 if (apos < scw.Length - 1)
@@ -352,7 +350,7 @@ public partial class WordList
                         return rv;
                     }
 
-                    scw = HunspellTextFunctions.MakeInitCap(scw, textInfo);
+                    scw = StringEx.MakeInitCap(scw, textInfo);
                     rv = _query.CheckWord(scw, ref resultType, out root);
                     if (rv is not null)
                     {
@@ -363,12 +361,12 @@ public partial class WordList
 
             if (Affix.CheckSharps && scw.Contains("SS"))
             {
-                scw = HunspellTextFunctions.MakeAllSmall(scw, textInfo);
+                scw = StringEx.MakeAllSmall(scw, textInfo);
                 var u8buffer = scw;
                 rv = SpellSharps(ref u8buffer, ref resultType, out root);
                 if (rv is null)
                 {
-                    scw = HunspellTextFunctions.MakeInitCap(scw, textInfo);
+                    scw = StringEx.MakeInitCap(scw, textInfo);
                     rv = SpellSharps(ref scw, ref resultType, out root);
                 }
 
@@ -449,8 +447,7 @@ public partial class WordList
                     {
                         resultType &= ~SpellCheckResultType.InitCap;
                     }
-
-                    if (capType == CapitalizationType.All && rv is not null && IsKeepCase(rv))
+                    else if (capType == CapitalizationType.All && rv is not null && IsKeepCase(rv))
                     {
                         rv = null;
                     }

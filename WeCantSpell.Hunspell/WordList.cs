@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-
-using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
@@ -78,12 +76,13 @@ public sealed partial class WordList
 
     public bool HasEntries => EntriesByRoot.HasItems;
 
+    public bool IsEmpty => EntriesByRoot.IsEmpty;
+
     public bool ContainsEntriesForRootWord(string rootWord) => rootWord is not null && EntriesByRoot.ContainsKey(rootWord);
 
     public bool ContainsEntriesForRootWord(ReadOnlySpan<char> rootWord) => EntriesByRoot.ContainsKey(rootWord);
 
-    public WordEntryDetail[] this[string rootWord] =>
-        rootWord is not null ? FindEntryDetailsByRootWord(rootWord).ToArray() : [];
+    public WordEntryDetail[] this[string rootWord] => TryGetEntryDetailsByRootWord(rootWord, out var details) ? details : [];
 
     private TextDictionary<WordEntryDetail[]> EntriesByRoot { get; set; }
 
@@ -158,21 +157,18 @@ public sealed partial class WordList
 
     public IEnumerable<string> Suggest(ReadOnlySpan<char> word, QueryOptions? options, CancellationToken cancellationToken) => new QuerySuggest(this, options, cancellationToken).Suggest(word);
 
-    private WordEntryDetail[] FindEntryDetailsByRootWord(string rootWord)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private bool TryGetEntryDetailsByRootWord(
+        string rootWord,
+#if !NO_EXPOSED_NULLANNOTATIONS
+        [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)]
+#endif
+        out WordEntryDetail[] details)
     {
-        return EntriesByRoot.TryGetValue(rootWord, out var details)
-            ? details
-            : [];
+        return EntriesByRoot.TryGetValue(rootWord, out details);
     }
 
-    private WordEntryDetail[] FindEntryDetailsByRootWord(ReadOnlySpan<char> rootWord)
-    {
-        return EntriesByRoot.TryGetValue(rootWord, out var details)
-            ? details
-            : [];
-    }
-
-    private bool TryFindFirstEntryDetailByRootWord(ReadOnlySpan<char> rootWord, out WordEntryDetail entryDetail)
+    private bool TryGetFirstEntryDetailByRootWord(ReadOnlySpan<char> rootWord, out WordEntryDetail entryDetail)
     {
         if (EntriesByRoot.TryGetValue(rootWord, out var details))
         {

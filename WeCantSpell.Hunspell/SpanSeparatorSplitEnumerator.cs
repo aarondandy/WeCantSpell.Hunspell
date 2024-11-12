@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace WeCantSpell.Hunspell.Infrastructure;
+namespace WeCantSpell.Hunspell;
 
-ref struct SpanSeparatorSplitEnumerator<T> where T : IEquatable<T>
+internal ref struct SpanSeparatorSplitEnumerator<T> where T : IEquatable<T>
 {
     public delegate int FindNextSeparator(ReadOnlySpan<T> text);
 

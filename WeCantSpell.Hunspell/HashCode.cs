@@ -1,8 +1,10 @@
-﻿namespace WeCantSpell.Hunspell.Infrastructure;
+﻿#if NO_HASHCODE
 
-#if NO_HASHCODE
+#pragma warning disable IDE0130 // Namespace does not match folder structure
 
-struct HashCode
+namespace System;
+
+internal struct HashCode
 {
     public static int Combine<T0, T1>(T0 value0, T1 value1)
         where T0 : notnull

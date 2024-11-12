@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-
-using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
+[DebuggerDisplay("Count = {Count}")]
 public readonly struct CompoundRule : IReadOnlyList<FlagValue>
 {
     public static CompoundRule Empty { get; } = new([]);
@@ -48,7 +48,7 @@ public readonly struct CompoundRule : IReadOnlyList<FlagValue>
     private readonly FlagValue[]? _values;
     private readonly FlagSet _nonWildcardRuleFlags;
 
-    public int Count => _values is null ? 0 : _values.Length;
+    public int Count => _values is not null ? _values.Length : 0;
 
     public bool IsEmpty => _values is not { Length: > 0 };
 
@@ -65,6 +65,11 @@ public readonly struct CompoundRule : IReadOnlyList<FlagValue>
             ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
             ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
+            if (_values is null)
+            {
+                ExceptionEx.ThrowInvalidOperation("Not initialized");
+            }
+
             return _values![index];
         }
     }

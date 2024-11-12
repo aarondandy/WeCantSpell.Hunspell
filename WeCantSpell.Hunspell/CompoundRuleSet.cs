@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-
-using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
+[DebuggerDisplay("Count = {Count}")]
 public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
 {
     public static CompoundRuleSet Empty { get; } = new([]);
@@ -28,7 +28,7 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
 
     private readonly CompoundRule[]? _rules;
 
-    public int Count => _rules is null ? 0 : _rules.Length;
+    public int Count => _rules is not null ? _rules.Length : 0;
 
     public bool IsEmpty => _rules is not { Length: > 0 };
 
@@ -45,6 +45,10 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
             ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
             ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
+            if (_rules is null)
+            {
+                ExceptionEx.ThrowInvalidOperation("Not initialized");
+            }
 
             return _rules![index];
         }
@@ -75,10 +79,7 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
     internal bool CompoundCheck(IncrementalWordList words, bool all)
     {
         var bt = 0;
-        var btinfo = new List<MetacharData>
-        {
-            new MetacharData()
-        };
+        var btinfo = new List<MetacharData> { new() };
 
         foreach (var compoundRule in GetInternalArray())
         {

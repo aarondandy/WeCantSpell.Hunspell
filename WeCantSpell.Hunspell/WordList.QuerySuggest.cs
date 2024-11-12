@@ -7,8 +7,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 public partial class WordList
@@ -37,7 +35,7 @@ public partial class WordList
         /// For testing compound words formed from 3 or more words.
         /// </summary>
         /// <remarks>
-        /// When <c>true</c>, don't suggest compound words, and <see cref="Suggest(SuggestionList, string, ref bool)"/> returns <c>true</c> when the first suggestion is found.
+        /// When <c>true</c>, don't suggest compound words, and <see cref="Suggest(List{string}, string, ref bool)"/> returns <c>true</c> when the first suggestion is found.
         /// </remarks>
         private readonly bool _testSimpleSuggestion;
 
@@ -65,26 +63,26 @@ public partial class WordList
 
         public List<string> Suggest(string word)
         {
-            if (!_query.WordList.HasEntries)
+            if (_query.WordList.IsEmpty)
             {
-                return CreateSuggestFailureResult();
+                goto fail;
             }
 
             // process XML input of the simplified API (see manual)
             if (word.StartsWith(Query.DefaultXmlTokenCheckPrefix, StringComparison.Ordinal))
             {
-                return CreateSuggestFailureResult(); // TODO: complete support for XML input
+                goto fail; // TODO: complete support for XML input
             }
 
             if (word.Length >= Options.MaxWordLen)
             {
-                return CreateSuggestFailureResult();
+                goto fail;
             }
 
             // something very broken if suggest ends up calling itself with the same word
             if (_suggestCandidateStack.Contains(word))
             {
-                return CreateSuggestFailureResult();
+                goto fail;
             }
 
             // input conversion
@@ -97,7 +95,7 @@ public partial class WordList
 
             if (scw.Length == 0)
             {
-                return CreateSuggestFailureResult();
+                goto fail;
             }
 
             CandidateStack.Push(ref _suggestCandidateStack, word);
@@ -107,30 +105,34 @@ public partial class WordList
             CandidateStack.Pop(ref _suggestCandidateStack);
 
             return slst;
+
+        fail:
+
+            return [];
         }
 
         public List<string> Suggest(ReadOnlySpan<char> word)
         {
-            if (!_query.WordList.HasEntries)
+            if (_query.WordList.IsEmpty)
             {
-                return CreateSuggestFailureResult();
+                goto fail;
             }
 
             // process XML input of the simplified API (see manual)
             if (word.StartsWith(Query.DefaultXmlTokenCheckPrefix, StringComparison.Ordinal))
             {
-                return CreateSuggestFailureResult(); // TODO: complete support for XML input
+                goto fail; // TODO: complete support for XML input
             }
 
             if (word.Length >= Options.MaxWordLen)
             {
-                return CreateSuggestFailureResult();
+                goto fail;
             }
 
             // something very broken if suggest ends up calling itself with the same word
             if (_suggestCandidateStack.ExceedsArbitraryDepthLimit || _suggestCandidateStack.Contains(word))
             {
-                return CreateSuggestFailureResult();
+                goto fail;
             }
 
             // input conversion
@@ -147,7 +149,7 @@ public partial class WordList
 
             if (scw.Length == 0)
             {
-                return CreateSuggestFailureResult();
+                goto fail;
             }
 
             // NOTE: because a string isn't formed until this point, scw is pushed instead. It isn't the same, but might be good enough.
@@ -159,13 +161,15 @@ public partial class WordList
             CandidateStack.Pop(ref _suggestCandidateStack);
 
             return slst;
-        }
 
-        private static List<string> CreateSuggestFailureResult() => [];
+        fail:
+
+            return [];
+        }
 
         private List<string> SuggestInternal(ReadOnlySpan<char> word, string scw, CapitalizationType capType, int abbv)
         {
-            var slst = new SuggestionList();
+            var slst = new List<string>();
 
             var opLimiter = new OperationTimedLimiter(Options.TimeLimitSuggestGlobal, _query.CancellationToken);
 
@@ -186,8 +190,8 @@ public partial class WordList
                         var info = SpellCheckResultType.OrigCap;
                         if (_query.CheckWord(scw, ref info, out _) is not null)
                         {
-                            slst.Add(HunspellTextFunctions.MakeInitCap(scw, textInfo));
-                            return slst;
+                            slst.Add(StringEx.MakeInitCap(scw, textInfo));
+                            goto result;
                         }
                     }
 
@@ -195,7 +199,7 @@ public partial class WordList
 
                     if (opLimiter.QueryForCancellation())
                     {
-                        return slst;
+                        goto result;
                     }
 
                     if (abbv != 0)
@@ -205,7 +209,7 @@ public partial class WordList
 
                         if (opLimiter.QueryForCancellation())
                         {
-                            return slst;
+                            goto result;
                         }
                     }
 
@@ -217,14 +221,14 @@ public partial class WordList
 
                     if (opLimiter.QueryForCancellation())
                     {
-                        return slst;
+                        goto result;
                     }
 
-                    good |= Suggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), ref onlyCompoundSuggest);
+                    good |= Suggest(slst, StringEx.MakeAllSmall(scw, textInfo), ref onlyCompoundSuggest);
 
                     if (opLimiter.QueryForCancellation())
                     {
-                        return slst;
+                        goto result;
                     }
 
                     break;
@@ -232,13 +236,14 @@ public partial class WordList
                 case CapitalizationType.HuhInit:
                     capWords = true;
                     goto case CapitalizationType.Huh;
+
                 case CapitalizationType.Huh:
 
                     good |= Suggest(slst, scw, ref onlyCompoundSuggest);
 
                     if (opLimiter.QueryForCancellation())
                     {
-                        return slst;
+                        goto result;
                     }
 
                     // something.The -> something. The
@@ -246,7 +251,7 @@ public partial class WordList
                     if (
                         dotPos >= 0
                         &&
-                        HunspellTextFunctions.GetCapitalizationType(scw.AsSpan(dotPos + 1), textInfo) == CapitalizationType.Init
+                        StringEx.GetCapitalizationType(scw.AsSpan(dotPos + 1), textInfo) == CapitalizationType.Init
                     )
                     {
                         InsertSuggestion(slst, scw.Insert(dotPos + 1, " "));
@@ -255,15 +260,15 @@ public partial class WordList
                     if (capWords)
                     {
                         // TheOpenOffice.org -> The OpenOffice.org
-                        good |= Suggest(slst, HunspellTextFunctions.MakeInitSmall(scw, textInfo), ref onlyCompoundSuggest);
+                        good |= Suggest(slst, StringEx.MakeInitSmall(scw, textInfo), ref onlyCompoundSuggest);
 
                         if (opLimiter.QueryForCancellation())
                         {
-                            return slst;
+                            goto result;
                         }
                     }
 
-                    wspace = HunspellTextFunctions.MakeAllSmall(scw, textInfo);
+                    wspace = StringEx.MakeAllSmall(scw, textInfo);
                     if (Check(wspace))
                     {
                         InsertSuggestion(slst, wspace);
@@ -274,12 +279,12 @@ public partial class WordList
 
                     if (opLimiter.QueryForCancellation())
                     {
-                        return slst;
+                        goto result;
                     }
 
                     if (capWords)
                     {
-                        wspace = HunspellTextFunctions.MakeInitCap(wspace, textInfo);
+                        wspace = StringEx.MakeInitCap(wspace, textInfo);
                         if (Check(wspace))
                         {
                             InsertSuggestion(slst, wspace);
@@ -289,7 +294,7 @@ public partial class WordList
 
                         if (opLimiter.QueryForCancellation())
                         {
-                            return slst;
+                            goto result;
                         }
                     }
 
@@ -335,12 +340,12 @@ public partial class WordList
                     break;
 
                 case CapitalizationType.All:
-                    wspace = HunspellTextFunctions.MakeAllSmall(scw, textInfo);
+                    wspace = StringEx.MakeAllSmall(scw, textInfo);
                     good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
                     if (opLimiter.QueryForCancellation())
                     {
-                        return slst;
+                        goto result;
                     }
 
                     if (Affix.KeepCase.HasValue && Check(wspace))
@@ -348,17 +353,17 @@ public partial class WordList
                         InsertSuggestion(slst, wspace);
                     }
 
-                    wspace = HunspellTextFunctions.MakeInitCap(wspace, textInfo);
+                    wspace = StringEx.MakeInitCap(wspace, textInfo);
                     good |= Suggest(slst, wspace, ref onlyCompoundSuggest);
 
                     if (opLimiter.QueryForCancellation())
                     {
-                        return slst;
+                        goto result;
                     }
 
                     for (var j = 0; j < slst.Count; j++)
                     {
-                        slst[j] = HunspellTextFunctions.MakeAllCap(slst[j], textInfo).Replace("ß", "SS");
+                        slst[j] = StringEx.MakeAllCap(slst[j], textInfo).Replace("ß", "SS");
                     }
 
                     break;
@@ -398,22 +403,23 @@ public partial class WordList
                     case CapitalizationType.HuhInit:
                         capWords = true;
                         goto case CapitalizationType.Huh;
+
                     case CapitalizationType.Huh:
-                        NGramSuggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), CapitalizationType.Huh);
+                        NGramSuggest(slst, StringEx.MakeAllSmall(scw, textInfo), CapitalizationType.Huh);
                         break;
 
                     case CapitalizationType.Init:
                         capWords = true;
-                        NGramSuggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), capType);
+                        NGramSuggest(slst, StringEx.MakeAllSmall(scw, textInfo), capType);
                         break;
 
                     case CapitalizationType.All:
                         var oldns = slst.Count;
-                        NGramSuggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), capType);
+                        NGramSuggest(slst, StringEx.MakeAllSmall(scw, textInfo), capType);
 
                         for (var j = oldns; j < slst.Count; j++)
                         {
-                            slst[j] = HunspellTextFunctions.MakeAllCap(slst[j], textInfo);
+                            slst[j] = StringEx.MakeAllCap(slst[j], textInfo);
                         }
 
                         break;
@@ -421,7 +427,7 @@ public partial class WordList
 
                 if (opLimiter.QueryForCancellation())
                 {
-                    return slst;
+                    goto result;
                 }
             }
 
@@ -507,7 +513,7 @@ public partial class WordList
             {
                 for (var j = 0; j < slst.Count; j++)
                 {
-                    slst[j] = HunspellTextFunctions.MakeInitCap(slst[j], textInfo);
+                    slst[j] = StringEx.MakeInitCap(slst[j], textInfo);
                 }
             }
 
@@ -533,14 +539,14 @@ public partial class WordList
                     var sitem = slst[j];
                     if (!sitem.Contains(' ') && !Check(sitem))
                     {
-                        var s = HunspellTextFunctions.MakeAllSmall(sitem, textInfo);
+                        var s = StringEx.MakeAllSmall(sitem, textInfo);
                         if (Check(s))
                         {
                             slst[l++] = s;
                         }
                         else
                         {
-                            s = HunspellTextFunctions.MakeInitCap(s, textInfo);
+                            s = StringEx.MakeInitCap(s, textInfo);
                             if (Check(s))
                             {
                                 slst[l++] = s;
@@ -562,6 +568,7 @@ public partial class WordList
             // output conversion
             Affix.OutputConversions.ConvertAll(slst);
 
+        result:
             return slst;
         }
 
@@ -571,85 +578,13 @@ public partial class WordList
 
         private readonly bool Check(ReadOnlySpan<char> word) => new QueryCheck(_query).Check(word);
 
-        private readonly bool TryLookupFirstDetail(ReadOnlySpan<char> word, out WordEntryDetail wordEntryDetail) => WordList.TryFindFirstEntryDetailByRootWord(word, out wordEntryDetail);
+        private readonly bool TryLookupFirstDetail(ReadOnlySpan<char> word, out WordEntryDetail wordEntryDetail) => WordList.TryGetFirstEntryDetailByRootWord(word, out wordEntryDetail);
 
         private readonly bool TryLookupFirstDetail(string word, out WordEntryDetail wordEntryDetail) => WordList.TryFindFirstEntryDetailByRootWord(word, out wordEntryDetail);
 
-        internal sealed class SuggestionList : List<string>
-        {
-            public SuggestionList() : base()
-            {
-            }
-
-            public void Add(ReadOnlySpan<char> suggestion)
-            {
-                base.Add(suggestion.ToString());
-            }
-
-            public void Insert(ReadOnlySpan<char> suggestion)
-            {
-                Insert(suggestion.ToString());
-            }
-
-            public void Insert(string suggestion)
-            {
-                Insert(0, suggestion);
-            }
-
-            public void ReplaceLast(string suggestion)
-            {
-                var lastIndex = Count - 1;
-                if (lastIndex >= 0)
-                {
-                    this[lastIndex] = suggestion;
-                }
-                else
-                {
-                    Add(suggestion);
-                }
-            }
-
-            public bool CanAccept(QueryOptions options)
-            {
-                return Count < options.MaxSuggestions;
-            }
-
-            public bool CanAccept(string suggestion, QueryOptions options)
-            {
-                return CanAccept(options) && !Contains(suggestion);
-            }
-
-            public bool CanAccept(ReadOnlySpan<char> suggestion, QueryOptions options)
-            {
-                return CanAccept(options) && !this.Contains(suggestion);
-            }
-
-            public bool AddIfAcceptable(string suggestion, QueryOptions options)
-            {
-                if (CanAccept(suggestion, options))
-                {
-                    Add(suggestion);
-                    return true;
-                }
-
-                return false;
-            }
-
-            public bool AddIfAcceptable(ReadOnlySpan<char> suggestion, QueryOptions options)
-            {
-                if (CanAccept(suggestion, options))
-                {
-                    Add(suggestion);
-                    return true;
-                }
-
-                return false;
-            }
-        }
-
         private ref struct SuggestState
         {
-            public SuggestState(string word, SuggestionList slst)
+            public SuggestState(string word, List<string> slst)
             {
                 SuggestionList = slst;
                 _rawCandidateBuffer = ArrayPool<char>.Shared.Rent(word.Length + 2);
@@ -660,7 +595,7 @@ public partial class WordList
                 GoodSuggestion = false;
             }
 
-            public SuggestionList SuggestionList;
+            public List<string> SuggestionList;
             private char[] _rawCandidateBuffer;
             public ReadOnlySpan<char> Word;
             public Span<char> CandidateBuffer;
@@ -695,7 +630,7 @@ public partial class WordList
         /// <param name="word">The word to base suggestions on.</param>
         /// <param name="onlyCompoundSug">Indicates there may be bad suggestions.</param>
         /// <returns>True when there may be a good suggestion.</returns>
-        internal bool Suggest(SuggestionList slst, string word, ref bool onlyCompoundSug)
+        internal bool Suggest(List<string> slst, string word, ref bool onlyCompoundSug)
         {
             var noCompoundTwoWords = false; // no second or third loops, see below
             var nSugOrig = slst.Count;
@@ -1219,7 +1154,7 @@ public partial class WordList
         }
 
         private void CapChars(string word, ref SuggestState state) =>
-            TestSug(HunspellTextFunctions.MakeAllCap(word, TextInfo), ref state);
+            TestSug(StringEx.MakeAllCap(word, TextInfo), ref state);
 
         private void MapChars(string word, ref SuggestState state)
         {
@@ -1238,7 +1173,7 @@ public partial class WordList
             if (word.Length == wn)
             {
                 if (
-                    state.SuggestionList.CanAccept(candidate, Options)
+                    CanAcceptSuggestion(state.SuggestionList, candidate)
                     &&
                     CheckWord(candidate, state.CpdSuggest, ref timer) != 0
                 )
@@ -1286,7 +1221,7 @@ public partial class WordList
 
         private bool TestSug(ReadOnlySpan<char> candidate, ref SuggestState state, ref OperationTimedCountLimiter timer)
         {
-            if (state.SuggestionList.CanAccept(candidate, Options))
+            if (CanAcceptSuggestion(state.SuggestionList, candidate))
             {
                 var result = CheckWord(candidate, state.CpdSuggest, ref timer);
                 if (result != 0)
@@ -1297,7 +1232,7 @@ public partial class WordList
                         state.Info |= SpellCheckResultType.Compound;
                     }
 
-                    state.SuggestionList.Add(candidate);
+                    state.SuggestionList.Add(candidate.ToString());
                     return true;
                 }
             }
@@ -1307,7 +1242,7 @@ public partial class WordList
 
         private bool TestSug(string candidate, ref SuggestState state)
         {
-            if (state.SuggestionList.CanAccept(candidate, Options))
+            if (CanAcceptSuggestion(state.SuggestionList, candidate))
             {
                 var result = CheckWord(candidate, state.CpdSuggest);
                 if (result != 0)
@@ -1328,7 +1263,7 @@ public partial class WordList
 
         private bool TestSug(ReadOnlySpan<char> candidate, ref SuggestState state)
         {
-            if (state.SuggestionList.CanAccept(candidate, Options))
+            if (CanAcceptSuggestion(state.SuggestionList, candidate))
             {
                 var result = CheckWord(candidate, state.CpdSuggest);
                 if (result != 0)
@@ -1339,7 +1274,7 @@ public partial class WordList
                         state.Info |= SpellCheckResultType.Compound;
                     }
 
-                    state.SuggestionList.Add(candidate);
+                    state.SuggestionList.Add(candidate.ToString());
                     return true;
                 }
             }
@@ -1361,7 +1296,7 @@ public partial class WordList
         {
             foreach (var rvDetail in rvDetails)
             {
-                if (!rvDetail.ContainsAnyFlags(Affix.Flags_NeedAffix_OnlyInCompound_OnlyUpcase))
+                if (rvDetail.DoesNotContainAnyFlags(Affix.Flags_NeedAffix_OnlyInCompound_OnlyUpcase))
                 {
                     return new WordEntry(word, rvDetail);
                 }
@@ -1446,8 +1381,12 @@ public partial class WordList
             }
 
             // get homonyms
-            if (_query.TryLookupDetails(word, out var wordString, out var rvDetails) && rvDetails is { Length: > 0 })
+            if (_query.TryLookupDetails(word, out var wordString, out var rvDetails))
             {
+#if DEBUG
+                if (rvDetails is not { Length: > 0 }) ExceptionEx.ThrowInvalidOperation();
+#endif
+
                 if (rvDetails[0].ContainsAnyFlags(Affix.Flags_ForbiddenWord_NoSuggest_SubStandard))
                 {
                     return 0;
@@ -1497,8 +1436,12 @@ public partial class WordList
             }
 
             // get homonyms
-            if (_query.TryLookupDetails(word, out var rvDetails) && rvDetails is { Length: > 0 })
+            if (_query.TryLookupDetails(word, out var rvDetails))
             {
+#if DEBUG
+                if (rvDetails is not { Length: > 0 }) ExceptionEx.ThrowInvalidOperation();
+#endif
+
                 if (rvDetails[0].ContainsAnyFlags(Affix.Flags_ForbiddenWord_NoSuggest_SubStandard))
                 {
                     return 0;
@@ -1624,7 +1567,7 @@ public partial class WordList
 
             var hasPhoneEntries = Affix.Phone.HasItems;
             var target = hasPhoneEntries
-                ? Phonet(HunspellTextFunctions.MakeAllCap(word, TextInfo))
+                ? Phonet(StringEx.MakeAllCap(word, TextInfo))
                 : string.Empty;
             var isNonGermanLowercase = !Affix.IsGerman && capType == CapitalizationType.None;
 
@@ -1669,7 +1612,7 @@ public partial class WordList
                     var scphon = -20000;
                     if (hasPhoneEntries && sc > 2 && wordKeyLengthDifference <= 3)
                     {
-                        scphon = NGramNoLowering(3, target, Phonet(HunspellTextFunctions.MakeAllCap(hpSet.Key, TextInfo)), NGramOptions.LongerWorse) * 2;
+                        scphon = NGramNoLowering(3, target, Phonet(StringEx.MakeAllCap(hpSet.Key, TextInfo)), NGramOptions.LongerWorse) * 2;
                     }
 
                     if (sc > roots[lp].Score)
@@ -1718,7 +1661,7 @@ public partial class WordList
             var thresh = 0;
 
             {
-                var wordLowered = HunspellTextFunctions.MakeAllSmall(word, TextInfo);
+                var wordLowered = StringEx.MakeAllSmall(word, TextInfo);
                 var mw = new StringBuilderSpan(wordLowered.Length);
                 for (var sp = 1; sp < 4; sp++)
                 {
@@ -1878,7 +1821,7 @@ public partial class WordList
                     if (root.RootPhon is not null)
                     {
                         // lowering rootphon[i]
-                        var gl = HunspellTextFunctions.MakeAllSmall(root.RootPhon, TextInfo);
+                        var gl = StringEx.MakeAllSmall(root.RootPhon, TextInfo);
                         var len = root.RootPhon.Length;
 
                         // heuristic weigthing of ngram scores
@@ -2005,7 +1948,7 @@ public partial class WordList
             // decapitalize dictionary word
             var t = Affix.ComplexPrefixes
                 ? s2.AsSpan(0, s2.Length - 1).ConcatString(TextInfo.ToLower(s2[s2.Length - 1]))
-                : HunspellTextFunctions.MakeAllSmall(s2, TextInfo);
+                : StringEx.MakeAllSmall(s2, TextInfo);
 
             var num = 0;
             var diff = 0;
@@ -2223,7 +2166,7 @@ public partial class WordList
                     !sptr.ContainsAnyContClass(Affix.Flags_NeedAffix_OnlyInCompound_Circumfix)
                 )
                 {
-                    var newword = Add(sptr, entry.Word);
+                    var newword = ConcatWithSuffix(entry.Word, sptr);
                     if (newword.Length != 0)
                     {
                         if (nh < wlst.Length)
@@ -2387,7 +2330,7 @@ public partial class WordList
                         state.SuggestionList.Clear();
                     }
 
-                    state.SuggestionList.Insert(candidate.TerminatedSpan);
+                    state.SuggestionList.Insert(0, candidate.TerminatedSpan.ToString());
                 }
 
                 // word pairs with dash?
@@ -2406,11 +2349,11 @@ public partial class WordList
                             state.SuggestionList.Clear();
                         }
 
-                        state.SuggestionList.Insert(candidate.TerminatedSpan);
+                        state.SuggestionList.Insert(0, candidate.TerminatedSpan.ToString());
                     }
                 }
 
-                if (!good && !Affix.NoSplitSuggestions && state.SuggestionList.CanAccept(Options))
+                if (!good && !Affix.NoSplitSuggestions && CanAcceptSuggestion(state.SuggestionList))
                 {
                     candidate[p] = '\0';
 
@@ -2450,7 +2393,7 @@ public partial class WordList
                                     )
                                 ) ? '-' : ' ';
 
-                            state.SuggestionList.AddIfAcceptable(candidate.TerminatedSpan, Options);
+                            AddIfAcceptable(state.SuggestionList, candidate.TerminatedSpan);
 
                             // add two word suggestion with dash, depending on the language
                             // Note that cwrd doesn't modified for REP twoword sugg.
@@ -2466,7 +2409,7 @@ public partial class WordList
                             {
                                 candidate[p] = '-';
 
-                                state.SuggestionList.AddIfAcceptable(candidate.TerminatedSpan, Options);
+                                AddIfAcceptable(state.SuggestionList, candidate.TerminatedSpan);
                             }
                         }
                     }
@@ -2485,7 +2428,7 @@ public partial class WordList
                 var rv = _query.SuffixCheck(word, AffixEntryOptions.None, null, default, default, CompoundOptions.Not); // prefix+suffix, suffix
                 return (rv is not null && rv.ContainsFlag(Affix.ForbiddenWord));
             }
-            else if (WordList.TryFindFirstEntryDetailByRootWord(word, out var rvDetail) && rvDetail.DoesNotContainAnyFlags(Affix.Flags_NeedAffix_OnlyInCompound))
+            else if (WordList.TryGetFirstEntryDetailByRootWord(word, out var rvDetail) && rvDetail.DoesNotContainAnyFlags(Affix.Flags_NeedAffix_OnlyInCompound))
             {
                 return rvDetail.ContainsFlag(Affix.ForbiddenWord);
             }
@@ -2522,7 +2465,7 @@ public partial class WordList
         /// <summary>
         /// Add suffix to this word assuming conditions hold.
         /// </summary>
-        private readonly string Add(SuffixEntry entry, string word)
+        private readonly string ConcatWithSuffix(string word, SuffixEntry entry)
         {
             // make sure all conditions match
             if (word.Length > entry.Strip.Length || (word.Length == 0 && Affix.FullStrip))
@@ -2544,6 +2487,20 @@ public partial class WordList
             }
 
             return string.Empty;
+        }
+
+        private readonly bool CanAcceptSuggestion(List<string> suggestions) =>  suggestions.Count < Options.MaxSuggestions;
+
+        private readonly bool CanAcceptSuggestion(List<string> suggestions, string candidate) => CanAcceptSuggestion(suggestions) && !suggestions.Contains(candidate);
+
+        private readonly bool CanAcceptSuggestion(List<string> suggestions, ReadOnlySpan<char> candidate) => CanAcceptSuggestion(suggestions) && !suggestions.Contains(candidate);
+
+        private readonly void AddIfAcceptable(List<string> suggestions, ReadOnlySpan<char> candidate)
+        {
+            if (CanAcceptSuggestion(suggestions, candidate))
+            {
+                suggestions.Add(candidate.ToString());
+            }
         }
 
         private static bool CopyField(ref string dest, MorphSet morphs, string var)
@@ -2613,7 +2570,7 @@ public partial class WordList
             return NGramNoLowering(
                 n,
                 s1,
-                HunspellTextFunctions.MakeAllSmall(s2, TextInfo),
+                StringEx.MakeAllSmall(s2, TextInfo),
                 opt);
         }
 
@@ -2805,7 +2762,7 @@ public partial class WordList
                     {
                         // check letters in "(..)"
                         if (
-                            HunspellTextFunctions.MyIsAlpha(word.GetCharOrTerminator(i + k)) // NOTE: could be implied?
+                            StringEx.MyIsAlpha(word.GetCharOrTerminator(i + k)) // NOTE: could be implied?
                             &&
                             sString.IndexOf(word.GetCharOrTerminator(i + k), sIndex + 1) >= 0
                         )
@@ -2856,13 +2813,13 @@ public partial class WordList
                             (
                                 i == 0
                                 ||
-                                !HunspellTextFunctions.MyIsAlpha(word.GetCharOrTerminator(i - 1))
+                                !StringEx.MyIsAlpha(word.GetCharOrTerminator(i - 1))
                             )
                             &&
                             (
                                 sString.GetCharOrTerminator(sIndex + 1) != '$'
                                 ||
-                                !HunspellTextFunctions.MyIsAlpha(word.GetCharOrTerminator(i + k0))
+                                !StringEx.MyIsAlpha(word.GetCharOrTerminator(i + k0))
                             )
                         )
                         ||
@@ -2871,9 +2828,9 @@ public partial class WordList
                             &&
                             i > 0
                             &&
-                            HunspellTextFunctions.MyIsAlpha(word.GetCharOrTerminator(i - 1))
+                            StringEx.MyIsAlpha(word.GetCharOrTerminator(i - 1))
                             &&
-                            !HunspellTextFunctions.MyIsAlpha(word.GetCharOrTerminator(i + k0))
+                            !StringEx.MyIsAlpha(word.GetCharOrTerminator(i + k0))
                         )
                     )
                     {
@@ -2902,7 +2859,7 @@ public partial class WordList
                                 if (sChar == '(')
                                 {
                                     // check letters
-                                    if (HunspellTextFunctions.MyIsAlpha(word.GetCharOrTerminator(i + k0)) && sString.IndexOf(word.GetCharOrTerminator(i + k0), sIndex + 1) >= 0)
+                                    if (StringEx.MyIsAlpha(word.GetCharOrTerminator(i + k0)) && sString.IndexOf(word.GetCharOrTerminator(i + k0), sIndex + 1) >= 0)
                                     {
                                         k0++;
                                         while (sChar != ')' && sChar != '\0')
@@ -2940,7 +2897,7 @@ public partial class WordList
                                     (
                                         sChar == '$'
                                         &&
-                                        !HunspellTextFunctions.MyIsAlpha(word.GetCharOrTerminator(i + k0))
+                                        !StringEx.MyIsAlpha(word.GetCharOrTerminator(i + k0))
                                     )
                                 )
                                 {

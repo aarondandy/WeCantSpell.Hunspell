@@ -2,9 +2,9 @@
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
-namespace WeCantSpell.Hunspell.Infrastructure;
+namespace WeCantSpell.Hunspell;
 
-static class HunspellTextFunctions
+internal static partial class StringEx
 {
 
 #if false // This isn't used anymore but I want to keep it around as it was tricky to port
@@ -173,21 +173,6 @@ static class HunspellTextFunctions
             if (expectedFirstLetter != actualFirstLetter)
             {
                 s = StringEx.ConcatString(expectedFirstLetter, s.AsSpan(1));
-            }
-        }
-
-        return s;
-    }
-
-    public static ReadOnlySpan<char> MakeInitCap(ReadOnlySpan<char> s, TextInfo textInfo)
-    {
-        if (!s.IsEmpty)
-        {
-            var actualFirstLetter = s[0];
-            var expectedFirstLetter = textInfo.ToUpper(actualFirstLetter);
-            if (expectedFirstLetter != actualFirstLetter)
-            {
-                s = StringEx.ConcatString(expectedFirstLetter, s.Slice(1)).AsSpan();
             }
         }
 

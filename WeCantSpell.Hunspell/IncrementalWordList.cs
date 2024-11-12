@@ -1,11 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
-sealed class IncrementalWordList
+internal sealed class IncrementalWordList
 {
     private const int MaxCachedCapacity = 32;
 

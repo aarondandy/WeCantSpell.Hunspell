@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Globalization;
 
-namespace WeCantSpell.Hunspell.Infrastructure;
+namespace WeCantSpell.Hunspell;
 
-static class IntEx
+internal static class IntEx
 {
     private static readonly NumberFormatInfo InvariantNumberFormat = CultureInfo.InvariantCulture.NumberFormat;
 

@@ -4,14 +4,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 /// <remarks>
 /// This probably does not need to exist if https://github.com/dotnet/runtime/issues/27229 works out.
 /// </remarks>
-sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>, IDictionary<string, TValue>
+internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>, IDictionary<string, TValue>
 {
     public static TextDictionary<TValue> Clone(TextDictionary<TValue> source)
     {
@@ -57,19 +55,6 @@ sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>,
         foreach (var entry in source)
         {
             builder.Write(entry.Key, entry.Value);
-        }
-
-        builder.Flush();
-
-        return new TextDictionary<TValue>(ref builder);
-    }
-
-    public static TextDictionary<TValue> MapFromDictionary<TSourceValue>(Dictionary<string, TSourceValue> source, Func<TSourceValue, TValue> valueSelector)
-    {
-        var builder = new Builder(source.Count);
-        foreach (var entry in source)
-        {
-            builder.Write(entry.Key, valueSelector(entry.Value));
         }
 
         builder.Flush();

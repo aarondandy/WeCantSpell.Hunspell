@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
-namespace WeCantSpell.Hunspell.Infrastructure;
+namespace WeCantSpell.Hunspell;
 
-ref struct StringBuilderSpan
+internal ref struct StringBuilderSpan
 {
     public StringBuilderSpan(int capacity)
     {
@@ -84,12 +84,6 @@ ref struct StringBuilderSpan
     }
 
     internal readonly Span<char> CurrentSpan => _bufferSpan.Slice(0, _length);
-
-    public void Clear()
-    {
-        _length = 0;
-    }
-
 
 #if NO_STRING_SPAN
 
@@ -496,28 +490,6 @@ ref struct StringBuilderSpan
         _length++;
     }
 
-    public void Insert(int index, scoped ReadOnlySpan<char> value)
-    {
-#if DEBUG
-        ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
-        ExceptionEx.ThrowIfArgumentGreaterThan(index, _length + 1, nameof(index));
-#endif
-
-        var newSize = value.Length + _length;
-        if (newSize > _bufferSpan.Length)
-        {
-            GrowBufferToCapacity(newSize);
-        }
-
-        if (index < _length)
-        {
-            _bufferSpan.Slice(index, _length - index).CopyTo(_bufferSpan.Slice(value.Length + index));
-        }
-
-        value.CopyTo(_bufferSpan.Slice(index));
-        _length = newSize;
-    }
-
     public readonly void Sort()
     {
 #if NO_SPAN_SORT
@@ -576,8 +548,6 @@ ref struct StringBuilderSpan
     }
 
     public override readonly string ToString() => _length == 0 ? string.Empty : _bufferSpan.Slice(0, _length).ToString();
-
-    public readonly bool StartsWith(char value) => _length != 0 && _bufferSpan[0] == value;
 
     public readonly bool EndsWith(char value) => _length != 0 && _bufferSpan[_length - 1] == (value);
 

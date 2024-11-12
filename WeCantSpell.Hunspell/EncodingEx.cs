@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Text;
 
-namespace WeCantSpell.Hunspell.Infrastructure;
+namespace WeCantSpell.Hunspell;
 
-static class EncodingEx
+internal static class EncodingEx
 {
     public static Encoding? GetEncodingByName(string encodingName) =>
         GetUtf8EncodingOrDefault(encodingName.AsSpan()) ?? GetEncodingFromDatabase(encodingName);

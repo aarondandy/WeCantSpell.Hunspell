@@ -2,8 +2,6 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 [DebuggerDisplay("AFlag = {AFlag}, Entries = {Entries}")]

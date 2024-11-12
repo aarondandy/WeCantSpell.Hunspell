@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Diagnostics;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 [DebuggerDisplay("Word = {Word}, {Detail}")]
-sealed class WordEntry : IEquatable<WordEntry>
+internal sealed class WordEntry : IEquatable<WordEntry>
 {
     public static bool operator ==(WordEntry? a, WordEntry? b) => a is null ? b is null : a.Equals(b);
 

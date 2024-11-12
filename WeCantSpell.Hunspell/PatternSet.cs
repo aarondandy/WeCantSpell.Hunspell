@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-
-using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
+[DebuggerDisplay("Count = {Count}")]
 public readonly struct PatternSet : IReadOnlyList<PatternEntry>
 {
     public static PatternSet Empty { get; } = new([]);
@@ -29,7 +29,7 @@ public readonly struct PatternSet : IReadOnlyList<PatternEntry>
 
     private readonly PatternEntry[]? _patterns;
 
-    public int Count => _patterns is null ? 0 : _patterns.Length;
+    public int Count => _patterns is not null ? _patterns.Length : 0;
 
     public bool IsEmpty => _patterns is not { Length: > 0 };
 
@@ -47,6 +47,11 @@ public readonly struct PatternSet : IReadOnlyList<PatternEntry>
             ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
 
+            if (_patterns is null)
+            {
+                ExceptionEx.ThrowInvalidOperation("Not initialized");
+            }
+
             return _patterns![index];
         }
     }
@@ -60,7 +65,9 @@ public readonly struct PatternSet : IReadOnlyList<PatternEntry>
     /// <summary>
     /// Forbid compoundings when there are special patterns at word bound.
     /// </summary>
+#pragma warning disable IDE0060 // Remove unused parameter
     internal bool Check(ReadOnlySpan<char> word, int pos, WordEntry r1, WordEntry r2, bool affixed)
+#pragma warning restore IDE0060 // Remove unused parameter
     {
         var wordAfterPos = word.Slice(pos);
 
@@ -87,7 +94,7 @@ public readonly struct PatternSet : IReadOnlyList<PatternEntry>
                     PatternWordCheck(word, pos, patternEntry.Pattern.StartsWith('0') ? r1.Word : patternEntry.Pattern)
                 )
                 &&
-                HunspellTextFunctions.IsSubset(patternEntry.Pattern2, wordAfterPos)
+                StringEx.IsSubset(patternEntry.Pattern2, wordAfterPos)
             )
             {
                 return true;

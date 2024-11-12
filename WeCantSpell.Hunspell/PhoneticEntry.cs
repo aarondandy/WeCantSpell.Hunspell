@@ -1,5 +1,8 @@
-﻿namespace WeCantSpell.Hunspell;
+﻿using System.Diagnostics;
 
+namespace WeCantSpell.Hunspell;
+
+[DebuggerDisplay("Rule = {Rule}, Replace = {Replace}")]
 public sealed class PhoneticEntry
 {
     public PhoneticEntry(string rule, string replace)

@@ -6,8 +6,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-using WeCantSpell.Hunspell.Infrastructure;
-
 namespace WeCantSpell.Hunspell;
 
 internal sealed class LineReader : IDisposable
@@ -483,8 +481,6 @@ internal sealed class LineReader : IDisposable
 
         public readonly ReadOnlySpan<char> ReadSpan => Memory.Span;
 
-        public readonly int FindLineBreak() => Memory.Span.IndexOf(CharacterLf);
-
         public readonly int FindLineBreak(int startIndex) => Memory.Span.IndexOf(CharacterLf, startIndex);
 
         public void PrepareMemoryForUse(int valueSize)
@@ -508,11 +504,5 @@ internal sealed class LineReader : IDisposable
 
         public int BufferIndex;
         public int SubIndex;
-
-        public readonly void Deconstruct(out int bufferIndex, out int subIndex)
-        {
-            bufferIndex = BufferIndex;
-            subIndex = SubIndex;
-        }
     }
 }
