@@ -28,6 +28,19 @@ static class CollectionsEx
 
 #endif
 
+    public static void ReplaceLast<T>(this List<T> list, T item)
+    {
+        var index = list.Count - 1;
+        if (index >= 0)
+        {
+            list[index] = item;
+        }
+        else
+        {
+            list.Add(item);
+        }
+    }
+
     public static int RemoveDuplicates<T>(this List<T> list, IEqualityComparer<T> comparer)
     {
         if (list.Count < 2)
