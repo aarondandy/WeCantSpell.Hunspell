@@ -110,6 +110,23 @@ static class CollectionsEx
 
 #endif
 
+#if NO_DICTIONARY_GETVALUE
+
+    public static TValue? GetValueOrDefault<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary, TKey key) =>
+        dictionary.TryGetValue(key, out var result) ? result : default;
+
+#endif
+
+#if NO_KVP_DECONSTRUCT
+
+    public static void Deconstruct<TKey, TValue>(this KeyValuePair<TKey, TValue> pair, out TKey key, out TValue value)
+    {
+        key = pair.Key;
+        value = pair.Value;
+    }
+
+#endif
+
     public static ImmutableArray<T> ToImmutable<T>(this ImmutableArray<T>.Builder builder, bool allowDestructive) =>
         allowDestructive && builder.Capacity == builder.Count ? builder.MoveToImmutable() : builder.ToImmutable();
 }

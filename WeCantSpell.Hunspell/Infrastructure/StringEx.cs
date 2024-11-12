@@ -18,13 +18,9 @@ static partial class StringEx
 
     public static bool StartsWith(this ReadOnlySpan<char> @this, char value) => !@this.IsEmpty && @this[0] == value;
 
-    public static bool StartsWith(this Span<char> @this, char value) => !@this.IsEmpty && @this[0] == value;
-
     public static bool EndsWith(this string @this, char character) => @this.Length > 0 && @this[@this.Length - 1] == character;
 
     public static bool EndsWith(this ReadOnlySpan<char> @this, char value) => !@this.IsEmpty && @this[@this.Length - 1] == value;
-
-    public static bool EndsWith(this Span<char> @this, char value) => !@this.IsEmpty && @this[@this.Length - 1] == value;
 
     public static bool EndsWith(this ReadOnlyMemory<char> @this, char value) => !@this.IsEmpty && @this.Span[@this.Length - 1] == value;
 
@@ -47,11 +43,6 @@ static partial class StringEx
 #else
     public static int IndexOfTabOrSpace(this ReadOnlySpan<char> span) => span.IndexOfAny('\t', ' ');
 #endif
-
-    public static int IndexOf(this ReadOnlySpan<char> @this, string value, int startIndex, StringComparison comparisonType)
-    {
-        return @this.IndexOf(value.AsSpan(), startIndex, comparisonType);
-    }
 
     public static int IndexOf(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value, int startIndex, StringComparison comparisonType)
     {

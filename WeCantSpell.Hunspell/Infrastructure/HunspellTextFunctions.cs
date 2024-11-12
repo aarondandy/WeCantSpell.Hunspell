@@ -179,21 +179,6 @@ static class HunspellTextFunctions
         return s;
     }
 
-    public static ReadOnlySpan<char> MakeInitCap(ReadOnlySpan<char> s, TextInfo textInfo)
-    {
-        if (!s.IsEmpty)
-        {
-            var actualFirstLetter = s[0];
-            var expectedFirstLetter = textInfo.ToUpper(actualFirstLetter);
-            if (expectedFirstLetter != actualFirstLetter)
-            {
-                s = StringEx.ConcatString(expectedFirstLetter, s.Slice(1)).AsSpan();
-            }
-        }
-
-        return s;
-    }
-
     /// <summary>
     /// Convert to all little.
     /// </summary>
