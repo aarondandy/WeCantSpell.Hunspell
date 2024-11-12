@@ -67,24 +67,24 @@ public partial class WordList
         {
             if (_query.WordList.IsEmpty)
             {
-                return CreateSuggestFailureResult();
+                goto fail;
             }
 
             // process XML input of the simplified API (see manual)
             if (word.StartsWith(Query.DefaultXmlTokenCheckPrefix, StringComparison.Ordinal))
             {
-                return CreateSuggestFailureResult(); // TODO: complete support for XML input
+                goto fail; // TODO: complete support for XML input
             }
 
             if (word.Length >= Options.MaxWordLen)
             {
-                return CreateSuggestFailureResult();
+                goto fail;
             }
 
             // something very broken if suggest ends up calling itself with the same word
             if (_suggestCandidateStack.Contains(word))
             {
-                return CreateSuggestFailureResult();
+                goto fail;
             }
 
             // input conversion
@@ -97,7 +97,7 @@ public partial class WordList
 
             if (scw.Length == 0)
             {
-                return CreateSuggestFailureResult();
+                goto fail;
             }
 
             CandidateStack.Push(ref _suggestCandidateStack, word);
@@ -107,30 +107,34 @@ public partial class WordList
             CandidateStack.Pop(ref _suggestCandidateStack);
 
             return slst;
+
+        fail:
+
+            return [];
         }
 
         public List<string> Suggest(ReadOnlySpan<char> word)
         {
             if (_query.WordList.IsEmpty)
             {
-                return CreateSuggestFailureResult();
+                goto fail;
             }
 
             // process XML input of the simplified API (see manual)
             if (word.StartsWith(Query.DefaultXmlTokenCheckPrefix, StringComparison.Ordinal))
             {
-                return CreateSuggestFailureResult(); // TODO: complete support for XML input
+                goto fail; // TODO: complete support for XML input
             }
 
             if (word.Length >= Options.MaxWordLen)
             {
-                return CreateSuggestFailureResult();
+                goto fail;
             }
 
             // something very broken if suggest ends up calling itself with the same word
             if (_suggestCandidateStack.ExceedsArbitraryDepthLimit || _suggestCandidateStack.Contains(word))
             {
-                return CreateSuggestFailureResult();
+                goto fail;
             }
 
             // input conversion
@@ -147,7 +151,7 @@ public partial class WordList
 
             if (scw.Length == 0)
             {
-                return CreateSuggestFailureResult();
+                goto fail;
             }
 
             // NOTE: because a string isn't formed until this point, scw is pushed instead. It isn't the same, but might be good enough.
@@ -159,9 +163,11 @@ public partial class WordList
             CandidateStack.Pop(ref _suggestCandidateStack);
 
             return slst;
-        }
 
-        private static List<string> CreateSuggestFailureResult() => [];
+        fail:
+
+            return [];
+        }
 
         private List<string> SuggestInternal(ReadOnlySpan<char> word, string scw, CapitalizationType capType, int abbv)
         {
@@ -187,7 +193,7 @@ public partial class WordList
                         if (_query.CheckWord(scw, ref info, out _) is not null)
                         {
                             slst.Add(HunspellTextFunctions.MakeInitCap(scw, textInfo));
-                            return slst;
+                            goto result;
                         }
                     }
 
@@ -195,7 +201,7 @@ public partial class WordList
 
                     if (opLimiter.QueryForCancellation())
                     {
-                        return slst;
+                        goto result;
                     }
 
                     if (abbv != 0)
@@ -205,7 +211,7 @@ public partial class WordList
 
                         if (opLimiter.QueryForCancellation())
                         {
-                            return slst;
+                            goto result;
                         }
                     }
 
@@ -217,14 +223,14 @@ public partial class WordList
 
                     if (opLimiter.QueryForCancellation())
                     {
-                        return slst;
+                        goto result;
                     }
 
                     good |= Suggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), ref onlyCompoundSuggest);
 
                     if (opLimiter.QueryForCancellation())
                     {
-                        return slst;
+                        goto result;
                     }
 
                     break;
@@ -232,13 +238,14 @@ public partial class WordList
                 case CapitalizationType.HuhInit:
                     capWords = true;
                     goto case CapitalizationType.Huh;
+
                 case CapitalizationType.Huh:
 
                     good |= Suggest(slst, scw, ref onlyCompoundSuggest);
 
                     if (opLimiter.QueryForCancellation())
                     {
-                        return slst;
+                        goto result;
                     }
 
                     // something.The -> something. The
@@ -259,7 +266,7 @@ public partial class WordList
 
                         if (opLimiter.QueryForCancellation())
                         {
-                            return slst;
+                            goto result;
                         }
                     }
 
@@ -274,7 +281,7 @@ public partial class WordList
 
                     if (opLimiter.QueryForCancellation())
                     {
-                        return slst;
+                        goto result;
                     }
 
                     if (capWords)
@@ -289,7 +296,7 @@ public partial class WordList
 
                         if (opLimiter.QueryForCancellation())
                         {
-                            return slst;
+                            goto result;
                         }
                     }
 
@@ -340,7 +347,7 @@ public partial class WordList
 
                     if (opLimiter.QueryForCancellation())
                     {
-                        return slst;
+                        goto result;
                     }
 
                     if (Affix.KeepCase.HasValue && Check(wspace))
@@ -353,7 +360,7 @@ public partial class WordList
 
                     if (opLimiter.QueryForCancellation())
                     {
-                        return slst;
+                        goto result;
                     }
 
                     for (var j = 0; j < slst.Count; j++)
@@ -398,6 +405,7 @@ public partial class WordList
                     case CapitalizationType.HuhInit:
                         capWords = true;
                         goto case CapitalizationType.Huh;
+
                     case CapitalizationType.Huh:
                         NGramSuggest(slst, HunspellTextFunctions.MakeAllSmall(scw, textInfo), CapitalizationType.Huh);
                         break;
@@ -421,7 +429,7 @@ public partial class WordList
 
                 if (opLimiter.QueryForCancellation())
                 {
-                    return slst;
+                    goto result;
                 }
             }
 
@@ -562,6 +570,7 @@ public partial class WordList
             // output conversion
             Affix.OutputConversions.ConvertAll(slst);
 
+        result:
             return slst;
         }
 
