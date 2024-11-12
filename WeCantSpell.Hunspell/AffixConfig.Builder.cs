@@ -6,6 +6,8 @@ using System.Text;
 
 namespace WeCantSpell.Hunspell;
 
+#pragma warning disable IDE0079 // Remove unnecessary suppression
+#pragma warning disable IDE0305 // Simplify collection initialization
 #pragma warning disable IDE0028 // Simplify collection initialization
 
 public partial class AffixConfig
@@ -331,7 +333,7 @@ public partial class AffixConfig
         /// <summary>
         /// A list of the warnings that were produced while reading or building an <see cref="AffixConfig"/>.
         /// </summary>
-        public ImmutableList<string>.Builder Warnings { get; } = ImmutableList.CreateBuilder<string>();
+        public ImmutableList<string>.Builder Warnings { get; } = ImmutableList.CreateBuilder<string>(); // TODO: replace with List<string> or ImmutableArray Builder
 
         /// <summary>
         /// Constructs a <see cref="AffixConfig"/> based on the values set in the builder.

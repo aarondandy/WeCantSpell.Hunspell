@@ -31,6 +31,8 @@ public sealed class AffixGroup<TAffixEntry> where TAffixEntry : AffixEntry
 
     public sealed class Builder
     {
+        // TODO: Replace this builder with factory methods
+
         public Builder(FlagValue aFlag, AffixEntryOptions options) : this(aFlag, options, ImmutableArray.CreateBuilder<TAffixEntry>())
         {
         }

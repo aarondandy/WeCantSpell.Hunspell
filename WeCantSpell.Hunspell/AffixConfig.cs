@@ -825,7 +825,7 @@ public sealed partial class AffixConfig
 
     public bool CultureUsesDottedI { get; private set; }
 
-    public ImmutableList<string> Warnings { get; private set; } = ImmutableList<string>.Empty;
+    public ImmutableList<string> Warnings { get; private set; } = ImmutableList<string>.Empty; // TODO: replace with immutable array or read-only list interface
 
     public bool HasCompound => CompoundFlag.HasValue || CompoundBegin.HasValue || CompoundRules.HasItems;
 
