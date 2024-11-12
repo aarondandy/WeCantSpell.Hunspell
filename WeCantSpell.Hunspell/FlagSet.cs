@@ -95,7 +95,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         }
 
         var builder = new StringBuilderSpan(text);
-        builder.RemoveAll('\0');
+        builder.RemoveAll(FlagValue.ZeroValue);
         builder.Sort();
         builder.RemoveAdjacentDuplicates();
         return new(builder.GetStringAndDispose());
@@ -552,7 +552,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 #if DEBUG
         ExceptionEx.ThrowIfArgumentEmpty(other, nameof(other));
         ExceptionEx.ThrowIfArgumentEqual(other.Length, 1, nameof(other));
-        if (other.Contains('\0')) ExceptionEx.ThrowArgumentOutOfRange(nameof(other));
+        if (other.Contains(FlagValue.ZeroValue)) ExceptionEx.ThrowArgumentOutOfRange(nameof(other));
         for (var i = 1; i < other.Length; i++)
         {
             if (other[i - 1] > other[i]) ExceptionEx.ThrowArgumentOutOfRange(nameof(other));
