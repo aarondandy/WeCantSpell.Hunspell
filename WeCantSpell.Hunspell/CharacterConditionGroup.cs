@@ -109,7 +109,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
 
     private readonly CharacterCondition[]? _items;
 
-    public int Count => _items is null ? 0 : _items.Length;
+    public int Count => _items is not null ? _items.Length : 0;
     public bool IsEmpty => _items is not { Length: > 0 };
     public bool HasItems => _items is { Length: > 0 };
     public CharacterCondition this[int index]

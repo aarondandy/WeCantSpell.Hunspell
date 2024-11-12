@@ -29,7 +29,7 @@ public readonly struct PatternSet : IReadOnlyList<PatternEntry>
 
     private readonly PatternEntry[]? _patterns;
 
-    public int Count => _patterns is null ? 0 : _patterns.Length;
+    public int Count => _patterns is not null ? _patterns.Length : 0;
 
     public bool IsEmpty => _patterns is not { Length: > 0 };
 

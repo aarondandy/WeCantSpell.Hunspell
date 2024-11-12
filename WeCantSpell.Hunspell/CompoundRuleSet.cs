@@ -28,7 +28,7 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
 
     private readonly CompoundRule[]? _rules;
 
-    public int Count => _rules is null ? 0 : _rules.Length;
+    public int Count => _rules is not null ? _rules.Length : 0;
 
     public bool IsEmpty => _rules is not { Length: > 0 };
 

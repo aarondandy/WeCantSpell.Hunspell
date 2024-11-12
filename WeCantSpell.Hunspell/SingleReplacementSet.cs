@@ -29,7 +29,7 @@ public readonly struct SingleReplacementSet : IReadOnlyList<SingleReplacement>
 
     private readonly SingleReplacement[]? _replacements;
 
-    public int Count => _replacements is null ? 0 : _replacements.Length;
+    public int Count => _replacements is not null ? _replacements.Length : 0;
 
     public bool IsEmpty => _replacements is not { Length: > 0 };
 

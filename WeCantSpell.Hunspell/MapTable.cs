@@ -29,7 +29,7 @@ public readonly struct MapTable : IReadOnlyList<MapEntry>
 
     private readonly MapEntry[]? _entries;
 
-    public int Count => _entries is null ? 0 : _entries.Length;
+    public int Count => _entries is not null ? _entries.Length : 0;
 
     public bool IsEmpty => _entries is not { Length: > 0 };
 
