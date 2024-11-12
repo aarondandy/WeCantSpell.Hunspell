@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell;
 
+[DebuggerDisplay("Pattern = {Pattern}")]
 public sealed class MultiReplacementEntry : ReplacementEntry
 {
     public MultiReplacementEntry(string pattern) : base(pattern)

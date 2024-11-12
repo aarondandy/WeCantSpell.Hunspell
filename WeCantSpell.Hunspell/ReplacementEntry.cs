@@ -1,5 +1,8 @@
-﻿namespace WeCantSpell.Hunspell;
+﻿using System.Diagnostics;
 
+namespace WeCantSpell.Hunspell;
+
+[DebuggerDisplay("Pattern = {Pattern}")]
 public abstract class ReplacementEntry
 {
     protected ReplacementEntry(string pattern)

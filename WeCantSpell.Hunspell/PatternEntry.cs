@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Diagnostics;
 
 using WeCantSpell.Hunspell.Infrastructure;
 
 namespace WeCantSpell.Hunspell;
 
+[DebuggerDisplay("Pattern = {Pattern}, Pattern2 = {Pattern2}, Pattern3 = {Pattern3}, Condition = {Condition}, Condition2 = {Condition2}")]
 public sealed class PatternEntry
 {
     public PatternEntry(string pattern, string pattern2, string pattern3, FlagValue condition, FlagValue condition2)
