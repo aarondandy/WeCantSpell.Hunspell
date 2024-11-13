@@ -38,6 +38,11 @@
       "commandLineArgs": "issue88",
       "workingDirectory": "./"
     },
+    "Issue #90": {
+      "commandName": "Project",
+      "commandLineArgs": "check-word --dic-file \"../temp-data/issue90/en_US.dic\" --word hours",
+      "workingDirectory": "./"
+    },
     "Issue #91": {
       "commandName": "Project",
       "commandLineArgs": "issue91",

@@ -1,0 +1,6 @@
+SET UTF-8
+FLAG num
+AF 1 # just one
+AF 2,3 # comment
+AM 1 #text
+AM ts:0 #single

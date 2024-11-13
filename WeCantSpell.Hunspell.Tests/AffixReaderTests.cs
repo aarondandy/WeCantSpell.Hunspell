@@ -2043,6 +2043,19 @@ public class AffixReaderTests
             rep.Fin.Should().Be(expectedFin);
             rep.Isol.Should().Be(expectedIsol);
         }
+
+        [Fact]
+        public async Task can_ignore_alias_comments()
+        {
+            var filePath = @"files/af_am_comments.aff";
+
+            var actual = await AffixReader.ReadFileAsync(filePath);
+
+            actual.AliasF.Should().HaveCount(1);
+            actual.AliasF[0].Should().BeEquivalentTo([2, 3]);
+            actual.AliasM.Should().HaveCount(1);
+            actual.AliasM[0].Should().BeEquivalentTo(["ts:0"]);
+        }
     }
 
     protected static string Reversed(string text)
