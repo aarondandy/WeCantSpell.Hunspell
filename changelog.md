@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 5.2.1 - 2024-11
+
+- Fixes affix alias parsing bug with comments [PR #99](https://github.com/aarondandy/WeCantSpell.Hunspell/pull/99)
+
 ## 5.2.0 - 2024-11
 
 - Assorted performance improvements
