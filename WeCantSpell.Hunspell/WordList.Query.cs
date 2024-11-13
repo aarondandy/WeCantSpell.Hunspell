@@ -1728,11 +1728,11 @@ public partial class WordList
         public readonly bool TryLookupDetails(
             ReadOnlySpan<char> word,
 #if !NO_EXPOSED_NULLANNOTATIONS
-            [System.Diagnostics.CodeAnalysis.NotNullWhen(true)]
+            [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)]
 #endif
             out string actualKey,
 #if !NO_EXPOSED_NULLANNOTATIONS
-            [System.Diagnostics.CodeAnalysis.NotNullWhen(true)]
+            [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)]
 #endif
             out WordEntryDetail[] details) =>
             WordList.EntriesByRoot.TryGetValue(word, out actualKey!, out details!);
@@ -1740,7 +1740,7 @@ public partial class WordList
         public readonly bool TryLookupDetails(
             string word,
 #if !NO_EXPOSED_NULLANNOTATIONS
-            [System.Diagnostics.CodeAnalysis.NotNullWhen(true)]
+            [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)]
 #endif
             out WordEntryDetail[] details) =>
             WordList.EntriesByRoot.TryGetValue(word, out details!);
