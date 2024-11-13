@@ -1735,7 +1735,7 @@ public partial class WordList
             [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)]
 #endif
             out WordEntryDetail[] details) =>
-            WordList.EntriesByRoot.TryGetValue(word, out actualKey!, out details!);
+            WordList._entriesByRoot.TryGetValue(word, out actualKey!, out details!);
 
         public readonly bool TryLookupDetails(
             string word,
@@ -1743,7 +1743,7 @@ public partial class WordList
             [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)]
 #endif
             out WordEntryDetail[] details) =>
-            WordList.EntriesByRoot.TryGetValue(word, out details!);
+            WordList._entriesByRoot.TryGetValue(word, out details!);
 
         /// <summary>
         /// Compound check patterns.

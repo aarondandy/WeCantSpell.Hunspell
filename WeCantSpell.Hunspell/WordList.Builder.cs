@@ -54,53 +54,55 @@ public partial class WordList
 
         public WordList ToImmutable(bool allowDestructive)
         {
-            var result = new WordList(Affix, nGramRestrictedFlags: FlagSet.Create(
+            var nGramRestrictedFlags = FlagSet.Create(
             [
                 Affix.ForbiddenWord,
                 Affix.NoSuggest,
                 Affix.NoNgramSuggest,
                 Affix.OnlyInCompound,
                 SpecialFlags.OnlyUpcaseFlag
-            ]));
+            ]);
 
+            TextDictionary<WordEntryDetail[]> entriesByRoot;
             if (allowDestructive)
             {
-                result.EntriesByRoot = _entryDetailsByRoot;
+                entriesByRoot = _entryDetailsByRoot;
                 _entryDetailsByRoot = new(1);
             }
             else
             {
-                result.EntriesByRoot = TextDictionary<WordEntryDetail[]>.Clone(_entryDetailsByRoot, static v => [.. v]);
+                entriesByRoot = TextDictionary<WordEntryDetail[]>.Clone(_entryDetailsByRoot, static v => [.. v]);
             }
 
-            result.AllReplacements = Affix.Replacements;
+            var allReplacements = Affix.Replacements;
             if (_phoneticReplacements is { Count: > 0 })
             {
                 // store ph: field of a morphological description in reptable
-                if (result.AllReplacements.IsEmpty)
+                if (allReplacements.IsEmpty)
                 {
-                    result.AllReplacements = new(_phoneticReplacements.MakeOrExtractArray(allowDestructive));
+                    allReplacements = new(_phoneticReplacements.MakeOrExtractArray(allowDestructive));
                 }
                 else if (allowDestructive)
                 {
-                    _phoneticReplacements.AddRange(result.AllReplacements);
-                    result.AllReplacements = new(_phoneticReplacements.Extract());
+                    _phoneticReplacements.AddRange(allReplacements);
+                    allReplacements = new(_phoneticReplacements.Extract());
                 }
                 else
                 {
-                    result.AllReplacements = SingleReplacementSet.Create(_phoneticReplacements.MakeArray().Concat(result.AllReplacements));
+                    allReplacements = SingleReplacementSet.Create(_phoneticReplacements.Concat(allReplacements));
                 }
             }
 
+            TextDictionary<WordEntryDetail[]> nGramRestrictedDetails = new(1);
             var details = new ArrayBuilder<WordEntryDetail>();
-            foreach (var rootSet in result.EntriesByRoot)
+            foreach (var rootSet in entriesByRoot)
             {
                 details.Clear();
                 details.GrowToCapacity(1);
 
                 foreach (var entry in rootSet.Value)
                 {
-                    if (result.NGramRestrictedFlags.ContainsAny(entry.Flags))
+                    if (nGramRestrictedFlags.ContainsAny(entry.Flags))
                     {
                         details.Add(entry);
                     }
@@ -108,11 +110,15 @@ public partial class WordList
 
                 if (details.Count != 0)
                 {
-                    result.NGramRestrictedDetails.Add(rootSet.Key, details.Extract());
+                    nGramRestrictedDetails.Add(rootSet.Key, details.Extract());
                 }
             }
 
-            return result;
+            return new WordList(
+                Affix,
+                entriesByRoot: entriesByRoot,
+                nGramRestrictedDetails: nGramRestrictedDetails,
+                allReplacements);
         }
 
         public void InitializeEntriesByRoot(int expectedSize)

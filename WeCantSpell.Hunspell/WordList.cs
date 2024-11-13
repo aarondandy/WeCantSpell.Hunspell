@@ -60,35 +60,39 @@ public sealed partial class WordList
         return wordListBuilder.MoveToImmutable();
     }
 
-    private WordList(AffixConfig affix, FlagSet nGramRestrictedFlags)
+    private WordList(
+        AffixConfig affix,
+        TextDictionary<WordEntryDetail[]> entriesByRoot,
+        TextDictionary<WordEntryDetail[]> nGramRestrictedDetails,
+        SingleReplacementSet allReplacements
+    )
     {
-        Affix = affix;
-        NGramRestrictedFlags = nGramRestrictedFlags;
-        EntriesByRoot = new(0);
-        NGramRestrictedDetails = new(0);
+        _affix = affix;
+        _entriesByRoot = entriesByRoot;
+        _nGramRestrictedDetails = nGramRestrictedDetails;
+        _allReplacements = allReplacements;
     }
 
-    public AffixConfig Affix { get; private set; }
+    private readonly AffixConfig _affix;
+    private readonly TextDictionary<WordEntryDetail[]> _entriesByRoot;
+    private readonly TextDictionary<WordEntryDetail[]> _nGramRestrictedDetails;
+    private readonly SingleReplacementSet _allReplacements;
 
-    public SingleReplacementSet AllReplacements { get; private set; }
+    public AffixConfig Affix => _affix;
 
-    public IEnumerable<string> RootWords => EntriesByRoot.Keys;
+    public SingleReplacementSet AllReplacements => _allReplacements;
 
-    public bool HasEntries => EntriesByRoot.HasItems;
+    public IEnumerable<string> RootWords => _entriesByRoot.Keys;
 
-    public bool IsEmpty => EntriesByRoot.IsEmpty;
+    public bool HasEntries => _entriesByRoot.HasItems;
 
-    public bool ContainsEntriesForRootWord(string rootWord) => rootWord is not null && EntriesByRoot.ContainsKey(rootWord);
-
-    public bool ContainsEntriesForRootWord(ReadOnlySpan<char> rootWord) => EntriesByRoot.ContainsKey(rootWord);
+    public bool IsEmpty => _entriesByRoot.IsEmpty;
 
     public WordEntryDetail[] this[string rootWord] => TryGetEntryDetailsByRootWord(rootWord, out var details) ? details : [];
 
-    private TextDictionary<WordEntryDetail[]> EntriesByRoot { get; set; }
+    public bool ContainsEntriesForRootWord(string rootWord) => rootWord is not null && _entriesByRoot.ContainsKey(rootWord);
 
-    private FlagSet NGramRestrictedFlags { get; set; }
-
-    private TextDictionary<WordEntryDetail[]> NGramRestrictedDetails { get; set; }
+    public bool ContainsEntriesForRootWord(ReadOnlySpan<char> rootWord) => _entriesByRoot.ContainsKey(rootWord);
 
     public bool Check(string word) => Check(word, options: null, CancellationToken.None);
 
@@ -165,12 +169,12 @@ public sealed partial class WordList
 #endif
         out WordEntryDetail[] details)
     {
-        return EntriesByRoot.TryGetValue(rootWord, out details);
+        return _entriesByRoot.TryGetValue(rootWord, out details);
     }
 
     private bool TryGetFirstEntryDetailByRootWord(ReadOnlySpan<char> rootWord, out WordEntryDetail entryDetail)
     {
-        if (EntriesByRoot.TryGetValue(rootWord, out var details))
+        if (_entriesByRoot.TryGetValue(rootWord, out var details))
         {
 #if DEBUG
             if (details.Length == 0) ExceptionEx.ThrowInvalidOperation();
@@ -186,7 +190,7 @@ public sealed partial class WordList
 
     private bool TryFindFirstEntryDetailByRootWord(string rootWord, out WordEntryDetail entryDetail)
     {
-        if (EntriesByRoot.TryGetValue(rootWord, out var details))
+        if (_entriesByRoot.TryGetValue(rootWord, out var details))
         {
 #if DEBUG
             if (details.Length == 0) ExceptionEx.ThrowInvalidOperation();
@@ -206,8 +210,8 @@ public sealed partial class WordList
     {
         public NGramAllowedEntriesEnumerator(WordList wordList, int minKeyLength, int maxKeyLength)
         {
-            _nGramRestrictedDetails = wordList.NGramRestrictedDetails;
-            _coreEnumerator = new(wordList.EntriesByRoot, minKeyLength, maxKeyLength);
+            _nGramRestrictedDetails = wordList._nGramRestrictedDetails;
+            _coreEnumerator = new(wordList._entriesByRoot, minKeyLength, maxKeyLength);
             _current = default;
         }
 
