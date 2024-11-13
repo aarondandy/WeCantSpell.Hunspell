@@ -379,6 +379,11 @@ public sealed partial class AffixReader
             case AffixReaderCommandKind.Break:
                 return TryParseStandardListItem(EntryListType.Break, parameters, _builder._breakPoints, TryParseBreak);
             case AffixReaderCommandKind.Version:
+                if (parameters.IsEmpty)
+                {
+                    return false;
+                }
+
                 _builder.Version = parameters.ToString();
                 return true;
             case AffixReaderCommandKind.MaxNgramSuggestions:
