@@ -235,11 +235,10 @@ public sealed partial class AffixReader
 
         var command = line.Slice(commandStartIndex, commandEndIndex - commandStartIndex);
 
-        if (parameterStartIndex <= lineEndIndex)
+        if (CommandMap.TryGetValue(command, out var commandType))
         {
-            if (TryHandleParameterizedCommand(
-                command,
-                line.Slice(parameterStartIndex, lineEndIndex - parameterStartIndex + 1)))
+            var parameters = line.Slice(parameterStartIndex, lineEndIndex - parameterStartIndex + 1);
+            if (TryHandleParameterizedCommand(commandType, parameters))
             {
                 return true;
             }
@@ -276,14 +275,8 @@ public sealed partial class AffixReader
         return _builder.ToImmutable(allowDestructive: _ownsBuilder && allowDestructive);
     }
 
-    private bool TryHandleParameterizedCommand(ReadOnlySpan<char> commandName, ReadOnlySpan<char> parameters)
+    private bool TryHandleParameterizedCommand(AffixReaderCommandKind command, ReadOnlySpan<char> parameters)
     {
-        if (!CommandMap.TryGetValue(commandName, out var command))
-        {
-            LogWarning(StringEx.ConcatString("Unknown command ", commandName, " with params: ", parameters));
-            return false;
-        }
-
         switch (command)
         {
             case AffixReaderCommandKind.Flag:
@@ -386,6 +379,11 @@ public sealed partial class AffixReader
             case AffixReaderCommandKind.Break:
                 return TryParseStandardListItem(EntryListType.Break, parameters, _builder._breakPoints, TryParseBreak);
             case AffixReaderCommandKind.Version:
+                if (parameters.IsEmpty)
+                {
+                    return false;
+                }
+
                 _builder.Version = parameters.ToString();
                 return true;
             case AffixReaderCommandKind.MaxNgramSuggestions:
@@ -431,13 +429,29 @@ public sealed partial class AffixReader
 
     private bool TryParseStandardListItem<T>(EntryListType entryListType, ReadOnlySpan<char> parameterText, ImmutableArray<T>.Builder entries, EntryParserForImmutableArray<T> parse)
     {
+        int intValue;
+
+        {
+            // Some aff files use comments on the AF and AM commands. This seems to work because the
+            // Int parser is able to tolerate comments in the original code while this parser is a bit
+            // more rigit in it's input expectations. I don't think comments on AF or AM are explicitly
+            // supported, but there are affix files with comments, and they still should work here too.
+            // It would be more correct to make the int parsers and flag parsers ignore these comments
+            // but this should work well enough for now.
+            intValue = parameterText.IndexOf('#', 1);
+            if (intValue > 0 && parameterText[intValue - 1].IsTabOrSpace())
+            {
+                parameterText = parameterText.Slice(0, intValue - 1);
+            }
+        }
+
         if (!IsInitialized(entryListType))
         {
             SetInitialized(entryListType);
 
-            if (IntEx.TryParseInvariant(parameterText, out var expectedSize) && expectedSize is >= 0 and <= CollectionsEx.CollectionPreallocationLimit)
+            if (IntEx.TryParseInvariant(parameterText, out intValue) && intValue is >= 0 and <= CollectionsEx.CollectionPreallocationLimit)
             {
-                entries.Capacity = expectedSize;
+                entries.Capacity = intValue;
                 return true;
             }
         }
