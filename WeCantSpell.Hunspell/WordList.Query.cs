@@ -18,7 +18,7 @@ public partial class WordList
         internal Query(WordList wordList, QueryOptions? options, CancellationToken cancellationToken)
         {
             WordList = wordList;
-            Affix = wordList.Affix;
+            Affix = wordList._affix;
             TextInfo = Affix.Culture.TextInfo;
             Options = options ?? DefaultOptions;
             CancellationToken = cancellationToken;
@@ -34,7 +34,7 @@ public partial class WordList
         internal Query(in Query source)
         {
             WordList = source.WordList;
-            Affix = source.WordList.Affix;
+            Affix = source.WordList._affix;
             TextInfo = Affix.Culture.TextInfo;
             Options = source.Options;
             CancellationToken = source.CancellationToken;
@@ -1888,10 +1888,10 @@ public partial class WordList
         /// <seealso cref="AllReplacements"/>
         private bool CompoundReplacementCheck(ReadOnlySpan<char> word)
         {
-            if (word.Length >= 2 && !WordList.AllReplacements.IsEmpty)
+            if (word.Length >= 2)
             {
                 // use only available mid patterns
-                foreach (var replacementEntry in WordList.AllReplacements.GetInternalArray())
+                foreach (var replacementEntry in WordList._allReplacements.GetInternalArray())
                 {
                     if (replacementEntry.Med is { Length: > 0 })
                     {

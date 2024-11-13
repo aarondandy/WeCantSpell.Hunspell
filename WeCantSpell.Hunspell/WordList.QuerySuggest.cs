@@ -1463,12 +1463,12 @@ public partial class WordList
         /// </summary>
         private void ReplChars(string word, ref SuggestState state)
         {
-            if (word.Length < 2 || WordList.AllReplacements.IsEmpty)
+            if (word.Length < 2 || WordList._allReplacements.IsEmpty)
             {
                 return;
             }
 
-            foreach (var replacement in WordList.AllReplacements.GetInternalArray())
+            foreach (var replacement in WordList._allReplacements.GetInternalArray())
             {
                 if (replacement.Pattern.Length == 0)
                 {

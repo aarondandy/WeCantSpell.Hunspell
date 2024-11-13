@@ -139,7 +139,7 @@ public sealed partial class WordList
     private void ApplyRootOutputConversions(ref SpellCheckResult result)
     {
         // output conversion
-        if (result.Correct && Affix.OutputConversions.TryConvert(result.Root, out var converted) && !string.Equals(result.Root, converted, StringComparison.Ordinal))
+        if (result.Correct && _affix.OutputConversions.TryConvert(result.Root, out var converted) && !string.Equals(result.Root, converted, StringComparison.Ordinal))
         {
             result = new SpellCheckResult(converted, result.Info, true);
         }
