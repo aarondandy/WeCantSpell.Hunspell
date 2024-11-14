@@ -23,7 +23,7 @@ public class SuggestEnUsSuite
     [Benchmark(Description = "Suggest words: WeCantSpell", Baseline = true)]
     public void All_WeCantSpell()
     {
-        foreach (var word in WordData.SmallSampling)
+        foreach (var word in WordData.SmallSuggestSampling)
         {
             _ = _dictionary.Suggest(word);
         }
@@ -33,7 +33,7 @@ public class SuggestEnUsSuite
     public void All_NHunspell()
     {
 
-        foreach (var word in WordData.SmallSampling)
+        foreach (var word in WordData.SmallSuggestSampling)
         {
             _ = _dictionaryNHunspell.Suggest(word);
         }

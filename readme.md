@@ -43,10 +43,10 @@ bool ok = dictionary.Check("Colour");
 
 This port performs competitively on newer versions of the .NET framework compared to the original [NHunspell](https://www.nuget.org/packages/NHunspell/) binaries.
 
-| Benchmark | .NET 8       | .NET 4.8     | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
-|-----------|--------------|--------------|--------------|
-| Check     | 🐇 5,939 μs | 🐌 18,874 μs | 🐇 6,094 μs |
-| Suggest   | 🐇 362 ms   | 🐢 819 ms    | 🐌 1,907 ms |
+| Benchmark en-US | .NET 8 on 9  | .NET 8       | .NET 4.8     | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
+|-----------------|--------------|--------------|--------------|--------------|
+| Check 7000      | 🐇 5,721 μs | 🐇 5,850 μs | 🐌 18,280 μs | 🐇 6,018 μs |
+| Suggest 300     | 🐇 1.545 s  | 🐇 1.569 s  | 🐢 3.580 s   | 🐌 7.781 s  |
 
 _Note: Measurements taken on an AMD 5800H._
 

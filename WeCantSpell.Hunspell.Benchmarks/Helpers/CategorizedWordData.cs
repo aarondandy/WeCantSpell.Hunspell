@@ -40,24 +40,23 @@ public class CategorizedWordData
 
     public static CategorizedWordData Create(IEnumerable<string> words, Func<string, bool> isCorrect, Func<string, bool> isRoot)
     {
-        var allWords = words.Distinct().OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
-        allWords.TrimExcess();
-        var correctWords = allWords.FindAll(word => isCorrect(word));
-        correctWords.TrimExcess();
-        var wrongWords = allWords.Except(correctWords).ToList();
-        wrongWords.TrimExcess();
-        var rootWords = allWords.FindAll(word => isRoot(word));
-        rootWords.TrimExcess();
-        var smallSampling = allWords.Where(static (_, i) => i % 100 == 0).ToList();
-        smallSampling.TrimExcess();
+        var allWords = words.Distinct().OrderBy(static x => x, StringComparer.OrdinalIgnoreCase).ToArray();
+        var correctWords = allWords.Where(isCorrect).ToArray();
+        var wrongWords = allWords.Except(correctWords).ToArray();
+
+        // Suggest sampling should be a few good words mixed in with mostly wrong words
+        var suggestGroup = wrongWords.Where(static (_, i) => i % 15 == 0) // start with some wrong words, about 266
+            .Concat(correctWords.Where(static (_, i) => i % 100 == 0)) // finish off with some correct words, about 40
+            .OrderBy(static x => x, StringComparer.OrdinalIgnoreCase); // mix it all up
 
         return new CategorizedWordData
         {
-            AllWords = allWords,
-            CorrectWords = correctWords,
-            WrongWords = wrongWords,
-            RootWords = rootWords,
-            SmallSampling = smallSampling
+            // Who doesn't like nice round numbers?
+            MostWords = allWords.Take(7000).ToArray(),
+            CorrectWords = correctWords.Take(3000).ToArray(),
+            WrongWords = wrongWords.Take(4000).ToArray(),
+            //RootWords = allWords.Where(isRoot).ToArray(),
+            SmallSuggestSampling = suggestGroup.Take(300).ToArray()
         };
     }
 
@@ -65,9 +64,9 @@ public class CategorizedWordData
     {
     }
 
-    public List<string> AllWords { get; private set; }
-    public List<string> CorrectWords { get; private set; }
-    public List<string> WrongWords { get; private set; }
-    public List<string> RootWords { get; private set; }
-    public List<string> SmallSampling { get; private set; }
+    public string[] MostWords { get; private set; }
+    public string[] CorrectWords { get; private set; }
+    public string[] WrongWords { get; private set; }
+    //public string[] RootWords { get; private set; }
+    public string[] SmallSuggestSampling { get; private set; }
 }

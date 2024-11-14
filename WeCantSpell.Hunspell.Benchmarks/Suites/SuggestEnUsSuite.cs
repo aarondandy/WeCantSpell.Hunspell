@@ -19,13 +19,13 @@ public class SuggestEnUsSuite
     public void Setup()
     {
         WordList = EnUsTestData.CreateDictionary();
-        Console.WriteLine($"Suggest data SmallSampling: {WordData.SmallSampling.Count}");
+        Console.WriteLine($"Suggest data SmallSampling: {WordData.SmallSuggestSampling.Length}");
     }
 
     [Benchmark(Description = "Suggest words", Baseline = true)]
     public void SuggestAssortedWords()
     {
-        foreach (var word in WordData.SmallSampling)
+        foreach (var word in WordData.SmallSuggestSampling)
         {
             _ = WordList.Suggest(word);
         }

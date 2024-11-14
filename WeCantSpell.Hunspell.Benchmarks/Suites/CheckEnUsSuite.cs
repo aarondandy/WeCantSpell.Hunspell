@@ -21,14 +21,14 @@ public class CheckEnUsSuite
         WordList = EnUsTestData.CreateDictionary();
         foreach (var item in CheckData())
         {
-            Console.WriteLine($"Check data {item[0]}: {((IList<string>)item[1]).Count}");
+            Console.WriteLine($"Check data {item[0]}: {((string[])(item[1])).Length}");
         }
     }
 
     public IEnumerable<object[]> CheckData()
     {
         var wordData = EnUsTestData.Data;
-        yield return new object[] { "All", wordData.AllWords };
+        yield return new object[] { "Mix", wordData.MostWords };
         // yield return new object[] { "Roots", wordData.RootWords };
         yield return new object[] { "Correct", wordData.CorrectWords };
         yield return new object[] { "Wrong", wordData.WrongWords };
@@ -36,7 +36,7 @@ public class CheckEnUsSuite
 
     [Benchmark(Description = "Check words")]
     [ArgumentsSource(nameof(CheckData))]
-    public void CheckWords(string set, List<string> words)
+    public void CheckWords(string set, string[] words)
     {
         foreach (var word in words)
         {

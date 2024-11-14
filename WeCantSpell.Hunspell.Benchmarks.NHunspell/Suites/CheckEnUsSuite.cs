@@ -23,7 +23,7 @@ public class CheckEnUsSuite
     [Benchmark(Description = "Check words: WeCantSpell", Baseline = true)]
     public void All_WeCantSpell()
     {
-        foreach (var word in WordData.AllWords)
+        foreach (var word in WordData.MostWords)
         {
             _ = _dictionary.Check(word);
         }
@@ -33,7 +33,7 @@ public class CheckEnUsSuite
     public void All_NHunspell()
     {
 
-        foreach (var word in WordData.AllWords)
+        foreach (var word in WordData.MostWords)
         {
             _ = _dictionaryNHunspell.Spell(word);
         }
