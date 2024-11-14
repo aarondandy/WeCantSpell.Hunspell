@@ -22,12 +22,12 @@ public class CategorizedWordData
         {
             line = line.Trim();
 
-            if (line.Length == 0 || line.StartsWith("#") || line.StartsWith("["))
+            if (string.IsNullOrWhiteSpace(line) || line[0] is '#' or '[')
             {
                 continue;
             }
 
-            result.AddRange(line.Split(new char[] { ' ', '\t', ',' }, StringSplitOptions.RemoveEmptyEntries));
+            result.AddRange(line.Split([' ', '\t', ','], StringSplitOptions.RemoveEmptyEntries));
         }
 
         return result;

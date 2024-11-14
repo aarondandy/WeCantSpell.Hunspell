@@ -1,4 +1,6 @@
-﻿using BenchmarkDotNet.Attributes;
+﻿using System;
+
+using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 
 using WeCantSpell.Hunspell.Benchmarks.Helpers;
@@ -6,6 +8,7 @@ using WeCantSpell.Hunspell.Benchmarks.Helpers;
 namespace WeCantSpell.Hunspell.Benchmarks.Suites;
 
 [SimpleJob(id: "Suggest en-US", runtimeMoniker: RuntimeMoniker.Net80, baseline: true)]
+[SimpleJob(id: "Suggest en-US", runtimeMoniker: RuntimeMoniker.Net90)]
 [MinColumn, MeanColumn, MedianColumn]
 public class SuggestEnUsSuite
 {
@@ -16,6 +19,7 @@ public class SuggestEnUsSuite
     public void Setup()
     {
         WordList = EnUsTestData.CreateDictionary();
+        Console.WriteLine($"Suggest data SmallSampling: {WordData.SmallSampling.Count}");
     }
 
     [Benchmark(Description = "Suggest words", Baseline = true)]
