@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -93,7 +94,20 @@ public class HunspellTests
         {
             var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
 
-            var checkResult = dictionary.Check(word);
+            QueryOptions options;
+            if (dictionaryFilePath.IndexOf("compound", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                options = new QueryOptions()
+                {
+                    TimeLimitCompoundCheck = TimeSpan.FromSeconds(10)
+                };
+            }
+            else
+            {
+                options = null;
+            }
+
+            var checkResult = dictionary.Check(word, options);
 
             checkResult.Should().BeTrue();
         }
@@ -197,7 +211,10 @@ public class HunspellTests
         {
             var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
 
-            var actual = dictionary.Suggest(word);
+            var actual = dictionary.Suggest(word, new QueryOptions()
+            {
+                TimeLimitCompoundSuggest = TimeSpan.FromSeconds(10)
+            });
 
             actual.Should().NotBeNullOrEmpty();
             actual.Should().BeEquivalentTo(expectedSuggestions);
@@ -214,6 +231,7 @@ public class HunspellTests
 
             var actual = dictionary.Suggest(word, new QueryOptions
             {
+                TimeLimitSuggestGlobal = TimeSpan.FromSeconds(10), // This test can be a bit slow
                 // Due to different internal dictionary orderings, the expected suggestions may not all appear unless we bring back more results
                 MaxPhoneticSuggestions = 5,
                 MaxSuggestions = 10
@@ -247,7 +265,7 @@ public class HunspellTests
         [Theory, MemberData(nameof(can_find_correct_best_suggestion_args))]
         public async Task can_find_correct_best_suggestion(string dictionaryFilePath, string givenWord, string[] expectedSuggestions)
         {
-            QueryOptions options = null;
+            QueryOptions options;
 
             if (
                 dictionaryFilePath.EndsWith("i35725.dic")
@@ -264,8 +282,16 @@ public class HunspellTests
                     TimeLimitSuggestGlobal = TimeSpan.FromSeconds(20)
                 };
             }
+            else
+            {
+                options = new()
+                {
+                    TimeLimitCompoundSuggest = TimeSpan.FromSeconds(5),
+                    TimeLimitSuggestGlobal = TimeSpan.FromSeconds(5)
+                };
+            }
 
-            var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
+                var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
 
             var actual = dictionary.Suggest(givenWord, options);
 

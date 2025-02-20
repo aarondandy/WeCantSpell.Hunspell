@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -75,7 +76,10 @@ public class EnUsWordsTests
         {
             if (spell.Check(word.Correct) && !spell.Check(word.Wrong))
             {
-                var suggestions = spell.Suggest(word.Wrong);
+                var suggestions = spell.Suggest(word.Wrong, new QueryOptions()
+                {
+                    TimeLimitSuggestGlobal = TimeSpan.FromSeconds(10)
+                });
                 if (!suggestions.Contains(word.Correct))
                 {
                     negativeCases.Add(word);
