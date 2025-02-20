@@ -118,21 +118,8 @@ public sealed class SuffixEntry : AffixEntry
 
     public override bool IsWordSubset(ReadOnlySpan<char> s2)
     {
-        return Append.Length <= s2.Length && check(Append.AsSpan(), s2.Slice(s2.Length - Append.Length));
-
-        static bool check(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
-        {
-            for (var i = 0; i < s1.Length; i++)
-            {
-                var c = s1[i];
-                if (c != '.' && s2[i] != c)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
+        return Append.Length <= s2.Length
+            && StringEx.IsSubset(Append, s2.Slice(s2.Length - Append.Length));
     }
 
     internal override bool TestCondition(ReadOnlySpan<char> word) => Conditions.IsEndingMatch(word);
