@@ -3,8 +3,6 @@
   <PropertyGroup>
     <TargetFrameworks>net8.0;net6.0;net48</TargetFrameworks>
     <OutputType>Exe</OutputType>
-    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
-    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <LangVersion>latest</LangVersion>
     <NoWarn>$(NoWarn);IDE1006</NoWarn>
   </PropertyGroup>
