@@ -16,7 +16,7 @@ public class Issue86 : IAsyncLifetime
         _wordList = await WordList.CreateFromFilesAsync("files/English (American).dic", TestContext.Current.CancellationToken);
     }
 
-    public async ValueTask DisposeAsync() => await Task.Yield();
+    public async ValueTask DisposeAsync() => await Task.Delay(0);
 
     [Theory]
     [InlineData("epooied", "epoxied")]

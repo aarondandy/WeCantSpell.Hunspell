@@ -57,8 +57,8 @@ public class HunspellTests
             actual.ShouldBe(expected);
         }
 
-        public static IEnumerable<object[]> checking_large_word_does_not_cause_errors_args() =>
-            GetAllDataFilePaths("*.dic").Select(filePath => new object[] { filePath });
+        public static IEnumerable<TheoryDataRow<string>> checking_large_word_does_not_cause_errors_args() =>
+            GetAllDataFilePaths("*.dic").Select(filePath => new TheoryDataRow<string>(filePath));
 
         [Theory, MemberData(nameof(checking_large_word_does_not_cause_errors_args))]
         public async Task checking_large_word_does_not_cause_errors(string filePath)
@@ -75,7 +75,7 @@ public class HunspellTests
 
     public class CheckGoodWords : HunspellTests
     {
-        public static IEnumerable<object[]> can_find_good_words_in_dictionary_args
+        public static IEnumerable<TheoryDataRow<string, string>> can_find_good_words_in_dictionary_args
         {
             get
             {
@@ -84,7 +84,7 @@ public class HunspellTests
                     // NOTE: These tests are bypassed because capitalization only works when the language is turkish and the UTF8 dic has no language applied
                     .Where(t => (t.dictionaryPath.EndsWith("base_utf.dic") && t.word.Contains('İ')) is false);
 
-                return results.Select(t => new[] { t.dictionaryPath, t.word });
+                return results.Select(t => new TheoryDataRow<string, string>(t.dictionaryPath, t.word));
             }
         }
 
@@ -124,10 +124,10 @@ public class HunspellTests
 
     public class CheckWrongWords : HunspellTests
     {
-        public static IEnumerable<object[]> cant_find_wrong_words_in_dictionary_args =>
+        public static IEnumerable<TheoryDataRow<string, string>> cant_find_wrong_words_in_dictionary_args =>
             GetAllDataFilePaths("*.wrong")
                 .SelectMany(ToDictionaryWordTestData)
-                .Select(t => new object[] { t.dictionaryPath, t.word });
+                .Select(t => new TheoryDataRow<string, string>(t.dictionaryPath, t.word));
 
         [Theory, MemberData(nameof(cant_find_wrong_words_in_dictionary_args))]
         public async Task cant_find_wrong_words_in_dictionary(string dictionaryFilePath, string word)
@@ -250,7 +250,7 @@ public class HunspellTests
             }
         }
 
-        public static IEnumerable<object[]> can_find_correct_best_suggestion_args()
+        public static IEnumerable<TheoryDataRow<string, string, string[]>> can_find_correct_best_suggestion_args()
         {
             foreach (var testSet in GetSuggestionTestFileSets().Where(s => s.WrongLines.Count == s.SuggestionLines.Count))
             {
@@ -261,12 +261,12 @@ public class HunspellTests
                         .Select(w => w.Trim(SpaceOrTab))
                         .ToArray();
 
-                    yield return new object[]
-                    {
+                    yield return new TheoryDataRow<string, string, string[]>
+                    (
                         testSet.DictionaryFilePath,
                         testSet.WrongLines[i],
                         suggestions
-                    };
+                    );
                 }
             }
         }

@@ -1708,25 +1708,24 @@ public class AffixReaderTests
             actual.FlagMode.ShouldBe(FlagParsingMode.Num);
         }
 
-        public static IEnumerable<object[]> can_read_file_without_exception_args =>
-            Directory.GetFiles("files/", "*.aff").Select(filePath => new object[] { filePath });
-
-        public static HashSet<string> can_read_file_without_exception_warning_exceptions = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "base_utf.aff", // this file has some strange morph lines at the bottom, maybe a bug?
-            "Russian-English Bilingual.aff",
-            "1748408-2.aff",
-            "1748408-4.aff"
-        };
+        public static IEnumerable<TheoryDataRow<string>> can_read_file_without_exception_args =>
+            Directory.GetFiles("files/", "*.aff").Select(filePath => new TheoryDataRow<string>(filePath));
 
         [Theory, MemberData(nameof(can_read_file_without_exception_args))]
         public async Task can_read_file_without_exception(string filePath)
         {
+            var excludedFileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "base_utf.aff", // this file has some strange morph lines at the bottom, maybe a bug?
+                "Russian-English Bilingual.aff",
+                "1748408-2.aff",
+                "1748408-4.aff"
+            };
             var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.ShouldNotBeNull();
 
-            if (!can_read_file_without_exception_warning_exceptions.Contains(Path.GetFileName(filePath)))
+            if (!excludedFileNames.Contains(Path.GetFileName(filePath)))
             {
                 actual.Warnings.ShouldBeEmpty();
             }
