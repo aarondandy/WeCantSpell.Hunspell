@@ -7,16 +7,16 @@ using Xunit;
 
 namespace WeCantSpell.Hunspell.Tests;
 
-public class Issue86  : IAsyncLifetime
+public class Issue86 : IAsyncLifetime
 {
     private WordList _wordList = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
-        _wordList = await WordList.CreateFromFilesAsync("files/English (American).dic");
+        _wordList = await WordList.CreateFromFilesAsync("files/English (American).dic", TestContext.Current.CancellationToken);
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public async ValueTask DisposeAsync() => await Task.Yield();
 
     [Theory]
     [InlineData("epooied", "epoxied")]
@@ -24,13 +24,16 @@ public class Issue86  : IAsyncLifetime
     [InlineData("suabbles", "squabbles")]
     public void suggest_correct_word(string query, string expected)
     {
-        var suggestions = _wordList.Suggest(query, new QueryOptions()
-        {
-            TimeLimitSuggestStep = TimeSpan.FromSeconds(1),
-            TimeLimitCompoundCheck = TimeSpan.FromSeconds(1),
-            TimeLimitCompoundSuggest = TimeSpan.FromSeconds(1),
-            TimeLimitSuggestGlobal = TimeSpan.FromSeconds(1),
-        });
+        var suggestions = _wordList.Suggest(
+            query,
+            new QueryOptions()
+            {
+                TimeLimitSuggestStep = TimeSpan.FromSeconds(1),
+                TimeLimitCompoundCheck = TimeSpan.FromSeconds(1),
+                TimeLimitCompoundSuggest = TimeSpan.FromSeconds(1),
+                TimeLimitSuggestGlobal = TimeSpan.FromSeconds(1),
+            },
+            TestContext.Current.CancellationToken);
         suggestions.ShouldContain(expected);
     }
 
@@ -40,7 +43,7 @@ public class Issue86  : IAsyncLifetime
     [InlineData("squabblees")]
     public void wrong_words_are_wrong(string given)
     {
-        _wordList.Check(given).ShouldBeFalse();
+        _wordList.Check(given, TestContext.Current.CancellationToken).ShouldBeFalse();
     }
 
     [Theory]
@@ -49,6 +52,6 @@ public class Issue86  : IAsyncLifetime
     [InlineData("squabbles")]
     public void correct_words_are_correct(string given)
     {
-        _wordList.Check(given).ShouldBeTrue();
+        _wordList.Check(given, TestContext.Current.CancellationToken).ShouldBeTrue();
     }
 }

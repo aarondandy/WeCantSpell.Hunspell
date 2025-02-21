@@ -12,7 +12,7 @@ public class OutputConversionTests
         var filePath = @"files/oconv2.dic";
         var dictionary = WordList.CreateFromFiles(filePath);
 
-        var actual = dictionary.CheckDetails("aas");
+        var actual = dictionary.CheckDetails("aas", TestContext.Current.CancellationToken);
         actual.Correct.ShouldBeTrue();
         actual.Root.ShouldBe("aa");
     }

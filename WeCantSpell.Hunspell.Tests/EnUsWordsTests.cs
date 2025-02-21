@@ -20,13 +20,16 @@ public class EnUsWordsTests
         var (words, spell) = await LoadMistakeTestData();
         var wrongCount = 0;
 
-        Parallel.ForEach(words, word =>
-        {
-            if (spell.Check(word.Wrong))
+        Parallel.ForEach(
+            words,
+            new() { CancellationToken = TestContext.Current.CancellationToken },
+            word =>
             {
-                Interlocked.Increment(ref wrongCount);
-            }
-        });
+                if (spell.Check(word.Wrong))
+                {
+                    Interlocked.Increment(ref wrongCount);
+                }
+            });
 
         wrongCount.ShouldBeLessThanOrEqualTo(words.Count / 10);
     }
@@ -37,13 +40,16 @@ public class EnUsWordsTests
         var (words, spell) = await LoadMistakeTestData();
         var wrongCount = 0;
 
-        Parallel.ForEach(words, word =>
-        {
-            if (!spell.Check(word.Correct))
+        Parallel.ForEach(
+            words,
+            new() { CancellationToken = TestContext.Current.CancellationToken },
+            word =>
             {
-                Interlocked.Increment(ref wrongCount);
-            }
-        });
+                if (!spell.Check(word.Correct))
+                {
+                    Interlocked.Increment(ref wrongCount);
+                }
+            });
 
         wrongCount.ShouldBeLessThanOrEqualTo(words.Count / 10);
     }
@@ -55,21 +61,24 @@ public class EnUsWordsTests
         words = words.Where(static (_,i) => i % 11 == 0).Take(10).ToList();
         var wrongCount = 0;
 
-        Parallel.ForEach(words, word =>
-        {
-            if (spell.Check(word.Correct) && !spell.Check(word.Wrong))
+        Parallel.ForEach(
+            words,
+            new() { CancellationToken = TestContext.Current.CancellationToken },
+            word =>
             {
-                var suggestions = spell.Suggest(word.Wrong, new QueryOptions()
+                if (spell.Check(word.Correct) && !spell.Check(word.Wrong))
                 {
-                    TimeLimitSuggestGlobal = TimeSpan.FromSeconds(10)
-                });
+                    var suggestions = spell.Suggest(word.Wrong, new QueryOptions()
+                    {
+                        TimeLimitSuggestGlobal = TimeSpan.FromSeconds(10)
+                    });
 
-                if (!suggestions.Contains(word.Correct))
-                {
-                    Interlocked.Increment(ref wrongCount);
+                    if (!suggestions.Contains(word.Correct))
+                    {
+                        Interlocked.Increment(ref wrongCount);
+                    }
                 }
-            }
-        });
+            });
 
         wrongCount.ShouldBeLessThanOrEqualTo(words.Count / 10);
     }
@@ -90,7 +99,7 @@ public class EnUsWordsTests
             string line;
             while ((line = await fileReader.ReadLineAsync().ConfigureAwait(false)) is not null)
             {
-                if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#") || line.StartsWith("["))
+                if (string.IsNullOrWhiteSpace(line) || line[0] is '#' or '[')
                 {
                     continue;
                 }

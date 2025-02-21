@@ -23,10 +23,10 @@ public class OptionsTests
             MaxSuggestions = 2
         };
 
-        var verification = wordList.Suggest(word);
+        var verification = wordList.Suggest(word, CancellationToken.None);
         verification.Count().ShouldBeGreaterThan(2);
 
-        var actual = wordList.Suggest(word, options);
+        var actual = wordList.Suggest(word, options, CancellationToken.None);
 
         actual.ShouldHaveCount(2);
     }
@@ -43,7 +43,7 @@ public class OptionsTests
         };
 
         var stopwatch = Stopwatch.StartNew();
-        var verification = wordList.Suggest(word, options);
+        var verification = wordList.Suggest(word, options, CancellationToken.None);
         stopwatch.Stop();
         var fullRunTime = stopwatch.Elapsed;
         verification.ShouldNotBeEmpty();

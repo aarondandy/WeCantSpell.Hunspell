@@ -1,4 +1,6 @@
-﻿using Shouldly;
+﻿using System.Threading;
+
+using Shouldly;
 
 using Xunit;
 
@@ -6,6 +8,8 @@ namespace WeCantSpell.Hunspell.Tests;
 
 public class WordListTests
 {
+    static CancellationToken TestCancellation => TestContext.Current.CancellationToken;
+
     public class Constructors : WordListTests
     {
         [Fact]
@@ -32,10 +36,10 @@ public class WordListTests
 
             foreach(var word in words)
             {
-                wordList.Check(word).ShouldBeTrue();
+                wordList.Check(word, TestCancellation).ShouldBeTrue();
             }
-            wordList.Check("missing").ShouldBeFalse();
-            wordList.Check("Wot?").ShouldBeFalse();
+            wordList.Check("missing", TestCancellation).ShouldBeFalse();
+            wordList.Check("Wot?", TestCancellation).ShouldBeFalse();
         }
 
         [Theory]
@@ -49,9 +53,9 @@ public class WordListTests
             var words = "The quick brown fox jumps over the lazy dog".Split(' ');
             var wordList = WordList.CreateFromWords(words);
 
-            var suggestions = wordList.Suggest(given);
+            var suggestions = wordList.Suggest(given, TestCancellation);
 
-            wordList.Check(given).ShouldBeFalse();
+            wordList.Check(given, TestCancellation).ShouldBeFalse();
             suggestions.ShouldContain(expected);
         }
 
@@ -60,7 +64,7 @@ public class WordListTests
         {
             var wordList = WordList.CreateFromWords([""]);
 
-            var suggestions = wordList.Suggest("test");
+            var suggestions = wordList.Suggest("test", TestCancellation);
 
             suggestions.ShouldBeEmpty();
         }
@@ -73,7 +77,7 @@ public class WordListTests
         {
             var wordList = WordList.CreateFromWords(["Word"]);
 
-            var actual = wordList.Check("  Word..");
+            var actual = wordList.Check("  Word..", TestCancellation);
 
             actual.ShouldBeTrue();
         }

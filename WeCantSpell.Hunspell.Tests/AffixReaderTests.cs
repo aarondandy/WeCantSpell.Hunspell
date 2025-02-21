@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Shouldly;
@@ -12,6 +13,8 @@ namespace WeCantSpell.Hunspell.Tests;
 
 public class AffixReaderTests
 {
+    static CancellationToken TestCancellation => TestContext.Current.CancellationToken;
+
     static AffixReaderTests()
     {
         EncodingHelpers.EnsureEncodingsReady();
@@ -24,7 +27,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/1463589.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.MaxNgramSuggestions.ShouldBe(1);
         }
@@ -34,7 +37,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/1463589_utf.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.Encoding.WebName.ShouldBe("utf-8");
             actual.MaxNgramSuggestions.ShouldBe(1);
@@ -45,7 +48,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/1592880.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.Encoding.WebName.ShouldBe("iso-8859-1");
 
@@ -99,7 +102,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/1695964.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.TryString.ShouldBe("esianrtolcdugmphbyfvkwESIANRTOLCDUGMPHBYFVKW");
             actual.MaxNgramSuggestions.ShouldBe(0);
@@ -128,7 +131,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/1706659.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.Encoding.WebName.ShouldBe("iso-8859-1");
             actual.TryString.ShouldBe("esijanrtolcdugmphbyfvkwqxz");
@@ -155,7 +158,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/1975530.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.Encoding.WebName.ShouldBe("utf-8");
             actual.IgnoredChars.ShouldBeValues([1600, 1612, 1613, 1614, 1615, 1616, 1617, 1618], ignoreOrder: true);
@@ -173,7 +176,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/2970240.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CompoundFlag.ShouldBeValue('c');
             var pattern = actual.CompoundPatterns.ShouldHaveSingleItem();
@@ -186,7 +189,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/2970242.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CompoundFlag.ShouldBeValue('c');
             var pattern = actual.CompoundPatterns.ShouldHaveSingleItem();
@@ -202,7 +205,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/2999225.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CompoundRules.ShouldHaveSingleItem().ShouldBeValues(['a', 'b']);
             actual.CompoundBegin.ShouldBeValue('A');
@@ -214,7 +217,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/affixes.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             var prefix = actual.Prefixes.ShouldHaveSingleItem();
             prefix.AFlag.ShouldBeValue('A');
@@ -244,7 +247,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/alias.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.AliasF.ShouldHaveCount(2);
             actual.AliasF[0].ShouldBeValues(['A', 'B']);
@@ -272,7 +275,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/alias2.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.AliasF.ShouldHaveCount(2);
             actual.AliasF[0].ShouldBeValues(['A', 'B']);
@@ -310,7 +313,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/alias3.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.ComplexPrefixes.ShouldBeTrue();
             actual.WordChars.ShouldBeValues(['_']);
@@ -359,7 +362,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/allcaps.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.WordChars.ShouldBe(['\'', '.']);
 
@@ -378,7 +381,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/allcaps_utf.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.Encoding.WebName.ShouldBe("utf-8");
 
@@ -399,7 +402,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/allcaps2.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.ForbiddenWord.ShouldBeValue('*');
 
@@ -417,7 +420,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/allcaps3.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.WordChars.ShouldBe(['\'']);
 
@@ -445,7 +448,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/arabic.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.Encoding.WebName.ShouldBe("utf-8");
             actual.TryString.ShouldBe("أ");
@@ -466,7 +469,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/base.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.Encoding.WebName.ShouldBe("iso-8859-1");
             actual.WordChars.ShouldBe(['\'', '.']);
@@ -498,7 +501,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/base_utf.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.TryString.ShouldBe("esianrtolcdugmphbyfvkwzESIANRTOLCDUGMPHBYFVKWZ'");
             actual.MaxNgramSuggestions.ShouldBe(1);
@@ -513,7 +516,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/break.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.BreakPoints.ShouldBe(["-", "–"]);
 
@@ -525,7 +528,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/breakdefault.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.MaxNgramSuggestions.ShouldBe(0);
             actual.WordChars.ShouldBe(['-']);
@@ -537,7 +540,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/breakoff.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.MaxNgramSuggestions.ShouldBe(0);
             actual.WordChars.ShouldBe(['-']);
@@ -550,7 +553,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/checkcompoundcase.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CheckCompoundCase.ShouldBeTrue();
             actual.CompoundFlag.ShouldBeValue('A');
@@ -561,7 +564,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/checkcompounddup.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CheckCompoundDup.ShouldBeTrue();
             actual.CompoundFlag.ShouldBeValue('A');
@@ -572,7 +575,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/checkcompoundpattern.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CompoundFlag.ShouldBeValue('A');
             actual.CompoundPatterns.ShouldHaveCount(2);
@@ -588,7 +591,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/checkcompoundpattern2.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CompoundFlag.ShouldBeValue('A');
             actual.CompoundPatterns.ShouldHaveCount(2);
@@ -607,7 +610,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/checkcompoundpattern3.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CompoundFlag.ShouldBeValue('A');
             var compoundPattern = actual.CompoundPatterns.ShouldHaveSingleItem();
@@ -625,7 +628,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/checkcompoundpattern4.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CompoundFlag.ShouldBeValue('x');
             actual.CompoundMin.ShouldBe(1);
@@ -648,7 +651,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/checkcompoundrep.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CheckCompoundRep.ShouldBeTrue();
             actual.CompoundFlag.ShouldBeValue('A');
@@ -663,7 +666,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/checkcompoundtriple.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CheckCompoundTriple.ShouldBeTrue();
             actual.CompoundFlag.ShouldBeValue('A');
@@ -674,7 +677,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/checksharps.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.Encoding.WebName.ShouldBe("iso-8859-1");
             actual.WordChars.ShouldBe(['.', 'ß'], ignoreOrder: true);
@@ -685,7 +688,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/checksharpsutf.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.Encoding.WebName.ShouldBe("utf-8");
             actual.CheckSharps.ShouldBeTrue();
@@ -698,7 +701,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/circumfix.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.Circumfix.ShouldBeValue('X');
 
@@ -757,7 +760,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/colons_in_words.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.WordChars.ShouldBe(":");
         }
@@ -767,7 +770,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/compoundaffix2.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CompoundFlag.ShouldBeValue('X');
             actual.CompoundPermitFlag.ShouldBeValue('Y');
@@ -780,7 +783,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/compoundaffix3.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CompoundFlag.ShouldBeValue('X');
             actual.CompoundForbidFlag.ShouldBeValue('Z');
@@ -793,7 +796,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/compoundrule2.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CompoundMin.ShouldBe(1);
             actual.CompoundRules.ShouldHaveSingleItem().ShouldBeValues(['A', '*', 'B', '*', 'C', '*']);
@@ -804,7 +807,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/compoundrule3.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CompoundMin.ShouldBe(1);
             actual.CompoundRules.ShouldHaveSingleItem().ShouldBeValues(['A', '?', 'B', '?', 'C', '?']);
@@ -815,7 +818,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/compoundrule4.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.WordChars.ShouldBe("0123456789");
             actual.CompoundMin.ShouldBe(1);
@@ -830,7 +833,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/compoundrule5.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CompoundMin.ShouldBe(1);
             actual.CompoundRules.ShouldHaveCount(2);
@@ -844,7 +847,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/compoundrule6.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CompoundMin.ShouldBe(1);
             actual.CompoundRules.ShouldHaveCount(2);
@@ -857,7 +860,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/compoundrule7.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.WordChars.ShouldBe("0123456789");
             actual.CompoundMin.ShouldBe(1);
@@ -872,7 +875,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/compoundrule8.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.WordChars.ShouldBe("0123456789");
             actual.CompoundMin.ShouldBe(1);
@@ -887,7 +890,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/condition.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.WordChars.ShouldBe("0123456789");
             actual.Suffixes.ShouldHaveCount(4);
@@ -899,7 +902,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/condition_utf.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.WordChars.ShouldBe("0123456789");
             actual.Suffixes.ShouldHaveSingleItem();
@@ -911,7 +914,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/digits_in_words.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CompoundMin.ShouldBe(1);
             actual.CompoundRules.ShouldHaveSingleItem();
@@ -925,7 +928,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/encoding.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.Encoding.WebName.ShouldBe("iso-8859-15");
         }
@@ -935,7 +938,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/flag.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.FlagMode.ShouldBe(FlagParsingMode.Char);
             actual.Suffixes.ShouldHaveCount(3);
@@ -948,7 +951,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/flaglong.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.FlagMode.ShouldBe(FlagParsingMode.Long);
             actual.Suffixes.ShouldHaveCount(3);
@@ -961,7 +964,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/flagnum.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.Suffixes.ShouldHaveCount(3);
             actual.Suffixes.ElementAt(0).AFlag.ShouldBeValue(999);
@@ -980,7 +983,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/flagutf8.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.FlagMode.ShouldBe(FlagParsingMode.Uni);
             actual.Suffixes.ShouldHaveCount(3);
@@ -997,7 +1000,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/fogemorpheme.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CompoundFlag.ShouldBeValue('X');
             actual.CompoundBegin.ShouldBeValue('Y');
@@ -1011,7 +1014,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/forbiddenword.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.ForbiddenWord.ShouldBeValue('X');
             actual.CompoundFlag.ShouldBeValue('Y');
@@ -1023,7 +1026,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/forceucase.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.TryString.ShouldBe("F");
             actual.ForceUpperCase.ShouldBeValue('A');
@@ -1035,7 +1038,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/fullstrip.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.FullStrip.ShouldBeTrue();
             actual.TryString.ShouldBe("aioertnsclmdpgubzfvhÃ q'ACMSkBGPLxEyRTVÃ²IODNwFÃ©Ã¹ÃšÃ¬jUZKHWJYQX");
@@ -1065,7 +1068,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/germancompounding.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CheckSharps.ShouldBeTrue();
             actual.CompoundBegin.ShouldBeValue('U');
@@ -1125,7 +1128,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/iconv.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.InputConversions.ShouldHaveCount(4);
             actual.InputConversions.ContainsKey("ş");
@@ -1143,7 +1146,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/ignore.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.IgnoredChars.ShouldBe("aeiou");
             var pg = actual.Prefixes.ShouldHaveSingleItem();
@@ -1160,7 +1163,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/ignoreutf.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.IgnoredChars.ShouldBe("ًٌٍَُِّْ", ignoreOrder: true);
             actual.WordChars.ShouldBe("ًٌٍَُِّْ", ignoreOrder: true);
@@ -1171,7 +1174,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/maputf.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.MaxNgramSuggestions.ShouldBe(0);
             actual.RelatedCharacterMap.ShouldHaveCount(3);
@@ -1185,7 +1188,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/morph.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             var pg = actual.Prefixes.ShouldHaveSingleItem();
             pg.AFlag.ShouldBeValue('P');
@@ -1211,7 +1214,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/needaffix.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.NeedAffix.ShouldBeValue('X');
             actual.CompoundFlag.ShouldBeValue('Y');
@@ -1235,7 +1238,7 @@ public class AffixReaderTests
             value1_2.ShouldNotBeEmpty();
             value1_2.ShouldNotBe(value1_1);
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.IgnoredChars.ShouldBe("￰");
             actual.WordChars.ShouldBe("ःािीॉॊोौॎॏॕॖॗ‌‍");
@@ -1262,7 +1265,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/ngram_utf_fix.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             var pg = actual.Prefixes.ShouldHaveSingleItem();
             pg.AFlag.ShouldBeValue(101);
@@ -1286,7 +1289,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/oconv.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.OutputConversions.ShouldHaveCount(7);
             actual.OutputConversions["a"][0].ShouldBe("A");
@@ -1303,7 +1306,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/onlyincompound2.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.OnlyInCompound.ShouldBeValue('O');
             actual.CompoundFlag.ShouldBeValue('A');
@@ -1328,7 +1331,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/opentaal_cpdpat.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CompoundBegin.ShouldBeValue('C' << 8 | 'a');
             actual.CompoundMiddle.ShouldBeValue('C' << 8 | 'b');
@@ -1359,7 +1362,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/opentaal_cpdpat2.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.WordChars.ShouldBe("-");
             actual.NoSplitSuggestions.ShouldBeTrue();
@@ -1482,7 +1485,7 @@ public class AffixReaderTests
                 .Select(e => e.Trim())
                 .ToArray();
             
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.Encoding.WebName.ShouldBe("iso-8859-1");
             actual.Warnings.ShouldBeEmpty();
@@ -1497,7 +1500,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/rep.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.MaxNgramSuggestions.ShouldBe(0);
 
@@ -1556,7 +1559,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/reputf.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.MaxNgramSuggestions.ShouldBe(0);
             var r = actual.Replacements.ShouldHaveSingleItem();
@@ -1570,7 +1573,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/simplifiedtriple.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CheckCompoundTriple.ShouldBeTrue();
             actual.SimplifiedTriple.ShouldBeTrue();
@@ -1583,7 +1586,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/slash.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.WordChars.ShouldBe(@"/:");
         }
@@ -1593,7 +1596,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/sug.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.MaxNgramSuggestions.ShouldBe(0);
             actual.Replacements.ShouldHaveCount(2);
@@ -1615,7 +1618,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/utf8_bom.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.Encoding.WebName.ShouldBe("utf-8");
         }
@@ -1625,7 +1628,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/utfcompound.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.CompoundMin.ShouldBe(3);
             actual.CompoundFlag.ShouldBeValue('A');
@@ -1636,7 +1639,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/warn.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.Warn.ShouldBeValue('W');
             actual.Suffixes.ShouldHaveSingleItem();
@@ -1651,7 +1654,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/zeroaffix.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.NeedAffix.ShouldBeValue('X');
             actual.CompoundFlag.ShouldBeValue('Y');
@@ -1700,7 +1703,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/Russian-English Bilingual.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.FlagMode.ShouldBe(FlagParsingMode.Num);
         }
@@ -1719,7 +1722,7 @@ public class AffixReaderTests
         [Theory, MemberData(nameof(can_read_file_without_exception_args))]
         public async Task can_read_file_without_exception(string filePath)
         {
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.ShouldNotBeNull();
 
@@ -2043,7 +2046,7 @@ public class AffixReaderTests
         {
             var filePath = @"files/af_am_comments.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
             actual.AliasF.ShouldHaveSingleItem().ShouldBeValues([2, 3]);
             actual.AliasM.ShouldHaveSingleItem().ShouldBe(["ts:0"]);
