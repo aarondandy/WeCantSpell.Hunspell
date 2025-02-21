@@ -131,7 +131,7 @@ public class CharacterConditionTests
         {
             var actual = CharacterConditionGroup.Parse("[qwerty][asdf]");
 
-            actual.Count.ShouldBe(2);
+            actual.ShouldHaveCount(2);
             actual[0].Characters.ShouldBe("qwerty", ignoreOrder: true);
             actual[0].Mode.ShouldBe(CharacterCondition.ModeKind.PermitChars);
             actual[1].Characters.ShouldBe("asdf", ignoreOrder: true);
@@ -143,7 +143,7 @@ public class CharacterConditionTests
         {
             var actual = CharacterConditionGroup.Parse("[^qwerty][^asdf]");
 
-            actual.Count.ShouldBe(2);
+            actual.ShouldHaveCount(2);
             actual[0].Characters.ShouldBe("qwerty", ignoreOrder: true);
             actual[0].Mode.ShouldBe(CharacterCondition.ModeKind.RestrictChars);
             actual[1].Characters.ShouldBe("asdf", ignoreOrder: true);
@@ -155,7 +155,7 @@ public class CharacterConditionTests
         {
             var actual = CharacterConditionGroup.Parse("[qwerty][^asdf]");
 
-            actual.Count.ShouldBe(2);
+            actual.ShouldHaveCount(2);
             actual[0].Characters.ShouldBe("qwerty", ignoreOrder: true);
             actual[0].Mode.ShouldBe(CharacterCondition.ModeKind.PermitChars);
             actual[1].Characters.ShouldBe("asdf", ignoreOrder: true);
@@ -167,7 +167,7 @@ public class CharacterConditionTests
         {
             var actual = CharacterConditionGroup.Parse("[^aeiou]y");
 
-            actual.Count.ShouldBe(2);
+            actual.ShouldHaveCount(2);
             actual[0].Characters.ShouldBe("aeiou");
             actual[0].Mode.ShouldBe(CharacterCondition.ModeKind.RestrictChars);
             actual[1].Characters.ShouldBe("y");

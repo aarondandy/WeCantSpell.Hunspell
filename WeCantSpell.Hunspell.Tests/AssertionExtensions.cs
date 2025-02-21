@@ -31,4 +31,16 @@ internal static class AssertionExtensions
     {
         actual.ShouldBe(expected.Select(static v => (char)v), ignoreOrder: ignoreOrder);
     }
+
+    public static void ShouldHaveCount<T>(this IEnumerable<T> actual, int expected)
+    {
+        if (actual is ICollection<T> list)
+        {
+            list.Count.ShouldBe(expected);
+        }
+        else
+        {
+            actual.Count().ShouldBe(expected);
+        }
+    }
 }

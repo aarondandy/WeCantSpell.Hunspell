@@ -28,7 +28,7 @@ public class OptionsTests
 
         var actual = wordList.Suggest(word, options);
 
-        actual.Count().ShouldBe(2);
+        actual.ShouldHaveCount(2);
     }
 
     [Fact(Skip = "I can't get this timing test to reliably run in a CI environment")]

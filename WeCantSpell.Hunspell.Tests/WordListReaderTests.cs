@@ -53,7 +53,7 @@ public class WordListReaderTests
             var actual = await WordListReader.ReadFileAsync(filePath);
 
             actual.RootWords.ShouldHaveSingleItem();
-            actual["Mull"].Length.ShouldBe(2);
+            actual["Mull"].ShouldHaveCount(2);
             actual["Mull"][0].Flags.ShouldBeValues(['e', 'h']);
             actual["Mull"][1].Flags.ShouldBeValues(['S']);
         }
@@ -65,7 +65,7 @@ public class WordListReaderTests
 
             var actual = await WordListReader.ReadFileAsync(filePath);
 
-            actual.RootWords.Count().ShouldBe(3);
+            actual.RootWords.ShouldHaveCount(3);
             actual["arbeits"][0].Flags.ShouldBeValues(['v']);
             actual["scheu"][0].Flags.ShouldBeValues(['A', 'w']);
             actual["farbig"][0].Flags.ShouldBeValues(['A']);
@@ -78,7 +78,7 @@ public class WordListReaderTests
 
             var actual = await WordListReader.ReadFileAsync(filePath);
 
-            actual.RootWords.Count().ShouldBe(2);
+            actual.RootWords.ShouldHaveCount(2);
             actual["أرى"][0].Flags.ShouldBeValues(['x']);
             actual["أيار"][0].Flags.ShouldBeValues(['x']);
         }
@@ -141,7 +141,7 @@ public class WordListReaderTests
 
             var actual = await WordListReader.ReadFileAsync(filePath);
 
-            actual.RootWords.Count().ShouldBe(4);
+            actual.RootWords.ShouldHaveCount(4);
             actual["iPod"][0].Flags.ShouldBeValues(['s']);
             actual["Ipod"][0].Flags.ShouldBe([(FlagValue)'s', SpecialFlags.OnlyUpcaseFlag]);
             actual["iPodos"][0].Flags.ShouldBeValues(['*']);
@@ -155,7 +155,7 @@ public class WordListReaderTests
 
             var actual = await WordListReader.ReadFileAsync(filePath);
 
-            actual.RootWords.Count().ShouldBe(6);
+            actual.RootWords.ShouldHaveCount(6);
             actual["UNESCO"][0].Flags.ShouldBeValues(['S']);
             actual["Unesco"][0].Flags.ShouldBeValues(['S']);
             actual["Nasa"][0].Flags.ShouldBeValues(['S']);
@@ -171,7 +171,7 @@ public class WordListReaderTests
 
             var actual = await WordListReader.ReadFileAsync(filePath);
 
-            actual.RootWords.Count().ShouldBe(4);
+            actual.RootWords.ShouldHaveCount(4);
             actual["OpenOffice.org"].ShouldHaveSingleItem().Flags.ShouldBeEmpty();
             actual["Openoffice.org"].ShouldHaveSingleItem().Flags.ShouldBe([SpecialFlags.OnlyUpcaseFlag]);
             actual["UNICEF"].ShouldHaveSingleItem().Flags.ShouldBeValues(['S']);
@@ -276,7 +276,7 @@ public class WordListReaderTests
 
             var actual = await WordListReader.ReadFileAsync(filePath);
 
-            actual.RootWords.Count().ShouldBe(expectedWords.Length);
+            actual.RootWords.ShouldHaveCount(expectedWords.Length);
             actual.RootWords.ShouldBe(expectedWords, ignoreOrder: true);
 
             actual["create"][0].Flags.ShouldBeValues(['X', 'K', 'V', 'N', 'G', 'A', 'D', 'S'], ignoreOrder: true);
@@ -302,7 +302,7 @@ public class WordListReaderTests
 
             var actual = await WordListReader.ReadFileAsync(filePath);
 
-            actual.RootWords.Count().ShouldBe(expected.Length);
+            actual.RootWords.ShouldHaveCount(expected.Length);
             actual.RootWords.ShouldBe(expected, ignoreOrder: true);
         }
 
@@ -367,7 +367,7 @@ public class WordListReaderTests
 
             var actual = await WordListReader.ReadFileAsync(filePath);
 
-            actual.RootWords.Count().ShouldBe(4);
+            actual.RootWords.ShouldHaveCount(4);
             actual.RootWords.ShouldBe(
             [
                 "foo",
@@ -438,7 +438,7 @@ public class WordListReaderTests
 
             var actual = await WordListReader.ReadFileAsync(filePath);
 
-            actual.RootWords.Count().ShouldBe(2);
+            actual.RootWords.ShouldHaveCount(2);
             actual["foo"][0].Flags.ShouldBeValues(['X', 'P', 'S'], ignoreOrder: true);
             actual["bar"][0].Flags.ShouldBeValues(['X', 'P', 'S'], ignoreOrder: true);
         }
@@ -607,7 +607,7 @@ public class WordListReaderTests
             var actual = await WordListReader.ReadFileAsync(filePath);
 
             actual.RootWords.ShouldHaveSingleItem();
-            actual["drink"].Length.ShouldBe(2);
+            actual["drink"].ShouldHaveCount(2);
             actual["drink"][0].Flags.ShouldBeValues(['Q', 'R']);
             actual["drink"][0].Morphs.ShouldBe(["po:verb"]);
             actual["drink"][1].Flags.ShouldBeValues(['S']);
@@ -690,7 +690,7 @@ public class WordListReaderTests
 
             var actual = await WordListReader.ReadFileAsync(filePath);
 
-            actual.RootWords.Count().ShouldBe(2);
+            actual.RootWords.ShouldHaveCount(2);
             actual.RootWords.ShouldBe(["gata", "kontoret"], ignoreOrder: true);
             actual["gata"][0].Flags.ShouldBeValues(['A']);
             actual["kontoret"][0].Flags.ShouldBeValues(['X']);
@@ -874,7 +874,7 @@ public class WordListReaderTests
                 "phenomena"
             ], ignoreOrder: true);
 
-            actual["drink"].Count().ShouldBe(2);
+            actual["drink"].ShouldHaveCount(2);
             actual["drink"][0].Flags.ShouldBeValues(['S']);
             actual["drink"][0].Morphs.ShouldBe(["po:noun"]);
             actual["drink"][1].Flags.ShouldBeValues(['Q', 'R']);
@@ -1016,7 +1016,7 @@ public class WordListReaderTests
 
             var actual = await WordListReader.ReadFileAsync(filePath);
 
-            actual.RootWords.Count().ShouldBe(2);
+            actual.RootWords.ShouldHaveCount(2);
             actual.RootWords.ShouldBe(["foo", "bar"], ignoreOrder: true);
             actual["foo"][0].Flags.ShouldBeValues(['A', 'W'], ignoreOrder: true);
         }
@@ -1028,7 +1028,7 @@ public class WordListReaderTests
 
             var actual = await WordListReader.ReadFileAsync(filePath);
 
-            actual.RootWords.Count().ShouldBe(2);
+            actual.RootWords.ShouldHaveCount(2);
             actual.RootWords.ShouldBe(["foo", "bar"], ignoreOrder: true);
             actual["foo"][0].Flags.ShouldBeValues(['X', 'A'], ignoreOrder: true);
             actual["foo"][0].Morphs.ShouldBe(["<FOO"]);
