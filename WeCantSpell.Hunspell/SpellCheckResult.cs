@@ -9,6 +9,15 @@ public readonly struct SpellCheckResult
 
     public static SpellCheckResult DefaultWrong { get; } = new SpellCheckResult(root: null, SpellCheckResultType.None, correct: false);
 
+    internal static SpellCheckResult Fail(string? root, SpellCheckResultType info) =>
+        new(root, info: info, correct: false);
+
+    internal static SpellCheckResult Success(string? root, SpellCheckResultType info) =>
+        new(root, info: info, correct: true);
+
+    internal static SpellCheckResult CompoundSuccess(string? root, SpellCheckResultType info) =>
+        new(root, info: info | SpellCheckResultType.Compound, correct: true);
+
     public SpellCheckResult(string? root, SpellCheckResultType info, bool correct)
     {
         Root = root ?? string.Empty;

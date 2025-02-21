@@ -193,11 +193,11 @@ public partial class WordList
 
                     if (Affix.ForbidWarn)
                     {
-                        return new SpellCheckResult(root, resultType, false);
+                        return SpellCheckResult.Fail(root, resultType);
                     }
                 }
 
-                return new SpellCheckResult(root, resultType, true);
+                return SpellCheckResult.Success(root, resultType);
             }
 
         handleRvNull:
@@ -205,7 +205,7 @@ public partial class WordList
             // recursive breaking at break points
             return (Affix.BreakPoints.HasItems && resultType.IsMissingFlag(SpellCheckResultType.Forbidden))
                 ? CheckDetailsInternalBreakPoints(scw, root, resultType)
-                : new SpellCheckResult(root, resultType, false);
+                : SpellCheckResult.Fail(root, resultType);
         }
 
         private readonly SpellCheckResult CheckDetailsInternalBreakPoints(string scw, string? root, SpellCheckResultType resultType)
@@ -213,37 +213,15 @@ public partial class WordList
             // calculate break points for recursion limit
             if (Affix.BreakPoints.FindRecursionLimit(scw) >= 10)
             {
-                return new SpellCheckResult(root, resultType, false);
+                return SpellCheckResult.Fail(root, resultType);
             }
 
             // check boundary patterns (^begin and end$)
             foreach (var breakEntry in Affix.BreakPoints.GetInternalArray())
             {
-                if (breakEntry.Length <= 1 || breakEntry.Length > scw.Length)
+                if (CheckDetailsInternalBreakPoints_BoundaryCheck(scw, breakEntry))
                 {
-                    continue;
-                }
-
-                var pLastIndex = breakEntry.Length - 1;
-                if (
-                    breakEntry.StartsWith('^')
-                    && scw.AsSpan(0, pLastIndex).EqualsOrdinal(breakEntry.AsSpan(1))
-                    && CheckNested(scw.AsSpan(pLastIndex))
-                )
-                {
-                    return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true);
-                }
-
-                if (breakEntry.EndsWith('$'))
-                {
-                    var wlLessBreakIndex = scw.Length - breakEntry.Length + 1;
-                    if (
-                        scw.AsSpan(wlLessBreakIndex).EqualsOrdinal(breakEntry.AsSpan(0, pLastIndex))
-                        && CheckNested(scw.AsSpan(0, wlLessBreakIndex))
-                    )
-                    {
-                        return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true);
-                    }
+                    return SpellCheckResult.CompoundSuccess(root, resultType);
                 }
             }
 
@@ -260,27 +238,14 @@ public partial class WordList
 
                         // try to break at the second occurance
                         // to recognize dictionary words with wordbreak
-                        if (scw.Length - found > 2 && scw.IndexOf(breakEntry, found + 1, scw.Length - 2 - found, StringComparison.Ordinal) is int found2 and >= 0)
+                        if (scw.Length - found > 2)
                         {
-                            found = found2;
+                            found = Math.Max(scw.IndexOf(breakEntry, found + 1, scw.Length - 2 - found, StringComparison.Ordinal), found);
                         }
 
-                        if (CheckNested(scw.AsSpan(found + breakEntry.Length)))
+                        if (CheckDetailsInternalBreakPoints_OtherPatternCheck(scw, breakEntry, found))
                         {
-                            // examine 2 sides of the break point
-                            if (CheckNested(scw.AsSpan(0, found)))
-                            {
-                                return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true);
-                            }
-
-                            // LANG_hu: spec. dash rule
-                            if (Affix.IsHungarian && "-".Equals(breakEntry, StringComparison.Ordinal))
-                            {
-                                if (CheckNested(scw.AsSpan(0, found + 1)))
-                                {
-                                    return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true); // check the first part with dash
-                                }
-                            }
+                            return SpellCheckResult.CompoundSuccess(root, resultType);
                         }
                     }
                 }
@@ -290,28 +255,65 @@ public partial class WordList
                     // other patterns (break at first break point)
                     foreach (var (breakEntry, found) in reSearch)
                     {
-                        if (CheckNested(scw.AsSpan(found + breakEntry.Length)))
+                        if (CheckDetailsInternalBreakPoints_OtherPatternCheck(scw, breakEntry, found))
                         {
-                            // examine 2 sides of the break point
-                            if (CheckNested(scw.AsSpan(0, found)))
-                            {
-                                return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true);
-                            }
-
-                            // LANG_hu: spec. dash rule
-                            if (Affix.IsHungarian && "-".Equals(breakEntry, StringComparison.Ordinal))
-                            {
-                                if (CheckNested(scw.AsSpan(0, found + 1)))
-                                {
-                                    return new SpellCheckResult(root, resultType | SpellCheckResultType.Compound, true); // check the first part with dash
-                                }
-                            }
+                            return SpellCheckResult.CompoundSuccess(root, resultType);
                         }
                     }
                 }
             }
 
-            return new SpellCheckResult(root, resultType, false);
+            return SpellCheckResult.Fail(root, resultType);
+        }
+
+        private readonly bool CheckDetailsInternalBreakPoints_BoundaryCheck(string scw, string breakEntry)
+        {
+            if (breakEntry.Length > 1 && breakEntry.Length <= scw.Length)
+            {
+                var pLastIndex = breakEntry.Length - 1;
+                if (
+                    breakEntry[0] == '^'
+                    && scw.AsSpan(0, pLastIndex).EqualsOrdinal(breakEntry.AsSpan(1))
+                    && CheckNested(scw.AsSpan(pLastIndex))
+                )
+                {
+                    return true;
+                }
+
+                if (
+                    breakEntry[pLastIndex] == '$'
+                    && scw.AsSpan(scw.Length - pLastIndex).EqualsOrdinal(breakEntry.AsSpan(0, pLastIndex))
+                    && CheckNested(scw.AsSpan(0, scw.Length - pLastIndex))
+                )
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private readonly bool CheckDetailsInternalBreakPoints_OtherPatternCheck(string scw, string breakEntry, int found)
+        {
+            if (CheckNested(scw.AsSpan(found + breakEntry.Length)))
+            {
+                // examine 2 sides of the break point
+                if (CheckNested(scw.AsSpan(0, found)))
+                {
+                    return true;
+                }
+
+                // LANG_hu: spec. dash rule
+                if (Affix.IsHungarian && "-".Equals(breakEntry, StringComparison.Ordinal))
+                {
+                    if (CheckNested(scw.AsSpan(0, found + 1)))
+                    {
+                        return true; // check the first part with dash
+                    }
+                }
+            }
+
+            return false;
         }
 
         private WordEntry? CheckDetailsAllCap(bool abbv, ref string scw, ref SpellCheckResultType resultType, out string? root)
