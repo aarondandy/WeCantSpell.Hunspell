@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using FluentAssertions;
+using Shouldly;
 
 using Xunit;
 
@@ -24,11 +24,11 @@ public class OptionsTests
         };
 
         var verification = wordList.Suggest(word);
-        verification.Should().HaveCountGreaterThan(2);
+        verification.Count().ShouldBeGreaterThan(2);
 
         var actual = wordList.Suggest(word, options);
 
-        actual.Should().HaveCount(2);
+        actual.Count().ShouldBe(2);
     }
 
     [Fact(Skip = "I can't get this timing test to reliably run in a CI environment")]
@@ -46,18 +46,17 @@ public class OptionsTests
         var verification = wordList.Suggest(word, options);
         stopwatch.Stop();
         var fullRunTime = stopwatch.Elapsed;
-        verification.Should().NotBeEmpty();
+        verification.ShouldNotBeEmpty();
 
         var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(fullRunTime.TotalMilliseconds * 0.1));
         stopwatch = Stopwatch.StartNew();
         var actual = wordList.Suggest(word, cts.Token);
         stopwatch.Stop();
 
-        cts.Token.IsCancellationRequested.Should().BeTrue();
-        actual.Should().HaveCountLessThanOrEqualTo(verification.Count());
-        stopwatch.Elapsed.Should().BeLessThan(fullRunTime);
+        cts.Token.IsCancellationRequested.ShouldBeTrue();
+        actual.Count().ShouldBeLessThanOrEqualTo(verification.Count());
+        stopwatch.Elapsed.ShouldBeLessThan(fullRunTime);
     }
 
-    protected Task<WordList> LoadEnUsAsync() =>
-        WordList.CreateFromFilesAsync("files/English (American).dic");
+    protected static Task<WordList> LoadEnUsAsync() => WordList.CreateFromFilesAsync("files/English (American).dic");
 }

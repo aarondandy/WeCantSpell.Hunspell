@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using FluentAssertions;
-
-using WeCantSpell.Hunspell.Tests.Infrastructure;
+using Shouldly;
 
 using Xunit;
 
@@ -34,7 +31,7 @@ public class HunspellTests
 
             var actual = dictionary.Check(word);
 
-            actual.Should().BeFalse();
+            actual.ShouldBeFalse();
         }
 
         [Theory]
@@ -54,7 +51,7 @@ public class HunspellTests
 
             var actual = dictionary.Check(searchWord);
 
-            actual.Should().Be(expected);
+            actual.ShouldBe(expected);
         }
 
         public static IEnumerable<object[]> checking_large_word_does_not_cause_errors_args() =>
@@ -69,7 +66,7 @@ public class HunspellTests
 
             var actual = dictionary.Check(largeInput);
 
-            actual.Should().BeFalse();
+            actual.ShouldBeFalse();
         }
     }
 
@@ -82,8 +79,7 @@ public class HunspellTests
                 var results = GetAllDataFilePaths("*.good")
                     .SelectMany(ToDictionaryWordTestData)
                     // NOTE: These tests are bypassed because capitalization only works when the language is turkish and the UTF8 dic has no language applied
-                    .Where(t => !(t.dictionaryPath.EndsWith("base_utf.dic") && t.word.Contains('İ')))
-                    ;
+                    .Where(t => (t.dictionaryPath.EndsWith("base_utf.dic") && t.word.Contains('İ')) is false);
 
                 return results.Select(t => new[] { t.dictionaryPath, t.word });
             }
@@ -109,7 +105,7 @@ public class HunspellTests
 
             var checkResult = dictionary.Check(word, options);
 
-            checkResult.Should().BeTrue();
+            checkResult.ShouldBeTrue();
         }
 
         [Theory, MemberData(nameof(can_find_good_words_in_dictionary_args))]
@@ -119,7 +115,7 @@ public class HunspellTests
 
             var checkResult = dictionary.Check(word.AsSpan());
 
-            checkResult.Should().BeTrue();
+            checkResult.ShouldBeTrue();
         }
     }
 
@@ -137,7 +133,7 @@ public class HunspellTests
 
             var checkResult = dictionary.Check(word);
 
-            checkResult.Should().BeFalse();
+            checkResult.ShouldBeFalse();
         }
 
         /// <remarks>
@@ -155,7 +151,7 @@ public class HunspellTests
 
             var checkResult = dictionary.Check(word);
 
-            checkResult.Should().BeFalse();
+            checkResult.ShouldBeFalse();
         }
     }
 
@@ -185,7 +181,7 @@ public class HunspellTests
 
             var actual = dictionary.Suggest(word);
 
-            actual.Should().BeEmpty();
+            actual.ShouldBeEmpty();
         }
 
         [Theory]
@@ -216,8 +212,7 @@ public class HunspellTests
                 TimeLimitCompoundSuggest = TimeSpan.FromSeconds(10)
             });
 
-            actual.Should().NotBeNullOrEmpty();
-            actual.Should().BeEquivalentTo(expectedSuggestions);
+            actual.ShouldBe(expectedSuggestions);
         }
 
         [Fact]
@@ -237,8 +232,13 @@ public class HunspellTests
                 MaxSuggestions = 10
             });
 
-            actual.Should().NotBeNullOrEmpty();
-            actual.Should().Contain(minimumExpectedSuggestions);
+            actual.ShouldNotBeNull();
+            actual.ShouldNotBeEmpty();
+
+            foreach (var s in minimumExpectedSuggestions)
+            {
+                actual.ShouldContain(s);
+            }
         }
 
         public static IEnumerable<object[]> can_find_correct_best_suggestion_args()
@@ -248,7 +248,7 @@ public class HunspellTests
                 for (var i = 0; i < testSet.WrongLines.Count; i++)
                 {
                     var suggestions = testSet.SuggestionLines[i]
-                        .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Split([','], StringSplitOptions.RemoveEmptyEntries)
                         .Select(w => w.Trim(SpaceOrTab))
                         .ToArray();
 
@@ -295,12 +295,12 @@ public class HunspellTests
 
             var actual = dictionary.Suggest(givenWord, options);
 
-            actual.Should().NotBeNull();
+            actual.ShouldNotBeNull();
 
             // ',' can either be a delimiter in the test data or part of the data
             var actualText = string.Join(", ", actual);
             var expectedText = string.Join(", ", expectedSuggestions);
-            actualText.Should().Be(expectedText);
+            actualText.ShouldBe(expectedText);
         }
 
         [Fact]
@@ -308,7 +308,7 @@ public class HunspellTests
         {
             var untestedSets = GetSuggestionTestFileSets().Where(s => s.WrongLines.Count != s.SuggestionLines.Count);
 
-            untestedSets.Should().BeEmpty();
+            untestedSets.ShouldBeEmpty();
         }
 
         private static readonly HashSet<string> ExcludedSuggestionFiles = new(StringComparer.OrdinalIgnoreCase)
@@ -389,7 +389,7 @@ public class HunspellTests
         return Directory.GetFiles("files/", searchPattern).OrderBy(n => n);
     }
 
-    protected static readonly char[] SpaceOrTab = { ' ', '\t' };
+    protected static readonly char[] SpaceOrTab = [' ', '\t'];
 
     protected static IEnumerable<(string dictionaryPath, string word)> ToDictionaryWordTestData(string wordFilePath)
     {

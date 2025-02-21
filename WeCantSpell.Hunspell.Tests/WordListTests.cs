@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using Shouldly;
 
 using Xunit;
 
@@ -18,7 +18,8 @@ public class WordListTests
             foreach (var word in words)
             {
                 var entry = wordList[word];
-                entry.Should().NotBeNullOrEmpty();
+                entry.ShouldNotBeNull();
+                entry.ShouldNotBeEmpty();
             }
         }
 
@@ -31,10 +32,10 @@ public class WordListTests
 
             foreach(var word in words)
             {
-                wordList.Check(word).Should().BeTrue();
+                wordList.Check(word).ShouldBeTrue();
             }
-            wordList.Check("missing").Should().BeFalse();
-            wordList.Check("Wot?").Should().BeFalse();
+            wordList.Check("missing").ShouldBeFalse();
+            wordList.Check("Wot?").ShouldBeFalse();
         }
 
         [Theory]
@@ -50,18 +51,18 @@ public class WordListTests
 
             var suggestions = wordList.Suggest(given);
 
-            wordList.Check(given).Should().BeFalse();
-            suggestions.Should().Contain(expected);
+            wordList.Check(given).ShouldBeFalse();
+            suggestions.ShouldContain(expected);
         }
 
         [Fact]
         public void wordlist_with_blank_word_entry_does_not_crash_suggest()
         {
-            var wordList = WordList.CreateFromWords(new[] { "" });
+            var wordList = WordList.CreateFromWords([""]);
 
             var suggestions = wordList.Suggest("test");
 
-            suggestions.Should().BeEmpty();
+            suggestions.ShouldBeEmpty();
         }
     }
 
@@ -70,11 +71,11 @@ public class WordListTests
         [Fact]
         public void can_check_with_appended_special_chars()
         {
-            var wordList = WordList.CreateFromWords(new[] { "Word" });
+            var wordList = WordList.CreateFromWords(["Word"]);
 
             var actual = wordList.Check("  Word..");
 
-            actual.Should().BeTrue();
+            actual.ShouldBeTrue();
         }
     }
 }

@@ -1,8 +1,9 @@
-﻿using FluentAssertions;
+﻿using Shouldly;
 
 using Xunit;
 
 namespace WeCantSpell.Hunspell.Tests;
+
 public class StringBuilderSpanTests
 {
     [Fact]
@@ -10,7 +11,7 @@ public class StringBuilderSpanTests
     {
         var builder = new StringBuilderSpan("ababab");
         builder.Replace("ab", "cc");
-        builder.ToString().Should().Be("cccccc");
+        builder.ToString().ShouldBe("cccccc");
     }
 
     [Fact]
@@ -18,7 +19,7 @@ public class StringBuilderSpanTests
     {
         var builder = new StringBuilderSpan("ababab");
         builder.Replace("ab", "c");
-        builder.ToString().Should().Be("ccc");
+        builder.ToString().ShouldBe("ccc");
     }
 
     [Fact]
@@ -26,7 +27,7 @@ public class StringBuilderSpanTests
     {
         var builder = new StringBuilderSpan("ababab");
         builder.Replace("ab", "ccc");
-        builder.ToString().Should().Be("ccccccccc");
+        builder.ToString().ShouldBe("ccccccccc");
     }
 
     [Fact]
@@ -34,7 +35,7 @@ public class StringBuilderSpanTests
     {
         var builder = new StringBuilderSpan("ababab");
         builder.Replace("ab", "cc", 2, 2);
-        builder.ToString().Should().Be("abccab");
+        builder.ToString().ShouldBe("abccab");
     }
 
     [Fact]
@@ -42,7 +43,7 @@ public class StringBuilderSpanTests
     {
         var builder = new StringBuilderSpan("ababab");
         builder.Replace("ab", "c", 2, 2);
-        builder.ToString().Should().Be("abcab");
+        builder.ToString().ShouldBe("abcab");
     }
 
     [Fact]
@@ -50,7 +51,7 @@ public class StringBuilderSpanTests
     {
         var builder = new StringBuilderSpan("ababab");
         builder.Replace("ab", "ccc", 2, 2);
-        builder.ToString().Should().Be("abcccab");
+        builder.ToString().ShouldBe("abcccab");
     }
 
     [Fact]
@@ -58,7 +59,7 @@ public class StringBuilderSpanTests
     {
         var builder = new StringBuilderSpan("ababababab");
         builder.Replace("ab", "cc", 2, 6);
-        builder.ToString().Should().Be("abccccccab");
+        builder.ToString().ShouldBe("abccccccab");
     }
 
     [Fact]
@@ -66,7 +67,7 @@ public class StringBuilderSpanTests
     {
         var builder = new StringBuilderSpan("ababababab");
         builder.Replace("ab", "c", 2, 6);
-        builder.ToString().Should().Be("abcccab");
+        builder.ToString().ShouldBe("abcccab");
     }
 
     [Fact]
@@ -74,7 +75,7 @@ public class StringBuilderSpanTests
     {
         var builder = new StringBuilderSpan("ababababab");
         builder.Replace("ab", "ccc", 2, 6);
-        builder.ToString().Should().Be("abcccccccccab");
+        builder.ToString().ShouldBe("abcccccccccab");
     }
 
     [Fact]
@@ -82,7 +83,7 @@ public class StringBuilderSpanTests
     {
         var builder = new StringBuilderSpan("abxabxabxabxab");
         builder.Replace("ab", "cc", 2, 10);
-        builder.ToString().Should().Be("abxccxccxccxab");
+        builder.ToString().ShouldBe("abxccxccxccxab");
     }
 
     [Fact]
@@ -90,7 +91,7 @@ public class StringBuilderSpanTests
     {
         var builder = new StringBuilderSpan("abxabxabxabxab");
         builder.Replace("ab", "c", 2, 10);
-        builder.ToString().Should().Be("abxcxcxcxab");
+        builder.ToString().ShouldBe("abxcxcxcxab");
     }
 
     [Fact]
@@ -98,6 +99,6 @@ public class StringBuilderSpanTests
     {
         var builder = new StringBuilderSpan("abxabxabxabxab");
         builder.Replace("ab", "ccc", 2, 10);
-        builder.ToString().Should().Be("abxcccxcccxcccxab");
+        builder.ToString().ShouldBe("abxcccxcccxcccxab");
     }
 }

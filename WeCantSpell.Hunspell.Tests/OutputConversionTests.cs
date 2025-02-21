@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using Shouldly;
 
 using Xunit;
 
@@ -13,7 +13,7 @@ public class OutputConversionTests
         var dictionary = WordList.CreateFromFiles(filePath);
 
         var actual = dictionary.CheckDetails("aas");
-        actual.Correct.Should().BeTrue();
-        actual.Root.Should().Be("aa");
+        actual.Correct.ShouldBeTrue();
+        actual.Root.ShouldBe("aa");
     }
 }

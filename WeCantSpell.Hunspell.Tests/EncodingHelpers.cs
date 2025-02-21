@@ -1,7 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace WeCantSpell.Hunspell.Tests.Infrastructure;
+namespace WeCantSpell.Hunspell.Tests;
 
 static class EncodingHelpers
 {

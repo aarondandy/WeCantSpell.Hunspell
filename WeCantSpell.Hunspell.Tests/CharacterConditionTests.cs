@@ -1,6 +1,6 @@
 ﻿using System;
 
-using FluentAssertions;
+using Shouldly;
 
 using Xunit;
 
@@ -13,197 +13,165 @@ public class CharacterConditionTests
         [Fact]
         public void empty_string_produces_no_conditions()
         {
-            var text = string.Empty;
+            var actual = CharacterConditionGroup.Parse("");
 
-            var actual = CharacterConditionGroup.Parse(text);
-
-            actual.Should().BeEmpty();
+            actual.ShouldBeEmpty();
         }
 
         [Fact]
         public void open_condition_group_creates_empty_group()
         {
-            var text = "[";
+            var actual = CharacterConditionGroup.Parse("[");
 
-            var actual = CharacterConditionGroup.Parse(text);
-
-            actual[0].Characters.Should().BeEmpty();
-            actual[0].Mode.Should().Be(CharacterCondition.ModeKind.PermitChars);
+            actual[0].Characters.ShouldBeEmpty();
+            actual[0].Mode.ShouldBe(CharacterCondition.ModeKind.PermitChars);
         }
 
         [Fact]
         public void invalid_condition_creates_best_effort_parse_result()
         {
-            var text = "[x";
+            var actual = CharacterConditionGroup.Parse("[x");
 
-            var actual = CharacterConditionGroup.Parse(text);
-
-            actual[0].Characters.Should().BeEquivalentTo(new[] { 'x' });
-            actual[0].Mode.Should().Be(CharacterCondition.ModeKind.PermitChars);
+            actual[0].Characters.ShouldBe("x");
+            actual[0].Mode.ShouldBe(CharacterCondition.ModeKind.PermitChars);
         }
 
         [Fact]
         public void single_letter_creates_single_allwed_char()
         {
-            var text = "q";
+            var actual = CharacterConditionGroup.Parse("q");
 
-            var actual = CharacterConditionGroup.Parse(text);
-
-            actual.Should().HaveCount(1);
-            actual[0].Characters.Should().BeEquivalentTo(new[] { 'q' });
-            actual[0].Mode.Should().Be(CharacterCondition.ModeKind.MatchSequence);
+            actual.ShouldHaveSingleItem();
+            actual[0].Characters.ShouldBe("q");
+            actual[0].Mode.ShouldBe(CharacterCondition.ModeKind.MatchSequence);
         }
 
         [Fact]
         public void single_dot_allows_anything()
         {
-            var text = ".";
+            var actual = CharacterConditionGroup.Parse(".");
 
-            var actual = CharacterConditionGroup.Parse(text);
-
-            actual.Should().HaveCount(1);
-            actual[0].Characters.Should().BeEmpty();
-            actual[0].Mode.Should().Be(CharacterCondition.ModeKind.RestrictChars);
+            actual.ShouldHaveSingleItem();
+            actual[0].Characters.ShouldBeEmpty();
+            actual[0].Mode.ShouldBe(CharacterCondition.ModeKind.RestrictChars);
         }
 
         [Fact]
         public void empty_brackets_creates_disallowed_condition()
         {
-            var text = "[]";
+            var actual = CharacterConditionGroup.Parse("[]");
 
-            var actual = CharacterConditionGroup.Parse(text);
-
-            actual.Should().HaveCount(1);
-            actual[0].Characters.Should().BeEmpty();
-            actual[0].Mode.Should().Be(CharacterCondition.ModeKind.PermitChars);
+            actual.ShouldHaveSingleItem();
+            actual[0].Characters.ShouldBeEmpty();
+            actual[0].Mode.ShouldBe(CharacterCondition.ModeKind.PermitChars);
         }
 
         [Fact]
         public void single_letter_in_brackets_creates_single_char()
         {
-            var text = "[b]";
+            var actual = CharacterConditionGroup.Parse("[b]");
 
-            var actual = CharacterConditionGroup.Parse(text);
-
-            actual.Should().HaveCount(1);
-            actual[0].Characters.Should().BeEquivalentTo(new[] { 'b' });
-            actual[0].Mode.Should().Be(CharacterCondition.ModeKind.PermitChars);
+            actual.ShouldHaveSingleItem();
+            actual[0].Characters.ShouldBe("b");
+            actual[0].Mode.ShouldBe(CharacterCondition.ModeKind.PermitChars);
         }
 
         [Fact]
         public void multiple_letter_in_brackets_creates_allowed_multiple()
         {
-            var text = "[qwerty]";
+            var actual = CharacterConditionGroup.Parse("[qwerty]");
 
-            var actual = CharacterConditionGroup.Parse(text);
-
-            actual.Should().HaveCount(1);
-            actual[0].Characters.Should().BeEquivalentTo("qwerty".ToCharArray());
-            actual[0].Mode.Should().Be(CharacterCondition.ModeKind.PermitChars);
+            actual.ShouldHaveSingleItem();
+            actual[0].Characters.ShouldBe("qwerty", ignoreOrder: true);
+            actual[0].Mode.ShouldBe(CharacterCondition.ModeKind.PermitChars);
         }
 
         [Fact]
         public void empty_negated_range_allows_any()
         {
-            var text = "[^]";
+            var actual = CharacterConditionGroup.Parse("[^]");
 
-            var actual = CharacterConditionGroup.Parse(text);
-
-            actual.Should().HaveCount(1);
-            actual[0].Characters.Should().BeEmpty();
-            actual[0].Mode.Should().Be(CharacterCondition.ModeKind.RestrictChars);
+            actual.ShouldHaveSingleItem();
+            actual[0].Characters.ShouldBeEmpty();
+            actual[0].Mode.ShouldBe(CharacterCondition.ModeKind.RestrictChars);
         }
 
         [Fact]
         public void single_in_negated_range_allows_all_but_one()
         {
-            var text = "[^t]";
+            var actual = CharacterConditionGroup.Parse("[^t]");
 
-            var actual = CharacterConditionGroup.Parse(text);
-
-            actual.Should().HaveCount(1);
-            actual[0].Characters.Should().BeEquivalentTo(new[] { 't' });
-            actual[0].Mode.Should().Be(CharacterCondition.ModeKind.RestrictChars);
+            actual.ShouldHaveSingleItem();
+            actual[0].Characters.ShouldBe("t");
+            actual[0].Mode.ShouldBe(CharacterCondition.ModeKind.RestrictChars);
         }
 
         [Fact]
         public void multiple_in_negated_range_allows_all_but_specified()
         {
-            var text = "[^qwerty]";
+            var actual = CharacterConditionGroup.Parse("[^qwerty]");
 
-            var actual = CharacterConditionGroup.Parse(text);
-
-            actual.Should().HaveCount(1);
-            actual[0].Characters.Should().BeEquivalentTo("qwerty".ToCharArray());
-            actual[0].Mode.Should().Be(CharacterCondition.ModeKind.RestrictChars);
+            actual.ShouldHaveSingleItem();
+            actual[0].Characters.ShouldBe("qwerty", ignoreOrder: true);
+            actual[0].Mode.ShouldBe(CharacterCondition.ModeKind.RestrictChars);
         }
 
         [Fact]
         public void double_caret_negated_range_allows_all_but_caret()
         {
-            var text = "[^^]";
+            var actual = CharacterConditionGroup.Parse("[^^]");
 
-            var actual = CharacterConditionGroup.Parse(text);
-
-            actual.Should().HaveCount(1);
-            actual[0].Characters.Should().BeEquivalentTo(new[] { '^' });
-            actual[0].Mode.Should().Be(CharacterCondition.ModeKind.RestrictChars);
+            actual.ShouldHaveSingleItem();
+            actual[0].Characters.ShouldBe("^");
+            actual[0].Mode.ShouldBe(CharacterCondition.ModeKind.RestrictChars);
         }
 
         [Fact]
         public void two_character_ranges_makes_two_conditions()
         {
-            var text = "[qwerty][asdf]";
+            var actual = CharacterConditionGroup.Parse("[qwerty][asdf]");
 
-            var actual = CharacterConditionGroup.Parse(text);
-
-            actual.Should().HaveCount(2);
-            actual[0].Characters.Should().BeEquivalentTo("qwerty".ToCharArray());
-            actual[0].Mode.Should().Be(CharacterCondition.ModeKind.PermitChars);
-            actual[1].Characters.Should().BeEquivalentTo("asdf".ToCharArray());
-            actual[1].Mode.Should().Be(CharacterCondition.ModeKind.PermitChars);
+            actual.Count.ShouldBe(2);
+            actual[0].Characters.ShouldBe("qwerty", ignoreOrder: true);
+            actual[0].Mode.ShouldBe(CharacterCondition.ModeKind.PermitChars);
+            actual[1].Characters.ShouldBe("asdf", ignoreOrder: true);
+            actual[1].Mode.ShouldBe(CharacterCondition.ModeKind.PermitChars);
         }
 
         [Fact]
         public void two_negated_ranges_makes_two__restricted_conditions()
         {
-            var text = "[^qwerty][^asdf]";
+            var actual = CharacterConditionGroup.Parse("[^qwerty][^asdf]");
 
-            var actual = CharacterConditionGroup.Parse(text);
-
-            actual.Should().HaveCount(2);
-            actual[0].Characters.Should().BeEquivalentTo("qwerty".ToCharArray());
-            actual[0].Mode.Should().Be(CharacterCondition.ModeKind.RestrictChars);
-            actual[1].Characters.Should().BeEquivalentTo("asdf".ToCharArray());
-            actual[1].Mode.Should().Be(CharacterCondition.ModeKind.RestrictChars);
+            actual.Count.ShouldBe(2);
+            actual[0].Characters.ShouldBe("qwerty", ignoreOrder: true);
+            actual[0].Mode.ShouldBe(CharacterCondition.ModeKind.RestrictChars);
+            actual[1].Characters.ShouldBe("asdf", ignoreOrder: true);
+            actual[1].Mode.ShouldBe(CharacterCondition.ModeKind.RestrictChars);
         }
 
         [Fact]
         public void two_mixed_ranges_makes_two__restricted_conditions()
         {
-            var text = "[qwerty][^asdf]";
+            var actual = CharacterConditionGroup.Parse("[qwerty][^asdf]");
 
-            var actual = CharacterConditionGroup.Parse(text);
-
-            actual.Should().HaveCount(2);
-            actual[0].Characters.Should().BeEquivalentTo("qwerty".ToCharArray());
-            actual[0].Mode.Should().Be(CharacterCondition.ModeKind.PermitChars);
-            actual[1].Characters.Should().BeEquivalentTo("asdf".ToCharArray());
-            actual[1].Mode.Should().Be(CharacterCondition.ModeKind.RestrictChars);
+            actual.Count.ShouldBe(2);
+            actual[0].Characters.ShouldBe("qwerty", ignoreOrder: true);
+            actual[0].Mode.ShouldBe(CharacterCondition.ModeKind.PermitChars);
+            actual[1].Characters.ShouldBe("asdf", ignoreOrder: true);
+            actual[1].Mode.ShouldBe(CharacterCondition.ModeKind.RestrictChars);
         }
 
         [Fact]
         public void documentation_example_creates_correct_conditions()
         {
-            var text = "[^aeiou]y";
+            var actual = CharacterConditionGroup.Parse("[^aeiou]y");
 
-            var actual = CharacterConditionGroup.Parse(text);
-
-            actual.Should().HaveCount(2);
-            actual[0].Characters.Should().BeEquivalentTo("aeiou".ToCharArray());
-            actual[0].Mode.Should().Be(CharacterCondition.ModeKind.RestrictChars);
-            actual[1].Characters.Should().BeEquivalentTo(new[] { 'y' });
-            actual[1].Mode.Should().Be(CharacterCondition.ModeKind.MatchSequence);
+            actual.Count.ShouldBe(2);
+            actual[0].Characters.ShouldBe("aeiou");
+            actual[0].Mode.ShouldBe(CharacterCondition.ModeKind.RestrictChars);
+            actual[1].Characters.ShouldBe("y");
+            actual[1].Mode.ShouldBe(CharacterCondition.ModeKind.MatchSequence);
         }
     }
 
@@ -212,11 +180,11 @@ public class CharacterConditionTests
         [Fact]
         public void default_allows_nothing()
         {
-            var condition = default(CharacterConditionGroup);
+            CharacterConditionGroup condition = default;
 
             var actual = condition.IsStartingMatch("h".AsSpan());
 
-            actual.Should().BeFalse();
+            actual.ShouldBeFalse();
         }
 
         [Theory]
@@ -234,7 +202,7 @@ public class CharacterConditionTests
 
             var actual = condition.IsStartingMatch(character.ToString().AsSpan());
 
-            actual.Should().BeTrue();
+            actual.ShouldBeTrue();
         }
 
         [Theory]
@@ -248,7 +216,7 @@ public class CharacterConditionTests
 
             var actual = condition.IsStartingMatch(givenLetter.ToString().AsSpan());
 
-            actual.Should().Be(expected);
+            actual.ShouldBe(expected);
         }
 
         [Theory]
@@ -267,7 +235,7 @@ public class CharacterConditionTests
 
             var actual = condition.IsStartingMatch(givenLetter.ToString().AsSpan());
 
-            actual.Should().Be(expected);
+            actual.ShouldBe(expected);
         }
 
         [Theory]
@@ -286,7 +254,7 @@ public class CharacterConditionTests
 
             var actual = condition.IsStartingMatch(givenLetter.ToString().AsSpan());
 
-            actual.Should().Be(expected);
+            actual.ShouldBe(expected);
         }
     }
 }

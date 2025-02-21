@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-using FluentAssertions;
+using Shouldly;
 
 using Xunit;
 
@@ -31,7 +31,7 @@ public class Issue86  : IAsyncLifetime
             TimeLimitCompoundSuggest = TimeSpan.FromSeconds(1),
             TimeLimitSuggestGlobal = TimeSpan.FromSeconds(1),
         });
-        suggestions.Should().Contain(expected);
+        suggestions.ShouldContain(expected);
     }
 
     [Theory]
@@ -40,7 +40,7 @@ public class Issue86  : IAsyncLifetime
     [InlineData("squabblees")]
     public void wrong_words_are_wrong(string given)
     {
-        _wordList.Check(given).Should().BeFalse();
+        _wordList.Check(given).ShouldBeFalse();
     }
 
     [Theory]
@@ -49,6 +49,6 @@ public class Issue86  : IAsyncLifetime
     [InlineData("squabbles")]
     public void correct_words_are_correct(string given)
     {
-        _wordList.Check(given).Should().BeTrue();
+        _wordList.Check(given).ShouldBeTrue();
     }
 }

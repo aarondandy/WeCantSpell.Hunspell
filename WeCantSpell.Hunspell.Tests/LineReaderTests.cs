@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-using FluentAssertions;
+using Shouldly;
 
 using Xunit;
 
@@ -39,7 +39,7 @@ public class LineReaderTests
                 actual.Add(reader.Current.ToString());
             }
 
-            actual.Should().BeEquivalentTo(expected);
+            actual.ShouldBeEquivalentTo(expected);
         }
     }
 
@@ -69,7 +69,7 @@ public class LineReaderTests
                 actual.Add(reader.Current.ToString());
             }
 
-            actual.Should().BeEquivalentTo(expected);
+            actual.ShouldBeEquivalentTo(expected);
         }
     }
 }
