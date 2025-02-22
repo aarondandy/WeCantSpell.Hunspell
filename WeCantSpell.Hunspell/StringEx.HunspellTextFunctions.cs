@@ -62,13 +62,8 @@ internal static partial class StringEx
             {
                 state = 1;
             }
-            else if (c is ',' or '.' or '-')
+            else if (c is ',' or '.' or '-' && state == 1)
             {
-                if (state != 1)
-                {
-                    return false;
-                }
-
                 state = 2;
             }
             else
