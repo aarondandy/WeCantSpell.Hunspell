@@ -25,7 +25,7 @@ public class EnUsWordsTests
             new() { CancellationToken = TestContext.Current.CancellationToken },
             word =>
             {
-                if (spell.Check(word.Wrong))
+                if (spell.Check(word.Wrong, TestContext.Current.CancellationToken))
                 {
                     Interlocked.Increment(ref wrongCount);
                 }
@@ -45,7 +45,7 @@ public class EnUsWordsTests
             new() { CancellationToken = TestContext.Current.CancellationToken },
             word =>
             {
-                if (!spell.Check(word.Correct))
+                if (!spell.Check(word.Correct, TestContext.Current.CancellationToken))
                 {
                     Interlocked.Increment(ref wrongCount);
                 }
@@ -70,8 +70,8 @@ public class EnUsWordsTests
                 {
                     var suggestions = spell.Suggest(word.Wrong, new QueryOptions()
                     {
-                        TimeLimitSuggestGlobal = TimeSpan.FromSeconds(10)
-                    });
+                        TimeLimitSuggestGlobal = TimeSpan.FromSeconds(2)
+                    }, TestContext.Current.CancellationToken);
 
                     if (!suggestions.Contains(word.Correct))
                     {
