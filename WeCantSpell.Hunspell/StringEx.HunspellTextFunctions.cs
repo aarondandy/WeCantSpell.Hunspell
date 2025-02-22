@@ -55,24 +55,48 @@ internal static partial class StringEx
 
     public static bool IsNumericWord(ReadOnlySpan<char> word)
     {
-        byte state = 0; // 0 = begin, 1 = number, 2 = separator
+        var isNum = false; // 0 = begin, 1 = number, 2 = separator
         foreach (var c in word)
         {
-            if (char.IsNumber(c))
+            switch (c)
             {
-                state = 1;
-            }
-            else if (c is ',' or '.' or '-' && state == 1)
-            {
-                state = 2;
-            }
-            else
-            {
-                return false;
+                case >= '0' and <= '9':
+                    isNum = true;
+                    break;
+
+                case ',' or '.' or '-' when isNum:
+                    isNum = false;
+                    break;
+
+                default:
+                    return false;
             }
         }
 
-        return state == 1;
+        return isNum;
+    }
+
+    public static bool IsNumericWord(string word)
+    {
+        var isNum = false; // 0 = begin, 1 = number, 2 = separator
+        foreach (var c in word)
+        {
+            switch (c)
+            {
+                case >= '0' and <= '9':
+                    isNum = true;
+                    break;
+
+                case ',' or '.' or '-' when isNum:
+                    isNum = false;
+                    break;
+
+                default:
+                    return false;
+            }
+        }
+
+        return isNum;
     }
 
 #if HAS_SEARCHVALUES

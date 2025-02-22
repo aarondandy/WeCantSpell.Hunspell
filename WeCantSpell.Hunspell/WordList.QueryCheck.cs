@@ -50,7 +50,7 @@ public partial class WordList
                 return SpellCheckResult.DefaultCorrect;
             }
 
-            if (StringEx.IsNumericWord(word.AsSpan()))
+            if (StringEx.IsNumericWord(word))
             {
                 // allow numbers with dots, dashes and commas (but forbid double separators: "..", "--" etc.)
                 return SpellCheckResult.DefaultCorrect;
