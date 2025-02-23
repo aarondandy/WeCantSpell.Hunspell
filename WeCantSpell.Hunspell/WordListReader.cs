@@ -227,53 +227,42 @@ public sealed class WordListReader
 
     private void ParseLine(ReadOnlySpan<char> line)
     {
-        if (line.Length == 0)
+        if (line.Length > 0)
         {
-            return;
-        }
-
-        if (!_hasInitialized)
-        {
-            if (AttemptToProcessInitializationLine(line))
+            if (!_hasInitialized)
             {
-                return;
-            }
-
-            Builder.InitializeEntriesByRoot(-1);
-        }
-
-        var parsed = ParsedWordLine.Parse(line);
-        if (parsed.Word.IsEmpty)
-        {
-            return;
-        }
-
-        FlagSet flags;
-        if (!parsed.Flags.IsEmpty)
-        {
-            if (Affix.IsAliasF)
-            {
-                if (IntEx.TryParseInvariant(parsed.Flags, out var flagAliasNumber) && Affix.TryGetAliasF(flagAliasNumber, out var aliasedFlags))
+                if (AttemptToProcessInitializationLine(line))
                 {
-                    flags = aliasedFlags;
-                }
-                else
-                {
-                    // TODO: warn
                     return;
                 }
+
+                Builder.InitializeEntriesByRoot(-1);
             }
-            else
+
+            var parsed = ParsedWordLine.Parse(line);
+            if (parsed.Word.Length > 0)
             {
-                flags = FlagParser.ParseFlagSet(parsed.Flags);
+                AddWord(
+                    parsed.Word.ReplaceIntoString(@"\/", @"/"),
+                    parsed.Flags.IsEmpty
+                        ? FlagSet.Empty
+                        : (Affix.IsAliasF ? GetAliasedFlagSet(parsed.Flags) : FlagParser.ParseFlagSet(parsed.Flags)),
+                    parsed.Morphs);
             }
+        }
+    }
+
+    private FlagSet GetAliasedFlagSet(ReadOnlySpan<char> flagNumber)
+    {
+        if (IntEx.TryParseInvariant(flagNumber, out var flagAliasNumber) && Affix.TryGetAliasF(flagAliasNumber, out var aliasedFlags))
+        {
+            return aliasedFlags;
         }
         else
         {
-            flags = FlagSet.Empty;
+            // TODO: warn
+            return FlagSet.Empty;
         }
-
-        AddWord(parsed.Word.ReplaceIntoString(@"\/", @"/"), flags, parsed.Morphs);
     }
 
     private bool AttemptToProcessInitializationLine(ReadOnlySpan<char> text)
@@ -559,65 +548,45 @@ public sealed class WordListReader
                 line = line.Slice(i);
             }
 
-            if (line.IsEmpty)
+            if (line.Length > 0)
             {
-                return default;
-            }
-
-            // Try to locate the end of the word part of a line, taking morphs into consideration
-            var endOfWordAndFlagsPosition = findIndexOfFirstMorphByColonCharAndSpacingHints(line);
-            if (endOfWordAndFlagsPosition <= 0)
-            {
-                endOfWordAndFlagsPosition = line.IndexOf('\t');
-                if (endOfWordAndFlagsPosition < 0)
+                // Try to locate the end of the word part of a line, taking morphs into consideration
+                i = findIndexOfFirstMorphByColonCharAndSpacingHints(line);
+                if (i <= 0)
                 {
-                    endOfWordAndFlagsPosition = line.Length;
+                    i = line.IndexOf('\t');
+                    if (i < 0)
+                    {
+                        i = line.Length;
+                    }
+                }
+
+                for (; i > 0 && line[i - 1].IsTabOrSpace(); --i) ;
+
+                var wordPart = line.Slice(0, i);
+                ReadOnlySpan<char> flagsPart;
+
+                var flagsDelimiterPosition = indexOfFlagsDelimiter(wordPart);
+                if (flagsDelimiterPosition >= 0)
+                {
+                    flagsPart = wordPart.Slice(flagsDelimiterPosition + 1);
+                    wordPart = wordPart.Slice(0, flagsDelimiterPosition);
+                }
+                else
+                {
+                    flagsPart = [];
+                }
+
+                if (wordPart.Length > 0)
+                {
+                    return new ParsedWordLine(
+                        word: wordPart,
+                        flags: flagsPart,
+                        morphs: i < line.Length ? parseMorphs(line.Slice(i)) : []);
                 }
             }
 
-            for(; endOfWordAndFlagsPosition > 0 && line[endOfWordAndFlagsPosition - 1].IsTabOrSpace(); --endOfWordAndFlagsPosition) ;
-
-            var wordPart = line.Slice(0, endOfWordAndFlagsPosition);
-            var morphPart = line.Slice(endOfWordAndFlagsPosition);
-
-            ReadOnlySpan<char> flagsPart;
-            var flagsDelimiterPosition = indexOfFlagsDelimiter(wordPart);
-            if (flagsDelimiterPosition >= 0)
-            {
-                flagsPart = wordPart.Slice(flagsDelimiterPosition + 1);
-                wordPart = wordPart.Slice(0, flagsDelimiterPosition);
-            }
-            else
-            {
-                flagsPart = [];
-            }
-
-            if (wordPart.IsEmpty)
-            {
-                return default;
-            }
-
-            string[] morphs;
-            if (morphPart.IsEmpty)
-            {
-                morphs = [];
-            }
-            else
-            {
-                var morphsBuilder = ArrayBuilder<string>.Pool.Get();
-
-                foreach (var morph in morphPart.SplitOnTabOrSpace())
-                {
-                    morphsBuilder.Add(morph.ToString());
-                }
-
-                morphs = ArrayBuilder<string>.Pool.ExtractAndReturn(morphsBuilder);
-            }
-
-            return new ParsedWordLine(
-                word: wordPart,
-                flags: flagsPart,
-                morphs: morphs);
+            return default;
 
             static int findIndexOfFirstMorphByColonCharAndSpacingHints(ReadOnlySpan<char> text)
             {
@@ -648,6 +617,18 @@ public sealed class WordListReader
                 }
 
                 return -1;
+            }
+
+            static string[] parseMorphs(ReadOnlySpan<char> text)
+            {
+                var morphsBuilder = ArrayBuilder<string>.Pool.Get();
+
+                foreach (var morph in text.SplitOnTabOrSpace())
+                {
+                    morphsBuilder.Add(morph.ToString());
+                }
+
+                return ArrayBuilder<string>.Pool.ExtractAndReturn(morphsBuilder);
             }
         }
     }
