@@ -1,11 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
-using FluentAssertions;
-
-using WeCantSpell.Hunspell.Tests.Infrastructure;
+using Shouldly;
 
 using Xunit;
 
@@ -13,6 +12,8 @@ namespace WeCantSpell.Hunspell.Tests;
 
 public class WordListReaderTests
 {
+    static CancellationToken TestCancellation => TestContext.Current.CancellationToken;
+
     public class ReadFileAsync : WordListReaderTests
     {
         [Fact]
@@ -20,15 +21,17 @@ public class WordListReaderTests
         {
             var filePath = @"files/1463589_utf.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.Affix.Should().NotBeNull();
-            actual.RootWords.Should().HaveCount(1);
-            actual.RootWords.First().Should().Be("Kühlschrank");
-            var detail = actual[actual.RootWords.Single()].Single();
-            detail.Flags.Should().BeNullOrEmpty();
-            detail.Morphs.Should().BeNullOrEmpty();
-            detail.Options.Should().Be(WordEntryOptions.InitCap);
+            actual.Affix.ShouldNotBeNull();
+
+            var rw = actual.RootWords.ShouldHaveSingleItem();
+            rw.ShouldBe("Kühlschrank");
+
+            var detail = actual[rw].ShouldHaveSingleItem();
+            detail.Flags.ShouldBeEmpty();
+            detail.Morphs.ShouldBeEmpty();
+            detail.Options.ShouldBe(WordEntryOptions.InitCap);
         }
 
         [Fact]
@@ -36,12 +39,12 @@ public class WordListReaderTests
         {
             var filePath = @"files/1592880.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().BeEquivalentTo(new[] { "weg", "wege" });
-            actual["weg"][0].Flags.Should().ContainInOrder(new[] { 'Q', 'o', 'z' });
-            actual["weg"][1].Flags.Should().ContainInOrder(new[] { 'P' });
-            actual["wege"][0].Flags.Should().BeEmpty();
+            actual.RootWords.ShouldBe(["weg", "wege"]);
+            actual["weg"][0].Flags.ShouldBeValues(['Q', 'o', 'z']);
+            actual["weg"][1].Flags.ShouldBeValues(['P']);
+            actual["wege"][0].Flags.ShouldBeEmpty();
         }
 
         [Fact]
@@ -49,12 +52,12 @@ public class WordListReaderTests
         {
             var filePath = @"files/1695964.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(1);
-            actual["Mull"].Should().HaveCount(2);
-            actual["Mull"][0].Flags.Should().ContainInOrder(new[] { 'e', 'h' });
-            actual["Mull"][1].Flags.Should().ContainInOrder(new[] { 'S' });
+            actual.RootWords.ShouldHaveSingleItem();
+            actual["Mull"].ShouldHaveCount(2);
+            actual["Mull"][0].Flags.ShouldBeValues(['e', 'h']);
+            actual["Mull"][1].Flags.ShouldBeValues(['S']);
         }
 
         [Fact]
@@ -62,12 +65,12 @@ public class WordListReaderTests
         {
             var filePath = @"files/1706659.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(3);
-            actual["arbeits"][0].Flags.Should().ContainInOrder(new[] { 'v' });
-            actual["scheu"][0].Flags.Should().ContainInOrder(new[] { 'A', 'w' });
-            actual["farbig"][0].Flags.Should().ContainInOrder(new[] { 'A' });
+            actual.RootWords.ShouldHaveCount(3);
+            actual["arbeits"][0].Flags.ShouldBeValues(['v']);
+            actual["scheu"][0].Flags.ShouldBeValues(['A', 'w']);
+            actual["farbig"][0].Flags.ShouldBeValues(['A']);
         }
 
         [Fact]
@@ -75,11 +78,11 @@ public class WordListReaderTests
         {
             var filePath = @"files/1975530.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(2);
-            actual["أرى"][0].Flags.Should().ContainInOrder(new[] { 'x' });
-            actual["أيار"][0].Flags.Should().ContainInOrder(new[] { 'x' });
+            actual.RootWords.ShouldHaveCount(2);
+            actual["أرى"][0].Flags.ShouldBeValues(['x']);
+            actual["أيار"][0].Flags.ShouldBeValues(['x']);
         }
 
         [Fact]
@@ -87,10 +90,10 @@ public class WordListReaderTests
         {
             var filePath = @"files/alias.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(1);
-            actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'A', 'B' });
+            actual.RootWords.ShouldHaveSingleItem();
+            actual["foo"][0].Flags.ShouldBeValues(['A', 'B']);
         }
 
         [Fact]
@@ -98,24 +101,24 @@ public class WordListReaderTests
         {
             var filePath = @"files/alias2.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(1);
-            actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'A', 'B' });
-            actual["foo"][0].Morphs.Should().ContainInOrder(new[] { "po:noun", "xx:other_data" });
+            actual.RootWords.ShouldHaveSingleItem();
+            actual["foo"][0].Flags.ShouldBeValues(['A', 'B']);
+            actual["foo"][0].Morphs.ShouldBe(["po:noun", "xx:other_data"]);
         }
 
         [Fact]
         public async Task can_read_alias3_dic()
         {
             var filePath = @"files/alias3.dic";
-            var reversedStem = new string("[stem_1]".ToCharArray().Reverse().ToArray());
+            var reversedStem = "[stem_1]".Reversed();
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(1);
-            actual["oruo"][0].Flags.Should().ContainInOrder(new[] { 'B', 'C' });
-            actual["oruo"][0].Morphs.Should().OnlyContain(x => x == reversedStem);
+            actual.RootWords.ShouldHaveSingleItem();
+            actual["oruo"][0].Flags.ShouldBeValues(['B', 'C']);
+            actual["oruo"][0].Morphs.ShouldAllBe(x => x == reversedStem);
         }
 
         [Fact]
@@ -123,19 +126,14 @@ public class WordListReaderTests
         {
             var filePath = @"files/allcaps.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCountGreaterThanOrEqualTo(4);
-            actual["OpenOffice.org"].Should().HaveCount(1);
-            actual["OpenOffice.org"][0].Flags.Should().BeEmpty();
-            actual["Openoffice.org"].Should().HaveCount(1);
-            actual["Openoffice.org"][0].Flags.Should().ContainInOrder(new[] { SpecialFlags.OnlyUpcaseFlag });
-            actual["UNICEF"].Should().HaveCount(1);
-            actual["UNICEF"][0].Flags.Should().ContainInOrder(new[] { 'S' });
-            actual["Unicef"].Should().HaveCount(1);
-            actual["Unicef"][0].Flags.Should().ContainInOrder(new[] { 'S', (char)SpecialFlags.OnlyUpcaseFlag });
-            actual["Afrique"].Should().HaveCount(1);
-            actual["Afrique"][0].Flags.Should().ContainInOrder(new[] { 'L' });
+            actual.RootWords.Count().ShouldBeGreaterThanOrEqualTo(4);
+            actual["OpenOffice.org"].ShouldHaveSingleItem().Flags.ShouldBeEmpty();
+            actual["Openoffice.org"].ShouldHaveSingleItem().Flags.ShouldBe([SpecialFlags.OnlyUpcaseFlag]);
+            actual["UNICEF"].ShouldHaveSingleItem().Flags.ShouldBeValues(['S']);
+            actual["Unicef"].ShouldHaveSingleItem().Flags.ShouldBe([(FlagValue)'S', SpecialFlags.OnlyUpcaseFlag]);
+            actual["Afrique"].ShouldHaveSingleItem().Flags.ShouldBeValues(['L']);
         }
 
         [Fact]
@@ -143,13 +141,13 @@ public class WordListReaderTests
         {
             var filePath = @"files/allcaps2.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(4);
-            actual["iPod"][0].Flags.Should().ContainInOrder(new[] { 's' });
-            actual["Ipod"][0].Flags.Should().ContainInOrder(new[] { 's', (char)SpecialFlags.OnlyUpcaseFlag });
-            actual["iPodos"][0].Flags.Should().ContainInOrder(new[] { '*' });
-            actual["ipodos"][0].Flags.Should().BeEmpty();
+            actual.RootWords.ShouldHaveCount(4);
+            actual["iPod"][0].Flags.ShouldBeValues(['s']);
+            actual["Ipod"][0].Flags.ShouldBe([(FlagValue)'s', SpecialFlags.OnlyUpcaseFlag]);
+            actual["iPodos"][0].Flags.ShouldBeValues(['*']);
+            actual["ipodos"][0].Flags.ShouldBeEmpty();
         }
 
         [Fact]
@@ -157,15 +155,15 @@ public class WordListReaderTests
         {
             var filePath = @"files/allcaps3.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(6);
-            actual["UNESCO"][0].Flags.Should().ContainInOrder(new[] { 'S' });
-            actual["Unesco"][0].Flags.Should().ContainInOrder(new[] { 'S' });
-            actual["Nasa"][0].Flags.Should().ContainInOrder(new[] { 'S' });
-            actual["NASA"][0].Flags.Should().ContainInOrder(new[] { 'S' });
-            actual["ACTS"][0].Flags.Should().BeEmpty();
-            actual["act"][0].Flags.Should().ContainInOrder(new[] { 's' });
+            actual.RootWords.ShouldHaveCount(6);
+            actual["UNESCO"][0].Flags.ShouldBeValues(['S']);
+            actual["Unesco"][0].Flags.ShouldBeValues(['S']);
+            actual["Nasa"][0].Flags.ShouldBeValues(['S']);
+            actual["NASA"][0].Flags.ShouldBeValues(['S']);
+            actual["ACTS"][0].Flags.ShouldBeEmpty();
+            actual["act"][0].Flags.ShouldBeValues(['s']);
         }
 
         [Fact]
@@ -173,17 +171,13 @@ public class WordListReaderTests
         {
             var filePath = @"files/allcaps_utf.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(4);
-            actual["OpenOffice.org"].Should().HaveCount(1);
-            actual["OpenOffice.org"][0].Flags.Should().BeEmpty();
-            actual["Openoffice.org"].Should().HaveCount(1);
-            actual["Openoffice.org"][0].Flags.Should().ContainInOrder(new[] { SpecialFlags.OnlyUpcaseFlag });
-            actual["UNICEF"].Should().HaveCount(1);
-            actual["UNICEF"][0].Flags.Should().ContainInOrder(new[] { 'S' });
-            actual["Unicef"].Should().HaveCount(1);
-            actual["Unicef"][0].Flags.Should().ContainInOrder(new[] { 'S', (char)SpecialFlags.OnlyUpcaseFlag });
+            actual.RootWords.ShouldHaveCount(4);
+            actual["OpenOffice.org"].ShouldHaveSingleItem().Flags.ShouldBeEmpty();
+            actual["Openoffice.org"].ShouldHaveSingleItem().Flags.ShouldBe([SpecialFlags.OnlyUpcaseFlag]);
+            actual["UNICEF"].ShouldHaveSingleItem().Flags.ShouldBeValues(['S']);
+            actual["Unicef"].ShouldHaveSingleItem().Flags.ShouldBe([(FlagValue)'S', SpecialFlags.OnlyUpcaseFlag]);
         }
 
         [Fact]
@@ -191,10 +185,10 @@ public class WordListReaderTests
         {
             var filePath = @"files/arabic.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(1);
-            actual["ب"].Should().HaveCount(1);
+            actual.RootWords.ShouldHaveSingleItem();
+            actual["ب"].ShouldHaveSingleItem();
         }
 
         [Fact]
@@ -202,10 +196,10 @@ public class WordListReaderTests
         {
             var filePath = @"files/base.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(28);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
+            actual.RootWords.ShouldBe(
+            [
                 "created",
                 "create",
                 "imply",
@@ -234,13 +228,14 @@ public class WordListReaderTests
                 "speech",
                 "suggest",
                 "uncreate",
-                "Hunspell" });
+                "Hunspell"
+            ], ignoreOrder: true);
 
-            actual["create"][0].Flags.Should().ContainInOrder(new int[] { 'X', 'K', 'V', 'N', 'G', 'A', 'D', 'S' }.OrderBy(x => x));
-            actual["Hunspell"][0].Flags.Should().BeEmpty();
-            actual["text"][0].Flags.Should().BeEmpty();
-            actual["FAQ"][0].Flags.Should().ContainInOrder(new int[] { 'M', 'S' });
-            actual["Faq"][0].Flags.Should().ContainInOrder(new int[] { 'M', 'S', SpecialFlags.OnlyUpcaseFlag });
+            actual["create"][0].Flags.ShouldBeValues(['X', 'K', 'V', 'N', 'G', 'A', 'D', 'S'], ignoreOrder: true);
+            actual["Hunspell"][0].Flags.ShouldBeEmpty();
+            actual["text"][0].Flags.ShouldBeEmpty();
+            actual["FAQ"][0].Flags.ShouldBeValues(['M', 'S']);
+            actual["Faq"][0].Flags.ShouldBe([(FlagValue)'M', (FlagValue)'S', SpecialFlags.OnlyUpcaseFlag]);
         }
 
         [Fact]
@@ -281,16 +276,16 @@ public class WordListReaderTests
             };
             var filePath = @"files/base_utf.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(expectedWords.Length);
-            actual.RootWords.Should().BeEquivalentTo(expectedWords);
+            actual.RootWords.ShouldHaveCount(expectedWords.Length);
+            actual.RootWords.ShouldBe(expectedWords, ignoreOrder: true);
 
-            actual["create"][0].Flags.Should().ContainInOrder(new int[] { 'X', 'K', 'V', 'N', 'G', 'A', 'D', 'S' }.OrderBy(x => x));
-            actual["Hunspell"][0].Flags.Should().BeEmpty();
-            actual["text"][0].Flags.Should().BeEmpty();
-            actual["FAQ"][0].Flags.Should().ContainInOrder(new int[] { 'M', 'S' });
-            actual["Faq"][0].Flags.Should().ContainInOrder(new int[] { 'M', 'S', SpecialFlags.OnlyUpcaseFlag });
+            actual["create"][0].Flags.ShouldBeValues(['X', 'K', 'V', 'N', 'G', 'A', 'D', 'S'], ignoreOrder: true);
+            actual["Hunspell"][0].Flags.ShouldBeEmpty();
+            actual["text"][0].Flags.ShouldBeEmpty();
+            actual["FAQ"][0].Flags.ShouldBeValues(['M', 'S']);
+            actual["Faq"][0].Flags.ShouldBe([(FlagValue)'M', (FlagValue)'S', SpecialFlags.OnlyUpcaseFlag]);
         }
 
         [Fact]
@@ -307,10 +302,10 @@ public class WordListReaderTests
                 "e-mail"
             };
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(expected.Length);
-            actual.RootWords.Should().BeEquivalentTo(expected);
+            actual.RootWords.ShouldHaveCount(expected.Length);
+            actual.RootWords.ShouldBe(expected, ignoreOrder: true);
         }
 
         [Fact]
@@ -318,19 +313,20 @@ public class WordListReaderTests
         {
             var filePath = @"files/checkcompoundcase.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(5);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
+            actual.RootWords.ShouldBe(
+            [
                 "foo",
                 "Bar",
                 "BAZ",
                 "Baz",
-                "-" });
+                "-"
+            ], ignoreOrder: true);
 
-            actual["BAZ"][0].Flags.Should().ContainInOrder(new[] { 'A' });
-            actual["Baz"][0].Flags.Should().ContainInOrder(new[] { 'A', (char)SpecialFlags.OnlyUpcaseFlag });
-            actual["-"][0].Flags.Should().ContainInOrder(new[] { 'A' });
+            actual["BAZ"][0].Flags.ShouldBeValues(['A']);
+            actual["Baz"][0].Flags.ShouldBe([(FlagValue)'A', SpecialFlags.OnlyUpcaseFlag]);
+            actual["-"][0].Flags.ShouldBeValues(['A']);
         }
 
         [Fact]
@@ -338,10 +334,9 @@ public class WordListReaderTests
         {
             var filePath = @"files/checkcompoundcaseutf.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(2);
-            actual.RootWords.Should().BeEquivalentTo(new[] { "áoó", "Óoá" });
+            actual.RootWords.ShouldBe(["áoó", "Óoá"]);
         }
 
         [Fact]
@@ -349,21 +344,22 @@ public class WordListReaderTests
         {
             var filePath = @"files/checkcompoundpattern4.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(7);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
+            actual.RootWords.ShouldBe(
+            [
                 "sUrya",
                 "Surya",
                 "udayaM",
                 "Udayam",
                 "pEru",
                 "Peru",
-                "unna" });
+                "unna"
+            ], ignoreOrder: true);
 
-            actual["pEru"][0].Flags.Should().ContainInOrder(new[] { 'B', 'x' });
-            actual["Peru"][0].Flags.Should().ContainInOrder(new[] { 'B', 'x', (char)SpecialFlags.OnlyUpcaseFlag });
-            actual["unna"][0].Flags.Should().ContainInOrder(new[] { 'B', 'x' });
+            actual["pEru"][0].Flags.ShouldBeValues(['B', 'x']);
+            actual["Peru"][0].Flags.ShouldBe([(FlagValue)'B', (FlagValue)'x', SpecialFlags.OnlyUpcaseFlag]);
+            actual["unna"][0].Flags.ShouldBeValues(['B', 'x']);
         }
 
         [Fact]
@@ -371,14 +367,16 @@ public class WordListReaderTests
         {
             var filePath = @"files/checkcompoundtriple.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(4);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
+            actual.RootWords.ShouldHaveCount(4);
+            actual.RootWords.ShouldBe(
+            [
                 "foo",
                 "opera",
                 "eel",
-                "bare" });
+                "bare"
+            ], ignoreOrder: true);
         }
 
         [Fact]
@@ -386,18 +384,19 @@ public class WordListReaderTests
         {
             var filePath = @"files/checksharpsutf.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(6);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
+            actual.RootWords.ShouldBe(
+            [
                 "müßig",
                 "Ausstoß",
                 "Abstoß.",
                 "Außenabmessung",
                 "Prozessionsstraße",
-                "Außenmaße" });
+                "Außenmaße"
+            ], ignoreOrder: true);
 
-            actual["müßig"][0].Flags.Should().ContainInOrder(new[] { 'k' });
+            actual["müßig"][0].Flags.ShouldBeValues(['k']);
         }
 
         [Fact]
@@ -405,11 +404,11 @@ public class WordListReaderTests
         {
             var filePath = @"files/circumfix.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(1);
-            actual["nagy"][0].Flags.Should().ContainInOrder(new[] { 'C' });
-            actual["nagy"][0].Morphs.Should().ContainInOrder(new[] { "po:adj" });
+            actual.RootWords.ShouldHaveSingleItem();
+            actual["nagy"][0].Flags.ShouldBeValues(['C']);
+            actual["nagy"][0].Morphs.ShouldBe(["po:adj"]);
         }
 
         [Fact]
@@ -417,13 +416,9 @@ public class WordListReaderTests
         {
             var filePath = @"files/colons_in_words.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(3);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
-                "c:a",
-                "S:t",
-                "foo" });
+            actual.RootWords.ShouldBe(["c:a", "S:t", "foo"], ignoreOrder: true);
         }
 
         [Fact]
@@ -431,11 +426,11 @@ public class WordListReaderTests
         {
             var filePath = @"files/complexprefixes2.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(1);
-            actual["oruo"][0].Flags.Should().ContainInOrder(new[] { 'B', 'C' });
-            actual["oruo"][0].Morphs.Should().ContainInOrder(new[] { "]1_mets[" });
+            actual.RootWords.ShouldHaveSingleItem();
+            actual["oruo"][0].Flags.ShouldBeValues(['B', 'C']);
+            actual["oruo"][0].Morphs.ShouldBe(["]1_mets["]);
         }
 
         [Fact]
@@ -443,11 +438,11 @@ public class WordListReaderTests
         {
             var filePath = @"files/compoundaffix.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(2);
-            actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'X', 'P', 'S' }.OrderBy(x => x));
-            actual["bar"][0].Flags.Should().ContainInOrder(new[] { 'X', 'P', 'S' }.OrderBy(x => x));
+            actual.RootWords.ShouldHaveCount(2);
+            actual["foo"][0].Flags.ShouldBeValues(['X', 'P', 'S'], ignoreOrder: true);
+            actual["bar"][0].Flags.ShouldBeValues(['X', 'P', 'S'], ignoreOrder: true);
         }
 
         [Fact]
@@ -455,10 +450,10 @@ public class WordListReaderTests
         {
             var filePath = @"files/compoundrule4.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(23);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
+            actual.RootWords.ShouldBe(
+            [
                 "0",
                 "1",
                 "2",
@@ -481,7 +476,8 @@ public class WordListReaderTests
                 "6th",
                 "7th",
                 "8th",
-                "9th" });
+                "9th"
+            ], ignoreOrder: true);
         }
 
         [Fact]
@@ -489,10 +485,10 @@ public class WordListReaderTests
         {
             var filePath = @"files/compoundrule5.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(13);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
+            actual.RootWords.ShouldBe(
+            [
                 "0",
                 "1",
                 "2",
@@ -505,16 +501,17 @@ public class WordListReaderTests
                 "9",
                 ".",
                 "%",
-                "‰" });
+                "‰"
+            ], ignoreOrder: true);
 
-            actual["0"][0].Flags.Should().ContainInOrder(new[] { 'N' });
-            actual["0"][0].Morphs.Should().BeEquivalentTo(new[] { "po:num" });
-            actual["."][0].Flags.Should().ContainInOrder(new[] { '.' });
-            actual["."][0].Morphs.Should().BeEquivalentTo(new[] { "po:sign_dot" });
-            actual["%"][0].Flags.Should().ContainInOrder(new[] { '%' });
-            actual["%"][0].Morphs.Should().BeEquivalentTo(new[] { "po:sign_percent" });
-            actual["‰"][0].Flags.Should().ContainInOrder(new[] { '%' });
-            actual["‰"][0].Morphs.Should().BeEquivalentTo(new[] { "po:sign_per_mille" });
+            actual["0"][0].Flags.ShouldBeValues(['N']);
+            actual["0"][0].Morphs.ShouldBe(["po:num"]);
+            actual["."][0].Flags.ShouldBeValues(['.']);
+            actual["."][0].Morphs.ShouldBe(["po:sign_dot"]);
+            actual["%"][0].Flags.ShouldBeValues(['%']);
+            actual["%"][0].Morphs.ShouldBe(["po:sign_percent"]);
+            actual["‰"][0].Flags.ShouldBeValues(['%']);
+            actual["‰"][0].Morphs.ShouldBe(["po:sign_per_mille"]);
         }
 
         [Fact]
@@ -522,10 +519,10 @@ public class WordListReaderTests
         {
             var filePath = @"files/compoundrule7.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(23);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
+            actual.RootWords.ShouldBe(
+            [
                 "0",
                 "1",
                 "2",
@@ -548,10 +545,11 @@ public class WordListReaderTests
                 "6th",
                 "7th",
                 "8th",
-                "9th" });
-            actual["0"][0].Flags.Should().ContainInOrder(new[] { 'n' << 8 | 'n', 'm' << 8 | 'm' }.OrderBy(x => x));
-            actual["3rd"][0].Flags.Should().ContainInOrder(new[] { 'p' << 8 | 'p' });
-            actual["9th"][0].Flags.Should().ContainInOrder(new[] { 'p' << 8 | 'p', 't' << 8 | 't' }.OrderBy(x => x));
+                "9th"
+            ], ignoreOrder: true);
+            actual["0"][0].Flags.ShouldBeValues(['n' << 8 | 'n', 'm' << 8 | 'm'], ignoreOrder: true);
+            actual["3rd"][0].Flags.ShouldBeValues(['p' << 8 | 'p'], ignoreOrder: true);
+            actual["9th"][0].Flags.ShouldBeValues(['p' << 8 | 'p', 't' << 8 | 't'], ignoreOrder: true);
         }
 
         [Fact]
@@ -559,10 +557,10 @@ public class WordListReaderTests
         {
             var filePath = @"files/compoundrule8.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(23);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
+            actual.RootWords.ShouldBe(
+            [
                 "0",
                 "1",
                 "2",
@@ -585,10 +583,11 @@ public class WordListReaderTests
                 "6th",
                 "7th",
                 "8th",
-                "9th" });
-            actual["0"][0].Flags.Should().ContainInOrder(new[] { 1001, 2002 });
-            actual["1st"][0].Flags.Should().ContainInOrder(new[] { 2000 });
-            actual["9th"][0].Flags.Should().ContainInOrder(new[] { 2000, 2001 });
+                "9th"
+            ], ignoreOrder: true);
+            actual["0"][0].Flags.ShouldBeValues([1001, 2002]);
+            actual["1st"][0].Flags.ShouldBeValues([2000]);
+            actual["9th"][0].Flags.ShouldBeValues([2000, 2001]);
         }
 
         [Fact]
@@ -596,10 +595,10 @@ public class WordListReaderTests
         {
             var filePath = @"files/condition_utf.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(1);
-            actual["óőó"][0].Flags.Should().ContainInOrder(new[] { 'P', 'S' });
+            actual.RootWords.ShouldHaveSingleItem();
+            actual["óőó"][0].Flags.ShouldBeValues(['P', 'S']);
         }
 
         [Fact]
@@ -607,14 +606,14 @@ public class WordListReaderTests
         {
             var filePath = @"files/conditionalprefix.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(1);
-            actual["drink"].Should().HaveCount(2);
-            actual["drink"][0].Flags.Should().ContainInOrder(new[] { 'Q', 'R' });
-            actual["drink"][0].Morphs.Should().BeEquivalentTo(new[] { "po:verb" });
-            actual["drink"][1].Flags.Should().ContainInOrder(new[] { 'S' });
-            actual["drink"][1].Morphs.Should().BeEquivalentTo(new[] { "po:noun" });
+            actual.RootWords.ShouldHaveSingleItem();
+            actual["drink"].ShouldHaveCount(2);
+            actual["drink"][0].Flags.ShouldBeValues(['Q', 'R']);
+            actual["drink"][0].Morphs.ShouldBe(["po:verb"]);
+            actual["drink"][1].Flags.ShouldBeValues(['S']);
+            actual["drink"][1].Morphs.ShouldBe(["po:noun"]);
         }
 
         [Fact]
@@ -622,10 +621,10 @@ public class WordListReaderTests
         {
             var filePath = @"files/digits_in_words.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(11);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
+            actual.RootWords.ShouldBe(
+            [
                 "0",
                 "1",
                 "2",
@@ -636,9 +635,10 @@ public class WordListReaderTests
                 "7",
                 "8",
                 "9",
-                "-jährig" });
-            actual["0"][0].Flags.Should().ContainInOrder(new[] { 'a' });
-            actual["-jährig"][0].Flags.Should().ContainInOrder(new[] { 'b', 'c' });
+                "-jährig"
+            ], ignoreOrder: true);
+            actual["0"][0].Flags.ShouldBeValues(['a']);
+            actual["-jährig"][0].Flags.ShouldBeValues(['b', 'c']);
         }
 
         [Fact]
@@ -646,10 +646,10 @@ public class WordListReaderTests
         {
             var filePath = @"files/flag.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(1);
-            actual["foo"][0].Flags.Should().ContainInOrder(new[] { '3', 'A', });
+            actual.RootWords.ShouldHaveSingleItem();
+            actual["foo"][0].Flags.ShouldBeValues(['3', 'A']);
         }
 
         [Fact]
@@ -657,10 +657,10 @@ public class WordListReaderTests
         {
             var filePath = @"files/flaglong.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(1);
-            actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'z' << 8 | 'x', '0' << 8 | '9' }.OrderBy(x => x));
+            actual.RootWords.ShouldHaveSingleItem();
+            actual["foo"][0].Flags.ShouldBeValues(['z' << 8 | 'x', '0' << 8 | '9'], ignoreOrder: true);
         }
 
         [Fact]
@@ -668,10 +668,10 @@ public class WordListReaderTests
         {
             var filePath = @"files/flagnum.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(1);
-            actual["foo"][0].Flags.Should().ContainInOrder(new[] { 999, 54321 });
+            actual.RootWords.ShouldHaveSingleItem();
+            actual["foo"][0].Flags.ShouldBeValues([999, 54321]);
         }
 
         [Fact]
@@ -679,10 +679,10 @@ public class WordListReaderTests
         {
             var filePath = @"files/flagutf8.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(1);
-            actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'A', 'Ü' });
+            actual.RootWords.ShouldHaveSingleItem();
+            actual["foo"][0].Flags.ShouldBeValues(['A', 'Ü']);
         }
 
         [Fact]
@@ -690,14 +690,12 @@ public class WordListReaderTests
         {
             var filePath = @"files/fogemorpheme.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(2);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
-                "gata",
-                "kontoret" });
-            actual["gata"][0].Flags.Should().ContainInOrder(new[] { 'A' });
-            actual["kontoret"][0].Flags.Should().ContainInOrder(new[] { 'X' });
+            actual.RootWords.ShouldHaveCount(2);
+            actual.RootWords.ShouldBe(["gata", "kontoret"], ignoreOrder: true);
+            actual["gata"][0].Flags.ShouldBeValues(['A']);
+            actual["kontoret"][0].Flags.ShouldBeValues(['X']);
         }
 
         [Fact]
@@ -705,10 +703,10 @@ public class WordListReaderTests
         {
             var filePath = @"files/forbiddenword.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().BeEquivalentTo(new[]
-            {
+            actual.RootWords.ShouldBe(
+            [
                 "foo",
                 "bar",
                 "bars",
@@ -718,20 +716,20 @@ public class WordListReaderTests
                 "KG",
                 "cm",
                 "Cm"
-            });
-            actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'S' });
-            actual["foo"][0].Morphs.Should().BeEmpty();
-            actual["foo"][1].Flags.Should().ContainInOrder(new[] { 'X', 'Y' });
-            actual["foo"][1].Morphs.Should().BeEmpty();
-            actual["bar"][0].Flags.Should().ContainInOrder(new[] { 'S', 'Y' });
-            actual["bar"][0].Morphs.Should().BeEmpty();
-            actual["bars"][0].Flags.Should().ContainInOrder(new[] { 'X' });
-            actual["foos"][0].Flags.Should().ContainInOrder(new[] { 'X' });
-            actual["kg"][0].Flags.Should().BeEmpty();
-            actual["Kg"][0].Flags.Should().ContainInOrder(new[] { 'X' });
-            actual["KG"][0].Flags.Should().ContainInOrder(new[] { 'X' });
-            actual["cm"][0].Flags.Should().BeEmpty();
-            actual["Cm"][0].Flags.Should().ContainInOrder(new[] { 'X' });
+            ], ignoreOrder: true);
+            actual["foo"][0].Flags.ShouldBeValues(['S']);
+            actual["foo"][0].Morphs.ShouldBeEmpty();
+            actual["foo"][1].Flags.ShouldBeValues(['X', 'Y']);
+            actual["foo"][1].Morphs.ShouldBeEmpty();
+            actual["bar"][0].Flags.ShouldBeValues(['S', 'Y']);
+            actual["bar"][0].Morphs.ShouldBeEmpty();
+            actual["bars"][0].Flags.ShouldBeValues(['X']);
+            actual["foos"][0].Flags.ShouldBeValues(['X']);
+            actual["kg"][0].Flags.ShouldBeEmpty();
+            actual["Kg"][0].Flags.ShouldBeValues(['X']);
+            actual["KG"][0].Flags.ShouldBeValues(['X']);
+            actual["cm"][0].Flags.ShouldBeEmpty();
+            actual["Cm"][0].Flags.ShouldBeValues(['X']);
         }
 
         [Fact]
@@ -739,14 +737,15 @@ public class WordListReaderTests
         {
             var filePath = @"files/i58202.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(4);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
+            actual.RootWords.ShouldBe(
+            [
                 "foo",
                 "bar",
                 "Baz",
-                "Boo" });
+                "Boo"
+            ], ignoreOrder: true);
         }
 
         [Fact]
@@ -754,14 +753,15 @@ public class WordListReaderTests
         {
             var filePath = @"files/iconv.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(4);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
+            actual.RootWords.ShouldBe(
+            [
                 "Chișinău",
                 "Țepes",
                 "ț",
-                "Ș" });
+                "Ș"
+            ], ignoreOrder: true);
         }
 
         [Fact]
@@ -769,21 +769,17 @@ public class WordListReaderTests
         {
             var filePath = @"files/ignore.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(2);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
-                "xmpl",
-                "xprssn" });
+            actual.RootWords.ShouldBe(["xmpl", "xprssn"]);
         }
 
         [Fact]
         public async Task can_read_ignoreutf_dic()
         {
             var filePath = @"files/ignoreutf.dic";
-            var ignoreChars = new[] { 1618, 1617, 1616, 1615, 1614, 1613, 1612, 1611 }.Select(i => (char)i).ToArray();
-            IEnumerable<string> expectedWords = new[]
-            {
+            string[] expectedWords =
+            [
                 "طِير",
                 "فَتحة",
                 "ضُمة",
@@ -793,16 +789,21 @@ public class WordListReaderTests
                 "كسرتاٍن",
                 "شدّة",
                 "سكوْن"
-            };
-            foreach (var ignoreChar in ignoreChars)
+            ];
+
+            foreach (var ignoreChar in new[] { 1618, 1617, 1616, 1615, 1614, 1613, 1612, 1611 })
             {
-                expectedWords = expectedWords.Select(w => w.Replace(ignoreChar.ToString(), ""));
+                var ignoreString = ((char)ignoreChar).ToString();
+
+                for (var i = 0; i < expectedWords.Length; i++)
+                {
+                    expectedWords[i] = expectedWords[i].Replace(ignoreString, "");
+                }
             }
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(9);
-            actual.RootWords.Should().BeEquivalentTo(expectedWords);
+            actual.RootWords.ShouldBe(expectedWords, ignoreOrder: true);
         }
 
         [Fact]
@@ -810,16 +811,11 @@ public class WordListReaderTests
         {
             var filePath = @"files/IJ.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(2);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
-                "ijs",
-                "Ijs" });
-            actual["ijs"].Should().HaveCount(1);
-            actual["ijs"][0].Flags.Should().ContainInOrder(new[] { 'i' });
-            actual["Ijs"].Should().HaveCount(1);
-            actual["Ijs"][0].Flags.Should().ContainInOrder(new[] { '*' });
+            actual.RootWords.ShouldBe(["ijs", "Ijs"], ignoreOrder: true);
+            actual["ijs"].ShouldHaveSingleItem().Flags.ShouldBeValues(['i']);
+            actual["Ijs"].ShouldHaveSingleItem().Flags.ShouldBeValues(['*']);
         }
 
         [Fact]
@@ -827,15 +823,16 @@ public class WordListReaderTests
         {
             var filePath = @"files/keepcase.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(4);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
+            actual.RootWords.ShouldBe(
+            [
                 "foo",
                 "Bar",
                 "baz.",
-                "Quux." });
-            actual["baz."][0].Flags.Should().ContainInOrder(new[] { 'A' });
+                "Quux."
+            ], ignoreOrder: true);
+            actual["baz."][0].Flags.ShouldBeValues(['A']);
         }
 
         [Fact]
@@ -843,11 +840,11 @@ public class WordListReaderTests
         {
             var filePath = @"files/korean.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCountGreaterThanOrEqualTo(2);
-            actual.RootWords.Should().Contain("들어오세요");
-            actual.RootWords.Should().Contain("안녕하세요");
+            actual.RootWords.Count().ShouldBeGreaterThanOrEqualTo(2);
+            actual.RootWords.ShouldContain("들어오세요");
+            actual.RootWords.ShouldContain("안녕하세요");
         }
 
         [Fact]
@@ -855,13 +852,9 @@ public class WordListReaderTests
         {
             var filePath = @"files/maputf.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(3);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
-                "Frühstück",
-                "tükörfúró",
-                "groß" });
+            actual.RootWords.ShouldBe(["Frühstück", "tükörfúró", "groß"], ignoreOrder: true);
         }
 
         [Fact]
@@ -869,10 +862,10 @@ public class WordListReaderTests
         {
             var filePath = @"files/morph.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(8);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
+            actual.RootWords.ShouldBe(
+            [
                 "drink",
                 "drank",
                 "drunk",
@@ -880,15 +873,16 @@ public class WordListReaderTests
                 "ate",
                 "eaten",
                 "phenomenon",
-                "phenomena" });
+                "phenomena"
+            ], ignoreOrder: true);
 
-            actual["drink"].Should().HaveCount(2);
-            actual["drink"][0].Flags.Should().ContainInOrder(new[] { 'S' });
-            actual["drink"][0].Morphs.Should().BeEquivalentTo(new[] { "po:noun" });
-            actual["drink"][1].Flags.Should().ContainInOrder(new[] { 'Q', 'R' });
-            actual["drink"][1].Morphs.Should().BeEquivalentTo(new[] { "po:verb", "al:drank", "al:drunk", "ts:present" });
-            actual["eaten"][0].Flags.Should().BeEmpty();
-            actual["eaten"][0].Morphs.Should().BeEquivalentTo(new[] { "po:verb", "st:eat", "is:past_2" });
+            actual["drink"].ShouldHaveCount(2);
+            actual["drink"][0].Flags.ShouldBeValues(['S']);
+            actual["drink"][0].Morphs.ShouldBe(["po:noun"]);
+            actual["drink"][1].Flags.ShouldBeValues(['Q', 'R']);
+            actual["drink"][1].Morphs.ShouldBe(["po:verb", "al:drank", "al:drunk", "ts:present"]);
+            actual["eaten"][0].Flags.ShouldBeEmpty();
+            actual["eaten"][0].Morphs.ShouldBe(["po:verb", "st:eat", "is:past_2"]);
         }
 
         [Fact]
@@ -896,14 +890,15 @@ public class WordListReaderTests
         {
             var filePath = @"files/nepali.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(4);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
+            actual.RootWords.ShouldBe(
+            [
                 "अलम्",
                 "क्यार",
                 "न्न",
-                "र्‌य" });
+                "र्‌य"
+            ], ignoreOrder: true);
         }
 
         [Fact]
@@ -911,10 +906,10 @@ public class WordListReaderTests
         {
             var filePath = @"files/ngram_utf_fix.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(1);
-            actual["человек"][0].Flags.Should().ContainInOrder(new[] { 2022, 2000, 101 }.OrderBy(x => x));
+            actual.RootWords.ShouldHaveSingleItem();
+            actual["человек"][0].Flags.ShouldBeValues([2022, 2000, 101], ignoreOrder: true);
         }
 
         [Fact]
@@ -922,10 +917,10 @@ public class WordListReaderTests
         {
             var filePath = @"files/phone.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(10);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
+            actual.RootWords.ShouldBe(
+            [
                 "Brasilia",
                 "brassily",
                 "Brazilian",
@@ -935,9 +930,10 @@ public class WordListReaderTests
                 "brain",
                 "brass",
                 "Churchillian",
-                "xxxxxxxxxx" });
-            actual["xxxxxxxxxx"][0].Flags.Should().BeEmpty();
-            actual["xxxxxxxxxx"][0].Morphs.Should().BeEquivalentTo(new[] { "ph:Brasilia" });
+                "xxxxxxxxxx"
+            ], ignoreOrder: true);
+            actual["xxxxxxxxxx"][0].Flags.ShouldBeEmpty();
+            actual["xxxxxxxxxx"][0].Morphs.ShouldBe(["ph:Brasilia"]);
         }
 
         [Fact]
@@ -945,18 +941,19 @@ public class WordListReaderTests
         {
             var filePath = @"files/slash.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(4);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
+            actual.RootWords.ShouldBe(
+            [
                 "/",
                 "1/2",
                 "http://",
-                "/usr/share/myspell/" });
-            actual["/"][0].Flags.Should().BeEmpty();
-            actual["1/2"][0].Flags.Should().BeEmpty();
-            actual["http://"][0].Flags.Should().BeEmpty();
-            actual["/usr/share/myspell/"][0].Flags.Should().BeEmpty();
+                "/usr/share/myspell/"
+            ], ignoreOrder: true);
+            actual["/"][0].Flags.ShouldBeEmpty();
+            actual["1/2"][0].Flags.ShouldBeEmpty();
+            actual["http://"][0].Flags.ShouldBeEmpty();
+            actual["/usr/share/myspell/"][0].Flags.ShouldBeEmpty();
         }
 
         [Fact]
@@ -964,10 +961,10 @@ public class WordListReaderTests
         {
             var filePath = @"files/sugutf.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(11);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
+            actual.RootWords.ShouldBe(
+            [
                 "NASA",
                 "Gandhi",
                 "grateful",
@@ -978,9 +975,10 @@ public class WordListReaderTests
                 "have",
                 "which",
                 "McDonald",
-                "Mcdonald" });
-            actual["McDonald"][0].Flags.Should().BeEmpty();
-            actual["Mcdonald"][0].Flags.Should().BeEquivalentTo(new[] { SpecialFlags.OnlyUpcaseFlag });
+                "Mcdonald"
+            ], ignoreOrder: true);
+            actual["McDonald"][0].Flags.ShouldBeEmpty();
+            actual["Mcdonald"][0].Flags.ShouldBe([SpecialFlags.OnlyUpcaseFlag]);
         }
 
         [Fact]
@@ -988,10 +986,9 @@ public class WordListReaderTests
         {
             var filePath = @"files/utf8_bom.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(1);
-            actual.RootWords.Should().ContainSingle("apéritif");
+            actual.RootWords.ShouldHaveSingleItem().ShouldBe("apéritif");
         }
 
         [Fact]
@@ -999,10 +996,9 @@ public class WordListReaderTests
         {
             var filePath = @"files/utf8_bom2.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(1);
-            actual.RootWords.Should().ContainSingle("apéritif");
+            actual.RootWords.ShouldHaveSingleItem().ShouldBe("apéritif");
         }
 
         [Fact]
@@ -1010,14 +1006,9 @@ public class WordListReaderTests
         {
             var filePath = @"files/utf8_nonbmp.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(4);
-            actual.RootWords.Should().BeEquivalentTo(new[] {
-                "𐏑",
-                "𐏒",
-                "𐏒𐏑",
-                "𐏒𐏒" });
+            actual.RootWords.ShouldBe(["𐏑", "𐏒", "𐏒𐏑", "𐏒𐏒"], ignoreOrder: true);
         }
 
         [Fact]
@@ -1025,11 +1016,11 @@ public class WordListReaderTests
         {
             var filePath = @"files/warn.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(2);
-            actual.RootWords.Should().BeEquivalentTo(new[] { "foo", "bar" });
-            actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'A', 'W' });
+            actual.RootWords.ShouldHaveCount(2);
+            actual.RootWords.ShouldBe(["foo", "bar"], ignoreOrder: true);
+            actual["foo"][0].Flags.ShouldBeValues(['A', 'W'], ignoreOrder: true);
         }
 
         [Fact]
@@ -1037,14 +1028,14 @@ public class WordListReaderTests
         {
             var filePath = @"files/zeroaffix.dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().HaveCount(2);
-            actual.RootWords.Should().BeEquivalentTo(new[] { "foo", "bar" });
-            actual["foo"][0].Flags.Should().ContainInOrder(new[] { 'X', 'A' }.OrderBy(x => x));
-            actual["foo"][0].Morphs.Should().BeEquivalentTo(new[] { "<FOO" });
-            actual["bar"][0].Flags.Should().ContainInOrder(new[] { 'X', 'A', 'B', 'C' }.OrderBy(x => x));
-            actual["bar"][0].Morphs.Should().BeEquivalentTo(new[] { "<BAR" });
+            actual.RootWords.ShouldHaveCount(2);
+            actual.RootWords.ShouldBe(["foo", "bar"], ignoreOrder: true);
+            actual["foo"][0].Flags.ShouldBeValues(['X', 'A'], ignoreOrder: true);
+            actual["foo"][0].Morphs.ShouldBe(["<FOO"]);
+            actual["bar"][0].Flags.ShouldBeValues(['X', 'A', 'B', 'C'], ignoreOrder: true);
+            actual["bar"][0].Morphs.ShouldBe(["<BAR"]);
         }
 
         [Fact]
@@ -1052,19 +1043,19 @@ public class WordListReaderTests
         {
             var filePath = @"files/English (American).dic";
 
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.RootWords.Should().NotBeEmpty();
-            actual.Affix.Warnings.Should().BeEmpty();
+            actual.RootWords.ShouldNotBeEmpty();
+            actual.Affix.Warnings.ShouldBeEmpty();
         }
 
         [Theory(Skip = "Not performant enough yet")]
-        [MemberData(nameof(large_assortment_of_dic_files))]
+        [ClassData(typeof(TestTheories.DicFilePathsData))]
         public async Task can_read_file_without_exception(string filePath)
         {
-            var actual = await WordListReader.ReadFileAsync(filePath);
+            var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.Should().NotBeNull();
+            actual.ShouldNotBeNull();
         }
     }
 
@@ -1077,17 +1068,17 @@ public class WordListReaderTests
 
             var actual = WordListReader.ReadFile(filePath);
 
-            actual.RootWords.Should().NotBeEmpty();
-            actual.Affix.Warnings.Should().BeEmpty();
+            actual.RootWords.ShouldNotBeEmpty();
+            actual.Affix.Warnings.ShouldBeEmpty();
         }
 
         [Theory(Skip = "Not performant enough yet")]
-        [MemberData(nameof(large_assortment_of_dic_files))]
+        [ClassData(typeof(TestTheories.DicFilePathsData))]
         public void can_read_file_without_exception(string filePath)
         {
             var actual = WordListReader.ReadFile(filePath);
 
-            actual.Should().NotBeNull();
+            actual.ShouldNotBeNull();
         }
     }
 

@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: '**'
+    branches: 'main'
   pull_request:
     branches: '**'
 
@@ -12,13 +12,20 @@ env:
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: windows-2025
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # The value of 0 may be important to include tags for MinVer
           submodules: true
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.x
+            8.x
+            6.x
 
       - run: dotnet build WeCantSpell.Hunspell.sln
 

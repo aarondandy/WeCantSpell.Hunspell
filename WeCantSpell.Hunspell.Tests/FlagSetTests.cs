@@ -1,6 +1,4 @@
-﻿using FluentAssertions;
-
-using Xunit;
+﻿using Xunit;
 
 namespace WeCantSpell.Hunspell.Tests;
 
@@ -13,7 +11,7 @@ public class FlagSetTests
 
         var actual = set.Union((FlagValue)'z');
 
-        actual.Should().Equal([(FlagValue)'a', (FlagValue)'z']);
+        actual.ShouldBeValues(['a', 'z']);
     }
 
     [Fact]
@@ -23,7 +21,7 @@ public class FlagSetTests
 
         var actual = set.Union((FlagValue)'a');
 
-        actual.Should().Equal([(FlagValue)'a', (FlagValue)'z']);
+        actual.ShouldBeValues(['a', 'z']);
     }
 
     [Fact]
@@ -33,6 +31,6 @@ public class FlagSetTests
 
         var actual = set.Union((FlagValue)'x');
 
-        actual.Should().Equal([(FlagValue)'a', (FlagValue)'x', (FlagValue)'z']);
+        actual.ShouldBeValues(['a', 'x', 'z']);
     }
 }

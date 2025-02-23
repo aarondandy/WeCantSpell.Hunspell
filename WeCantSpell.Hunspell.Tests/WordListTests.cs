@@ -1,4 +1,6 @@
-﻿using FluentAssertions;
+﻿using System.Threading;
+
+using Shouldly;
 
 using Xunit;
 
@@ -6,6 +8,8 @@ namespace WeCantSpell.Hunspell.Tests;
 
 public class WordListTests
 {
+    static CancellationToken TestCancellation => TestContext.Current.CancellationToken;
+
     public class Constructors : WordListTests
     {
         [Fact]
@@ -18,7 +22,8 @@ public class WordListTests
             foreach (var word in words)
             {
                 var entry = wordList[word];
-                entry.Should().NotBeNullOrEmpty();
+                entry.ShouldNotBeNull();
+                entry.ShouldNotBeEmpty();
             }
         }
 
@@ -31,10 +36,10 @@ public class WordListTests
 
             foreach(var word in words)
             {
-                wordList.Check(word).Should().BeTrue();
+                wordList.Check(word, TestCancellation).ShouldBeTrue();
             }
-            wordList.Check("missing").Should().BeFalse();
-            wordList.Check("Wot?").Should().BeFalse();
+            wordList.Check("missing", TestCancellation).ShouldBeFalse();
+            wordList.Check("Wot?", TestCancellation).ShouldBeFalse();
         }
 
         [Theory]
@@ -48,20 +53,20 @@ public class WordListTests
             var words = "The quick brown fox jumps over the lazy dog".Split(' ');
             var wordList = WordList.CreateFromWords(words);
 
-            var suggestions = wordList.Suggest(given);
+            var suggestions = wordList.Suggest(given, TestCancellation);
 
-            wordList.Check(given).Should().BeFalse();
-            suggestions.Should().Contain(expected);
+            wordList.Check(given, TestCancellation).ShouldBeFalse();
+            suggestions.ShouldContain(expected);
         }
 
         [Fact]
         public void wordlist_with_blank_word_entry_does_not_crash_suggest()
         {
-            var wordList = WordList.CreateFromWords(new[] { "" });
+            var wordList = WordList.CreateFromWords([""]);
 
-            var suggestions = wordList.Suggest("test");
+            var suggestions = wordList.Suggest("test", TestCancellation);
 
-            suggestions.Should().BeEmpty();
+            suggestions.ShouldBeEmpty();
         }
     }
 
@@ -70,11 +75,11 @@ public class WordListTests
         [Fact]
         public void can_check_with_appended_special_chars()
         {
-            var wordList = WordList.CreateFromWords(new[] { "Word" });
+            var wordList = WordList.CreateFromWords(["Word"]);
 
-            var actual = wordList.Check("  Word..");
+            var actual = wordList.Check("  Word..", TestCancellation);
 
-            actual.Should().BeTrue();
+            actual.ShouldBeTrue();
         }
     }
 }

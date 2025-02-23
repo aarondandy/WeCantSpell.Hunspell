@@ -2,12 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
-using FluentAssertions;
-
-using WeCantSpell.Hunspell.Tests.Infrastructure;
+using Shouldly;
 
 using Xunit;
 
@@ -15,9 +13,11 @@ namespace WeCantSpell.Hunspell.Tests;
 
 public class HunspellTests
 {
+    static CancellationToken TestCancellation => TestContext.Current.CancellationToken;
+
     static HunspellTests()
     {
-        EncodingHelpers.EnsureEncodingsReady();
+        Helpers.EnsureEncodingsReady();
     }
 
     public class SimpleTests : HunspellTests
@@ -31,9 +31,9 @@ public class HunspellTests
         {
             var dictionary = new WordList.Builder().ToImmutable();
 
-            var actual = dictionary.Check(word);
+            var actual = dictionary.Check(word, TestCancellation);
 
-            actual.Should().BeFalse();
+            actual.ShouldBeFalse();
         }
 
         [Theory]
@@ -51,79 +51,83 @@ public class HunspellTests
 
             var dictionary = dictionaryBuilder.ToImmutable();
 
-            var actual = dictionary.Check(searchWord);
+            var actual = dictionary.Check(searchWord, TestCancellation);
 
-            actual.Should().Be(expected);
+            actual.ShouldBe(expected);
         }
 
-        public static IEnumerable<object[]> checking_large_word_does_not_cause_errors_args() =>
-            GetAllDataFilePaths("*.dic").Select(filePath => new object[] { filePath });
-
-        [Theory, MemberData(nameof(checking_large_word_does_not_cause_errors_args))]
+        [Theory, ClassData(typeof(TestTheories.DicFilePathsData))]
         public async Task checking_large_word_does_not_cause_errors(string filePath)
         {
             // attampt to reproduce https://github.com/hunspell/hunspell/issues/446
             var largeInput = new string('X', 102);
-            var dictionary = await WordList.CreateFromFilesAsync(filePath);
+            var dictionary = await DictionaryLoader.GetDictionaryAsync(filePath, TestCancellation);
 
-            var actual = dictionary.Check(largeInput);
+            var actual = dictionary.Check(largeInput, TestCancellation);
 
-            actual.Should().BeFalse();
+            actual.ShouldBeFalse();
         }
     }
 
     public class CheckGoodWords : HunspellTests
     {
-        public static IEnumerable<object[]> can_find_good_words_in_dictionary_args
+        [Theory, ClassData(typeof(TestTheories.GoodWordsData))]
+        public async Task can_find_good_words_in_dictionary(string filePath, string word)
         {
-            get
+            var dictionary = await DictionaryLoader.GetDictionaryAsync(filePath, TestCancellation);
+
+            QueryOptions options;
+            if (filePath.IndexOf("compound", StringComparison.OrdinalIgnoreCase) >= 0)
             {
-                var results = GetAllDataFilePaths("*.good")
-                    .SelectMany(ToDictionaryWordTestData)
-                    // NOTE: These tests are bypassed because capitalization only works when the language is turkish and the UTF8 dic has no language applied
-                    .Where(t => !(t.dictionaryPath.EndsWith("base_utf.dic") && t.word.Contains('İ')))
-                    ;
-
-                return results.Select(t => new[] { t.dictionaryPath, t.word });
+                options = new QueryOptions()
+                {
+                    TimeLimitCompoundCheck = TimeSpan.FromSeconds(10)
+                };
             }
+            else
+            {
+                options = null;
+            }
+
+            var checkResult = dictionary.Check(word, options, TestCancellation);
+
+            checkResult.ShouldBeTrue();
         }
 
-        [Theory, MemberData(nameof(can_find_good_words_in_dictionary_args))]
-        public async Task can_find_good_words_in_dictionary(string dictionaryFilePath, string word)
+        [Theory, ClassData(typeof(TestTheories.GoodWordsData))]
+        public async Task can_find_good_word_spans_in_dictionary(string filePath, string word)
         {
-            var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
+            var dictionary = await DictionaryLoader.GetDictionaryAsync(filePath, TestCancellation);
 
-            var checkResult = dictionary.Check(word);
+            QueryOptions options;
+            if (filePath.IndexOf("compound", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                options = new QueryOptions()
+                {
+                    TimeLimitCompoundCheck = TimeSpan.FromSeconds(10)
+                };
+            }
+            else
+            {
+                options = null;
+            }
 
-            checkResult.Should().BeTrue();
-        }
+            var checkResult = dictionary.Check(word.AsSpan(), TestCancellation);
 
-        [Theory, MemberData(nameof(can_find_good_words_in_dictionary_args))]
-        public async Task can_find_good_word_spans_in_dictionary(string dictionaryFilePath, string word)
-        {
-            var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
-
-            var checkResult = dictionary.Check(word.AsSpan());
-
-            checkResult.Should().BeTrue();
+            checkResult.ShouldBeTrue();
         }
     }
 
     public class CheckWrongWords : HunspellTests
     {
-        public static IEnumerable<object[]> cant_find_wrong_words_in_dictionary_args =>
-            GetAllDataFilePaths("*.wrong")
-                .SelectMany(ToDictionaryWordTestData)
-                .Select(t => new object[] { t.dictionaryPath, t.word });
-
-        [Theory, MemberData(nameof(cant_find_wrong_words_in_dictionary_args))]
-        public async Task cant_find_wrong_words_in_dictionary(string dictionaryFilePath, string word)
+        [Theory, ClassData(typeof(TestTheories.WrongWordsData))]
+        public async Task cant_find_wrong_words_in_dictionary(string filePath, string word)
         {
-            var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
+            var dictionary = await DictionaryLoader.GetDictionaryAsync(filePath, TestCancellation);
 
-            var checkResult = dictionary.Check(word);
+            var checkResult = dictionary.Check(word, TestCancellation);
 
-            checkResult.Should().BeFalse();
+            checkResult.ShouldBeFalse();
         }
 
         /// <remarks>
@@ -137,11 +141,11 @@ public class HunspellTests
         public async Task can_still_find_10_break_pattern_word_wrong()
         {
             var word = "foo-bar-foo-bar-foo-bar-foo-bar-foo-bar-foo";
-            var dictionary = await WordList.CreateFromFilesAsync("files/break.dic");
+            var dictionary = await DictionaryLoader.GetDictionaryAsync("files/break.dic", TestCancellation);
 
-            var checkResult = dictionary.Check(word);
+            var checkResult = dictionary.Check(word, TestCancellation);
 
-            checkResult.Should().BeFalse();
+            checkResult.ShouldBeFalse();
         }
     }
 
@@ -167,11 +171,11 @@ public class HunspellTests
         [InlineData("files/ngram_utf_fix.dic", "времячко")]
         public async Task words_without_suggestions_offer_no_suggestions(string dictionaryFilePath, string word)
         {
-            var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
+            var dictionary = await DictionaryLoader.GetDictionaryAsync(dictionaryFilePath, TestCancellation);
 
-            var actual = dictionary.Suggest(word);
+            var actual = dictionary.Suggest(word, TestCancellation);
 
-            actual.Should().BeEmpty();
+            actual.ShouldBeEmpty();
         }
 
         [Theory]
@@ -195,12 +199,17 @@ public class HunspellTests
         [InlineData("files/ignoresug.dic", "որտե՞ղ", new[] { "որտեղ" })]
         public async Task words_offer_specific_suggestions(string dictionaryFilePath, string word, string[] expectedSuggestions)
         {
-            var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
+            var dictionary = await DictionaryLoader.GetDictionaryAsync(dictionaryFilePath, TestCancellation);
 
-            var actual = dictionary.Suggest(word);
+            var actual = dictionary.Suggest(
+                word,
+                new QueryOptions()
+                {
+                    TimeLimitCompoundSuggest = TimeSpan.FromSeconds(10)
+                },
+                TestCancellation);
 
-            actual.Should().NotBeNullOrEmpty();
-            actual.Should().BeEquivalentTo(expectedSuggestions);
+            actual.ShouldBe(expectedSuggestions);
         }
 
         [Fact]
@@ -210,44 +219,34 @@ public class HunspellTests
             var word = "Brasillian";
             var minimumExpectedSuggestions = new[] { "Brasilia", "Xxxxxxxxxx", "Brilliant", "Brazilian", "Brassily", "Brilliance" };
 
-            var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
+            var dictionary = await DictionaryLoader.GetDictionaryAsync(dictionaryFilePath, TestCancellation);
 
-            var actual = dictionary.Suggest(word, new QueryOptions
-            {
-                // Due to different internal dictionary orderings, the expected suggestions may not all appear unless we bring back more results
-                MaxPhoneticSuggestions = 5,
-                MaxSuggestions = 10
-            });
-
-            actual.Should().NotBeNullOrEmpty();
-            actual.Should().Contain(minimumExpectedSuggestions);
-        }
-
-        public static IEnumerable<object[]> can_find_correct_best_suggestion_args()
-        {
-            foreach (var testSet in GetSuggestionTestFileSets().Where(s => s.WrongLines.Count == s.SuggestionLines.Count))
-            {
-                for (var i = 0; i < testSet.WrongLines.Count; i++)
+            var actual = dictionary.Suggest(
+                word,
+                new QueryOptions
                 {
-                    var suggestions = testSet.SuggestionLines[i]
-                        .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                        .Select(w => w.Trim(SpaceOrTab))
-                        .ToArray();
+                    TimeLimitSuggestGlobal = TimeSpan.FromSeconds(10), // This test can be a bit slow
+                    // Due to different internal dictionary orderings, the expected suggestions may not all appear unless we bring back more results
+                    MaxPhoneticSuggestions = 5,
+                    MaxSuggestions = 10
+                },
+                TestCancellation);
 
-                    yield return new object[]
-                    {
-                        testSet.DictionaryFilePath,
-                        testSet.WrongLines[i],
-                        suggestions
-                    };
-                }
+            actual.ShouldNotBeNull();
+            actual.ShouldNotBeEmpty();
+
+            foreach (var s in minimumExpectedSuggestions)
+            {
+                actual.ShouldContain(s);
             }
         }
 
-        [Theory, MemberData(nameof(can_find_correct_best_suggestion_args))]
-        public async Task can_find_correct_best_suggestion(string dictionaryFilePath, string givenWord, string[] expectedSuggestions)
+        [Theory, ClassData(typeof(TestTheories.SuggestionData))]
+        public async Task can_find_correct_best_suggestion(string name, string given, string[] expected)
         {
-            QueryOptions options = null;
+            var dictionaryFilePath = Path.ChangeExtension(name, "dic");
+
+            QueryOptions options;
 
             if (
                 dictionaryFilePath.EndsWith("i35725.dic")
@@ -264,130 +263,25 @@ public class HunspellTests
                     TimeLimitSuggestGlobal = TimeSpan.FromSeconds(20)
                 };
             }
+            else
+            {
+                options = new()
+                {
+                    TimeLimitCompoundSuggest = TimeSpan.FromSeconds(5),
+                    TimeLimitSuggestGlobal = TimeSpan.FromSeconds(5)
+                };
+            }
 
-            var dictionary = await WordList.CreateFromFilesAsync(dictionaryFilePath);
+            var dictionary = await DictionaryLoader.GetDictionaryAsync(dictionaryFilePath, TestCancellation);
 
-            var actual = dictionary.Suggest(givenWord, options);
+            var actual = dictionary.Suggest(given, options, TestCancellation);
 
-            actual.Should().NotBeNull();
+            actual.ShouldNotBeNull();
 
             // ',' can either be a delimiter in the test data or part of the data
             var actualText = string.Join(", ", actual);
-            var expectedText = string.Join(", ", expectedSuggestions);
-            actualText.Should().Be(expectedText);
-        }
-
-        [Fact]
-        public void untested_suggestion_files_should_not_be_found()
-        {
-            var untestedSets = GetSuggestionTestFileSets().Where(s => s.WrongLines.Count != s.SuggestionLines.Count);
-
-            untestedSets.Should().BeEmpty();
-        }
-
-        private static readonly HashSet<string> ExcludedSuggestionFiles = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "nosuggest",
-            "onlyincompound",
-            "opentaal_forbiddenword1",
-            "opentaal_forbiddenword2",
-            "rep",
-            "ngram_utf_fix",
-            "utf8_nonbmp",
-            "phone"
-        };
-
-        protected static IEnumerable<SuggestionTestSet> GetSuggestionTestFileSets()
-        {
-            var suggestionFilePaths = GetAllDataFilePaths("*.sug")
-                .Where(p => !ExcludedSuggestionFiles.Contains(Path.GetFileNameWithoutExtension(p)));
-
-            foreach (var suggestionFilePath in suggestionFilePaths)
-            {
-                var wrongFilePath = Path.ChangeExtension(suggestionFilePath, "wrong");
-                if (!File.Exists(wrongFilePath))
-                {
-                    throw new InvalidOperationException($"File {wrongFilePath} not found");
-                }
-
-                var dictionaryFilePath = Path.ChangeExtension(wrongFilePath, "dic");
-                var encoding = Encoding.UTF8;
-                var wrongLines = ExtractLinesFromWordFile(wrongFilePath, encoding).ToList();
-                var suggestionLines = ExtractLinesFromWordFile(suggestionFilePath, encoding, allowBlankLines: true).ToList();
-
-                if (suggestionFilePath.EndsWith("ph2.sug"))
-                {
-                    // NOTE: ph2.wrong does not have a corresponding blank suggestion in the file for rootforbiddenroot
-                    suggestionLines.Insert(8, string.Empty);
-                }
-
-                if (suggestionFilePath.EndsWith("breakdefault.sug"))
-                {
-                    // No suggestions were added to compensate for new wrong words
-                    suggestionLines.Add(string.Empty);
-                }
-
-                if (suggestionFilePath.EndsWith("checksharps.sug"))
-                {
-                    // No suggestions were added to compensate for new wrong words
-                    suggestionLines.Add(string.Empty);
-                }
-
-                yield return new SuggestionTestSet
-                {
-                    DictionaryFilePath = dictionaryFilePath,
-                    WrongFilePath = wrongFilePath,
-                    SuggestionFilePath = suggestionFilePath,
-                    WrongLines = wrongLines,
-                    SuggestionLines = suggestionLines
-                };
-            }
-        }
-
-        protected class SuggestionTestSet
-        {
-            public string DictionaryFilePath;
-
-            public string WrongFilePath;
-
-            public string SuggestionFilePath;
-
-            public List<string> WrongLines;
-
-            public List<string> SuggestionLines;
+            var expectedText = string.Join(", ", expected);
+            actualText.ShouldBe(expectedText);
         }
     }
-
-    protected static IEnumerable<string> GetAllDataFilePaths(string searchPattern)
-    {
-        return Directory.GetFiles("files/", searchPattern).OrderBy(n => n);
-    }
-
-    protected static readonly char[] SpaceOrTab = { ' ', '\t' };
-
-    protected static IEnumerable<(string dictionaryPath, string word)> ToDictionaryWordTestData(string wordFilePath)
-    {
-        var dictionaryPath = Path.ChangeExtension(wordFilePath, "dic");
-
-        return ExtractMultipleWordsFromWordFile(wordFilePath, Encoding.UTF8)
-            .Distinct()
-            .OrderBy(w => w, StringComparer.Ordinal)
-            .Select(line => (dictionaryPath, line));
-    }
-
-    protected static IEnumerable<string> ExtractLinesFromWordFile(string filePath, Encoding encoding, bool allowBlankLines = false)
-    {
-        var results = File.ReadAllLines(filePath, encoding).Select(line => line.Trim(SpaceOrTab));
-
-        if (!allowBlankLines)
-        {
-            results = results.Where(line => line.Length != 0);
-        }
-
-        return results;
-    }
-
-    protected static IEnumerable<string> ExtractMultipleWordsFromWordFile(string filePath, Encoding affixEncoding) =>
-        ExtractLinesFromWordFile(filePath, affixEncoding)
-            .SelectMany(line => line.Split(SpaceOrTab, StringSplitOptions.RemoveEmptyEntries));
 }

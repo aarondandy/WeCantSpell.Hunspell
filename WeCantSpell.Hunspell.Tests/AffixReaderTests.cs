@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
-using FluentAssertions;
-
-using WeCantSpell.Hunspell.Tests.Infrastructure;
+using Shouldly;
 
 using Xunit;
 
@@ -14,9 +12,11 @@ namespace WeCantSpell.Hunspell.Tests;
 
 public class AffixReaderTests
 {
+    static CancellationToken TestCancellation => TestContext.Current.CancellationToken;
+
     static AffixReaderTests()
     {
-        EncodingHelpers.EnsureEncodingsReady();
+        Helpers.EnsureEncodingsReady();
     }
 
     public class ReadFileAsync : AffixReaderTests
@@ -26,9 +26,9 @@ public class AffixReaderTests
         {
             var filePath = @"files/1463589.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.MaxNgramSuggestions.Should().Be(1);
+            actual.MaxNgramSuggestions.ShouldBe(1);
         }
 
         [Fact]
@@ -36,10 +36,10 @@ public class AffixReaderTests
         {
             var filePath = @"files/1463589_utf.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.Encoding.WebName.Should().Be("utf-8");
-            actual.MaxNgramSuggestions.Should().Be(1);
+            actual.Encoding.WebName.ShouldBe("utf-8");
+            actual.MaxNgramSuggestions.ShouldBe(1);
         }
 
         [Fact]
@@ -47,51 +47,53 @@ public class AffixReaderTests
         {
             var filePath = @"files/1592880.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.Encoding.WebName.Should().Be("iso-8859-1");
+            actual.Encoding.WebName.ShouldBe("iso-8859-1");
 
-            actual.Suffixes.Should().HaveCount(4);
+            actual.Suffixes.ShouldHaveCount(4);
             var suffixes = actual.Suffixes.ToList();
 
             var suffixGroup1 = suffixes[0];
-            suffixGroup1.AFlag.Should().Be('N');
-            suffixGroup1.Options.Should().Be(AffixEntryOptions.CrossProduct);
-            suffixGroup1.Entries.Should().HaveCount(1);
-            suffixGroup1.Entries.Single().Strip.Should().BeEmpty();
-            suffixGroup1.Entries.Single().Append.Should().Be("n");
-            suffixGroup1.Entries.Single().Conditions.GetEncoded().Should().Be(".");
+            suffixGroup1.AFlag.ShouldBeValue('N');
+            suffixGroup1.Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            var entry = suffixGroup1.Entries.ShouldHaveSingleItem();
+            entry.Strip.ShouldBeEmpty();
+            entry.Append.ShouldBe("n");
+            entry.Conditions.GetEncoded().ShouldBe(".");
 
             var suffixGroup2 = suffixes[1];
-            suffixGroup2.AFlag.Should().Be('S');
-            suffixGroup2.Options.Should().Be(AffixEntryOptions.CrossProduct);
-            suffixGroup2.Entries.Should().HaveCount(1);
-            suffixGroup2.Entries.Single().Strip.Should().BeEmpty();
-            suffixGroup2.Entries.Single().Append.Should().Be("s");
-            suffixGroup2.Entries.Single().Conditions.GetEncoded().Should().Be(".");
+            suffixGroup2.AFlag.ShouldBeValue('S');
+            suffixGroup2.Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            entry = suffixGroup2.Entries.ShouldHaveSingleItem();
+            entry.Strip.ShouldBeEmpty();
+            entry.Append.ShouldBe("s");
+            entry.Conditions.GetEncoded().ShouldBe(".");
 
             var suffixGroup3 = suffixes[2];
-            suffixGroup3.AFlag.Should().Be('P');
-            suffixGroup3.Options.Should().Be(AffixEntryOptions.CrossProduct);
-            suffixGroup3.Entries.Should().HaveCount(1);
-            suffixGroup3.Entries.Single().Strip.Should().BeEmpty();
-            suffixGroup3.Entries.Single().Append.Should().Be("en");
-            suffixGroup3.Entries.Single().Conditions.GetEncoded().Should().Be(".");
+            suffixGroup3.AFlag.ShouldBeValue('P');
+            suffixGroup3.Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            entry = suffixGroup3.Entries.ShouldHaveSingleItem();
+            entry.Strip.ShouldBeEmpty();
+            entry.Append.ShouldBe("en");
+            entry.Conditions.GetEncoded().ShouldBe(".");
 
             var suffixGroup4 = suffixes[3];
-            suffixGroup4.AFlag.Should().Be('Q');
-            suffixGroup4.Options.Should().Be(AffixEntryOptions.CrossProduct);
-            suffixGroup4.Entries.Should().HaveCount(2);
-            suffixGroup4.Entries.First().Strip.Should().BeEmpty();
-            suffixGroup4.Entries.First().Append.Should().Be("e");
-            suffixGroup4.Entries.First().Conditions.GetEncoded().Should().Be(".");
-            suffixGroup4.Entries.Last().Strip.Should().BeEmpty();
-            suffixGroup4.Entries.Last().Append.Should().Be("en");
-            suffixGroup4.Entries.Last().Conditions.GetEncoded().Should().Be(".");
+            suffixGroup4.AFlag.ShouldBeValue('Q');
+            suffixGroup4.Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            suffixGroup4.Entries.ShouldHaveCount(2);
+            entry = suffixGroup4.Entries[0];
+            entry.Strip.ShouldBeEmpty();
+            entry.Append.ShouldBe("e");
+            entry.Conditions.GetEncoded().ShouldBe(".");
+            entry = suffixGroup4.Entries[1];
+            entry.Strip.ShouldBeEmpty();
+            entry.Append.ShouldBe("en");
+            entry.Conditions.GetEncoded().ShouldBe(".");
 
-            actual.CompoundEnd.Should().Be('z');
-            actual.CompoundPermitFlag.Should().Be('c');
-            actual.OnlyInCompound.Should().Be('o');
+            actual.CompoundEnd.ShouldBeValue('z');
+            actual.CompoundPermitFlag.ShouldBeValue('c');
+            actual.OnlyInCompound.ShouldBeValue('o');
         }
 
         [Fact]
@@ -99,26 +101,28 @@ public class AffixReaderTests
         {
             var filePath = @"files/1695964.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.TryString.Should().Be("esianrtolcdugmphbyfvkwESIANRTOLCDUGMPHBYFVKW");
-            actual.MaxNgramSuggestions.Should().Be(0);
-            actual.NeedAffix.Should().Be('h');
-            actual.Suffixes.Should().HaveCount(2);
-            var suffixGroup1 = actual.Suffixes.First();
-            suffixGroup1.AFlag.Should().Be('S');
-            suffixGroup1.Options.Should().Be(AffixEntryOptions.CrossProduct);
-            suffixGroup1.Entries.Should().HaveCount(1);
-            suffixGroup1.Entries.Single().Strip.Should().BeEmpty();
-            suffixGroup1.Entries.Single().Append.Should().Be("s");
-            suffixGroup1.Entries.Single().Conditions.GetEncoded().Should().Be(".");
-            var suffixGroup2 = actual.Suffixes.Last();
-            suffixGroup2.AFlag.Should().Be('e');
-            suffixGroup2.Options.Should().Be(AffixEntryOptions.CrossProduct);
-            suffixGroup2.Entries.Should().HaveCount(1);
-            suffixGroup2.Entries.Single().Strip.Should().BeEmpty();
-            suffixGroup2.Entries.Single().Append.Should().Be("e");
-            suffixGroup2.Entries.Single().Conditions.GetEncoded().Should().Be(".");
+            actual.TryString.ShouldBe("esianrtolcdugmphbyfvkwESIANRTOLCDUGMPHBYFVKW");
+            actual.MaxNgramSuggestions.ShouldBe(0);
+            actual.NeedAffix.ShouldBeValue('h');
+            actual.Suffixes.ShouldHaveCount(2);
+
+            var suffixGroup1 = actual.Suffixes.ElementAt(0);
+            suffixGroup1.AFlag.ShouldBeValue('S');
+            suffixGroup1.Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            var entry = suffixGroup1.Entries.ShouldHaveSingleItem();
+            entry.Strip.ShouldBeEmpty();
+            entry.Append.ShouldBe("s");
+            entry.Conditions.GetEncoded().ShouldBe(".");
+
+            var suffixGroup2 = actual.Suffixes.ElementAt(1);
+            suffixGroup2.AFlag.ShouldBeValue('e');
+            suffixGroup2.Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            entry = suffixGroup2.Entries.ShouldHaveSingleItem();
+            entry.Strip.ShouldBeEmpty();
+            entry.Append.ShouldBe("e");
+            entry.Conditions.GetEncoded().ShouldBe(".");
         }
 
         [Fact]
@@ -126,27 +130,26 @@ public class AffixReaderTests
         {
             var filePath = @"files/1706659.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.Encoding.WebName.Should().Be("iso-8859-1");
-            actual.TryString.Should().Be("esijanrtolcdugmphbyfvkwqxz");
-            actual.Suffixes.Should().HaveCount(1);
-            actual.Suffixes.Single().AFlag.Should().Be('A');
-            actual.Suffixes.Single().Options.Should().Be(AffixEntryOptions.CrossProduct);
-            actual.Suffixes.Single().Entries.Should().HaveCount(5);
-            actual.Suffixes.Single().Entries.Select(e => e.Append).Should().BeEquivalentTo(new[]
-            {
+            actual.Encoding.WebName.ShouldBe("iso-8859-1");
+            actual.TryString.ShouldBe("esijanrtolcdugmphbyfvkwqxz");
+            var group = actual.Suffixes.ShouldHaveSingleItem();
+            group.AFlag.ShouldBeValue('A');
+            group.Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            group.Entries.ShouldHaveCount(5);
+            group.Entries.Select(e => e.Append).ShouldBe(
+            [
                 "e",
                 "er",
                 "en",
                 "em",
                 "es"
-            });
-            actual.Suffixes.Single().Entries.Should().OnlyContain(e => e.Strip == string.Empty);
-            actual.Suffixes.Single().Entries.Should().OnlyContain(e => e.Conditions.GetEncoded() == ".");
+            ]);
+            group.Entries.ShouldAllBe(e => e.Strip == string.Empty);
+            group.Entries.ShouldAllBe(e => e.Conditions.GetEncoded() == ".");
 
-            actual.CompoundRules.Should().HaveCount(1);
-            actual.CompoundRules.Single().Should().ContainInOrder(new[] { 'v', 'w' });
+            actual.CompoundRules.ShouldHaveSingleItem().ShouldBeValues(['v', 'w']);
         }
 
         [Fact]
@@ -154,19 +157,17 @@ public class AffixReaderTests
         {
             var filePath = @"files/1975530.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.Encoding.WebName.Should().Be("utf-8");
-            actual.IgnoredChars.Should().ContainInOrder(new[] { 1617, 1614, 1615, 1612, 1618, 1616, 1613, 1600 }.OrderBy(c => c).Select(i => (char)i));
-            actual.Prefixes.Should().HaveCount(1);
-            var prefixGroup1 = actual.Prefixes.Single();
-            prefixGroup1.AFlag.Should().Be('x');
-            prefixGroup1.Options.Should().Be(AffixEntryOptions.None);
-            prefixGroup1.Entries.Should().HaveCount(1);
-            var prefixEntry = prefixGroup1.Entries.Single();
-            prefixEntry.Append.Should().Be("ت");
-            prefixEntry.Conditions.GetEncoded().Should().Be("أ[^ي]");
-            prefixEntry.Strip.Should().Be("أ");
+            actual.Encoding.WebName.ShouldBe("utf-8");
+            actual.IgnoredChars.ShouldBeValues([1600, 1612, 1613, 1614, 1615, 1616, 1617, 1618], ignoreOrder: true);
+            var prefixGroup1 = actual.Prefixes.ShouldHaveSingleItem();
+            prefixGroup1.AFlag.ShouldBeValue('x');
+            prefixGroup1.Options.ShouldBe(AffixEntryOptions.None);
+            var prefixEntry = prefixGroup1.Entries.ShouldHaveSingleItem();
+            prefixEntry.Append.ShouldBe("ت");
+            prefixEntry.Conditions.GetEncoded().ShouldBe("أ[^ي]");
+            prefixEntry.Strip.ShouldBe("أ");
         }
 
         [Fact]
@@ -174,13 +175,12 @@ public class AffixReaderTests
         {
             var filePath = @"files/2970240.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CompoundFlag.Should().Be('c');
-            actual.CompoundPatterns.Should().HaveCount(1);
-            var pattern = actual.CompoundPatterns.Single();
-            pattern.Pattern.Should().Be("le");
-            pattern.Pattern2.Should().Be("fi");
+            actual.CompoundFlag.ShouldBeValue('c');
+            var pattern = actual.CompoundPatterns.ShouldHaveSingleItem();
+            pattern.Pattern.ShouldBe("le");
+            pattern.Pattern2.ShouldBe("fi");
         }
 
         [Fact]
@@ -188,16 +188,15 @@ public class AffixReaderTests
         {
             var filePath = @"files/2970242.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CompoundPatterns.Should().HaveCount(1);
-            var pattern = actual.CompoundPatterns.Single();
-            pattern.Pattern.Should().BeEmpty();
-            pattern.Condition.Should().Be('a');
-            pattern.Pattern2.Should().BeEmpty();
-            pattern.Condition2.Should().Be('b');
-            pattern.Pattern3.Should().BeNullOrEmpty();
-            actual.CompoundFlag.Should().Be('c');
+            actual.CompoundFlag.ShouldBeValue('c');
+            var pattern = actual.CompoundPatterns.ShouldHaveSingleItem();
+            pattern.Pattern.ShouldBeEmpty();
+            pattern.Condition.ShouldBeValue('a');
+            pattern.Pattern2.ShouldBeEmpty();
+            pattern.Condition2.ShouldBeValue('b');
+            pattern.Pattern3.ShouldBeNullOrEmpty();
         }
 
         [Fact]
@@ -205,12 +204,11 @@ public class AffixReaderTests
         {
             var filePath = @"files/2999225.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CompoundRules.Should().HaveCount(1);
-            actual.CompoundRules.Single().Should().ContainInOrder(new[] { 'a', 'b' });
-            actual.CompoundBegin.Should().Be('A');
-            actual.CompoundEnd.Should().Be('B');
+            actual.CompoundRules.ShouldHaveSingleItem().ShouldBeValues(['a', 'b']);
+            actual.CompoundBegin.ShouldBeValue('A');
+            actual.CompoundEnd.ShouldBeValue('B');
         }
 
         [Fact]
@@ -218,29 +216,29 @@ public class AffixReaderTests
         {
             var filePath = @"files/affixes.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.Prefixes.Should().HaveCount(1);
-            actual.Prefixes.Single().AFlag.Should().Be('A');
-            actual.Prefixes.Single().Options.Should().Be(AffixEntryOptions.CrossProduct);
-            actual.Prefixes.Single().Entries.Should().HaveCount(1);
-            var prefixEntry = actual.Prefixes.Single().Entries.Single();
-            prefixEntry.Strip.Should().BeEmpty();
-            prefixEntry.Append.Should().Be("re");
-            prefixEntry.Conditions.GetEncoded().Should().Be(".");
+            var prefix = actual.Prefixes.ShouldHaveSingleItem();
+            prefix.AFlag.ShouldBeValue('A');
+            prefix.Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            prefix.Entries.ShouldHaveSingleItem();
+            var prefixEntry = prefix.Entries.Single();
+            prefixEntry.Strip.ShouldBeEmpty();
+            prefixEntry.Append.ShouldBe("re");
+            prefixEntry.Conditions.GetEncoded().ShouldBe(".");
 
-            actual.Suffixes.Should().HaveCount(1);
-            actual.Suffixes.Single().AFlag.Should().Be('B');
-            actual.Suffixes.Single().Options.Should().Be(AffixEntryOptions.CrossProduct);
-            actual.Suffixes.Single().Entries.Should().HaveCount(2);
-            var suffixEntry1 = actual.Suffixes.Single().Entries.First();
-            suffixEntry1.Strip.Should().BeEmpty();
-            suffixEntry1.Append.Should().Be("ed");
-            suffixEntry1.Conditions.GetEncoded().Should().Be("[^y]");
-            var suffixEntry2 = actual.Suffixes.Single().Entries.Last();
-            suffixEntry2.Strip.Should().Be("y");
-            suffixEntry2.Append.Should().Be("ied");
-            suffixEntry2.Conditions.GetEncoded().Should().Be(".");
+            var suffix = actual.Suffixes.ShouldHaveSingleItem();
+            suffix.AFlag.ShouldBeValue('B');
+            suffix.Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            suffix.Entries.ShouldHaveCount(2);
+            var suffixEntry1 = suffix.Entries[0];
+            suffixEntry1.Strip.ShouldBeEmpty();
+            suffixEntry1.Append.ShouldBe("ed");
+            suffixEntry1.Conditions.GetEncoded().ShouldBe("[^y]");
+            var suffixEntry2 = suffix.Entries[1];
+            suffixEntry2.Strip.ShouldBe("y");
+            suffixEntry2.Append.ShouldBe("ied");
+            suffixEntry2.Conditions.GetEncoded().ShouldBe(".");
         }
 
         [Fact]
@@ -248,25 +246,27 @@ public class AffixReaderTests
         {
             var filePath = @"files/alias.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.AliasF.Should().HaveCount(2);
-            actual.AliasF.First().Should().ContainInOrder(new[] { 'A', 'B' });
-            actual.AliasF.Last().Should().ContainInOrder(new[] { 'A' });
-            actual.Suffixes.Should().HaveCount(2);
-            actual.Suffixes.First().AFlag.Should().Be('A');
-            actual.Suffixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF);
-            actual.Suffixes.First().Entries.Should().HaveCount(1);
-            actual.Suffixes.First().Entries.Single().Strip.Should().BeEmpty();
-            actual.Suffixes.First().Entries.Single().Append.Should().Be("x");
-            actual.Suffixes.First().Entries.Single().Conditions.GetEncoded().Should().Be(".");
-            actual.Suffixes.Last().AFlag.Should().Be('B');
-            actual.Suffixes.Last().Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF);
-            actual.Suffixes.Last().Entries.Should().HaveCount(1);
-            actual.Suffixes.Last().Entries.Single().Strip.Should().BeEmpty();
-            actual.Suffixes.Last().Entries.Single().Append.Should().Be("y");
-            actual.Suffixes.Last().Entries.Single().ContClass.Should().ContainInOrder(new[] { 'A' });
-            actual.Suffixes.Last().Entries.Single().Conditions.GetEncoded().Should().Be(".");
+            actual.AliasF.ShouldHaveCount(2);
+            actual.AliasF[0].ShouldBeValues(['A', 'B']);
+            actual.AliasF[1].ShouldBeValues(['A']);
+            actual.Suffixes.ShouldHaveCount(2);
+            var suffix = actual.Suffixes.ElementAt(0);
+            suffix.AFlag.ShouldBeValue('A');
+            suffix.Options.ShouldBe(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF);
+            var entry = suffix.Entries.ShouldHaveSingleItem();
+            entry.Strip.ShouldBeEmpty();
+            entry.Append.ShouldBe("x");
+            entry.Conditions.GetEncoded().ShouldBe(".");
+            suffix = actual.Suffixes.ElementAt(1);
+            suffix.AFlag.ShouldBeValue('B');
+            suffix.Options.ShouldBe(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF);
+            entry = suffix.Entries.ShouldHaveSingleItem();
+            entry.Strip.ShouldBeEmpty();
+            entry.Append.ShouldBe("y");
+            entry.ContClass.ShouldBeValues(['A']);
+            entry.Conditions.GetEncoded().ShouldBe(".");
         }
 
         [Fact]
@@ -274,37 +274,37 @@ public class AffixReaderTests
         {
             var filePath = @"files/alias2.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.AliasF.Should().HaveCount(2);
-            actual.AliasF.First().Should().ContainInOrder(new[] { 'A', 'B' });
-            actual.AliasF.Last().Should().ContainInOrder(new[] { 'A' });
+            actual.AliasF.ShouldHaveCount(2);
+            actual.AliasF[0].ShouldBeValues(['A', 'B']);
+            actual.AliasF[1].ShouldBeValues(['A']);
 
-            actual.AliasM.Should().HaveCount(3);
-            actual.AliasM.First().Should().OnlyContain(x => x == "is:affix_x");
-            actual.AliasM.Skip(1).First().Should().OnlyContain(x => x == "ds:affix_y");
-            actual.AliasM.Last().Should().BeEquivalentTo(new[] { "po:noun", "xx:other_data" });
+            actual.AliasM.ShouldHaveCount(3);
+            actual.AliasM[0].ShouldAllBe(x => x == "is:affix_x");
+            actual.AliasM[1].ShouldAllBe(x => x == "ds:affix_y");
+            actual.AliasM[2].ShouldBe(["po:noun", "xx:other_data"]);
 
-            actual.Suffixes.Should().HaveCount(2);
+            actual.Suffixes.ShouldHaveCount(2);
 
-            actual.Suffixes.First().AFlag.Should().Be('A');
-            actual.Suffixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF | AffixEntryOptions.AliasM);
-            actual.Suffixes.First().Entries.Should().HaveCount(1);
-            var suffixEntry1 = actual.Suffixes.First().Entries.Single();
-            suffixEntry1.Strip.Should().BeEmpty();
-            suffixEntry1.Append.Should().Be("x");
-            suffixEntry1.Conditions.GetEncoded().Should().Be(".");
-            suffixEntry1.MorphCode.Should().OnlyContain(x => x == "is:affix_x");
+            var suffixGroup = actual.Suffixes.ElementAt(0);
+            suffixGroup.AFlag.ShouldBeValue('A');
+            suffixGroup.Options.ShouldBe(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF | AffixEntryOptions.AliasM);
+            var suffixEntry1 = suffixGroup.Entries.ShouldHaveSingleItem();
+            suffixEntry1.Strip.ShouldBeEmpty();
+            suffixEntry1.Append.ShouldBe("x");
+            suffixEntry1.Conditions.GetEncoded().ShouldBe(".");
+            suffixEntry1.MorphCode.ShouldAllBe(x => x == "is:affix_x");
 
-            actual.Suffixes.Last().AFlag.Should().Be('B');
-            actual.Suffixes.Last().Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF | AffixEntryOptions.AliasM);
-            actual.Suffixes.Last().Entries.Should().HaveCount(1);
-            var suffixEntry2 = actual.Suffixes.Last().Entries.Single();
-            suffixEntry2.Strip.Should().BeEmpty();
-            suffixEntry2.Append.Should().Be("y");
-            suffixEntry2.ContClass.Should().ContainInOrder(new[] { 'A' });
-            suffixEntry2.Conditions.GetEncoded().Should().Be(".");
-            suffixEntry2.MorphCode.Should().OnlyContain(x => x == "ds:affix_y");
+            suffixGroup = actual.Suffixes.ElementAt(1);
+            suffixGroup.AFlag.ShouldBeValue('B');
+            suffixGroup.Options.ShouldBe(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF | AffixEntryOptions.AliasM);
+            var suffixEntry2 = suffixGroup.Entries.ShouldHaveSingleItem();
+            suffixEntry2.Strip.ShouldBeEmpty();
+            suffixEntry2.Append.ShouldBe("y");
+            suffixEntry2.ContClass.ShouldBeValues(['A']);
+            suffixEntry2.Conditions.GetEncoded().ShouldBe(".");
+            suffixEntry2.MorphCode.ShouldAllBe(x => x == "ds:affix_y");
         }
 
         [Fact]
@@ -312,52 +312,48 @@ public class AffixReaderTests
         {
             var filePath = @"files/alias3.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.ComplexPrefixes.Should().BeTrue();
-            actual.WordChars.Should().BeEquivalentTo(new[] { '_' });
-            actual.AliasM.Should().HaveCount(4);
-            actual.AliasM.Should().BeEquivalentTo(new[]
+            actual.ComplexPrefixes.ShouldBeTrue();
+            actual.WordChars.ShouldBeValues(['_']);
+            actual.AliasM.ShouldBe(new[]
             {
-                new[] { Reversed(@"affix_1/") },
-                new[] { Reversed(@"affix_2/") },
-                new[] { Reversed(@"/suffix_1") },
-                new[] { Reversed(@"[stem_1]") }
+                new MorphSet([@"affix_1/".Reversed()]),
+                new MorphSet([@"affix_2/".Reversed()]),
+                new MorphSet([@"/suffix_1".Reversed()]),
+                new MorphSet([@"[stem_1]".Reversed()])
             });
 
-            actual.Suffixes.Should().HaveCount(2);
-            actual.Prefixes.Should().HaveCount(1);
+            actual.Suffixes.ShouldHaveCount(2);
 
-            var suffixGroup1 = actual.Suffixes.First();
-            suffixGroup1.AFlag.Should().Be('A');
-            suffixGroup1.Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasM);
-            suffixGroup1.Entries.Should().HaveCount(1);
-            var suffixEntry1 = suffixGroup1.Entries.Single();
-            suffixEntry1.Strip.Should().BeEmpty();
-            suffixEntry1.Append.Should().Be("ket");
-            suffixEntry1.Conditions.GetEncoded().Should().Be(".");
-            suffixEntry1.MorphCode.Should().ContainSingle(Reversed(@"affix_1/"));
+            var suffixGroup1 = actual.Suffixes.ElementAt(0);
+            suffixGroup1.AFlag.ShouldBeValue('A');
+            suffixGroup1.Options.ShouldBe(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasM);
+            var suffixEntry1 = suffixGroup1.Entries.ShouldHaveSingleItem();
+            suffixEntry1.Strip.ShouldBeEmpty();
+            suffixEntry1.Append.ShouldBe("ket");
+            suffixEntry1.Conditions.GetEncoded().ShouldBe(".");
+            suffixEntry1.MorphCode.ShouldHaveSingleItem().ShouldBe(@"affix_1/".Reversed());
 
-            var suffixGroup2 = actual.Suffixes.Last();
-            suffixGroup2.AFlag.Should().Be('B');
-            suffixGroup2.Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasM);
-            suffixGroup2.Entries.Should().HaveCount(1);
-            var suffixEntry2 = suffixGroup2.Entries.Single();
-            suffixEntry2.Strip.Should().BeEmpty();
-            suffixEntry2.Append.Should().Be("tem");
-            suffixEntry2.ContClass.Should().ContainInOrder(new[] { 'A' });
-            suffixEntry2.Conditions.GetEncoded().Should().Be(".");
-            suffixEntry2.MorphCode.Should().ContainSingle(Reversed(@"affix_2/"));
+            var suffixGroup2 = actual.Suffixes.ElementAt(1);
+            suffixGroup2.AFlag.ShouldBeValue('B');
+            suffixGroup2.Options.ShouldBe(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasM);
+            var suffixEntry2 = suffixGroup2.Entries.ShouldHaveSingleItem();
+            suffixEntry2.Strip.ShouldBeEmpty();
+            suffixEntry2.Append.ShouldBe("tem");
+            suffixEntry2.ContClass.ShouldBeValues(['A']);
+            suffixEntry2.Conditions.GetEncoded().ShouldBe(".");
+            suffixEntry2.MorphCode.ShouldHaveSingleItem().ShouldBe(@"affix_2/".Reversed());
 
-            var prefixGroup1 = actual.Prefixes.Single();
-            prefixGroup1.AFlag.Should().Be('C');
-            prefixGroup1.Options.Should().Be(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasM);
-            prefixGroup1.Entries.Should().HaveCount(1);
+            var prefixGroup1 = actual.Prefixes.ShouldHaveSingleItem();
+            prefixGroup1.AFlag.ShouldBeValue('C');
+            prefixGroup1.Options.ShouldBe(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasM);
+            prefixGroup1.Entries.ShouldHaveSingleItem();
             var prefixEntry1 = prefixGroup1.Entries.Single();
-            prefixEntry1.Strip.Should().BeEmpty();
-            prefixEntry1.Append.Should().Be("_tset_");
-            prefixEntry1.Conditions.GetEncoded().Should().Be(".");
-            prefixEntry1.MorphCode.Should().ContainSingle(Reversed(@"/suffix_1"));
+            prefixEntry1.Strip.ShouldBeEmpty();
+            prefixEntry1.Append.ShouldBe("_tset_");
+            prefixEntry1.Conditions.GetEncoded().ShouldBe(".");
+            prefixEntry1.MorphCode.ShouldHaveSingleItem().ShouldBe(@"/suffix_1".Reversed());
         }
 
         [Fact]
@@ -365,18 +361,18 @@ public class AffixReaderTests
         {
             var filePath = @"files/allcaps.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.WordChars.Should().BeEquivalentTo(new[] { '\'', '.' });
+            actual.WordChars.ShouldBe(['\'', '.']);
 
-            actual.Suffixes.Should().HaveCount(1);
-            actual.Suffixes.Single().AFlag.Should().Be('S');
-            actual.Suffixes.Single().Options.Should().Be(AffixEntryOptions.None);
-            actual.Suffixes.Single().Entries.Should().HaveCount(1);
-            var entry1 = actual.Suffixes.Single().Entries.Single();
-            entry1.Strip.Should().BeEmpty();
-            entry1.Append.Should().Be("'s");
-            entry1.Conditions.GetEncoded().Should().Be(".");
+            var group = actual.Suffixes.ShouldHaveSingleItem();
+            group.AFlag.ShouldBeValue('S');
+            group.Options.ShouldBe(AffixEntryOptions.None);
+            group.Entries.ShouldHaveSingleItem();
+            var entry1 = group.Entries.ShouldHaveSingleItem();
+            entry1.Strip.ShouldBeEmpty();
+            entry1.Append.ShouldBe("'s");
+            entry1.Conditions.GetEncoded().ShouldBe(".");
         }
 
         [Fact]
@@ -384,20 +380,20 @@ public class AffixReaderTests
         {
             var filePath = @"files/allcaps_utf.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.Encoding.WebName.Should().Be("utf-8");
+            actual.Encoding.WebName.ShouldBe("utf-8");
 
-            actual.WordChars.Should().BeEquivalentTo(new[] { '\'', '.' });
+            actual.WordChars.ShouldBe(['\'', '.'], ignoreOrder: true);
 
-            actual.Suffixes.Should().HaveCount(1);
-            actual.Suffixes.Single().AFlag.Should().Be('S');
-            actual.Suffixes.Single().Options.Should().Be(AffixEntryOptions.None);
-            actual.Suffixes.Single().Entries.Should().HaveCount(1);
-            var entry1 = actual.Suffixes.Single().Entries.Single();
-            entry1.Strip.Should().BeEmpty();
-            entry1.Append.Should().Be("'s");
-            entry1.Conditions.GetEncoded().Should().Be(".");
+            var group = actual.Suffixes.ShouldHaveSingleItem();
+            group.AFlag.ShouldBeValue('S');
+            group.Options.ShouldBe(AffixEntryOptions.None);
+            group.Entries.ShouldHaveSingleItem();
+            var entry1 = group.Entries.ShouldHaveSingleItem();
+            entry1.Strip.ShouldBeEmpty();
+            entry1.Append.ShouldBe("'s");
+            entry1.Conditions.GetEncoded().ShouldBe(".");
         }
 
         [Fact]
@@ -405,18 +401,17 @@ public class AffixReaderTests
         {
             var filePath = @"files/allcaps2.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.ForbiddenWord.Should().Be('*');
+            actual.ForbiddenWord.ShouldBeValue('*');
 
-            actual.Suffixes.Should().HaveCount(1);
-            actual.Suffixes.Single().AFlag.Should().Be('s');
-            actual.Suffixes.Single().Options.Should().Be(AffixEntryOptions.None);
-            actual.Suffixes.Single().Entries.Should().HaveCount(1);
-            var entry1 = actual.Suffixes.Single().Entries.Single();
-            entry1.Strip.Should().BeEmpty();
-            entry1.Append.Should().Be("os");
-            entry1.Conditions.GetEncoded().Should().Be(".");
+            var group = actual.Suffixes.ShouldHaveSingleItem();
+            group.AFlag.ShouldBeValue('s');
+            group.Options.ShouldBe(AffixEntryOptions.None);
+            var entry1 = group.Entries.ShouldHaveSingleItem();
+            entry1.Strip.ShouldBeEmpty();
+            entry1.Append.ShouldBe("os");
+            entry1.Conditions.GetEncoded().ShouldBe(".");
         }
 
         [Fact]
@@ -424,27 +419,27 @@ public class AffixReaderTests
         {
             var filePath = @"files/allcaps3.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.WordChars.Should().BeEquivalentTo(new[] { '\'' });
+            actual.WordChars.ShouldBe(['\'']);
 
-            actual.Suffixes.Should().HaveCount(2);
-            var suffixGroup1 = actual.Suffixes.First();
-            suffixGroup1.AFlag.Should().Be('s');
-            suffixGroup1.Options.Should().Be(AffixEntryOptions.None);
-            suffixGroup1.Entries.Should().HaveCount(1);
-            var entry1 = suffixGroup1.Entries.Single();
-            entry1.Strip.Should().BeEmpty();
-            entry1.Append.Should().Be("s");
-            entry1.Conditions.GetEncoded().Should().Be(".");
-            var suffixGroup2 = actual.Suffixes.Last();
-            suffixGroup2.AFlag.Should().Be('S');
-            suffixGroup2.Options.Should().Be(AffixEntryOptions.None);
-            suffixGroup2.Entries.Should().HaveCount(1);
-            var entry2 = suffixGroup2.Entries.Single();
-            entry2.Strip.Should().BeEmpty();
-            entry2.Append.Should().Be("\'s");
-            entry2.Conditions.GetEncoded().Should().Be(".");
+            actual.Suffixes.ShouldHaveCount(2);
+
+            var suffixGroup1 = actual.Suffixes.ElementAt(0);
+            suffixGroup1.AFlag.ShouldBeValue('s');
+            suffixGroup1.Options.ShouldBe(AffixEntryOptions.None);
+            var entry1 = suffixGroup1.Entries.ShouldHaveSingleItem();
+            entry1.Strip.ShouldBeEmpty();
+            entry1.Append.ShouldBe("s");
+            entry1.Conditions.GetEncoded().ShouldBe(".");
+
+            var suffixGroup2 = actual.Suffixes.ElementAt(1);
+            suffixGroup2.AFlag.ShouldBeValue('S');
+            suffixGroup2.Options.ShouldBe(AffixEntryOptions.None);
+            var entry2 = suffixGroup2.Entries.ShouldHaveSingleItem();
+            entry2.Strip.ShouldBeEmpty();
+            entry2.Append.ShouldBe("\'s");
+            entry2.Conditions.GetEncoded().ShouldBe(".");
         }
 
         [Fact]
@@ -452,22 +447,20 @@ public class AffixReaderTests
         {
             var filePath = @"files/arabic.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.Encoding.WebName.Should().Be("utf-8");
-            actual.TryString.Should().Be("أ");
-            actual.IgnoredChars.Should().BeEquivalentTo(new[] { 'ّ', 'َ', 'ُ', 'ٌ', 'ْ', 'ِ', 'ٍ' });
+            actual.Encoding.WebName.ShouldBe("utf-8");
+            actual.TryString.ShouldBe("أ");
+            actual.IgnoredChars.ShouldBe(['ّ', 'َ', 'ُ', 'ٌ', 'ْ', 'ِ', 'ٍ'], ignoreOrder: true);
 
-            actual.Prefixes.Should().HaveCount(1);
-            var group1 = actual.Prefixes.Single();
-            group1.AFlag.Should().Be('A');
-            group1.Options.Should().Be(AffixEntryOptions.CrossProduct);
-            group1.Entries.Should().HaveCount(1);
-            var entry1 = group1.Entries.Single();
-            entry1.Strip.Should().BeEmpty();
-            entry1.Append.Should().BeEmpty();
-            entry1.ContClass.Should().ContainInOrder(new[] { '0', 'X' });
-            entry1.Conditions.GetEncoded().Should().Be("أ[^ي]");
+            var group1 = actual.Prefixes.ShouldHaveSingleItem();
+            group1.AFlag.ShouldBeValue('A');
+            group1.Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            var entry1 = group1.Entries.ShouldHaveSingleItem();
+            entry1.Strip.ShouldBeEmpty();
+            entry1.Append.ShouldBeEmpty();
+            entry1.ContClass.ShouldBeValues(['0', 'X']);
+            entry1.Conditions.GetEncoded().ShouldBe("أ[^ي]");
         }
 
         [Fact]
@@ -475,32 +468,31 @@ public class AffixReaderTests
         {
             var filePath = @"files/base.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.Encoding.WebName.Should().Be("iso-8859-1");
-            actual.WordChars.Should().BeEquivalentTo(new[] { '.', '\'' });
-            actual.TryString.Should().Be("esianrtolcdugmphbyfvkwz'");
+            actual.Encoding.WebName.ShouldBe("iso-8859-1");
+            actual.WordChars.ShouldBe(['\'', '.']);
+            actual.TryString.ShouldBe("esianrtolcdugmphbyfvkwz'");
 
-            actual.Prefixes.Should().HaveCount(7);
-            var prefixGroup1 = actual.Prefixes.First();
-            prefixGroup1.AFlag.Should().Be('A');
-            prefixGroup1.Options.Should().Be(AffixEntryOptions.CrossProduct);
-            prefixGroup1.Entries.Should().HaveCount(1);
-            var entry1 = prefixGroup1.Entries.Single();
-            entry1.Strip.Should().BeEmpty();
-            entry1.Append.Should().Be("re");
-            entry1.Conditions.GetEncoded().Should().Be(".");
+            actual.Prefixes.ShouldHaveCount(7);
+            var prefixGroup1 = actual.Prefixes.ElementAt(0);
+            prefixGroup1.AFlag.ShouldBeValue('A');
+            prefixGroup1.Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            var entry1 = prefixGroup1.Entries.ShouldHaveSingleItem();
+            entry1.Strip.ShouldBeEmpty();
+            entry1.Append.ShouldBe("re");
+            entry1.Conditions.GetEncoded().ShouldBe(".");
 
-            actual.Suffixes.Should().HaveCount(16);
+            actual.Suffixes.ShouldHaveCount(16);
 
-            actual.Replacements.Should().HaveCount(88);
+            actual.Replacements.ShouldHaveCount(88);
             var replacements = actual.Replacements.ToList();
-            replacements[0].Pattern.Should().Be("a");
-            replacements[0].OutString.Should().Be("ei");
-            replacements[0].Type.Should().Be(ReplacementValueType.Med);
-            replacements[87].Pattern.Should().Be("shun");
-            replacements[87].OutString.Should().Be("cion");
-            replacements[87].Type.Should().Be(ReplacementValueType.Med);
+            replacements[0].Pattern.ShouldBe("a");
+            replacements[0].OutString.ShouldBe("ei");
+            replacements[0].Type.ShouldBe(ReplacementValueType.Med);
+            replacements[87].Pattern.ShouldBe("shun");
+            replacements[87].OutString.ShouldBe("cion");
+            replacements[87].Type.ShouldBe(ReplacementValueType.Med);
         }
 
         [Fact]
@@ -508,14 +500,14 @@ public class AffixReaderTests
         {
             var filePath = @"files/base_utf.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.TryString.Should().Be("esianrtolcdugmphbyfvkwzESIANRTOLCDUGMPHBYFVKWZ'");
-            actual.MaxNgramSuggestions.Should().Be(1);
-            actual.WordChars.Should().BeEquivalentTo(new[] { '.', '\'', '’' });
-            actual.Prefixes.Should().HaveCount(7);
-            actual.Suffixes.Should().HaveCount(16);
-            actual.Replacements.Should().HaveCount(88);
+            actual.TryString.ShouldBe("esianrtolcdugmphbyfvkwzESIANRTOLCDUGMPHBYFVKWZ'");
+            actual.MaxNgramSuggestions.ShouldBe(1);
+            actual.WordChars.ShouldBe(['.', '\'', '’' ], ignoreOrder: true);
+            actual.Prefixes.ShouldHaveCount(7);
+            actual.Suffixes.ShouldHaveCount(16);
+            actual.Replacements.ShouldHaveCount(88);
         }
 
         [Fact]
@@ -523,15 +515,11 @@ public class AffixReaderTests
         {
             var filePath = @"files/break.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.BreakPoints.Should().BeEquivalentTo(new[]
-            {
-                "-",
-                "–"
-            });
+            actual.BreakPoints.ShouldBe(["-", "–"]);
 
-            actual.WordChars.Should().BeEquivalentTo(new[] { '-', '–' });
+            actual.WordChars.ShouldBe(['-', '–']);
         }
 
         [Fact]
@@ -539,11 +527,11 @@ public class AffixReaderTests
         {
             var filePath = @"files/breakdefault.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.MaxNgramSuggestions.Should().Be(0);
-            actual.WordChars.Should().BeEquivalentTo(new[] { '-' });
-            actual.TryString.Should().Be("ot");
+            actual.MaxNgramSuggestions.ShouldBe(0);
+            actual.WordChars.ShouldBe(['-']);
+            actual.TryString.ShouldBe("ot");
         }
 
         [Fact]
@@ -551,12 +539,12 @@ public class AffixReaderTests
         {
             var filePath = @"files/breakoff.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.MaxNgramSuggestions.Should().Be(0);
-            actual.WordChars.Should().BeEquivalentTo(new[] { '-' });
-            actual.TryString.Should().Be("ot");
-            actual.BreakPoints.Should().HaveCount(0);
+            actual.MaxNgramSuggestions.ShouldBe(0);
+            actual.WordChars.ShouldBe(['-']);
+            actual.TryString.ShouldBe("ot");
+            actual.BreakPoints.ShouldBeEmpty();
         }
 
         [Fact]
@@ -564,10 +552,10 @@ public class AffixReaderTests
         {
             var filePath = @"files/checkcompoundcase.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CheckCompoundCase.Should().BeTrue();
-            actual.CompoundFlag.Should().Be('A');
+            actual.CheckCompoundCase.ShouldBeTrue();
+            actual.CompoundFlag.ShouldBeValue('A');
         }
 
         [Fact]
@@ -575,10 +563,10 @@ public class AffixReaderTests
         {
             var filePath = @"files/checkcompounddup.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CheckCompoundDup.Should().BeTrue();
-            actual.CompoundFlag.Should().Be('A');
+            actual.CheckCompoundDup.ShouldBeTrue();
+            actual.CompoundFlag.ShouldBeValue('A');
         }
 
         [Fact]
@@ -586,15 +574,15 @@ public class AffixReaderTests
         {
             var filePath = @"files/checkcompoundpattern.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CompoundFlag.Should().Be('A');
-            actual.CompoundPatterns.Should().HaveCount(2);
-            actual.CompoundPatterns.First().Pattern.Should().Be("nny");
-            actual.CompoundPatterns.First().Pattern2.Should().Be("ny");
-            actual.CompoundPatterns.Last().Pattern.Should().Be("ssz");
-            actual.CompoundPatterns.Last().Pattern2.Should().Be("sz");
-            actual.SimplifiedCompound.Should().BeFalse();
+            actual.CompoundFlag.ShouldBeValue('A');
+            actual.CompoundPatterns.ShouldHaveCount(2);
+            actual.CompoundPatterns[0].Pattern.ShouldBe("nny");
+            actual.CompoundPatterns[0].Pattern2.ShouldBe("ny");
+            actual.CompoundPatterns[1].Pattern.ShouldBe("ssz");
+            actual.CompoundPatterns[1].Pattern2.ShouldBe("sz");
+            actual.SimplifiedCompound.ShouldBeFalse();
         }
 
         [Fact]
@@ -602,18 +590,18 @@ public class AffixReaderTests
         {
             var filePath = @"files/checkcompoundpattern2.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CompoundFlag.Should().Be('A');
-            actual.CompoundPatterns.Should().HaveCount(2);
-            actual.CompoundPatterns.First().Pattern.Should().Be("o");
-            actual.CompoundPatterns.First().Pattern2.Should().Be("b");
-            actual.CompoundPatterns.First().Pattern3.Should().Be("z");
-            actual.CompoundPatterns.Last().Pattern.Should().Be("oo");
-            actual.CompoundPatterns.Last().Pattern2.Should().Be("ba");
-            actual.CompoundPatterns.Last().Pattern3.Should().Be("u");
-            actual.CompoundMin.Should().Be(1);
-            actual.SimplifiedCompound.Should().BeTrue();
+            actual.CompoundFlag.ShouldBeValue('A');
+            actual.CompoundPatterns.ShouldHaveCount(2);
+            actual.CompoundPatterns[0].Pattern.ShouldBe("o");
+            actual.CompoundPatterns[0].Pattern2.ShouldBe("b");
+            actual.CompoundPatterns[0].Pattern3.ShouldBe("z");
+            actual.CompoundPatterns[1].Pattern.ShouldBe("oo");
+            actual.CompoundPatterns[1].Pattern2.ShouldBe("ba");
+            actual.CompoundPatterns[1].Pattern3.ShouldBe("u");
+            actual.CompoundMin.ShouldBe(1);
+            actual.SimplifiedCompound.ShouldBeTrue();
         }
 
         [Fact]
@@ -621,17 +609,17 @@ public class AffixReaderTests
         {
             var filePath = @"files/checkcompoundpattern3.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CompoundFlag.Should().Be('A');
-            actual.CompoundPatterns.Should().HaveCount(1);
-            actual.CompoundPatterns.Single().Pattern.Should().Be("o");
-            actual.CompoundPatterns.Single().Condition.Should().Be('X');
-            actual.CompoundPatterns.Single().Pattern2.Should().Be("b");
-            actual.CompoundPatterns.Single().Condition2.Should().Be('Y');
-            actual.CompoundPatterns.Single().Pattern3.Should().Be("z");
-            actual.CompoundMin.Should().Be(1);
-            actual.SimplifiedCompound.Should().BeTrue();
+            actual.CompoundFlag.ShouldBeValue('A');
+            var compoundPattern = actual.CompoundPatterns.ShouldHaveSingleItem();
+            compoundPattern.Pattern.ShouldBe("o");
+            compoundPattern.Condition.ShouldBeValue('X');
+            compoundPattern.Pattern2.ShouldBe("b");
+            compoundPattern.Condition2.ShouldBeValue('Y');
+            compoundPattern.Pattern3.ShouldBe("z");
+            actual.CompoundMin.ShouldBe(1);
+            actual.SimplifiedCompound.ShouldBeTrue();
         }
 
         [Fact]
@@ -639,22 +627,22 @@ public class AffixReaderTests
         {
             var filePath = @"files/checkcompoundpattern4.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CompoundFlag.Should().Be('x');
-            actual.CompoundMin.Should().Be(1);
-            actual.CompoundPatterns.Should().HaveCount(2);
-            actual.CompoundPatterns.First().Pattern.Should().Be("a");
-            actual.CompoundPatterns.First().Condition.Should().Be('A');
-            actual.CompoundPatterns.First().Pattern2.Should().Be("u");
-            actual.CompoundPatterns.First().Condition2.Should().Be('A');
-            actual.CompoundPatterns.First().Pattern3.Should().Be("O");
-            actual.CompoundPatterns.Last().Pattern.Should().Be("u");
-            actual.CompoundPatterns.Last().Condition.Should().Be('B');
-            actual.CompoundPatterns.Last().Pattern2.Should().Be("u");
-            actual.CompoundPatterns.Last().Condition2.Should().Be('B');
-            actual.CompoundPatterns.Last().Pattern3.Should().Be("u");
-            actual.SimplifiedCompound.Should().BeTrue();
+            actual.CompoundFlag.ShouldBeValue('x');
+            actual.CompoundMin.ShouldBe(1);
+            actual.CompoundPatterns.ShouldHaveCount(2);
+            actual.CompoundPatterns[0].Pattern.ShouldBe("a");
+            actual.CompoundPatterns[0].Condition.ShouldBeValue('A');
+            actual.CompoundPatterns[0].Pattern2.ShouldBe("u");
+            actual.CompoundPatterns[0].Condition2.ShouldBeValue('A');
+            actual.CompoundPatterns[0].Pattern3.ShouldBe("O");
+            actual.CompoundPatterns[1].Pattern.ShouldBe("u");
+            actual.CompoundPatterns[1].Condition.ShouldBeValue('B');
+            actual.CompoundPatterns[1].Pattern2.ShouldBe("u");
+            actual.CompoundPatterns[1].Condition2.ShouldBeValue('B');
+            actual.CompoundPatterns[1].Pattern3.ShouldBe("u");
+            actual.SimplifiedCompound.ShouldBeTrue();
         }
 
         [Fact]
@@ -662,14 +650,14 @@ public class AffixReaderTests
         {
             var filePath = @"files/checkcompoundrep.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CheckCompoundRep.Should().BeTrue();
-            actual.CompoundFlag.Should().Be('A');
-            actual.Replacements.Should().HaveCount(1);
-            actual.Replacements.Single().Pattern.Should().NotBeNullOrEmpty();
-            actual.Replacements.Single().OutString.Should().Be("i");
-            actual.Replacements.Single().Type.Should().Be(ReplacementValueType.Med);
+            actual.CheckCompoundRep.ShouldBeTrue();
+            actual.CompoundFlag.ShouldBeValue('A');
+            var r = actual.Replacements.ShouldHaveSingleItem();
+            r.Pattern.ShouldNotBeNullOrEmpty();
+            r.OutString.ShouldBe("i");
+            r.Type.ShouldBe(ReplacementValueType.Med);
         }
 
         [Fact]
@@ -677,10 +665,10 @@ public class AffixReaderTests
         {
             var filePath = @"files/checkcompoundtriple.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CheckCompoundTriple.Should().BeTrue();
-            actual.CompoundFlag.Should().Be('A');
+            actual.CheckCompoundTriple.ShouldBeTrue();
+            actual.CompoundFlag.ShouldBeValue('A');
         }
 
         [Fact]
@@ -688,10 +676,10 @@ public class AffixReaderTests
         {
             var filePath = @"files/checksharps.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.Encoding.WebName.Should().Be("iso-8859-1");
-            actual.WordChars.Should().ContainInOrder(new[] { '.', 'ß' });
+            actual.Encoding.WebName.ShouldBe("iso-8859-1");
+            actual.WordChars.ShouldBe(['.', 'ß'], ignoreOrder: true);
         }
 
         [Fact]
@@ -699,12 +687,12 @@ public class AffixReaderTests
         {
             var filePath = @"files/checksharpsutf.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.Encoding.WebName.Should().Be("utf-8");
-            actual.CheckSharps.Should().BeTrue();
-            actual.WordChars.Should().BeEquivalentTo(new[] { 'ß', '.' });
-            actual.KeepCase.Should().Be('k');
+            actual.Encoding.WebName.ShouldBe("utf-8");
+            actual.CheckSharps.ShouldBeTrue();
+            actual.WordChars.ShouldBe(['ß', '.'], ignoreOrder: true);
+            actual.KeepCase.ShouldBeValue('k');
         }
 
         [Fact]
@@ -712,49 +700,58 @@ public class AffixReaderTests
         {
             var filePath = @"files/circumfix.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.Circumfix.Should().Be('X');
+            actual.Circumfix.ShouldBeValue('X');
 
-            actual.Prefixes.Should().HaveCount(2);
-            actual.Prefixes.First().AFlag.Should().Be('A');
-            actual.Prefixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct);
-            actual.Prefixes.First().Entries.Should().HaveCount(1);
-            var entry1 = actual.Prefixes.First().Entries[0];
-            entry1.Strip.Should().BeEmpty();
-            entry1.Append.Should().Be("leg");
-            entry1.ContClass.Should().ContainInOrder(new[] { 'X' });
-            entry1.Conditions.GetEncoded().Should().Be(".");
-            actual.Prefixes.Last().AFlag.Should().Be('B');
-            actual.Prefixes.Last().Options.Should().Be(AffixEntryOptions.CrossProduct);
-            actual.Prefixes.Last().Entries.Should().HaveCount(1);
-            var entry2 = actual.Prefixes.Last().Entries[0];
-            entry2.Strip.Should().BeEmpty();
-            entry2.Append.Should().Be("legesleg");
-            entry2.ContClass.Should().ContainInOrder(new[] { 'X' });
-            entry2.Conditions.GetEncoded().Should().Be(".");
+            actual.Prefixes.ShouldHaveCount(2);
 
-            actual.Suffixes.Should().HaveCount(1);
-            actual.Suffixes.First().AFlag.Should().Be('C');
-            actual.Suffixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct);
-            actual.Suffixes.First().Entries.Should().HaveCount(3);
-            var entry3 = actual.Suffixes.First().Entries[0];
-            entry3.Strip.Should().BeEmpty();
-            entry3.Append.Should().Be("obb");
-            entry3.Conditions.GetEncoded().Should().Be(".");
-            entry3.MorphCode.Should().OnlyContain(x => x == "is:COMPARATIVE");
-            var entry4 = actual.Suffixes.First().Entries[1];
-            entry4.Strip.Should().BeEmpty();
-            entry4.Append.Should().Be("obb");
-            entry4.ContClass.Should().ContainInOrder(new[] { 'A', 'X' });
-            entry4.Conditions.GetEncoded().Should().Be(".");
-            entry4.MorphCode.Should().OnlyContain(x => x == "is:SUPERLATIVE");
-            var entry5 = actual.Suffixes.First().Entries[2];
-            entry5.Strip.Should().BeEmpty();
-            entry5.Append.Should().Be("obb");
-            entry5.ContClass.Should().ContainInOrder(new[] { 'B', 'X' });
-            entry5.Conditions.GetEncoded().Should().Be(".");
-            entry5.MorphCode.Should().OnlyContain(x => x == "is:SUPERSUPERLATIVE");
+            var pg = actual.Prefixes.ElementAt(0);
+            pg.AFlag.ShouldBeValue('A');
+            pg.Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            pg.Entries.ShouldHaveSingleItem();
+
+            var entry1 = pg.Entries[0];
+            entry1.Strip.ShouldBeEmpty();
+            entry1.Append.ShouldBe("leg");
+            entry1.ContClass.ShouldBeValues(['X']);
+            entry1.Conditions.GetEncoded().ShouldBe(".");
+
+            pg = actual.Prefixes.ElementAt(1);
+            pg.AFlag.ShouldBeValue('B');
+            pg.Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            pg.Entries.ShouldHaveSingleItem();
+
+            var entry2 = actual.Prefixes.ElementAt(1).Entries[0];
+            entry2.Strip.ShouldBeEmpty();
+            entry2.Append.ShouldBe("legesleg");
+            entry2.ContClass.ShouldBeValues(['X']);
+            entry2.Conditions.GetEncoded().ShouldBe(".");
+
+            var sg = actual.Suffixes.ShouldHaveSingleItem();
+            sg.AFlag.ShouldBeValue('C');
+            sg.Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            sg.Entries.ShouldHaveCount(3);
+
+            var entry3 = sg.Entries[0];
+            entry3.Strip.ShouldBeEmpty();
+            entry3.Append.ShouldBe("obb");
+            entry3.Conditions.GetEncoded().ShouldBe(".");
+            entry3.MorphCode.ShouldAllBe(x => x == "is:COMPARATIVE");
+
+            var entry4 = sg.Entries[1];
+            entry4.Strip.ShouldBeEmpty();
+            entry4.Append.ShouldBe("obb");
+            entry4.ContClass.ShouldBeValues(['A', 'X']);
+            entry4.Conditions.GetEncoded().ShouldBe(".");
+            entry4.MorphCode.ShouldAllBe(x => x == "is:SUPERLATIVE");
+
+            var entry5 = sg.Entries[2];
+            entry5.Strip.ShouldBeEmpty();
+            entry5.Append.ShouldBe("obb");
+            entry5.ContClass.ShouldBeValues(['B', 'X']);
+            entry5.Conditions.GetEncoded().ShouldBe(".");
+            entry5.MorphCode.ShouldAllBe(x => x == "is:SUPERSUPERLATIVE");
         }
 
         [Fact]
@@ -762,9 +759,9 @@ public class AffixReaderTests
         {
             var filePath = @"files/colons_in_words.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.WordChars.Should().BeEquivalentTo(new[] { ':' });
+            actual.WordChars.ShouldBe(":");
         }
 
         [Fact]
@@ -772,12 +769,12 @@ public class AffixReaderTests
         {
             var filePath = @"files/compoundaffix2.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CompoundFlag.Should().Be('X');
-            actual.CompoundPermitFlag.Should().Be('Y');
-            actual.Prefixes.Should().HaveCount(1);
-            actual.Suffixes.Should().HaveCount(1);
+            actual.CompoundFlag.ShouldBeValue('X');
+            actual.CompoundPermitFlag.ShouldBeValue('Y');
+            actual.Prefixes.ShouldHaveSingleItem();
+            actual.Suffixes.ShouldHaveSingleItem();
         }
 
         [Fact]
@@ -785,12 +782,12 @@ public class AffixReaderTests
         {
             var filePath = @"files/compoundaffix3.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CompoundFlag.Should().Be('X');
-            actual.CompoundForbidFlag.Should().Be('Z');
-            actual.Prefixes.Should().HaveCount(1);
-            actual.Suffixes.Should().HaveCount(1);
+            actual.CompoundFlag.ShouldBeValue('X');
+            actual.CompoundForbidFlag.ShouldBeValue('Z');
+            actual.Prefixes.ShouldHaveSingleItem();
+            actual.Suffixes.ShouldHaveSingleItem();
         }
 
         [Fact]
@@ -798,11 +795,10 @@ public class AffixReaderTests
         {
             var filePath = @"files/compoundrule2.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CompoundMin.Should().Be(1);
-            actual.CompoundRules.Should().HaveCount(1);
-            actual.CompoundRules.Single().Should().ContainInOrder(new[] { 'A', '*', 'B', '*', 'C', '*' });
+            actual.CompoundMin.ShouldBe(1);
+            actual.CompoundRules.ShouldHaveSingleItem().ShouldBeValues(['A', '*', 'B', '*', 'C', '*']);
         }
 
         [Fact]
@@ -810,11 +806,10 @@ public class AffixReaderTests
         {
             var filePath = @"files/compoundrule3.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CompoundMin.Should().Be(1);
-            actual.CompoundRules.Should().HaveCount(1);
-            actual.CompoundRules.Single().Should().ContainInOrder(new[] { 'A', '?', 'B', '?', 'C', '?' });
+            actual.CompoundMin.ShouldBe(1);
+            actual.CompoundRules.ShouldHaveSingleItem().ShouldBeValues(['A', '?', 'B', '?', 'C', '?']);
         }
 
         [Fact]
@@ -822,14 +817,14 @@ public class AffixReaderTests
         {
             var filePath = @"files/compoundrule4.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.WordChars.Should().BeEquivalentTo("0123456789".ToCharArray());
-            actual.CompoundMin.Should().Be(1);
-            actual.OnlyInCompound.Should().Be('c');
-            actual.CompoundRules.Should().HaveCount(2);
-            actual.CompoundRules.First().Should().ContainInOrder(new[] { 'n', '*', '1', 't' });
-            actual.CompoundRules.Last().Should().ContainInOrder(new[] { 'n', '*', 'm', 'p' });
+            actual.WordChars.ShouldBe("0123456789");
+            actual.CompoundMin.ShouldBe(1);
+            actual.OnlyInCompound.ShouldBeValue('c');
+            actual.CompoundRules.ShouldHaveCount(2);
+            actual.CompoundRules[0].ShouldBeValues(['n', '*', '1', 't']);
+            actual.CompoundRules[1].ShouldBeValues(['n', '*', 'm', 'p']);
         }
 
         [Fact]
@@ -837,13 +832,13 @@ public class AffixReaderTests
         {
             var filePath = @"files/compoundrule5.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CompoundMin.Should().Be(1);
-            actual.CompoundRules.Should().HaveCount(2);
-            actual.CompoundRules.First().Should().ContainInOrder("N*%?".ToCharArray());
-            actual.CompoundRules.Last().Should().ContainInOrder("NN*.NN*%?".ToCharArray());
-            actual.WordChars.Should().ContainInOrder("0123456789‰.".ToCharArray().OrderBy(x => x));
+            actual.CompoundMin.ShouldBe(1);
+            actual.CompoundRules.ShouldHaveCount(2);
+            actual.CompoundRules[0].ShouldBeValues("N*%?");
+            actual.CompoundRules[1].ShouldBeValues("NN*.NN*%?");
+            actual.WordChars.ShouldBe("0123456789‰.", ignoreOrder: true);
         }
 
         [Fact]
@@ -851,12 +846,12 @@ public class AffixReaderTests
         {
             var filePath = @"files/compoundrule6.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CompoundMin.Should().Be(1);
-            actual.CompoundRules.Should().HaveCount(2);
-            actual.CompoundRules.First().Should().ContainInOrder("A*A".ToCharArray());
-            actual.CompoundRules.Last().Should().ContainInOrder("A*AAB*BBBC*C".ToCharArray());
+            actual.CompoundMin.ShouldBe(1);
+            actual.CompoundRules.ShouldHaveCount(2);
+            actual.CompoundRules[0].ShouldBeValues("A*A");
+            actual.CompoundRules[1].ShouldBeValues("A*AAB*BBBC*C");
         }
 
         [Fact]
@@ -864,14 +859,14 @@ public class AffixReaderTests
         {
             var filePath = @"files/compoundrule7.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.WordChars.Should().BeEquivalentTo("0123456789".ToCharArray());
-            actual.CompoundMin.Should().Be(1);
-            actual.OnlyInCompound.Should().Be('c' << 8 | 'c');
-            actual.CompoundRules.Should().HaveCount(2);
-            actual.CompoundRules.First().Should().ContainInOrder(new[] { 'n' << 8 | 'n', '*', '1' << 8 | '1', 't' << 8 | 't' });
-            actual.CompoundRules.Last().Should().ContainInOrder(new[] { 'n' << 8 | 'n', '*', 'm' << 8 | 'm', 'p' << 8 | 'p' });
+            actual.WordChars.ShouldBe("0123456789");
+            actual.CompoundMin.ShouldBe(1);
+            actual.OnlyInCompound.ShouldBeValue('c' << 8 | 'c');
+            actual.CompoundRules.ShouldHaveCount(2);
+            actual.CompoundRules[0].ShouldBeValues(['n' << 8 | 'n', '*', '1' << 8 | '1', 't' << 8 | 't']);
+            actual.CompoundRules[1].ShouldBeValues(['n' << 8 | 'n', '*', 'm' << 8 | 'm', 'p' << 8 | 'p']);
         }
 
         [Fact]
@@ -879,14 +874,14 @@ public class AffixReaderTests
         {
             var filePath = @"files/compoundrule8.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.WordChars.Should().BeEquivalentTo("0123456789".ToCharArray());
-            actual.CompoundMin.Should().Be(1);
-            actual.OnlyInCompound.Should().Be(1000);
-            actual.CompoundRules.Should().HaveCount(2);
-            actual.CompoundRules.First().Should().ContainInOrder(new[] { 1001, '*', 1002, 2001 });
-            actual.CompoundRules.Last().Should().ContainInOrder(new[] { 1001, '*', 2002, 2000 });
+            actual.WordChars.ShouldBe("0123456789");
+            actual.CompoundMin.ShouldBe(1);
+            actual.OnlyInCompound.ShouldBeValue(1000);
+            actual.CompoundRules.ShouldHaveCount(2);
+            actual.CompoundRules[0].ShouldBeValues([1001, '*', 1002, 2001]);
+            actual.CompoundRules[1].ShouldBeValues([1001, '*', 2002, 2000]);
         }
 
         [Fact]
@@ -894,11 +889,11 @@ public class AffixReaderTests
         {
             var filePath = @"files/condition.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.WordChars.Should().BeEquivalentTo("0123456789".ToCharArray());
-            actual.Suffixes.Should().HaveCount(4);
-            actual.Prefixes.Should().HaveCount(3);
+            actual.WordChars.ShouldBe("0123456789");
+            actual.Suffixes.ShouldHaveCount(4);
+            actual.Prefixes.ShouldHaveCount(3);
         }
 
         [Fact]
@@ -906,11 +901,11 @@ public class AffixReaderTests
         {
             var filePath = @"files/condition_utf.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.WordChars.Should().BeEquivalentTo("0123456789".ToCharArray());
-            actual.Suffixes.Should().HaveCount(1);
-            actual.Prefixes.Should().HaveCount(1);
+            actual.WordChars.ShouldBe("0123456789");
+            actual.Suffixes.ShouldHaveSingleItem();
+            actual.Prefixes.ShouldHaveSingleItem();
         }
 
         [Fact]
@@ -918,13 +913,13 @@ public class AffixReaderTests
         {
             var filePath = @"files/digits_in_words.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CompoundMin.Should().Be(1);
-            actual.CompoundRules.Should().HaveCount(1);
-            actual.CompoundRules.Single().Should().ContainInOrder(new[] { 'a', '*', 'b' });
-            actual.OnlyInCompound.Should().Be('c');
-            actual.WordChars.Should().ContainInOrder("0123456789-".ToCharArray().OrderBy(x => x));
+            actual.CompoundMin.ShouldBe(1);
+            actual.CompoundRules.ShouldHaveSingleItem();
+            actual.CompoundRules.Single().ShouldBeValues(['a', '*', 'b']);
+            actual.OnlyInCompound.ShouldBeValue('c');
+            actual.WordChars.ShouldBe("0123456789-", ignoreOrder: true);
         }
 
         [Fact]
@@ -932,9 +927,9 @@ public class AffixReaderTests
         {
             var filePath = @"files/encoding.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.Encoding.WebName.Should().Be("iso-8859-15");
+            actual.Encoding.WebName.ShouldBe("iso-8859-15");
         }
 
         [Fact]
@@ -942,12 +937,12 @@ public class AffixReaderTests
         {
             var filePath = @"files/flag.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.FlagMode.Should().Be(FlagParsingMode.Char);
-            actual.Suffixes.Should().HaveCount(3);
-            actual.Suffixes.Skip(1).First().AFlag.Should().Be('1');
-            actual.Prefixes.Should().HaveCount(1);
+            actual.FlagMode.ShouldBe(FlagParsingMode.Char);
+            actual.Suffixes.ShouldHaveCount(3);
+            actual.Suffixes.ElementAt(1).AFlag.ShouldBeValue('1');
+            actual.Prefixes.ShouldHaveSingleItem();
         }
 
         [Fact]
@@ -955,12 +950,12 @@ public class AffixReaderTests
         {
             var filePath = @"files/flaglong.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.FlagMode.Should().Be(FlagParsingMode.Long);
-            actual.Suffixes.Should().HaveCount(3);
-            actual.Suffixes.Skip(1).First().AFlag.Should().Be('g' << 8 | '?');
-            actual.Prefixes.Should().HaveCount(1);
+            actual.FlagMode.ShouldBe(FlagParsingMode.Long);
+            actual.Suffixes.ShouldHaveCount(3);
+            actual.Suffixes.ElementAt(1).AFlag.ShouldBeValue('g' << 8 | '?');
+            actual.Prefixes.ShouldHaveSingleItem();
         }
 
         [Fact]
@@ -968,18 +963,18 @@ public class AffixReaderTests
         {
             var filePath = @"files/flagnum.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.Suffixes.Should().HaveCount(3);
-            actual.Suffixes.First().AFlag.Should().Be((char)999);
-            actual.Suffixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct);
-            actual.Suffixes.Skip(1).First().AFlag.Should().Be((char)214);
-            actual.Suffixes.Skip(1).First().Options.Should().Be(AffixEntryOptions.CrossProduct);
-            actual.Suffixes.Skip(2).First().AFlag.Should().Be((char)216);
-            actual.Suffixes.Skip(2).First().Options.Should().Be(AffixEntryOptions.CrossProduct);
-            actual.Prefixes.Should().HaveCount(1);
-            actual.Prefixes.Single().AFlag.Should().Be((char)54321);
-            actual.Prefixes.Single().Options.Should().Be(AffixEntryOptions.CrossProduct);
+            actual.Suffixes.ShouldHaveCount(3);
+            actual.Suffixes.ElementAt(0).AFlag.ShouldBeValue(999);
+            actual.Suffixes.ElementAt(0).Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            actual.Suffixes.ElementAt(1).AFlag.ShouldBeValue(214);
+            actual.Suffixes.ElementAt(1).Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            actual.Suffixes.ElementAt(2).AFlag.ShouldBeValue(216);
+            actual.Suffixes.ElementAt(2).Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            var pg = actual.Prefixes.ShouldHaveSingleItem();
+            pg.AFlag.ShouldBeValue(54321);
+            pg.Options.ShouldBe(AffixEntryOptions.CrossProduct);
         }
 
         [Fact]
@@ -987,16 +982,16 @@ public class AffixReaderTests
         {
             var filePath = @"files/flagutf8.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.FlagMode.Should().Be(FlagParsingMode.Uni);
-            actual.Suffixes.Should().HaveCount(3);
-            actual.Suffixes.First().Entries.Should().HaveCount(1);
-            actual.Suffixes.Skip(1).First().AFlag.Should().Be('Ö');
-            actual.Suffixes.Skip(1).First().Entries.Should().HaveCount(1);
-            actual.Suffixes.Skip(2).First().Entries.Should().HaveCount(1);
-            actual.Prefixes.Should().HaveCount(1);
-            actual.Prefixes.Single().Entries.Should().HaveCount(1);
+            actual.FlagMode.ShouldBe(FlagParsingMode.Uni);
+            actual.Suffixes.ShouldHaveCount(3);
+            actual.Suffixes.ElementAt(0).Entries.ShouldHaveSingleItem();
+            actual.Suffixes.ElementAt(1).AFlag.ShouldBeValue('Ö');
+            actual.Suffixes.ElementAt(1).Entries.ShouldHaveSingleItem();
+            actual.Suffixes.ElementAt(2).Entries.ShouldHaveSingleItem();
+            var pg = actual.Prefixes.ShouldHaveSingleItem();
+            pg.Entries.ShouldHaveSingleItem();
         }
 
         [Fact]
@@ -1004,13 +999,13 @@ public class AffixReaderTests
         {
             var filePath = @"files/fogemorpheme.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CompoundFlag.Should().Be('X');
-            actual.CompoundBegin.Should().Be('Y');
-            actual.OnlyInCompound.Should().Be('Z');
-            actual.CompoundPermitFlag.Should().Be('P');
-            actual.Suffixes.Should().HaveCount(1);
+            actual.CompoundFlag.ShouldBeValue('X');
+            actual.CompoundBegin.ShouldBeValue('Y');
+            actual.OnlyInCompound.ShouldBeValue('Z');
+            actual.CompoundPermitFlag.ShouldBeValue('P');
+            actual.Suffixes.ShouldHaveSingleItem();
         }
 
         [Fact]
@@ -1018,11 +1013,11 @@ public class AffixReaderTests
         {
             var filePath = @"files/forbiddenword.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.ForbiddenWord.Should().Be('X');
-            actual.CompoundFlag.Should().Be('Y');
-            actual.Suffixes.Should().HaveCount(1);
+            actual.ForbiddenWord.ShouldBeValue('X');
+            actual.CompoundFlag.ShouldBeValue('Y');
+            actual.Suffixes.ShouldHaveSingleItem();
         }
 
         [Fact]
@@ -1030,11 +1025,11 @@ public class AffixReaderTests
         {
             var filePath = @"files/forceucase.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.TryString.Should().Be("F");
-            actual.ForceUpperCase.Should().Be('A');
-            actual.CompoundFlag.Should().Be('C');
+            actual.TryString.ShouldBe("F");
+            actual.ForceUpperCase.ShouldBeValue('A');
+            actual.CompoundFlag.ShouldBeValue('C');
         }
 
         [Fact]
@@ -1042,25 +1037,29 @@ public class AffixReaderTests
         {
             var filePath = @"files/fullstrip.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.FullStrip.Should().BeTrue();
-            actual.TryString.Should().Be("aioertnsclmdpgubzfvhÃ q'ACMSkBGPLxEyRTVÃ²IODNwFÃ©Ã¹ÃšÃ¬jUZKHWJYQX");
-            actual.Suffixes.Should().HaveCount(1);
-            actual.Suffixes.First().AFlag.Should().Be('A');
-            actual.Suffixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct);
-            var entry1 = actual.Suffixes.First().Entries[0];
-            entry1.Strip.Should().Be("andare");
-            entry1.Append.Should().Be("vado");
-            entry1.Conditions.GetEncoded().Should().Be(".");
-            var entry2 = actual.Suffixes.First().Entries[1];
-            entry2.Strip.Should().Be("andare");
-            entry2.Append.Should().Be("va");
-            entry2.Conditions.GetEncoded().Should().Be(".");
-            var entry3 = actual.Suffixes.First().Entries[2];
-            entry3.Strip.Should().Be("are");
-            entry3.Append.Should().Be("iamo");
-            entry3.Conditions.GetEncoded().Should().Be("andare");
+            actual.FullStrip.ShouldBeTrue();
+            actual.TryString.ShouldBe("aioertnsclmdpgubzfvhÃ q'ACMSkBGPLxEyRTVÃ²IODNwFÃ©Ã¹ÃšÃ¬jUZKHWJYQX");
+
+            var sg = actual.Suffixes.ShouldHaveSingleItem();
+            sg.AFlag.ShouldBeValue('A');
+            sg.Options.ShouldBe(AffixEntryOptions.CrossProduct);
+
+            var entry1 = sg.Entries[0];
+            entry1.Strip.ShouldBe("andare");
+            entry1.Append.ShouldBe("vado");
+            entry1.Conditions.GetEncoded().ShouldBe(".");
+
+            var entry2 = sg.Entries[1];
+            entry2.Strip.ShouldBe("andare");
+            entry2.Append.ShouldBe("va");
+            entry2.Conditions.GetEncoded().ShouldBe(".")
+                ;
+            var entry3 = sg.Entries[2];
+            entry3.Strip.ShouldBe("are");
+            entry3.Append.ShouldBe("iamo");
+            entry3.Conditions.GetEncoded().ShouldBe("andare");
         }
 
         [Fact]
@@ -1068,53 +1067,59 @@ public class AffixReaderTests
         {
             var filePath = @"files/germancompounding.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CheckSharps.Should().BeTrue();
-            actual.CompoundBegin.Should().Be('U');
-            actual.CompoundMiddle.Should().Be('V');
-            actual.CompoundEnd.Should().Be('W');
-            actual.CompoundPermitFlag.Should().Be('P');
-            actual.OnlyInCompound.Should().Be('X');
-            actual.CompoundMin.Should().Be(1);
-            actual.WordChars.Should().BeEquivalentTo(new[] { '-' });
+            actual.CheckSharps.ShouldBeTrue();
+            actual.CompoundBegin.ShouldBeValue('U');
+            actual.CompoundMiddle.ShouldBeValue('V');
+            actual.CompoundEnd.ShouldBeValue('W');
+            actual.CompoundPermitFlag.ShouldBeValue('P');
+            actual.OnlyInCompound.ShouldBeValue('X');
+            actual.CompoundMin.ShouldBe(1);
+            actual.WordChars.ShouldBe(['-']);
 
-            actual.Suffixes.Should().HaveCount(3);
+            actual.Suffixes.ShouldHaveCount(3);
 
-            actual.Suffixes.First().AFlag.Should().Be('A');
-            actual.Suffixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct);
-            actual.Suffixes.First().Entries.Should().HaveCount(3);
-            actual.Suffixes.First().Entries[0].Strip.Should().BeEmpty();
-            actual.Suffixes.First().Entries[0].Append.Should().Be("s");
-            actual.Suffixes.First().Entries[0].Key.Should().Be("s");
-            actual.Suffixes.First().Entries[0].ContClass.Should().ContainInOrder(new[] { 'U', 'P', 'X' }.OrderBy(x => x));
-            actual.Suffixes.First().Entries[0].Conditions.GetEncoded().Should().Be(".");
-            actual.Suffixes.First().Entries[1].Append.Should().Be("s");
-            actual.Suffixes.First().Entries[1].Key.Should().Be("s");
-            actual.Suffixes.First().Entries[2].Append.Should().BeEmpty();
-            actual.Suffixes.First().Entries[2].Key.Should().BeEmpty();
+            var sg = actual.Suffixes.ElementAt(0);
+            sg.AFlag.ShouldBeValue('A');
+            sg.Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            sg.Entries.ShouldHaveCount(3);
+            sg.Entries[0].Strip.ShouldBeEmpty();
+            sg.Entries[0].Append.ShouldBe("s");
+            sg.Entries[0].Key.ShouldBe("s");
+            sg.Entries[0].ContClass.ShouldBeValues(['U', 'P', 'X'], ignoreOrder: true);
+            sg.Entries[0].Conditions.GetEncoded().ShouldBe(".");
+            sg.Entries[1].Append.ShouldBe("s");
+            sg.Entries[1].Key.ShouldBe("s");
+            sg.Entries[2].Append.ShouldBeEmpty();
+            sg.Entries[2].Key.ShouldBeEmpty();
 
-            actual.Suffixes.Skip(1).First().AFlag.Should().Be('B');
-            actual.Suffixes.Skip(1).First().Entries.Should().HaveCount(2);
+            sg = actual.Suffixes.ElementAt(1);
+            sg.AFlag.ShouldBeValue('B');
+            sg.Entries.ShouldHaveCount(2);
 
-            actual.Suffixes.Skip(2).First().AFlag.Should().Be('C');
-            actual.Suffixes.Skip(2).First().Entries.Should().HaveCount(1);
-            actual.Suffixes.Skip(2).First().Entries[0].Strip.Should().BeEmpty();
-            actual.Suffixes.Skip(2).First().Entries[0].Append.Should().Be("n");
-            actual.Suffixes.Skip(2).First().Entries[0].ContClass.Should().ContainInOrder(new[] { 'D', 'W' });
-            actual.Suffixes.Skip(2).First().Entries[0].Conditions.GetEncoded().Should().Be(".");
+            sg = actual.Suffixes.ElementAt(2);
+            sg.AFlag.ShouldBeValue('C');
+            var se = sg.Entries.ShouldHaveSingleItem();
+            se.Strip.ShouldBeEmpty();
+            se.Append.ShouldBe("n");
+            se.ContClass.ShouldBeValues(['D', 'W']);
+            se.Conditions.GetEncoded().ShouldBe(".");
 
-            actual.ForbiddenWord.Should().Be('Z');
+            actual.ForbiddenWord.ShouldBeValue('Z');
 
-            actual.Prefixes.Should().HaveCount(2);
-            actual.Prefixes.First().AFlag.Should().Be('-');
-            actual.Prefixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct);
-            actual.Prefixes.First().Entries.Should().HaveCount(1);
-            actual.Prefixes.First().Entries[0].Strip.Should().BeEmpty();
-            actual.Prefixes.First().Entries[0].Append.Should().Be("-");
-            actual.Prefixes.First().Entries[0].ContClass.Should().ContainInOrder(new[] { 'P' });
-            actual.Prefixes.First().Entries[0].Conditions.GetEncoded().Should().Be(".");
-            actual.Prefixes.Last().Entries.Should().HaveCount(29);
+            actual.Prefixes.ShouldHaveCount(2);
+
+            var pg = actual.Prefixes.ElementAt(0);
+            pg.AFlag.ShouldBeValue('-');
+            pg.Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            var pe = pg.Entries.ShouldHaveSingleItem();
+            pe.Strip.ShouldBeEmpty();
+            pe.Append.ShouldBe("-");
+            pe.ContClass.ShouldBeValues(['P']);
+            pe.Conditions.GetEncoded().ShouldBe(".");
+
+            actual.Prefixes.ElementAt(1).Entries.ShouldHaveCount(29);
         }
 
         [Fact]
@@ -1122,17 +1127,17 @@ public class AffixReaderTests
         {
             var filePath = @"files/iconv.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.InputConversions.Should().HaveCount(4);
+            actual.InputConversions.ShouldHaveCount(4);
             actual.InputConversions.ContainsKey("ş");
-            actual.InputConversions["ş"][0].Should().Be("ș");
+            actual.InputConversions["ş"][0].ShouldBe("ș");
             actual.InputConversions.ContainsKey("ţ");
-            actual.InputConversions["ţ"][0].Should().Be("ț");
+            actual.InputConversions["ţ"][0].ShouldBe("ț");
             actual.InputConversions.ContainsKey("Ş");
-            actual.InputConversions["Ş"][0].Should().Be("Ș");
+            actual.InputConversions["Ş"][0].ShouldBe("Ș");
             actual.InputConversions.ContainsKey("Ţ");
-            actual.InputConversions["Ţ"][0].Should().Be("Ț");
+            actual.InputConversions["Ţ"][0].ShouldBe("Ț");
         }
 
         [Fact]
@@ -1140,16 +1145,16 @@ public class AffixReaderTests
         {
             var filePath = @"files/ignore.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.IgnoredChars.Should().BeEquivalentTo("aeiou".ToCharArray());
-            actual.Prefixes.Should().HaveCount(1);
-            actual.Prefixes.Single().AFlag.Should().Be('A');
-            actual.Prefixes.Single().Options.Should().Be(AffixEntryOptions.CrossProduct);
-            actual.Prefixes.Single().Entries.Should().HaveCount(1);
-            actual.Prefixes.Single().Entries[0].Strip.Should().BeEmpty();
-            actual.Prefixes.Single().Entries[0].Append.Should().Be("r");
-            actual.Prefixes.Single().Entries[0].Conditions.GetEncoded().Should().Be(".");
+            actual.IgnoredChars.ShouldBe("aeiou");
+            var pg = actual.Prefixes.ShouldHaveSingleItem();
+            pg.AFlag.ShouldBeValue('A');
+            pg.Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            pg.Entries.ShouldHaveSingleItem();
+            pg.Entries[0].Strip.ShouldBeEmpty();
+            pg.Entries[0].Append.ShouldBe("r");
+            pg.Entries[0].Conditions.GetEncoded().ShouldBe(".");
         }
 
         [Fact]
@@ -1157,10 +1162,10 @@ public class AffixReaderTests
         {
             var filePath = @"files/ignoreutf.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.IgnoredChars.Should().BeEquivalentTo("ًٌٍَُِّْ".ToCharArray());
-            actual.WordChars.Should().BeEquivalentTo("ًٌٍَُِّْ".ToCharArray());
+            actual.IgnoredChars.ShouldBe("ًٌٍَُِّْ", ignoreOrder: true);
+            actual.WordChars.ShouldBe("ًٌٍَُِّْ", ignoreOrder: true);
         }
 
         [Fact]
@@ -1168,13 +1173,13 @@ public class AffixReaderTests
         {
             var filePath = @"files/maputf.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.MaxNgramSuggestions.Should().Be(0);
-            actual.RelatedCharacterMap.Should().HaveCount(3);
-            actual.RelatedCharacterMap.First().Should().BeEquivalentTo(new[] { "u", "ú", "ü" });
-            actual.RelatedCharacterMap.Skip(1).First().Should().BeEquivalentTo(new[] { "ö", "ó", "o" });
-            actual.RelatedCharacterMap.Last().Should().BeEquivalentTo(new[] { "ß", "ss" });
+            actual.MaxNgramSuggestions.ShouldBe(0);
+            actual.RelatedCharacterMap.ShouldHaveCount(3);
+            actual.RelatedCharacterMap[0].ShouldBe(["u", "ú", "ü"]);
+            actual.RelatedCharacterMap[1].ShouldBe(["ö", "ó", "o"]);
+            actual.RelatedCharacterMap[2].ShouldBe(["ß", "ss"]);
         }
 
         [Fact]
@@ -1182,19 +1187,25 @@ public class AffixReaderTests
         {
             var filePath = @"files/morph.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.Prefixes.Should().HaveCount(1);
-            actual.Prefixes.Single().AFlag.Should().Be('P');
-            actual.Prefixes.Single().Entries[0].MorphCode.Should().BeEquivalentTo(new[] { "dp:pfx_un", "sp:un" });
+            var pg = actual.Prefixes.ShouldHaveSingleItem();
+            pg.AFlag.ShouldBeValue('P');
+            pg.Entries[0].MorphCode.ShouldBe(["dp:pfx_un", "sp:un"]);
 
-            actual.Suffixes.Should().HaveCount(3);
-            actual.Suffixes.First().AFlag.Should().Be('S');
-            actual.Suffixes.First().Entries[0].MorphCode.Should().BeEquivalentTo(new[] { "is:plur" });
-            actual.Suffixes.Skip(1).First().AFlag.Should().Be('Q');
-            actual.Suffixes.Skip(1).First().Entries[0].MorphCode.Should().BeEquivalentTo(new[] { "is:sg_3" });
-            actual.Suffixes.Last().AFlag.Should().Be('R');
-            actual.Suffixes.Last().Entries[0].MorphCode.Should().BeEquivalentTo(new[] { "ds:der_able" });
+            actual.Suffixes.ShouldHaveCount(3);
+
+            var sg = actual.Suffixes.ElementAt(0);
+            sg.AFlag.ShouldBeValue('S');
+            sg.Entries[0].MorphCode.ShouldBe(["is:plur"]);
+
+            sg = actual.Suffixes.ElementAt(1);
+            sg.AFlag.ShouldBeValue('Q');
+            sg.Entries[0].MorphCode.ShouldBe(["is:sg_3"]);
+
+            sg = actual.Suffixes.ElementAt(2);
+            sg.AFlag.ShouldBeValue('R');
+            sg.Entries[0].MorphCode.ShouldBe(["ds:der_able"]);
         }
 
         [Fact]
@@ -1202,12 +1213,12 @@ public class AffixReaderTests
         {
             var filePath = @"files/needaffix.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.NeedAffix.Should().Be('X');
-            actual.CompoundFlag.Should().Be('Y');
-            actual.Suffixes.Should().HaveCount(1);
-            actual.Suffixes.Single().Entries.Should().HaveCount(1);
+            actual.NeedAffix.ShouldBeValue('X');
+            actual.CompoundFlag.ShouldBeValue('Y');
+            actual.Suffixes.ShouldHaveSingleItem();
+            actual.Suffixes.Single().Entries.ShouldHaveSingleItem();
         }
 
         [Fact]
@@ -1219,33 +1230,33 @@ public class AffixReaderTests
             var value1_2 = "‌"; // NOTE: this is not the empty string
             var key2 = "‍"; // NOTE: this is not the empty string
             var value2_2 = "￰";
-            key1.Should().NotBeEmpty();
-            key2.Should().NotBeEmpty();
-            key2.Should().NotBe(key1);
-            value1_1.Should().NotBeEmpty();
-            value1_2.Should().NotBeEmpty();
-            value1_2.Should().NotBe(value1_1);
+            key1.ShouldNotBeEmpty();
+            key2.ShouldNotBeEmpty();
+            key2.ShouldNotBe(key1);
+            value1_1.ShouldNotBeEmpty();
+            value1_2.ShouldNotBeEmpty();
+            value1_2.ShouldNotBe(value1_1);
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.IgnoredChars.Should().BeEquivalentTo(new[] { '￰' });
-            actual.WordChars.Should().BeEquivalentTo("ःािीॉॊोौॎॏॕॖॗ‌‍".ToCharArray());
+            actual.IgnoredChars.ShouldBe("￰");
+            actual.WordChars.ShouldBe("ःािीॉॊोौॎॏॕॖॗ‌‍");
 
-            actual.InputConversions.Should().HaveCount(4);
+            actual.InputConversions.ShouldHaveCount(4);
 
-            actual.InputConversions[key1][0].Equals(value1_1, StringComparison.Ordinal).Should().BeTrue();
-            actual.InputConversions[key1][(ReplacementValueType)1].Should().BeNull();
-            actual.InputConversions[key1][(ReplacementValueType)2].Equals(value1_2, StringComparison.Ordinal).Should().BeTrue();
-            actual.InputConversions[key1][(ReplacementValueType)3].Should().BeNull();
+            actual.InputConversions[key1][0].Equals(value1_1, StringComparison.Ordinal).ShouldBeTrue();
+            actual.InputConversions[key1][(ReplacementValueType)1].ShouldBeNull();
+            actual.InputConversions[key1][(ReplacementValueType)2].Equals(value1_2, StringComparison.Ordinal).ShouldBeTrue();
+            actual.InputConversions[key1][(ReplacementValueType)3].ShouldBeNull();
 
-            actual.InputConversions[key2][0].Should().BeNull();
-            actual.InputConversions[key2][(ReplacementValueType)1].Should().BeNull();
-            actual.InputConversions[key2][(ReplacementValueType)2].Equals(value2_2, StringComparison.Ordinal).Should().BeTrue();
-            actual.InputConversions[key2][(ReplacementValueType)3].Should().BeNull();
+            actual.InputConversions[key2][0].ShouldBeNull();
+            actual.InputConversions[key2][(ReplacementValueType)1].ShouldBeNull();
+            actual.InputConversions[key2][(ReplacementValueType)2].Equals(value2_2, StringComparison.Ordinal).ShouldBeTrue();
+            actual.InputConversions[key2][(ReplacementValueType)3].ShouldBeNull();
 
-            actual.InputConversions["र्‌य"][0].Should().Be("र्‌य");
+            actual.InputConversions["र्‌य"][0].ShouldBe("र्‌य");
 
-            actual.InputConversions["र्‌व"][0].Should().Be("र्‌व");
+            actual.InputConversions["र्‌व"][0].ShouldBe("र्‌व");
         }
 
         [Fact]
@@ -1253,22 +1264,23 @@ public class AffixReaderTests
         {
             var filePath = @"files/ngram_utf_fix.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.Prefixes.Should().HaveCount(1);
-            actual.Prefixes.Single().AFlag.Should().Be(101);
-            actual.Prefixes.Single().Options.Should().Be(AffixEntryOptions.CrossProduct);
-            actual.Prefixes.Single().Entries.Should().HaveCount(1);
-            actual.Prefixes.Single().Entries.Single().Strip.Should().BeEmpty();
-            actual.Prefixes.Single().Entries.Single().Append.Should().Be("пред");
-            actual.Prefixes.Single().Entries.Single().Conditions.GetEncoded().Should().Be(".");
+            var pg = actual.Prefixes.ShouldHaveSingleItem();
+            pg.AFlag.ShouldBeValue(101);
+            pg.Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            pg.Entries.ShouldHaveSingleItem();
+            pg.Entries.Single().Strip.ShouldBeEmpty();
+            pg.Entries.Single().Append.ShouldBe("пред");
+            pg.Entries.Single().Conditions.GetEncoded().ShouldBe(".");
 
-            actual.Suffixes.Should().HaveCount(3);
-            actual.Suffixes.Skip(1).First().AFlag.Should().Be(2000);
-            actual.Suffixes.Skip(1).First().Entries.Should().HaveCount(3);
-            actual.Suffixes.Skip(1).First().Entries[1].Strip.Should().BeEmpty();
-            actual.Suffixes.Skip(1).First().Entries[1].Append.Should().Be("ами");
-            actual.Suffixes.Skip(1).First().Entries[1].Conditions.GetEncoded().Should().Be(".");
+            actual.Suffixes.ShouldHaveCount(3);
+            var sg = actual.Suffixes.ElementAt(1);
+            sg.AFlag.ShouldBeValue(2000);
+            sg.Entries.ShouldHaveCount(3);
+            sg.Entries[1].Strip.ShouldBeEmpty();
+            sg.Entries[1].Append.ShouldBe("ами");
+            sg.Entries[1].Conditions.GetEncoded().ShouldBe(".");
         }
 
         [Fact]
@@ -1276,16 +1288,16 @@ public class AffixReaderTests
         {
             var filePath = @"files/oconv.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.OutputConversions.Should().HaveCount(7);
-            actual.OutputConversions["a"][0].Should().Be("A");
-            actual.OutputConversions["á"][0].Should().Be("Á");
-            actual.OutputConversions["b"][0].Should().Be("B");
-            actual.OutputConversions["c"][0].Should().Be("C");
-            actual.OutputConversions["d"][0].Should().Be("D");
-            actual.OutputConversions["e"][0].Should().Be("E");
-            actual.OutputConversions["é"][0].Should().Be("É");
+            actual.OutputConversions.ShouldHaveCount(7);
+            actual.OutputConversions["a"][0].ShouldBe("A");
+            actual.OutputConversions["á"][0].ShouldBe("Á");
+            actual.OutputConversions["b"][0].ShouldBe("B");
+            actual.OutputConversions["c"][0].ShouldBe("C");
+            actual.OutputConversions["d"][0].ShouldBe("D");
+            actual.OutputConversions["e"][0].ShouldBe("E");
+            actual.OutputConversions["é"][0].ShouldBe("É");
         }
 
         [Fact]
@@ -1293,24 +1305,24 @@ public class AffixReaderTests
         {
             var filePath = @"files/onlyincompound2.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.OnlyInCompound.Should().Be('O');
-            actual.CompoundFlag.Should().Be('A');
-            actual.CompoundPermitFlag.Should().Be('P');
-            actual.Suffixes.Should().HaveCount(1);
-            actual.Suffixes.First().AFlag.Should().Be('B');
-            actual.Suffixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct);
-            actual.Suffixes.First().Entries.Should().HaveCount(1);
-            actual.Suffixes.First().Entries[0].Strip.Should().BeEmpty();
-            actual.Suffixes.First().Entries[0].Append.Should().Be("s");
-            actual.Suffixes.First().Entries[0].ContClass.Should().ContainInOrder(new[] { 'O', 'P' });
-            actual.Suffixes.First().Entries[0].Conditions.GetEncoded().Should().Be(".");
-            actual.CompoundPatterns.Should().HaveCount(1);
-            actual.CompoundPatterns.Single().Pattern.Should().Be("0");
-            actual.CompoundPatterns.Single().Condition.Should().Be('B');
-            actual.CompoundPatterns.Single().Pattern2.Should().BeEmpty();
-            actual.CompoundPatterns.Single().Condition2.Should().Be('A');
+            actual.OnlyInCompound.ShouldBeValue('O');
+            actual.CompoundFlag.ShouldBeValue('A');
+            actual.CompoundPermitFlag.ShouldBeValue('P');
+            var sg = actual.Suffixes.ShouldHaveSingleItem();
+            sg.AFlag.ShouldBeValue('B');
+            sg.Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            var e = sg.Entries.ShouldHaveSingleItem();
+            e.Strip.ShouldBeEmpty();
+            e.Append.ShouldBe("s");
+            e.ContClass.ShouldBeValues(['O', 'P']);
+            e.Conditions.GetEncoded().ShouldBe(".");
+            var pe = actual.CompoundPatterns.ShouldHaveSingleItem();
+            pe.Pattern.ShouldBe("0");
+            pe.Condition.ShouldBeValue('B');
+            pe.Pattern2.ShouldBeEmpty();
+            pe.Condition2.ShouldBeValue('A');
         }
 
         [Fact]
@@ -1318,30 +1330,30 @@ public class AffixReaderTests
         {
             var filePath = @"files/opentaal_cpdpat.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CompoundBegin.Should().Be('C' << 8 | 'a');
-            actual.CompoundMiddle.Should().Be('C' << 8 | 'b');
-            actual.CompoundEnd.Should().Be('C' << 8 | 'c');
-            actual.CompoundPermitFlag.Should().Be('C' << 8 | 'p');
-            actual.OnlyInCompound.Should().Be('C' << 8 | 'x');
-            actual.CompoundPatterns.Should().HaveCount(1);
-            actual.CompoundPatterns.Single().Pattern.Should().BeEmpty();
-            actual.CompoundPatterns.Single().Condition.Should().Be('C' << 8 | 'h');
-            actual.CompoundPatterns.Single().Pattern2.Should().BeEmpty();
-            actual.CompoundPatterns.Single().Condition2.Should().Be('X' << 8 | 's');
-            actual.Suffixes.Should().HaveCount(1);
-            actual.Suffixes.First().AFlag.Should().Be('C' << 8 | 'h');
-            actual.Suffixes.First().Options.Should().Be(AffixEntryOptions.CrossProduct);
-            actual.Suffixes.First().Entries.Should().HaveCount(2);
-            actual.Suffixes.First().Entries[0].Strip.Should().BeEmpty();
-            actual.Suffixes.First().Entries[0].Append.Should().Be("s");
-            actual.Suffixes.First().Entries[0].ContClass.Should().ContainInOrder(new[] { 'C' << 8 | 'a', 'C' << 8 | 'b', 'C' << 8 | 'x', 'C' << 8 | 'p' }.OrderBy(x => x));
-            actual.Suffixes.First().Entries[0].Conditions.GetEncoded().Should().Be(".");
-            actual.Suffixes.First().Entries[1].Strip.Should().BeEmpty();
-            actual.Suffixes.First().Entries[1].Append.Should().Be("s-");
-            actual.Suffixes.First().Entries[1].ContClass.Should().ContainInOrder(new[] { 'C' << 8 | 'a', 'C' << 8 | 'b', 'C' << 8 | 'c', 'C' << 8 | 'p' }.OrderBy(x => x));
-            actual.Suffixes.First().Entries[1].Conditions.GetEncoded().Should().Be(".");
+            actual.CompoundBegin.ShouldBeValue('C' << 8 | 'a');
+            actual.CompoundMiddle.ShouldBeValue('C' << 8 | 'b');
+            actual.CompoundEnd.ShouldBeValue('C' << 8 | 'c');
+            actual.CompoundPermitFlag.ShouldBeValue('C' << 8 | 'p');
+            actual.OnlyInCompound.ShouldBeValue('C' << 8 | 'x');
+            var pe = actual.CompoundPatterns.ShouldHaveSingleItem();
+            pe.Pattern.ShouldBeEmpty();
+            pe.Condition.ShouldBeValue('C' << 8 | 'h');
+            pe.Pattern2.ShouldBeEmpty();
+            pe.Condition2.ShouldBeValue('X' << 8 | 's');
+            var sg = actual.Suffixes.ShouldHaveSingleItem();
+            sg.AFlag.ShouldBeValue('C' << 8 | 'h');
+            sg.Options.ShouldBe(AffixEntryOptions.CrossProduct);
+            sg.Entries.ShouldHaveCount(2);
+            sg.Entries[0].Strip.ShouldBeEmpty();
+            sg.Entries[0].Append.ShouldBe("s");
+            sg.Entries[0].ContClass.ShouldBeValues(['C' << 8 | 'a', 'C' << 8 | 'b', 'C' << 8 | 'x', 'C' << 8 | 'p'], ignoreOrder: true);
+            sg.Entries[0].Conditions.GetEncoded().ShouldBe(".");
+            sg.Entries[1].Strip.ShouldBeEmpty();
+            sg.Entries[1].Append.ShouldBe("s-");
+            sg.Entries[1].ContClass.ShouldBeValues(['C' << 8 | 'a', 'C' << 8 | 'b', 'C' << 8 | 'c', 'C' << 8 | 'p'], ignoreOrder: true);
+            sg.Entries[1].Conditions.GetEncoded().ShouldBe(".");
         }
 
         [Fact]
@@ -1349,135 +1361,137 @@ public class AffixReaderTests
         {
             var filePath = @"files/opentaal_cpdpat2.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.WordChars.Should().BeEquivalentTo(new[] { '-' });
-            actual.NoSplitSuggestions.Should().BeTrue();
+            actual.WordChars.ShouldBe("-");
+            actual.NoSplitSuggestions.ShouldBeTrue();
         }
 
         [Fact]
         public async Task can_read_phone_aff()
         {
             var filePath = @"files/phone.aff";
-            var expectedPhoneRules = new[]
-            {
-                 "AH(AEIOUY)-^"
-                ,"AR(AEIOUY)-^"
-                ,"A(HR)^      "
-                ,"A^          "
-                ,"AH(AEIOUY)- "
-                ,"AR(AEIOUY)- "
-                ,"A(HR)       "
-                ,"BB-         "
-                ,"B           "
-                ,"CQ-         "
-                ,"CIA         "
-                ,"CH          "
-                ,"C(EIY)-     "
-                ,"CK          "
-                ,"COUGH^      "
-                ,"CC<         "
-                ,"C           "
-                ,"DG(EIY)     "
-                ,"DD-         "
-                ,"D           "
-                ,"É<          "
-                ,"EH(AEIOUY)-^"
-                ,"ER(AEIOUY)-^"
-                ,"E(HR)^      "
-                ,"ENOUGH^$    "
-                ,"E^          "
-                ,"EH(AEIOUY)- "
-                ,"ER(AEIOUY)- "
-                ,"E(HR)       "
-                ,"FF-         "
-                ,"F           "
-                ,"GN^         "
-                ,"GN$         "
-                ,"GNS$        "
-                ,"GNED$       "
-                ,"GH(AEIOUY)- "
-                ,"GH          "
-                ,"GG9         "
-                ,"G           "
-                ,"H           "
-                ,"IH(AEIOUY)-^"
-                ,"IR(AEIOUY)-^"
-                ,"I(HR)^      "
-                ,"I^          "
-                ,"ING6        "
-                ,"IH(AEIOUY)- "
-                ,"IR(AEIOUY)- "
-                ,"I(HR)       "
-                ,"J           "
-                ,"KN^         "
-                ,"KK-         "
-                ,"K           "
-                ,"LAUGH^      "
-                ,"LL-         "
-                ,"L           "
-                ,"MB$         "
-                ,"MM          "
-                ,"M           "
-                ,"NN-         "
-                ,"N           "
-                ,"OH(AEIOUY)-^"
-                ,"OR(AEIOUY)-^"
-                ,"O(HR)^      "
-                ,"O^          "
-                ,"OH(AEIOUY)- "
-                ,"OR(AEIOUY)- "
-                ,"O(HR)       "
-                ,"PH          "
-                ,"PN^         "
-                ,"PP-         "
-                ,"P           "
-                ,"Q           "
-                ,"RH^         "
-                ,"ROUGH^      "
-                ,"RR-         "
-                ,"R           "
-                ,"SCH(EOU)-   "
-                ,"SC(IEY)-    "
-                ,"SH          "
-                ,"SI(AO)-     "
-                ,"SS-         "
-                ,"S           "
-                ,"TI(AO)-     "
-                ,"TH          "
-                ,"TCH--       "
-                ,"TOUGH^      "
-                ,"TT-         "
-                ,"T           "
-                ,"UH(AEIOUY)-^"
-                ,"UR(AEIOUY)-^"
-                ,"U(HR)^      "
-                ,"U^          "
-                ,"UH(AEIOUY)- "
-                ,"UR(AEIOUY)- "
-                ,"U(HR)       "
-                ,"V^          "
-                ,"V           "
-                ,"WR^         "
-                ,"WH^         "
-                ,"W(AEIOU)-   "
-                ,"X^          "
-                ,"X           "
-                ,"Y(AEIOU)-   "
-                ,"ZZ-         "
-                ,"Z           "
-            }
-            .Select(p => p.Trim());
+            var expectedPhoneRulesSection =
+            """
+            AH(AEIOUY)-^
+            AR(AEIOUY)-^
+            A(HR)^      
+            A^          
+            AH(AEIOUY)- 
+            AR(AEIOUY)- 
+            A(HR)       
+            BB-         
+            B           
+            CQ-         
+            CIA         
+            CH          
+            C(EIY)-     
+            CK          
+            COUGH^      
+            CC<         
+            C           
+            DG(EIY)     
+            DD-         
+            D           
+            É<          
+            EH(AEIOUY)-^
+            ER(AEIOUY)-^
+            E(HR)^      
+            ENOUGH^$    
+            E^          
+            EH(AEIOUY)- 
+            ER(AEIOUY)- 
+            E(HR)       
+            FF-         
+            F           
+            GN^         
+            GN$         
+            GNS$        
+            GNED$       
+            GH(AEIOUY)- 
+            GH          
+            GG9         
+            G           
+            H           
+            IH(AEIOUY)-^
+            IR(AEIOUY)-^
+            I(HR)^      
+            I^          
+            ING6        
+            IH(AEIOUY)- 
+            IR(AEIOUY)- 
+            I(HR)       
+            J           
+            KN^         
+            KK-         
+            K           
+            LAUGH^      
+            LL-         
+            L           
+            MB$         
+            MM          
+            M           
+            NN-         
+            N           
+            OH(AEIOUY)-^
+            OR(AEIOUY)-^
+            O(HR)^      
+            O^          
+            OH(AEIOUY)- 
+            OR(AEIOUY)- 
+            O(HR)       
+            PH          
+            PN^         
+            PP-         
+            P           
+            Q           
+            RH^         
+            ROUGH^      
+            RR-         
+            R           
+            SCH(EOU)-   
+            SC(IEY)-    
+            SH          
+            SI(AO)-     
+            SS-         
+            S           
+            TI(AO)-     
+            TH          
+            TCH--       
+            TOUGH^      
+            TT-         
+            T           
+            UH(AEIOUY)-^
+            UR(AEIOUY)-^
+            U(HR)^      
+            U^          
+            UH(AEIOUY)- 
+            UR(AEIOUY)- 
+            U(HR)       
+            V^          
+            V           
+            WR^         
+            WH^         
+            W(AEIOU)-   
+            X^          
+            X           
+            Y(AEIOU)-   
+            ZZ-         
+            Z           
+            """;
+            var expectedPhoneRules = expectedPhoneRulesSection
+                .Split(separator: (char[])null, StringSplitOptions.RemoveEmptyEntries)
+                .Select(e => e.Trim())
+                .ToArray();
+            
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
-
-            actual.Encoding.WebName.Should().Be("iso-8859-1");
-            actual.Warnings.Should().BeEmpty();
-            actual.Phone.Select(p => p.Rule).Should().BeEquivalentTo(expectedPhoneRules);
-            actual.Phone.First().Rule.Should().Be("AH(AEIOUY)-^");
-            actual.Phone.First().Replace.Should().Be("*H");
-            actual.Phone.Last().Rule.Should().Be("Z");
-            actual.Phone.Last().Replace.Should().Be("S");
+            actual.Encoding.WebName.ShouldBe("iso-8859-1");
+            actual.Warnings.ShouldBeEmpty();
+            actual.Phone.Select(p => p.Rule).ShouldBe(expectedPhoneRules);
+            actual.Phone[0].Rule.ShouldBe("AH(AEIOUY)-^");
+            actual.Phone[0].Replace.ShouldBe("*H");
+            actual.Phone.Single(p => p.Rule == "Z").Replace.ShouldBe("S");
         }
 
         [Fact]
@@ -1485,55 +1499,58 @@ public class AffixReaderTests
         {
             var filePath = @"files/rep.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.MaxNgramSuggestions.Should().Be(0);
-            actual.Replacements.Should().HaveCount(8);
-            var replacements = actual.Replacements.ToList();
-            replacements[0].Pattern.Should().Be("f");
-            replacements[0].OutString.Should().Be("ph");
-            replacements[0].Med.Should().Be("ph");
-            replacements[0].Type.Should().Be(ReplacementValueType.Med);
+            actual.MaxNgramSuggestions.ShouldBe(0);
 
-            replacements[1].Pattern.Should().Be("ph");
-            replacements[1].OutString.Should().Be("f");
-            replacements[1].Med.Should().Be("f");
-            replacements[1].Type.Should().Be(ReplacementValueType.Med);
+            var replacements = actual.Replacements;
+            replacements.ShouldHaveCount(8);
 
-            replacements[2].Pattern.Should().Be("shun");
-            replacements[2].OutString.Should().Be("tion");
-            replacements[2].Fin.Should().Be("tion");
-            replacements[2].Type.Should().Be(ReplacementValueType.Fin);
+            replacements[0].Pattern.ShouldBe("f");
+            replacements[0].OutString.ShouldBe("ph");
+            replacements[0].Med.ShouldBe("ph");
+            replacements[0].Type.ShouldBe(ReplacementValueType.Med);
 
-            replacements[3].Pattern.Should().Be("alot");
-            replacements[3].OutString.Should().Be("a lot");
-            replacements[3].Isol.Should().Be("a lot");
-            replacements[3].Type.Should().Be(ReplacementValueType.Isol);
+            replacements[1].Pattern.ShouldBe("ph");
+            replacements[1].OutString.ShouldBe("f");
+            replacements[1].Med.ShouldBe("f");
+            replacements[1].Type.ShouldBe(ReplacementValueType.Med);
 
-            replacements[4].Pattern.Should().Be("foo");
-            replacements[4].OutString.Should().Be("bar");
-            replacements[4].Isol.Should().Be("bar");
-            replacements[4].Type.Should().Be(ReplacementValueType.Isol);
+            replacements[2].Pattern.ShouldBe("shun");
+            replacements[2].OutString.ShouldBe("tion");
+            replacements[2].Fin.ShouldBe("tion");
+            replacements[2].Type.ShouldBe(ReplacementValueType.Fin);
 
-            replacements[5].Pattern.Should().Be("'");
-            replacements[5].OutString.Should().Be(" ");
-            replacements[5].Med.Should().Be(" ");
-            replacements[5].Type.Should().Be(ReplacementValueType.Med);
+            replacements[3].Pattern.ShouldBe("alot");
+            replacements[3].OutString.ShouldBe("a lot");
+            replacements[3].Isol.ShouldBe("a lot");
+            replacements[3].Type.ShouldBe(ReplacementValueType.Isol);
 
-            replacements[6].Pattern.Should().StartWith("vinte");
-            replacements[6].Pattern.Should().EndWith("n");
-            replacements[6].OutString.Should().Be("vinte e un");
-            replacements[6].Isol.Should().Be("vinte e un");
-            replacements[6].Type.Should().Be(ReplacementValueType.Isol);
+            replacements[4].Pattern.ShouldBe("foo");
+            replacements[4].OutString.ShouldBe("bar");
+            replacements[4].Isol.ShouldBe("bar");
+            replacements[4].Type.ShouldBe(ReplacementValueType.Isol);
 
-            replacements[7].Pattern.Should().Be("s");
-            replacements[7].OutString.Should().Be("'s");
-            replacements[7].Med.Should().Be("'s");
-            replacements[7].Type.Should().Be(ReplacementValueType.Med);
+            replacements[5].Pattern.ShouldBe("'");
+            replacements[5].OutString.ShouldBe(" ");
+            replacements[5].Med.ShouldBe(" ");
+            replacements[5].Type.ShouldBe(ReplacementValueType.Med);
 
-            actual.Suffixes.Should().HaveCount(1);
-            actual.Suffixes.Single().AFlag.Should().Be('A');
-            actual.WordChars.Should().BeEquivalentTo(new[] { '\'' });
+            replacements[6].Pattern.ShouldStartWith("vinte");
+            replacements[6].Pattern.ShouldEndWith("n");
+            replacements[6].OutString.ShouldBe("vinte e un");
+            replacements[6].Isol.ShouldBe("vinte e un");
+            replacements[6].Type.ShouldBe(ReplacementValueType.Isol);
+
+            replacements[7].Pattern.ShouldBe("s");
+            replacements[7].OutString.ShouldBe("'s");
+            replacements[7].Med.ShouldBe("'s");
+            replacements[7].Type.ShouldBe(ReplacementValueType.Med);
+
+            var sg = actual.Suffixes.ShouldHaveSingleItem();
+            sg.AFlag.ShouldBeValue('A');
+
+            actual.WordChars.ShouldBe("\'");
         }
 
         [Fact]
@@ -1541,13 +1558,13 @@ public class AffixReaderTests
         {
             var filePath = @"files/reputf.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.MaxNgramSuggestions.Should().Be(0);
-            actual.Replacements.Should().HaveCount(1);
-            actual.Replacements.Single().Pattern.Should().Be("oo");
-            actual.Replacements.Single().OutString.Should().Be("őő");
-            actual.Replacements.Single().Type.Should().Be(ReplacementValueType.Med);
+            actual.MaxNgramSuggestions.ShouldBe(0);
+            var r = actual.Replacements.ShouldHaveSingleItem();
+            r.Pattern.ShouldBe("oo");
+            r.OutString.ShouldBe("őő");
+            r.Type.ShouldBe(ReplacementValueType.Med);
         }
 
         [Fact]
@@ -1555,12 +1572,12 @@ public class AffixReaderTests
         {
             var filePath = @"files/simplifiedtriple.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CheckCompoundTriple.Should().BeTrue();
-            actual.SimplifiedTriple.Should().BeTrue();
-            actual.CompoundMin.Should().Be(2);
-            actual.CompoundFlag.Should().Be('A');
+            actual.CheckCompoundTriple.ShouldBeTrue();
+            actual.SimplifiedTriple.ShouldBeTrue();
+            actual.CompoundMin.ShouldBe(2);
+            actual.CompoundFlag.ShouldBeValue('A');
         }
 
         [Fact]
@@ -1568,9 +1585,9 @@ public class AffixReaderTests
         {
             var filePath = @"files/slash.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.WordChars.Should().BeEquivalentTo(@"/:".ToCharArray());
+            actual.WordChars.ShouldBe(@"/:");
         }
 
         [Fact]
@@ -1578,21 +1595,21 @@ public class AffixReaderTests
         {
             var filePath = @"files/sug.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.MaxNgramSuggestions.Should().Be(0);
-            actual.Replacements.Should().NotBeNull();
-            var entry = actual.Replacements.Should().HaveCount(2).And.Subject.First();
-            entry.Pattern.Should().Be("alot");
-            entry.OutString.Should().Be("a lot");
-            entry.Type.Should().Be(ReplacementValueType.Med);
-            entry.Med.Should().Be("a lot");
-            actual.KeyString.Should().Be("qwertzuiop|asdfghjkl|yxcvbnm|aq");
-            actual.WordChars.Should().BeEquivalentTo(new[] { '.', '-' });
-            actual.ForbiddenWord.Should().Be('?');
+            actual.MaxNgramSuggestions.ShouldBe(0);
+            actual.Replacements.ShouldHaveCount(2);
+            var entry = actual.Replacements[0];
+            entry.Pattern.ShouldBe("alot");
+            entry.OutString.ShouldBe("a lot");
+            entry.Type.ShouldBe(ReplacementValueType.Med);
+            entry.Med.ShouldBe("a lot");
+            actual.KeyString.ShouldBe("qwertzuiop|asdfghjkl|yxcvbnm|aq");
+            actual.WordChars.ShouldBe(['.', '-'], ignoreOrder: true);
+            actual.ForbiddenWord.ShouldBeValue('?');
             var entry2 = actual.Replacements[1];
-            entry2.Pattern.Should().Be("inspite");
-            entry2.OutString.Should().Be("in spite");
+            entry2.Pattern.ShouldBe("inspite");
+            entry2.OutString.ShouldBe("in spite");
         }
 
         [Fact]
@@ -1600,9 +1617,9 @@ public class AffixReaderTests
         {
             var filePath = @"files/utf8_bom.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.Encoding.WebName.Should().Be("utf-8");
+            actual.Encoding.WebName.ShouldBe("utf-8");
         }
 
         [Fact]
@@ -1610,10 +1627,10 @@ public class AffixReaderTests
         {
             var filePath = @"files/utfcompound.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.CompoundMin.Should().Be(3);
-            actual.CompoundFlag.Should().Be('A');
+            actual.CompoundMin.ShouldBe(3);
+            actual.CompoundFlag.ShouldBeValue('A');
         }
 
         [Fact]
@@ -1621,14 +1638,14 @@ public class AffixReaderTests
         {
             var filePath = @"files/warn.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.Warn.Should().Be('W');
-            actual.Suffixes.Should().HaveCount(1);
-            actual.Replacements.Should().HaveCount(1);
-            actual.Replacements.Single().Pattern.Should().Be("foo");
-            actual.Replacements.Single().OutString.Should().Be("bar");
-            actual.Replacements.Single().Type.Should().Be(ReplacementValueType.Med);
+            actual.Warn.ShouldBeValue('W');
+            actual.Suffixes.ShouldHaveSingleItem();
+            var r = actual.Replacements.ShouldHaveSingleItem();
+            r.Pattern.ShouldBe("foo");
+            r.OutString.ShouldBe("bar");
+            r.Type.ShouldBe(ReplacementValueType.Med);
         }
 
         [Fact]
@@ -1636,39 +1653,48 @@ public class AffixReaderTests
         {
             var filePath = @"files/zeroaffix.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.NeedAffix.Should().Be('X');
-            actual.CompoundFlag.Should().Be('Y');
+            actual.NeedAffix.ShouldBeValue('X');
+            actual.CompoundFlag.ShouldBeValue('Y');
 
-            actual.Suffixes.Should().HaveCount(3);
+            actual.Suffixes.ShouldHaveCount(3);
 
-            actual.Suffixes.First().AFlag.Should().Be('A');
-            actual.Suffixes.First().Entries.Should().HaveCount(1);
-            actual.Suffixes.First().Entries[0].Strip.Should().BeEmpty();
-            actual.Suffixes.First().Entries[0].Append.Should().BeEmpty();
-            actual.Suffixes.First().Entries[0].Conditions.GetEncoded().Should().Be(".");
-            actual.Suffixes.First().Entries[0].MorphCode.Should().OnlyContain(x => x == ">");
+            var sg = actual.Suffixes.ElementAt(0);
+            sg.AFlag.ShouldBeValue('A');
 
-            actual.Suffixes.Skip(1).First().AFlag.Should().Be('B');
-            actual.Suffixes.Skip(1).First().Entries.Should().HaveCount(1);
-            actual.Suffixes.Skip(1).First().Entries[0].Strip.Should().BeEmpty();
-            actual.Suffixes.Skip(1).First().Entries[0].Append.Should().BeEmpty();
-            actual.Suffixes.Skip(1).First().Entries[0].Conditions.GetEncoded().Should().Be(".");
-            actual.Suffixes.Skip(1).First().Entries[0].MorphCode.Should().OnlyContain(x => x == "<ZERO>>");
+            var e = sg.Entries.ShouldHaveSingleItem();
+            e.Strip.ShouldBeEmpty();
+            e.Append.ShouldBeEmpty();
+            e.Conditions.GetEncoded().ShouldBe(".");
+            e.MorphCode.ShouldAllBe(x => x == ">");
 
-            actual.Suffixes.Last().AFlag.Should().Be('C');
-            actual.Suffixes.Last().Entries.Should().HaveCount(2);
-            actual.Suffixes.Last().Entries[0].Strip.Should().BeEmpty();
-            actual.Suffixes.Last().Entries[0].Append.Should().BeEmpty();
-            actual.Suffixes.Last().Entries[0].ContClass.Should().ContainInOrder(new[] { 'X', 'A', 'B' }.OrderBy(x => x));
-            actual.Suffixes.Last().Entries[0].Conditions.GetEncoded().Should().Be(".");
-            actual.Suffixes.Last().Entries[0].MorphCode.Should().OnlyContain(x => x == "<ZERODERIV>");
-            actual.Suffixes.Last().Entries[1].Strip.Should().BeEmpty();
-            actual.Suffixes.Last().Entries[1].Append.Should().Be("baz");
-            actual.Suffixes.Last().Entries[1].ContClass.Should().ContainInOrder(new[] { 'X', 'A', 'B' }.OrderBy(x => x));
-            actual.Suffixes.Last().Entries[1].Conditions.GetEncoded().Should().Be(".");
-            actual.Suffixes.Last().Entries[1].MorphCode.Should().OnlyContain(x => x == "<DERIV>");
+            sg = actual.Suffixes.ElementAt(1);
+            sg.AFlag.ShouldBeValue('B');
+
+            e = sg.Entries.ShouldHaveSingleItem();
+            e.Strip.ShouldBeEmpty();
+            e.Append.ShouldBeEmpty();
+            e.Conditions.GetEncoded().ShouldBe(".");
+            e.MorphCode.ShouldAllBe(x => x == "<ZERO>>");
+
+            sg = actual.Suffixes.ElementAt(2);
+            sg.AFlag.ShouldBeValue('C');
+            sg.Entries.ShouldHaveCount(2);
+
+            e = sg.Entries[0];
+            e.Strip.ShouldBeEmpty();
+            e.Append.ShouldBeEmpty();
+            e.ContClass.ShouldBeValues(['X', 'A', 'B'], ignoreOrder: true);
+            e.Conditions.GetEncoded().ShouldBe(".");
+            e.MorphCode.ShouldAllBe(x => x == "<ZERODERIV>");
+
+            e = sg.Entries[1];
+            e.Strip.ShouldBeEmpty();
+            e.Append.ShouldBe("baz");
+            e.ContClass.ShouldBeValues(['X', 'A', 'B'], ignoreOrder: true);
+            e.Conditions.GetEncoded().ShouldBe(".");
+            e.MorphCode.ShouldAllBe(x => x == "<DERIV>");
         }
 
         [Fact]
@@ -1676,32 +1702,29 @@ public class AffixReaderTests
         {
             var filePath = @"files/Russian-English Bilingual.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.FlagMode.Should().Be(FlagParsingMode.Num);
+            actual.FlagMode.ShouldBe(FlagParsingMode.Num);
         }
 
-        public static IEnumerable<object[]> can_read_file_without_exception_args =>
-            Directory.GetFiles("files/", "*.aff").Select(filePath => new object[] { filePath });
-
-        public static HashSet<string> can_read_file_without_exception_warning_exceptions = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "base_utf.aff", // this file has some strange morph lines at the bottom, maybe a bug?
-            "Russian-English Bilingual.aff",
-            "1748408-2.aff",
-            "1748408-4.aff"
-        };
-
-        [Theory, MemberData(nameof(can_read_file_without_exception_args))]
+        [Theory, ClassData(typeof(TestTheories.AffFilePathsData))]
         public async Task can_read_file_without_exception(string filePath)
         {
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.Should().NotBeNull();
+            actual.ShouldNotBeNull();
 
-            if (!can_read_file_without_exception_warning_exceptions.Contains(Path.GetFileName(filePath)))
+            if (Path.GetFileName(filePath) is
+                "base_utf.aff" // this file has some strange morph lines at the bottom, maybe a bug?
+                or "1748408-2.aff"
+                or "1748408-4.aff"
+            )
             {
-                actual.Warnings.Should().BeEmpty();
+                actual.Warnings.ShouldNotBeEmpty();
+            }
+            else
+            {
+                actual.Warnings.ShouldBeEmpty();
             }
         }
     }
@@ -1727,39 +1750,40 @@ public class AffixReaderTests
         {
             var textFileContents = $"LANG {langCode}";
             var expectedCulture = langCode;
+
             if (expectedCulture.EndsWith("-"))
             {
                 expectedCulture = expectedCulture.Substring(0, expectedCulture.Length - 1);
             }
+
             expectedCulture = expectedCulture.Replace('_', '-');
 
             var actual = AffixReader.ReadFromString(textFileContents);
 
-            actual.Language.Should().Be(langCode);
-            actual.Culture.Should().NotBeNull();
+            actual.Language.ShouldBe(langCode);
+            actual.Culture.ShouldNotBeNull();
 
             if (expectedCulture.Equals(actual.Culture.Name, StringComparison.OrdinalIgnoreCase))
             {
-                actual.Culture.Name.Should().Be(expectedCulture);
+                actual.Culture.Name.ShouldBe(expectedCulture);
             }
             else
             {
                 // On linux net48 runs unknown cultures may behave differently
-                expectedCulture.Should().StartWith(actual.Culture.Name, because: "en-XX may change to en, or worse");
-                actual.Language.Should().Be(expectedCulture);
+                expectedCulture.ShouldStartWith(actual.Culture.Name, customMessage: "en-XX may change to en, or worse");
+                actual.Language.ShouldBe(expectedCulture);
             }
         }
 
         [Fact]
-        public void reading_empty_lang_code_leave_language_unset_and_culture_invariant()
+        public void reading_empty_lang_code_leaves_language_unset_and_culture_invariant()
         {
-            var langCode = string.Empty;
-            var textFileContents = $"LANG {langCode}";
+            var textFileContents = "LANG ";
 
             var actual = AffixReader.ReadFromString(textFileContents);
 
-            actual.Language.Should().BeNullOrEmpty();
-            actual.Culture.Should().Be(System.Globalization.CultureInfo.InvariantCulture);
+            actual.Language.ShouldBeNullOrEmpty();
+            actual.Culture.ShouldBe(System.Globalization.CultureInfo.InvariantCulture);
         }
 
         [Theory]
@@ -1771,7 +1795,7 @@ public class AffixReaderTests
 
             var actual = AffixReader.ReadFromString(textFileContents);
 
-            actual.CompoundSyllableNum.Should().Be(parameters);
+            actual.CompoundSyllableNum.ShouldBe(parameters);
         }
 
         [Theory]
@@ -1784,7 +1808,7 @@ public class AffixReaderTests
 
             var actual = AffixReader.ReadFromString(textFileContents);
 
-            actual.CompoundWordMax.Should().Be(expected);
+            actual.CompoundWordMax.ShouldBe(expected);
         }
 
         [Theory]
@@ -1799,7 +1823,7 @@ public class AffixReaderTests
 
             var actual = AffixReader.ReadFromString(textFileContents);
 
-            actual.CompoundMin.Should().Be(expected);
+            actual.CompoundMin.ShouldBe(expected);
         }
 
         [Theory]
@@ -1810,15 +1834,17 @@ public class AffixReaderTests
         public void can_read_compoundroot(string parameters, int expected)
         {
             var textFileContents = string.Empty;
+
             if (parameters.Length > 1)
             {
                 textFileContents += "FLAG LONG\n";
             }
+
             textFileContents += "COMPOUNDROOT " + parameters;
 
             var actual = AffixReader.ReadFromString(textFileContents);
 
-            actual.CompoundRoot.Should().Be(expected);
+            actual.CompoundRoot.ShouldBeValue(expected);
         }
 
         [Theory]
@@ -1828,50 +1854,40 @@ public class AffixReaderTests
         [InlineData("abc", 0, "")]
         public void can_read_compoundsyllable(string parameters, int expectedNumber, string expectedLettersText)
         {
-            var textFileContents = "COMPOUNDSYLLABLE " + parameters;
-            var expectedLetters = expectedLettersText.ToCharArray();
-            Array.Sort(expectedLetters);
+            var actual = AffixReader.ReadFromString($"COMPOUNDSYLLABLE {parameters}");
 
-            var actual = AffixReader.ReadFromString(textFileContents);
-
-            actual.CompoundMaxSyllable.Should().Be(expectedNumber);
-            actual.CompoundVowels.Should().BeEquivalentTo(expectedLetters);
+            actual.CompoundMaxSyllable.ShouldBe(expectedNumber);
+            actual.CompoundVowels.ShouldBe(expectedLettersText, ignoreOrder: true);
         }
 
         [Theory]
         [InlineData("A", 'A')]
         [InlineData("=", '=')]
-        public void can_read_nosuggest(string parameters, int expectedFlag)
+        public void can_read_nosuggest(string parameters, char expectedFlag)
         {
-            var textFileContents = "NOSUGGEST " + parameters;
+            var actual = AffixReader.ReadFromString($"NOSUGGEST {parameters}");
 
-            var actual = AffixReader.ReadFromString(textFileContents);
-
-            actual.NoSuggest.Should().Be(expectedFlag);
+            actual.NoSuggest.ShouldBeValue(expectedFlag);
         }
 
         [Theory]
         [InlineData("A", 'A')]
         [InlineData("=", '=')]
-        public void can_read_nongramsuggest(string parameters, int expectedFlag)
+        public void can_read_nongramsuggest(string parameters, char expectedFlag)
         {
-            var textFileContents = "NONGRAMSUGGEST " + parameters;
+            var actual = AffixReader.ReadFromString($"NONGRAMSUGGEST {parameters}");
 
-            var actual = AffixReader.ReadFromString(textFileContents);
-
-            actual.NoNgramSuggest.Should().Be(expectedFlag);
+            actual.NoNgramSuggest.ShouldBeValue(expectedFlag);
         }
 
         [Theory]
         [InlineData("A", 'A')]
         [InlineData(")", ')')]
-        public void can_read_lemma_present(string parameters, int expectedFlag)
+        public void can_read_lemma_present(string parameters, char expectedFlag)
         {
-            var textFileContents = "LEMMA_PRESENT " + parameters;
+            var actual = AffixReader.ReadFromString($"LEMMA_PRESENT {parameters}");
 
-            var actual = AffixReader.ReadFromString(textFileContents);
-
-            actual.LemmaPresent.Should().Be(expectedFlag);
+            actual.LemmaPresent.ShouldBeValue(expectedFlag);
         }
 
         [Theory]
@@ -1879,11 +1895,9 @@ public class AffixReaderTests
         [InlineData("", null)]
         public void can_read_version(string parameters, string expected)
         {
-            var textFileContents = "VERSION " + parameters;
+            var actual = AffixReader.ReadFromString($"VERSION {parameters}");
 
-            var actual = AffixReader.ReadFromString(textFileContents);
-
-            actual.Version.Should().Be(expected);
+            actual.Version.ShouldBe(expected);
         }
 
         [Theory]
@@ -1892,11 +1906,9 @@ public class AffixReaderTests
         [InlineData("", null)]
         public void can_read_maxdiff(string parameters, int? expected)
         {
-            var textFileContents = "MAXDIFF " + parameters;
+            var actual = AffixReader.ReadFromString($"MAXDIFF {parameters}");
 
-            var actual = AffixReader.ReadFromString(textFileContents);
-
-            actual.MaxDifferency.Should().Be(expected);
+            actual.MaxDifferency.ShouldBe(expected);
         }
 
         [Theory]
@@ -1905,83 +1917,67 @@ public class AffixReaderTests
         [InlineData("", 3)]
         public void can_read_maxcpdsugs(string parameters, int expected)
         {
-            var textFileContents = "MAXCPDSUGS " + parameters;
+            var actual = AffixReader.ReadFromString($"MAXCPDSUGS {parameters}");
 
-            var actual = AffixReader.ReadFromString(textFileContents);
-
-            actual.MaxCompoundSuggestions.Should().Be(expected);
+            actual.MaxCompoundSuggestions.ShouldBe(expected);
         }
 
         [Theory]
         [InlineData("A", 'A')]
         [InlineData("&", '&')]
-        public void can_read_substandard(string parameters, int expectedFlag)
+        public void can_read_substandard(string parameters, char expectedFlag)
         {
-            var textFileContents = "SUBSTANDARD " + parameters;
+            var actual = AffixReader.ReadFromString($"SUBSTANDARD {parameters}");
 
-            var actual = AffixReader.ReadFromString(textFileContents);
-
-            actual.SubStandard.Should().Be(expectedFlag);
+            actual.SubStandard.ShouldBeValue(expectedFlag);
         }
 
         [Fact]
         public void can_read_compoundmoresuffixes()
         {
-            var textFileContents = "COMPOUNDMORESUFFIXES";
+            var actual = AffixReader.ReadFromString("COMPOUNDMORESUFFIXES");
 
-            var actual = AffixReader.ReadFromString(textFileContents);
-
-            actual.CompoundMoreSuffixes.Should().BeTrue();
+            actual.CompoundMoreSuffixes.ShouldBeTrue();
         }
 
         [Fact]
         public void can_read_checknum()
         {
-            var textFileContents = "CHECKNUM";
+            var actual = AffixReader.ReadFromString("CHECKNUM");
 
-            var actual = AffixReader.ReadFromString(textFileContents);
-
-            actual.CheckNum.Should().BeTrue();
+            actual.CheckNum.ShouldBeTrue();
         }
 
         [Fact]
         public void can_read_onlymaxdiff()
         {
-            var textFileContents = "ONLYMAXDIFF";
+            var actual = AffixReader.ReadFromString("ONLYMAXDIFF");
 
-            var actual = AffixReader.ReadFromString(textFileContents);
-
-            actual.OnlyMaxDiff.Should().BeTrue();
+            actual.OnlyMaxDiff.ShouldBeTrue();
         }
 
         [Fact]
         public void can_read_sugswithdots()
         {
-            var textFileContents = "SUGSWITHDOTS";
+            var actual = AffixReader.ReadFromString("SUGSWITHDOTS");
 
-            var actual = AffixReader.ReadFromString(textFileContents);
-
-            actual.SuggestWithDots.Should().BeTrue();
+            actual.SuggestWithDots.ShouldBeTrue();
         }
 
         [Fact]
         public void can_read_forbidwarn()
         {
-            var textFileContents = "FORBIDWARN";
+            var actual = AffixReader.ReadFromString("FORBIDWARN");
 
-            var actual = AffixReader.ReadFromString(textFileContents);
-
-            actual.ForbidWarn.Should().BeTrue();
+            actual.ForbidWarn.ShouldBeTrue();
         }
 
         [Fact]
         public void can_read_unknown_command()
         {
-            var textFileContents = "UNKNOWN arguments";
+            var actual = AffixReader.ReadFromString("UNKNOWN arguments");
 
-            var actual = AffixReader.ReadFromString(textFileContents);
-
-            actual.Should().NotBeNull();
+            actual.ShouldNotBeNull();
         }
 
         [Theory]
@@ -1995,11 +1991,9 @@ public class AffixReaderTests
         [InlineData("UTF-8", FlagParsingMode.Uni)]
         public void can_read_flag_mode(string given, FlagParsingMode expected)
         {
-            var textFileContents = "FLAG " + given;
+            var actual = AffixReader.ReadFromString($"FLAG {given}");
 
-            var actual = AffixReader.ReadFromString(textFileContents);
-
-            actual.FlagMode.Should().Be(expected);
+            actual.FlagMode.ShouldBe(expected);
         }
 
         [Theory]
@@ -2033,15 +2027,14 @@ public class AffixReaderTests
 
             var actual = AffixReader.ReadFromString(textFileContents);
 
-            actual.Replacements.Should().HaveCount(1);
-            var rep = actual.Replacements.Single();
-            rep.Pattern.Should().Be(expectedPattern);
-            rep.OutString.Should().Be(expectedOutString);
-            rep.Type.Should().Be(expectedType);
-            rep.Med.Should().Be(expectedMed);
-            rep.Ini.Should().Be(expectedIni);
-            rep.Fin.Should().Be(expectedFin);
-            rep.Isol.Should().Be(expectedIsol);
+            var rep = actual.Replacements.ShouldHaveSingleItem();
+            rep.Pattern.ShouldBe(expectedPattern);
+            rep.OutString.ShouldBe(expectedOutString);
+            rep.Type.ShouldBe(expectedType);
+            rep.Med.ShouldBe(expectedMed);
+            rep.Ini.ShouldBe(expectedIni);
+            rep.Fin.ShouldBe(expectedFin);
+            rep.Isol.ShouldBe(expectedIsol);
         }
 
         [Fact]
@@ -2049,19 +2042,10 @@ public class AffixReaderTests
         {
             var filePath = @"files/af_am_comments.aff";
 
-            var actual = await AffixReader.ReadFileAsync(filePath);
+            var actual = await AffixReader.ReadFileAsync(filePath, TestCancellation);
 
-            actual.AliasF.Should().HaveCount(1);
-            actual.AliasF[0].Should().BeEquivalentTo([2, 3]);
-            actual.AliasM.Should().HaveCount(1);
-            actual.AliasM[0].Should().BeEquivalentTo(["ts:0"]);
+            actual.AliasF.ShouldHaveSingleItem().ShouldBeValues([2, 3]);
+            actual.AliasM.ShouldHaveSingleItem().ShouldBe(["ts:0"]);
         }
-    }
-
-    protected static string Reversed(string text)
-    {
-        var letters = text.ToCharArray();
-        Array.Reverse(letters);
-        return new string(letters);
     }
 }

@@ -6,6 +6,7 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{312E1AA7-E8A4-4AEB-8D9D-6327A0ED57FB}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		WeCantSpell.Hunspell.v3.ncrunchsolution = WeCantSpell.Hunspell.v3.ncrunchsolution
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeCantSpell.Hunspell", "WeCantSpell.Hunspell\WeCantSpell.Hunspell.csproj", "{6E337874-1C2A-467F-A3F3-0E3908022651}"

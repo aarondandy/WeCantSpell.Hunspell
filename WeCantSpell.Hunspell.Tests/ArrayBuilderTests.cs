@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-using FluentAssertions;
+using Shouldly;
 
 using Xunit;
 
@@ -17,8 +17,7 @@ public class ArrayBuilderTests
         {
             var sut = new ArrayBuilder<int>();
 
-            Action act = () => sut.RemoveAt(0);
-            act.Should().Throw<ArgumentOutOfRangeException>();
+            Should.Throw<ArgumentOutOfRangeException>(() => sut.RemoveAt(0));
         }
 
         [Fact]
@@ -28,7 +27,7 @@ public class ArrayBuilderTests
 
             sut.Remove(1);
 
-            sut.Should().BeEquivalentTo(new int[] { 2, 3});
+            sut.ShouldBe([2, 3]);
         }
 
         [Fact]
@@ -38,7 +37,7 @@ public class ArrayBuilderTests
 
             sut.Remove(2);
 
-            sut.Should().BeEquivalentTo(new int[] { 1, 3 });
+            sut.ShouldBe([1, 3]);
         }
 
         [Fact]
@@ -48,7 +47,7 @@ public class ArrayBuilderTests
 
             sut.Remove(3);
 
-            sut.Should().BeEquivalentTo(new int[] { 1, 2 });
+            sut.ShouldBe([1, 2]);
         }
     }
 
@@ -59,9 +58,9 @@ public class ArrayBuilderTests
         {
             var sut = new ArrayBuilder<int> { 1, 2 };
 
-            sut.AddRange(new int[] { 3, 4, 5 }.AsEnumerable());
+            sut.AddRange((IEnumerable<int>)[3, 4, 5]);
 
-            sut.Should().BeEquivalentTo(new int[] { 1, 2, 3, 4, 5 });
+            sut.ShouldBe([1, 2, 3, 4, 5]);
         }
 
         [Fact]
@@ -69,9 +68,9 @@ public class ArrayBuilderTests
         {
             var sut = new ArrayBuilder<int> { 1, 2 };
 
-            sut.AddRange(new int[] { 3, 4, 5 });
+            sut.AddRange((int[])[3, 4, 5]);
 
-            sut.Should().BeEquivalentTo(new int[] { 1, 2, 3, 4, 5 });
+            sut.ShouldBe([1, 2, 3, 4, 5]);
         }
 
         [Fact]
@@ -81,7 +80,7 @@ public class ArrayBuilderTests
 
             sut.AddRange(new List<int> { 3, 4, 5 });
 
-            sut.Should().BeEquivalentTo(new int[] { 1, 2, 3, 4, 5 });
+            sut.ShouldBe([1, 2, 3, 4, 5]);
         }
     }
 
@@ -92,9 +91,7 @@ public class ArrayBuilderTests
         {
             var sut = new ArrayBuilder<char> { 'a', 'b', 'c' };
 
-            sut[0].Should().Be('a');
-            sut[1].Should().Be('b');
-            sut[2].Should().Be('c');
+            sut.ToArray().ShouldBe(['a', 'b', 'c']);
         }
 
         [Fact]
@@ -103,8 +100,7 @@ public class ArrayBuilderTests
             var sut = new ArrayBuilder<char> { 'a', 'b', 'c', 'd' };
             sut.RemoveAt(3);
 
-            Action act = () => sut[3].Should().Be('d');
-            act.Should().Throw<ArgumentOutOfRangeException>();
+            Should.Throw<ArgumentOutOfRangeException>(() => sut[3].ShouldBe('d'));
         }
 
         [Fact]
@@ -113,9 +109,7 @@ public class ArrayBuilderTests
             var sut = new ArrayBuilder<char> { 'a', 'b', 'c' };
             sut[1] = 'x';
 
-            sut[0].Should().Be('a');
-            sut[1].Should().Be('x');
-            sut[2].Should().Be('c');
+            sut.ToArray().ShouldBe(['a', 'x', 'c']);
         }
     }
 }

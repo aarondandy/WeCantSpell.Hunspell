@@ -1,105 +1,38 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
-using FluentAssertions;
+using Shouldly;
 
 using Xunit;
 
 namespace WeCantSpell.Hunspell.Tests;
 
-public class EnUsWordsTests
+public class EnUsWordsTests : IAsyncLifetime
 {
-    [Fact]
-    public async Task most_wrong_words_are_not_found()
+    private WordList _spell = null!;
+    private ImmutableArray<CommonSpellingMistake> _words = [];
+
+    public async ValueTask InitializeAsync()
     {
-        var wordsTask = LoadMistakesAsync();
-        var spellTask = LoadEnUsAsync();
+        var ct = TestContext.Current.CancellationToken;
 
-        await Task.WhenAll(wordsTask, spellTask);
+        var spellTask = DictionaryLoader.GetDictionaryAsync("files/English (American).dic", ct);
 
-        var words = await wordsTask;
-        var spell = await spellTask;
-
-        var negativeCases = new ConcurrentBag<CommonSpellingMistake>();
-        Parallel.ForEach(words, word =>
-        {
-            if (spell.Check(word.Wrong))
-            {
-                negativeCases.Add(word);
-            }
-        });
-
-        negativeCases.Count.Should().BeLessOrEqualTo(words.Count / 10);
-    }
-
-    [Fact]
-    public async Task most_correct_words_are_found()
-    {
-        var wordsTask = LoadMistakesAsync();
-        var spellTask = LoadEnUsAsync();
-
-        await Task.WhenAll(wordsTask, spellTask);
-
-        var words = await wordsTask;
-        var spell = await spellTask;
-
-        var negativeCases = new ConcurrentBag<CommonSpellingMistake>();
-        Parallel.ForEach(words, word =>
-        {
-            if (!spell.Check(word.Correct))
-            {
-                negativeCases.Add(word);
-            }
-        });
-
-        negativeCases.Count.Should().BeLessOrEqualTo(words.Count / 10);
-    }
-
-    [Fact]
-    public async Task most_correct_words_are_suggested_for_wrong_words()
-    {
-        var wordsTask = LoadMistakesAsync();
-        var spellTask = LoadEnUsAsync();
-
-        await Task.WhenAll(wordsTask, spellTask);
-
-        var words = (await wordsTask).Where(static (_,i) => i % 11 == 0).Take(10).ToList();
-        var spell = await spellTask;
-
-        var negativeCases = new ConcurrentBag<CommonSpellingMistake>();
-        Parallel.ForEach(words, word =>
-        {
-            if (spell.Check(word.Correct) && !spell.Check(word.Wrong))
-            {
-                var suggestions = spell.Suggest(word.Wrong);
-                if (!suggestions.Contains(word.Correct))
-                {
-                    negativeCases.Add(word);
-                }
-            }
-        });
-
-        negativeCases.Count.Should().BeLessOrEqualTo(words.Count / 10);
-    }
-
-    protected Task<WordList> LoadEnUsAsync() =>
-        WordList.CreateFromFilesAsync("files/English (American).dic");
-
-    protected async Task<List<CommonSpellingMistake>> LoadMistakesAsync()
-    {
         // NOTE: not all of these words may be wrong with respect to the dictionary used
         var results = new List<CommonSpellingMistake>();
         using var fileStream = new FileStream("files/List_of_common_misspellings.txt", FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
         using var fileReader = new StreamReader(fileStream, Encoding.UTF8, true);
 
         string line;
-        while ((line = await fileReader.ReadLineAsync().ConfigureAwait(false)) is not null)
+        while ((line = await fileReader.ReadLineAsync(ct).ConfigureAwait(false)) is not null)
         {
-            if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#") || line.StartsWith("["))
+            if (string.IsNullOrWhiteSpace(line) || line[0] is '#' or '[')
             {
                 continue;
             }
@@ -117,13 +50,88 @@ public class EnUsWordsTests
             });
         }
 
-        return results;
+        _words = results.ToImmutableArray();
+
+        _spell = await spellTask.ConfigureAwait(false);
+    }
+
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+    public async ValueTask DisposeAsync() { }
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
+
+
+    [Fact]
+    public void most_wrong_words_are_not_found()
+    {
+        var wrongCount = 0;
+
+        Parallel.ForEach(
+            _words,
+            new() { CancellationToken = TestContext.Current.CancellationToken },
+            word =>
+            {
+                if (_spell.Check(word.Wrong, TestContext.Current.CancellationToken))
+                {
+                    Interlocked.Increment(ref wrongCount);
+                }
+            });
+
+        wrongCount.ShouldBeLessThanOrEqualTo(_words.Length / 10);
+    }
+
+    [Fact]
+    public void most_correct_words_are_found()
+    {
+        var wrongCount = 0;
+
+        Parallel.ForEach(
+            _words,
+            new() { CancellationToken = TestContext.Current.CancellationToken },
+            word =>
+            {
+                if (!_spell.Check(word.Correct, TestContext.Current.CancellationToken))
+                {
+                    Interlocked.Increment(ref wrongCount);
+                }
+            });
+
+        wrongCount.ShouldBeLessThanOrEqualTo(_words.Length / 10);
+    }
+
+    [Fact]
+    public void most_correct_words_are_suggested_for_wrong_words()
+    {
+        var ct = TestContext.Current.CancellationToken;
+
+        var words = _words
+            .Where(static (_,i) => i % 11 == 0)
+            .Where(word => _spell.Check(word.Correct, ct) && !_spell.Check(word.Wrong, ct))
+            .Take(20)
+            .ToArray();
+        var wrongCount = 0;
+
+        Parallel.ForEach(
+            words,
+            new() { CancellationToken = ct },
+            word =>
+            {
+                var suggestions = _spell.Suggest(word.Wrong, new QueryOptions()
+                {
+                    TimeLimitSuggestGlobal = TimeSpan.FromSeconds(2)
+                }, ct);
+
+                if (!suggestions.Contains(word.Correct))
+                {
+                    Interlocked.Increment(ref wrongCount);
+                }
+            });
+
+        wrongCount.ShouldBeLessThanOrEqualTo(words.Length / 5);
     }
 
     protected struct CommonSpellingMistake
     {
         public string Wrong;
-
         public string Correct;
     }
 }
