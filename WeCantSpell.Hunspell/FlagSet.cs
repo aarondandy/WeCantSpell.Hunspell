@@ -17,6 +17,8 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     public static FlagSet Create(FlagValue value) => value.IsZero ? Empty : new(value);
 
+    private static FlagSet Create(char value) => value == FlagValue.ZeroValue ? Empty : new(value);
+
     public static FlagSet Create(FlagValue value0, FlagValue value1)
     {
         if (value0.IsZero)
@@ -94,6 +96,11 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     internal static FlagSet ParseAsChars(ReadOnlySpan<char> text)
     {
+        if (text.Length == 1)
+        {
+            return Create(text[0]);
+        }
+
         return ValidateFlagSetData(text)
             ? CreateFromPreparedValues(text.ToString())
             : CreateFromBuilderChars(new StringBuilderSpan(text));
