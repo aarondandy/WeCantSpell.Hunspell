@@ -2,7 +2,7 @@
 <html lang='en'>
 <head>
 <meta charset='utf-8' />
-<title>WeCantSpell.Hunspell.Benchmarks.NHunspell.Suites.SuggestEnUsSuite-20241113-173334</title>
+<title>WeCantSpell.Hunspell.Benchmarks.NHunspell.Suites.SuggestEnUsSuite-20250223-014323</title>
 
 <style type="text/css">
 	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
@@ -13,19 +13,19 @@
 </head>
 <body>
 <pre><code>
-BenchmarkDotNet v0.13.12, Windows 11 (10.0.22631.4460/23H2/2023Update/SunValley3)
+BenchmarkDotNet v0.14.0, Windows 11 (10.0.26100.3194)
 AMD Ryzen 7 5800H with Radeon Graphics, 1 CPU, 16 logical and 8 physical cores
-  [Host]        : .NET Framework 4.8.1 (4.8.9282.0), X64 RyuJIT VectorSize=256
-  Suggest en-US : .NET Framework 4.8.1 (4.8.9282.0), X64 RyuJIT VectorSize=256
+  [Host]        : .NET Framework 4.8.1 (4.8.9290.0), X64 RyuJIT VectorSize=256
+  Suggest en-US : .NET Framework 4.8.1 (4.8.9290.0), X64 RyuJIT VectorSize=256
 </code></pre>
 <pre><code>Job=Suggest en-US  
 </code></pre>
 
 <table>
-<thead><tr><th>Method                </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Min</th><th>Median</th><th>Ratio</th>
+<thead><tr><th>Method                </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Min</th><th>Median</th><th>Ratio</th><th>RatioSD</th>
 </tr>
-</thead><tbody><tr><td>&#39;Suggest words: WeCantSpell&#39;</td><td>3.580 s</td><td>0.0110 s</td><td>0.0103 s</td><td>3.569 s</td><td>3.577 s</td><td>1.00</td>
-</tr><tr><td>&#39;Suggest words: NHunspell&#39;</td><td>7.781 s</td><td>0.0529 s</td><td>0.0469 s</td><td>7.686 s</td><td>7.774 s</td><td>2.17</td>
+</thead><tbody><tr><td>&#39;Suggest words: WeCantSpell&#39;</td><td>3.559 s</td><td>0.0043 s</td><td>0.0038 s</td><td>3.554 s</td><td>3.558 s</td><td>1.00</td><td>0.00</td>
+</tr><tr><td>&#39;Suggest words: NHunspell&#39;</td><td>7.849 s</td><td>0.0899 s</td><td>0.0999 s</td><td>7.731 s</td><td>7.877 s</td><td>2.21</td><td>0.03</td>
 </tr></tbody></table>
 </body>
 </html>
