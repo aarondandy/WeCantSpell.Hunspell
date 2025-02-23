@@ -39,6 +39,8 @@ public static class TestTheories
             words.AddRange(parts);
         }
 
+        words = words.Distinct().ToList();
+
         if (sort)
         {
             words.Sort(StringComparer.Ordinal);
