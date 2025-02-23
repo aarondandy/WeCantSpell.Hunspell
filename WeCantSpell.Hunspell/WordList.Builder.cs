@@ -54,15 +54,6 @@ public partial class WordList
 
         public WordList ToImmutable(bool allowDestructive)
         {
-            var nGramRestrictedFlags = FlagSet.Create(
-            [
-                Affix.ForbiddenWord,
-                Affix.NoSuggest,
-                Affix.NoNgramSuggest,
-                Affix.OnlyInCompound,
-                SpecialFlags.OnlyUpcaseFlag
-            ]);
-
             TextDictionary<WordEntryDetail[]> entriesByRoot;
             if (allowDestructive)
             {
@@ -93,24 +84,31 @@ public partial class WordList
                 }
             }
 
+            var nGramRestrictedFlags = FlagSet.Create(
+            [
+                Affix.ForbiddenWord,
+                Affix.NoSuggest,
+                Affix.NoNgramSuggest,
+                Affix.OnlyInCompound,
+                SpecialFlags.OnlyUpcaseFlag
+            ]);
             TextDictionary<WordEntryDetail[]> nGramRestrictedDetails = new(1);
-            var details = new ArrayBuilder<WordEntryDetail>();
+            var restrictedRootSetDetails = new ArrayBuilder<WordEntryDetail>();
             foreach (var rootSet in entriesByRoot)
             {
-                details.Clear();
-                details.GrowToCapacity(1);
+                restrictedRootSetDetails.Clear();
 
                 foreach (var entry in rootSet.Value)
                 {
                     if (nGramRestrictedFlags.ContainsAny(entry.Flags))
                     {
-                        details.Add(entry);
+                        restrictedRootSetDetails.Add(entry);
                     }
                 }
 
-                if (details.Count != 0)
+                if (restrictedRootSetDetails.Count > 0)
                 {
-                    nGramRestrictedDetails.Add(rootSet.Key, details.Extract());
+                    nGramRestrictedDetails.Add(rootSet.Key, restrictedRootSetDetails.Extract());
                 }
             }
 
