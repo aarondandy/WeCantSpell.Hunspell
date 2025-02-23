@@ -79,7 +79,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     internal static FlagSet CreateFromPreparedValues(string values)
     {
 #if DEBUG
-        if (!ValidateFlagSetData(values)) ExceptionEx.ThrowArgumentOutOfRange(nameof(values));
+        if (!ValidateFlagSetData(values.AsSpan())) ExceptionEx.ThrowArgumentOutOfRange(nameof(values));
 #endif
 
         return new(values);
@@ -87,32 +87,19 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     internal static FlagSet ParseAsChars(string text)
     {
-        return ValidateFlagSetData(text)
+        return ValidateFlagSetData(text.AsSpan())
             ? CreateFromPreparedValues(text)
             : CreateFromBuilderChars(new StringBuilderSpan(text));
     }
 
     internal static FlagSet ParseAsChars(ReadOnlySpan<char> text)
     {
-        switch (text.Length)
-        {
-            case 0:
-                return Empty;
-
-            case 1:
-                if (text[0] == '\0')
-                {
-                    goto case 0;
-                }
-
-                return new(text[0]);
-
-            default:
-                return CreateFromBuilderChars(new StringBuilderSpan(text));
-        }
+        return ValidateFlagSetData(text)
+            ? CreateFromPreparedValues(text.ToString())
+            : CreateFromBuilderChars(new StringBuilderSpan(text));
     }
 
-    private static bool ValidateFlagSetData(string values)
+    private static bool ValidateFlagSetData(ReadOnlySpan<char> values)
     {
         if (values.Length > 0)
         {
@@ -388,7 +375,6 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     public bool Equals(FlagSet other) => GetInternalText().Equals(other.GetInternalText(), StringComparison.Ordinal);
 
     public override bool Equals(object? obj) => obj is FlagSet set && Equals(set);
-
 
 
 #if HAS_SEARCHVALUES
