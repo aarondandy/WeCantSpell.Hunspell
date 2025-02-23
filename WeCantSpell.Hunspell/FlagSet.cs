@@ -136,10 +136,9 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         return CreateFromBuilderChars(text);
     }
 
-    private static FlagSet CreateFromBuilderChars(ReadOnlySpan<char> text) => CreateFromBuilderChars(new StringBuilderSpan(text));
-
-    private static FlagSet CreateFromBuilderChars(StringBuilderSpan builder)
+    private static FlagSet CreateFromBuilderChars(ReadOnlySpan<char> text)
     {
+        var builder = new StringBuilderSpan(text);
         builder.RemoveAll(FlagValue.ZeroValue);
         builder.Sort();
         builder.RemoveAdjacentDuplicates();
@@ -193,25 +192,15 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
         return new(builder.GetStringAndDispose());
     }
 
-    private static void PrepareMutableFlagValuesForUse(ref Span<char> values)
+    private static FlagSet CreateUsingMutableBuffer(Span<char> values)
     {
         MemoryEx.RemoveAll(ref values, FlagValue.ZeroValue);
 
         values.Sort();
 
         MemoryEx.RemoveAdjacentDuplicates(ref values);
-    }
 
-    private static FlagSet CreateUsingMutableBuffer(Span<char> values)
-    {
-        PrepareMutableFlagValuesForUse(ref values);
-
-        if (values.Length > 0)
-        {
-            return new(values.ToString());
-        }
-
-        return Empty;
+        return new(values.ToString());
     }
 
 #if !HAS_SEARCHVALUES

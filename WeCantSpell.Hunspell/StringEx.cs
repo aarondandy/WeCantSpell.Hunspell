@@ -98,23 +98,29 @@ internal static partial class StringEx
 
     public static string ReplaceIntoString(this ReadOnlySpan<char> text, char oldChar, char newChar)
     {
-        if (text.IsEmpty)
+        if (text.Length > 0)
         {
-            return string.Empty;
+            var replacementStartIndex = text.IndexOf(oldChar);
+            if (replacementStartIndex < 0)
+            {
+                return text.ToString();
+            }
+
+            if (replacementStartIndex == text.Length - 1)
+            {
+                return ConcatString(text.Slice(0, text.Length - 1), newChar);
+            }
+
+            return buildReplaced(replacementStartIndex, text, oldChar, newChar);
         }
 
-        var replaceIndex = text.IndexOf(oldChar);
-        if (replaceIndex < 0)
-        {
-            return text.ToString();
-        }
+        return string.Empty;
 
-        return buildReplaced(replaceIndex, text, oldChar, newChar);
-
-        static string buildReplaced(int replaceIndex, ReadOnlySpan<char> text, char oldChar, char newChar)
+        static string buildReplaced(int startIndex, ReadOnlySpan<char> text, char oldChar, char newChar)
         {
             var builder = new StringBuilderSpan(text);
-            builder.Replace(oldChar, newChar, replaceIndex);
+            builder[startIndex] = newChar;
+            builder.Replace(oldChar, newChar, startIndex + 1);
             return builder.GetStringAndDispose();
         }
     }
@@ -126,18 +132,18 @@ internal static partial class StringEx
             return string.Empty;
         }
 
-        var replaceIndex = text.IndexOf(oldText.AsSpan());
-        if (replaceIndex < 0)
+        var replacementStartIndex = text.IndexOf(oldText.AsSpan());
+        if (replacementStartIndex < 0)
         {
             return text.ToString();
         }
 
-        return buildReplaced(replaceIndex, text, oldText, newText);
+        return buildReplaced(replacementStartIndex, text, oldText, newText);
 
-        static string buildReplaced(int replaceIndex, ReadOnlySpan<char> text, string oldText, string newText)
+        static string buildReplaced(int startIndex, ReadOnlySpan<char> text, string oldText, string newText)
         {
             var builder = new StringBuilderSpan(text);
-            builder.Replace(oldText, newText, replaceIndex);
+            builder.Replace(oldText, newText, startIndex);
             return builder.GetStringAndDispose();
         }
     }
