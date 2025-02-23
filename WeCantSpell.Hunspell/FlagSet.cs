@@ -87,16 +87,26 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     internal static FlagSet ParseAsChars(ReadOnlySpan<char> text)
     {
-        if (text.IsEmpty)
+        switch (text.Length)
         {
-            return Empty;
-        }
+            case 0:
+                return Empty;
 
-        var builder = new StringBuilderSpan(text);
-        builder.RemoveAll(FlagValue.ZeroValue);
-        builder.Sort();
-        builder.RemoveAdjacentDuplicates();
-        return new(builder.GetStringAndDispose());
+            case 1:
+                if (text[0] == '\0')
+                {
+                    goto case 0;
+                }
+
+                return new(text[0]);
+
+            default:
+                var builder = new StringBuilderSpan(text);
+                builder.RemoveAll(FlagValue.ZeroValue);
+                builder.Sort();
+                builder.RemoveAdjacentDuplicates();
+                return new(builder.GetStringAndDispose());
+        }
     }
 
     internal static FlagSet ParseAsLongs(ReadOnlySpan<char> text)
