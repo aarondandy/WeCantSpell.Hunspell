@@ -106,7 +106,7 @@ internal sealed class LineReader : IDisposable
         BufferPosition? lineTerminalPosition = null;
         do
         {
-            var newBufferLines = await ReadNewTextBufferLinesAsync(ct);
+            var newBufferLines = await ReadNewTextBufferLinesAsync(ct).ConfigureAwait(false);
             if (newBufferLines == 0)
             {
                 break;
