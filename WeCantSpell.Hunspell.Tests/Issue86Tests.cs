@@ -7,7 +7,7 @@ using Xunit;
 
 namespace WeCantSpell.Hunspell.Tests;
 
-public class Issue86 : IAsyncLifetime
+public class Issue86Tests : IAsyncLifetime
 {
     private WordList _wordList = null!;
 
