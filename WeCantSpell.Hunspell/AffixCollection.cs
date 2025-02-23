@@ -262,7 +262,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
             foreach (var ptr in allNodes)
             {
                 nptr = ptr.Next;
-                while (nptr is not null && ptr.Affix.IsKeySubset(nptr.Affix.Key))
+                while (nptr is not null && ptr.IsKeySubset(nptr))
                 {
                     nptr = nptr.Next;
                 }
@@ -270,7 +270,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
                 ptr.NextNotEqual = nptr;
                 // ptr.NextEqual = null;
 
-                if (ptr.Next is not null && ptr.Affix.IsKeySubset(ptr.Next.Affix.Key))
+                if (ptr.Next is not null && ptr.IsKeySubset(ptr.Next))
                 {
                     ptr.NextEqual = ptr.Next;
                 }
@@ -285,7 +285,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
             {
                 EntryTreeNode? mptr = null;
                 nptr = ptr.Next;
-                while (nptr is not null && ptr.Affix.IsKeySubset(nptr.Affix.Key))
+                while (nptr is not null && ptr.IsKeySubset(nptr))
                 {
                     mptr = nptr;
                     nptr = nptr.Next;
@@ -548,6 +548,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         public EntryTreeNode? NextEqual { get; set; }
         public EntryTreeNode? NextNotEqual { get; set; }
         public EntryTreeNode? Next { get; set; }
+        public bool IsKeySubset(EntryTreeNode other) => Affix.IsKeySubset(other.Affix.Key.AsSpan());
     }
 }
 
