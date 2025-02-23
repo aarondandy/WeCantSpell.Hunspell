@@ -89,21 +89,17 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     internal static FlagSet ParseAsChars(string text)
     {
-        return ValidateFlagSetData(text.AsSpan())
+        var span = text.AsSpan();
+        return ValidateFlagSetData(span)
             ? CreateFromPreparedValues(text)
-            : CreateFromBuilderChars(new StringBuilderSpan(text));
+            : CreateWithMutation(span);
     }
 
     internal static FlagSet ParseAsChars(ReadOnlySpan<char> text)
     {
-        if (text.Length == 1)
-        {
-            return Create(text[0]);
-        }
-
         return ValidateFlagSetData(text)
             ? CreateFromPreparedValues(text.ToString())
-            : CreateFromBuilderChars(new StringBuilderSpan(text));
+            : CreateWithMutation(text);
     }
 
     private static bool ValidateFlagSetData(ReadOnlySpan<char> values)
@@ -127,6 +123,20 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
         return true;
     }
+
+    static FlagSet CreateWithMutation(ReadOnlySpan<char> text)
+    {
+        if (text.Length <= 4)
+        {
+            Span<char> buffer = (stackalloc char[4]).Slice(0, text.Length);
+            text.CopyTo(buffer);
+            return CreateUsingMutableBuffer(buffer);
+        }
+
+        return CreateFromBuilderChars(text);
+    }
+
+    private static FlagSet CreateFromBuilderChars(ReadOnlySpan<char> text) => CreateFromBuilderChars(new StringBuilderSpan(text));
 
     private static FlagSet CreateFromBuilderChars(StringBuilderSpan builder)
     {
@@ -194,14 +204,14 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     private static FlagSet CreateUsingMutableBuffer(Span<char> values)
     {
-        if (values.IsEmpty)
-        {
-            return Empty;
-        }
-
         PrepareMutableFlagValuesForUse(ref values);
 
-        return new(values.ToString());
+        if (values.Length > 0)
+        {
+            return new(values.ToString());
+        }
+
+        return Empty;
     }
 
 #if !HAS_SEARCHVALUES
