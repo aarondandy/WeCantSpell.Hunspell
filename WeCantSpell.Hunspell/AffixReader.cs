@@ -295,7 +295,7 @@ public sealed partial class AffixReader
                 }
 
                 _builder.Encoding = encoding;
-                _flagParser.Encoding = encoding;
+                _flagParser = _flagParser.WithEncoding(encoding);
                 return true;
             case AffixReaderCommandKind.Language:
                 _builder.Language = parameters.ToString();
@@ -1201,7 +1201,7 @@ public sealed partial class AffixReader
         }
 
         _builder.FlagMode = mode;
-        _flagParser.Mode = mode;
+        _flagParser = _flagParser.WithMode(mode);
         return true;
     }
 

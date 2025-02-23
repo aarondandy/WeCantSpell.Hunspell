@@ -79,10 +79,17 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     internal static FlagSet CreateFromPreparedValues(string values)
     {
 #if DEBUG
-        if (!values.AsSpan().CheckSortedWithoutDuplicates()) ExceptionEx.ThrowInvalidOperation();
+        if (!ValidateFlagSetData(values)) ExceptionEx.ThrowArgumentOutOfRange(nameof(values));
 #endif
 
         return new(values);
+    }
+
+    internal static FlagSet ParseAsChars(string text)
+    {
+        return ValidateFlagSetData(text)
+            ? CreateFromPreparedValues(text)
+            : CreateFromBuilderChars(new StringBuilderSpan(text));
     }
 
     internal static FlagSet ParseAsChars(ReadOnlySpan<char> text)
@@ -101,12 +108,38 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
                 return new(text[0]);
 
             default:
-                var builder = new StringBuilderSpan(text);
-                builder.RemoveAll(FlagValue.ZeroValue);
-                builder.Sort();
-                builder.RemoveAdjacentDuplicates();
-                return new(builder.GetStringAndDispose());
+                return CreateFromBuilderChars(new StringBuilderSpan(text));
         }
+    }
+
+    private static bool ValidateFlagSetData(string values)
+    {
+        if (values.Length > 0)
+        {
+            if (values[0] == '\0')
+            {
+                return false;
+            }
+
+            for (var i = 1; i < values.Length; i++)
+            {
+                var c = values[i];
+                if (c == '\0' || values[i - 1] >= c)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private static FlagSet CreateFromBuilderChars(StringBuilderSpan builder)
+    {
+        builder.RemoveAll(FlagValue.ZeroValue);
+        builder.Sort();
+        builder.RemoveAdjacentDuplicates();
+        return new(builder.GetStringAndDispose());
     }
 
     internal static FlagSet ParseAsLongs(ReadOnlySpan<char> text)

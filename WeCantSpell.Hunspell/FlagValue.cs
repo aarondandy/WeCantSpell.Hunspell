@@ -48,16 +48,28 @@ public readonly struct FlagValue :
 
     internal static FlagValue CreateAsLong(char high, char low) => new(unchecked((char)((high << 8) | low)));
 
-    internal static bool TryParseAsChar(ReadOnlySpan<char> text, out FlagValue value)
+    internal static bool TryParseAsChar(string text, out FlagValue value)
     {
-        if (text.IsEmpty)
+        if (text is { Length: > 0 })
         {
-            value = default;
-            return false;
+            value = new FlagValue(text[0]);
+            return true;
         }
 
-        value = new FlagValue(text[0]);
-        return true;
+        value = default;
+        return false;
+    }
+
+    internal static bool TryParseAsChar(ReadOnlySpan<char> text, out FlagValue value)
+    {
+        if (text.Length > 0)
+        {
+            value = new FlagValue(text[0]);
+            return true;
+        }
+
+        value = default;
+        return false;
     }
 
     internal static bool TryParseAsLong(ReadOnlySpan<char> text, out FlagValue value)
@@ -86,20 +98,36 @@ public readonly struct FlagValue :
         return false;
     }
 
+    internal static FlagValue[] ParseAsChars(string text)
+    {
+        if (text.Length > 0)
+        {
+            var values = new FlagValue[text.Length];
+            for (var i = 0; i < values.Length; i++)
+            {
+                values[i] = new FlagValue(text[i]);
+            }
+
+            return values;
+        }
+
+        return [];
+    }
+
     internal static FlagValue[] ParseAsChars(ReadOnlySpan<char> text)
     {
-        if (text.IsEmpty)
+        if (text.Length > 0)
         {
-            return [];
+            var values = new FlagValue[text.Length];
+            for (var i = 0; i < values.Length; i++)
+            {
+                values[i] = new FlagValue(text[i]);
+            }
+
+            return values;
         }
 
-        var values = new FlagValue[text.Length];
-        for (var i = 0; i < values.Length; i++)
-        {
-            values[i] = new FlagValue(text[i]);
-        }
-
-        return values;
+        return [];
     }
 
     internal static FlagValue[] ParseAsLongs(ReadOnlySpan<char> text)
