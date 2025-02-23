@@ -248,20 +248,24 @@ internal static partial class StringEx
         var firstIsUpper = false;
         var hasLower = false;
 
-        for (var i = 0; i < word.Length; i++)
+        var c = word[0];
+
+        if (char.IsUpper(c))
         {
-            var c = word[i];
+            firstIsUpper = true;
+        }
+        else if (charIsNotNeutral(c, textInfo))
+        {
+            hasLower = true;
+        }
+
+        for (var i = 1; i < word.Length; i++)
+        {
+            c = word[i];
 
             if (!hasFoundMoreCaps && char.IsUpper(c))
             {
-                if (i == 0)
-                {
-                    firstIsUpper = true;
-                }
-                else
-                {
-                    hasFoundMoreCaps = true;
-                }
+                hasFoundMoreCaps = true;
 
                 if (hasLower)
                 {
@@ -271,6 +275,7 @@ internal static partial class StringEx
             else if (!hasLower && charIsNotNeutral(c, textInfo))
             {
                 hasLower = true;
+
                 if (hasFoundMoreCaps)
                 {
                     break;
@@ -284,12 +289,11 @@ internal static partial class StringEx
             {
                 return CapitalizationType.Init;
             }
-            if (!hasLower)
-            {
-                return CapitalizationType.All;
-            }
 
-            return CapitalizationType.HuhInit;
+            if (hasLower)
+            {
+                return CapitalizationType.HuhInit;
+            }
         }
         else
         {
@@ -297,13 +301,14 @@ internal static partial class StringEx
             {
                 return CapitalizationType.None;
             }
-            if (!hasLower)
-            {
-                return CapitalizationType.All;
-            }
 
-            return CapitalizationType.Huh;
+            if (hasLower)
+            {
+                return CapitalizationType.Huh;
+            }
         }
+
+        return CapitalizationType.All;
 
         static bool charIsNotNeutral(char c, TextInfo textInfo) => c < 128
             ? c is >= 'a' and <= 'z' // For ASCII, only the a-z range needs to be checked
