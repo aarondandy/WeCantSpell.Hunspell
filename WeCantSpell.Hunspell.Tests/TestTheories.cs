@@ -26,12 +26,12 @@ public static class TestTheories
         return filePaths;
     }
 
-    public static async Task<List<string>> LoadWordListAsync(string wordListFilePath, Encoding encoding, bool sort = false, CancellationToken ct = default)
+    public static async ValueTask<List<string>> LoadWordListAsync(string filePath, Encoding encoding, bool sort = false, CancellationToken ct = default)
     {
         var words = new List<string>();
 
-        using var fileStream = File.Open(wordListFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        using var reader = new StreamReader(fileStream, encoding);
+        using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
+        using var reader = new StreamReader(fileStream, encoding, true);
 
         while ((await reader.ReadLineAsync(ct).ConfigureAwait(false)) is { } rawLine)
         {
@@ -47,12 +47,12 @@ public static class TestTheories
         return words;
     }
 
-    public static async Task<List<string>> LoadLinesAsync(string wordListFilePath, Encoding encoding, bool allowBlankLines = false, CancellationToken ct = default)
+    public static async ValueTask<List<string>> LoadLinesAsync(string filePath, Encoding encoding, bool allowBlankLines = false, CancellationToken ct = default)
     {
         var lines = new List<string>();
 
-        using var fileStream = File.OpenRead(wordListFilePath);
-        using var reader = new StreamReader(fileStream, encoding);
+        using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
+        using var reader = new StreamReader(fileStream, encoding, true);
 
         while ((await reader.ReadLineAsync(ct).ConfigureAwait(false)) is { } rawLine)
         {

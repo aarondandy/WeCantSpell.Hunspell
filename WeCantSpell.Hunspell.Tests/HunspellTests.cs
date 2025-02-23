@@ -61,7 +61,7 @@ public class HunspellTests
         {
             // attampt to reproduce https://github.com/hunspell/hunspell/issues/446
             var largeInput = new string('X', 102);
-            var dictionary = await WordList.CreateFromFilesAsync(filePath, TestCancellation);
+            var dictionary = await DictionaryLoader.GetDictionaryAsync(filePath, TestCancellation);
 
             var actual = dictionary.Check(largeInput, TestCancellation);
 
