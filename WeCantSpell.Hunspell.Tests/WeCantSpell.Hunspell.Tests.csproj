@@ -8,10 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="files\hun_cover.*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="files\*_comments.*">
+    <None Include="files\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\hunspell-origin\tests\*.*">
@@ -32,22 +29,12 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup Condition="false">
-    <None Include="..\samples\*.aff">
-      <Link>samples\%(Filename)%(Extension)</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\samples\*.dic">
-      <Link>samples\%(Filename)%(Extension)</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="GitHubActionsTestLogger" Version="2.4.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
     <PackageReference Include="Shouldly" Version="4.3.0" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
@@ -58,5 +45,13 @@
   <ItemGroup>
     <ProjectReference Include="..\WeCantSpell.Hunspell\WeCantSpell.Hunspell.csproj" />
   </ItemGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net48' ">
+    <DefineConstants>$(DefineConstants);NO_CANCELLABLE_READLINE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
+    <DefineConstants>$(DefineConstants);NO_CANCELLABLE_READLINE</DefineConstants>
+  </PropertyGroup>
 
 </Project>

@@ -13,10 +13,12 @@ public class Issue86 : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        _wordList = await WordList.CreateFromFilesAsync("files/English (American).dic", TestContext.Current.CancellationToken);
+        _wordList = await DictionaryLoader.GetDictionaryAsync("files/English (American).dic", TestContext.Current.CancellationToken);
     }
 
-    public async ValueTask DisposeAsync() => await Task.Delay(0);
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+    public async ValueTask DisposeAsync() { }
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
 
     [Theory]
     [InlineData("epooied", "epoxied")]

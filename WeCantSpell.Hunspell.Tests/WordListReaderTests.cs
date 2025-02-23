@@ -1051,7 +1051,7 @@ public class WordListReaderTests
         }
 
         [Theory(Skip = "Not performant enough yet")]
-        [MemberData(nameof(large_assortment_of_dic_files))]
+        [ClassData(typeof(TestTheories.DicFilePathsData))]
         public async Task can_read_file_without_exception(string filePath)
         {
             var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
@@ -1074,7 +1074,7 @@ public class WordListReaderTests
         }
 
         [Theory(Skip = "Not performant enough yet")]
-        [MemberData(nameof(large_assortment_of_dic_files))]
+        [ClassData(typeof(TestTheories.DicFilePathsData))]
         public void can_read_file_without_exception(string filePath)
         {
             var actual = WordListReader.ReadFile(filePath);
