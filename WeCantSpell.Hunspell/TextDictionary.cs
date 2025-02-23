@@ -315,7 +315,7 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
         {
             entry = new(hash, key);
             Count++;
-            return ref entry;
+            goto entryMatches;
         }
 
         while (true)
@@ -327,7 +327,7 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
                     ThrowDuplicateKey();
                 }
 
-                return ref entry;
+                goto entryMatches;
             }
 
             if (entry.Next < 0)
@@ -346,10 +346,13 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
             entry = new(hash, key);
             Count++;
 
-            return ref entry;
+            goto entryMatches;
         }
 
         return ref Unsafe.NullRef<Entry>();
+
+    entryMatches:
+        return ref entry;
     }
 
     private int FindNextEmptyCollisionIndex()
