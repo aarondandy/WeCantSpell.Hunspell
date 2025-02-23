@@ -413,21 +413,25 @@ internal sealed class LineReader : IDisposable
             // The characters that were loaded after the encoding change need to be re-decoded
             for (var bufferIndex = _position.BufferIndex; bufferIndex < _buffers.Count; bufferIndex++)
             {
-                var oldCharacters = _buffers[bufferIndex].Memory;
 
+#if NO_ENCODING_SPANS
+
+                var oldBuffer = _buffers[bufferIndex];
+                var offset = _position.BufferIndex == bufferIndex ? _position.SubIndex : 0;
+                var restoredBytes = oldEncoding.GetBytes(oldBuffer.GetRawBuffer(), offset, oldBuffer.Length - offset);
+                var newCharacters = newEncoding.GetChars(restoredBytes);
+
+#else
+
+                var oldCharacters = _buffers[bufferIndex].ReadSpan;
                 if (_position.BufferIndex == bufferIndex)
                 {
                     oldCharacters = oldCharacters.Slice(_position.SubIndex);
                 }
 
-#if NO_ENCODING_SPANS
-                var restoredBytes = oldEncoding.GetBytes(oldCharacters.ToArray());
-                var newCharacters = newEncoding.GetChars(restoredBytes);
-#else
-                var restoredBytesRaw = new byte[_reusableFileReadBuffer.Length];
-                var restoredBytesCount = oldEncoding.GetBytes(oldCharacters.Span, restoredBytesRaw.AsSpan());
-                var restoredBytes = restoredBytesRaw.AsSpan(0, restoredBytesCount);
-
+                Span<byte> restoredBytesRaw = new byte[_reusableFileReadBuffer.Length];
+                var restoredBytesCount = oldEncoding.GetBytes(oldCharacters, restoredBytesRaw);
+                var restoredBytes = restoredBytesRaw.Slice(0, restoredBytesCount);
                 var newCharacters = new char[newEncoding.GetCharCount(restoredBytes)];
                 var newCharactersCount = newEncoding.GetChars(restoredBytes, newCharacters.AsSpan());
 
@@ -435,6 +439,7 @@ internal sealed class LineReader : IDisposable
                 if (newCharactersCount != newCharacters.Length) ExceptionEx.ThrowInvalidOperation();
 #endif
 #endif
+
                 _buffers[bufferIndex] = new TextBufferLine(newCharacters, preventRecycle: true);
 
             }
@@ -470,7 +475,9 @@ internal sealed class LineReader : IDisposable
         }
 
         private readonly char[] _raw;
+
         public ReadOnlyMemory<char> Memory;
+
         private readonly bool _preventRecycle;
 
         public readonly int Length => Memory.Length;
@@ -492,6 +499,8 @@ internal sealed class LineReader : IDisposable
         {
             Memory = ReadOnlyMemory<char>.Empty;
         }
+
+        internal char[] GetRawBuffer() => _raw;
     }
 
     private struct BufferPosition
