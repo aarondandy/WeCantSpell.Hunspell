@@ -89,9 +89,9 @@ public sealed class PrefixEntry : AffixEntry
 
     public override string Key => Append;
 
-    public override bool IsKeySubset(ReadOnlySpan<char> s2) => StringEx.IsSubset(Key, s2);
+    public override bool IsKeySubset(ReadOnlySpan<char> s2) => StringEx.IsSubset(Append, s2);
 
-    public override bool IsWordSubset(ReadOnlySpan<char> s2) => StringEx.IsSubset(Key, s2);
+    public override bool IsWordSubset(ReadOnlySpan<char> s2) => StringEx.IsSubset(Append, s2);
 
     internal override bool TestCondition(ReadOnlySpan<char> word) => Conditions.IsStartingMatch(word);
 }
@@ -109,12 +109,14 @@ public sealed class SuffixEntry : AffixEntry
         AffixEntryOptions options)
         : base(strip, affixText, conditions, morph, contClass, aFlag, options)
     {
-        Key = Append.GetReversed();
+        _key = Append.GetReversed();
     }
 
-    public override string Key { get; }
+    private readonly string _key;
 
-    public override bool IsKeySubset(ReadOnlySpan<char> s2) => StringEx.IsSubset(Key, s2);
+    public override string Key => _key;
+
+    public override bool IsKeySubset(ReadOnlySpan<char> s2) => StringEx.IsSubset(_key, s2);
 
     public override bool IsWordSubset(ReadOnlySpan<char> s2)
     {

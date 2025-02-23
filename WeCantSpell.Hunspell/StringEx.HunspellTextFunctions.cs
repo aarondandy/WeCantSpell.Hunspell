@@ -35,22 +35,21 @@ internal static partial class StringEx
 
     public static bool IsSubset(string s1, ReadOnlySpan<char> s2)
     {
-        return s1.Length <= s2.Length && check(s1.AsSpan(), s2);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static bool check(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
+        if (s1.Length <= s2.Length)
         {
             for (var i = 0; i < s1.Length; i++)
             {
-                var c = s1[i];
-                if (c != '.' && s2[i] != c)
+                if (s1[i] != '.' && s1[i] != s2[i])
                 {
-                    return false;
+                    goto fail;
                 }
             }
 
             return true;
         }
+
+    fail:
+        return false;
     }
 
     public static bool IsNumericWord(ReadOnlySpan<char> word)
