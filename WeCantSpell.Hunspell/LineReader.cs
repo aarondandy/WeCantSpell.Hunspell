@@ -135,7 +135,7 @@ internal sealed class LineReader : IDisposable
         if (_position.BufferIndex == lineTerminalPosition.BufferIndex)
         {
             buffer = _buffers[_position.BufferIndex];
-            Current = buffer.Memory.Slice(_position.SubIndex, lineTerminalPosition.SubIndex - _position.SubIndex);
+            Current = buffer.AsMemory(_position.SubIndex, lineTerminalPosition.SubIndex - _position.SubIndex);
         }
         else
         {
@@ -213,18 +213,18 @@ internal sealed class LineReader : IDisposable
         var joinWriteSpan = joinBufferMemory.Span;
 
         var buffer = _buffers[_position.BufferIndex];
-        buffer.ReadSpan.Slice(_position.SubIndex).CopyTo(joinWriteSpan);
+        buffer.AsSpan(_position.SubIndex).CopyTo(joinWriteSpan);
         joinWriteSpan = joinWriteSpan.Slice(buffer.Length - _position.SubIndex);
 
         for (i = _position.BufferIndex + 1; i < lineTerminalPosition.BufferIndex; i++)
         {
             buffer = _buffers[i];
-            buffer.ReadSpan.CopyTo(joinWriteSpan);
+            buffer.AsSpan().CopyTo(joinWriteSpan);
             joinWriteSpan = joinWriteSpan.Slice(buffer.Length);
         }
 
         buffer = _buffers[lineTerminalPosition.BufferIndex];
-        buffer.ReadSpan.Slice(0, lineTerminalPosition.SubIndex).CopyTo(joinWriteSpan);
+        buffer.AsSpan(0, lineTerminalPosition.SubIndex).CopyTo(joinWriteSpan);
 
         Current = joinBufferMemory;
 
@@ -234,7 +234,7 @@ internal sealed class LineReader : IDisposable
     private BufferPosition GetTerminalBufferPosition()
     {
         var lastBufferIndex = _buffers.Count - 1;
-        return new(lastBufferIndex, lastBufferIndex >= 0 ? _buffers[lastBufferIndex].Memory.Length : 0);
+        return new(lastBufferIndex, lastBufferIndex >= 0 ? _buffers[lastBufferIndex].Length : 0);
     }
 
     private BufferPosition? ScanForwardToNextLineBreak() => ScanForwardToNextLineBreak(_position.BufferIndex, _position.SubIndex);
@@ -321,7 +321,7 @@ internal sealed class LineReader : IDisposable
 
             _decoder.Convert(
                 fileReadByteBuffer,
-                textBuffer.WriteSpan,
+                textBuffer.GetFullWriteSpan(),
                 flush: false,
                 out var bytesConsumed,
                 out var charsProduced,
@@ -413,22 +413,17 @@ internal sealed class LineReader : IDisposable
             // The characters that were loaded after the encoding change need to be re-decoded
             for (var bufferIndex = _position.BufferIndex; bufferIndex < _buffers.Count; bufferIndex++)
             {
+                var offset = _position.BufferIndex == bufferIndex ? _position.SubIndex : 0;
 
 #if NO_ENCODING_SPANS
 
                 var oldBuffer = _buffers[bufferIndex];
-                var offset = _position.BufferIndex == bufferIndex ? _position.SubIndex : 0;
                 var restoredBytes = oldEncoding.GetBytes(oldBuffer.GetRawBuffer(), offset, oldBuffer.Length - offset);
                 var newCharacters = newEncoding.GetChars(restoredBytes);
 
 #else
 
-                var oldCharacters = _buffers[bufferIndex].ReadSpan;
-                if (_position.BufferIndex == bufferIndex)
-                {
-                    oldCharacters = oldCharacters.Slice(_position.SubIndex);
-                }
-
+                var oldCharacters = _buffers[bufferIndex].AsSpan(offset);
                 Span<byte> restoredBytesRaw = new byte[_reusableFileReadBuffer.Length];
                 var restoredBytesCount = oldEncoding.GetBytes(oldCharacters, restoredBytesRaw);
                 var restoredBytes = restoredBytesRaw.Slice(0, restoredBytesCount);
@@ -463,44 +458,67 @@ internal sealed class LineReader : IDisposable
         public TextBufferLine(int rawBufferSize)
         {
             _raw = new char[rawBufferSize];
-            Memory = ReadOnlyMemory<char>.Empty;
+            _length = 0;
             _preventRecycle = false;
         }
 
         public TextBufferLine(char[] raw, bool preventRecycle)
         {
             _raw = raw;
-            Memory = raw.AsMemory();
+            _length = raw.Length;
             _preventRecycle = preventRecycle;
         }
 
         private readonly char[] _raw;
-
-        public ReadOnlyMemory<char> Memory;
-
+        private int _length;
         private readonly bool _preventRecycle;
 
-        public readonly int Length => Memory.Length;
+        public readonly int Length => _length;
 
         public readonly bool PreventRecycle => _preventRecycle;
 
-        public readonly Span<char> WriteSpan => _raw.AsSpan();
+        public readonly int FindLineBreak(int startIndex) => Array.IndexOf(_raw, CharacterLf, startIndex, _length - startIndex);
 
-        public readonly ReadOnlySpan<char> ReadSpan => Memory.Span;
+        public readonly ReadOnlySpan<char> AsSpan() => _raw.AsSpan(0, _length);
 
-        public readonly int FindLineBreak(int startIndex) => Memory.Span.IndexOf(CharacterLf, startIndex);
+        public readonly ReadOnlySpan<char> AsSpan(int offset) => _raw.AsSpan(offset, _length - offset);
+
+        public readonly ReadOnlySpan<char> AsSpan(int offset, int length)
+        {
+#if DEBUG
+            ExceptionEx.ThrowIfArgumentGreaterThan(offset, _length, nameof(offset));
+            ExceptionEx.ThrowIfArgumentGreaterThan(offset + length, _length, nameof(length));
+#endif
+            return _raw.AsSpan(offset, length);
+        }
+
+        public readonly Span<char> GetFullWriteSpan() => _raw.AsSpan();
+
+        public readonly ReadOnlyMemory<char> AsMemory() => _raw.AsMemory(0, _length);
+
+        public readonly ReadOnlyMemory<char> AsMemory(int offset) => _raw.AsMemory(offset, _length - offset);
+
+        public readonly ReadOnlyMemory<char> AsMemory(int offset, int length)
+        {
+#if DEBUG
+            ExceptionEx.ThrowIfArgumentGreaterThan(offset, _length, nameof(offset));
+            ExceptionEx.ThrowIfArgumentGreaterThan(offset + length, _length, nameof(length));
+#endif
+
+            return _raw.AsMemory(offset, length);
+        }
 
         public void PrepareMemoryForUse(int valueSize)
         {
-            Memory = _raw.AsMemory(0, valueSize);
+            _length = valueSize;
         }
 
         public void ResetMemory()
         {
-            Memory = ReadOnlyMemory<char>.Empty;
+            _length = 0;
         }
 
-        internal char[] GetRawBuffer() => _raw;
+        internal readonly char[] GetRawBuffer() => _raw;
     }
 
     private struct BufferPosition
