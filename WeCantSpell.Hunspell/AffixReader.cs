@@ -142,7 +142,7 @@ public sealed partial class AffixReader
         {
             while (await lineReader.ReadNextAsync(cancellationToken))
             {
-                readerInstance.ParseLine(lineReader.Current.Span);
+                readerInstance.ParseLine(lineReader.CurrentSpan);
             }
         }
 
@@ -204,7 +204,7 @@ public sealed partial class AffixReader
         using var lineReader = new LineReader(stream, readerInstance.Encoding, allowEncodingChanges: true);
         while (lineReader.ReadNext())
         {
-            readerInstance.ParseLine(lineReader.Current.Span);
+            readerInstance.ParseLine(lineReader.CurrentSpan);
         }
 
         return readerInstance.BuildConfig(allowDestructive: true);

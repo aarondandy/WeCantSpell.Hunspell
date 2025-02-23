@@ -109,7 +109,7 @@ public sealed class WordListReader
         {
             while (await lineReader.ReadNextAsync(cancellationToken))
             {
-                readerInstance.ParseLine(lineReader.Current.Span);
+                readerInstance.ParseLine(lineReader.CurrentSpan);
             }
         }
 
@@ -191,7 +191,7 @@ public sealed class WordListReader
         using var lineReader = new LineReader(dictionaryStream, affix.Encoding);
         while (lineReader.ReadNext())
         {
-            readerInstance.ParseLine(lineReader.Current.Span);
+            readerInstance.ParseLine(lineReader.CurrentSpan);
         }
 
         return readerInstance.Builder.MoveToImmutable();

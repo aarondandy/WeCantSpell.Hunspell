@@ -42,15 +42,16 @@ internal sealed class LineReader : IDisposable
     private readonly Stream _stream;
     private readonly byte[] _reusableFileReadBuffer;
     private readonly List<TextBufferLine> _buffers;
-    private readonly bool _ownsStream;
-    private bool _allowEncodingChanges;
     private Encoding _encoding;
     private Decoder _decoder;
-    private bool _hasReadPreamble = false;
-    private BufferPosition _position = default;
     private IMemoryOwner<char>? _tempJoinBuffer = null;
+    private ReadOnlyMemory<char> _current = ReadOnlyMemory<char>.Empty;
+    private BufferPosition _position = default;
+    private bool _allowEncodingChanges;
+    private bool _hasReadPreamble = false;
+    private readonly bool _ownsStream;
 
-    public ReadOnlyMemory<char> Current { get; private set; } = ReadOnlyMemory<char>.Empty;
+    public ReadOnlySpan<char> CurrentSpan => _current.Span;
 
     public bool ReadNext()
     {
@@ -135,16 +136,16 @@ internal sealed class LineReader : IDisposable
         if (_position.BufferIndex == lineTerminalPosition.BufferIndex)
         {
             buffer = _buffers[_position.BufferIndex];
-            Current = buffer.AsMemory(_position.SubIndex, lineTerminalPosition.SubIndex - _position.SubIndex);
+            _current = buffer.AsMemory(_position.SubIndex, lineTerminalPosition.SubIndex - _position.SubIndex);
         }
         else
         {
             buffer = UpdateAfterReadWithJoinInternal(lineTerminalPosition);
         }
 
-        if (Current.EndsWith(CharacterCr))
+        if (_current.EndsWith(CharacterCr))
         {
-            Current = Current.Slice(0, Current.Length - 1);
+            _current = _current.Slice(0, _current.Length - 1);
         }
 
         _position = lineTerminalPosition;
@@ -157,45 +158,48 @@ internal sealed class LineReader : IDisposable
 
         if (_allowEncodingChanges)
         {
-            tryChangeEncoding();
-            void tryChangeEncoding()
-            {
-                if (readSetEncoding(Current.Span) is { IsEmpty: false } encodingSpan)
-                {
-                    ChangeEncoding(encodingSpan);
-                    _allowEncodingChanges = false; // Only expect one encoding switch per file
-                }
-            }
-
-            static ReadOnlySpan<char> readSetEncoding(ReadOnlySpan<char> span)
-            {
-                var startIndex = 0;
-                for (; startIndex < span.Length && span[startIndex].IsTabOrSpace(); startIndex++) ;
-
-                if (startIndex > 0)
-                {
-                    span = span.Slice(startIndex);
-                }
-
-                if (span.Length >= 5
-                    && span[0] is 'S' or 's'
-                    && span[1] is 'E' or 'e'
-                    && span[2] is 'T' or 't'
-                    && span[3].IsTabOrSpace())
-                {
-                    for (startIndex = 4; startIndex < span.Length && span[startIndex].IsTabOrSpace(); startIndex++) ;
-
-                    var endIndex = span.Length - 1;
-                    for (; endIndex > startIndex && span[endIndex].IsTabOrSpace(); endIndex--) ;
-
-                    return span.Slice(startIndex, endIndex - startIndex + 1);
-                }
-
-                return [];
-            }
+            UpdateAfterRead_TryChangeEncoding();
         }
 
         return true;
+    }
+
+    private void UpdateAfterRead_TryChangeEncoding()
+    {
+        var encodingSpan = readSetEncoding(_current.Span);
+        if (!encodingSpan.IsEmpty)
+        {
+            ChangeEncoding(encodingSpan);
+            _allowEncodingChanges = false; // Only expect one encoding switch per file
+        }
+
+        static ReadOnlySpan<char> readSetEncoding(ReadOnlySpan<char> span)
+        {
+            var startIndex = 0;
+            for (; startIndex < span.Length && span[startIndex].IsTabOrSpace(); startIndex++) ;
+
+            if (startIndex > 0)
+            {
+                span = span.Slice(startIndex);
+            }
+
+            if (span.Length >= 5
+                && span[0] is 'S' or 's'
+                && span[1] is 'E' or 'e'
+                && span[2] is 'T' or 't'
+                && span[3].IsTabOrSpace())
+            {
+                for (startIndex = 4; startIndex < span.Length && span[startIndex].IsTabOrSpace(); startIndex++) ;
+
+                var endIndex = span.Length - 1;
+                for (; endIndex > startIndex && span[endIndex].IsTabOrSpace(); endIndex--) ;
+
+                return span.Slice(startIndex, endIndex - startIndex + 1);
+            }
+
+            return [];
+        }
+
     }
 
     private TextBufferLine UpdateAfterReadWithJoinInternal(BufferPosition lineTerminalPosition)
@@ -226,7 +230,7 @@ internal sealed class LineReader : IDisposable
         buffer = _buffers[lineTerminalPosition.BufferIndex];
         buffer.AsSpan(0, lineTerminalPosition.SubIndex).CopyTo(joinWriteSpan);
 
-        Current = joinBufferMemory;
+        _current = joinBufferMemory;
 
         return buffer;
     }
@@ -493,10 +497,6 @@ internal sealed class LineReader : IDisposable
         }
 
         public readonly Span<char> GetFullWriteSpan() => _raw.AsSpan();
-
-        public readonly ReadOnlyMemory<char> AsMemory() => _raw.AsMemory(0, _length);
-
-        public readonly ReadOnlyMemory<char> AsMemory(int offset) => _raw.AsMemory(offset, _length - offset);
 
         public readonly ReadOnlyMemory<char> AsMemory(int offset, int length)
         {
