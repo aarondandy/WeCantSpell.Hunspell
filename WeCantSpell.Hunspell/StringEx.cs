@@ -16,13 +16,13 @@ internal static partial class StringEx
 
     public static bool StartsWith(this ReadOnlySpan<char> @this, string value, StringComparison comparison) => @this.StartsWith(value.AsSpan(), comparison);
 
-    public static bool StartsWith(this ReadOnlySpan<char> @this, char value) => !@this.IsEmpty && @this[0] == value;
+    public static bool StartsWith(this ReadOnlySpan<char> @this, char value) => @this.Length > 0 && @this[0] == value;
 
     public static bool EndsWith(this string @this, char character) => @this.Length > 0 && @this[@this.Length - 1] == character;
 
-    public static bool EndsWith(this ReadOnlySpan<char> @this, char value) => !@this.IsEmpty && @this[@this.Length - 1] == value;
+    public static bool EndsWith(this ReadOnlySpan<char> @this, char value) => @this.Length > 0 && @this[@this.Length - 1] == value;
 
-    public static bool EndsWith(this ReadOnlyMemory<char> @this, char value) => !@this.IsEmpty && @this.Span[@this.Length - 1] == value;
+    public static bool EndsWith(this ReadOnlyMemory<char> @this, char value) => @this.Length > 0 && @this.Span[@this.Length - 1] == value;
 
     public static bool Equals(this ReadOnlySpan<char> @this, string value, StringComparison comparison) => @this.Equals(value.AsSpan(), comparison);
 
