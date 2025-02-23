@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -29,6 +30,13 @@ static class Helpers
         return reader.ReadLineAsync();
     }
 #endif
+
+    public static string Reversed(this string value)
+    {
+        var letters = value.ToCharArray();
+        Array.Reverse(letters);
+        return new string(letters);
+    }
 
     public static void ShouldBeValue(this FlagValue actual, char expected)
     {

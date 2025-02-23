@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -113,7 +112,7 @@ public class WordListReaderTests
         public async Task can_read_alias3_dic()
         {
             var filePath = @"files/alias3.dic";
-            var reversedStem = new string("[stem_1]".ToCharArray().Reverse().ToArray());
+            var reversedStem = "[stem_1]".Reversed();
 
             var actual = await WordListReader.ReadFileAsync(filePath, TestCancellation);
 

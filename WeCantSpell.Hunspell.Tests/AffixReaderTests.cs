@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -319,10 +318,10 @@ public class AffixReaderTests
             actual.WordChars.ShouldBeValues(['_']);
             actual.AliasM.ShouldBe(new[]
             {
-                new MorphSet([Reversed(@"affix_1/")]),
-                new MorphSet([Reversed(@"affix_2/")]),
-                new MorphSet([Reversed(@"/suffix_1")]),
-                new MorphSet([Reversed(@"[stem_1]")])
+                new MorphSet([@"affix_1/".Reversed()]),
+                new MorphSet([@"affix_2/".Reversed()]),
+                new MorphSet([@"/suffix_1".Reversed()]),
+                new MorphSet([@"[stem_1]".Reversed()])
             });
 
             actual.Suffixes.ShouldHaveCount(2);
@@ -334,7 +333,7 @@ public class AffixReaderTests
             suffixEntry1.Strip.ShouldBeEmpty();
             suffixEntry1.Append.ShouldBe("ket");
             suffixEntry1.Conditions.GetEncoded().ShouldBe(".");
-            suffixEntry1.MorphCode.ShouldHaveSingleItem().ShouldBe(Reversed(@"affix_1/"));
+            suffixEntry1.MorphCode.ShouldHaveSingleItem().ShouldBe(@"affix_1/".Reversed());
 
             var suffixGroup2 = actual.Suffixes.ElementAt(1);
             suffixGroup2.AFlag.ShouldBeValue('B');
@@ -344,7 +343,7 @@ public class AffixReaderTests
             suffixEntry2.Append.ShouldBe("tem");
             suffixEntry2.ContClass.ShouldBeValues(['A']);
             suffixEntry2.Conditions.GetEncoded().ShouldBe(".");
-            suffixEntry2.MorphCode.ShouldHaveSingleItem().ShouldBe(Reversed(@"affix_2/"));
+            suffixEntry2.MorphCode.ShouldHaveSingleItem().ShouldBe(@"affix_2/".Reversed());
 
             var prefixGroup1 = actual.Prefixes.ShouldHaveSingleItem();
             prefixGroup1.AFlag.ShouldBeValue('C');
@@ -354,7 +353,7 @@ public class AffixReaderTests
             prefixEntry1.Strip.ShouldBeEmpty();
             prefixEntry1.Append.ShouldBe("_tset_");
             prefixEntry1.Conditions.GetEncoded().ShouldBe(".");
-            prefixEntry1.MorphCode.ShouldHaveSingleItem().ShouldBe(Reversed(@"/suffix_1"));
+            prefixEntry1.MorphCode.ShouldHaveSingleItem().ShouldBe(@"/suffix_1".Reversed());
         }
 
         [Fact]
@@ -2048,12 +2047,5 @@ public class AffixReaderTests
             actual.AliasF.ShouldHaveSingleItem().ShouldBeValues([2, 3]);
             actual.AliasM.ShouldHaveSingleItem().ShouldBe(["ts:0"]);
         }
-    }
-
-    protected static string Reversed(string text)
-    {
-        var letters = text.ToCharArray();
-        Array.Reverse(letters);
-        return new string(letters);
     }
 }
