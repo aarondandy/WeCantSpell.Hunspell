@@ -418,29 +418,8 @@ internal sealed class LineReader : IDisposable
             for (var bufferIndex = _position.BufferIndex; bufferIndex < _buffers.Count; bufferIndex++)
             {
                 var offset = _position.BufferIndex == bufferIndex ? _position.SubIndex : 0;
-
-#if NO_ENCODING_SPANS
-
-                var oldBuffer = _buffers[bufferIndex];
-                var restoredBytes = oldEncoding.GetBytes(oldBuffer.GetRawBuffer(), offset, oldBuffer.Length - offset);
-                var newCharacters = newEncoding.GetChars(restoredBytes);
-
-#else
-
-                var oldCharacters = _buffers[bufferIndex].AsSpan(offset);
-                Span<byte> restoredBytesRaw = new byte[_reusableFileReadBuffer.Length];
-                var restoredBytesCount = oldEncoding.GetBytes(oldCharacters, restoredBytesRaw);
-                var restoredBytes = restoredBytesRaw.Slice(0, restoredBytesCount);
-                var newCharacters = new char[newEncoding.GetCharCount(restoredBytes)];
-                var newCharactersCount = newEncoding.GetChars(restoredBytes, newCharacters.AsSpan());
-
-#if DEBUG
-                if (newCharactersCount != newCharacters.Length) ExceptionEx.ThrowInvalidOperation();
-#endif
-#endif
-
+                var newCharacters = _buffers[bufferIndex].ReEncode(offset, oldEncoding, newEncoding);
                 _buffers[bufferIndex] = new TextBufferLine(newCharacters, preventRecycle: true);
-
             }
 
             _position.SubIndex = 0;
@@ -518,7 +497,8 @@ internal sealed class LineReader : IDisposable
             _length = 0;
         }
 
-        internal readonly char[] GetRawBuffer() => _raw;
+        internal readonly char[] ReEncode(int offset, Encoding oldEncoding, Encoding newEncoding) =>
+            newEncoding.GetChars(oldEncoding.GetBytes(_raw, offset, _length - offset));
     }
 
     private struct BufferPosition
