@@ -2742,7 +2742,7 @@ public partial class WordList
                 var z0 = false;
 
                 // check all rules for the same letter
-                foreach (var phoneEntry in Affix.Phone.Where(pe => pe.Rule.StartsWith(c)))
+                foreach (var phoneEntry in Affix.Phone.GetInternalArrayByFirstRuleChar(c))
                 {
                     // check whole string
                     k = 1; // number of found letters
