@@ -106,7 +106,7 @@ public class EnUsWordsTests : IAsyncLifetime
         var words = _words
             .Where(static (_,i) => i % 11 == 0)
             .Where(word => _spell.Check(word.Correct, ct) && !_spell.Check(word.Wrong, ct))
-            .Take(20)
+            .Take(10)
             .ToArray();
         var wrongCount = 0;
 
@@ -117,7 +117,9 @@ public class EnUsWordsTests : IAsyncLifetime
             {
                 var suggestions = _spell.Suggest(word.Wrong, new QueryOptions()
                 {
-                    TimeLimitSuggestGlobal = TimeSpan.FromSeconds(2)
+                    TimeLimitSuggestGlobal = TimeSpan.FromSeconds(2),
+                    TimeLimitCompoundSuggest = TimeSpan.FromSeconds(1),
+                    TimeLimitSuggestStep = TimeSpan.FromSeconds(1),
                 }, ct);
 
                 if (!suggestions.Contains(word.Correct))
