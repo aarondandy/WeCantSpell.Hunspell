@@ -2719,14 +2719,14 @@ public partial class WordList
         /// </remarks>
         private readonly string Phonet(string inword)
         {
-            var len = inword.Length;
-            if (len > Options.MaxPhoneTLen)
+            if (inword.Length > Options.MaxPhoneTLen)
             {
                 return string.Empty;
             }
 
-            var word = inword.ToCharArray().AsSpan();
-            var target = new StringBuilderSpan(word.Length);
+            var len = inword.Length;
+            var word = new SimulatedCString(inword.AsSpan());
+            var target = new StringBuilderSpan(len);
 
             // check word
             var i = 0;
@@ -2737,7 +2737,7 @@ public partial class WordList
             int k0;
             char c;
 
-            while ((c = word.GetCharOrTerminator(i)) != '\0')
+            while (i < word.BufferLength && (c = word[i]) != '\0')
             {
                 var z0 = false;
 
@@ -2752,7 +2752,7 @@ public partial class WordList
                     sIndex++; // important for (see below)  "*(s-1)"
                     var sChar = sString.GetCharOrTerminator(sIndex);
 
-                    while (sChar != '\0' && word.GetCharOrTerminator(i + k) == sChar && !char.IsDigit(sChar) && notConditionMarkup(sChar))
+                    while (sChar != '\0' && word[i + k] == sChar && !char.IsDigit(sChar) && notConditionMarkup(sChar))
                     {
                         k++;
                         sChar = sString.GetCharOrTerminator(++sIndex);
@@ -2762,9 +2762,11 @@ public partial class WordList
                     {
                         // check letters in "(..)"
                         if (
-                            StringEx.MyIsAlpha(word.GetCharOrTerminator(i + k)) // NOTE: could be implied?
+                            StringEx.MyIsAlpha(word[i + k]) // NOTE: could be implied?
                             &&
-                            sString.IndexOf(word.GetCharOrTerminator(i + k), sIndex + 1) >= 0
+                            (sIndex + 1) < sString.Length
+                            &&
+                            sString.IndexOf(word[i + k], sIndex + 1) >= 0
                         )
                         {
                             k++;
@@ -2813,13 +2815,13 @@ public partial class WordList
                             (
                                 i == 0
                                 ||
-                                !StringEx.MyIsAlpha(word.GetCharOrTerminator(i - 1))
+                                !StringEx.MyIsAlpha(word[i - 1])
                             )
                             &&
                             (
                                 sString.GetCharOrTerminator(sIndex + 1) != '$'
                                 ||
-                                !StringEx.MyIsAlpha(word.GetCharOrTerminator(i + k0))
+                                !StringEx.MyIsAlpha(word[i + k0])
                             )
                         )
                         ||
@@ -2828,18 +2830,18 @@ public partial class WordList
                             &&
                             i > 0
                             &&
-                            StringEx.MyIsAlpha(word.GetCharOrTerminator(i - 1))
+                            StringEx.MyIsAlpha(word[i - 1])
                             &&
-                            !StringEx.MyIsAlpha(word.GetCharOrTerminator(i + k0))
+                            !StringEx.MyIsAlpha(word[i + k0])
                         )
                     )
                     {
                         // search for followup rules, if:
                         // parms.followup and k > 1  and  NO '-' in searchstring
 
-                        var c0 = word.GetCharOrTerminator(i + k - 1);
+                        var c0 = word[i + k - 1];
 
-                        if (k > 1 && p0 != '-' && word.GetCharOrTerminator(i + k) != '\0')
+                        if (k > 1 && p0 != '-' && word[i + k] != '\0')
                         {
                             // test follow-up rule for "word[i+k]"
                             foreach (var phoneEntryNested in Affix.Phone.Where(pe => pe.Rule.StartsWith(c0)))
@@ -2850,7 +2852,7 @@ public partial class WordList
                                 sString = phoneEntryNested.Rule;
                                 sChar = sString.GetCharOrTerminator(++sIndex);
 
-                                while (sChar != '\0' && word.GetCharOrTerminator(i + k0) == sChar && !char.IsDigit(sChar) && notConditionMarkup(sChar))
+                                while (sChar != '\0' && word[i + k0] == sChar && !char.IsDigit(sChar) && notConditionMarkup(sChar))
                                 {
                                     k0++;
                                     sChar = sString.GetCharOrTerminator(++sIndex);
@@ -2859,7 +2861,10 @@ public partial class WordList
                                 if (sChar == '(')
                                 {
                                     // check letters
-                                    if (StringEx.MyIsAlpha(word.GetCharOrTerminator(i + k0)) && sString.IndexOf(word.GetCharOrTerminator(i + k0), sIndex + 1) >= 0)
+                                    if (
+                                        (sIndex + 1) < sString.Length
+                                        && StringEx.MyIsAlpha(word[i + k0])
+                                        && sString.IndexOf(word[i + k0], sIndex + 1) >= 0)
                                     {
                                         k0++;
                                         while (sChar != ')' && sChar != '\0')
@@ -2897,7 +2902,7 @@ public partial class WordList
                                     (
                                         sChar == '$'
                                         &&
-                                        !StringEx.MyIsAlpha(word.GetCharOrTerminator(i + k0))
+                                        !StringEx.MyIsAlpha(word[i + k0])
                                     )
                                 )
                                 {
@@ -2941,7 +2946,7 @@ public partial class WordList
                             z = true;
                             k0 = 0;
 
-                            while (sChar != '\0' && word.GetCharOrTerminator(i + k0) != '\0')
+                            while (sChar != '\0' && word[i + k0] != '\0')
                             {
                                 word[i + k0] = sChar;
                                 k0++;
@@ -2950,7 +2955,7 @@ public partial class WordList
 
                             if (k > k0)
                             {
-                                StrMove(word, i + k0, i + k);
+                                word.RemoveRange(i + k0, k - k0);
                             }
 
                             c = word[i];
@@ -2980,7 +2985,8 @@ public partial class WordList
                                     target.Append(c);
                                 }
 
-                                StrMove(word, 0, i + 1);
+                                word.RemoveRange(0, i + 1);
+
                                 len = 0;
                                 z0 = true;
                             }
@@ -3004,22 +3010,10 @@ public partial class WordList
                 }
             }
 
+            word.Dispose();
             return target.GetStringAndDispose();
 
             static bool notConditionMarkup(char c) => c is not '(' or '-' or '<' or '^' or '$';
-        }
-
-        private static void StrMove(Span<char> span, int destIndex, int srcOffset)
-        {
-            for (var srcIndex = srcOffset; srcIndex < span.Length && destIndex < span.Length; srcIndex++, destIndex++)
-            {
-                span[destIndex] = span[srcIndex];
-            }
-
-            if (destIndex < span.Length)
-            {
-                span[destIndex] = '\0';
-            }
         }
 
         private static void InsertSuggestion(List<string> slst, string word)

@@ -36,7 +36,7 @@ internal struct SimulatedCString
         {
 #if DEBUG
             ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
-            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, _bufferLength, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThan(index, _bufferLength, nameof(index)); // Allow access to the virtual or real null terminator
 #endif
             return index < _bufferLength ? _rawBuffer[index] : '\0';
         }
@@ -148,6 +148,26 @@ internal struct SimulatedCString
         }
 
         _terminatedLength = -1;
+    }
+
+    public void RemoveRange(int startIndex, int count)
+    {
+#if DEBUG
+        ExceptionEx.ThrowIfArgumentLessThan(startIndex, 0, nameof(startIndex));
+        ExceptionEx.ThrowIfArgumentGreaterThan(startIndex + count, _bufferLength, nameof(count));
+#endif
+
+        if (count > 0)
+        {
+            if (_terminatedLength >= startIndex)
+            {
+                _terminatedLength = -1;
+            }
+
+            var buffer = _rawBuffer.AsSpan(0, _bufferLength);
+            buffer.Slice(startIndex + count).CopyTo(buffer.Slice(startIndex)); // shift the leftovers backwards
+            buffer.Slice(buffer.Length - count).Clear(); // zero the freed space at the end
+        }
     }
 
     public void Dispose()
