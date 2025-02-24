@@ -77,6 +77,8 @@ public partial class AffixReader
             }
         }
 
+        public override readonly string ToString() => _text.ToString();
+
         private void AdvanceThroughWhiteSpace()
         {
             var i = 0;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 
@@ -12,6 +13,7 @@ namespace WeCantSpell.Hunspell;
 
 public partial class AffixConfig
 {
+    [DebuggerDisplay("Prefixes = {Prefixes}, Suffixes = {Suffixes}")]
     public sealed class Builder
     {
         public Builder()

@@ -33,6 +33,25 @@ internal static partial class StringEx
 
 #endif
 
+    public static bool IsSubset(string s1, string s2)
+    {
+        if (s1.Length <= s2.Length)
+        {
+            for (var i = 0; i < s1.Length; i++)
+            {
+                if (s1[i] != '.' && s1[i] != s2[i])
+                {
+                    goto fail;
+                }
+            }
+
+            return true;
+        }
+
+    fail:
+        return false;
+    }
+
     public static bool IsSubset(string s1, ReadOnlySpan<char> s2)
     {
         if (s1.Length <= s2.Length)
@@ -190,7 +209,7 @@ internal static partial class StringEx
             var expectedFirstLetter = textInfo.ToUpper(actualFirstLetter);
             if (expectedFirstLetter != actualFirstLetter)
             {
-                s = StringEx.ConcatString(expectedFirstLetter, s.AsSpan(1));
+                s = ConcatString(expectedFirstLetter, s.AsSpan(1));
             }
         }
 
@@ -211,7 +230,7 @@ internal static partial class StringEx
             var expectedFirstLetter = textInfo.ToLower(actualFirstLetter);
             if (expectedFirstLetter != actualFirstLetter)
             {
-                s = StringEx.ConcatString(expectedFirstLetter, s.AsSpan(1));
+                s = ConcatString(expectedFirstLetter, s.AsSpan(1));
             }
         }
 

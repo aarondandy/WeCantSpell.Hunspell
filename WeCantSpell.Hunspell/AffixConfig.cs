@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 
@@ -8,6 +9,7 @@ namespace WeCantSpell.Hunspell;
 #pragma warning disable IDE0079 // Remove unnecessary suppression
 #pragma warning disable IDE0301 // Simplify collection initialization
 
+[DebuggerDisplay("Prefixes = {Prefixes}, Suffixes = {Suffixes}")]
 public sealed partial class AffixConfig
 {
     private const string DefaultKeyString = "qwertyuiop|asdfghjkl|zxcvbnm";

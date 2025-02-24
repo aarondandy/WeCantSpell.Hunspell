@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
-using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell;
 
+[DebuggerDisplay("Length = {Length}, Text = {ToString()}")]
 internal ref struct StringBuilderSpan
 {
     public StringBuilderSpan(int capacity)

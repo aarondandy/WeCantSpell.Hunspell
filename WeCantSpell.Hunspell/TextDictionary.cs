@@ -1,14 +1,19 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell;
 
 /// <remarks>
-/// This probably does not need to exist if https://github.com/dotnet/runtime/issues/27229 works out.
+/// I was hopeful that upcoming changes to <see cref="Dictionary{TKey, TValue}"/>
+/// would replace this, but that did not turn out as I expected. Instead, I had to
+/// piece this thing together. It works well enough.
 /// </remarks>
+/// <seealso cref="https://github.com/dotnet/runtime/issues/27229"/>
+[DebuggerDisplay("Count = {Count}")]
 internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>, IDictionary<string, TValue>
 {
     public static TextDictionary<TValue> Clone(TextDictionary<TValue> source)
@@ -114,9 +119,9 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
 
     public int Count { get; private set; }
 
-    public bool HasItems => Count != 0;
+    public bool HasItems => Count > 0;
 
-    public bool IsEmpty => Count == 0;
+    public bool IsEmpty => Count <= 0;
 
     public TValue this[string key]
     {

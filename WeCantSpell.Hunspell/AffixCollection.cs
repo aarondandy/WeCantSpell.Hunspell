@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics;
+
 
 #if HAS_FROZENDICTIONARY || HAS_FROZENSET
 using System.Collections.Frozen;
@@ -99,6 +101,7 @@ namespace WeCantSpell.Hunspell;
 /// 
 /// <seealso cref="PrefixCollection"/>
 /// <seealso cref="SuffixCollection"/>
+[DebuggerDisplay("Count = {Count}")]
 public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAffixEntry>>
     where TAffixEntry : AffixEntry
 {
@@ -122,7 +125,9 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
     public FlagSet ContClasses { get; protected set; } = FlagSet.Empty;
 
-    public bool HasAffixes => _affixesByFlag.Count != 0;
+    public bool HasAffixes => _affixesByFlag.Count > 0;
+
+    public int Count => _affixesByFlag.Count;
 
     public IEnumerable<FlagValue> FlagValues => _affixesByFlag.Keys;
 
@@ -150,6 +155,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
     protected abstract char GetKeyIndexValueForWord(ReadOnlySpan<char> word);
 
+    [DebuggerDisplay("Count = {Count}")]
     public abstract class BuilderBase
     {
         protected BuilderBase()
@@ -160,6 +166,8 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         private protected ArrayBuilder<TAffixEntry> _emptyKeys = [];
         protected HashSet<FlagValue> _contClassAccumulator = [];
         protected Dictionary<char, List<TAffixEntry>> _byFirstKeyChar = [];
+
+        public int Count => _byFlag.Count;
 
         public GroupBuilder ForGroup(FlagValue aFlag)
         {
@@ -300,6 +308,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
             return allNodes[0];
         }
 
+        [DebuggerDisplay("{Builder}")]
         public sealed class GroupBuilder
         {
             internal GroupBuilder(BuilderBase parent, FlagValue aFlag)
@@ -313,6 +322,8 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
             public AffixGroup<TAffixEntry>.Builder Builder { get; }
 
             public FlagValue AFlag => Builder.AFlag;
+
+            public int Count => Builder.Entries.Count;
 
             public AffixEntryOptions Options { get => Builder.Options; set => Builder.Options = value; }
 
@@ -552,6 +563,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
     }
 }
 
+[DebuggerDisplay("Count = {Count}")]
 public sealed class SuffixCollection : AffixCollection<SuffixEntry>
 {
     public static SuffixCollection Empty { get; } = new Builder().BuildCollection(allowDestructive: true);
@@ -573,6 +585,7 @@ public sealed class SuffixCollection : AffixCollection<SuffixEntry>
     }
 }
 
+[DebuggerDisplay("Count = {Count}")]
 public sealed class PrefixCollection : AffixCollection<PrefixEntry>
 {
     public static PrefixCollection Empty { get; } = new Builder().BuildCollection(allowDestructive: true);

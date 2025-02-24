@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace WeCantSpell.Hunspell;
 
+[DebuggerDisplay("RootCount = {RootCount}")]
 public sealed partial class WordList
 {
     public static WordList CreateFromStreams(Stream dictionaryStream, Stream affixStream) =>
@@ -88,6 +90,8 @@ public sealed partial class WordList
 
     public bool IsEmpty => _entriesByRoot.IsEmpty;
 
+    public int RootCount => _entriesByRoot.Count;
+
     public WordEntryDetail[] this[string rootWord] => TryGetEntryDetailsByRootWord(rootWord, out var details) ? details : [];
 
     public bool ContainsEntriesForRootWord(string rootWord) => rootWord is not null && _entriesByRoot.ContainsKey(rootWord);
@@ -136,15 +140,6 @@ public sealed partial class WordList
         return result;
     }
 
-    private void ApplyRootOutputConversions(ref SpellCheckResult result)
-    {
-        // output conversion
-        if (result.Correct && _affix.OutputConversions.TryConvert(result.Root, out var converted) && !string.Equals(result.Root, converted, StringComparison.Ordinal))
-        {
-            result = SpellCheckResult.Success(converted, result.Info);
-        }
-    }
-
     public IEnumerable<string> Suggest(string word) => Suggest(word, options: null, CancellationToken.None);
 
     public IEnumerable<string> Suggest(ReadOnlySpan<char> word) => Suggest(word, options: null, CancellationToken.None);
@@ -160,6 +155,25 @@ public sealed partial class WordList
     public IEnumerable<string> Suggest(string word, QueryOptions? options, CancellationToken cancellationToken) => new QuerySuggest(this, options, cancellationToken).Suggest(word);
 
     public IEnumerable<string> Suggest(ReadOnlySpan<char> word, QueryOptions? options, CancellationToken cancellationToken) => new QuerySuggest(this, options, cancellationToken).Suggest(word);
+
+    public void Add(string word)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Add(string word, WordEntryDetail detail)
+    {
+        throw new NotImplementedException();
+    }
+
+    private void ApplyRootOutputConversions(ref SpellCheckResult result)
+    {
+        // output conversion
+        if (result.Correct && _affix.OutputConversions.TryConvert(result.Root, out var converted) && !string.Equals(result.Root, converted, StringComparison.Ordinal))
+        {
+            result = SpellCheckResult.Success(converted, result.Info);
+        }
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool TryGetEntryDetailsByRootWord(

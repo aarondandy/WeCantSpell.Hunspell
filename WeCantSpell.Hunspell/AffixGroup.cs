@@ -29,6 +29,7 @@ public sealed class AffixGroup<TAffixEntry> where TAffixEntry : AffixEntry
     /// </summary>
     public AffixEntryOptions Options { get; }
 
+    [DebuggerDisplay("AFlag = {AFlag}, Count = {Entries}")]
     public sealed class Builder
     {
         // TODO: Replace this builder with factory methods

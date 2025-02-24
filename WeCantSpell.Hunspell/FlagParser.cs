@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Buffers;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace WeCantSpell.Hunspell;
 
+[DebuggerDisplay("Mode = {Mode}, Encoding = {Encoding}")]
 internal readonly struct FlagParser
 {
     public FlagParser(FlagParsingMode mode, Encoding encoding)

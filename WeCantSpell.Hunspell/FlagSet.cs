@@ -17,7 +17,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     public static FlagSet Create(FlagValue value) => value.IsZero ? Empty : new(value);
 
-    private static FlagSet Create(char value) => value == FlagValue.ZeroValue ? Empty : new(value);
+    public static FlagSet Create(char value) => value == FlagValue.ZeroValue ? Empty : new(value);
 
     public static FlagSet Create(FlagValue value0, FlagValue value1)
     {
