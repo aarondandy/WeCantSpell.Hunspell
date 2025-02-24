@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
@@ -230,13 +229,17 @@ public partial class AffixConfig
         /// Ordinal numbers for affix flag compression.
         /// </summary>
         /// <seealso cref="AffixConfig.AliasF"/>
-        public ImmutableArray<FlagSet>.Builder AliasF { get; } = ImmutableArray.CreateBuilder<FlagSet>();
+        public IList<FlagSet> AliasF => _aliasF;
+
+        internal ArrayBuilder<FlagSet> _aliasF = new();
 
         /// <summary>
         /// Values used for morphological alias compression.
         /// </summary>
         /// <seealso cref="AffixConfig.AliasM"/>
-        public ImmutableArray<MorphSet>.Builder AliasM { get; } = ImmutableArray.CreateBuilder<MorphSet>();
+        public IList<MorphSet> AliasM => _aliasM;
+
+        internal ArrayBuilder<MorphSet> _aliasM = new();
 
         /// <summary>
         /// Defines custom compound patterns with a regex-like syntax.
@@ -244,7 +247,7 @@ public partial class AffixConfig
         /// <seealso cref="AffixConfig.CompoundRules"/>
         public IList<CompoundRule> CompoundRules => _compoundRules;
 
-        internal ArrayBuilder<CompoundRule> _compoundRules { get; } = new();
+        internal ArrayBuilder<CompoundRule> _compoundRules = new();
 
         /// <summary>
         /// Forbid compounding, if the first word in the compound ends with endchars, and
@@ -335,7 +338,7 @@ public partial class AffixConfig
         /// <summary>
         /// A list of the warnings that were produced while reading or building an <see cref="AffixConfig"/>.
         /// </summary>
-        public ImmutableList<string>.Builder Warnings { get; } = ImmutableList.CreateBuilder<string>(); // TODO: replace with List<string> or ImmutableArray Builder
+        public List<string> Warnings { get; }
 
         /// <summary>
         /// Constructs a <see cref="AffixConfig"/> based on the values set in the builder.
@@ -437,8 +440,8 @@ public partial class AffixConfig
                     : MultiReplacementTable.Empty;
             }
 
-            config.AliasF = AliasF.ToImmutable(allowDestructive);
-            config.AliasM = AliasM.ToImmutable(allowDestructive);
+            config.AliasF = _aliasF.ToImmutable(allowDestructive);
+            config.AliasM = _aliasM.ToImmutable(allowDestructive);
             config.BreakPoints = new(_breakPoints.MakeOrExtractArray(allowDestructive));
             config.Replacements = new(_replacements.MakeOrExtractArray(allowDestructive));
             config.CompoundRules = new(_compoundRules.MakeOrExtractArray(allowDestructive));
@@ -468,7 +471,7 @@ public partial class AffixConfig
             config.Flags_ForbiddenWord_NoSuggest = FlagSet.Create(config.ForbiddenWord, config.NoSuggest);
             config.Flags_ForbiddenWord_NoSuggest_SubStandard = config.Flags_ForbiddenWord_NoSuggest.Union(config.SubStandard);
 
-            config.Warnings = Warnings.ToImmutable();
+            config.Warnings = Warnings.ToArray();
 
             return config;
         }

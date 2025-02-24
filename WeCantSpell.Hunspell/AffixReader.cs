@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -416,20 +415,20 @@ public sealed partial class AffixReader
                     ? TryParseAffixIntoList(parameters, _builder.Prefixes)
                     : TryParseAffixIntoList(parameters, _builder.Suffixes);
             case AffixReaderCommandKind.AliasF:
-                return TryParseStandardListItem(EntryListType.AliasF, parameters, _builder.AliasF, TryParseAliasF);
+                return TryParseStandardListItemForAffix(EntryListType.AliasF, parameters, _builder._aliasF, TryParseAliasF);
             case AffixReaderCommandKind.AliasM:
-                return TryParseStandardListItem(EntryListType.AliasM, parameters, _builder.AliasM, TryParseAliasM);
+                return TryParseStandardListItemForAffix(EntryListType.AliasM, parameters, _builder._aliasM, TryParseAliasM);
             default:
                 LogWarning(string.Concat("Unknown parsed command ", command.ToString()));
                 return false;
         }
     }
 
-    private delegate bool EntryParserForImmutableArray<T>(ReadOnlySpan<char> parameterText, ImmutableArray<T>.Builder entries);
+    private delegate bool EntryParserForImmutableArray<T>(ReadOnlySpan<char> parameterText, ArrayBuilder<T> entries);
 
-    private bool TryParseStandardListItem<T>(EntryListType entryListType, ReadOnlySpan<char> parameterText, ImmutableArray<T>.Builder entries, EntryParserForImmutableArray<T> parse)
+    private bool TryParseStandardListItemForAffix<T>(EntryListType entryListType, ReadOnlySpan<char> parameterText, ArrayBuilder<T> entries, EntryParserForImmutableArray<T> parse)
     {
-        int intValue;
+        int expectedSize;
 
         {
             // Some aff files use comments on the AF and AM commands. This seems to work because the
@@ -438,10 +437,10 @@ public sealed partial class AffixReader
             // supported, but there are affix files with comments, and they still should work here too.
             // It would be more correct to make the int parsers and flag parsers ignore these comments
             // but this should work well enough for now.
-            intValue = parameterText.IndexOf('#', 1);
-            if (intValue > 0 && parameterText[intValue - 1].IsTabOrSpace())
+            expectedSize = parameterText.IndexOf('#', 1);
+            if (expectedSize > 0 && parameterText[expectedSize - 1].IsTabOrSpace())
             {
-                parameterText = parameterText.Slice(0, intValue - 1);
+                parameterText = parameterText.Slice(0, expectedSize - 1);
             }
         }
 
@@ -449,9 +448,9 @@ public sealed partial class AffixReader
         {
             SetInitialized(entryListType);
 
-            if (IntEx.TryParseInvariant(parameterText, out intValue) && intValue is >= 0 and <= CollectionsEx.CollectionPreallocationLimit)
+            if (IntEx.TryParseInvariant(parameterText, out expectedSize) && expectedSize is >= 0 and <= CollectionsEx.CollectionPreallocationLimit)
             {
-                entries.Capacity = intValue;
+                entries.GrowToCapacity(expectedSize);
                 return true;
             }
         }
@@ -683,13 +682,13 @@ public sealed partial class AffixReader
         return true;
     }
 
-    private bool TryParseAliasF(ReadOnlySpan<char> parameterText, ImmutableArray<FlagSet>.Builder entries)
+    private bool TryParseAliasF(ReadOnlySpan<char> parameterText, ArrayBuilder<FlagSet> entries)
     {
         entries.Add(_flagParser.ParseFlagSet(parameterText));
         return true;
     }
 
-    private bool TryParseAliasM(ReadOnlySpan<char> parameterText, ImmutableArray<MorphSet>.Builder entries)
+    private bool TryParseAliasM(ReadOnlySpan<char> parameterText, ArrayBuilder<MorphSet> entries)
     {
         var parts = ArrayBuilder<string>.Pool.Get((parameterText.Length + 1) / 2);
 
@@ -785,11 +784,11 @@ public sealed partial class AffixReader
             {
                 options |= AffixEntryOptions.CrossProduct;
             }
-            if (_builder.AliasM is { Count: > 0 })
+            if (_builder._aliasM is { Count: > 0 })
             {
                 options |= AffixEntryOptions.AliasM;
             }
-            if (_builder.AliasF is { Count: > 0 })
+            if (_builder._aliasF is { Count: > 0 })
             {
                 options |= AffixEntryOptions.AliasF;
             }
@@ -829,7 +828,7 @@ public sealed partial class AffixReader
 
         if (group2.IndexOf('/') is int affixSlashIndex and >= 0)
         {
-            if (_builder.AliasF is { Count: > 0 } aliasF)
+            if (_builder._aliasF is { Count: > 0 } aliasF)
             {
                 if (IntEx.TryParseInvariant(group2.Slice(affixSlashIndex + 1), out var aliasNumber) && aliasNumber > 0 && aliasNumber <= aliasF.Count)
                 {
@@ -895,7 +894,7 @@ public sealed partial class AffixReader
         if (!group4.IsEmpty)
         {
             var morphAffixText = group4;
-            if (_builder.AliasM is { Count: > 0 } aliasM)
+            if (_builder._aliasM is { Count: > 0 } aliasM)
             {
                 if (IntEx.TryParseInvariant(morphAffixText, out var morphNumber) && morphNumber > 0 && morphNumber <= aliasM.Count)
                 {

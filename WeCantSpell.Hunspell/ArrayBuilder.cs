@@ -7,6 +7,7 @@ using System.Threading;
 namespace WeCantSpell.Hunspell;
 
 [DebuggerDisplay("Count = {Count}")]
+[Obsolete("Consider making this public, but keeping most methods internal")]
 internal sealed class ArrayBuilder<T> : IList<T>
 {
     public ArrayBuilder()

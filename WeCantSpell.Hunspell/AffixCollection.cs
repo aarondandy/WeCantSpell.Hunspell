@@ -335,7 +335,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
                 if (expectedCapacity is > 0 and <= CollectionsEx.CollectionPreallocationLimit)
                 {
-                    Builder.Entries.Capacity = expectedCapacity;
+                    Builder._entries.EnsureCapacityAtLeast(expectedCapacity);
                 }
 
                 IsInitialized = true;
@@ -350,7 +350,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
             {
                 var entry = CreateEntry(strip, affixText, conditions, morph, contClass);
 
-                Builder.Entries.Add(entry);
+                Builder._entries.Add(entry);
 
                 if (entry.ContClass.HasItems)
                 {

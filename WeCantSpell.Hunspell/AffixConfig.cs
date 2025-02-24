@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Immutable;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
@@ -577,7 +577,7 @@ public sealed partial class AffixConfig
     /// work/AB
     /// </code>
     /// </example>
-    public ImmutableArray<FlagSet> AliasF { get; private set; } = ImmutableArray<FlagSet>.Empty;
+    public ImmutableArray<FlagSet> AliasF { get; private set; } = [];
 
     /// <summary>
     /// Inidicates if any <see cref="AliasF"/> entries have been defined.
@@ -587,7 +587,7 @@ public sealed partial class AffixConfig
     /// <summary>
     /// Values used for morphological alias compression.
     /// </summary>
-    public ImmutableArray<MorphSet> AliasM { get; private set; } = ImmutableArray<MorphSet>.Empty;
+    public ImmutableArray<MorphSet> AliasM { get; private set; } = [];
 
     /// <summary>
     /// Indicates if any <see cref="AliasM"/> entries have been defined.
@@ -827,7 +827,7 @@ public sealed partial class AffixConfig
 
     public bool CultureUsesDottedI { get; private set; }
 
-    public ImmutableList<string> Warnings { get; private set; } = ImmutableList<string>.Empty; // TODO: replace with immutable array or read-only list interface
+    public IReadOnlyList<string> Warnings { get; private set; } = [];
 
     public bool HasCompound => CompoundFlag.HasValue || CompoundBegin.HasValue || CompoundRules.HasItems;
 

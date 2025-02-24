@@ -48,10 +48,13 @@ public partial class WordList
             }
         }
 
+        [Obsolete]
         public WordList ToImmutable() => ToImmutable(allowDestructive: false);
 
+        [Obsolete]
         public WordList MoveToImmutable() => ToImmutable(allowDestructive: true);
 
+        [Obsolete]
         public WordList ToImmutable(bool allowDestructive)
         {
             TextDictionary<WordEntryDetail[]> entriesByRoot;
