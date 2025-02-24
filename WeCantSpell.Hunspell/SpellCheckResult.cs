@@ -5,9 +5,9 @@ namespace WeCantSpell.Hunspell;
 [DebuggerDisplay("{Correct}: Info = {Info}, Root = {Root}")]
 public readonly struct SpellCheckResult
 {
-    public static SpellCheckResult DefaultCorrect { get; } = new SpellCheckResult(root: null, SpellCheckResultType.None, correct: true);
+    public static SpellCheckResult DefaultCorrect { get; } = Success(root: null, SpellCheckResultType.None);
 
-    public static SpellCheckResult DefaultWrong { get; } = new SpellCheckResult(root: null, SpellCheckResultType.None, correct: false);
+    public static SpellCheckResult DefaultWrong { get; } = Fail(root: null, SpellCheckResultType.None);
 
     internal static SpellCheckResult Fail(string? root, SpellCheckResultType info) =>
         new(root, info: info, correct: false);
