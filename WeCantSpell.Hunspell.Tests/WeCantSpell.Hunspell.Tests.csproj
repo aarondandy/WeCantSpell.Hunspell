@@ -23,6 +23,10 @@
       <Link>files\English %28American%29%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="..\samples\English %28Australian%29.*">
+      <Link>files\English %28Australian%29%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="..\samples\Russian-English Bilingual.*">
       <Link>files\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

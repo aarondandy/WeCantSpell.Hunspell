@@ -1714,13 +1714,23 @@ public class AffixReaderTests
 
             actual.ShouldNotBeNull();
 
-            if (Path.GetFileName(filePath) is
-                "base_utf.aff" // this file has some strange morph lines at the bottom, maybe a bug?
-                or "1748408-2.aff"
-                or "1748408-4.aff"
-            )
+            var fileName = Path.GetFileName(filePath);
+
+            if (fileName == "base_utf.aff")
+            {
+                actual.Warnings.ShouldNotBeEmpty(customMessage: "this file has some strange morph lines at the bottom, maybe a bug?");
+            }
+            else if (fileName is "1748408-2.aff" or "1748408-4.aff")
             {
                 actual.Warnings.ShouldNotBeEmpty();
+            }
+            else if (fileName == "English (Australian).aff")
+            {
+                actual.Warnings.ShouldBe(
+                [
+                    "Failed to parse line: MIDWORD '-",
+                    "Failed to parse line: BAD ~"
+                ], "I'm not sure what to make of this");
             }
             else
             {
