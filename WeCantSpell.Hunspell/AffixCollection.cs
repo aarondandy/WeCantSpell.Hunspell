@@ -217,12 +217,12 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
             // convert from binary tree to sorted list
             // NOTE: the above comment is a lie, but that is what this sort and initial tree build is for
 
+            var allNodes = new EntryTreeNode[affixes.Count];
             int i;
-            EntryTreeNode[] allNodes;
+
             if (allowDestructive)
             {
                 affixes.Sort(static (a, b) => StringComparer.Ordinal.Compare(a.Key, b.Key));
-                allNodes = new EntryTreeNode[affixes.Count];
 
                 i = allNodes.Length - 1;
                 allNodes[i] = new(affixes[affixes.Count - 1]);
@@ -237,7 +237,6 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
             }
             else
             {
-                allNodes = new EntryTreeNode[affixes.Count];
                 for (i = 0; i < allNodes.Length; i++)
                 {
                     allNodes[i] = new(affixes[i]);
@@ -263,20 +262,15 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
             foreach (var ptr in allNodes)
             {
                 nptr = ptr.Next;
-                while (nptr is not null)
+                while (nptr is not null && ptr.IsKeySubset(nptr))
                 {
-                    if (!ptr.Affix.IsKeySubset(nptr.Affix.Key))
-                    {
-                        break;
-                    }
-
                     nptr = nptr.Next;
                 }
 
                 ptr.NextNotEqual = nptr;
                 // ptr.NextEqual = null;
 
-                if (ptr.Next is not null && ptr.Affix.IsKeySubset(ptr.Next.Affix.Key))
+                if (ptr.Next is not null && ptr.IsKeySubset(ptr.Next))
                 {
                     ptr.NextEqual = ptr.Next;
                 }
@@ -289,15 +283,10 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
             foreach (var ptr in allNodes)
             {
-                nptr = ptr.Next;
                 EntryTreeNode? mptr = null;
-                while (nptr is not null)
+                nptr = ptr.Next;
+                while (nptr is not null && ptr.IsKeySubset(nptr))
                 {
-                    if (!ptr.Affix.IsKeySubset(nptr.Affix.Key))
-                    {
-                        break;
-                    }
-
                     mptr = nptr;
                     nptr = nptr.Next;
                 }
@@ -559,6 +548,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         public EntryTreeNode? NextEqual { get; set; }
         public EntryTreeNode? NextNotEqual { get; set; }
         public EntryTreeNode? Next { get; set; }
+        public bool IsKeySubset(EntryTreeNode other) => Affix.IsKeySubset(other.Affix.Key.AsSpan());
     }
 }
 

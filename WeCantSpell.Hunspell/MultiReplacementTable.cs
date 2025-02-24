@@ -95,7 +95,7 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
 
     internal bool TryConvert(ReadOnlySpan<char> text, out string converted)
     {
-        if (!text.IsEmpty)
+        if (!text.IsEmpty && HasReplacements)
         {
             var appliedConversion = false;
             var convertedBuilder = new StringBuilderSpan(text.Length);

@@ -42,15 +42,16 @@ internal sealed class LineReader : IDisposable
     private readonly Stream _stream;
     private readonly byte[] _reusableFileReadBuffer;
     private readonly List<TextBufferLine> _buffers;
-    private readonly bool _ownsStream;
-    private bool _allowEncodingChanges;
     private Encoding _encoding;
     private Decoder _decoder;
-    private bool _hasReadPreamble = false;
-    private BufferPosition _position = default;
     private IMemoryOwner<char>? _tempJoinBuffer = null;
+    private ReadOnlyMemory<char> _current = ReadOnlyMemory<char>.Empty;
+    private BufferPosition _position = default;
+    private bool _allowEncodingChanges;
+    private bool _hasReadPreamble = false;
+    private readonly bool _ownsStream;
 
-    public ReadOnlyMemory<char> Current { get; private set; } = ReadOnlyMemory<char>.Empty;
+    public ReadOnlySpan<char> CurrentSpan => _current.Span;
 
     public bool ReadNext()
     {
@@ -105,7 +106,7 @@ internal sealed class LineReader : IDisposable
         BufferPosition? lineTerminalPosition = null;
         do
         {
-            var newBufferLines = await ReadNewTextBufferLinesAsync(ct);
+            var newBufferLines = await ReadNewTextBufferLinesAsync(ct).ConfigureAwait(false);
             if (newBufferLines == 0)
             {
                 break;
@@ -135,16 +136,16 @@ internal sealed class LineReader : IDisposable
         if (_position.BufferIndex == lineTerminalPosition.BufferIndex)
         {
             buffer = _buffers[_position.BufferIndex];
-            Current = buffer.Memory.Slice(_position.SubIndex, lineTerminalPosition.SubIndex - _position.SubIndex);
+            _current = buffer.AsMemory(_position.SubIndex, lineTerminalPosition.SubIndex - _position.SubIndex);
         }
         else
         {
             buffer = UpdateAfterReadWithJoinInternal(lineTerminalPosition);
         }
 
-        if (Current.EndsWith(CharacterCr))
+        if (_current.EndsWith(CharacterCr))
         {
-            Current = Current.Slice(0, Current.Length - 1);
+            _current = _current.Slice(0, _current.Length - 1);
         }
 
         _position = lineTerminalPosition;
@@ -157,45 +158,48 @@ internal sealed class LineReader : IDisposable
 
         if (_allowEncodingChanges)
         {
-            tryChangeEncoding();
-            void tryChangeEncoding()
-            {
-                if (readSetEncoding(Current.Span) is { IsEmpty: false } encodingSpan)
-                {
-                    ChangeEncoding(encodingSpan);
-                    _allowEncodingChanges = false; // Only expect one encoding switch per file
-                }
-            }
-
-            static ReadOnlySpan<char> readSetEncoding(ReadOnlySpan<char> span)
-            {
-                var startIndex = 0;
-                for (; startIndex < span.Length && span[startIndex].IsTabOrSpace(); startIndex++) ;
-
-                if (startIndex > 0)
-                {
-                    span = span.Slice(startIndex);
-                }
-
-                if (span.Length >= 5
-                    && span[0] is 'S' or 's'
-                    && span[1] is 'E' or 'e'
-                    && span[2] is 'T' or 't'
-                    && span[3].IsTabOrSpace())
-                {
-                    for (startIndex = 4; startIndex < span.Length && span[startIndex].IsTabOrSpace(); startIndex++) ;
-
-                    var endIndex = span.Length - 1;
-                    for (; endIndex > startIndex && span[endIndex].IsTabOrSpace(); endIndex--) ;
-
-                    return span.Slice(startIndex, endIndex - startIndex + 1);
-                }
-
-                return [];
-            }
+            UpdateAfterRead_TryChangeEncoding();
         }
 
         return true;
+    }
+
+    private void UpdateAfterRead_TryChangeEncoding()
+    {
+        var encodingSpan = readSetEncoding(_current.Span);
+        if (!encodingSpan.IsEmpty)
+        {
+            ChangeEncoding(encodingSpan);
+            _allowEncodingChanges = false; // Only expect one encoding switch per file
+        }
+
+        static ReadOnlySpan<char> readSetEncoding(ReadOnlySpan<char> span)
+        {
+            var startIndex = 0;
+            for (; startIndex < span.Length && span[startIndex].IsTabOrSpace(); startIndex++) ;
+
+            if (startIndex > 0)
+            {
+                span = span.Slice(startIndex);
+            }
+
+            if (span.Length >= 5
+                && span[0] is 'S' or 's'
+                && span[1] is 'E' or 'e'
+                && span[2] is 'T' or 't'
+                && span[3].IsTabOrSpace())
+            {
+                for (startIndex = 4; startIndex < span.Length && span[startIndex].IsTabOrSpace(); startIndex++) ;
+
+                var endIndex = span.Length - 1;
+                for (; endIndex > startIndex && span[endIndex].IsTabOrSpace(); endIndex--) ;
+
+                return span.Slice(startIndex, endIndex - startIndex + 1);
+            }
+
+            return [];
+        }
+
     }
 
     private TextBufferLine UpdateAfterReadWithJoinInternal(BufferPosition lineTerminalPosition)
@@ -213,20 +217,20 @@ internal sealed class LineReader : IDisposable
         var joinWriteSpan = joinBufferMemory.Span;
 
         var buffer = _buffers[_position.BufferIndex];
-        buffer.ReadSpan.Slice(_position.SubIndex).CopyTo(joinWriteSpan);
+        buffer.AsSpan(_position.SubIndex).CopyTo(joinWriteSpan);
         joinWriteSpan = joinWriteSpan.Slice(buffer.Length - _position.SubIndex);
 
         for (i = _position.BufferIndex + 1; i < lineTerminalPosition.BufferIndex; i++)
         {
             buffer = _buffers[i];
-            buffer.ReadSpan.CopyTo(joinWriteSpan);
+            buffer.AsSpan().CopyTo(joinWriteSpan);
             joinWriteSpan = joinWriteSpan.Slice(buffer.Length);
         }
 
         buffer = _buffers[lineTerminalPosition.BufferIndex];
-        buffer.ReadSpan.Slice(0, lineTerminalPosition.SubIndex).CopyTo(joinWriteSpan);
+        buffer.AsSpan(0, lineTerminalPosition.SubIndex).CopyTo(joinWriteSpan);
 
-        Current = joinBufferMemory;
+        _current = joinBufferMemory;
 
         return buffer;
     }
@@ -234,7 +238,7 @@ internal sealed class LineReader : IDisposable
     private BufferPosition GetTerminalBufferPosition()
     {
         var lastBufferIndex = _buffers.Count - 1;
-        return new(lastBufferIndex, lastBufferIndex >= 0 ? _buffers[lastBufferIndex].Memory.Length : 0);
+        return new(lastBufferIndex, lastBufferIndex >= 0 ? _buffers[lastBufferIndex].Length : 0);
     }
 
     private BufferPosition? ScanForwardToNextLineBreak() => ScanForwardToNextLineBreak(_position.BufferIndex, _position.SubIndex);
@@ -321,7 +325,7 @@ internal sealed class LineReader : IDisposable
 
             _decoder.Convert(
                 fileReadByteBuffer,
-                textBuffer.WriteSpan,
+                textBuffer.GetFullWriteSpan(),
                 flush: false,
                 out var bytesConsumed,
                 out var charsProduced,
@@ -413,30 +417,9 @@ internal sealed class LineReader : IDisposable
             // The characters that were loaded after the encoding change need to be re-decoded
             for (var bufferIndex = _position.BufferIndex; bufferIndex < _buffers.Count; bufferIndex++)
             {
-                var oldCharacters = _buffers[bufferIndex].Memory;
-
-                if (_position.BufferIndex == bufferIndex)
-                {
-                    oldCharacters = oldCharacters.Slice(_position.SubIndex);
-                }
-
-#if NO_ENCODING_SPANS
-                var restoredBytes = oldEncoding.GetBytes(oldCharacters.ToArray());
-                var newCharacters = newEncoding.GetChars(restoredBytes);
-#else
-                var restoredBytesRaw = new byte[_reusableFileReadBuffer.Length];
-                var restoredBytesCount = oldEncoding.GetBytes(oldCharacters.Span, restoredBytesRaw.AsSpan());
-                var restoredBytes = restoredBytesRaw.AsSpan(0, restoredBytesCount);
-
-                var newCharacters = new char[newEncoding.GetCharCount(restoredBytes)];
-                var newCharactersCount = newEncoding.GetChars(restoredBytes, newCharacters.AsSpan());
-
-#if DEBUG
-                if (newCharactersCount != newCharacters.Length) ExceptionEx.ThrowInvalidOperation();
-#endif
-#endif
+                var offset = _position.BufferIndex == bufferIndex ? _position.SubIndex : 0;
+                var newCharacters = _buffers[bufferIndex].ReEncode(offset, oldEncoding, newEncoding);
                 _buffers[bufferIndex] = new TextBufferLine(newCharacters, preventRecycle: true);
-
             }
 
             _position.SubIndex = 0;
@@ -458,40 +441,64 @@ internal sealed class LineReader : IDisposable
         public TextBufferLine(int rawBufferSize)
         {
             _raw = new char[rawBufferSize];
-            Memory = ReadOnlyMemory<char>.Empty;
+            _length = 0;
             _preventRecycle = false;
         }
 
         public TextBufferLine(char[] raw, bool preventRecycle)
         {
             _raw = raw;
-            Memory = raw.AsMemory();
+            _length = raw.Length;
             _preventRecycle = preventRecycle;
         }
 
         private readonly char[] _raw;
-        public ReadOnlyMemory<char> Memory;
+        private int _length;
         private readonly bool _preventRecycle;
 
-        public readonly int Length => Memory.Length;
+        public readonly int Length => _length;
 
         public readonly bool PreventRecycle => _preventRecycle;
 
-        public readonly Span<char> WriteSpan => _raw.AsSpan();
+        public readonly int FindLineBreak(int startIndex) => Array.IndexOf(_raw, CharacterLf, startIndex, _length - startIndex);
 
-        public readonly ReadOnlySpan<char> ReadSpan => Memory.Span;
+        public readonly ReadOnlySpan<char> AsSpan() => _raw.AsSpan(0, _length);
 
-        public readonly int FindLineBreak(int startIndex) => Memory.Span.IndexOf(CharacterLf, startIndex);
+        public readonly ReadOnlySpan<char> AsSpan(int offset) => _raw.AsSpan(offset, _length - offset);
+
+        public readonly ReadOnlySpan<char> AsSpan(int offset, int length)
+        {
+#if DEBUG
+            ExceptionEx.ThrowIfArgumentGreaterThan(offset, _length, nameof(offset));
+            ExceptionEx.ThrowIfArgumentGreaterThan(offset + length, _length, nameof(length));
+#endif
+            return _raw.AsSpan(offset, length);
+        }
+
+        public readonly Span<char> GetFullWriteSpan() => _raw.AsSpan();
+
+        public readonly ReadOnlyMemory<char> AsMemory(int offset, int length)
+        {
+#if DEBUG
+            ExceptionEx.ThrowIfArgumentGreaterThan(offset, _length, nameof(offset));
+            ExceptionEx.ThrowIfArgumentGreaterThan(offset + length, _length, nameof(length));
+#endif
+
+            return _raw.AsMemory(offset, length);
+        }
 
         public void PrepareMemoryForUse(int valueSize)
         {
-            Memory = _raw.AsMemory(0, valueSize);
+            _length = valueSize;
         }
 
         public void ResetMemory()
         {
-            Memory = ReadOnlyMemory<char>.Empty;
+            _length = 0;
         }
+
+        internal readonly char[] ReEncode(int offset, Encoding oldEncoding, Encoding newEncoding) =>
+            newEncoding.GetChars(oldEncoding.GetBytes(_raw, offset, _length - offset));
     }
 
     private struct BufferPosition

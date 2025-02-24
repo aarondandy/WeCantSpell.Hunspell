@@ -14,10 +14,29 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 
     public static CharacterCondition CreateCharSet(ReadOnlySpan<char> chars, bool restricted)
     {
-        var builder = new StringBuilderSpan(chars);
-        builder.Sort();
-        builder.RemoveAdjacentDuplicates();
-        return new(builder.GetStringAndDispose(), restricted ? ModeKind.RestrictChars : ModeKind.PermitChars);
+        return new(buildCharString(chars), restricted ? ModeKind.RestrictChars : ModeKind.PermitChars);
+
+        static string buildCharString(ReadOnlySpan<char> chars)
+        {
+            if (chars.Length <= 4)
+            {
+                Span<char> buffer = (stackalloc char[4]).Slice(0, chars.Length);
+                chars.CopyTo(buffer);
+                buffer.Sort();
+                MemoryEx.RemoveAdjacentDuplicates(ref buffer);
+                return buffer.ToString();
+            }
+
+            return buildCharSetString(chars);
+        }
+
+        static string buildCharSetString(ReadOnlySpan<char> chars)
+        {
+            var builder = new StringBuilderSpan(chars);
+            builder.Sort();
+            builder.RemoveAdjacentDuplicates();
+            return builder.GetStringAndDispose();
+        }
     }
 
     public static CharacterCondition CreateCharSet(string chars, bool restricted)

@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
+    <PackageReference Include="System.Collections.Immutable" Version="9.0.1" />
   </ItemGroup>
 
   <ItemGroup>

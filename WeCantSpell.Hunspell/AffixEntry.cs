@@ -89,9 +89,9 @@ public sealed class PrefixEntry : AffixEntry
 
     public override string Key => Append;
 
-    public override bool IsKeySubset(ReadOnlySpan<char> s2) => StringEx.IsSubset(Key, s2);
+    public override bool IsKeySubset(ReadOnlySpan<char> s2) => StringEx.IsSubset(Append, s2);
 
-    public override bool IsWordSubset(ReadOnlySpan<char> s2) => StringEx.IsSubset(Key, s2);
+    public override bool IsWordSubset(ReadOnlySpan<char> s2) => StringEx.IsSubset(Append, s2);
 
     internal override bool TestCondition(ReadOnlySpan<char> word) => Conditions.IsStartingMatch(word);
 }
@@ -109,30 +109,19 @@ public sealed class SuffixEntry : AffixEntry
         AffixEntryOptions options)
         : base(strip, affixText, conditions, morph, contClass, aFlag, options)
     {
-        Key = Append.GetReversed();
+        _key = Append.GetReversed();
     }
 
-    public override string Key { get; }
+    private readonly string _key;
 
-    public override bool IsKeySubset(ReadOnlySpan<char> s2) => StringEx.IsSubset(Key, s2);
+    public override string Key => _key;
+
+    public override bool IsKeySubset(ReadOnlySpan<char> s2) => StringEx.IsSubset(_key, s2);
 
     public override bool IsWordSubset(ReadOnlySpan<char> s2)
     {
-        return Append.Length <= s2.Length && check(Append.AsSpan(), s2.Slice(s2.Length - Append.Length));
-
-        static bool check(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
-        {
-            for (var i = 0; i < s1.Length; i++)
-            {
-                var c = s1[i];
-                if (c != '.' && s2[i] != c)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
+        return Append.Length <= s2.Length
+            && StringEx.IsSubset(Append, s2.Slice(s2.Length - Append.Length));
     }
 
     internal override bool TestCondition(ReadOnlySpan<char> word) => Conditions.IsEndingMatch(word);

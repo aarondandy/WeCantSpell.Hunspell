@@ -414,10 +414,10 @@ public partial class WordList
                         break;
 
                     case CapitalizationType.All:
-                        var oldns = slst.Count;
+                        var j = slst.Count;
                         NGramSuggest(slst, StringEx.MakeAllSmall(scw, textInfo), capType);
 
-                        for (var j = oldns; j < slst.Count; j++)
+                        for (; j < slst.Count; j++)
                         {
                             slst[j] = StringEx.MakeAllCap(slst[j], textInfo);
                         }

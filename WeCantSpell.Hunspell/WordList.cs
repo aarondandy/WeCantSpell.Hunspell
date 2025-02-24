@@ -141,7 +141,7 @@ public sealed partial class WordList
         // output conversion
         if (result.Correct && _affix.OutputConversions.TryConvert(result.Root, out var converted) && !string.Equals(result.Root, converted, StringComparison.Ordinal))
         {
-            result = new SpellCheckResult(converted, result.Info, true);
+            result = SpellCheckResult.Success(converted, result.Info);
         }
     }
 

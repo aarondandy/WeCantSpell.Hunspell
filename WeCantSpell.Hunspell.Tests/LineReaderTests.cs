@@ -35,7 +35,7 @@ public class LineReaderTests
             var actual = new List<string>();
             while (reader.ReadNext())
             {
-                actual.Add(reader.Current.ToString());
+                actual.Add(reader.CurrentSpan.ToString());
             }
 
             actual.ShouldBeEquivalentTo(expected);
@@ -65,7 +65,7 @@ public class LineReaderTests
             var actual = new List<string>();
             while (await reader.ReadNextAsync(TestContext.Current.CancellationToken))
             {
-                actual.Add(reader.Current.ToString());
+                actual.Add(reader.CurrentSpan.ToString());
             }
 
             actual.ShouldBeEquivalentTo(expected);

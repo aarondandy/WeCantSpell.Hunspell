@@ -142,7 +142,7 @@ public sealed partial class AffixReader
         {
             while (await lineReader.ReadNextAsync(cancellationToken))
             {
-                readerInstance.ParseLine(lineReader.Current.Span);
+                readerInstance.ParseLine(lineReader.CurrentSpan);
             }
         }
 
@@ -204,7 +204,7 @@ public sealed partial class AffixReader
         using var lineReader = new LineReader(stream, readerInstance.Encoding, allowEncodingChanges: true);
         while (lineReader.ReadNext())
         {
-            readerInstance.ParseLine(lineReader.Current.Span);
+            readerInstance.ParseLine(lineReader.CurrentSpan);
         }
 
         return readerInstance.BuildConfig(allowDestructive: true);
@@ -295,7 +295,7 @@ public sealed partial class AffixReader
                 }
 
                 _builder.Encoding = encoding;
-                _flagParser.Encoding = encoding;
+                _flagParser = _flagParser.WithEncoding(encoding);
                 return true;
             case AffixReaderCommandKind.Language:
                 _builder.Language = parameters.ToString();
@@ -1201,7 +1201,7 @@ public sealed partial class AffixReader
         }
 
         _builder.FlagMode = mode;
-        _flagParser.Mode = mode;
+        _flagParser = _flagParser.WithMode(mode);
         return true;
     }
 
