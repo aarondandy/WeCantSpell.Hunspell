@@ -2724,22 +2724,25 @@ public partial class WordList
                 return string.Empty;
             }
 
-            var len = inword.Length;
             var word = new SimulatedCString(inword.AsSpan());
-            var target = new StringBuilderSpan(len);
+            var target = new StringBuilderSpan(inword.Length);
 
             // check word
-            var i = 0;
-            var z = false;
-            var p0 = -333;
-            var k = 0;
-            int p;
+
+            // int len = inword.Length;
+            int i = 0;
+            int k = 0;
             int k0;
+            int p;
+            int p0 = -333;
             char c;
+            char c0;
+            bool z = false;
+            bool z0;
 
             while (i < word.BufferLength && (c = word[i]) != '\0')
             {
-                var z0 = false;
+                z0 = false;
 
                 // check all rules for the same letter
                 foreach (var phoneEntry in Affix.Phone.GetInternalArrayByFirstRuleChar(c))
@@ -2748,11 +2751,10 @@ public partial class WordList
                     k = 1; // number of found letters
                     p = 5; // default priority
                     var sString = phoneEntry.Rule;
-                    var sIndex = 0;
-                    sIndex++; // important for (see below)  "*(s-1)"
+                    var sIndex = 1; // important for (see below)  "*(s-1)"
                     var sChar = sString.GetCharOrTerminator(sIndex);
 
-                    while (sChar != '\0' && word[i + k] == sChar && !char.IsDigit(sChar) && notConditionMarkup(sChar))
+                    while (sChar != '\0' && word[i + k] == sChar && !isAsciiDigit(sChar) && notConditionMarkup(sChar))
                     {
                         k++;
                         sChar = sString.GetCharOrTerminator(++sIndex);
@@ -2780,7 +2782,7 @@ public partial class WordList
                         }
                     }
 
-                    p0 = (int)sChar;
+                    p0 = sChar;
                     k0 = k;
 
                     while (sChar == '-' && k > 1)
@@ -2794,7 +2796,7 @@ public partial class WordList
                         sChar = sString.GetCharOrTerminator(++sIndex);
                     }
 
-                    if (sChar < 128 && char.IsDigit(sChar))
+                    if (isAsciiDigit(sChar))
                     {
                         // determine priority
                         p = sChar - '0';
@@ -2839,12 +2841,12 @@ public partial class WordList
                         // search for followup rules, if:
                         // parms.followup and k > 1  and  NO '-' in searchstring
 
-                        var c0 = word[i + k - 1];
+                        c0 = word[i + k - 1];
 
                         if (k > 1 && p0 != '-' && word[i + k] != '\0')
                         {
                             // test follow-up rule for "word[i+k]"
-                            foreach (var phoneEntryNested in Affix.Phone.Where(pe => pe.Rule.StartsWith(c0)))
+                            foreach (var phoneEntryNested in Affix.Phone.GetInternalArrayByFirstRuleChar(c0))
                             {
                                 // check whole string
                                 k0 = k;
@@ -2852,7 +2854,7 @@ public partial class WordList
                                 sString = phoneEntryNested.Rule;
                                 sChar = sString.GetCharOrTerminator(++sIndex);
 
-                                while (sChar != '\0' && word[i + k0] == sChar && !char.IsDigit(sChar) && notConditionMarkup(sChar))
+                                while (sChar != '\0' && word[i + k0] == sChar && !isAsciiDigit(sChar) && notConditionMarkup(sChar))
                                 {
                                     k0++;
                                     sChar = sString.GetCharOrTerminator(++sIndex);
@@ -2871,6 +2873,7 @@ public partial class WordList
                                         {
                                             sChar = sString.GetCharOrTerminator(++sIndex);
                                         }
+
                                         if (sChar == ')')
                                         {
                                             sChar = sString.GetCharOrTerminator(++sIndex);
@@ -2890,7 +2893,7 @@ public partial class WordList
                                     sChar = sString.GetCharOrTerminator(++sIndex);
                                 }
 
-                                if (char.IsDigit(sChar))
+                                if (isAsciiDigit(sChar))
                                 {
                                     p0 = sChar - '0';
                                     sChar = sString.GetCharOrTerminator(++sIndex);
@@ -2965,7 +2968,7 @@ public partial class WordList
                             // no '<' rule used
                             i += k - 1;
                             z = false;
-                            while (sChar != '\0' && sString.GetCharOrTerminator(sIndex + 1) != '\0' && target.Length < len)
+                            while (sChar != '\0' && sString.GetCharOrTerminator(sIndex + 1) != '\0' && target.Length < inword.Length)
                             {
                                 if (target.Length == 0 || !target.EndsWith(sChar))
                                 {
@@ -2987,7 +2990,7 @@ public partial class WordList
 
                                 word.RemoveRange(0, i + 1);
 
-                                len = 0;
+                                inword = ""; // len = 0
                                 z0 = true;
                             }
                         }
@@ -2998,7 +3001,7 @@ public partial class WordList
 
                 if (!z0)
                 {
-                    if (k != 0 && p0 == 0 && target.Length < len && c != '\0')
+                    if (k != 0 && p0 == 0 && target.Length < inword.Length && c != '\0')
                     {
                         // condense only double letters
                         target.Append(c);
@@ -3014,6 +3017,8 @@ public partial class WordList
             return target.GetStringAndDispose();
 
             static bool notConditionMarkup(char c) => c is not '(' or '-' or '<' or '^' or '$';
+
+            static bool isAsciiDigit(char c) => c is >= '0' and <= '9';
         }
 
         private static void InsertSuggestion(List<string> slst, string word)
