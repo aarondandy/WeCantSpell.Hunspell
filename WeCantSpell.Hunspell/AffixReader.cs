@@ -424,9 +424,9 @@ public sealed partial class AffixReader
         }
     }
 
-    private delegate bool EntryParserForImmutableArray<T>(ReadOnlySpan<char> parameterText, ArrayBuilder<T> entries);
+    private delegate bool EntryParserForBuilder<T>(ReadOnlySpan<char> parameterText, ArrayBuilder<T> entries);
 
-    private bool TryParseStandardListItemForAffix<T>(EntryListType entryListType, ReadOnlySpan<char> parameterText, ArrayBuilder<T> entries, EntryParserForImmutableArray<T> parse)
+    private bool TryParseStandardListItemForAffix<T>(EntryListType entryListType, ReadOnlySpan<char> parameterText, ArrayBuilder<T> entries, EntryParserForBuilder<T> parse)
     {
         int expectedSize;
 

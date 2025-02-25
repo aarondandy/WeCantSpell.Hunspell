@@ -345,6 +345,7 @@ public partial class AffixConfig
         /// </summary>
         /// <returns>A constructed affix config.</returns>
         /// <seealso cref="AffixConfig"/>
+        [Obsolete("Stop using the word immutable")]
         public AffixConfig ToImmutable() => ToImmutable(allowDestructive: false);
 
         /// <summary>
@@ -357,8 +358,10 @@ public partial class AffixConfig
         /// This method can leave the builder in an invalid state
         /// but provides better performance for file reads.
         /// </remarks>
+        [Obsolete("Stop using the word immutable")]
         public AffixConfig MoveToImmutable() => ToImmutable(allowDestructive: true);
 
+        [Obsolete("Stop using the word immutable")]
         public AffixConfig ToImmutable(bool allowDestructive)
         {
             var culture = CultureInfo.InvariantCulture;
