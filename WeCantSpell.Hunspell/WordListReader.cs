@@ -254,7 +254,7 @@ public sealed class WordListReader
 
     private FlagSet GetAliasedFlagSet(ReadOnlySpan<char> flagNumber)
     {
-        if (IntEx.TryParseInvariant(flagNumber, out var flagAliasNumber) && Affix.AliasF.TryGetByNumber(flagAliasNumber, out var aliasedFlags))
+        if (Affix.AliasF.TryGetByNumber(flagNumber, out var aliasedFlags))
         {
             return aliasedFlags;
         }
@@ -318,20 +318,7 @@ public sealed class WordListReader
         if (Affix.IsAliasM)
         {
             options |= WordEntryOptions.AliasM;
-            var morphBuilder = ArrayBuilder<string>.Pool.Get();
-            foreach (var originalValue in morphs)
-            {
-                if (IntEx.TryParseInvariant(originalValue, out var morphNumber) && Affix.AliasM.TryGetByNumber(morphNumber, out var aliasedMorph))
-                {
-                    morphBuilder.AddRange(aliasedMorph.RawArray);
-                }
-                else
-                {
-                    morphBuilder.Add(originalValue);
-                }
-            }
-
-            morphs = ArrayBuilder<string>.Pool.ExtractAndReturn(morphBuilder);
+            morphs = ResolveMorphAliases(morphs);
         }
 
         var morphPhonEnumerator = new AddWordMorphFilterEnumerator(morphs);
@@ -418,6 +405,41 @@ public sealed class WordListReader
         }
 
         return morphs;
+    }
+
+    private string[] ResolveMorphAliases(string[] morphs)
+    {
+        if (morphs.Length == 1)
+        {
+            if (Affix.AliasM.TryGetByNumber(morphs[0].AsSpan(), out var aliasedMorph))
+            {
+                // The array in the MorphSet should be effectively immutable
+                // so sharing the reference should be safe.
+                morphs = aliasedMorph.RawArray;
+            }
+
+            return morphs;
+        }
+
+        return ResolveMorphAliasesWithBuilder(morphs);
+    }
+
+    private string[] ResolveMorphAliasesWithBuilder(string[] morphs)
+    {
+        var morphBuilder = ArrayBuilder<string>.Pool.Get();
+        foreach (var originalValue in morphs)
+        {
+            if (Affix.AliasM.TryGetByNumber(originalValue.AsSpan(), out var aliasedMorph))
+            {
+                morphBuilder.AddRange(aliasedMorph.RawArray);
+            }
+            else
+            {
+                morphBuilder.Add(originalValue);
+            }
+        }
+
+        return ArrayBuilder<string>.Pool.ExtractAndReturn(morphBuilder);
     }
 
     private struct AddWordMorphFilterEnumerator

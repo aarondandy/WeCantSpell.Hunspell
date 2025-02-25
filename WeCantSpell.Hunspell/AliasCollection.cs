@@ -68,6 +68,17 @@ public readonly struct AliasCollection<TEntry> : IReadOnlyList<TEntry>
         return false;
     }
 
+    public bool TryGetByNumber(ReadOnlySpan<char> numberText, out TEntry result)
+    {
+        if (IntEx.TryParseInvariant(numberText, out var numberValue))
+        {
+            return TryGetByNumber(numberValue, out result);
+        }
+
+        result = default!;
+        return false;
+    }
+
     public IEnumerator<TEntry> GetEnumerator() => ((IEnumerable<TEntry>)RawArray).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
