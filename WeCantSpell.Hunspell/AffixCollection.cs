@@ -198,12 +198,12 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
 #if HAS_FROZENDICTIONARY
 
-            target._affixesByFlag = _byFlag.ToFrozenDictionary(static x => x.Key, x => x.Value.ToImmutable(allowDestructive: allowDestructive));
+            target._affixesByFlag = _byFlag.ToFrozenDictionary(static x => x.Key, x => x.Value.Build(allowDestructive: allowDestructive));
             target._affixTreeRootsByFirstKeyChar = affixTreeRootsByFirstKeyCharBuilder.ToFrozenDictionary();
 
 #else
 
-            target._affixesByFlag = _byFlag.ToDictionary(static x => x.Key, x => x.Value.ToImmutable(allowDestructive: allowDestructive));
+            target._affixesByFlag = _byFlag.ToDictionary(static x => x.Key, x => x.Value.Build(allowDestructive: allowDestructive));
             target._affixTreeRootsByFirstKeyChar = affixTreeRootsByFirstKeyCharBuilder;
 
 #endif
@@ -314,18 +314,18 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
             internal GroupBuilder(BuilderBase parent, FlagValue aFlag)
             {
                 _parent = parent;
-                Builder = new(aFlag, AffixEntryOptions.None);
+                AFlag = aFlag;
+                _entries = new();
             }
 
             private readonly BuilderBase _parent;
+            private readonly ArrayBuilder<TAffixEntry> _entries;
 
-            public AffixGroup<TAffixEntry>.Builder Builder { get; }
+            public IList<TAffixEntry> Entries => _entries;
 
-            public FlagValue AFlag => Builder.AFlag;
+            public FlagValue AFlag { get; set; }
 
-            public int Count => Builder.Entries.Count;
-
-            public AffixEntryOptions Options { get => Builder.Options; set => Builder.Options = value; }
+            public AffixEntryOptions Options { get; set; }
 
             public bool IsInitialized { get; private set; }
 
@@ -335,7 +335,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
                 if (expectedCapacity is > 0 and <= CollectionsEx.CollectionPreallocationLimit)
                 {
-                    Builder._entries.EnsureCapacityAtLeast(expectedCapacity);
+                    _entries.EnsureCapacity(expectedCapacity);
                 }
 
                 IsInitialized = true;
@@ -350,7 +350,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
             {
                 var entry = CreateEntry(strip, affixText, conditions, morph, contClass);
 
-                Builder._entries.Add(entry);
+                _entries.Add(entry);
 
                 if (entry.ContClass.HasItems)
                 {
@@ -374,8 +374,11 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
                 }
             }
 
-            public AffixGroup<TAffixEntry> ToImmutable(bool allowDestructive) =>
-                Builder.ToImmutable(allowDestructive: allowDestructive);
+            public AffixGroup<TAffixEntry> Build(bool allowDestructive) =>
+                AffixGroup<TAffixEntry>.CreateUsingArray(
+                    AFlag,
+                    Options,
+                    _entries.MakeOrExtractArray(allowDestructive));
 
             private TAffixEntry CreateEntry(string strip,
                 string affixText,
@@ -443,7 +446,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
         public bool MoveNext()
         {
-            if (_group is null || _group.Entries.Length <= _groupIndex)
+            if (_group is null || _group.Count <= _groupIndex)
             {
                 if (!MoveNextGroup())
                 {
@@ -451,7 +454,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
                 }
             }
 
-            _current = _group!.Entries[_groupIndex++];
+            _current = _group![_groupIndex++];
             return true;
         }
 
@@ -459,7 +462,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         {
             while (_flagsIndex < _flags.Length)
             {
-                if (_byFlag.TryGetValue((FlagValue)_flags[_flagsIndex++], out _group) && _group.Entries.Length != 0)
+                if (_byFlag.TryGetValue((FlagValue)_flags[_flagsIndex++], out _group) && _group.Count != 0)
                 {
                     _groupIndex = 0;
                     return true;

@@ -1189,15 +1189,15 @@ public partial class WordList
             }
 
             var inMap = false;
-            foreach (var mapEntry in Affix.RelatedCharacterMap.GetInternalArray())
+            foreach (var mapEntry in Affix.RelatedCharacterMap.RawArray)
             {
-                foreach (var mapEntryValue in mapEntry.GetInternalArray())
+                foreach (var mapEntryValue in mapEntry.RawArray)
                 {
                     if (word.AsSpan(wn).StartsWith(mapEntryValue, StringComparison.Ordinal))
                     {
                         inMap = true;
                         var candidatePrefix = candidate;
-                        foreach (var otherMapEntryValue in mapEntry.GetInternalArray())
+                        foreach (var otherMapEntryValue in mapEntry.RawArray)
                         {
                             candidate = candidatePrefix + otherMapEntryValue;
                             MapRelated(word, ref candidate, wn + mapEntryValue.Length, ref state, ref timer, depth + 1);
@@ -1467,7 +1467,7 @@ public partial class WordList
                 return;
             }
 
-            foreach (var replacement in WordList._allReplacements.GetInternalArray())
+            foreach (var replacement in WordList._allReplacements.RawArray)
             {
                 if (replacement.Pattern.Length == 0)
                 {
@@ -2217,7 +2217,7 @@ public partial class WordList
                     {
                         if (pfxGroup.Options.HasFlagEx(AffixEntryOptions.CrossProduct))
                         {
-                            foreach (var cptr in pfxGroup.Entries)
+                            foreach (var cptr in pfxGroup.RawArray)
                             {
                                 if (
                                     cptr.Append.Length == 0

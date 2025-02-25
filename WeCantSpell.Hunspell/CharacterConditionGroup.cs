@@ -108,8 +108,13 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
     private readonly CharacterCondition[]? _items;
 
     public int Count => _items is not null ? _items.Length : 0;
+
     public bool IsEmpty => _items is not { Length: > 0 };
+
     public bool HasItems => _items is { Length: > 0 };
+
+    internal CharacterCondition[] RawArray => _items ?? [];
+
     public CharacterCondition this[int index]
     {
         get
@@ -125,15 +130,13 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
         }
     }
 
-    public IEnumerator<CharacterCondition> GetEnumerator() => ((IEnumerable<CharacterCondition>)GetInternalArray()).GetEnumerator();
+    public IEnumerator<CharacterCondition> GetEnumerator() => ((IEnumerable<CharacterCondition>)RawArray).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    internal CharacterCondition[] GetInternalArray() => _items ?? [];
-
     public bool MatchesAnySingleCharacter => _items is { Length: 1 } && _items[0].MatchesAnySingleCharacter;
 
-    public string GetEncoded() => string.Concat(GetInternalArray().Select(c => c.GetEncoded()));
+    public string GetEncoded() => string.Concat(RawArray.Select(static c => c.GetEncoded()));
 
     public override string ToString() => GetEncoded();
 
@@ -189,14 +192,17 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
 
     public bool IsOnlyPossibleMatch(ReadOnlySpan<char> text)
     {
-        foreach (var condition in GetInternalArray())
+        if (_items is not null)
         {
-            if (!condition.IsOnlyPossibleMatch(text, out var matchLength))
+            foreach (var condition in _items)
             {
-                return false;
-            }
+                if (!condition.IsOnlyPossibleMatch(text, out var matchLength))
+                {
+                    return false;
+                }
 
-            text = text.Slice(matchLength);
+                text = text.Slice(matchLength);
+            }
         }
 
         return text.IsEmpty;

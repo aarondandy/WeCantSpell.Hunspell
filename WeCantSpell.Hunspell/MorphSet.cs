@@ -52,6 +52,8 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
 
     public bool HasItems => _morphs is { Length: > 0 };
 
+    internal string[] RawArray => _morphs ?? [];
+
     public string this[int index]
     {
         get
@@ -73,24 +75,23 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
         }
     }
 
-    public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)GetInternalArray()).GetEnumerator();
+    public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)RawArray).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public bool Equals(MorphSet other) => GetInternalArray().AsSpan().SequenceEqual(GetInternalArray().AsSpan());
+    public bool Equals(MorphSet other) => RawArray.AsSpan().SequenceEqual(RawArray.AsSpan());
 
     public override bool Equals(object? obj) => obj is MorphSet set && Equals(set);
 
-    public override int GetHashCode() => ((IStructuralEquatable)GetInternalArray()).GetHashCode(StringComparer.Ordinal);
+    public override int GetHashCode() => ((IStructuralEquatable)RawArray).GetHashCode(StringComparer.Ordinal);
 
     public override string ToString() => Join(' ');
 
     internal string Join(char seperator) =>
 #if NO_STATIC_STRINGCHAR_METHODS
-        StringEx.Join(seperator, GetInternalArray());
+        StringEx.Join(seperator, RawArray);
 #else
-        string.Join(seperator, GetInternalArray());
+        string.Join(seperator, RawArray);
 #endif
 
-    internal string[] GetInternalArray() => _morphs ?? [];
 }

@@ -12,7 +12,7 @@ namespace WeCantSpell.Hunspell;
 /// would replace this, but that did not turn out as I expected. Instead, I had to
 /// piece this thing together. It works well enough.
 /// </remarks>
-/// <seealso cref="https://github.com/dotnet/runtime/issues/27229"/>
+/// <seealso href="https://github.com/dotnet/runtime/issues/27229">dotnet/runtime/issues/27229</seealso>
 [DebuggerDisplay("Count = {Count}")]
 internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>, IDictionary<string, TValue>
 {

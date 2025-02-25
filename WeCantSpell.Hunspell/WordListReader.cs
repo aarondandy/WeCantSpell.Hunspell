@@ -254,7 +254,7 @@ public sealed class WordListReader
 
     private FlagSet GetAliasedFlagSet(ReadOnlySpan<char> flagNumber)
     {
-        if (IntEx.TryParseInvariant(flagNumber, out var flagAliasNumber) && Affix.TryGetAliasF(flagAliasNumber, out var aliasedFlags))
+        if (IntEx.TryParseInvariant(flagNumber, out var flagAliasNumber) && Affix.AliasF.TryGetByNumber(flagAliasNumber, out var aliasedFlags))
         {
             return aliasedFlags;
         }
@@ -321,9 +321,9 @@ public sealed class WordListReader
             var morphBuilder = ArrayBuilder<string>.Pool.Get();
             foreach (var originalValue in morphs)
             {
-                if (IntEx.TryParseInvariant(originalValue, out var morphNumber) && Affix.TryGetAliasM(morphNumber, out var aliasedMorph))
+                if (IntEx.TryParseInvariant(originalValue, out var morphNumber) && Affix.AliasM.TryGetByNumber(morphNumber, out var aliasedMorph))
                 {
-                    morphBuilder.AddRange(aliasedMorph.GetInternalArray());
+                    morphBuilder.AddRange(aliasedMorph.RawArray);
                 }
                 else
                 {

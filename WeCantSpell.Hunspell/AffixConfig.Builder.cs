@@ -338,7 +338,7 @@ public partial class AffixConfig
         /// <summary>
         /// A list of the warnings that were produced while reading or building an <see cref="AffixConfig"/>.
         /// </summary>
-        public List<string> Warnings { get; }
+        public List<string> Warnings { get; } = [];
 
         /// <summary>
         /// Constructs a <see cref="AffixConfig"/> based on the values set in the builder.
@@ -440,8 +440,8 @@ public partial class AffixConfig
                     : MultiReplacementTable.Empty;
             }
 
-            config.AliasF = _aliasF.ToImmutable(allowDestructive);
-            config.AliasM = _aliasM.ToImmutable(allowDestructive);
+            config.AliasF = new(_aliasF.MakeOrExtractArray(allowDestructive));
+            config.AliasM = new(_aliasM.MakeOrExtractArray(allowDestructive));
             config.BreakPoints = new(_breakPoints.MakeOrExtractArray(allowDestructive));
             config.Replacements = new(_replacements.MakeOrExtractArray(allowDestructive));
             config.CompoundRules = new(_compoundRules.MakeOrExtractArray(allowDestructive));

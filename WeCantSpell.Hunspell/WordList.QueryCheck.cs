@@ -217,7 +217,7 @@ public partial class WordList
             }
 
             // check boundary patterns (^begin and end$)
-            foreach (var breakEntry in Affix.BreakPoints.GetInternalArray())
+            foreach (var breakEntry in Affix.BreakPoints.RawArray)
             {
                 if (CheckDetailsInternalBreakPoints_BoundaryCheck(scw, breakEntry))
                 {
@@ -229,7 +229,7 @@ public partial class WordList
             {
                 List<(string breakEntry, int found)>? reSearch = null;
                 // other patterns
-                foreach (var breakEntry in Affix.BreakPoints.GetInternalArray())
+                foreach (var breakEntry in Affix.BreakPoints.RawArray)
                 {
                     var found = scw.IndexOf(breakEntry, 1, scw.Length - 2, StringComparison.Ordinal);
                     if (found >= 0)

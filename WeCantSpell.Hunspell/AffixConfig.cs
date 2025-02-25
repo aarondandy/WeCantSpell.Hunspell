@@ -577,22 +577,22 @@ public sealed partial class AffixConfig
     /// work/AB
     /// </code>
     /// </example>
-    public ImmutableArray<FlagSet> AliasF { get; private set; } = [];
+    public AliasCollection<FlagSet> AliasF { get; private set; } = [];
 
     /// <summary>
     /// Inidicates if any <see cref="AliasF"/> entries have been defined.
     /// </summary>
-    public bool IsAliasF => !AliasF.IsDefaultOrEmpty;
+    public bool IsAliasF => AliasF.HasItems;
 
     /// <summary>
     /// Values used for morphological alias compression.
     /// </summary>
-    public ImmutableArray<MorphSet> AliasM { get; private set; } = [];
+    public AliasCollection<MorphSet> AliasM { get; private set; } = [];
 
     /// <summary>
     /// Indicates if any <see cref="AliasM"/> entries have been defined.
     /// </summary>
-    public bool IsAliasM => !AliasM.IsDefaultOrEmpty;
+    public bool IsAliasM => AliasM.HasItems;
 
     /// <summary>
     /// Defines custom compound patterns with a regex-like syntax.
@@ -847,29 +847,4 @@ public sealed partial class AffixConfig
     internal FlagSet Flags_ForbiddenWord_OnlyUpcase_NoSuggest_OnlyInCompound { get; private set; } = FlagSet.Empty;
     internal FlagSet Flags_ForbiddenWord_NoSuggest { get; private set; } = FlagSet.Empty;
     internal FlagSet Flags_ForbiddenWord_NoSuggest_SubStandard { get; private set; } = FlagSet.Empty;
-
-
-    public bool TryGetAliasF(int number, out FlagSet result)
-    {
-        if (number <= 0 || number > AliasF.Length)
-        {
-            result = FlagSet.Empty;
-            return false;
-        }
-
-        result = AliasF[number - 1];
-        return true;
-    }
-
-    public bool TryGetAliasM(int number, out MorphSet result)
-    {
-        if (number <= 0 || number > AliasM.Length)
-        {
-            result = MorphSet.Empty;
-            return false;
-        }
-
-        result = AliasM[number - 1];
-        return true;
-    }
 }

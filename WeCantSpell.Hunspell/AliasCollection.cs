@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 namespace WeCantSpell.Hunspell;
 
-[DebuggerDisplay("Count = {Count}")]
-public readonly struct BreakSet : IReadOnlyList<string>
+public readonly struct AliasCollection<TEntry> : IReadOnlyList<TEntry>
 {
-    public static BreakSet Empty { get; } = new([]);
+    public static AliasCollection<TEntry> Empty { get; } = new([]);
 
-    public static BreakSet Create(IEnumerable<string> entries)
+    public static AliasCollection<TEntry> Craete(IEnumerable<TEntry> entries)
     {
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(entries);
@@ -22,12 +20,12 @@ public readonly struct BreakSet : IReadOnlyList<string>
         return new(entries.ToArray());
     }
 
-    internal BreakSet(string[] entries)
+    internal AliasCollection(TEntry[] entries)
     {
         _entries = entries;
     }
 
-    private readonly string[]? _entries;
+    private readonly TEntry[]? _entries;
 
     public int Count => _entries is not null ? _entries.Length : 0;
 
@@ -35,9 +33,9 @@ public readonly struct BreakSet : IReadOnlyList<string>
 
     public bool HasItems => _entries is { Length: > 0 };
 
-    internal string[] RawArray => _entries ?? [];
+    internal TEntry[] RawArray => _entries ?? [];
 
-    public string this[int index]
+    public TEntry this[int index]
     {
         get
         {
@@ -48,6 +46,7 @@ public readonly struct BreakSet : IReadOnlyList<string>
             ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
             ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
+
             if (_entries is null)
             {
                 ExceptionEx.ThrowInvalidOperation("Not initialized");
@@ -57,30 +56,19 @@ public readonly struct BreakSet : IReadOnlyList<string>
         }
     }
 
-    public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)RawArray).GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-    /// <summary>
-    /// Calculate break points for recursion limit.
-    /// </summary>
-    internal int FindRecursionLimit(string scw)
+    public bool TryGetByNumber(int number, out TEntry result)
     {
-        var nbr = 0;
-
-        if (scw.Length != 0 && HasItems)
+        if (number > 0 && _entries is not null && number <= _entries.Length)
         {
-            foreach (var breakEntry in _entries!)
-            {
-                var pos = 0;
-                while ((pos = scw.IndexOf(breakEntry, pos, StringComparison.Ordinal)) >= 0)
-                {
-                    nbr++;
-                    pos += breakEntry.Length;
-                }
-            }
+            result = _entries[number - 1];
+            return true;
         }
 
-        return nbr;
+        result = default!;
+        return false;
     }
+
+    public IEnumerator<TEntry> GetEnumerator() => ((IEnumerable<TEntry>)RawArray).GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

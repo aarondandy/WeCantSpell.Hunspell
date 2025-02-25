@@ -98,11 +98,9 @@ public readonly struct PhoneTable : IReadOnlyList<PhoneticEntry>
         }
     }
 
-    public IEnumerator<PhoneticEntry> GetEnumerator() => ((IEnumerable<PhoneticEntry>)GetInternalArray()).GetEnumerator();
+    public IEnumerator<PhoneticEntry> GetEnumerator() => ((IEnumerable<PhoneticEntry>)(_items ?? [])).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-    internal PhoneticEntry[] GetInternalArray() => _items ?? [];
 
     internal PhoneticEntry[] GetInternalArrayByFirstRuleChar(char ruleKey) => _byFirstRuleChar?.GetValueOrDefault(ruleKey) ?? [];
 }

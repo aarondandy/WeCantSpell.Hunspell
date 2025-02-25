@@ -450,7 +450,7 @@ public sealed partial class AffixReader
 
             if (IntEx.TryParseInvariant(parameterText, out expectedSize) && expectedSize is >= 0 and <= CollectionsEx.CollectionPreallocationLimit)
             {
-                entries.GrowToCapacity(expectedSize);
+                entries.SetCapacity(expectedSize);
                 return true;
             }
         }
@@ -468,7 +468,7 @@ public sealed partial class AffixReader
 
             if (IntEx.TryParseInvariant(parameterText, out var expectedSize) && expectedSize is >= 0 and <= CollectionsEx.CollectionPreallocationLimit)
             {
-                entries.GrowToCapacity(expectedSize);
+                entries.SetCapacity(expectedSize);
                 return true;
             }
         }

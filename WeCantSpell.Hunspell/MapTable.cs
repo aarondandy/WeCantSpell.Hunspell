@@ -35,6 +35,8 @@ public readonly struct MapTable : IReadOnlyList<MapEntry>
 
     public bool HasItems => _entries is { Length: > 0 };
 
+    public MapEntry[] RawArray => _entries ?? [];
+
     public MapEntry this[int index]
     {
         get
@@ -56,9 +58,7 @@ public readonly struct MapTable : IReadOnlyList<MapEntry>
         }
     }
 
-    public IEnumerator<MapEntry> GetEnumerator() => ((IEnumerable<MapEntry>)GetInternalArray()).GetEnumerator();
+    public IEnumerator<MapEntry> GetEnumerator() => ((IEnumerable<MapEntry>)RawArray).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-    internal MapEntry[] GetInternalArray() => _entries ?? [];
 }
