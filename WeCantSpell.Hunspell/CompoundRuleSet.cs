@@ -60,7 +60,7 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
 
     internal bool EntryContainsRuleFlags(in FlagSet flags)
     {
-        if (flags.HasItems && _rules is not null)
+        if (flags.HasItems && _rules is { Length: > 0 })
         {
             foreach(var rule in _rules)
             {
@@ -82,7 +82,7 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
         }
 
         var bt = 0;
-        var btinfo = new List<MetacharData> { new() };
+        var btinfo = new List<MetacharData>(4) { new() };
 
         foreach (var compoundRule in _rules)
         {

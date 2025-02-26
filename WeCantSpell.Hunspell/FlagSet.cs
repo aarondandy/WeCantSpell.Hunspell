@@ -361,19 +361,19 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     public override string ToString()
     {
-        if (IsEmpty)
+        if (_values is { Length: > 0 })
         {
-            return string.Empty;
+            if (((FlagValue)_values[0]).IsPrintable && (_values.Length == 1 || ((FlagValue)_values[_values.Length - 1]).IsPrintable))
+            {
+                return _values;
+            }
+            else
+            {
+                return string.Join(",", _values!.Select(static v => ((int)v).ToString(CultureInfo.InvariantCulture.NumberFormat)));
+            }
         }
 
-        if (_values!.All(static v => ((FlagValue)v).IsPrintable))
-        {
-            return _values!;
-        }
-        else
-        {
-            return string.Join(",", _values!.Select(static v => ((int)v).ToString(CultureInfo.InvariantCulture.NumberFormat)));
-        }
+        return string.Empty;
     }
 
     public override int GetHashCode() => (int)StringEx.GetStableOrdinalHashCode(GetInternalText());
