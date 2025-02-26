@@ -156,14 +156,38 @@ public sealed partial class WordList
 
     public IEnumerable<string> Suggest(ReadOnlySpan<char> word, QueryOptions? options, CancellationToken cancellationToken) => new QuerySuggest(this, options, cancellationToken).Suggest(word);
 
+    /// <summary>
+    /// Adds a word to this in-memory dictionary.
+    /// </summary>
+    /// <param name="word">The word to add.</param>
+    /// <remarks>
+    /// Changes made to this dictionary instance will not be saved.
+    /// </remarks>
     public void Add(string word)
     {
-        throw new NotImplementedException();
+        Add(word, new(FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None));
     }
 
+    /// <summary>
+    /// Adds a word to this in-memory dictionary.
+    /// </summary>
+    /// <param name="word">The word to add.</param>
+    /// <param name="detail">The word entry details.</param>
+    /// <remarks>
+    /// Changes made to this dictionary instance will not be saved.
+    /// </remarks>
     public void Add(string word, WordEntryDetail detail)
     {
-        throw new NotImplementedException();
+        ref var details = ref _entriesByRoot.GetOrAdd(word);
+        if (details is null)
+        {
+            details = [detail];
+        }
+        else
+        {
+            Array.Resize(ref details, details.Length + 1);
+            details[details.Length - 1] = detail;
+        }
     }
 
     private void ApplyRootOutputConversions(ref SpellCheckResult result)
