@@ -37,7 +37,7 @@ public sealed partial class WordList
         ExceptionEx.ThrowIfArgumentNull(words, nameof(words));
 #endif
 
-        return CreateFromWords(words, new AffixConfig.Builder().MoveToImmutable());
+        return CreateFromWords(words, new AffixConfig.Builder().Extract());
     }
 
     public static WordList CreateFromWords(IEnumerable<string> words, AffixConfig affix)
@@ -59,7 +59,7 @@ public sealed partial class WordList
             wordListBuilder.Add(word);
         }
 
-        return wordListBuilder.MoveToImmutable();
+        return wordListBuilder.Extract();
     }
 
     private WordList(

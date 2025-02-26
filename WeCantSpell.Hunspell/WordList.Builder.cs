@@ -8,7 +8,7 @@ public partial class WordList
 {
     public sealed class Builder
     {
-        public Builder() : this(new AffixConfig.Builder().MoveToImmutable())
+        public Builder() : this(new AffixConfig.Builder().Extract())
         {
         }
 
@@ -48,17 +48,26 @@ public partial class WordList
             }
         }
 
-        [Obsolete]
-        public WordList ToImmutable() => ToImmutable(allowDestructive: false);
+        /// <summary>
+        /// Builds a new <see cref="WordList"/> based on the values in this builder.
+        /// </summary>
+        /// <returns>A new <see cref="WordList"/>.</returns>
+        public WordList Build() => BuildOrExtract(extract: false);
 
-        [Obsolete]
-        public WordList MoveToImmutable() => ToImmutable(allowDestructive: true);
+        /// <summary>
+        /// Builds a new <see cref="WordList"/> based on the values in this builder.
+        /// </summary>
+        /// <remarks>
+        /// This method can leave the builder in an invalid state
+        /// but provides better performance for file reads.
+        /// </remarks>
+        /// <returns>A new <see cref="WordList"/>.</returns>
+        public WordList Extract() => BuildOrExtract(extract: true);
 
-        [Obsolete]
-        public WordList ToImmutable(bool allowDestructive)
+        private WordList BuildOrExtract(bool extract)
         {
             TextDictionary<WordEntryDetail[]> entriesByRoot;
-            if (allowDestructive)
+            if (extract)
             {
                 entriesByRoot = _entryDetailsByRoot;
                 _entryDetailsByRoot = new(1);
@@ -74,9 +83,9 @@ public partial class WordList
                 // store ph: field of a morphological description in reptable
                 if (allReplacements.IsEmpty)
                 {
-                    allReplacements = new(_phoneticReplacements.MakeOrExtractArray(allowDestructive));
+                    allReplacements = new(_phoneticReplacements.MakeOrExtractArray(extract));
                 }
-                else if (allowDestructive)
+                else if (extract)
                 {
                     _phoneticReplacements.AddRange(allReplacements);
                     allReplacements = new(_phoneticReplacements.Extract());

@@ -145,7 +145,7 @@ public sealed partial class AffixReader
             }
         }
 
-        return readerInstance.BuildConfig(allowDestructive: true);
+        return readerInstance.ExtractOrBuild();
     }
 
     public static AffixConfig ReadFile(string filePath)
@@ -182,7 +182,7 @@ public sealed partial class AffixReader
             readerInstance.ParseLine(line.AsSpan());
         }
 
-        return readerInstance.BuildConfig(allowDestructive: true);
+        return readerInstance.ExtractOrBuild();
     }
 
     public static AffixConfig Read(Stream stream)
@@ -206,7 +206,7 @@ public sealed partial class AffixReader
             readerInstance.ParseLine(lineReader.CurrentSpan);
         }
 
-        return readerInstance.BuildConfig(allowDestructive: true);
+        return readerInstance.ExtractOrBuild();
     }
 
     private bool ParseLine(ReadOnlySpan<char> line)
@@ -261,17 +261,19 @@ public sealed partial class AffixReader
         _initialized |= flags;
     }
 
-    private AffixConfig BuildConfig(bool allowDestructive)
+    private AffixConfig ExtractOrBuild()
     {
-        if (!IsInitialized(EntryListType.Break))
+        if (!IsInitialized(EntryListType.Break) && _builder._breakPoints.Count == 0)
         {
-            if (_builder._breakPoints.Count == 0)
-            {
-                _builder._breakPoints.AddRange(["-", "^-", "-$"]);
-            }
+            _builder._breakPoints.AddRange(["-", "^-", "-$"]);
         }
 
-        return _builder.ToImmutable(allowDestructive: _ownsBuilder && allowDestructive);
+        return _ownsBuilder ? _builder.Extract() : _builder.Build();
+    }
+
+    internal void InitializeBreaksIfEmpty()
+    {
+        
     }
 
     private bool TryHandleParameterizedCommand(AffixReaderCommandKind command, ReadOnlySpan<char> parameters)

@@ -211,7 +211,7 @@ public partial class AffixConfig
         /// <seealso cref="AffixConfig.Replacements"/>
         public IList<SingleReplacement> Replacements => _replacements;
 
-        internal ArrayBuilder<SingleReplacement> _replacements { get; } = new();
+        internal ArrayBuilder<SingleReplacement> _replacements = new();
 
         /// <summary>
         /// Suffixes attached to root words to make other words.
@@ -256,7 +256,7 @@ public partial class AffixConfig
         /// <seealso cref="AffixConfig.CompoundPatterns"/>
         public IList<PatternEntry> CompoundPatterns => _compoundPatterns;
 
-        internal ArrayBuilder<PatternEntry> _compoundPatterns { get; } = new();
+        internal ArrayBuilder<PatternEntry> _compoundPatterns = new();
 
         /// <summary>
         /// Defines new break points for breaking words and checking word parts separately.
@@ -264,23 +264,23 @@ public partial class AffixConfig
         /// <seealso cref="AffixConfig.BreakPoints"/>
         public IList<string> BreakPoints => _breakPoints;
 
-        internal ArrayBuilder<string> _breakPoints { get; } = new();
+        internal ArrayBuilder<string> _breakPoints = new();
 
         /// <summary>
         /// Input conversion entries.
         /// </summary>
         /// <seealso cref="AffixConfig.InputConversions"/>
-        internal TextDictionary<MultiReplacementEntry> _inputConversions = new(0);
-
         public IDictionary<string, MultiReplacementEntry> InputConversions => _inputConversions;
+
+        internal TextDictionary<MultiReplacementEntry> _inputConversions = new(0);
 
         /// <summary>
         /// Output conversion entries.
         /// </summary>
         /// <seealso cref="AffixConfig.OutputConversions"/>
-        internal TextDictionary<MultiReplacementEntry> _outputConversions = new(0);
-
         public IDictionary<string, MultiReplacementEntry> OutputConversions => _outputConversions;
+
+        internal TextDictionary<MultiReplacementEntry> _outputConversions = new(0);
 
         /// <summary>
         /// Mappings between related characters.
@@ -288,7 +288,7 @@ public partial class AffixConfig
         /// <seealso cref="AffixConfig.RelatedCharacterMap"/>
         public IList<MapEntry> RelatedCharacterMap => _relatedCharacterMap;
 
-        internal ArrayBuilder<MapEntry> _relatedCharacterMap { get; } = new();
+        internal ArrayBuilder<MapEntry> _relatedCharacterMap = new();
 
         /// <summary>
         /// Phonetic transcription entries.
@@ -296,7 +296,7 @@ public partial class AffixConfig
         /// <seealso cref="AffixConfig.Phone"/>
         public IList<PhoneticEntry> Phone => _phone;
 
-        internal ArrayBuilder<PhoneticEntry> _phone { get; } = new();
+        internal ArrayBuilder<PhoneticEntry> _phone = new();
 
         /// <summary>
         /// Maximum syllable number, that may be in a
@@ -341,28 +341,34 @@ public partial class AffixConfig
         public List<string> Warnings { get; } = [];
 
         /// <summary>
-        /// Constructs a <see cref="AffixConfig"/> based on the values set in the builder.
+        /// Builds a new <see cref="AffixConfig"/> based on the values set in this builder.
         /// </summary>
-        /// <returns>A constructed affix config.</returns>
+        /// <returns>A new affix config.</returns>
         /// <seealso cref="AffixConfig"/>
-        [Obsolete("Stop using the word immutable")]
-        public AffixConfig ToImmutable() => ToImmutable(allowDestructive: false);
+        public AffixConfig Build() => BuildOrExtract(extract: false);
 
         /// <summary>
-        /// Constructs a <see cref="AffixConfig"/> based on the values set in the builder
-        /// destroying the builder in the process.
+        /// Builds a new <see cref="AffixConfig"/> based on the values set in the builder.
         /// </summary>
-        /// <returns>A constructed affix config.</returns>
+        /// <returns>A new affix config.</returns>
+        /// <remarks>
+        /// This method can leave the builder in an invalid state
+        /// but provides better performance for file reads.
+        /// </remarks>
+        /// <seealso cref="AffixConfig"/>
+        public AffixConfig Extract() => BuildOrExtract(extract: true);
+
+        /// <summary>
+        /// Builds a new <see cref="AffixConfig"/> based on the values set in the builder.
+        /// </summary>
+        /// <param name="extract"><c>true</c> to build an <see cref="AffixConfig"/> at the expense of this builder.</param>
+        /// <returns>A new affix config.</returns>
         /// <seealso cref="AffixConfig"/>
         /// <remarks>
         /// This method can leave the builder in an invalid state
         /// but provides better performance for file reads.
         /// </remarks>
-        [Obsolete("Stop using the word immutable")]
-        public AffixConfig MoveToImmutable() => ToImmutable(allowDestructive: true);
-
-        [Obsolete("Stop using the word immutable")]
-        public AffixConfig ToImmutable(bool allowDestructive)
+        private AffixConfig BuildOrExtract(bool extract)
         {
             var culture = CultureInfo.InvariantCulture;
             var comparer = StringComparer.InvariantCulture;
@@ -422,7 +428,7 @@ public partial class AffixConfig
                 Version = Version
             };
 
-            if (allowDestructive)
+            if (extract)
             {
                 config.InputConversions = _inputConversions.HasItems
                     ? MultiReplacementTable.TakeDictionary(_inputConversions)
@@ -443,17 +449,17 @@ public partial class AffixConfig
                     : MultiReplacementTable.Empty;
             }
 
-            config.AliasF = new(_aliasF.MakeOrExtractArray(allowDestructive));
-            config.AliasM = new(_aliasM.MakeOrExtractArray(allowDestructive));
-            config.BreakPoints = new(_breakPoints.MakeOrExtractArray(allowDestructive));
-            config.Replacements = new(_replacements.MakeOrExtractArray(allowDestructive));
-            config.CompoundRules = new(_compoundRules.MakeOrExtractArray(allowDestructive));
-            config.CompoundPatterns = new(_compoundPatterns.MakeOrExtractArray(allowDestructive));
-            config.RelatedCharacterMap = new(_relatedCharacterMap.MakeOrExtractArray(allowDestructive));
-            config.Phone = new(_phone.MakeOrExtractArray(allowDestructive));
+            config.AliasF = new(_aliasF.MakeOrExtractArray(extract));
+            config.AliasM = new(_aliasM.MakeOrExtractArray(extract));
+            config.BreakPoints = new(_breakPoints.MakeOrExtractArray(extract));
+            config.Replacements = new(_replacements.MakeOrExtractArray(extract));
+            config.CompoundRules = new(_compoundRules.MakeOrExtractArray(extract));
+            config.CompoundPatterns = new(_compoundPatterns.MakeOrExtractArray(extract));
+            config.RelatedCharacterMap = new(_relatedCharacterMap.MakeOrExtractArray(extract));
+            config.Phone = new(_phone.MakeOrExtractArray(extract));
 
-            config.Prefixes = Prefixes.BuildCollection(allowDestructive);
-            config.Suffixes = Suffixes.BuildCollection(allowDestructive);
+            config.Prefixes = Prefixes.BuildCollection(extract);
+            config.Suffixes = Suffixes.BuildCollection(extract);
 
             config.ContClasses = config.Prefixes.ContClasses.Union(config.Suffixes.ContClasses);
 

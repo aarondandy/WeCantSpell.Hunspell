@@ -113,7 +113,7 @@ public sealed class WordListReader
             }
         }
 
-        return readerInstance.BuildWordList(allowDestructive: true);
+        return readerInstance.ExtractOrBuild();
     }
 
     public static WordList ReadFile(string dictionaryFilePath)
@@ -188,18 +188,20 @@ public sealed class WordListReader
 
         var readerInstance = new WordListReader(builder, affix);
 
-        using var lineReader = new LineReader(dictionaryStream, affix.Encoding);
-        while (lineReader.ReadNext())
+        using (var lineReader = new LineReader(dictionaryStream, affix.Encoding))
         {
-            readerInstance.ParseLine(lineReader.CurrentSpan);
+            while (lineReader.ReadNext())
+            {
+                readerInstance.ParseLine(lineReader.CurrentSpan);
+            }
         }
 
-        return readerInstance.Builder.MoveToImmutable();
+        return readerInstance.Builder.Extract();
     }
 
-    private WordList BuildWordList(bool allowDestructive)
+    private WordList ExtractOrBuild()
     {
-        return Builder.ToImmutable(allowDestructive: _ownsBuilder && allowDestructive);
+        return _ownsBuilder ? Builder.Extract() : Builder.Build();
     }
 
     private static string FindAffixFilePath(string dictionaryFilePath)
