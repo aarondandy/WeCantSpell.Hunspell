@@ -96,7 +96,7 @@ internal static partial class StringEx
 
     public static bool IsNumericWord(string word)
     {
-        var isNum = false; // 0 = begin, 1 = number, 2 = separator
+        var isNum = false;
         foreach (var c in word)
         {
             switch (c)

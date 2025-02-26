@@ -79,7 +79,7 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public bool Equals(MorphSet other) => RawArray.AsSpan().SequenceEqual(RawArray.AsSpan());
+    public bool Equals(MorphSet other) => RawArray.AsSpan().SequenceEqual(other.RawArray.AsSpan());
 
     public override bool Equals(object? obj) => obj is MorphSet set && Equals(set);
 
