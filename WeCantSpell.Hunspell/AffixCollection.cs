@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Diagnostics;
-
+using System.Linq;
 
 #if HAS_FROZENDICTIONARY || HAS_FROZENSET
 using System.Collections.Frozen;
@@ -131,7 +130,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
     public IEnumerable<FlagValue> FlagValues => _affixesByFlag.Keys;
 
-    public IEnumerator<AffixGroup<TAffixEntry>> GetEnumerator() => _affixesByFlag.Values.AsEnumerable().GetEnumerator();
+    public IEnumerator<AffixGroup<TAffixEntry>> GetEnumerator() => ((IEnumerable<AffixGroup<TAffixEntry>>)_affixesByFlag.Values).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -180,39 +179,38 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
             return groupBuilder;
         }
 
-        protected void ApplyToCollection(AffixCollection<TAffixEntry> target, bool allowDestructive)
+        protected void ApplyToCollection(AffixCollection<TAffixEntry> target, bool allowDestructiveApplication)
         {
             Dictionary<char, EntryTreeNode> affixTreeRootsByFirstKeyCharBuilder = [];
 
             // loop through each prefix list starting point
             foreach (var (firstChar, affixes) in _byFirstKeyChar)
             {
-                if (BuildTree(affixes, allowDestructive: allowDestructive) is { } root)
+                if (BuildTree(affixes, allowDestructive: allowDestructiveApplication) is { } root)
                 {
                     affixTreeRootsByFirstKeyCharBuilder.Add(firstChar, root);
                 }
             }
 
             target.ContClasses = FlagSet.Create(_contClassAccumulator);
-            target._affixesWithEmptyKeys = _emptyKeys.MakeOrExtractArray(allowDestructive);
+            target._affixesWithEmptyKeys = _emptyKeys.MakeOrExtractArray(extract: allowDestructiveApplication);
+
+            Func<KeyValuePair<FlagValue, GroupBuilder>, AffixGroup<TAffixEntry>> buildByFlagValue = allowDestructiveApplication
+                ? static (x) => x.Value.Extract()
+                : static (x) => x.Value.Build();
 
 #if HAS_FROZENDICTIONARY
-
-            target._affixesByFlag = _byFlag.ToFrozenDictionary(static x => x.Key, x => x.Value.Build(allowDestructive: allowDestructive));
+            target._affixesByFlag = _byFlag.ToFrozenDictionary(static x => x.Key, buildByFlagValue);
             target._affixTreeRootsByFirstKeyChar = affixTreeRootsByFirstKeyCharBuilder.ToFrozenDictionary();
-
 #else
-
-            target._affixesByFlag = _byFlag.ToDictionary(static x => x.Key, x => x.Value.Build(allowDestructive: allowDestructive));
+            target._affixesByFlag = _byFlag.ToDictionary(static x => x.Key, buildByFlagValue);
             target._affixTreeRootsByFirstKeyChar = affixTreeRootsByFirstKeyCharBuilder;
-
 #endif
 
-            if (allowDestructive)
+            if (allowDestructiveApplication)
             {
                 _byFlag.Clear();
             }
-
         }
 
         private static EntryTreeNode? BuildTree(List<TAffixEntry> affixes, bool allowDestructive)
@@ -374,11 +372,20 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
                 }
             }
 
-            public AffixGroup<TAffixEntry> Build(bool allowDestructive) =>
+            public AffixGroup<TAffixEntry> Build() =>
                 AffixGroup<TAffixEntry>.CreateUsingArray(
                     AFlag,
                     Options,
-                    _entries.MakeOrExtractArray(allowDestructive));
+                    _entries.ToArray());
+
+            public AffixGroup<TAffixEntry> Extract() =>
+                AffixGroup<TAffixEntry>.CreateUsingArray(
+                    AFlag,
+                    Options,
+                    _entries.Extract());
+
+            public AffixGroup<TAffixEntry> ExtractOrBuild(bool extract) =>
+                extract ? Extract() : Build();
 
             private TAffixEntry CreateEntry(string strip,
                 string affixText,
@@ -569,7 +576,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 [DebuggerDisplay("Count = {Count}")]
 public sealed class SuffixCollection : AffixCollection<SuffixEntry>
 {
-    public static SuffixCollection Empty { get; } = new Builder().BuildCollection(allowDestructive: true);
+    public static SuffixCollection Empty { get; } = new Builder().BuildOrExtract(extract: true);
 
     private SuffixCollection()
     {
@@ -579,10 +586,10 @@ public sealed class SuffixCollection : AffixCollection<SuffixEntry>
 
     public sealed class Builder : BuilderBase
     {
-        public SuffixCollection BuildCollection(bool allowDestructive)
+        public SuffixCollection BuildOrExtract(bool extract)
         {
             var result = new SuffixCollection();
-            ApplyToCollection(result, allowDestructive: allowDestructive);
+            ApplyToCollection(result, allowDestructiveApplication: extract);
             return result;
         }
     }
@@ -591,7 +598,7 @@ public sealed class SuffixCollection : AffixCollection<SuffixEntry>
 [DebuggerDisplay("Count = {Count}")]
 public sealed class PrefixCollection : AffixCollection<PrefixEntry>
 {
-    public static PrefixCollection Empty { get; } = new Builder().BuildCollection(allowDestructive: true);
+    public static PrefixCollection Empty { get; } = new Builder().BuildOrExtract(extract: true);
 
     private PrefixCollection()
     {
@@ -601,10 +608,10 @@ public sealed class PrefixCollection : AffixCollection<PrefixEntry>
 
     public sealed class Builder : BuilderBase
     {
-        public PrefixCollection BuildCollection(bool allowDestructive)
+        public PrefixCollection BuildOrExtract(bool extract)
         {
             var result = new PrefixCollection();
-            ApplyToCollection(result, allowDestructive: allowDestructive);
+            ApplyToCollection(result, allowDestructiveApplication: extract);
             return result;
         }
     }

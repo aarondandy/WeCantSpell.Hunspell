@@ -124,8 +124,10 @@ public sealed partial class AffixReader
         return await ReadAsync(stream, builder, cancellationToken).ConfigureAwait(false);
     }
 
-    public static Task<AffixConfig> ReadAsync(Stream stream, CancellationToken cancellationToken = default) =>
-        ReadAsync(stream, builder: null, cancellationToken);
+    public static Task<AffixConfig> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
+    {
+        return ReadAsync(stream, builder: null, cancellationToken);
+    }
 
     public static async Task<AffixConfig> ReadAsync(Stream stream, AffixConfig.Builder? builder, CancellationToken cancellationToken = default)
     {
@@ -174,12 +176,13 @@ public sealed partial class AffixReader
     {
         var readerInstance = new AffixReader(builder);
 
-        using var reader = new StringReader(contents);
-
-        string? line;
-        while ((line = reader.ReadLine()) is not null)
+        using (var reader = new StringReader(contents))
         {
-            readerInstance.ParseLine(line.AsSpan());
+            string? line;
+            while ((line = reader.ReadLine()) is not null)
+            {
+                readerInstance.ParseLine(line.AsSpan());
+            }
         }
 
         return readerInstance.ExtractOrBuild();
@@ -200,10 +203,12 @@ public sealed partial class AffixReader
 
         var readerInstance = new AffixReader(builder);
 
-        using var lineReader = new LineReader(stream, readerInstance.Encoding, allowEncodingChanges: true);
-        while (lineReader.ReadNext())
+        using (var lineReader = new LineReader(stream, readerInstance.Encoding, allowEncodingChanges: true))
         {
-            readerInstance.ParseLine(lineReader.CurrentSpan);
+            while (lineReader.ReadNext())
+            {
+                readerInstance.ParseLine(lineReader.CurrentSpan);
+            }
         }
 
         return readerInstance.ExtractOrBuild();
@@ -263,17 +268,12 @@ public sealed partial class AffixReader
 
     private AffixConfig ExtractOrBuild()
     {
-        if (!IsInitialized(EntryListType.Break) && _builder._breakPoints.Count == 0)
+        if (!IsInitialized(EntryListType.Break) && _builder.BreakPointsBuilder.Count == 0)
         {
-            _builder._breakPoints.AddRange(["-", "^-", "-$"]);
+            _builder.BreakPointsBuilder.AddRange(["-", "^-", "-$"]);
         }
 
         return _ownsBuilder ? _builder.Extract() : _builder.Build();
-    }
-
-    internal void InitializeBreaksIfEmpty()
-    {
-        
     }
 
     private bool TryHandleParameterizedCommand(AffixReaderCommandKind command, ReadOnlySpan<char> parameters)
@@ -364,21 +364,21 @@ public sealed partial class AffixReader
             case AffixReaderCommandKind.NeedAffix:
                 return _flagParser.TryParseFlag(parameters, out _builder.NeedAffix);
             case AffixReaderCommandKind.Replacement:
-                return TryParseStandardListItem(EntryListType.Replacements, parameters, _builder._replacements, TryParseReplacements);
+                return TryParseStandardListItem(EntryListType.Replacements, parameters, _builder.ReplacementsBuilder, TryParseReplacements);
             case AffixReaderCommandKind.InputConversions:
-                return TryParseConv(parameters, EntryListType.Iconv, ref _builder._inputConversions);
+                return TryParseConv(parameters, EntryListType.Iconv, ref _builder.InputConversionsBuilder);
             case AffixReaderCommandKind.OutputConversions:
-                return TryParseConv(parameters, EntryListType.Oconv, ref _builder._outputConversions);
+                return TryParseConv(parameters, EntryListType.Oconv, ref _builder.OutputConversionsBuilder);
             case AffixReaderCommandKind.Phone:
-                return TryParseStandardListItem(EntryListType.Phone, parameters, _builder._phone, TryParsePhone);
+                return TryParseStandardListItem(EntryListType.Phone, parameters, _builder.PhoneBuilder, TryParsePhone);
             case AffixReaderCommandKind.CheckCompoundPattern:
-                return TryParseStandardListItem(EntryListType.CompoundPatterns, parameters, _builder._compoundPatterns, TryParseCheckCompoundPatternIntoCompoundPatterns);
+                return TryParseStandardListItem(EntryListType.CompoundPatterns, parameters, _builder.CompoundPatternsBuilder, TryParseCheckCompoundPatternIntoCompoundPatterns);
             case AffixReaderCommandKind.CompoundRule:
-                return TryParseStandardListItem(EntryListType.CompoundRules, parameters, _builder._compoundRules, TryParseCompoundRuleIntoList);
+                return TryParseStandardListItem(EntryListType.CompoundRules, parameters, _builder.CompoundRulesBuilder, TryParseCompoundRuleIntoList);
             case AffixReaderCommandKind.Map:
-                return TryParseStandardListItem(EntryListType.Map, parameters, _builder._relatedCharacterMap, TryParseMapEntry);
+                return TryParseStandardListItem(EntryListType.Map, parameters, _builder.RelatedCharacterMapBuilder, TryParseMapEntry);
             case AffixReaderCommandKind.Break:
-                return TryParseStandardListItem(EntryListType.Break, parameters, _builder._breakPoints, TryParseBreak);
+                return TryParseStandardListItem(EntryListType.Break, parameters, _builder.BreakPointsBuilder, TryParseBreak);
             case AffixReaderCommandKind.Version:
                 if (parameters.IsEmpty)
                 {
@@ -417,9 +417,9 @@ public sealed partial class AffixReader
                     ? TryParseAffixIntoList(parameters, _builder.Prefixes)
                     : TryParseAffixIntoList(parameters, _builder.Suffixes);
             case AffixReaderCommandKind.AliasF:
-                return TryParseStandardListItemForAffix(EntryListType.AliasF, parameters, _builder._aliasF, TryParseAliasF);
+                return TryParseStandardListItemForAffix(EntryListType.AliasF, parameters, _builder.AliasFBuilder, TryParseAliasF);
             case AffixReaderCommandKind.AliasM:
-                return TryParseStandardListItemForAffix(EntryListType.AliasM, parameters, _builder._aliasM, TryParseAliasM);
+                return TryParseStandardListItemForAffix(EntryListType.AliasM, parameters, _builder.AliasMBuilder, TryParseAliasM);
             default:
                 LogWarning(string.Concat("Unknown parsed command ", command.ToString()));
                 return false;
@@ -529,7 +529,8 @@ public sealed partial class AffixReader
         }
         catch (CultureNotFoundException)
         {
-            if (language.IndexOf('-') is int dashIndex and > 0)
+            var dashIndex = language.IndexOf('-');
+            if (dashIndex > 0)
             {
                 return GetCultureFromLanguage(language.Substring(0, dashIndex));
             }
@@ -786,11 +787,11 @@ public sealed partial class AffixReader
             {
                 options |= AffixEntryOptions.CrossProduct;
             }
-            if (_builder._aliasM is { Count: > 0 })
+            if (_builder.AliasMBuilder is { Count: > 0 })
             {
                 options |= AffixEntryOptions.AliasM;
             }
-            if (_builder._aliasF is { Count: > 0 })
+            if (_builder.AliasFBuilder is { Count: > 0 })
             {
                 options |= AffixEntryOptions.AliasF;
             }
@@ -830,7 +831,7 @@ public sealed partial class AffixReader
 
         if (group2.IndexOf('/') is int affixSlashIndex and >= 0)
         {
-            if (_builder._aliasF is { Count: > 0 } aliasF)
+            if (_builder.AliasFBuilder is { Count: > 0 } aliasF)
             {
                 if (IntEx.TryParseInvariant(group2.Slice(affixSlashIndex + 1), out var aliasNumber) && aliasNumber > 0 && aliasNumber <= aliasF.Count)
                 {
@@ -893,10 +894,10 @@ public sealed partial class AffixReader
 
         // piece 6
         MorphSet morph;
-        if (!group4.IsEmpty)
+        if (group4.Length > 0)
         {
             var morphAffixText = group4;
-            if (_builder._aliasM is { Count: > 0 } aliasM)
+            if (_builder.AliasMBuilder is { Count: > 0 } aliasM)
             {
                 if (IntEx.TryParseInvariant(morphAffixText, out var morphNumber) && morphNumber > 0 && morphNumber <= aliasM.Count)
                 {

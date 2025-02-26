@@ -16,22 +16,33 @@ public partial class AffixReader
         public bool TryParseNextAffixFlag(FlagParser flagParser, out FlagValue flag)
         {
             var flagSpan = ParseNextArgument();
-
-            if (flagSpan.IsEmpty || !flagParser.TryParseFlag(flagSpan, out flag))
-            {
-                flag = default;
-                return false;
-            }
-
-            return true;
+            return flagParser.TryParseFlag(flagSpan, out flag);
         }
 
         public ReadOnlySpan<char> ParseNextArgument()
         {
+            ReadOnlySpan<char> resultSpan;
             AdvanceThroughWhiteSpace();
 
-            var resultSpan = ReadCurrentGroup();
-            _text = _text.Slice(resultSpan.Length);
+            if (_text.Length > 0)
+            {
+                var i = _text.IndexOfTabOrSpace();
+
+                if (i < 0)
+                {
+                    resultSpan = _text;
+                    _text = [];
+                }
+                else
+                {
+                    resultSpan = _text.Slice(0, i);
+                    _text = _text.Slice(resultSpan.Length);
+                }
+            }
+            else
+            {
+                resultSpan = [];
+            }
 
             return resultSpan;
         }
@@ -53,26 +64,28 @@ public partial class AffixReader
             static int locateComments(ReadOnlySpan<char> span)
             {
                 var i = 0;
-                while (i >= 0)
+                while (i < span.Length)
                 {
                     i = span.IndexOf('#', i);
-                    if (i < 0)
-                    {
-                        break;
-                    }
-                    else if (i == 0)
+
+                    if (i == 0)
                     {
                         return 0;
                     }
-                    else if (i > 0)
+                    else if (i < 0)
                     {
-                        if (span[i - 1].IsTabOrSpace())
-                        {
-                            return i;
-                        }
+                        goto fail;
                     }
+
+                    if (span[i - 1].IsTabOrSpace())
+                    {
+                        return i;
+                    }
+
+                    i++;
                 }
 
+            fail:
                 return -1;
             }
         }
@@ -88,17 +101,6 @@ public partial class AffixReader
             {
                 _text = _text.Slice(i);
             }
-        }
-
-        private readonly ReadOnlySpan<char> ReadCurrentGroup()
-        {
-            if (_text.IsEmpty)
-            {
-                return [];
-            }
-
-            var i = _text.IndexOfTabOrSpace();
-            return i < 0 ? _text : _text.Slice(0, i);
         }
     }
 }

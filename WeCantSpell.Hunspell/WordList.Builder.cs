@@ -87,7 +87,7 @@ public partial class WordList
                 }
                 else if (extract)
                 {
-                    _phoneticReplacements.AddRange(allReplacements);
+                    _phoneticReplacements.AddRange(allReplacements.RawArray);
                     allReplacements = new(_phoneticReplacements.Extract());
                 }
                 else

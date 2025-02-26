@@ -209,9 +209,9 @@ public partial class AffixConfig
         /// Specifies modifications to try first.
         /// </summary>
         /// <seealso cref="AffixConfig.Replacements"/>
-        public IList<SingleReplacement> Replacements => _replacements;
+        public IList<SingleReplacement> Replacements => ReplacementsBuilder;
 
-        internal ArrayBuilder<SingleReplacement> _replacements = new();
+        internal ArrayBuilder<SingleReplacement> ReplacementsBuilder = new();
 
         /// <summary>
         /// Suffixes attached to root words to make other words.
@@ -229,74 +229,74 @@ public partial class AffixConfig
         /// Ordinal numbers for affix flag compression.
         /// </summary>
         /// <seealso cref="AffixConfig.AliasF"/>
-        public IList<FlagSet> AliasF => _aliasF;
+        public IList<FlagSet> AliasF => AliasFBuilder;
 
-        internal ArrayBuilder<FlagSet> _aliasF = new();
+        internal ArrayBuilder<FlagSet> AliasFBuilder = new();
 
         /// <summary>
         /// Values used for morphological alias compression.
         /// </summary>
         /// <seealso cref="AffixConfig.AliasM"/>
-        public IList<MorphSet> AliasM => _aliasM;
+        public IList<MorphSet> AliasM => AliasMBuilder;
 
-        internal ArrayBuilder<MorphSet> _aliasM = new();
+        internal ArrayBuilder<MorphSet> AliasMBuilder = new();
 
         /// <summary>
         /// Defines custom compound patterns with a regex-like syntax.
         /// </summary>
         /// <seealso cref="AffixConfig.CompoundRules"/>
-        public IList<CompoundRule> CompoundRules => _compoundRules;
+        public IList<CompoundRule> CompoundRules => CompoundRulesBuilder;
 
-        internal ArrayBuilder<CompoundRule> _compoundRules = new();
+        internal ArrayBuilder<CompoundRule> CompoundRulesBuilder = new();
 
         /// <summary>
         /// Forbid compounding, if the first word in the compound ends with endchars, and
         /// next word begins with beginchars and(optionally) they have the requested flags.
         /// </summary>
         /// <seealso cref="AffixConfig.CompoundPatterns"/>
-        public IList<PatternEntry> CompoundPatterns => _compoundPatterns;
+        public IList<PatternEntry> CompoundPatterns => CompoundPatternsBuilder;
 
-        internal ArrayBuilder<PatternEntry> _compoundPatterns = new();
+        internal ArrayBuilder<PatternEntry> CompoundPatternsBuilder = new();
 
         /// <summary>
         /// Defines new break points for breaking words and checking word parts separately.
         /// </summary>
         /// <seealso cref="AffixConfig.BreakPoints"/>
-        public IList<string> BreakPoints => _breakPoints;
+        public IList<string> BreakPoints => BreakPointsBuilder;
 
-        internal ArrayBuilder<string> _breakPoints = new();
+        internal ArrayBuilder<string> BreakPointsBuilder = new();
 
         /// <summary>
         /// Input conversion entries.
         /// </summary>
         /// <seealso cref="AffixConfig.InputConversions"/>
-        public IDictionary<string, MultiReplacementEntry> InputConversions => _inputConversions;
+        public IDictionary<string, MultiReplacementEntry> InputConversions => InputConversionsBuilder;
 
-        internal TextDictionary<MultiReplacementEntry> _inputConversions = new(0);
+        internal TextDictionary<MultiReplacementEntry> InputConversionsBuilder = new(0);
 
         /// <summary>
         /// Output conversion entries.
         /// </summary>
         /// <seealso cref="AffixConfig.OutputConversions"/>
-        public IDictionary<string, MultiReplacementEntry> OutputConversions => _outputConversions;
+        public IDictionary<string, MultiReplacementEntry> OutputConversions => OutputConversionsBuilder;
 
-        internal TextDictionary<MultiReplacementEntry> _outputConversions = new(0);
+        internal TextDictionary<MultiReplacementEntry> OutputConversionsBuilder = new(0);
 
         /// <summary>
         /// Mappings between related characters.
         /// </summary>
         /// <seealso cref="AffixConfig.RelatedCharacterMap"/>
-        public IList<MapEntry> RelatedCharacterMap => _relatedCharacterMap;
+        public IList<MapEntry> RelatedCharacterMap => RelatedCharacterMapBuilder;
 
-        internal ArrayBuilder<MapEntry> _relatedCharacterMap = new();
+        internal ArrayBuilder<MapEntry> RelatedCharacterMapBuilder = new();
 
         /// <summary>
         /// Phonetic transcription entries.
         /// </summary>
         /// <seealso cref="AffixConfig.Phone"/>
-        public IList<PhoneticEntry> Phone => _phone;
+        public IList<PhoneticEntry> Phone => PhoneBuilder;
 
-        internal ArrayBuilder<PhoneticEntry> _phone = new();
+        internal ArrayBuilder<PhoneticEntry> PhoneBuilder = new();
 
         /// <summary>
         /// Maximum syllable number, that may be in a
@@ -430,36 +430,36 @@ public partial class AffixConfig
 
             if (extract)
             {
-                config.InputConversions = _inputConversions.HasItems
-                    ? MultiReplacementTable.TakeDictionary(_inputConversions)
+                config.InputConversions = InputConversionsBuilder.HasItems
+                    ? MultiReplacementTable.TakeDictionary(InputConversionsBuilder)
                     : MultiReplacementTable.Empty;
-                _inputConversions = new(0);
-                config.OutputConversions = _outputConversions.HasItems
-                    ? MultiReplacementTable.TakeDictionary(_outputConversions)
+                InputConversionsBuilder = new(0);
+                config.OutputConversions = OutputConversionsBuilder.HasItems
+                    ? MultiReplacementTable.TakeDictionary(OutputConversionsBuilder)
                     : MultiReplacementTable.Empty;
-                _outputConversions = new(0);
+                OutputConversionsBuilder = new(0);
             }
             else
             {
-                config.InputConversions = _inputConversions.HasItems
-                    ? MultiReplacementTable.Create(_inputConversions)
+                config.InputConversions = InputConversionsBuilder.HasItems
+                    ? MultiReplacementTable.Create(InputConversionsBuilder)
                     : MultiReplacementTable.Empty;
-                config.OutputConversions = _outputConversions.HasItems
-                    ? MultiReplacementTable.Create(_outputConversions)
+                config.OutputConversions = OutputConversionsBuilder.HasItems
+                    ? MultiReplacementTable.Create(OutputConversionsBuilder)
                     : MultiReplacementTable.Empty;
             }
 
-            config.AliasF = new(_aliasF.MakeOrExtractArray(extract));
-            config.AliasM = new(_aliasM.MakeOrExtractArray(extract));
-            config.BreakPoints = new(_breakPoints.MakeOrExtractArray(extract));
-            config.Replacements = new(_replacements.MakeOrExtractArray(extract));
-            config.CompoundRules = new(_compoundRules.MakeOrExtractArray(extract));
-            config.CompoundPatterns = new(_compoundPatterns.MakeOrExtractArray(extract));
-            config.RelatedCharacterMap = new(_relatedCharacterMap.MakeOrExtractArray(extract));
-            config.Phone = new(_phone.MakeOrExtractArray(extract));
+            config.AliasF = new(AliasFBuilder.MakeOrExtractArray(extract));
+            config.AliasM = new(AliasMBuilder.MakeOrExtractArray(extract));
+            config.BreakPoints = new(BreakPointsBuilder.MakeOrExtractArray(extract));
+            config.Replacements = new(ReplacementsBuilder.MakeOrExtractArray(extract));
+            config.CompoundRules = new(CompoundRulesBuilder.MakeOrExtractArray(extract));
+            config.CompoundPatterns = new(CompoundPatternsBuilder.MakeOrExtractArray(extract));
+            config.RelatedCharacterMap = new(RelatedCharacterMapBuilder.MakeOrExtractArray(extract));
+            config.Phone = new(PhoneBuilder.MakeOrExtractArray(extract));
 
-            config.Prefixes = Prefixes.BuildCollection(extract);
-            config.Suffixes = Suffixes.BuildCollection(extract);
+            config.Prefixes = Prefixes.BuildOrExtract(extract);
+            config.Suffixes = Suffixes.BuildOrExtract(extract);
 
             config.ContClasses = config.Prefixes.ContClasses.Union(config.Suffixes.ContClasses);
 
