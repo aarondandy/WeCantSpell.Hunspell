@@ -48,6 +48,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
 
         ReadOnlySpan<char> span;
         var conditions = ArrayBuilder<CharacterCondition>.Pool.Get();
+        int index;
 
         do
         {
@@ -61,41 +62,52 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
 
                 case '[':
                     span = text.Slice(1);
-                    var closeIndex = span.IndexOf(']');
-                    if (closeIndex >= 0)
+                    index = span.IndexOf(']');
+                    if (index >= 0)
                     {
-                        span = span.Slice(0, closeIndex);
-                        text = text.Slice(closeIndex + 2);
+                        span = span.Slice(0, index);
+                        text = text.Slice(index + 2);
                     }
                     else
                     {
                         text = [];
                     }
 
-                    var restricted = span.Length > 0 && span[0] == '^';
-                    if (restricted)
+                    if (span.Length > 0 && span[0] == '^')
                     {
-                        span = span.Slice(1);
+                        conditions.Add(CharacterCondition.CreateCharSet(span.Slice(1), restricted: true));
                     }
-                    conditions.Add(CharacterCondition.CreateCharSet(span, restricted: restricted));
+                    else
+                    {
+                        conditions.Add(CharacterCondition.CreateCharSet(span, restricted: false));
+                    }
 
                     break;
 
                 default:
 #if HAS_SEARCHVALUES
-                    var stopIndex = text.IndexOfAny(ConditionParseStopCharacters);
+                    index = text.IndexOfAny(ConditionParseStopCharacters);
 #else
-                    var stopIndex = text.IndexOfAny('.', '[');
+                    index = text.IndexOfAny('.', '[');
 #endif
-                    span = stopIndex < 0 ? text : text.Slice(0, stopIndex);
-                    text = text.Slice(span.Length);
+
+                    if (index >= 0)
+                    {
+                        span = text.Slice(0, index);
+                        text = text.Slice(index);
+                    }
+                    else
+                    {
+                        span = text;
+                        text = [];
+                    }
 
                     conditions.Add(CharacterCondition.CreateSequence(span));
 
                     break;
             }
         }
-        while (!text.IsEmpty);
+        while (text.Length > 0);
 
         return new(ArrayBuilder<CharacterCondition>.Pool.ExtractAndReturn(conditions));
     }
