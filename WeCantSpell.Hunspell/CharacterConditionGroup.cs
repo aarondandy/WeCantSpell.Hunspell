@@ -75,11 +75,11 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
 
                     if (span.Length > 0 && span[0] == '^')
                     {
-                        conditions.Add(CharacterCondition.CreateCharSet(span.Slice(1), restricted: true));
+                        conditions.Add(CharacterCondition.CreateCharSet(span.Slice(1), CharacterCondition.ModeKind.RestrictChars));
                     }
                     else
                     {
-                        conditions.Add(CharacterCondition.CreateCharSet(span, restricted: false));
+                        conditions.Add(CharacterCondition.CreateCharSet(span, CharacterCondition.ModeKind.PermitChars));
                     }
 
                     break;

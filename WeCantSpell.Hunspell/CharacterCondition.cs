@@ -12,9 +12,12 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 
     public static bool operator !=(CharacterCondition left, CharacterCondition right) => !left.Equals(right);
 
-    public static CharacterCondition CreateCharSet(ReadOnlySpan<char> chars, bool restricted)
+    public static CharacterCondition CreateCharSet(ReadOnlySpan<char> chars, bool restricted) =>
+        CreateCharSet(chars, restricted ? ModeKind.RestrictChars : ModeKind.PermitChars);
+
+    public static CharacterCondition CreateCharSet(ReadOnlySpan<char> chars, ModeKind mode)
     {
-        return new(buildCharString(chars), restricted ? ModeKind.RestrictChars : ModeKind.PermitChars);
+        return new(buildCharString(chars), mode);
 
         static string buildCharString(ReadOnlySpan<char> chars)
         {
@@ -39,12 +42,15 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
         }
     }
 
-    public static CharacterCondition CreateCharSet(string chars, bool restricted)
+    public static CharacterCondition CreateCharSet(string chars, bool restricted) =>
+        CreateCharSet(chars, restricted ? ModeKind.RestrictChars : ModeKind.PermitChars);
+
+    public static CharacterCondition CreateCharSet(string chars, ModeKind mode)
     {
         var charsSpan = chars.AsSpan();
         return charsSpan.CheckSortedWithoutDuplicates()
-            ? new(chars, restricted ? ModeKind.RestrictChars : ModeKind.PermitChars)
-            : CreateCharSet(charsSpan, restricted);
+            ? new(chars, mode)
+            : CreateCharSet(charsSpan, mode);
     }
 
     public static CharacterCondition CreateSequence(char c) => CreateSequence(c.ToString());

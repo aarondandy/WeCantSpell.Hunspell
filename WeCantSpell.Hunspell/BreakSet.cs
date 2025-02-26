@@ -68,9 +68,9 @@ public readonly struct BreakSet : IReadOnlyList<string>
     {
         var nbr = 0;
 
-        if (scw.Length != 0 && HasItems)
+        if (scw.Length > 0 && _entries is { Length: > 0 })
         {
-            foreach (var breakEntry in _entries!)
+            foreach (var breakEntry in _entries)
             {
                 var pos = 0;
                 while ((pos = scw.IndexOf(breakEntry, pos, StringComparison.Ordinal)) >= 0)
