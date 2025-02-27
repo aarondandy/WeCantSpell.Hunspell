@@ -15,7 +15,7 @@ public partial class WordList
         public Builder(AffixConfig affix)
         {
             Affix = affix;
-            _entryDetailsByRoot = new(1);
+            _entryDetailsByRoot = new();
         }
 
         internal TextDictionary<WordEntryDetail[]> _entryDetailsByRoot;
@@ -70,7 +70,7 @@ public partial class WordList
             if (extract)
             {
                 entriesByRoot = _entryDetailsByRoot;
-                _entryDetailsByRoot = new(1);
+                _entryDetailsByRoot = new();
             }
             else
             {
@@ -104,7 +104,7 @@ public partial class WordList
                 Affix.OnlyInCompound,
                 SpecialFlags.OnlyUpcaseFlag
             ]);
-            TextDictionary<WordEntryDetail[]> nGramRestrictedDetails = new(1);
+            TextDictionary<WordEntryDetail[]> nGramRestrictedDetails = new();
             var restrictedRootSetDetails = new ArrayBuilder<WordEntryDetail>();
             foreach (var rootSet in entriesByRoot)
             {

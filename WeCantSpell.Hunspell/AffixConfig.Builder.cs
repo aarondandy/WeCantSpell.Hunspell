@@ -272,7 +272,7 @@ public partial class AffixConfig
         /// <seealso cref="AffixConfig.InputConversions"/>
         public IDictionary<string, MultiReplacementEntry> InputConversions => InputConversionsBuilder;
 
-        internal TextDictionary<MultiReplacementEntry> InputConversionsBuilder = new(0);
+        internal TextDictionary<MultiReplacementEntry> InputConversionsBuilder = new();
 
         /// <summary>
         /// Output conversion entries.
@@ -280,7 +280,7 @@ public partial class AffixConfig
         /// <seealso cref="AffixConfig.OutputConversions"/>
         public IDictionary<string, MultiReplacementEntry> OutputConversions => OutputConversionsBuilder;
 
-        internal TextDictionary<MultiReplacementEntry> OutputConversionsBuilder = new(0);
+        internal TextDictionary<MultiReplacementEntry> OutputConversionsBuilder = new();
 
         /// <summary>
         /// Mappings between related characters.
@@ -433,11 +433,11 @@ public partial class AffixConfig
                 config.InputConversions = InputConversionsBuilder.HasItems
                     ? MultiReplacementTable.TakeDictionary(InputConversionsBuilder)
                     : MultiReplacementTable.Empty;
-                InputConversionsBuilder = new(0);
+                InputConversionsBuilder = new();
                 config.OutputConversions = OutputConversionsBuilder.HasItems
                     ? MultiReplacementTable.TakeDictionary(OutputConversionsBuilder)
                     : MultiReplacementTable.Empty;
-                OutputConversionsBuilder = new(0);
+                OutputConversionsBuilder = new();
             }
             else
             {

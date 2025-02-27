@@ -12,7 +12,7 @@ public class WordAddTests
     [Fact]
     public void can_add_to_empty_word_list_and_check()
     {
-        string word = "word";
+        var word = "word";
         var wordList = new WordList.Builder().Build();
         wordList.Check(word, CancellationToken.None).ShouldBeFalse();
 
@@ -24,8 +24,8 @@ public class WordAddTests
     [Fact]
     public void can_add_to_empty_word_list_and_suggest()
     {
-        string given = "ord";
-        string word = "word";
+        var given = "ord";
+        var word = "word";
         var wordList = new WordList.Builder().Build();
         var suggestions = wordList.Suggest(given, CancellationToken.None);
         suggestions.ShouldNotContain(word);
@@ -40,7 +40,7 @@ public class WordAddTests
     public async Task can_add_to_en_us_word_list_for_check()
     {
         var ct = TestContext.Current.CancellationToken;
-        string word = "qwertyuiop";
+        var word = "qwertyuiop";
         var wordList = await WordList.CreateFromFilesAsync("files/English (American).dic", ct);
         wordList.Check(word, ct).ShouldBeFalse();
 
@@ -53,8 +53,8 @@ public class WordAddTests
     public async Task can_add_to_en_us_word_list_for_suggest()
     {
         var ct = TestContext.Current.CancellationToken;
-        string given = "qwertyuio";
-        string word = "qwertyuiop";
+        var given = "qwertyuio";
+        var word = "qwertyuiop";
         var wordList = await WordList.CreateFromFilesAsync("files/English (American).dic", ct);
         var suggestions = wordList.Suggest(given, ct);
         suggestions.ShouldNotContain(word);

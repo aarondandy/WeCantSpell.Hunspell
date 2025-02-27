@@ -620,7 +620,7 @@ public sealed partial class AffixReader
             }
         }
 
-        entries ??= new(1);
+        entries ??= new();
 
         var pattern1 = ReadOnlySpan<char>.Empty;
         var pattern2 = ReadOnlySpan<char>.Empty;

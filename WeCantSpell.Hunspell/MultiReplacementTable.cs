@@ -9,7 +9,7 @@ namespace WeCantSpell.Hunspell;
 [DebuggerDisplay("Count = {Count}")]
 public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacementEntry>
 {
-    public static readonly MultiReplacementTable Empty = TakeDictionary(new TextDictionary<MultiReplacementEntry>(0));
+    public static readonly MultiReplacementTable Empty = TakeDictionary(new TextDictionary<MultiReplacementEntry>());
 
     public static MultiReplacementTable Create(Dictionary<string, MultiReplacementEntry>? replacements) =>
         replacements is null

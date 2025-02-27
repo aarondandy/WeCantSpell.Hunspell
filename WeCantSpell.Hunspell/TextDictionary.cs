@@ -16,6 +16,8 @@ namespace WeCantSpell.Hunspell;
 [DebuggerDisplay("Count = {Count}")]
 internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, TValue>>, IDictionary<string, TValue>
 {
+    private const int MaxCapacity = 0X7FFFFFC7;
+
     public static TextDictionary<TValue> Clone(TextDictionary<TValue> source)
     {
         var builder = new Builder(source.Count);
@@ -80,13 +82,22 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
         return new TextDictionary<TValue>(ref builder);
     }
 
-    private TextDictionary()
+    public TextDictionary()
     {
         _entries = [];
         _cellarStartIndex = 0;
         _fastmodMul = 0;
         _collisionIndex = 0;
-        Count = 0;
+        _count = 0;
+    }
+
+    public TextDictionary(int desiredCapacity)
+    {
+        _entries = new Entry[ClampCapacity(desiredCapacity)];
+        _cellarStartIndex = CalculateBestCellarIndexForCapacity(_entries.Length);
+        _fastmodMul = CalculateFastmodMultiplier(_cellarStartIndex);
+        _collisionIndex = _entries.Length - 1;
+        _count = 0;
     }
 
     private TextDictionary(ref Builder builder)
@@ -95,33 +106,22 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
         _cellarStartIndex = builder.CellarStartIndex;
         _fastmodMul = builder.FastmodMultiplier;
         _collisionIndex = builder.CollisionIndex;
-        Count = builder.Count;
-    }
-
-    public TextDictionary(int desiredCapacity)
-    {
-        if (desiredCapacity < 1)
-        {
-            desiredCapacity = 1;
-        }
-
-        _entries = new Entry[desiredCapacity];
-        _cellarStartIndex = CalculateBestCellarIndexForCapacity(_entries.Length);
-        _fastmodMul = CalculateFastmodMultiplier(_cellarStartIndex);
-        _collisionIndex = _entries.Length - 1;
-        Count = 0;
+        _count = builder.Count;
     }
 
     private Entry[] _entries;
     private ulong _fastmodMul;
     private uint _cellarStartIndex;
     private int _collisionIndex;
+    private int _count;
 
-    public int Count { get; private set; }
+    public int Count => _count;
 
-    public bool HasItems => Count > 0;
+    public bool HasItems => _count > 0;
 
-    public bool IsEmpty => Count <= 0;
+    public bool IsEmpty => _count <= 0;
+
+    public int Capacity => _entries.Length;
 
     public TValue this[string key]
     {
@@ -236,6 +236,8 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
 
     public void EnsureCapacity(int capacity)
     {
+        capacity = ClampCapacity(capacity);
+
         if (_entries.Length >= capacity)
         {
             return;
@@ -262,25 +264,6 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
         _collisionIndex = builder.CollisionIndex;
     }
 
-    public void Add(KeyValuePair<string, TValue> item) => Add(item.Key, item.Value);
-
-    public void Add(string key, TValue value)
-    {
-        var hash = CalculateHash(key);
-        ref var entry = ref GetOrAddWithoutGrowth(hash, key, isAdd: true);
-        if (Unsafe.IsNullRef(ref entry))
-        {
-            EnsureCapacity(Math.Max(_entries.Length * 2, 1));
-            entry = ref GetOrAddWithoutGrowth(hash, key, isAdd: true);
-            if (Unsafe.IsNullRef(ref entry))
-            {
-                ThrowAddFailed();
-            }
-        }
-
-        entry.Value = value;
-    }
-
     public void CopyTo(KeyValuePair<string, TValue>[] array, int arrayIndex)
     {
         foreach (var pair in this)
@@ -295,44 +278,61 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
 
     public bool Remove(KeyValuePair<string, TValue> item) => ExceptionEx.ThrowNotImplementedYet<bool>();
 
-    internal ref TValue GetOrAdd(string key)
+    public void Add(KeyValuePair<string, TValue> item) => Add(item.Key, item.Value);
+
+    public void Add(string key, TValue value)
     {
-        var hash = CalculateHash(key);
-        ref var entry = ref GetOrAddWithoutGrowth(hash, key, isAdd: false);
+        ref var entry = ref GetOrAddEntryRefForKey(key, throwOnMatch: true);
         if (Unsafe.IsNullRef(ref entry))
         {
-            EnsureCapacity(Math.Max(_entries.Length * 2, 1));
-            entry = ref GetOrAddWithoutGrowth(hash, key, isAdd: false);
-            if (Unsafe.IsNullRef(ref entry))
-            {
-                ThrowAddFailed();
-            }
+            ThrowAddFailed();
+        }
+
+        entry.Value = value;
+    }
+
+    internal ref TValue GetOrAdd(string key)
+    {
+        ref var entry = ref GetOrAddEntryRefForKey(key, throwOnMatch: false);
+        if (Unsafe.IsNullRef(ref entry))
+        {
+            ThrowAddFailed();
         }
 
         return ref entry.Value;
     }
 
-    private ref Entry GetOrAddWithoutGrowth(uint hash, string key, bool isAdd)
+    private ref Entry GetOrAddEntryRefForKey(string key, bool throwOnMatch)
     {
+        var isSearchIteration = true;
+        var hash = CalculateHash(key);
+
+        if (_entries.Length == 0)
+        {
+            goto findFail;
+        }
+
+    retry:
+
         ref var entry = ref GetRefByHash(hash);
 
         if (entry.Key is null)
         {
             entry = new(hash, key);
-            Count++;
-            goto entryMatches;
+            _count++;
+            goto entrySelected;
         }
 
         while (true)
         {
             if (entry.HashCode == hash && key.Equals(entry.Key))
             {
-                if (isAdd)
+                if (throwOnMatch)
                 {
                     ThrowDuplicateKey();
                 }
 
-                goto entryMatches;
+                goto entrySelected;
             }
 
             if (entry.Next < 0)
@@ -343,20 +343,29 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
             entry = ref _entries[entry.Next];
         }
 
-        if (Count < _entries.Length && (_collisionIndex = FindNextEmptyCollisionIndex()) >= 0)
+        if (_count < _entries.Length && (_collisionIndex = FindNextEmptyCollisionIndex()) >= 0)
         {
             entry.Next = _collisionIndex;
 
             entry = ref _entries[_collisionIndex--];
             entry = new(hash, key);
-            Count++;
+            _count++;
 
-            goto entryMatches;
+            goto entrySelected;
+        }
+
+    findFail:
+
+        if (isSearchIteration)
+        {
+            isSearchIteration = false;
+            EnsureCapacity(GetNextCapacity());
+            goto retry;
         }
 
         return ref Unsafe.NullRef<Entry>();
 
-    entryMatches:
+    entrySelected:
         return ref entry;
     }
 
@@ -369,6 +378,11 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
 
     private ref Entry GetRefByKey(string key)
     {
+        if (_entries.Length == 0)
+        {
+            goto fail;
+        }
+
         var hash = CalculateHash(key);
         ref var entry = ref GetRefByHash(hash);
 
@@ -397,6 +411,11 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
 
     private ref Entry GetRefByKey(ReadOnlySpan<char> key)
     {
+        if (_entries.Length == 0)
+        {
+            goto fail;
+        }
+
         var hash = CalculateHash(key);
         ref var entry = ref GetRefByHash(hash);
 
@@ -423,9 +442,11 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
         return ref Unsafe.NullRef<Entry>();
     }
 
+    private int GetNextCapacity() => Math.Max(_entries.Length * 2, 4);
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private ref Entry GetRefByHash(uint hash) =>
-        ref _entries[GetIndexByHash(hash, _cellarStartIndex, _fastmodMul)];
+            ref _entries[GetIndexByHash(hash, _cellarStartIndex, _fastmodMul)];
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static uint GetIndexByHash(uint hash, uint divisor, ulong multiplier) =>
@@ -484,6 +505,20 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
 
             return true;
         }
+    }
+
+    private static int ClampCapacity(int capacity)
+    {
+        if (capacity < 0)
+        {
+            capacity = 0;
+        }
+        else if (capacity > MaxCapacity)
+        {
+            capacity = MaxCapacity;
+        }
+
+        return capacity;
     }
 
 #if !NO_EXPOSED_NULLANNOTATIONS
@@ -617,7 +652,7 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
     {
         public Builder(int capacity)
         {
-            Entries = new Entry[capacity];
+            Entries = new Entry[ClampCapacity(capacity)];
             CellarStartIndex = CalculateBestCellarIndexForCapacity(Entries.Length);
             FastmodMultiplier = CalculateFastmodMultiplier(CellarStartIndex);
             CollisionIndex = Entries.Length - 1;
