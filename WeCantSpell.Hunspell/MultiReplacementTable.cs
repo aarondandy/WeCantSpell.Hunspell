@@ -138,16 +138,14 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
 
     internal void ConvertAll(List<string> slst)
     {
-        if (_replacements.IsEmpty)
+        if (HasReplacements)
         {
-            return;
-        }
-
-        for (var j = 0; j < slst.Count; j++)
-        {
-            if (TryConvert(slst[j], out var wspace))
+            for (var j = 0; j < slst.Count; j++)
             {
-                slst[j] = wspace;
+                if (TryConvert(slst[j], out var wspace))
+                {
+                    slst[j] = wspace;
+                }
             }
         }
     }

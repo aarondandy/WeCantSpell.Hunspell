@@ -1216,17 +1216,18 @@ public sealed partial class AffixReader
     {
         text = text.TrimStart();
 
-        if (text.IsEmpty)
+        if (text.Length > 0)
         {
-            return text;
+            var firstNonDigitIndex = 0;
+            for (; firstNonDigitIndex < text.Length && char.IsDigit(text[firstNonDigitIndex]); firstNonDigitIndex++) ;
+
+            if (firstNonDigitIndex < text.Length)
+            {
+                text = text.Slice(0, firstNonDigitIndex);
+            }
         }
 
-        var firstNonDigitIndex = 0;
-        for (; firstNonDigitIndex < text.Length && char.IsDigit(text[firstNonDigitIndex]); firstNonDigitIndex++) ;
-
-        return firstNonDigitIndex < text.Length
-            ? text.Slice(0, firstNonDigitIndex)
-            : text;
+        return text;
     }
 
     private static FlagParsingMode? TryParseFlagMode(ReadOnlySpan<char> value)

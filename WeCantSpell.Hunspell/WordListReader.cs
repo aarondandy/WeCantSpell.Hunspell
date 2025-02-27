@@ -269,21 +269,26 @@ public sealed class WordListReader
 
     private bool AttemptToProcessInitializationLine(ReadOnlySpan<char> text)
     {
+        int i;
         _hasInitialized = true;
 
         // read through any leading spaces
-        int i;
         for (i = 0; i < text.Length && char.IsWhiteSpace(text[i]); i++) ;
-        text = text.Slice(i);
+
+        if (i > 0)
+        {
+            text = text.Slice(i);
+        }
 
         // find the possible value
         for (i = 0; i < text.Length && !char.IsWhiteSpace(text[i]); i++) ;
+
         if (i < text.Length)
         {
             text = text.Slice(0, i);
         }
 
-        if (!text.IsEmpty && IntEx.TryParseInvariant(text, out var expectedSize))
+        if (text.Length > 0 && IntEx.TryParseInvariant(text, out var expectedSize))
         {
             Builder.InitializeEntriesByRoot(expectedSize);
 
@@ -578,7 +583,7 @@ public sealed class WordListReader
                 i = findIndexOfFirstMorphByColonCharAndSpacingHints(line);
                 if (i <= 0)
                 {
-                    i = line.IndexOf('\t');
+                    i = line.IndexOf('\t'); // For some reason, this does not include space
                     if (i < 0)
                     {
                         i = line.Length;

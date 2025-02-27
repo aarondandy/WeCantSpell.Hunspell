@@ -2673,7 +2673,7 @@ public partial class WordList
                 nscore += FindLongestSubstringMatch(s1.Limit(n), s2);
                 s1 = s1.Slice(1);
             }
-            while (!s1.IsEmpty);
+            while (s1.Length > 0);
 
             return nscore;
         }
