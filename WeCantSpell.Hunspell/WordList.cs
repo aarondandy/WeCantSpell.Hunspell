@@ -308,7 +308,7 @@ public sealed partial class WordList
             {
                 _current = _coreEnumerator.Current;
 
-                if (_nGramRestrictedDetails.TryGetValue(_current.Key, out var restrictedDetails) && restrictedDetails.Length != 0)
+                if (_nGramRestrictedDetails.TryGetValue(_current.Key, out var restrictedDetails))
                 {
                     if (restrictedDetails.Length == _current.Value.Length)
                     {
