@@ -59,9 +59,9 @@ internal readonly struct FlagParser
         static void throwNotSupportedFlagMode() => throw new NotSupportedException("Flag mode is not supported");
     }
 
-    private readonly TryParseValueDelegate _tryParseValue;
-    private readonly ParseValuesDelegate _parseValues;
-    private readonly ParseSetDelegate _parseSet;
+    private readonly TryParseFlagValueDelegate _tryParseValue;
+    private readonly ParseFlagValuesDelegate _parseValues;
+    private readonly ParseFlagSetDelegate _parseSet;
     private readonly Encoding _encoding;
     private readonly FlagParsingMode _mode;
 
@@ -120,10 +120,4 @@ internal readonly struct FlagParser
         return Encoding.UTF8.GetString(buffer.WrittenSpan);
 #endif
     }
-
-    private delegate bool TryParseValueDelegate(ReadOnlySpan<char> text, out FlagValue value);
-
-    private delegate FlagSet ParseSetDelegate(ReadOnlySpan<char> text);
-
-    private delegate FlagValue[] ParseValuesDelegate(ReadOnlySpan<char> text);
 }
