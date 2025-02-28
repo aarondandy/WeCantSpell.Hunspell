@@ -128,6 +128,7 @@ public partial class WordList
                 Affix,
                 entriesByRoot: entriesByRoot,
                 nGramRestrictedDetails: nGramRestrictedDetails,
+                nGramRestrictedFlags: nGramRestrictedFlags,
                 allReplacements);
         }
 

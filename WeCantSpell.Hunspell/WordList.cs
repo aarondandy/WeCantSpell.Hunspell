@@ -66,18 +66,21 @@ public sealed partial class WordList
         AffixConfig affix,
         TextDictionary<WordEntryDetail[]> entriesByRoot,
         TextDictionary<WordEntryDetail[]> nGramRestrictedDetails,
+        FlagSet nGramRestrictedFlags,
         SingleReplacementSet allReplacements
     )
     {
         _affix = affix;
         _entriesByRoot = entriesByRoot;
         _nGramRestrictedDetails = nGramRestrictedDetails;
+        _nGramRestrictedFlags = nGramRestrictedFlags;
         _allReplacements = allReplacements;
     }
 
     private readonly AffixConfig _affix;
     private readonly TextDictionary<WordEntryDetail[]> _entriesByRoot;
     private readonly TextDictionary<WordEntryDetail[]> _nGramRestrictedDetails;
+    private readonly FlagSet _nGramRestrictedFlags;
     private readonly SingleReplacementSet _allReplacements;
 
     public AffixConfig Affix => _affix;
@@ -157,37 +160,58 @@ public sealed partial class WordList
     public IEnumerable<string> Suggest(ReadOnlySpan<char> word, QueryOptions? options, CancellationToken cancellationToken) => new QuerySuggest(this, options, cancellationToken).Suggest(word);
 
     /// <summary>
-    /// Adds a word to this in-memory dictionary.
+    /// Adds a root word to this in-memory dictionary.
     /// </summary>
-    /// <param name="word">The word to add.</param>
+    /// <param name="word">The root word to add.</param>
     /// <remarks>
     /// Changes made to this dictionary instance will not be saved.
     /// </remarks>
-    public void Add(string word)
+    public bool Add(string word)
     {
-        Add(word, new(FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None));
+        return Add(word, new(FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None));
     }
 
     /// <summary>
-    /// Adds a word to this in-memory dictionary.
+    /// Adds a root word to this in-memory dictionary.
     /// </summary>
-    /// <param name="word">The word to add.</param>
-    /// <param name="detail">The word entry details.</param>
+    /// <param name="word">The root word to add.</param>
+    /// <param name="detail">The root word entry details.</param>
     /// <remarks>
     /// Changes made to this dictionary instance will not be saved.
     /// </remarks>
-    public void Add(string word, WordEntryDetail detail)
+    public bool Add(string word, WordEntryDetail detail)
     {
-        ref var details = ref _entriesByRoot.GetOrAdd(word);
+        ref WordEntryDetail[]? details = ref _entriesByRoot.GetOrAdd(word)!;
         if (details is null)
         {
             details = [detail];
         }
         else
         {
+            if (details.Contains(detail))
+            {
+                return false;
+            }
+
             Array.Resize(ref details, details.Length + 1);
             details[details.Length - 1] = detail;
         }
+
+        if (detail.Flags.ContainsAny(_nGramRestrictedFlags))
+        {
+            details = ref _nGramRestrictedDetails.GetOrAdd(word)!;
+            if (details is null)
+            {
+                details = [detail];
+            }
+            else
+            {
+                Array.Resize(ref details, details.Length + 1);
+                details[details.Length - 1] = detail;
+            }
+        }
+
+        return true;
     }
 
     private void ApplyRootOutputConversions(ref SpellCheckResult result)

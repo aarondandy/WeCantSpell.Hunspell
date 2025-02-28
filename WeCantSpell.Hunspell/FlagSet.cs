@@ -402,6 +402,9 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c, FlagValue d) =>
         ((ReadOnlySpan<char>)[a, b, c, d]).ContainsAny(_searchValues!);
 
+    public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c, FlagValue d, FlagValue e) =>
+        ((ReadOnlySpan<char>)[a, b, c, d, e]).ContainsAny(_searchValues!);
+
     public bool ContainsAny(FlagSet other)
     {
         return _values is { Length: > 0 }
