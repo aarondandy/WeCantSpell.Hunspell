@@ -104,30 +104,10 @@ public partial class WordList
                 Affix.OnlyInCompound,
                 SpecialFlags.OnlyUpcaseFlag
             ]);
-            TextDictionary<WordEntryDetail[]> nGramRestrictedDetails = new();
-            var restrictedRootSetDetails = new ArrayBuilder<WordEntryDetail>();
-            foreach (var rootSet in entriesByRoot)
-            {
-                restrictedRootSetDetails.Clear();
-
-                foreach (var entry in rootSet.Value)
-                {
-                    if (nGramRestrictedFlags.ContainsAny(entry.Flags))
-                    {
-                        restrictedRootSetDetails.Add(entry);
-                    }
-                }
-
-                if (restrictedRootSetDetails.Count > 0)
-                {
-                    nGramRestrictedDetails.Add(rootSet.Key, restrictedRootSetDetails.Extract());
-                }
-            }
 
             return new WordList(
                 Affix,
                 entriesByRoot: entriesByRoot,
-                nGramRestrictedDetails: nGramRestrictedDetails,
                 nGramRestrictedFlags: nGramRestrictedFlags,
                 allReplacements);
         }

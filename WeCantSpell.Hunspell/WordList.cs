@@ -65,21 +65,18 @@ public sealed partial class WordList
     private WordList(
         AffixConfig affix,
         TextDictionary<WordEntryDetail[]> entriesByRoot,
-        TextDictionary<WordEntryDetail[]> nGramRestrictedDetails,
         FlagSet nGramRestrictedFlags,
         SingleReplacementSet allReplacements
     )
     {
         _affix = affix;
         _entriesByRoot = entriesByRoot;
-        _nGramRestrictedDetails = nGramRestrictedDetails;
         _nGramRestrictedFlags = nGramRestrictedFlags;
         _allReplacements = allReplacements;
     }
 
     private readonly AffixConfig _affix;
     private readonly TextDictionary<WordEntryDetail[]> _entriesByRoot;
-    private readonly TextDictionary<WordEntryDetail[]> _nGramRestrictedDetails;
     private readonly FlagSet _nGramRestrictedFlags;
     private readonly SingleReplacementSet _allReplacements;
 
@@ -181,7 +178,7 @@ public sealed partial class WordList
     /// </remarks>
     public bool Add(string word, WordEntryDetail detail)
     {
-        ref WordEntryDetail[]? details = ref _entriesByRoot.GetOrAdd(word)!;
+        ref var details = ref _entriesByRoot.GetOrAdd(word)!;
         if (details is null)
         {
             details = [detail];
@@ -195,20 +192,6 @@ public sealed partial class WordList
 
             Array.Resize(ref details, details.Length + 1);
             details[details.Length - 1] = detail;
-        }
-
-        if (detail.Flags.ContainsAny(_nGramRestrictedFlags))
-        {
-            details = ref _nGramRestrictedDetails.GetOrAdd(word)!;
-            if (details is null)
-            {
-                details = [detail];
-            }
-            else
-            {
-                Array.Resize(ref details, details.Length + 1);
-                details[details.Length - 1] = detail;
-            }
         }
 
         return true;
@@ -272,12 +255,12 @@ public sealed partial class WordList
     {
         public NGramAllowedEntriesEnumerator(WordList wordList, int minKeyLength, int maxKeyLength)
         {
-            _nGramRestrictedDetails = wordList._nGramRestrictedDetails;
+            _nGramRestrictedFlags = wordList._nGramRestrictedFlags;
             _coreEnumerator = new(wordList._entriesByRoot, minKeyLength, maxKeyLength);
             _current = default;
         }
 
-        private readonly TextDictionary<WordEntryDetail[]> _nGramRestrictedDetails;
+        private readonly FlagSet _nGramRestrictedFlags;
         private TextDictionary<WordEntryDetail[]>.KeyLengthEnumerator _coreEnumerator;
         private KeyValuePair<string, WordEntryDetail[]> _current;
 
@@ -287,7 +270,7 @@ public sealed partial class WordList
 
         public bool MoveNext()
         {
-            if (_nGramRestrictedDetails.HasItems)
+            if (_nGramRestrictedFlags.HasItems)
             {
                 return MoveNextWithRestrictedDetails();
             }
@@ -307,29 +290,22 @@ public sealed partial class WordList
             while (_coreEnumerator.MoveNext())
             {
                 _current = _coreEnumerator.Current;
+                var details = _current.Value;
 
-                if (_nGramRestrictedDetails.TryGetValue(_current.Key, out var restrictedDetails))
+                int leftRestrictCount = 0;
+                for (; leftRestrictCount < details.Length && details[leftRestrictCount].ContainsAnyFlags(_nGramRestrictedFlags); leftRestrictCount++) ;
+
+                if (leftRestrictCount == details.Length)
                 {
-                    if (restrictedDetails.Length == _current.Value.Length)
-                    {
-                        continue;
-                    }
+                    continue; // all are restricted so try the next one
+                }
 
-                    _current = new(_current.Key, filterNonMatching(_current.Value, restrictedDetails));
-                    static WordEntryDetail[] filterNonMatching(WordEntryDetail[] source, WordEntryDetail[] check)
-                    {
-                        var builder = ArrayBuilder<WordEntryDetail>.Pool.Get(source.Length);
+                int index = leftRestrictCount + 1;
+                for (; index < details.Length && details[index].DoesNotContainAnyFlags(_nGramRestrictedFlags); index++) ;
 
-                        foreach (var item in source)
-                        {
-                            if (!check.Contains(item))
-                            {
-                                builder.Add(item);
-                            }
-                        }
-
-                        return ArrayBuilder<WordEntryDetail>.Pool.ExtractAndReturn(builder);
-                    }
+                if (leftRestrictCount > 0 || index < details.Length)
+                {
+                    _current = new(_current.Key, FilterRestrictedDetails(details, leftRestrictCount, index));
                 }
 
                 return true;
@@ -337,6 +313,24 @@ public sealed partial class WordList
 
             _current = default;
             return false;
+        }
+
+        private WordEntryDetail[] FilterRestrictedDetails(WordEntryDetail[] source, int leftRestrictCount, int index)
+        {
+            var builder = ArrayBuilder<WordEntryDetail>.Pool.Get(source.Length - leftRestrictCount);
+            builder.AddRange(source.AsSpan(leftRestrictCount, index - leftRestrictCount));
+
+            index++; // whatever is at the index isn't permitted, so skip it
+
+            for (; index < source.Length; index++)
+            {
+                if (source[index].DoesNotContainAnyFlags(_nGramRestrictedFlags))
+                {
+                    builder.Add(source[index]);
+                }
+            }
+
+            return ArrayBuilder<WordEntryDetail>.Pool.ExtractAndReturn(builder);
         }
     }
 }
