@@ -284,50 +284,33 @@ internal static partial class StringEx
 
             if (!hasFoundMoreCaps && char.IsUpper(c))
             {
-                hasFoundMoreCaps = true;
-
                 if (hasLower)
                 {
-                    break;
+                    goto handleHuh;
                 }
+
+                hasFoundMoreCaps = true;
             }
             else if (!hasLower && charIsNotNeutral(c, textInfo))
             {
-                hasLower = true;
-
                 if (hasFoundMoreCaps)
                 {
-                    break;
+                    goto handleHuh;
                 }
+
+                hasLower = true;
             }
         }
 
-        if (firstIsUpper)
+        if (hasFoundMoreCaps)
         {
-            if (!hasFoundMoreCaps)
-            {
-                return CapitalizationType.Init;
-            }
-
-            if (hasLower)
-            {
-                return CapitalizationType.HuhInit;
-            }
-        }
-        else
-        {
-            if (!hasFoundMoreCaps)
-            {
-                return CapitalizationType.None;
-            }
-
-            if (hasLower)
-            {
-                return CapitalizationType.Huh;
-            }
+            return CapitalizationType.All;
         }
 
-        return CapitalizationType.All;
+        return firstIsUpper ? CapitalizationType.Init : CapitalizationType.None;
+
+    handleHuh:
+        return firstIsUpper ? CapitalizationType.HuhInit : CapitalizationType.Huh;
 
         static bool charIsNotNeutral(char c, TextInfo textInfo) => c < 128
             ? c is >= 'a' and <= 'z' // For ASCII, only the a-z range needs to be checked
