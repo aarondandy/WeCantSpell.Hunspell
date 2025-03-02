@@ -587,7 +587,7 @@ public sealed class WordListReader
             morphs = AddWord_HandleMorph(morphs, word, capType, ref options);
         }
 
-        ref var details = ref Builder._entryDetailsByRoot.GetOrAdd(word);
+        ref var details = ref Builder._entriesByRoot.GetOrAdd(word);
 
         if (details is not null)
         {

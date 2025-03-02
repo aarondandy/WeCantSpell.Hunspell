@@ -315,13 +315,13 @@ public class AffixReaderTests
 
             actual.ComplexPrefixes.ShouldBeTrue();
             actual.WordChars.ShouldBeValues(['_']);
-            actual.AliasM.ShouldBe(new[]
-            {
+            actual.AliasM.ShouldBe(
+            [
                 new MorphSet([@"affix_1/".Reversed()]),
                 new MorphSet([@"affix_2/".Reversed()]),
                 new MorphSet([@"/suffix_1".Reversed()]),
                 new MorphSet([@"[stem_1]".Reversed()])
-            });
+            ]);
 
             actual.Suffixes.ShouldHaveCount(2);
 

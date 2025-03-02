@@ -15,10 +15,10 @@ public partial class WordList
         public Builder(AffixConfig affix)
         {
             Affix = affix;
-            _entryDetailsByRoot = new();
+            _entriesByRoot = new();
         }
 
-        internal TextDictionary<WordEntryDetail[]> _entryDetailsByRoot;
+        internal TextDictionary<WordEntryDetail[]> _entriesByRoot;
 
         public readonly AffixConfig Affix;
 
@@ -29,23 +29,51 @@ public partial class WordList
 
         internal ArrayBuilder<SingleReplacement> _phoneticReplacements { get; } = [];
 
-        public void Add(string word)
+        /// <summary>
+        /// Adds a root word to this builder.
+        /// </summary>
+        /// <param name="word">The root word to add.</param>
+        /// <returns><c>true</c> when a root is added, <c>false</c> otherwise.</returns>
+        public bool Add(string word)
         {
-            Add(word, WordEntryDetail.Default);
+            return Add(word, FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None);
         }
 
-        public void Add(string word, WordEntryDetail detail)
+        /// <summary>
+        /// Adds a root word to this builder.
+        /// </summary>
+        /// <param name="word">The root word to add.</param>
+        /// <param name="flags">The flags associated with the root <paramref name="word"/> detail entry.</param>
+        /// <param name="morphs">The morphs associated with the root <paramref name="word"/> detail entry.</param>
+        /// <param name="options">The options associated with the root <paramref name="word"/> detail entry.</param>
+        /// <returns><c>true</c> when a root is added, <c>false</c> otherwise.</returns>
+        public bool Add(string word, FlagSet flags, IEnumerable<string> morphs, WordEntryOptions options)
         {
-            ref var details = ref _entryDetailsByRoot.GetOrAdd(word);
-            if (details is null)
-            {
-                details = [detail];
-            }
-            else
-            {
-                Array.Resize(ref details, details.Length + 1);
-                details[details.Length - 1] = detail;
-            }
+            return Add(word, new WordEntryDetail(flags, MorphSet.Create(morphs), options));
+        }
+
+        /// <summary>
+        /// Adds a root word to this builder.
+        /// </summary>
+        /// <param name="word">The root word to add.</param>
+        /// <param name="flags">The flags associated with the root <paramref name="word"/> detail entry.</param>
+        /// <param name="morphs">The morphs associated with the root <paramref name="word"/> detail entry.</param>
+        /// <param name="options">The options associated with the root <paramref name="word"/> detail entry.</param>
+        /// <returns><c>true</c> when a root is added, <c>false</c> otherwise.</returns>
+        public bool Add(string word, FlagSet flags, MorphSet morphs, WordEntryOptions options)
+        {
+            return Add(word, new WordEntryDetail(flags, morphs, options));
+        }
+
+        /// <summary>
+        /// Adds a root word to this builder.
+        /// </summary>
+        /// <param name="word">The root word to add details for.</param>
+        /// <param name="detail">The details to associate with the root <paramref name="word"/>.</param>
+        /// <returns><c>true</c> when a root is added, <c>false</c> otherwise.</returns>
+        public bool Add(string word, WordEntryDetail detail)
+        {
+            return WordList.Add(_entriesByRoot, Affix, word, detail);
         }
 
         /// <summary>
@@ -69,12 +97,12 @@ public partial class WordList
             TextDictionary<WordEntryDetail[]> entriesByRoot;
             if (extract)
             {
-                entriesByRoot = _entryDetailsByRoot;
-                _entryDetailsByRoot = new();
+                entriesByRoot = _entriesByRoot;
+                _entriesByRoot = new();
             }
             else
             {
-                entriesByRoot = TextDictionary<WordEntryDetail[]>.Clone(_entryDetailsByRoot, static v => [.. v]);
+                entriesByRoot = TextDictionary<WordEntryDetail[]>.Clone(_entriesByRoot, static v => [.. v]);
             }
 
             var allReplacements = Affix.Replacements;
@@ -118,7 +146,7 @@ public partial class WordList
             {
                 // PERF: because we add more entries than we are told about, we add a bit more to the expected size
                 var expectedCapacity = (expectedSize / 100) + expectedSize;
-                _entryDetailsByRoot.EnsureCapacity(expectedCapacity);
+                _entriesByRoot.EnsureCapacity(expectedCapacity);
             }
         }
     }

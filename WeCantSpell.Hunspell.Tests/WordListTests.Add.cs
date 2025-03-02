@@ -38,8 +38,8 @@ public partial class WordListTests
             var word = "word";
             var wordList = new WordList.Builder().Build();
 
-            wordList.Add(word, new(FlagSet.Create('A'), MorphSet.Empty, WordEntryOptions.None)).ShouldBeTrue();
-            wordList.Add(word, new(FlagSet.Create('A'), MorphSet.Empty, WordEntryOptions.None)).ShouldBeFalse();
+            wordList.Add(word, FlagSet.Create('A'), MorphSet.Empty, WordEntryOptions.None).ShouldBeTrue();
+            wordList.Add(word, FlagSet.Create('A'), MorphSet.Empty, WordEntryOptions.None).ShouldBeFalse();
         }
 
         [Fact]
@@ -48,8 +48,8 @@ public partial class WordListTests
             var word = "word";
             var wordList = new WordList.Builder().Build();
 
-            wordList.Add(word, new(FlagSet.Create('A'), MorphSet.Empty, WordEntryOptions.None)).ShouldBeTrue();
-            wordList.Add(word, new(FlagSet.Create('B'), MorphSet.Empty, WordEntryOptions.None)).ShouldBeTrue();
+            wordList.Add(word, FlagSet.Create('A'), MorphSet.Empty, WordEntryOptions.None).ShouldBeTrue();
+            wordList.Add(word, FlagSet.Create('B'), MorphSet.Empty, WordEntryOptions.None).ShouldBeTrue();
         }
 
         [Fact]
@@ -63,8 +63,8 @@ public partial class WordListTests
             }.Build();
             var wordList = new WordList.Builder(affix).Build();
 
-            wordList.Add(word, new(FlagSet.Create('A'), MorphSet.Empty, WordEntryOptions.None)).ShouldBeTrue();
-            wordList.Add(word, new(FlagSet.Create('B'), MorphSet.Empty, WordEntryOptions.None)).ShouldBeTrue();
+            wordList.Add(word, FlagSet.Create('A'), MorphSet.Empty, WordEntryOptions.None).ShouldBeTrue();
+            wordList.Add(word, FlagSet.Create('B'), MorphSet.Empty, WordEntryOptions.None).ShouldBeTrue();
         }
 
         [Fact]
@@ -116,7 +116,7 @@ public partial class WordListTests
             var wordList = await WordList.CreateFromFilesAsync("files/English (American).dic", TestCancellation);
             wordList.Check(word, TestCancellation).ShouldBeFalse();
             wordList.Affix.ForbiddenWord.HasValue.ShouldBeTrue();
-            wordList.Add(word, new(FlagSet.Create(wordList.Affix.ForbiddenWord), MorphSet.Empty, WordEntryOptions.None));
+            wordList.Add(word, FlagSet.Create(wordList.Affix.ForbiddenWord), MorphSet.Empty, WordEntryOptions.None);
 
             var actual = wordList.Suggest(given, TestCancellation);
 
@@ -131,11 +131,35 @@ public partial class WordListTests
             var wordList = await WordList.CreateFromFilesAsync("files/English (American).dic", TestCancellation);
             wordList.Check(word, TestCancellation).ShouldBeFalse();
             wordList.Affix.NoSuggest.HasValue.ShouldBeTrue();
-            wordList.Add(word, new(FlagSet.Create(wordList.Affix.NoSuggest), MorphSet.Empty, WordEntryOptions.None));
+            wordList.Add(word, FlagSet.Create(wordList.Affix.NoSuggest), MorphSet.Empty, WordEntryOptions.None);
 
             var actual = wordList.Suggest(given, TestCancellation);
 
             actual.ShouldNotContain(word);
+        }
+
+        [Fact]
+        public void can_handle_add_for_ignore_chars()
+        {
+            var affix = new AffixConfig.Builder()
+            {
+                IgnoredChars = CharacterSet.Create("xyz")
+            }.Build();
+            var wordList = new WordList.Builder(affix).Build();
+
+            wordList.Add("abcxyz");
+
+            wordList.Check("abc", TestCancellation).ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task chan_handle_add_for_complex_prefixes()
+        {
+            var wordList = await WordList.CreateFromFilesAsync("files/alias3.dic", TestCancellation);
+
+            wordList.Add("abc");
+
+            wordList.Check("abc", TestCancellation).ShouldBeTrue();
         }
     }
 }

@@ -160,25 +160,74 @@ public sealed partial class WordList
     /// Adds a root word to this in-memory dictionary.
     /// </summary>
     /// <param name="word">The root word to add.</param>
+    /// <returns><c>true</c> when a root is added, <c>false</c> otherwise.</returns>
     /// <remarks>
     /// Changes made to this dictionary instance will not be saved.
     /// </remarks>
     public bool Add(string word)
     {
-        return Add(word, new(FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None));
+        return Add(word, FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None);
     }
 
     /// <summary>
     /// Adds a root word to this in-memory dictionary.
     /// </summary>
     /// <param name="word">The root word to add.</param>
-    /// <param name="detail">The root word entry details.</param>
+    /// <param name="flags">The flags associated with the root <paramref name="word"/> detail entry.</param>
+    /// <param name="morphs">The morphs associated with the root <paramref name="word"/> detail entry.</param>
+    /// <param name="options">The options associated with the root <paramref name="word"/> detail entry.</param>
+    /// <returns><c>true</c> when a root is added, <c>false</c> otherwise.</returns>
+    /// <remarks>
+    /// Changes made to this dictionary instance will not be saved.
+    /// </remarks>
+    public bool Add(string word, FlagSet flags, IEnumerable<string> morphs, WordEntryOptions options)
+    {
+        return Add(word, flags, MorphSet.Create(morphs), options);
+    }
+
+    /// <summary>
+    /// Adds a root word to this in-memory dictionary.
+    /// </summary>
+    /// <param name="word">The root word to add.</param>
+    /// <param name="flags">The flags associated with the root <paramref name="word"/> detail entry.</param>
+    /// <param name="morphs">The morphs associated with the root <paramref name="word"/> detail entry.</param>
+    /// <param name="options">The options associated with the root <paramref name="word"/> detail entry.</param>
+    /// <returns><c>true</c> when a root is added, <c>false</c> otherwise.</returns>
+    /// <remarks>
+    /// Changes made to this dictionary instance will not be saved.
+    /// </remarks>
+    public bool Add(string word, FlagSet flags, MorphSet morphs, WordEntryOptions options)
+    {
+        return Add(word, new WordEntryDetail(flags, morphs, options));
+    }
+
+    /// <summary>
+    /// Adds a root word to this in-memory dictionary.
+    /// </summary>
+    /// <param name="word">The root word to add details for.</param>
+    /// <param name="detail">The details to associate with the root <paramref name="word"/>.</param>
+    /// <returns><c>true</c> when a root is added, <c>false</c> otherwise.</returns>
     /// <remarks>
     /// Changes made to this dictionary instance will not be saved.
     /// </remarks>
     public bool Add(string word, WordEntryDetail detail)
     {
-        ref var details = ref _entriesByRoot.GetOrAdd(word)!;
+        return Add(_entriesByRoot, Affix, word, detail);
+    }
+
+    private static bool Add(TextDictionary<WordEntryDetail[]> entries, AffixConfig affix, string word, WordEntryDetail detail)
+    {
+        if (affix.IgnoredChars.HasItems)
+        {
+            word = affix.IgnoredChars.RemoveChars(word);
+        }
+
+        if (affix.ComplexPrefixes)
+        {
+            word = word.GetReversed();
+        }
+
+        ref var details = ref entries.GetOrAdd(word)!;
         if (details is null)
         {
             details = [detail];
@@ -315,7 +364,7 @@ public sealed partial class WordList
             return false;
         }
 
-        private WordEntryDetail[] FilterRestrictedDetails(WordEntryDetail[] source, int leftRestrictCount, int index)
+        private readonly WordEntryDetail[] FilterRestrictedDetails(WordEntryDetail[] source, int leftRestrictCount, int index)
         {
             var builder = ArrayBuilder<WordEntryDetail>.Pool.Get(source.Length - leftRestrictCount);
             builder.AddRange(source.AsSpan(leftRestrictCount, index - leftRestrictCount));

@@ -18,8 +18,8 @@ public partial class WordListTests
                 NoSuggest = (FlagValue)'B',
             }.Build();
             var wordList = new WordList.Builder(affix).Build();
-            wordList.Add(word, new(FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None));
-            wordList.Add(word, new(FlagSet.Empty, MorphSet.Empty, WordEntryOptions.AliasM));
+            wordList.Add(word, FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None);
+            wordList.Add(word, FlagSet.Empty, MorphSet.Empty, WordEntryOptions.AliasM);
 
             var actual = wordList.Suggest(given, TestCancellation);
 
@@ -36,8 +36,8 @@ public partial class WordListTests
                 NoSuggest = (FlagValue)'B',
             }.Build();
             var wordList = new WordList.Builder(affix).Build();
-            wordList.Add(word, new(FlagSet.Create('B'), MorphSet.Empty, WordEntryOptions.None));
-            wordList.Add(word, new(FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None));
+            wordList.Add(word, FlagSet.Create('B'), MorphSet.Empty, WordEntryOptions.None);
+            wordList.Add(word, FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None);
 
             var actual = wordList.Suggest(given, TestCancellation);
 
@@ -54,8 +54,8 @@ public partial class WordListTests
                 NoSuggest = (FlagValue)'B',
             }.Build();
             var wordList = new WordList.Builder(affix).Build();
-            wordList.Add(word, new(FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None));
-            wordList.Add(word, new(FlagSet.Create('B'), MorphSet.Empty, WordEntryOptions.None));
+            wordList.Add(word, FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None);
+            wordList.Add(word, FlagSet.Create('B'), MorphSet.Empty, WordEntryOptions.None);
 
             var actual = wordList.Suggest(given, TestCancellation);
 
@@ -73,12 +73,12 @@ public partial class WordListTests
                 NoSuggest = (FlagValue)'B',
             }.Build();
             var wordList = new WordList.Builder(affix).Build();
-            wordList.Add(word, new(FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None));
-            wordList.Add(word, new(FlagSet.Create('A'), MorphSet.Empty, WordEntryOptions.None));
-            wordList.Add(word, new(FlagSet.Empty, MorphSet.Empty, WordEntryOptions.AliasM));
-            wordList.Add(word, new(FlagSet.Create('B'), MorphSet.Empty, WordEntryOptions.AliasM));
-            wordList.Add(word, new(FlagSet.Empty, MorphSet.Empty, WordEntryOptions.InitCap));
-            wordList.Add(word, new(FlagSet.Create('B'), MorphSet.Empty, WordEntryOptions.InitCap));
+            wordList.Add(word, FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None);
+            wordList.Add(word, FlagSet.Create('A'), MorphSet.Empty, WordEntryOptions.None);
+            wordList.Add(word, FlagSet.Empty, MorphSet.Empty, WordEntryOptions.AliasM);
+            wordList.Add(word, FlagSet.Create('B'), MorphSet.Empty, WordEntryOptions.AliasM);
+            wordList.Add(word, FlagSet.Empty, MorphSet.Empty, WordEntryOptions.InitCap);
+            wordList.Add(word, FlagSet.Create('B'), MorphSet.Empty, WordEntryOptions.InitCap);
 
             var actual = wordList.Suggest(given, TestCancellation);
 
@@ -96,12 +96,12 @@ public partial class WordListTests
                 NoSuggest = (FlagValue)'B',
             }.Build();
             var wordList = new WordList.Builder(affix).Build();
-            wordList.Add(word, new(FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None));
-            wordList.Add(word, new(FlagSet.Empty, MorphSet.Empty, WordEntryOptions.AliasM));
-            wordList.Add(word, new(FlagSet.Create('A'), MorphSet.Empty, WordEntryOptions.None));
-            wordList.Add(word, new(FlagSet.Create('B'), MorphSet.Empty, WordEntryOptions.AliasM));
-            wordList.Add(word, new(FlagSet.Empty, MorphSet.Empty, WordEntryOptions.InitCap));
-            wordList.Add(word, new(FlagSet.Create('B'), MorphSet.Empty, WordEntryOptions.InitCap));
+            wordList.Add(word, FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None);
+            wordList.Add(word, FlagSet.Empty, MorphSet.Empty, WordEntryOptions.AliasM);
+            wordList.Add(word, FlagSet.Create('A'), MorphSet.Empty, WordEntryOptions.None);
+            wordList.Add(word, FlagSet.Create('B'), MorphSet.Empty, WordEntryOptions.AliasM);
+            wordList.Add(word, FlagSet.Empty, MorphSet.Empty, WordEntryOptions.InitCap);
+            wordList.Add(word, FlagSet.Create('B'), MorphSet.Empty, WordEntryOptions.InitCap);
 
             var actual = wordList.Suggest(given, TestCancellation);
 
