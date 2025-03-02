@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 
 using Shouldly;
 
@@ -188,5 +190,199 @@ public class TextDictionaryTests
         var actual = dic.ShouldHaveSingleItem();
         actual.Key.ShouldBe("word");
         actual.Value.ShouldBe(2);
+    }
+
+    [Fact]
+    public void clear_empty_does_nothing()
+    {
+        var dic = new TextDictionary<int>();
+
+        dic.Clear();
+
+        dic.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void can_clear_after_add()
+    {
+        var dic = new TextDictionary<int>();
+        dic.Add("word1", 1);
+        dic.Add("word2", 2);
+        dic.Add("word3", 3);
+        dic.Add("word4", 4);
+
+        dic.Clear();
+
+        dic.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void can_add_after_clear()
+    {
+        var dic = new TextDictionary<int>();
+        dic.Add("word1", 1);
+        dic.Add("word2", 2);
+        dic.Add("word3", 3);
+        dic.Add("word4", 4);
+        dic.Clear();
+
+        dic.Add("word5", 5);
+        dic.Add("word6", 6);
+
+        dic.ShouldBe(
+        [
+            new("word5", 5),
+            new("word6", 6)
+        ], ignoreOrder: true);
+    }
+
+    [Fact]
+    public void remove_on_empty_does_nothing()
+    {
+        var dic = new TextDictionary<int>();
+
+        dic.Remove("not-found");
+
+        dic.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void can_remove_one_of_many()
+    {
+        var dic = new TextDictionary<int>();
+        dic.Add("word1", 1);
+        dic.Add("word2", 2);
+        dic.Add("word3", 3);
+        dic.Add("word4", 4);
+
+        dic.Remove("word3").ShouldBeTrue();
+
+        dic.ShouldBe(
+        [
+            new("word1", 1),
+            new("word2", 2),
+            new("word4", 4)
+        ], ignoreOrder: true);
+    }
+
+    [Fact]
+    public void removing_not_found_does_nothing()
+    {
+        var dic = new TextDictionary<int>();
+        dic.Add("word1", 1);
+        dic.Add("word2", 2);
+        dic.Add("word3", 3);
+        dic.Add("word4", 4);
+
+        dic.Remove("not-found").ShouldBeFalse();
+
+        dic.ShouldBe(
+        [
+            new("word1", 1),
+            new("word2", 2),
+            new("word3", 3),
+            new("word4", 4)
+        ], ignoreOrder: true);
+    }
+
+    [Fact]
+    public void remove_for_missing_with_hash_not_found_does_nothing()
+    {
+        // This test is important to handle cases where there is not hash match on a missing key
+
+        // arrange
+        var dic = new TextDictionary<int>(5);
+        dic.HashSpace.ShouldBeGreaterThan(0u);
+        const string knownWord = "word";
+        var hashHashTarget = StringEx.GetStableOrdinalHashCode(knownWord) % dic.HashSpace;
+        dic.Add(knownWord, 0);
+        var random = new Random(123);
+        string unknownWord;
+        do
+        {
+            unknownWord = random.Next().ToString(CultureInfo.InvariantCulture);
+            if (unknownWord != knownWord)
+            {
+                var wordHash = StringEx.GetStableOrdinalHashCode(unknownWord) % dic.HashSpace;
+                if (wordHash != hashHashTarget)
+                {
+                    break;
+                }
+            }
+
+            TestContext.Current.CancellationToken.ThrowIfCancellationRequested();
+        }
+        while (true);
+
+        // act & assert
+        dic.Remove(unknownWord).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void can_remove_all_when_all_hashs_collide()
+    {
+        // This test was really annoying to create, but is important!
+        // It's goal is to provide test coverage for add and remove
+        // when there are hash collisions.
+
+        // arrange
+        var dic = new TextDictionary<int>(5);
+        dic.HashSpace.ShouldBeGreaterThan(0u);
+        var givenWords = new List<string>(dic.Capacity);
+        const string startWord = "word";
+        givenWords.Add("word");
+        var hashHashTarget = StringEx.GetStableOrdinalHashCode(startWord) % dic.HashSpace;
+        var random = new Random(123);
+        givenWords.AddRange(generateCollisionWords(dic.Capacity - givenWords.Count, w => w != startWord));
+        givenWords.Count.ShouldBeGreaterThan(2);
+        var otherWords = generateCollisionWords(3, w => !givenWords.Contains(w));
+
+        foreach (var toAdd in givenWords)
+        {
+            dic.Add(toAdd, 0);
+            dic.ContainsKey(toAdd).ShouldBeTrue(customMessage: "must be able to add entry with hash collision");
+        }
+
+        // act (and some assert)
+
+        foreach (var notFound in otherWords)
+        {
+            dic.Remove(notFound).ShouldBeFalse(customMessage: "must be able to gracefully handle not found on hash collision");
+        }
+
+        dic.Remove(givenWords.First()).ShouldBeTrue(customMessage: "must be able to remove the first entry");
+        dic.Remove(givenWords.Last()).ShouldBeTrue(customMessage: "must be able to remove the last entry");
+
+        foreach (var toRemove in givenWords.Skip(1).Take(givenWords.Count - 2))
+        {
+            dic.Remove(toRemove).ShouldBeTrue(customMessage: "must be able to remove other entries");
+        }
+
+        // assert
+
+        dic.Count.ShouldBe(0);
+        dic.ShouldBeEmpty();
+
+        // helpers
+
+        List<string> generateCollisionWords(int count, Func<string, bool> predicate)
+        {
+            var results = new List<string>();
+            while (results.Count < count)
+            {
+                TestContext.Current.CancellationToken.ThrowIfCancellationRequested();
+                var word = random.Next().ToString(CultureInfo.InvariantCulture);
+                if (predicate(word))
+                {
+                    var wordHash = StringEx.GetStableOrdinalHashCode(word) % dic.HashSpace;
+                    if (wordHash == hashHashTarget)
+                    {
+                        results.Add(word);
+                    }
+                }
+            }
+
+            return results;
+        }
     }
 }

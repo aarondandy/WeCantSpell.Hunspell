@@ -246,6 +246,98 @@ public sealed partial class WordList
         return true;
     }
 
+    /// <summary>
+    /// Removes all detail entries for the given root <paramref name="word"/>.
+    /// </summary>
+    /// <param name="word">The root to delete all entries for.</param>
+    /// <returns>The count of entries removed.</returns>
+    public int Remove(string word)
+    {
+        return Remove(_entriesByRoot, Affix, word);
+    }
+
+    private static int Remove(TextDictionary<WordEntryDetail[]> entries, AffixConfig affix, string word)
+    {
+        if (affix.IgnoredChars.HasItems)
+        {
+            word = affix.IgnoredChars.RemoveChars(word);
+        }
+
+        if (affix.ComplexPrefixes)
+        {
+            word = word.GetReversed();
+        }
+
+        if (entries.TryGetValue(word, out var details))
+        {
+            entries.Remove(word);
+
+            return details.Length;
+        }
+
+        return 0;
+    }
+
+    /// <summary>
+    /// Removes a specific detail entry for the given root <paramref name="word"/> and detail arguments.
+    /// </summary>
+    /// <param name="word">The root word to delete a specific entry for.</param>
+    /// <param name="flags">The flags to match on an entry.</param>
+    /// <param name="morphs">The morphs to match on an entry.</param>
+    /// <param name="options">The options to match on an entry.</param>
+    /// <returns><c>true</c> when an entry is remove, otherwise <c>false</c>.</returns>
+    public bool Remove(string word, FlagSet flags, MorphSet morphs, WordEntryOptions options)
+    {
+        return Remove(word, new WordEntryDetail(flags, morphs, options));
+    }
+
+    /// <summary>
+    /// Removes a specific <paramref name="detail"/> entry for the given root <paramref name="word"/>.
+    /// </summary>
+    /// <param name="word">The root word to delete a specific entry for.</param>
+    /// <param name="detail">The detail to delete for a specific root.</param>
+    /// <returns><c>true</c> when an entry is remove, otherwise <c>false</c>.</returns>
+    public bool Remove(string word, WordEntryDetail detail)
+    {
+        return Remove(_entriesByRoot, Affix, word, detail);
+    }
+
+    private static bool Remove(TextDictionary<WordEntryDetail[]> entries, AffixConfig affix, string word, WordEntryDetail detail)
+    {
+        if (affix.IgnoredChars.HasItems)
+        {
+            word = affix.IgnoredChars.RemoveChars(word);
+        }
+
+        if (affix.ComplexPrefixes)
+        {
+            word = word.GetReversed();
+        }
+
+        if (entries.TryGetValue(word, out var details))
+        {
+            var index = details.AsSpan().IndexOf(detail);
+            if (index >= 0)
+            {
+                if (details.Length == 1)
+                {
+                    entries.Remove(word);
+                }
+                else
+                {
+                    var newDetails = new WordEntryDetail[details.Length - 1];
+                    Array.Copy(details, 0, newDetails, 0, index);
+                    Array.Copy(details, index + 1, newDetails, index, newDetails.Length - index);
+                    entries[word] = newDetails;
+                }
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private void ApplyRootOutputConversions(ref SpellCheckResult result)
     {
         // output conversion

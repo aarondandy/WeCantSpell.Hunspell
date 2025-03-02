@@ -123,6 +123,8 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
 
     public int Capacity => _entries.Length;
 
+    internal uint HashSpace => _cellarStartIndex;
+
     public TValue this[string key]
     {
         get
@@ -272,13 +274,97 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
         }
     }
 
-    public void Clear() => ExceptionEx.ThrowNotImplementedYet();
+    public void Clear()
+    {
+        for (var i = 0; i < _entries.Length; i++)
+        {
+            ref var entry = ref _entries[i];
+            entry.HashCode = 0;
+            entry.Next = -1;
+            entry.Key = default!;
+            entry.Value = default!;
+        }
 
-    public bool Remove(string key) => ExceptionEx.ThrowNotImplementedYet<bool>();
+        _count = 0;
+    }
 
-    public bool Remove(KeyValuePair<string, TValue> item) => ExceptionEx.ThrowNotImplementedYet<bool>();
+    public bool Remove(string key)
+    {
+        return Remove(key.AsSpan());
+    }
 
-    public void Add(KeyValuePair<string, TValue> item) => Add(item.Key, item.Value);
+    public bool Remove(ReadOnlySpan<char> key)
+    {
+        if (_entries.Length == 0)
+        {
+            goto findFail;
+        }
+
+        var hash = CalculateHash(key);
+
+        ref var entry = ref GetRefByHash(hash);
+
+        if (entry.Key is null)
+        {
+            goto findFail;
+        }
+
+        ref var otherEntry = ref Unsafe.NullRef<Entry>();
+
+        while (true)
+        {
+            if (entry.HashCode == hash && key.SequenceEqual(entry.Key.AsSpan()))
+            {
+                if (Unsafe.IsNullRef(ref otherEntry))
+                {
+                    if (entry.Next < 0)
+                    {
+                        // the only entry
+                    }
+                    else
+                    {
+                        // the first of multiple
+                        otherEntry = ref entry;
+                        entry = ref _entries[entry.Next];
+                        otherEntry = entry; // NOTE: this is a copy!
+                    }
+                }
+                else
+                {
+                    otherEntry.Next = entry.Next;
+                }
+
+                entry.HashCode = 0;
+                entry.Next = -1;
+                entry.Key = default!;
+                entry.Value = default!;
+
+                _count--;
+                return true;
+            }
+
+            if (entry.Next < 0)
+            {
+                break;
+            }
+
+            otherEntry = ref entry;
+            entry = ref _entries[entry.Next];
+        }
+
+    findFail:
+        return false;
+    }
+
+    public bool Remove(KeyValuePair<string, TValue> item)
+    {
+        return Contains(item) && Remove(item.Key);
+    }
+
+    public void Add(KeyValuePair<string, TValue> item)
+    {
+        Add(item.Key, item.Value);
+    }
 
     public void Add(string key, TValue value)
     {

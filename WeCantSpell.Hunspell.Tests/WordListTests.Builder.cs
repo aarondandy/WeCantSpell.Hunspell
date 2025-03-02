@@ -38,5 +38,64 @@ public partial class WordListTests
 
             builder.Build().Check("abc", TestCancellation).ShouldBeTrue();
         }
+
+        [Fact]
+        public void remove_root_from_empty_does_nothing()
+        {
+            var builder = new WordList.Builder();
+
+            builder.Remove("not-found").ShouldBe(0);
+        }
+
+        [Fact]
+        public void can_remove_root_with_single_detail()
+        {
+            var builder = new WordList.Builder();
+            builder.Add("word", FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None);
+
+            builder.Remove("word").ShouldBe(1);
+        }
+
+        [Fact]
+        public void can_remove_root_with_multiple_detailst()
+        {
+            var builder = new WordList.Builder();
+            builder.Add("word", FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None).ShouldBeTrue();
+            builder.Add("word", FlagSet.Create('A'), MorphSet.Empty, WordEntryOptions.None).ShouldBeTrue();
+
+            builder.Remove("word").ShouldBe(2);
+        }
+
+        [Fact]
+        public void remove_details_from_empty_does_nothing()
+        {
+            var builder = new WordList.Builder();
+
+            builder.Remove("not-found", new WordEntryDetail()).ShouldBeFalse();
+        }
+
+        [Fact]
+        public void can_remove_single_detail()
+        {
+            var builder = new WordList.Builder();
+            builder.Add("word", FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None);
+
+            builder.Remove("word", FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None).ShouldBeTrue();
+        }
+
+        [Fact]
+        public void can_remove_each_detail_when_root_has_many()
+        {
+            var builder = new WordList.Builder();
+            builder.Add("word", FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None).ShouldBeTrue();
+            builder.Add("word", FlagSet.Create('A'), MorphSet.Empty, WordEntryOptions.None).ShouldBeTrue();
+            builder.Add("word", FlagSet.Create('B'), MorphSet.Empty, WordEntryOptions.None).ShouldBeTrue();
+            builder.Add("word", FlagSet.Create('C'), MorphSet.Empty, WordEntryOptions.None).ShouldBeTrue();
+
+            builder.Remove("word", FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None).ShouldBeTrue("can remove first");
+            builder.Remove("word", FlagSet.Create('C'), MorphSet.Empty, WordEntryOptions.None).ShouldBeTrue("can remove last");
+            builder.Remove("word", FlagSet.Create('A'), MorphSet.Empty, WordEntryOptions.None).ShouldBeTrue();
+            builder.Remove("word", FlagSet.Create('B'), MorphSet.Empty, WordEntryOptions.None).ShouldBeTrue();
+        }
     }
 }

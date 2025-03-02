@@ -77,6 +77,40 @@ public partial class WordList
         }
 
         /// <summary>
+        /// Removes all detail entries for the given root <paramref name="word"/>.
+        /// </summary>
+        /// <param name="word">The root to delete all entries for.</param>
+        /// <returns>The count of entries removed.</returns>
+        public int Remove(string word)
+        {
+            return WordList.Remove(_entriesByRoot, Affix, word);
+        }
+
+        /// <summary>
+        /// Removes a specific detail entry for the given root <paramref name="word"/> and detail arguments.
+        /// </summary>
+        /// <param name="word">The root word to delete a specific entry for.</param>
+        /// <param name="flags">The flags to match on an entry.</param>
+        /// <param name="morphs">The morphs to match on an entry.</param>
+        /// <param name="options">The options to match on an entry.</param>
+        /// <returns><c>true</c> when an entry is remove, otherwise <c>false</c>.</returns>
+        public bool Remove(string word, FlagSet flags, MorphSet morphs, WordEntryOptions options)
+        {
+            return Remove(word, new WordEntryDetail(flags, morphs, options));
+        }
+
+        /// <summary>
+        /// Removes a specific <paramref name="detail"/> entry for the given root <paramref name="word"/>.
+        /// </summary>
+        /// <param name="word">The root word to delete a specific entry for.</param>
+        /// <param name="detail">The detail to delete for a specific root.</param>
+        /// <returns><c>true</c> when an entry is remove, otherwise <c>false</c>.</returns>
+        public bool Remove(string word, WordEntryDetail detail)
+        {
+            return WordList.Remove(_entriesByRoot, Affix, word, detail);
+        }
+
+        /// <summary>
         /// Builds a new <see cref="WordList"/> based on the values in this builder.
         /// </summary>
         /// <returns>A new <see cref="WordList"/>.</returns>

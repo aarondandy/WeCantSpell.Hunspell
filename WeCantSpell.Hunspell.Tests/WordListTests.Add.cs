@@ -30,6 +30,7 @@ public partial class WordListTests
 
             wordList.Add(word).ShouldBeTrue();
             wordList.Add(word).ShouldBeFalse();
+            wordList.RootCount.ShouldBe(1);
         }
 
         [Fact]
