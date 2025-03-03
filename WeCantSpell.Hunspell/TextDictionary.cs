@@ -276,16 +276,9 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
 
     public void Clear()
     {
-        for (var i = 0; i < _entries.Length; i++)
-        {
-            ref var entry = ref _entries[i];
-            entry.HashCode = 0;
-            entry.Next = -1;
-            entry.Key = default!;
-            entry.Value = default!;
-        }
-
+        Array.Clear(_entries, 0, _entries.Length);
         _count = 0;
+        _collisionIndex = _entries.Length - 1;
     }
 
     public bool Remove(string key)
@@ -317,39 +310,34 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
             {
                 if (Unsafe.IsNullRef(ref otherEntry))
                 {
-                    if (entry.Next < 0)
+                    if (entry.NextNumber != 0)
                     {
-                        // the only entry
-                    }
-                    else
-                    {
-                        // the first of multiple
-                        otherEntry = ref entry;
-                        entry = ref _entries[entry.Next];
-                        otherEntry = entry; // NOTE: this is a copy!
+                        // This is the first entry in the chain, so move the next entry into this one
+                        otherEntry = ref entry; // there is no prev, so point at the first entry we need to replace
+                        entry = ref _entries[entry.NextNumber - 1]; // capture a reference to the next one
+                        otherEntry = entry; // copy what is in the next entry into the "other" current entry
+                        // very soon, entry (the old next) will be cleared out
                     }
                 }
                 else
                 {
-                    otherEntry.Next = entry.Next;
+                    otherEntry.NextNumber = entry.NextNumber;
                 }
 
-                entry.HashCode = 0;
-                entry.Next = -1;
-                entry.Key = default!;
-                entry.Value = default!;
+                entry = default;
 
                 _count--;
+                _collisionIndex = _entries.Length - 1;
                 return true;
             }
 
-            if (entry.Next < 0)
+            if (entry.NextNumber == 0)
             {
                 break;
             }
 
             otherEntry = ref entry;
-            entry = ref _entries[entry.Next];
+            entry = ref _entries[entry.NextNumber - 1];
         }
 
     findFail:
@@ -421,17 +409,17 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
                 goto entrySelected;
             }
 
-            if (entry.Next < 0)
+            if (entry.NextNumber == 0)
             {
                 break;
             }
 
-            entry = ref _entries[entry.Next];
+            entry = ref _entries[entry.NextNumber - 1];
         }
 
         if (_count < _entries.Length && (_collisionIndex = FindNextEmptyCollisionIndex()) >= 0)
         {
-            entry.Next = _collisionIndex;
+            entry.NextNumber = (uint)(_collisionIndex + 1);
 
             entry = ref _entries[_collisionIndex--];
             entry = new(hash, key);
@@ -481,12 +469,12 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
                     return ref entry;
                 }
 
-                if (entry.Next < 0)
+                if (entry.NextNumber == 0)
                 {
                     goto fail;
                 }
 
-                entry = ref _entries[entry.Next];
+                entry = ref _entries[entry.NextNumber - 1];
             }
             while (true);
         }
@@ -514,12 +502,12 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
                     return ref entry;
                 }
 
-                if (entry.Next < 0)
+                if (entry.NextNumber == 0)
                 {
                     goto fail;
                 }
 
-                entry = ref _entries[entry.Next];
+                entry = ref _entries[entry.NextNumber - 1];
             }
             while (true);
         }
@@ -798,12 +786,12 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
 
             ref var entry = ref GetRefByHash(hash);
 
-            while (entry.Next >= 0)
+            while (entry.NextNumber != 0)
             {
-                entry = ref Entries[entry.Next];
+                entry = ref Entries[entry.NextNumber - 1];
             }
 
-            entry.Next = CollisionIndex;
+            entry.NextNumber = (uint)(CollisionIndex + 1);
 
             Entries[CollisionIndex--] = new(hash, key, value);
 
@@ -822,14 +810,14 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
     private struct Entry
     {
         public uint HashCode;
-        public int Next; // -1 is for explicit terminal, >= 0 for the next 0-based index
+        public uint NextNumber; // 0 is for explicit terminal, > 0 for the next 1-based index
         public string Key;
         public TValue Value;
 
         public Entry(uint hashCode, string key)
         {
             HashCode = hashCode;
-            Next = -1;
+            NextNumber = 0;
             Key = key;
             Value = default!;
         }
@@ -837,7 +825,7 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
         public Entry(uint hashCode, string key, TValue value)
         {
             HashCode = hashCode;
-            Next = -1;
+            NextNumber = 0;
             Key = key;
             Value = value;
         }
