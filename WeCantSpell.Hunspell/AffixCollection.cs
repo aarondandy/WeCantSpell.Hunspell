@@ -209,6 +209,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
 
             if (allowDestructiveApplication)
             {
+                _byFirstKeyChar.Clear();
                 _byFlag.Clear();
             }
         }
@@ -256,54 +257,61 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
                 }
             }
 
-            EntryTreeNode? nptr = null;
-
-            // look through the remainder of the list
-            // and find next entry with affix that
-            // the current one is not a subset of
-            // mark that as destination for NextNE
-            // use next in list that you are a subset
-            // of as NextEQ
-
-            foreach (var ptr in allNodes)
-            {
-                nptr = ptr.Next;
-                while (nptr is not null && ptr.IsKeySubset(nptr))
-                {
-                    nptr = nptr.Next;
-                }
-
-                ptr.NextNotEqual = nptr;
-                // ptr.NextEqual = null;
-
-                if (ptr.Next is not null && ptr.IsKeySubset(ptr.Next))
-                {
-                    ptr.NextEqual = ptr.Next;
-                }
-            }
-
-            // now clean up by adding smart search termination strings:
-            // if you are already a superset of the previous affix
-            // but not a subset of the next, search can end here
-            // so set NextNE properly
-
-            foreach (var ptr in allNodes)
-            {
-                EntryTreeNode? mptr = null;
-                nptr = ptr.Next;
-                while (nptr is not null && ptr.IsKeySubset(nptr))
-                {
-                    mptr = nptr;
-                    nptr = nptr.Next;
-                }
-
-                if (mptr is not null)
-                {
-                    mptr.NextNotEqual = null;
-                }
-            }
+            prepareTree(allNodes);
+            cleanTree(allNodes);
 
             return allNodes[0];
+
+            static void prepareTree(EntryTreeNode[] allNodes)
+            {
+                // look through the remainder of the list
+                // and find next entry with affix that
+                // the current one is not a subset of
+                // mark that as destination for NextNE
+                // use next in list that you are a subset
+                // of as NextEQ
+
+                foreach (var ptr in allNodes)
+                {
+                    var nptr = ptr.Next;
+                    while (nptr is not null && ptr.IsKeySubset(nptr))
+                    {
+                        nptr = nptr.Next;
+                    }
+
+                    ptr.NextNotEqual = nptr;
+                    // ptr.NextEqual = null;
+
+                    if (ptr.Next is not null && ptr.IsKeySubset(ptr.Next))
+                    {
+                        ptr.NextEqual = ptr.Next;
+                    }
+                }
+            }
+
+            static void cleanTree(EntryTreeNode[] allNodes)
+            {
+                // now clean up by adding smart search termination strings:
+                // if you are already a superset of the previous affix
+                // but not a subset of the next, search can end here
+                // so set NextNE properly
+
+                foreach (var ptr in allNodes)
+                {
+                    EntryTreeNode? mptr = null;
+                    var nptr = ptr.Next;
+                    while (nptr is not null && ptr.IsKeySubset(nptr))
+                    {
+                        mptr = nptr;
+                        nptr = nptr.Next;
+                    }
+
+                    if (mptr is not null)
+                    {
+                        mptr.NextNotEqual = null;
+                    }
+                }
+            }
         }
 
         [DebuggerDisplay("{Builder}")]
