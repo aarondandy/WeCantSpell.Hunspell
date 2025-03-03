@@ -144,7 +144,7 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
         }
         set
         {
-            ref var entryValue = ref GetOrAdd(key);
+            ref var entryValue = ref GetOrAddValueRef(key);
             entryValue = value;
         }
     }
@@ -365,7 +365,7 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
         entry.Value = value;
     }
 
-    internal ref TValue GetOrAdd(string key)
+    internal ref TValue GetOrAddValueRef(string key)
     {
         ref var entry = ref GetOrAddEntryRefForKey(key, throwOnMatch: false);
         if (Unsafe.IsNullRef(ref entry))

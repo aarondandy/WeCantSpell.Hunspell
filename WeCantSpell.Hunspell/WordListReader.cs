@@ -467,7 +467,7 @@ public sealed class WordListReader
     private void AddWord(string word, FlagSet flags, MorphSet morphs)
     {
         var capType = StringEx.GetCapitalizationType(word, TextInfo);
-        AddWord(word, flags, morphs, false, capType);
+        AddWord(word, flags, morphs, onlyUpperCase: false, capType);
         AddWordCapitalized(word, flags, morphs, capType);
     }
 
@@ -486,11 +486,12 @@ public sealed class WordListReader
 
         do
         {
-            var ph = morphPhonEnumerator.Current.AsSpan(MorphologicalTags.Phon.Length);
-            if (ph.Length == 0)
+            if (morphPhonEnumerator.Current.Length <= MorphologicalTags.Phon.Length)
             {
                 continue;
             }
+
+            var ph = morphPhonEnumerator.Current.AsSpan(MorphologicalTags.Phon.Length);
 
             ReadOnlySpan<char> wordpart;
             // dictionary based REP replacement, separated by "->"
@@ -532,7 +533,7 @@ public sealed class WordListReader
             if (capType == CapitalizationType.Init)
             {
                 var phCapitalized = StringEx.MakeInitCap(phString, Affix.Culture.TextInfo);
-                if (phCapitalized.Length != 0)
+                if (phCapitalized.Length > 0)
                 {
                     // add also lowercase word in the case of German or
                     // Hungarian to support lowercase suggestions lowercased by
@@ -546,8 +547,10 @@ public sealed class WordListReader
                     // Hungarian dictionary.)
                     if (Affix.IsGerman || Affix.IsHungarian)
                     {
-                        var wordpartLower = StringEx.MakeAllSmall(wordpartString, Affix.Culture.TextInfo);
-                        Builder._phoneticReplacements.Add(new SingleReplacement(phString, wordpartLower, ReplacementValueType.Med));
+                        Builder._phoneticReplacements.Add(new SingleReplacement(
+                            phString,
+                            StringEx.MakeAllSmall(wordpartString, Affix.Culture.TextInfo),
+                            ReplacementValueType.Med));
                     }
 
                     Builder._phoneticReplacements.Add(new SingleReplacement(phCapitalized, wordpartString, ReplacementValueType.Med));
@@ -568,6 +571,7 @@ public sealed class WordListReader
     {
         // store the description string or its pointer
         var options = capType == CapitalizationType.Init ? WordEntryOptions.InitCap : WordEntryOptions.None;
+
         if (morphs.HasItems)
         {
             if (Affix.IsAliasM)
@@ -578,7 +582,7 @@ public sealed class WordListReader
             AddWord_HandleMorph(morphs, word, capType, ref options);
         }
 
-        ref var details = ref Builder._entriesByRoot.GetOrAdd(word);
+        ref var details = ref Builder._entriesByRoot.GetOrAddValueRef(word);
 
         if (details is not null)
         {
@@ -627,9 +631,12 @@ public sealed class WordListReader
             flags.DoesNotContain(Affix.ForbiddenWord)
         )
         {
-            flags = flags.Union(SpecialFlags.OnlyUpcaseFlag);
-            word = StringEx.MakeTitleCase(word, Affix.Culture);
-            AddWord(word, flags, morphs, true, CapitalizationType.Init);
+            AddWord(
+                StringEx.MakeTitleCase(word, Affix.Culture),
+                flags.Union(SpecialFlags.OnlyUpcaseFlag),
+                morphs,
+                onlyUpperCase: true,
+                CapitalizationType.Init);
         }
     }
 

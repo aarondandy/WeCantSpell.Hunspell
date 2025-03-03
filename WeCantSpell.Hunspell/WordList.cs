@@ -227,7 +227,7 @@ public sealed partial class WordList
             word = word.GetReversed();
         }
 
-        ref var details = ref entries.GetOrAdd(word)!;
+        ref var details = ref entries.GetOrAddValueRef(word)!;
         if (details is null)
         {
             details = [detail];
