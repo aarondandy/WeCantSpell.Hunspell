@@ -26,20 +26,22 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
         return new(morphs.ToArray());
     }
 
-    internal static string[] CreateReversedStrings(string[] oldMorphs)
+    public static MorphSet CreateSingle(string morphValue)
     {
-        var newMorphs = new string[oldMorphs.Length];
-        var lastIndex = oldMorphs.Length - 1;
-        var newIndex = 0;
-        for (var i = oldMorphs.Length - 1; i >= 0; i--)
-        {
-            newMorphs[newIndex++] = oldMorphs[lastIndex - i].GetReversed();
-        }
-
-        return newMorphs;
+        return new MorphSet([morphValue]);
     }
 
-    internal MorphSet(string[] morphs)
+    public static MorphSet CreateSingle(ReadOnlySpan<char> morphValue)
+    {
+        return CreateSingle(morphValue.ToString());
+    }
+
+    internal static MorphSet CreateUsingArray(string[] morphValues)
+    {
+        return new(morphValues);
+    }
+
+    private MorphSet(string[] morphs)
     {
         _morphs = morphs;
     }

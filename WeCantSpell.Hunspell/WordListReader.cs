@@ -190,23 +190,23 @@ public sealed class WordListReader
     }
 
     private WordListReader(WordList.Builder? builder, AffixConfig affix)
+        : this(builder, affix, new(affix), new(affix))
     {
-        if (builder is null)
-        {
-            _ownsBuilder = true;
-            builder = new WordList.Builder(affix);
-        }
-
-        Builder = builder;
-        Affix = affix;
-        _flagParser = new FlagParser(Affix.FlagMode, Affix.Encoding);
-
-        _parseWordLineFlags = Affix.IsAliasF
-            ? GetAliasedFlagSet
-            : _flagParser.ParseFlagSet;
     }
 
-    private WordListReader(WordList.Builder? builder, AffixConfig affix, AffixReader affixReader)
+    private WordListReader(
+        WordList.Builder? builder,
+        AffixConfig affix,
+        AffixReader affixReader)
+        : this(builder, affix, affixReader.FlagParser, affixReader.MorphParser)
+    {
+    }
+
+    private WordListReader(
+        WordList.Builder? builder,
+        AffixConfig affix,
+        FlagParser flagParser,
+        MorphSetParser morphSetParser)
     {
         if (builder is null)
         {
@@ -216,15 +216,22 @@ public sealed class WordListReader
 
         Builder = builder;
         Affix = affix;
-        _flagParser = affixReader.FlagParser;
+        _flagParser = flagParser;
+        _morphParser = morphSetParser;
 
         _parseWordLineFlags = Affix.IsAliasF
             ? GetAliasedFlagSet
             : _flagParser.ParseFlagSet;
+
+        _parseWordLineMorphs = Affix.IsAliasM
+            ? GetAliasedMorphSet
+            : _morphParser.ParseMorphSet;
     }
 
     private readonly ParseFlagSetDelegate _parseWordLineFlags;
+    private readonly ParseMorphSetDelegate _parseWordLineMorphs;
     private readonly FlagParser _flagParser;
+    private readonly MorphSetParser _morphParser;
     private readonly bool _ownsBuilder;
     private bool _hasInitialized;
 
@@ -315,6 +322,7 @@ public sealed class WordListReader
                 {
                     var wordPart = line.Slice(0, i);
                     FlagSet flags;
+                    MorphSet morphs;
 
                     var flagsDelimiterPosition = indexOfFlagsDelimiter(wordPart);
                     if (flagsDelimiterPosition < wordPart.Length)
@@ -327,10 +335,19 @@ public sealed class WordListReader
                         flags = FlagSet.Empty;
                     }
 
+                    if (i < line.Length)
+                    {
+                        morphs = _parseWordLineMorphs(line.Slice(i + 1));
+                    }
+                    else
+                    {
+                        morphs = MorphSet.Empty;
+                    }
+
                     AddWord(
                         wordPart.ReplaceIntoString(@"\/", @"/"),
                         flags,
-                        i < line.Length ? parseMorphs(line.Slice(i + 1)) : []);
+                        morphs);
                 }
             }
         }
@@ -366,28 +383,11 @@ public sealed class WordListReader
 
             return i;
         }
-
-        static string[] parseMorphs(ReadOnlySpan<char> text)
-        {
-            if (text.IndexOfTabOrSpace() < 0)
-            {
-                return [text.ToString()];
-            }
-
-            var morphsBuilder = ArrayBuilder<string>.Pool.Get();
-
-            foreach (var morph in text.SplitOnTabOrSpace())
-            {
-                morphsBuilder.Add(morph.ToString());
-            }
-
-            return ArrayBuilder<string>.Pool.ExtractAndReturn(morphsBuilder);
-        }
     }
 
-    private FlagSet GetAliasedFlagSet(ReadOnlySpan<char> flagNumber)
+    private FlagSet GetAliasedFlagSet(ReadOnlySpan<char> flagNumberText)
     {
-        if (Affix.AliasF.TryGetByNumber(flagNumber, out var aliasedFlags))
+        if (Affix.AliasF.TryGetByNumber(flagNumberText, out var aliasedFlags))
         {
             return aliasedFlags;
         }
@@ -396,6 +396,24 @@ public sealed class WordListReader
             // TODO: warn
             return FlagSet.Empty;
         }
+    }
+
+    MorphSet GetAliasedMorphSet(ReadOnlySpan<char> morphsText)
+    {
+        var morphBuilder = ArrayBuilder<string>.Pool.Get();
+        foreach (var originalValue in morphsText.SplitOnTabOrSpace())
+        {
+            if (Affix.AliasM.TryGetByNumber(originalValue, out var aliasedMorph))
+            {
+                morphBuilder.AddRange(aliasedMorph.RawArray);
+            }
+            else
+            {
+                morphBuilder.Add(originalValue.ToString());
+            }
+        }
+
+        return MorphSet.CreateUsingArray(ArrayBuilder<string>.Pool.ExtractAndReturn(morphBuilder));
     }
 
     private bool AttemptToProcessInitializationLine(ReadOnlySpan<char> text)
@@ -429,7 +447,7 @@ public sealed class WordListReader
         return false;
     }
 
-    private void AddWord(string word, FlagSet flags, string[] morphs)
+    private void AddWord(string word, FlagSet flags, MorphSet morphs)
     {
         if (Affix.IgnoredChars.HasItems)
         {
@@ -439,11 +457,6 @@ public sealed class WordListReader
         if (Affix.ComplexPrefixes)
         {
             word = word.GetReversed();
-
-            if (morphs.Length > 0 && !Affix.IsAliasM)
-            {
-                morphs = MorphSet.CreateReversedStrings(morphs);
-            }
         }
 
         var capType = StringEx.GetCapitalizationType(word, TextInfo);
@@ -451,14 +464,8 @@ public sealed class WordListReader
         AddWordCapitalized(word, flags, morphs, capType);
     }
 
-    private string[] AddWord_HandleMorph(string[] morphs, string word, CapitalizationType capType, ref WordEntryOptions options)
+    private void AddWord_HandleMorph(MorphSet morphs, string word, CapitalizationType capType, ref WordEntryOptions options)
     {
-        if (Affix.IsAliasM)
-        {
-            options |= WordEntryOptions.AliasM;
-            morphs = ResolveMorphAliases(morphs);
-        }
-
         var morphPhonEnumerator = new AddWordMorphFilterEnumerator(morphs);
         if (morphPhonEnumerator.MoveNext())
         {
@@ -541,43 +548,6 @@ public sealed class WordListReader
             }
             while (morphPhonEnumerator.MoveNext());
         }
-
-        return morphs;
-    }
-
-    private string[] ResolveMorphAliases(string[] morphs)
-    {
-        if (morphs.Length == 1)
-        {
-            if (Affix.AliasM.TryGetByNumber(morphs[0].AsSpan(), out var aliasedMorph))
-            {
-                // The array in the MorphSet should be effectively immutable
-                // so sharing the reference should be safe.
-                morphs = aliasedMorph.RawArray;
-            }
-
-            return morphs;
-        }
-
-        return ResolveMorphAliasesWithBuilder(morphs);
-    }
-
-    private string[] ResolveMorphAliasesWithBuilder(string[] morphs)
-    {
-        var morphBuilder = ArrayBuilder<string>.Pool.Get();
-        foreach (var originalValue in morphs)
-        {
-            if (Affix.AliasM.TryGetByNumber(originalValue.AsSpan(), out var aliasedMorph))
-            {
-                morphBuilder.AddRange(aliasedMorph.RawArray);
-            }
-            else
-            {
-                morphBuilder.Add(originalValue);
-            }
-        }
-
-        return ArrayBuilder<string>.Pool.ExtractAndReturn(morphBuilder);
     }
 
     private WordList ExtractOrBuild()
@@ -585,13 +555,18 @@ public sealed class WordListReader
         return _ownsBuilder ? Builder.Extract() : Builder.Build();
     }
 
-    private void AddWord(string word, FlagSet flags, string[] morphs, bool onlyUpperCase, CapitalizationType capType)
+    private void AddWord(string word, FlagSet flags, MorphSet morphs, bool onlyUpperCase, CapitalizationType capType)
     {
         // store the description string or its pointer
         var options = capType == CapitalizationType.Init ? WordEntryOptions.InitCap : WordEntryOptions.None;
-        if (morphs.Length > 0)
+        if (morphs.HasItems)
         {
-            morphs = AddWord_HandleMorph(morphs, word, capType, ref options);
+            if (Affix.IsAliasM)
+            {
+                options |= WordEntryOptions.AliasM;
+            }
+
+            AddWord_HandleMorph(morphs, word, capType, ref options);
         }
 
         ref var details = ref Builder._entriesByRoot.GetOrAdd(word);
@@ -619,21 +594,15 @@ public sealed class WordListReader
             }
 
             Array.Resize(ref details, details.Length + 1);
-            details[details.Length - 1] = new(
-                flags,
-                new MorphSet(morphs),
-                options);
+            details[details.Length - 1] = new(flags, morphs, options);
         }
         else
         {
-            details =
-            [
-                new(flags, new MorphSet(morphs), options)
-            ];
+            details = [new(flags, morphs, options)];
         }
     }
 
-    private void AddWordCapitalized(string word, FlagSet flags, string[] morphs, CapitalizationType capType)
+    private void AddWordCapitalized(string word, FlagSet flags, MorphSet morphs, CapitalizationType capType)
     {
         // add inner capitalized forms to handle the following allcap forms:
         // Mixed caps: OpenOffice.org -> OPENOFFICE.ORG
@@ -657,6 +626,10 @@ public sealed class WordListReader
 
     private struct AddWordMorphFilterEnumerator
     {
+        public AddWordMorphFilterEnumerator(MorphSet morphs) : this(morphs.RawArray)
+        {
+        }
+
         public AddWordMorphFilterEnumerator(string[] morphs)
         {
             _morphs = morphs;

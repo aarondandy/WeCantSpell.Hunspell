@@ -9,6 +9,11 @@ namespace WeCantSpell.Hunspell;
 [DebuggerDisplay("Mode = {Mode}, Encoding = {Encoding}")]
 internal readonly struct FlagParser
 {
+    internal FlagParser(AffixConfig affix)
+        : this(affix.FlagMode, affix.Encoding)
+    {
+    }
+
     public FlagParser(FlagParsingMode mode, Encoding encoding)
     {
         Encoding = encoding;

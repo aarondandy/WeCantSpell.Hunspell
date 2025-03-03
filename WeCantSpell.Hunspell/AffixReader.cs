@@ -172,6 +172,7 @@ public sealed partial class AffixReader
 
         _builder = builder;
         FlagParser = new(_builder.FlagMode, _builder.Encoding);
+        MorphParser = new(complexPrefixes: builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes));
     }
 
     internal AffixReader(AffixConfig.Builder builder, bool ownsBuilder)
@@ -179,10 +180,12 @@ public sealed partial class AffixReader
         _ownsBuilder = ownsBuilder;
         _builder = builder;
         FlagParser = new(_builder.FlagMode, _builder.Encoding);
+        MorphParser = new(complexPrefixes: builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes));
     }
 
     private readonly AffixConfig.Builder _builder;
     internal FlagParser FlagParser;
+    internal MorphSetParser MorphParser;
     private readonly bool _ownsBuilder;
     private EntryListType _initialized = EntryListType.None;
 
@@ -285,6 +288,12 @@ public sealed partial class AffixReader
         else if (BitFlagCommandMap.TryGetValue(command, out var option))
         {
             _builder.EnableOptions(option);
+
+            if (option == AffixConfigOptions.ComplexPrefixes)
+            {
+                UpdateMorphParserForState();
+            }
+
             return true;
         }
 
@@ -482,6 +491,7 @@ public sealed partial class AffixReader
         if (!IsInitialized(entryListType))
         {
             SetInitialized(entryListType);
+            UpdateMorphParserForState();
 
             if (IntEx.TryParseInvariant(parameterText, out expectedSize) && expectedSize is >= 0 and <= CollectionsEx.CollectionPreallocationLimit)
             {
@@ -724,27 +734,7 @@ public sealed partial class AffixReader
 
     private bool TryParseAliasM(ReadOnlySpan<char> parameterText, ArrayBuilder<MorphSet> entries)
     {
-        var parts = ArrayBuilder<string>.Pool.Get((parameterText.Length + 1) / 2);
-
-        if (_builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes))
-        {
-            foreach (var part in parameterText.SplitOnTabOrSpace())
-            {
-                parts.Add(part.ToStringReversed());
-            }
-
-            parts.Reverse();
-        }
-        else
-        {
-            foreach (var part in parameterText.SplitOnTabOrSpace())
-            {
-                parts.Add(part.ToString());
-            }
-        }
-
-        entries.Add(new MorphSet(ArrayBuilder<string>.Pool.ExtractAndReturn(parts)));
-
+        entries.Add(MorphParser.ParseMorphSet(parameterText));
         return true;
     }
 
@@ -942,24 +932,7 @@ public sealed partial class AffixReader
             }
             else
             {
-                var morphSetBuilder = new List<string>();
-
-                if (_builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes))
-                {
-                    foreach (var morphValue in morphAffixText.SplitOnTabOrSpace())
-                    {
-                        morphSetBuilder.Insert(0, morphValue.ToStringReversed());
-                    }
-                }
-                else
-                {
-                    foreach (var morphValue in morphAffixText.SplitOnTabOrSpace())
-                    {
-                        morphSetBuilder.Add(morphValue.ToString());
-                    }
-                }
-
-                morph = MorphSet.Create(morphSetBuilder);
+                morph = MorphParser.ParseMorphSet(morphAffixText);
             }
         }
         else
@@ -980,6 +953,16 @@ public sealed partial class AffixReader
             contClass);
 
         return true;
+    }
+
+    private void UpdateMorphParserForState()
+    {
+        var complexPrefixes = _builder.Options.HasFlagEx(AffixConfigOptions.ComplexPrefixes);
+
+        if (MorphParser.ComplexPrefixes != complexPrefixes)
+        {
+            MorphParser = new(complexPrefixes: complexPrefixes);
+        }
     }
 
     private static ReadOnlySpan<char> ReverseCondition(ReadOnlySpan<char> conditionText)
