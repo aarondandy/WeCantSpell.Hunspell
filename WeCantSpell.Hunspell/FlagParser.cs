@@ -11,44 +11,45 @@ internal readonly struct FlagParser
 {
     public FlagParser(FlagParsingMode mode, Encoding encoding)
     {
-        _encoding = encoding;
-        _mode = mode;
+        Encoding = encoding;
+        Mode = mode;
+        _flagSetCache = new();
 
         switch (mode)
         {
             case FlagParsingMode.Char:
-                _tryParseValue = FlagValue.TryParseAsChar;
-                _parseValues = FlagValue.ParseAsChars;
-                _parseSet = FlagSet.ParseAsChars;
+                TryParseFlag = FlagValue.TryParseAsChar;
+                ParseFlagsInOrder = FlagValue.ParseAsChars;
+                ParseFlagSet = FlagSetParseAsChars;
                 break;
             case FlagParsingMode.Long:
-                _tryParseValue = FlagValue.TryParseAsLong;
-                _parseValues = FlagValue.ParseAsLongs;
-                _parseSet = FlagSet.ParseAsLongs;
+                TryParseFlag = FlagValue.TryParseAsLong;
+                ParseFlagsInOrder = FlagValue.ParseAsLongs;
+                ParseFlagSet = FlagSetParseAsLongs;
                 break;
             case FlagParsingMode.Num:
-                _tryParseValue = FlagValue.TryParseAsNumber;
-                _parseValues = FlagValue.ParseAsNumbers;
-                _parseSet = FlagSet.ParseAsNumbers;
+                TryParseFlag = FlagValue.TryParseAsNumber;
+                ParseFlagsInOrder = FlagValue.ParseAsNumbers;
+                ParseFlagSet = FlagSetParseAsNumbers;
                 break;
             case FlagParsingMode.Uni:
-                if (Encoding.UTF8.Equals(_encoding))
+                if (Encoding.UTF8.Equals(Encoding))
                 {
                     goto case FlagParsingMode.Char;
                 }
                 else
                 {
-                    _tryParseValue = TryParseFlagWithUnicodeReDecode;
-                    _parseValues = ParseFlagsInOrderWithUnicodeReDecode;
-                    _parseSet = ParseFlagSetWithUnicodeReDecode;
+                    TryParseFlag = TryParseFlagWithUnicodeReDecode;
+                    ParseFlagsInOrder = ParseFlagsInOrderWithUnicodeReDecode;
+                    ParseFlagSet = ParseFlagSetWithUnicodeReDecode;
                 }
 
                 break;
             default:
                 throwNotSupportedFlagMode();
-                _tryParseValue = null!;
-                _parseValues = null!;
-                _parseSet = null!;
+                TryParseFlag = null!;
+                ParseFlagsInOrder = null!;
+                ParseFlagSet = null!;
                 break;
         }
 
@@ -59,19 +60,16 @@ internal readonly struct FlagParser
         static void throwNotSupportedFlagMode() => throw new NotSupportedException("Flag mode is not supported");
     }
 
-    private readonly TryParseFlagValueDelegate _tryParseValue;
-    private readonly ParseFlagValuesDelegate _parseValues;
-    private readonly ParseFlagSetDelegate _parseSet;
-    private readonly Encoding _encoding;
-    private readonly FlagParsingMode _mode;
+    public readonly TryParseFlagValueDelegate TryParseFlag;
+    public readonly ParseFlagValuesDelegate ParseFlagsInOrder;
+    public readonly ParseFlagSetDelegate ParseFlagSet;
+    public readonly Encoding Encoding;
+    public readonly FlagParsingMode Mode;
+    private readonly TextDictionary<FlagSet> _flagSetCache;
 
-    public Encoding Encoding => _encoding;
+    public FlagParser WithEncoding(Encoding encoding) => new(Mode, encoding);
 
-    public FlagParsingMode Mode => _mode;
-
-    public FlagParser WithEncoding(Encoding encoding) => new(_mode, encoding);
-
-    public FlagParser WithMode(FlagParsingMode mode) => new(mode, _encoding);
+    public FlagParser WithMode(FlagParsingMode mode) => new(mode, Encoding);
 
     public FlagValue ParseFlagOrDefault(ReadOnlySpan<char> text)
     {
@@ -79,20 +77,91 @@ internal readonly struct FlagParser
         return result;
     }
 
-    public readonly bool TryParseFlag(ReadOnlySpan<char> text, out FlagValue value) => _tryParseValue(text, out value);
-
     private readonly bool TryParseFlagWithUnicodeReDecode(ReadOnlySpan<char> text, out FlagValue value) =>
-        FlagValue.TryParseAsChar(ReDecodeConvertedStringAsUtf8(text, _encoding), out value);
-
-    public readonly FlagValue[] ParseFlagsInOrder(ReadOnlySpan<char> text) => _parseValues(text);
+        FlagValue.TryParseAsChar(ReDecodeConvertedStringAsUtf8(text, Encoding), out value);
 
     private readonly FlagValue[] ParseFlagsInOrderWithUnicodeReDecode(ReadOnlySpan<char> text) =>
-        FlagValue.ParseAsChars(ReDecodeConvertedStringAsUtf8(text, _encoding));
+        FlagValue.ParseAsChars(ReDecodeConvertedStringAsUtf8(text, Encoding));
 
-    public readonly FlagSet ParseFlagSet(ReadOnlySpan<char> text) => _parseSet(text);
+    private FlagSet FlagSetParseAsChars(ReadOnlySpan<char> text)
+    {
+        FlagSet set;
+        if (text.Length > 0)
+        {
+            if (!_flagSetCache.TryGetValue(text, out set))
+            {
+                var textString = text.ToString();
+                set = FlagSet.ParseAsChars(textString);
+                _flagSetCache.Add(textString, set);
+            }
+        }
+        else
+        {
+            set = FlagSet.Empty;
+        }
+
+        return set;
+    }
+
+    private FlagSet FlagSetParseAsChars(string text)
+    {
+        FlagSet set;
+        if (text.Length > 0)
+        {
+            if (!_flagSetCache.TryGetValue(text, out set))
+            {
+                set = FlagSet.ParseAsChars(text);
+                _flagSetCache.Add(text, set);
+            }
+        }
+        else
+        {
+            set = FlagSet.Empty;
+        }
+
+        return set;
+    }
+
+    private FlagSet FlagSetParseAsLongs(ReadOnlySpan<char> text)
+    {
+        FlagSet set;
+        if (text.Length > 0)
+        {
+            if (!_flagSetCache.TryGetValue(text, out set))
+            {
+                set = FlagSet.ParseAsLongs(text);
+                _flagSetCache.Add(text.ToString(), set);
+            }
+        }
+        else
+        {
+            set = FlagSet.Empty;
+        }
+
+        return set;
+    }
+
+    private FlagSet FlagSetParseAsNumbers(ReadOnlySpan<char> text)
+    {
+        FlagSet set;
+        if (text.Length > 0)
+        {
+            if (!_flagSetCache.TryGetValue(text, out set))
+            {
+                set = FlagSet.ParseAsNumbers(text);
+                _flagSetCache.Add(text.ToString(), set);
+            }
+        }
+        else
+        {
+            set = FlagSet.Empty;
+        }
+
+        return set;
+    }
 
     private readonly FlagSet ParseFlagSetWithUnicodeReDecode(ReadOnlySpan<char> text) =>
-        FlagSet.ParseAsChars(ReDecodeConvertedStringAsUtf8(text, _encoding));
+        FlagSetParseAsChars(ReDecodeConvertedStringAsUtf8(text, Encoding));
 
     private static string ReDecodeConvertedStringAsUtf8(ReadOnlySpan<char> decoded, Encoding encoding)
     {
