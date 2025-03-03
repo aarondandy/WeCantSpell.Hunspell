@@ -67,9 +67,11 @@ internal readonly struct FlagParser
     public readonly FlagParsingMode Mode;
     private readonly TextDictionary<FlagSet> _flagSetCache;
 
-    public FlagParser WithEncoding(Encoding encoding) => new(Mode, encoding);
+    public FlagParser WithEncoding(Encoding encoding) =>
+        Encoding.Equals(encoding) ? this : new(Mode, encoding);
 
-    public FlagParser WithMode(FlagParsingMode mode) => new(mode, Encoding);
+    public FlagParser WithMode(FlagParsingMode mode) =>
+        Mode == mode ? this : new(mode, Encoding);
 
     public FlagValue ParseFlagOrDefault(ReadOnlySpan<char> text)
     {

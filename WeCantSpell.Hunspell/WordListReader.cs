@@ -9,35 +9,6 @@ namespace WeCantSpell.Hunspell;
 
 public sealed class WordListReader
 {
-    private WordListReader(WordList.Builder? builder, AffixConfig affix)
-    {
-        if (builder is null)
-        {
-            _ownsBuilder = true;
-            builder = new WordList.Builder(affix);
-        }
-
-        Builder = builder;
-        Affix = affix;
-        FlagParser = new FlagParser(Affix.FlagMode, Affix.Encoding);
-
-        _parseWordLineFlags = Affix.IsAliasF
-            ? GetAliasedFlagSet
-            : ParseFlagSet;
-    }
-
-    private readonly ParseFlagSetDelegate _parseWordLineFlags;
-    private readonly bool _ownsBuilder;
-    private bool _hasInitialized;
-
-    private WordList.Builder Builder { get; }
-
-    private AffixConfig Affix { get; }
-
-    private FlagParser FlagParser { get; }
-
-    private TextInfo TextInfo => Affix.Culture.TextInfo;
-
     public static Task<WordList> ReadFileAsync(string dictionaryFilePath, CancellationToken cancellationToken = default)
     {
 #if HAS_THROWNULL
@@ -60,12 +31,16 @@ public sealed class WordListReader
         ExceptionEx.ThrowIfArgumentNull(affixFilePath, nameof(affixFilePath));
 #endif
 
-        var affix = await AffixReader.ReadFileAsync(affixFilePath, cancellationToken).ConfigureAwait(false);
-        return await ReadFileAsync(dictionaryFilePath, affix, cancellationToken);
+        var affixReader = new AffixReader(builder: null);
+        var affix = await affixReader.ReadFileLinesAsync(affixFilePath, cancellationToken).ConfigureAwait(false);
+        var wordListReader = new WordListReader(builder: null, affix, affixReader);
+        return await wordListReader.ReadFileLinesAsync(dictionaryFilePath, cancellationToken);
     }
 
-    public static Task<WordList> ReadFileAsync(string dictionaryFilePath, AffixConfig affix, CancellationToken cancellationToken = default) =>
-        ReadFileAsync(dictionaryFilePath, affix, builder: null, cancellationToken);
+    public static Task<WordList> ReadFileAsync(string dictionaryFilePath, AffixConfig affix, CancellationToken cancellationToken = default)
+    {
+        return ReadFileAsync(dictionaryFilePath, affix, builder: null, cancellationToken);
+    }
 
     public static async Task<WordList> ReadFileAsync(string dictionaryFilePath, AffixConfig affix, WordList.Builder? builder, CancellationToken cancellationToken = default)
     {
@@ -95,10 +70,12 @@ public sealed class WordListReader
         return await ReadAsync(dictionaryStream, affix, cancellationToken);
     }
 
-    public static Task<WordList> ReadAsync(Stream dictionaryStream, AffixConfig affix, CancellationToken cancellationToken = default) =>
-        ReadAsync(dictionaryStream, affix, builder: null, cancellationToken);
+    public static Task<WordList> ReadAsync(Stream dictionaryStream, AffixConfig affix, CancellationToken cancellationToken = default)
+    {
+        return ReadAsync(dictionaryStream, affix, builder: null, cancellationToken);
+    }
 
-    public static async Task<WordList> ReadAsync(Stream dictionaryStream, AffixConfig affix, WordList.Builder? builder, CancellationToken cancellationToken = default)
+    public static Task<WordList> ReadAsync(Stream dictionaryStream, AffixConfig affix, WordList.Builder? builder, CancellationToken cancellationToken = default)
     {
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(dictionaryStream);
@@ -108,17 +85,7 @@ public sealed class WordListReader
         ExceptionEx.ThrowIfArgumentNull(affix, nameof(affix));
 #endif
 
-        var readerInstance = new WordListReader(builder, affix);
-
-        using (var lineReader = new LineReader(dictionaryStream, affix.Encoding))
-        {
-            while (await lineReader.ReadNextAsync(cancellationToken))
-            {
-                readerInstance.ParseLine(lineReader.CurrentSpan);
-            }
-        }
-
-        return readerInstance.ExtractOrBuild();
+        return new WordListReader(builder, affix).ReadLinesAsync(dictionaryStream, cancellationToken);
     }
 
     public static WordList ReadFile(string dictionaryFilePath)
@@ -142,13 +109,16 @@ public sealed class WordListReader
         ExceptionEx.ThrowIfArgumentNull(dictionaryFilePath, nameof(dictionaryFilePath));
         ExceptionEx.ThrowIfArgumentNull(affixFilePath, nameof(affixFilePath));
 #endif
-
-        var affix = AffixReader.ReadFile(affixFilePath);
-        return ReadFile(dictionaryFilePath, affix);
+        var affixReader = new AffixReader(builder: null);
+        var affix = affixReader.ReadFileLines(affixFilePath);
+        var wordListReader = new WordListReader(builder: null, affix, affixReader);
+        return wordListReader.ReadFileLines(dictionaryFilePath);
     }
 
-    public static WordList ReadFile(string dictionaryFilePath, AffixConfig affix) =>
-        ReadFile(dictionaryFilePath, affix, builder: null);
+    public static WordList ReadFile(string dictionaryFilePath, AffixConfig affix)
+    {
+        return ReadFile(dictionaryFilePath, affix, builder: null);
+    }
 
     public static WordList ReadFile(string dictionaryFilePath, AffixConfig affix, WordList.Builder? builder)
     {
@@ -178,8 +148,10 @@ public sealed class WordListReader
         return Read(dictionaryStream, affix);
     }
 
-    public static WordList Read(Stream dictionaryStream, AffixConfig affix) =>
-        Read(dictionaryStream, affix, builder: null);
+    public static WordList Read(Stream dictionaryStream, AffixConfig affix)
+    {
+        return Read(dictionaryStream, affix, builder: null);
+    }
 
     public static WordList Read(Stream dictionaryStream, AffixConfig affix, WordList.Builder? builder)
     {
@@ -191,22 +163,7 @@ public sealed class WordListReader
         ExceptionEx.ThrowIfArgumentNull(affix, nameof(affix));
 #endif
 
-        var readerInstance = new WordListReader(builder, affix);
-
-        using (var lineReader = new LineReader(dictionaryStream, affix.Encoding))
-        {
-            while (lineReader.ReadNext())
-            {
-                readerInstance.ParseLine(lineReader.CurrentSpan);
-            }
-        }
-
-        return readerInstance.Builder.Extract();
-    }
-
-    private WordList ExtractOrBuild()
-    {
-        return _ownsBuilder ? Builder.Extract() : Builder.Build();
+        return new WordListReader(builder, affix).ReadLines(dictionaryStream);
     }
 
     private static string FindAffixFilePath(string dictionaryFilePath)
@@ -230,6 +187,89 @@ public sealed class WordListReader
         }
 
         return Path.ChangeExtension(dictionaryFilePath, "aff");
+    }
+
+    private WordListReader(WordList.Builder? builder, AffixConfig affix)
+    {
+        if (builder is null)
+        {
+            _ownsBuilder = true;
+            builder = new WordList.Builder(affix);
+        }
+
+        Builder = builder;
+        Affix = affix;
+        _flagParser = new FlagParser(Affix.FlagMode, Affix.Encoding);
+
+        _parseWordLineFlags = Affix.IsAliasF
+            ? GetAliasedFlagSet
+            : _flagParser.ParseFlagSet;
+    }
+
+    private WordListReader(WordList.Builder? builder, AffixConfig affix, AffixReader affixReader)
+    {
+        if (builder is null)
+        {
+            _ownsBuilder = true;
+            builder = new WordList.Builder(affix);
+        }
+
+        Builder = builder;
+        Affix = affix;
+        _flagParser = affixReader.FlagParser;
+
+        _parseWordLineFlags = Affix.IsAliasF
+            ? GetAliasedFlagSet
+            : _flagParser.ParseFlagSet;
+    }
+
+    private readonly ParseFlagSetDelegate _parseWordLineFlags;
+    private readonly FlagParser _flagParser;
+    private readonly bool _ownsBuilder;
+    private bool _hasInitialized;
+
+    private WordList.Builder Builder { get; }
+
+    private AffixConfig Affix { get; }
+
+    private TextInfo TextInfo => Affix.Culture.TextInfo;
+
+    public async Task<WordList> ReadFileLinesAsync(string filePath, CancellationToken cancellationToken)
+    {
+        using var stream = StreamEx.OpenAsyncReadFileStream(filePath);
+        return await ReadLinesAsync(stream, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<WordList> ReadLinesAsync(Stream dictionaryStream, CancellationToken cancellationToken = default)
+    {
+        using (var lineReader = new LineReader(dictionaryStream, Affix.Encoding))
+        {
+            while (await lineReader.ReadNextAsync(cancellationToken))
+            {
+                ParseLine(lineReader.CurrentSpan);
+            }
+        }
+
+        return ExtractOrBuild();
+    }
+
+    public WordList ReadFileLines(string filePath)
+    {
+        using var stream = StreamEx.OpenAsyncReadFileStream(filePath);
+        return ReadLines(stream);
+    }
+
+    public WordList ReadLines(Stream dictionaryStream)
+    {
+        using (var lineReader = new LineReader(dictionaryStream, Affix.Encoding))
+        {
+            while (lineReader.ReadNext())
+            {
+                ParseLine(lineReader.CurrentSpan);
+            }
+        }
+
+        return Builder.Extract();
     }
 
     private void ParseLine(ReadOnlySpan<char> line)
@@ -343,11 +383,6 @@ public sealed class WordListReader
 
             return ArrayBuilder<string>.Pool.ExtractAndReturn(morphsBuilder);
         }
-    }
-
-    private FlagSet ParseFlagSet(ReadOnlySpan<char> flagsText)
-    {
-        return FlagParser.ParseFlagSet(flagsText);
     }
 
     private FlagSet GetAliasedFlagSet(ReadOnlySpan<char> flagNumber)
@@ -545,37 +580,9 @@ public sealed class WordListReader
         return ArrayBuilder<string>.Pool.ExtractAndReturn(morphBuilder);
     }
 
-    private struct AddWordMorphFilterEnumerator
+    private WordList ExtractOrBuild()
     {
-        public AddWordMorphFilterEnumerator(string[] morphs)
-        {
-            _morphs = morphs;
-            _index = 0;
-            Current = default!;
-        }
-
-        private readonly string[] _morphs;
-        public string Current;
-        private int _index;
-
-        public bool MoveNext()
-        {
-            var i = _index;
-            while (i < _morphs.Length)
-            {
-                var morph = _morphs[i++];
-                if (morph.StartsWith(MorphologicalTags.Phon))
-                {
-                    Current = morph;
-                    _index = i;
-                    return true;
-                }
-            }
-
-            Current = default!;
-            _index = i;
-            return false;
-        }
+        return _ownsBuilder ? Builder.Extract() : Builder.Build();
     }
 
     private void AddWord(string word, FlagSet flags, string[] morphs, bool onlyUpperCase, CapitalizationType capType)
@@ -645,6 +652,39 @@ public sealed class WordListReader
             flags = flags.Union(SpecialFlags.OnlyUpcaseFlag);
             word = StringEx.MakeTitleCase(word, Affix.Culture);
             AddWord(word, flags, morphs, true, CapitalizationType.Init);
+        }
+    }
+
+    private struct AddWordMorphFilterEnumerator
+    {
+        public AddWordMorphFilterEnumerator(string[] morphs)
+        {
+            _morphs = morphs;
+            _index = 0;
+            Current = default!;
+        }
+
+        private readonly string[] _morphs;
+        public string Current;
+        private int _index;
+
+        public bool MoveNext()
+        {
+            var i = _index;
+            while (i < _morphs.Length)
+            {
+                var morph = _morphs[i++];
+                if (morph.StartsWith(MorphologicalTags.Phon))
+                {
+                    Current = morph;
+                    _index = i;
+                    return true;
+                }
+            }
+
+            Current = default!;
+            _index = i;
+            return false;
         }
     }
 }
