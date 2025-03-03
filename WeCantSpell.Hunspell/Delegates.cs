@@ -9,3 +9,5 @@ internal delegate FlagSet ParseFlagSetDelegate(ReadOnlySpan<char> text);
 internal delegate FlagValue[] ParseFlagValuesDelegate(ReadOnlySpan<char> text);
 
 internal delegate MorphSet ParseMorphSetDelegate(ReadOnlySpan<char> text);
+
+internal delegate string ParseWordDelegate(ReadOnlySpan<char> text);

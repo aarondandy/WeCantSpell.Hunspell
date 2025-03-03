@@ -226,10 +226,15 @@ public sealed class WordListReader
         _parseWordLineMorphs = Affix.IsAliasM
             ? GetAliasedMorphSet
             : _morphParser.ParseMorphSet;
+
+        _parseWordLineWord = Affix.ComplexPrefixes || Affix.IgnoredChars.HasItems
+            ? ParseWordGeneral
+            : ParseWordSimple;
     }
 
     private readonly ParseFlagSetDelegate _parseWordLineFlags;
     private readonly ParseMorphSetDelegate _parseWordLineMorphs;
+    private readonly ParseWordDelegate _parseWordLineWord;
     private readonly FlagParser _flagParser;
     private readonly MorphSetParser _morphParser;
     private readonly bool _ownsBuilder;
@@ -322,7 +327,6 @@ public sealed class WordListReader
                 {
                     var wordPart = line.Slice(0, i);
                     FlagSet flags;
-                    MorphSet morphs;
 
                     var flagsDelimiterPosition = indexOfFlagsDelimiter(wordPart);
                     if (flagsDelimiterPosition < wordPart.Length)
@@ -335,19 +339,10 @@ public sealed class WordListReader
                         flags = FlagSet.Empty;
                     }
 
-                    if (i < line.Length)
-                    {
-                        morphs = _parseWordLineMorphs(line.Slice(i + 1));
-                    }
-                    else
-                    {
-                        morphs = MorphSet.Empty;
-                    }
-
                     AddWord(
-                        wordPart.ReplaceIntoString(@"\/", @"/"),
+                        _parseWordLineWord(wordPart),
                         flags,
-                        morphs);
+                        i < line.Length ? _parseWordLineMorphs(line.Slice(i + 1)): MorphSet.Empty);
                 }
             }
         }
@@ -383,6 +378,28 @@ public sealed class WordListReader
 
             return i;
         }
+    }
+
+    private string ParseWordGeneral(ReadOnlySpan<char> text)
+    {
+        var word = text.ReplaceIntoString(@"\/", @"/");
+
+        if (Affix.IgnoredChars.HasItems)
+        {
+            word = Affix.IgnoredChars.RemoveChars(word);
+        }
+
+        if (Affix.ComplexPrefixes)
+        {
+            word = word.GetReversed();
+        }
+
+        return word;
+    }
+
+    private string ParseWordSimple(ReadOnlySpan<char> text)
+    {
+        return text.ReplaceIntoString(@"\/", @"/");
     }
 
     private FlagSet GetAliasedFlagSet(ReadOnlySpan<char> flagNumberText)
@@ -449,16 +466,6 @@ public sealed class WordListReader
 
     private void AddWord(string word, FlagSet flags, MorphSet morphs)
     {
-        if (Affix.IgnoredChars.HasItems)
-        {
-            word = Affix.IgnoredChars.RemoveChars(word);
-        }
-
-        if (Affix.ComplexPrefixes)
-        {
-            word = word.GetReversed();
-        }
-
         var capType = StringEx.GetCapitalizationType(word, TextInfo);
         AddWord(word, flags, morphs, false, capType);
         AddWordCapitalized(word, flags, morphs, capType);
