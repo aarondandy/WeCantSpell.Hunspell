@@ -342,7 +342,7 @@ public sealed class WordListReader
                     AddWord(
                         _parseWordLineWord(wordPart),
                         flags,
-                        i < line.Length ? _parseWordLineMorphs(line.Slice(i + 1)): MorphSet.Empty);
+                        (i + 1) < line.Length ? _parseWordLineMorphs(line.Slice(i + 1)) : MorphSet.Empty);
                 }
             }
         }
