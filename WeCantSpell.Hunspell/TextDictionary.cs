@@ -28,7 +28,7 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
             ref var entry = ref sourceEntries[i];
             if (entry.Key is not null)
             {
-                builder.Write(entry.HashCode, entry.Key, entry.Value);
+                builder.Add(entry.HashCode, entry.Key, entry.Value);
             }
         }
 
@@ -47,7 +47,7 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
             ref var entry = ref sourceEntries[i];
             if (entry.Key is not null)
             {
-                builder.Write(entry.HashCode, entry.Key, valueSelector(entry.Value));
+                builder.Add(entry.HashCode, entry.Key, valueSelector(entry.Value));
             }
         }
 
@@ -61,7 +61,7 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
         var builder = new Builder(source.Count);
         foreach (var entry in source)
         {
-            builder.Write(entry.Key, entry.Value);
+            builder.Add(entry.Key, entry.Value);
         }
 
         builder.Flush();
@@ -74,7 +74,7 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
         var builder = new Builder(source.Length);
         foreach (var entry in source)
         {
-            builder.Write(entry.Key, entry.Value);
+            builder.Add(entry.Key, entry.Value);
         }
 
         builder.Flush();
@@ -250,7 +250,7 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
         {
             if (oldEntry.Key is not null)
             {
-                builder.Write(oldEntry.HashCode, oldEntry.Key, oldEntry.Value);
+                builder.Add(oldEntry.HashCode, oldEntry.Key, oldEntry.Value);
             }
         }
 
@@ -743,12 +743,12 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
         public int CollisionIndex;
         public int Count;
 
-        public void Write(string key, TValue value)
+        public void Add(string key, TValue value)
         {
-            Write(CalculateHash(key), key, value);
+            Add(CalculateHash(key), key, value);
         }
 
-        public void Write(uint hash, string key, TValue value)
+        public void Add(uint hash, string key, TValue value)
         {
             ref var entry = ref GetRefByHash(hash);
             if (entry.Key is null)
