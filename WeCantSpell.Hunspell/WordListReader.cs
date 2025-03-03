@@ -474,87 +474,89 @@ public sealed class WordListReader
     private void AddWord_HandleMorph(MorphSet morphs, string word, CapitalizationType capType, ref WordEntryOptions options)
     {
         var morphPhonEnumerator = new AddWordMorphFilterEnumerator(morphs);
-        if (morphPhonEnumerator.MoveNext())
+        if (!morphPhonEnumerator.MoveNext())
         {
-            options |= WordEntryOptions.Phon;
-
-            // store ph: fields (pronounciation, misspellings, old orthography etc.)
-            // of a morphological description in reptable to use in REP replacements.
-
-            do
-            {
-                var ph = morphPhonEnumerator.Current.AsSpan(MorphologicalTags.Phon.Length);
-                if (ph.Length == 0)
-                {
-                    continue;
-                }
-
-                ReadOnlySpan<char> wordpart;
-                // dictionary based REP replacement, separated by "->"
-                // for example "pretty ph:prity ph:priti->pretti" to handle
-                // both prity -> pretty and pritier -> prettiest suggestions.
-                var strippatt = ph.IndexOf("->".AsSpan());
-                if (strippatt > 0 && strippatt < (ph.Length - 2))
-                {
-                    wordpart = ph.Slice(strippatt + 2);
-                    ph = ph.Slice(0, strippatt);
-                }
-                else
-                {
-                    wordpart = word.AsSpan();
-                }
-
-                // when the ph: field ends with the character *,
-                // strip last character of the pattern and the replacement
-                // to match in REP suggestions also at character changes,
-                // for example, "pretty ph:prity*" results "prit->prett"
-                // REP replacement instead of "prity->pretty", to get
-                // prity->pretty and pritiest->prettiest suggestions.
-                if (ph.EndsWith('*'))
-                {
-                    if (ph.Length > 2 && wordpart.Length > 1)
-                    {
-                        ph = ph.Slice(0, ph.Length - 2);
-                        wordpart = wordpart.Slice(0, word.Length - 1);
-                    }
-                }
-
-                var phString = ph.ToString();
-                var wordpartString = wordpart.ToString();
-
-                // capitalize lowercase pattern for capitalized words to support
-                // good suggestions also for capitalized misspellings, eg.
-                // Wednesday ph:wendsay
-                // results wendsay -> Wednesday and Wendsay -> Wednesday, too.
-                if (capType == CapitalizationType.Init)
-                {
-                    var phCapitalized = StringEx.MakeInitCap(phString, Affix.Culture.TextInfo);
-                    if (phCapitalized.Length != 0)
-                    {
-                        // add also lowercase word in the case of German or
-                        // Hungarian to support lowercase suggestions lowercased by
-                        // compound word generation or derivational suffixes
-                        // (for example by adjectival suffix "-i" of geographical
-                        // names in Hungarian:
-                        // Massachusetts ph:messzecsuzec
-                        // messzecsuzeci -> massachusettsi (adjective)
-                        // For lowercasing by conditional PFX rules, see
-                        // tests/germancompounding test example or the
-                        // Hungarian dictionary.)
-                        if (Affix.IsGerman || Affix.IsHungarian)
-                        {
-                            var wordpartLower = StringEx.MakeAllSmall(wordpartString, Affix.Culture.TextInfo);
-                            Builder._phoneticReplacements.Add(new SingleReplacement(phString, wordpartLower, ReplacementValueType.Med));
-                        }
-
-                        Builder._phoneticReplacements.Add(new SingleReplacement(phCapitalized, wordpartString, ReplacementValueType.Med));
-                    }
-                }
-
-                Builder._phoneticReplacements.Add(new SingleReplacement(phString, wordpartString, ReplacementValueType.Med));
-            }
-            while (morphPhonEnumerator.MoveNext());
+            return;
         }
+
+        options |= WordEntryOptions.Phon;
+
+        // store ph: fields (pronounciation, misspellings, old orthography etc.)
+        // of a morphological description in reptable to use in REP replacements.
+
+        do
+        {
+            var ph = morphPhonEnumerator.Current.AsSpan(MorphologicalTags.Phon.Length);
+            if (ph.Length == 0)
+            {
+                continue;
+            }
+
+            ReadOnlySpan<char> wordpart;
+            // dictionary based REP replacement, separated by "->"
+            // for example "pretty ph:prity ph:priti->pretti" to handle
+            // both prity -> pretty and pritier -> prettiest suggestions.
+            var strippatt = ph.IndexOf("->".AsSpan());
+            if (strippatt > 0 && strippatt < (ph.Length - 2))
+            {
+                wordpart = ph.Slice(strippatt + 2);
+                ph = ph.Slice(0, strippatt);
+            }
+            else
+            {
+                wordpart = word.AsSpan();
+            }
+
+            // when the ph: field ends with the character *,
+            // strip last character of the pattern and the replacement
+            // to match in REP suggestions also at character changes,
+            // for example, "pretty ph:prity*" results "prit->prett"
+            // REP replacement instead of "prity->pretty", to get
+            // prity->pretty and pritiest->prettiest suggestions.
+            if (ph.EndsWith('*'))
+            {
+                if (ph.Length > 2 && wordpart.Length > 1)
+                {
+                    ph = ph.Slice(0, ph.Length - 2);
+                    wordpart = wordpart.Slice(0, word.Length - 1);
+                }
+            }
+
+            var phString = ph.ToString();
+            var wordpartString = wordpart.ToString();
+
+            // capitalize lowercase pattern for capitalized words to support
+            // good suggestions also for capitalized misspellings, eg.
+            // Wednesday ph:wendsay
+            // results wendsay -> Wednesday and Wendsay -> Wednesday, too.
+            if (capType == CapitalizationType.Init)
+            {
+                var phCapitalized = StringEx.MakeInitCap(phString, Affix.Culture.TextInfo);
+                if (phCapitalized.Length != 0)
+                {
+                    // add also lowercase word in the case of German or
+                    // Hungarian to support lowercase suggestions lowercased by
+                    // compound word generation or derivational suffixes
+                    // (for example by adjectival suffix "-i" of geographical
+                    // names in Hungarian:
+                    // Massachusetts ph:messzecsuzec
+                    // messzecsuzeci -> massachusettsi (adjective)
+                    // For lowercasing by conditional PFX rules, see
+                    // tests/germancompounding test example or the
+                    // Hungarian dictionary.)
+                    if (Affix.IsGerman || Affix.IsHungarian)
+                    {
+                        var wordpartLower = StringEx.MakeAllSmall(wordpartString, Affix.Culture.TextInfo);
+                        Builder._phoneticReplacements.Add(new SingleReplacement(phString, wordpartLower, ReplacementValueType.Med));
+                    }
+
+                    Builder._phoneticReplacements.Add(new SingleReplacement(phCapitalized, wordpartString, ReplacementValueType.Med));
+                }
+            }
+
+            Builder._phoneticReplacements.Add(new SingleReplacement(phString, wordpartString, ReplacementValueType.Med));
+        }
+        while (morphPhonEnumerator.MoveNext());
     }
 
     private WordList ExtractOrBuild()
@@ -650,20 +652,17 @@ public sealed class WordListReader
 
         public bool MoveNext()
         {
-            var i = _index;
-            while (i < _morphs.Length)
+            while (_index < _morphs.Length)
             {
-                var morph = _morphs[i++];
+                var morph = _morphs[_index++];
                 if (morph.StartsWith(MorphologicalTags.Phon))
                 {
                     Current = morph;
-                    _index = i;
                     return true;
                 }
             }
 
             Current = default!;
-            _index = i;
             return false;
         }
     }
