@@ -9,7 +9,7 @@ namespace WeCantSpell.Hunspell;
 [DebuggerDisplay("Count = {Count}")]
 public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiReplacementEntry>
 {
-    public static readonly MultiReplacementTable Empty = TakeDictionary(new TextDictionary<MultiReplacementEntry>(0));
+    public static readonly MultiReplacementTable Empty = TakeDictionary(new TextDictionary<MultiReplacementEntry>());
 
     public static MultiReplacementTable Create(Dictionary<string, MultiReplacementEntry>? replacements) =>
         replacements is null
@@ -57,7 +57,7 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
 
     internal bool TryConvert(string text, out string converted)
     {
-        if (text.Length != 0 && HasReplacements)
+        if (text.Length > 0 && HasReplacements)
         {
             var appliedConversion = false;
             var convertedBuilder = new StringBuilderSpan(text.Length);
@@ -95,7 +95,7 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
 
     internal bool TryConvert(ReadOnlySpan<char> text, out string converted)
     {
-        if (!text.IsEmpty && HasReplacements)
+        if (text.Length > 0 && HasReplacements)
         {
             var appliedConversion = false;
             var convertedBuilder = new StringBuilderSpan(text.Length);
@@ -138,16 +138,14 @@ public sealed class MultiReplacementTable : IReadOnlyDictionary<string, MultiRep
 
     internal void ConvertAll(List<string> slst)
     {
-        if (_replacements.IsEmpty)
+        if (HasReplacements)
         {
-            return;
-        }
-
-        for (var j = 0; j < slst.Count; j++)
-        {
-            if (TryConvert(slst[j], out var wspace))
+            for (var j = 0; j < slst.Count; j++)
             {
-                slst[j] = wspace;
+                if (TryConvert(slst[j], out var wspace))
+                {
+                    slst[j] = wspace;
+                }
             }
         }
     }

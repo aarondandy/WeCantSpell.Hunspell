@@ -74,7 +74,7 @@ public readonly struct CompoundRule : IReadOnlyList<FlagValue>
         }
     }
 
-    public IEnumerator<FlagValue> GetEnumerator() => (_values is null ? Enumerable.Empty<FlagValue>() : _values).GetEnumerator();
+    public IEnumerator<FlagValue> GetEnumerator() => ((IEnumerable<FlagValue>)(_values ?? [])).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

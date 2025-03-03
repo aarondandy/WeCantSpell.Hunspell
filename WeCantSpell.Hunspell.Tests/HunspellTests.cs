@@ -29,7 +29,7 @@ public class HunspellTests
         [InlineData("-")]
         public void cant_find_words_in_empty_dictioanry(string word)
         {
-            var dictionary = new WordList.Builder().ToImmutable();
+            var dictionary = new WordList.Builder().Build();
 
             var actual = dictionary.Check(word, TestCancellation);
 
@@ -49,7 +49,7 @@ public class HunspellTests
             dictionaryBuilder.InitializeEntriesByRoot(1);
             dictionaryBuilder.Add(dictionaryWord, WordEntryDetail.Default);
 
-            var dictionary = dictionaryBuilder.ToImmutable();
+            var dictionary = dictionaryBuilder.Build();
 
             var actual = dictionary.Check(searchWord, TestCancellation);
 

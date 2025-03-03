@@ -45,7 +45,7 @@ internal ref struct SpanSeparatorSplitEnumerator<T> where T : IEquatable<T>
     {
         while (MoveNextPart())
         {
-            if (!Current.IsEmpty)
+            if (_current.Length > 0)
             {
                 return true;
             }

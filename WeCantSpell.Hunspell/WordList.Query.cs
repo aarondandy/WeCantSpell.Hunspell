@@ -1891,7 +1891,7 @@ public partial class WordList
             if (word.Length >= 2)
             {
                 // use only available mid patterns
-                foreach (var replacementEntry in WordList._allReplacements.GetInternalArray())
+                foreach (var replacementEntry in WordList._allReplacements.RawArray)
                 {
                     if (replacementEntry.Med is { Length: > 0 })
                     {

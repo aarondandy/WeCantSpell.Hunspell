@@ -72,7 +72,7 @@ dotnet_naming_symbols.private_static_fields.required_modifiers = static
 dotnet_naming_symbols.private_static_fields.applicable_accessibilities = private, internal, private_protected
 
 # internal and private fields should be _camelCase
-dotnet_naming_rule.camel_case_for_private_internal_fields.severity = suggestion
+dotnet_naming_rule.camel_case_for_private_internal_fields.severity = silent
 dotnet_naming_rule.camel_case_for_private_internal_fields.symbols  = private_internal_fields
 dotnet_naming_rule.camel_case_for_private_internal_fields.style    = camel_case_underscore_style
 dotnet_naming_symbols.private_internal_fields.applicable_kinds = field

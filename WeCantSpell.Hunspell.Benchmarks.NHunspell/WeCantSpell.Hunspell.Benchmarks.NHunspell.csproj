@@ -14,7 +14,6 @@
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageReference Include="NHunspell" Version="1.2.5554.16953" GeneratePathProperty="true" />
-    <PackageReference Include="System.Collections.Immutable" Version="9.0.1" />
   </ItemGroup>
 
   <Target Name="CopyNHunspellBinaries" BeforeTargets="BeforeBuild">

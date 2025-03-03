@@ -59,9 +59,11 @@ public abstract class AffixEntry
 
     public abstract string Key { get; }
 
-    public bool IsKeySubset(string s2) => s2 is not null && IsKeySubset(s2.AsSpan());
+    public abstract bool IsKeySubset(string s2);
 
     public abstract bool IsKeySubset(ReadOnlySpan<char> s2);
+
+    public abstract bool IsWordSubset(string word);
 
     public abstract bool IsWordSubset(ReadOnlySpan<char> word);
 
@@ -89,9 +91,13 @@ public sealed class PrefixEntry : AffixEntry
 
     public override string Key => Append;
 
+    public override bool IsKeySubset(string s2) => StringEx.IsSubset(Append, s2);
+
     public override bool IsKeySubset(ReadOnlySpan<char> s2) => StringEx.IsSubset(Append, s2);
 
-    public override bool IsWordSubset(ReadOnlySpan<char> s2) => StringEx.IsSubset(Append, s2);
+    public override bool IsWordSubset(string word) => StringEx.IsSubset(Append, word);
+
+    public override bool IsWordSubset(ReadOnlySpan<char> word) => StringEx.IsSubset(Append, word);
 
     internal override bool TestCondition(ReadOnlySpan<char> word) => Conditions.IsStartingMatch(word);
 }
@@ -116,12 +122,21 @@ public sealed class SuffixEntry : AffixEntry
 
     public override string Key => _key;
 
+    public override bool IsKeySubset(string s2) => s2 is not null && StringEx.IsSubset(_key, s2);
+
     public override bool IsKeySubset(ReadOnlySpan<char> s2) => StringEx.IsSubset(_key, s2);
 
-    public override bool IsWordSubset(ReadOnlySpan<char> s2)
+    public override bool IsWordSubset(string word)
     {
-        return Append.Length <= s2.Length
-            && StringEx.IsSubset(Append, s2.Slice(s2.Length - Append.Length));
+        return word is not null
+            && Append.Length <= word.Length
+            && StringEx.IsSubset(Append, word.AsSpan(word.Length - Append.Length));
+    }
+
+    public override bool IsWordSubset(ReadOnlySpan<char> word)
+    {
+        return Append.Length <= word.Length
+            && StringEx.IsSubset(Append, word.Slice(word.Length - Append.Length));
     }
 
     internal override bool TestCondition(ReadOnlySpan<char> word) => Conditions.IsEndingMatch(word);

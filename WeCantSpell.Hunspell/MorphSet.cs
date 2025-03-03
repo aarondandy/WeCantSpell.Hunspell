@@ -26,20 +26,22 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
         return new(morphs.ToArray());
     }
 
-    internal static string[] CreateReversedStrings(string[] oldMorphs)
+    public static MorphSet CreateSingle(string morphValue)
     {
-        var newMorphs = new string[oldMorphs.Length];
-        var lastIndex = oldMorphs.Length - 1;
-        var newIndex = 0;
-        for (var i = oldMorphs.Length - 1; i >= 0; i--)
-        {
-            newMorphs[newIndex++] = oldMorphs[lastIndex - i].GetReversed();
-        }
-
-        return newMorphs;
+        return new MorphSet([morphValue]);
     }
 
-    internal MorphSet(string[] morphs)
+    public static MorphSet CreateSingle(ReadOnlySpan<char> morphValue)
+    {
+        return CreateSingle(morphValue.ToString());
+    }
+
+    internal static MorphSet CreateUsingArray(string[] morphValues)
+    {
+        return new(morphValues);
+    }
+
+    private MorphSet(string[] morphs)
     {
         _morphs = morphs;
     }
@@ -51,6 +53,8 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
     public bool IsEmpty => _morphs is not { Length: > 0 };
 
     public bool HasItems => _morphs is { Length: > 0 };
+
+    internal string[] RawArray => _morphs ?? [];
 
     public string this[int index]
     {
@@ -73,24 +77,23 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
         }
     }
 
-    public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)GetInternalArray()).GetEnumerator();
+    public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)RawArray).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public bool Equals(MorphSet other) => GetInternalArray().AsSpan().SequenceEqual(GetInternalArray().AsSpan());
+    public bool Equals(MorphSet other) => RawArray.AsSpan().SequenceEqual(other.RawArray.AsSpan());
 
     public override bool Equals(object? obj) => obj is MorphSet set && Equals(set);
 
-    public override int GetHashCode() => ((IStructuralEquatable)GetInternalArray()).GetHashCode(StringComparer.Ordinal);
+    public override int GetHashCode() => ((IStructuralEquatable)RawArray).GetHashCode(StringComparer.Ordinal);
 
     public override string ToString() => Join(' ');
 
     internal string Join(char seperator) =>
 #if NO_STATIC_STRINGCHAR_METHODS
-        StringEx.Join(seperator, GetInternalArray());
+        StringEx.Join(seperator, RawArray);
 #else
-        string.Join(seperator, GetInternalArray());
+        string.Join(seperator, RawArray);
 #endif
 
-    internal string[] GetInternalArray() => _morphs ?? [];
 }

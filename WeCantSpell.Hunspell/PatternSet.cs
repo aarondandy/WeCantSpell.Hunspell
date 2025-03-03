@@ -56,11 +56,9 @@ public readonly struct PatternSet : IReadOnlyList<PatternEntry>
         }
     }
 
-    public IEnumerator<PatternEntry> GetEnumerator() => ((IEnumerable<PatternEntry>)GetInternalArray()).GetEnumerator();
+    public IEnumerator<PatternEntry> GetEnumerator() => ((IEnumerable<PatternEntry>)(_patterns ?? [])).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-    internal PatternEntry[] GetInternalArray() => _patterns ?? [];
 
     /// <summary>
     /// Forbid compoundings when there are special patterns at word bound.
@@ -69,35 +67,38 @@ public readonly struct PatternSet : IReadOnlyList<PatternEntry>
     internal bool Check(ReadOnlySpan<char> word, int pos, WordEntry r1, WordEntry r2, bool affixed)
 #pragma warning restore IDE0060 // Remove unused parameter
     {
-        var wordAfterPos = word.Slice(pos);
-
-        foreach (var patternEntry in GetInternalArray())
+        if (_patterns is { Length: > 0 })
         {
-            if (
-                (
-                    patternEntry.Condition.IsZero
-                    ||
-                    r1.ContainsFlag(patternEntry.Condition)
-                )
-                &&
-                (
-                    patternEntry.Condition2.IsZero
-                    ||
-                    r2.ContainsFlag(patternEntry.Condition2)
-                )
-                &&
-                // zero length pattern => only TESTAFF
-                // zero pattern (0/flag) => unmodified stem (zero affixes allowed)
-                (
-                    string.IsNullOrEmpty(patternEntry.Pattern)
-                    ||
-                    PatternWordCheck(word, pos, patternEntry.Pattern.StartsWith('0') ? r1.Word : patternEntry.Pattern)
-                )
-                &&
-                StringEx.IsSubset(patternEntry.Pattern2, wordAfterPos)
-            )
+            var wordAfterPos = word.Slice(pos);
+
+            foreach (var patternEntry in _patterns)
             {
-                return true;
+                if (
+                    (
+                        patternEntry.Condition.IsZero
+                        ||
+                        r1.ContainsFlag(patternEntry.Condition)
+                    )
+                    &&
+                    (
+                        patternEntry.Condition2.IsZero
+                        ||
+                        r2.ContainsFlag(patternEntry.Condition2)
+                    )
+                    &&
+                    // zero length pattern => only TESTAFF
+                    // zero pattern (0/flag) => unmodified stem (zero affixes allowed)
+                    (
+                        string.IsNullOrEmpty(patternEntry.Pattern)
+                        ||
+                        PatternWordCheck(word, pos, patternEntry.Pattern.StartsWith('0') ? r1.Word : patternEntry.Pattern)
+                    )
+                    &&
+                    StringEx.IsSubset(patternEntry.Pattern2, wordAfterPos)
+                )
+                {
+                    return true;
+                }
             }
         }
 

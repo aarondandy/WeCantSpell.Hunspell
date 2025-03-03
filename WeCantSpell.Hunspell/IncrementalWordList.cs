@@ -1,8 +1,10 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 
 namespace WeCantSpell.Hunspell;
 
+[DebuggerDisplay("WNum = {WNum}")]
 internal sealed class IncrementalWordList
 {
     private const int MaxCachedCapacity = 32;

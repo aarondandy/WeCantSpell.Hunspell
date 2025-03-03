@@ -91,7 +91,7 @@ public class ArrayBuilderTests
         {
             var sut = new ArrayBuilder<char> { 'a', 'b', 'c' };
 
-            sut.ToArray().ShouldBe(['a', 'b', 'c']);
+            Enumerable.ToArray(sut).ShouldBe(['a', 'b', 'c']);
         }
 
         [Fact]
@@ -109,7 +109,7 @@ public class ArrayBuilderTests
             var sut = new ArrayBuilder<char> { 'a', 'b', 'c' };
             sut[1] = 'x';
 
-            sut.ToArray().ShouldBe(['a', 'x', 'c']);
+            Enumerable.ToArray(sut).ShouldBe(['a', 'x', 'c']);
         }
     }
 }

@@ -76,7 +76,6 @@ internal static partial class StringEx
             {
                 return true;
             }
-
         }
 
         return false;

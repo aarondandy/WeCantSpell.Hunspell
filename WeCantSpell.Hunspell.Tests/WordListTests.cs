@@ -6,7 +6,7 @@ using Xunit;
 
 namespace WeCantSpell.Hunspell.Tests;
 
-public class WordListTests
+public partial class WordListTests
 {
     static CancellationToken TestCancellation => TestContext.Current.CancellationToken;
 

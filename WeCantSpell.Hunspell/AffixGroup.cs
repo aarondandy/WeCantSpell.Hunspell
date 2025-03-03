@@ -1,70 +1,66 @@
 ﻿using System;
-using System.Collections.Immutable;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace WeCantSpell.Hunspell;
 
-[DebuggerDisplay("AFlag = {AFlag}, Entries = {Entries}")]
-public sealed class AffixGroup<TAffixEntry> where TAffixEntry : AffixEntry
+[DebuggerDisplay("AFlag = {AFlag}, Options = {Options}, Count = {Count}")]
+public sealed class AffixGroup<TAffixEntry> : IReadOnlyList<TAffixEntry> where TAffixEntry : AffixEntry
 {
-    private AffixGroup(FlagValue aFlag, AffixEntryOptions options, ImmutableArray<TAffixEntry> entries)
+    public static AffixGroup<TAffixEntry> Create(FlagValue aFlag, AffixEntryOptions options, IEnumerable<TAffixEntry> entries) =>
+        CreateUsingArray(aFlag, options, entries.ToArray());
+
+    internal static AffixGroup<TAffixEntry> CreateUsingArray(FlagValue aFlag, AffixEntryOptions options, TAffixEntry[] entries) =>
+        new(aFlag, options, entries);
+
+    private AffixGroup(FlagValue aFlag, AffixEntryOptions options, TAffixEntry[] entries)
     {
-        Entries = entries;
-        AFlag = aFlag;
-        Options = options;
+        _entries = entries;
+        _aFlag = aFlag;
+        _options = options;
     }
 
-    /// <summary>
-    /// All of the entries that make up this group.
-    /// </summary>
-    public ImmutableArray<TAffixEntry> Entries { get; }
+    private readonly TAffixEntry[] _entries;
+    private readonly FlagValue _aFlag;
+    private readonly AffixEntryOptions _options;
 
     /// <summary>
     /// ID used to represent the affix group.
     /// </summary>
-    public FlagValue AFlag { get; }
+    public FlagValue AFlag => _aFlag;
 
     /// <summary>
     /// Options for this affix group.
     /// </summary>
-    public AffixEntryOptions Options { get; }
+    public AffixEntryOptions Options => _options;
 
-    public sealed class Builder
+    public int Count => _entries.Length;
+
+    public bool IsEmpty => _entries.Length <= 0;
+
+    public bool HasItems => _entries.Length > 0;
+
+    internal TAffixEntry[] RawArray => _entries;
+
+    public TAffixEntry this[int index]
     {
-        // TODO: Replace this builder with factory methods
-
-        public Builder(FlagValue aFlag, AffixEntryOptions options) : this(aFlag, options, ImmutableArray.CreateBuilder<TAffixEntry>())
+        get
         {
-        }
-
-        private Builder(FlagValue aFlag, AffixEntryOptions options, ImmutableArray<TAffixEntry>.Builder entries)
-        {
-#if HAS_THROWNULL
-            ArgumentNullException.ThrowIfNull(entries);
+#if HAS_THROWOOR
+            ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
 #else
-            ExceptionEx.ThrowIfArgumentNull(entries, nameof(entries));
+            ExceptionEx.ThrowIfArgumentLessThan(index, 0, nameof(index));
+            ExceptionEx.ThrowIfArgumentGreaterThanOrEqual(index, Count, nameof(index));
 #endif
 
-            AFlag = aFlag;
-            Options = options;
-            Entries = entries;
+            return _entries[index];
         }
-
-        /// <summary>
-        /// All of the entries that make up this group.
-        /// </summary>
-        public ImmutableArray<TAffixEntry>.Builder Entries { get; }
-
-        /// <summary>
-        /// ID used to represent the affix group.
-        /// </summary>
-        public FlagValue AFlag { get; set; }
-
-        /// <summary>
-        /// Options for this affix group.
-        /// </summary>
-        public AffixEntryOptions Options { get; set; }
-
-        public AffixGroup<TAffixEntry> ToImmutable(bool allowDestructive = false) => new(AFlag, Options, Entries.ToImmutable(allowDestructive: allowDestructive));
     }
+
+    public IEnumerator<TAffixEntry> GetEnumerator() => ((IEnumerable<TAffixEntry>)RawArray).GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

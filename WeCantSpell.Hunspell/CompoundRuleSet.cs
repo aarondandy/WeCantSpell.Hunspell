@@ -54,15 +54,13 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
         }
     }
 
-    public IEnumerator<CompoundRule> GetEnumerator() => ((IEnumerable<CompoundRule>)GetInternalArray()).GetEnumerator();
+    public IEnumerator<CompoundRule> GetEnumerator() => ((IEnumerable<CompoundRule>)(_rules ?? [])).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    internal CompoundRule[] GetInternalArray() => _rules ?? [];
-
     internal bool EntryContainsRuleFlags(in FlagSet flags)
     {
-        if (flags.HasItems && _rules is not null)
+        if (flags.HasItems && _rules is { Length: > 0 })
         {
             foreach(var rule in _rules)
             {
@@ -78,10 +76,15 @@ public readonly struct CompoundRuleSet : IReadOnlyList<CompoundRule>
 
     internal bool CompoundCheck(IncrementalWordList words, bool all)
     {
-        var bt = 0;
-        var btinfo = new List<MetacharData> { new() };
+        if (_rules is not { Length: > 0 })
+        {
+            return false;
+        }
 
-        foreach (var compoundRule in GetInternalArray())
+        var bt = 0;
+        var btinfo = new List<MetacharData>(4) { new() };
+
+        foreach (var compoundRule in _rules)
         {
             var pp = 0; // pattern position
             var wp = 0; // "words" position

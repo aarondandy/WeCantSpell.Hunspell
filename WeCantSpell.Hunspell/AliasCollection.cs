@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 namespace WeCantSpell.Hunspell;
 
-[DebuggerDisplay("Count = {Count}")]
-public readonly struct MapTable : IReadOnlyList<MapEntry>
+public readonly struct AliasCollection<TEntry> : IReadOnlyList<TEntry>
 {
-    public static MapTable Empty { get; } = new([]);
+    public static AliasCollection<TEntry> Empty { get; } = new([]);
 
-    public static MapTable Create(IEnumerable<MapEntry> entries)
+    public static AliasCollection<TEntry> Craete(IEnumerable<TEntry> entries)
     {
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(entries);
@@ -22,12 +20,12 @@ public readonly struct MapTable : IReadOnlyList<MapEntry>
         return new(entries.ToArray());
     }
 
-    internal MapTable(MapEntry[] items)
+    internal AliasCollection(TEntry[] entries)
     {
-        _entries = items;
+        _entries = entries;
     }
 
-    private readonly MapEntry[]? _entries;
+    private readonly TEntry[]? _entries;
 
     public int Count => _entries is not null ? _entries.Length : 0;
 
@@ -35,9 +33,9 @@ public readonly struct MapTable : IReadOnlyList<MapEntry>
 
     public bool HasItems => _entries is { Length: > 0 };
 
-    public MapEntry[] RawArray => _entries ?? [];
+    internal TEntry[] RawArray => _entries ?? [];
 
-    public MapEntry this[int index]
+    public TEntry this[int index]
     {
         get
         {
@@ -58,7 +56,30 @@ public readonly struct MapTable : IReadOnlyList<MapEntry>
         }
     }
 
-    public IEnumerator<MapEntry> GetEnumerator() => ((IEnumerable<MapEntry>)RawArray).GetEnumerator();
+    public bool TryGetByNumber(int number, out TEntry result)
+    {
+        if (number > 0 && _entries is not null && number <= _entries.Length)
+        {
+            result = _entries[number - 1];
+            return true;
+        }
+
+        result = default!;
+        return false;
+    }
+
+    public bool TryGetByNumber(ReadOnlySpan<char> numberText, out TEntry result)
+    {
+        if (IntEx.TryParseInvariant(numberText, out var numberValue))
+        {
+            return TryGetByNumber(numberValue, out result);
+        }
+
+        result = default!;
+        return false;
+    }
+
+    public IEnumerator<TEntry> GetEnumerator() => ((IEnumerable<TEntry>)RawArray).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

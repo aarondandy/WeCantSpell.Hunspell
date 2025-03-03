@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace WeCantSpell.Hunspell;
 
-public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterSet>
+public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterSet>, IEquatable<string>
 {
     public static readonly CharacterSet Empty = new(string.Empty);
 
@@ -260,50 +260,16 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
     public override string ToString() => _values ?? string.Empty;
 
-    public bool Equals(CharacterSet obj) => ToString().Equals(obj.ToString(), StringComparison.Ordinal);
+    public bool Equals(CharacterSet other) => ToString().Equals(other.ToString(), StringComparison.Ordinal);
 
-    public override bool Equals(object? obj) => obj is CharacterSet set && Equals(set);
+    public bool Equals(string? other) => other is not null && ToString().Equals(other, StringComparison.Ordinal);
 
-    public override int GetHashCode() => (int)StringEx.GetStableOrdinalHashCode(ToString());
-
-    [Obsolete("This type may be replaced with CharacterSet.Create factory methods.")]
-    public sealed class Builder
+    public override bool Equals(object? obj) => obj switch
     {
-        public Builder()
-        {
-            _builder = [];
-        }
+        CharacterSet set => Equals(set),
+        string value => Equals(value),
+        _ => false
+    };
 
-        public Builder(int capacity)
-        {
-            _builder = capacity is >= 0 and <= 128
-                ? new ArrayBuilder<char>(capacity)
-                : [];
-        }
-
-        private readonly ArrayBuilder<char> _builder;
-
-        public void Add(char value)
-        {
-            _builder.AddAsSortedSet(value);
-        }
-
-        public void AddRange(IEnumerable<char> values)
-        {
-#if HAS_THROWNULL
-            ArgumentNullException.ThrowIfNull(values);
-#else
-            ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
-#endif
-
-            _builder.AddAsSortedSet(values);
-        }
-
-        public void AddRange(ReadOnlySpan<char> values)
-        {
-            _builder.AddAsSortedSet(values);
-        }
-
-        public CharacterSet Create() => new(_builder.AsSpan().ToString());
-    }
+    public override int GetHashCode() => unchecked((int)StringEx.GetStableOrdinalHashCode(ToString()));
 }

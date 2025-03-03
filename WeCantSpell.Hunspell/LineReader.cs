@@ -150,6 +150,7 @@ internal sealed class LineReader : IDisposable
 
         _position = lineTerminalPosition;
         _position.SubIndex++;
+
         if (_position.SubIndex >= buffer.Length)
         {
             _position.BufferIndex++;
@@ -319,7 +320,7 @@ internal sealed class LineReader : IDisposable
             ReadPreamble(ref fileReadByteBuffer);
         }
 
-        while (!fileReadByteBuffer.IsEmpty)
+        while (fileReadByteBuffer.Length > 0)
         {
             var textBuffer = AllocateBufferForNewWrites();
 
@@ -374,7 +375,7 @@ internal sealed class LineReader : IDisposable
 
     private void ReadPreamble(ref ReadOnlySpan<byte> fileBytes)
     {
-        if (!fileBytes.IsEmpty)
+        if (fileBytes.Length > 0)
         {
             _hasReadPreamble = true;
 
