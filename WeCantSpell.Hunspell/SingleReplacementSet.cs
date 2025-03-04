@@ -35,6 +35,8 @@ public readonly struct SingleReplacementSet : IReadOnlyList<SingleReplacement>
 
     public bool HasItems => _replacements is { Length: > 0 };
 
+    internal SingleReplacement[] RawArray => _replacements ?? [];
+
     public SingleReplacement this[int index]
     {
         get
@@ -56,9 +58,7 @@ public readonly struct SingleReplacementSet : IReadOnlyList<SingleReplacement>
         }
     }
 
-    public IEnumerator<SingleReplacement> GetEnumerator() => ((IEnumerable<SingleReplacement>)GetInternalArray()).GetEnumerator();
+    public IEnumerator<SingleReplacement> GetEnumerator() => ((IEnumerable<SingleReplacement>)RawArray).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-    internal SingleReplacement[] GetInternalArray() => _replacements ?? [];
 }

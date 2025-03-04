@@ -1049,7 +1049,7 @@ public class WordListReaderTests
             actual.Affix.Warnings.ShouldBeEmpty();
         }
 
-        [Theory(Skip = "Not performant enough yet")]
+        [Theory]
         [ClassData(typeof(TestTheories.DicFilePathsData))]
         public async Task can_read_file_without_exception(string filePath)
         {
@@ -1072,7 +1072,7 @@ public class WordListReaderTests
             actual.Affix.Warnings.ShouldBeEmpty();
         }
 
-        [Theory(Skip = "Not performant enough yet")]
+        [Theory]
         [ClassData(typeof(TestTheories.DicFilePathsData))]
         public void can_read_file_without_exception(string filePath)
         {

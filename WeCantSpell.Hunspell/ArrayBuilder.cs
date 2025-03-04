@@ -1,12 +1,17 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 
 namespace WeCantSpell.Hunspell;
 
+[DebuggerDisplay("Count = {Count}, Capacity = {Capacity}")]
 internal sealed class ArrayBuilder<T> : IList<T>
 {
+    private const int MaxCapacity = 0X7FFFFFC7;
+
     public ArrayBuilder()
     {
         _values = [];
@@ -69,13 +74,7 @@ internal sealed class ArrayBuilder<T> : IList<T>
 
     public void CopyTo(T[] array, int arrayIndex) => Array.Copy(_values, 0, array, arrayIndex, _count);
 
-    public IEnumerator<T> GetEnumerator()
-    {
-        for (var i = 0; i < _count; i++)
-        {
-            yield return _values[i];
-        }
-    }
+    public IEnumerator<T> GetEnumerator() => new ArraySegment<T>(_values, 0, _count).AsEnumerable().GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -83,7 +82,7 @@ internal sealed class ArrayBuilder<T> : IList<T>
     {
         if (_count >= _values.Length)
         {
-            EnsureCapacityAtLeast(_count + 1);
+            EnsureCapacity(_count + 1);
         }
 
         _values[_count++] = value;
@@ -100,7 +99,7 @@ internal sealed class ArrayBuilder<T> : IList<T>
         var expectedSize = values.GetNonEnumeratedCountOrDefault();
         if (expectedSize > 0)
         {
-            EnsureCapacityAtLeast(_count + expectedSize);
+            EnsureCapacity(_count + expectedSize);
         }
 
         foreach (var value in values)
@@ -118,7 +117,7 @@ internal sealed class ArrayBuilder<T> : IList<T>
 #endif
 
         var futureSize = _count + values.Length;
-        EnsureCapacityAtLeast(futureSize);
+        EnsureCapacity(futureSize);
         values.CopyTo(_values, _count);
         _count = futureSize;
     }
@@ -126,84 +125,9 @@ internal sealed class ArrayBuilder<T> : IList<T>
     public void AddRange(ReadOnlySpan<T> values)
     {
         var futureSize = _count + values.Length;
-        EnsureCapacityAtLeast(futureSize);
+        EnsureCapacity(futureSize);
         values.CopyTo(_values.AsSpan(_count));
         _count = futureSize;
-    }
-
-    public void GrowToCapacity(int requiredLength)
-    {
-#if HAS_THROWOOR
-        ArgumentOutOfRangeException.ThrowIfLessThan(requiredLength, 0);
-#else
-        ExceptionEx.ThrowIfArgumentLessThan(requiredLength, 0, nameof(requiredLength));
-#endif
-
-        if (_values.Length < requiredLength)
-        {
-            if (_count == 0)
-            {
-                _values = new T[requiredLength];
-            }
-            else
-            {
-                Array.Resize(ref _values, requiredLength);
-            }
-        }
-    }
-
-    public void EnsureCapacityAtLeast(int requiredLength)
-    {
-#if HAS_THROWOOR
-        ArgumentOutOfRangeException.ThrowIfLessThan(requiredLength, 0);
-#else
-        ExceptionEx.ThrowIfArgumentLessThan(requiredLength, 0, nameof(requiredLength));
-#endif
-
-        if (_values.Length < requiredLength)
-        {
-            GrowToCapacity(CalculateBestCapacity(requiredLength));
-        }
-    }
-
-    public bool AddAsSortedSet(T value)
-    {
-        if (_count == 0)
-        {
-            Add(value);
-            return true;
-        }
-
-        var insertLocation = Array.BinarySearch(_values, 0, _count, value);
-        if (insertLocation >= 0)
-        {
-            return false;
-        }
-
-        insertLocation = ~insertLocation;
-
-        Insert(insertLocation, value);
-        return true;
-    }
-
-    public void AddAsSortedSet(IEnumerable<T> values)
-    {
-        var expectedCount = values.GetNonEnumeratedCountOrDefault();
-        if (expectedCount > 0)
-        {
-            EnsureCapacityAtLeast(_count + expectedCount);
-        }
-
-        AddRange(values);
-        Array.Sort(_values, 0, _count);
-        RemoveAdjacentDuplicates();
-    }
-
-    public void AddAsSortedSet(ReadOnlySpan<T> values)
-    {
-        AddRange(values);
-        Array.Sort(_values, 0, _count);
-        RemoveAdjacentDuplicates();
     }
 
     public void Insert(int insertionIndex, T value)
@@ -216,7 +140,7 @@ internal sealed class ArrayBuilder<T> : IList<T>
 
         if (_count >= _values.Length)
         {
-            var newArray = new T[CalculateBestCapacity(_count + 1)];
+            var newArray = new T[CalculateBestGrowthCapacity(_count + 1)];
 
             if (insertionIndex > 0)
             {
@@ -277,31 +201,62 @@ internal sealed class ArrayBuilder<T> : IList<T>
         return false;
     }
 
-    private void RemoveAdjacentDuplicates()
+    public void EnsureCapacity(int requiredCapacity)
     {
-        if (_count < 2)
+#if HAS_THROWOOR
+        ArgumentOutOfRangeException.ThrowIfLessThan(requiredCapacity, 0);
+#else
+        ExceptionEx.ThrowIfArgumentLessThan(requiredCapacity, 0, nameof(requiredCapacity));
+#endif
+
+        if (_values.Length < requiredCapacity)
+        {
+            SetCapacity(CalculateBestGrowthCapacity(requiredCapacity));
+        }
+    }
+
+    public void Reverse()
+    {
+        if (_count > 0)
+        {
+            Array.Reverse(_values, 0, _count);
+        }
+    }
+
+    public T[] ToArray() => _count == 0 ? [] : _values.AsSpan(0, _count).ToArray();
+
+    public void SetCapacity(int desiredCapacity)
+    {
+#if HAS_THROWOOR
+        ArgumentOutOfRangeException.ThrowIfLessThan(desiredCapacity, 0);
+#else
+        ExceptionEx.ThrowIfArgumentLessThan(desiredCapacity, 0, nameof(desiredCapacity));
+#endif
+
+        if (_values.Length == desiredCapacity)
         {
             return;
         }
 
-        var eq = EqualityComparer<T>.Default;
-        var i = 1;
-        do
+        if (_count == 0)
         {
-            if (eq.Equals(_values[i - 1], _values[i]))
-            {
-                _values.AsSpan(i + 1, _count - i - 1).CopyTo(_values.AsSpan(i));
-                _count--;
-            }
-            else
-            {
-                i++;
-            }
+            _values = new T[desiredCapacity];
+            return;
         }
-        while (i < _count);
+
+        var bestCapacity = Math.Max(_count, desiredCapacity);
+        if ((uint)bestCapacity > MaxCapacity)
+        {
+            bestCapacity = MaxCapacity;
+        }
+
+        if (_values.Length < bestCapacity)
+        {
+            Array.Resize(ref _values, desiredCapacity);
+        }
     }
 
-    public T[] Extract()
+    internal T[] Extract()
     {
 #if DEBUG
         if (_count > _values.Length) ExceptionEx.ThrowInvalidOperation();
@@ -318,7 +273,7 @@ internal sealed class ArrayBuilder<T> : IList<T>
         }
         else
         {
-            result = MakeArray();
+            result = ToArray();
         }
 
         Clear();
@@ -326,25 +281,19 @@ internal sealed class ArrayBuilder<T> : IList<T>
         return result;
     }
 
-    public void Reverse()
+    internal T[] MakeOrExtractArray(bool extract) => extract ? Extract() : ToArray();
+
+    private int CalculateBestGrowthCapacity(int minCapacity)
     {
-        if (_count > 0)
+        var result = Math.Max(Math.Max(_values.Length * 2, 4), minCapacity);
+
+        if ((uint)result > MaxCapacity)
         {
-            Array.Reverse(_values, 0, _count);
+            result = MaxCapacity;
         }
+
+        return result;
     }
-
-    public T[] MakeArray() => _count == 0 ? [] : AsSpan().ToArray();
-
-    public T[] MakeOrExtractArray(bool extract) => extract ? Extract() : MakeArray();
-
-    internal int BinarySearch(int startIndex, int count, T value) => Array.BinarySearch(_values, startIndex, count, value);
-
-    internal Span<T> AsSpan() => _values.AsSpan(0, _count);
-
-    private int CalculateBestCapacity(int minCapacity) => Math.Max(CalculateNextCapacity(), minCapacity);
-
-    private int CalculateNextCapacity() => Math.Max(_values.Length * 2, 4);
 
     internal static class Pool
     {
@@ -371,7 +320,7 @@ internal sealed class ArrayBuilder<T> : IList<T>
             if (Interlocked.Exchange(ref Cache, null) is { } taken)
             {
                 taken.Clear();
-                taken.GrowToCapacity(capacity);
+                taken.SetCapacity(capacity);
             }
             else
             {

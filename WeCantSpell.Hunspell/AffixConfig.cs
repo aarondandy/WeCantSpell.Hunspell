@@ -1,5 +1,6 @@
 ﻿using System;
-using System.Collections.Immutable;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 
@@ -8,6 +9,7 @@ namespace WeCantSpell.Hunspell;
 #pragma warning disable IDE0079 // Remove unnecessary suppression
 #pragma warning disable IDE0301 // Simplify collection initialization
 
+[DebuggerDisplay("Prefixes = {Prefixes}, Suffixes = {Suffixes}")]
 public sealed partial class AffixConfig
 {
     private const string DefaultKeyString = "qwertyuiop|asdfghjkl|zxcvbnm";
@@ -575,22 +577,22 @@ public sealed partial class AffixConfig
     /// work/AB
     /// </code>
     /// </example>
-    public ImmutableArray<FlagSet> AliasF { get; private set; } = ImmutableArray<FlagSet>.Empty;
+    public AliasCollection<FlagSet> AliasF { get; private set; } = [];
 
     /// <summary>
     /// Inidicates if any <see cref="AliasF"/> entries have been defined.
     /// </summary>
-    public bool IsAliasF => !AliasF.IsDefaultOrEmpty;
+    public bool IsAliasF => AliasF.HasItems;
 
     /// <summary>
     /// Values used for morphological alias compression.
     /// </summary>
-    public ImmutableArray<MorphSet> AliasM { get; private set; } = ImmutableArray<MorphSet>.Empty;
+    public AliasCollection<MorphSet> AliasM { get; private set; } = [];
 
     /// <summary>
     /// Indicates if any <see cref="AliasM"/> entries have been defined.
     /// </summary>
-    public bool IsAliasM => !AliasM.IsDefaultOrEmpty;
+    public bool IsAliasM => AliasM.HasItems;
 
     /// <summary>
     /// Defines custom compound patterns with a regex-like syntax.
@@ -825,7 +827,7 @@ public sealed partial class AffixConfig
 
     public bool CultureUsesDottedI { get; private set; }
 
-    public ImmutableList<string> Warnings { get; private set; } = ImmutableList<string>.Empty; // TODO: replace with immutable array or read-only list interface
+    public IReadOnlyList<string> Warnings { get; private set; } = [];
 
     public bool HasCompound => CompoundFlag.HasValue || CompoundBegin.HasValue || CompoundRules.HasItems;
 
@@ -845,29 +847,4 @@ public sealed partial class AffixConfig
     internal FlagSet Flags_ForbiddenWord_OnlyUpcase_NoSuggest_OnlyInCompound { get; private set; } = FlagSet.Empty;
     internal FlagSet Flags_ForbiddenWord_NoSuggest { get; private set; } = FlagSet.Empty;
     internal FlagSet Flags_ForbiddenWord_NoSuggest_SubStandard { get; private set; } = FlagSet.Empty;
-
-
-    public bool TryGetAliasF(int number, out FlagSet result)
-    {
-        if (number <= 0 || number > AliasF.Length)
-        {
-            result = FlagSet.Empty;
-            return false;
-        }
-
-        result = AliasF[number - 1];
-        return true;
-    }
-
-    public bool TryGetAliasM(int number, out MorphSet result)
-    {
-        if (number <= 0 || number > AliasM.Length)
-        {
-            result = MorphSet.Empty;
-            return false;
-        }
-
-        result = AliasM[number - 1];
-        return true;
-    }
 }

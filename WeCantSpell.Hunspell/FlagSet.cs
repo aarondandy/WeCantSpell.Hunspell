@@ -17,7 +17,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     public static FlagSet Create(FlagValue value) => value.IsZero ? Empty : new(value);
 
-    private static FlagSet Create(char value) => value == FlagValue.ZeroValue ? Empty : new(value);
+    public static FlagSet Create(char value) => value == FlagValue.ZeroValue ? Empty : new(value);
 
     public static FlagSet Create(FlagValue value0, FlagValue value1)
     {
@@ -361,19 +361,19 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     public override string ToString()
     {
-        if (IsEmpty)
+        if (_values is { Length: > 0 })
         {
-            return string.Empty;
+            if (((FlagValue)_values[0]).IsPrintable && (_values.Length == 1 || ((FlagValue)_values[_values.Length - 1]).IsPrintable))
+            {
+                return _values;
+            }
+            else
+            {
+                return string.Join(",", _values!.Select(static v => ((int)v).ToString(CultureInfo.InvariantCulture.NumberFormat)));
+            }
         }
 
-        if (_values!.All(static v => ((FlagValue)v).IsPrintable))
-        {
-            return _values!;
-        }
-        else
-        {
-            return string.Join(",", _values!.Select(static v => ((int)v).ToString(CultureInfo.InvariantCulture.NumberFormat)));
-        }
+        return string.Empty;
     }
 
     public override int GetHashCode() => (int)StringEx.GetStableOrdinalHashCode(GetInternalText());
@@ -401,6 +401,9 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c, FlagValue d) =>
         ((ReadOnlySpan<char>)[a, b, c, d]).ContainsAny(_searchValues!);
+
+    public bool ContainsAny(FlagValue a, FlagValue b, FlagValue c, FlagValue d, FlagValue e) =>
+        ((ReadOnlySpan<char>)[a, b, c, d, e]).ContainsAny(_searchValues!);
 
     public bool ContainsAny(FlagSet other)
     {
@@ -678,92 +681,4 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     }
 
     internal string GetInternalText() => _values ?? string.Empty;
-
-    [Obsolete("This type may be replaced with FlagSet.Create factory methods.")]
-    public sealed class Builder
-    {
-        public Builder()
-        {
-            _builder = ArrayBuilder<char>.Pool.Get();
-        }
-
-        public Builder(int capacity)
-        {
-            _builder = capacity is >= 0 and <= 128
-                ? ArrayBuilder<char>.Pool.Get(capacity)
-                : ArrayBuilder<char>.Pool.Get();
-        }
-
-        private ArrayBuilder<char> _builder;
-
-        public void Add(FlagValue value)
-        {
-            if (value.HasValue)
-            {
-                _builder.AddAsSortedSet(value);
-            }
-        }
-
-        public void AddRange(IEnumerable<FlagValue> values)
-        {
-#if HAS_THROWNULL
-            ArgumentNullException.ThrowIfNull(values);
-#else
-            ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
-#endif
-
-            foreach (var value in values)
-            {
-                Add(value);
-            }
-        }
-
-        public void AddRange(FlagSet values)
-        {
-            AddRangePreSorted(values._values.AsSpan());
-        }
-
-        public FlagSet Create()
-        {
-            return new(_builder.AsSpan().ToString());
-        }
-
-        internal FlagSet MoveToFlagSet()
-        {
-            var result = new FlagSet(_builder.AsSpan().ToString());
-            ArrayBuilder<char>.Pool.Return(_builder);
-            _builder = null!; // This should operate as a very crude dispose
-            return result;
-        }
-
-        private void AddRangePreSorted(ReadOnlySpan<char> values)
-        {
-            if (_builder.Count == 0)
-            {
-                _builder.AddRange(values);
-                return;
-            }
-
-            var lowBoundIndex = 0;
-            foreach (var value in values)
-            {
-                var valueIndex = _builder.BinarySearch(lowBoundIndex, _builder.Count - lowBoundIndex, value);
-                if (valueIndex < 0)
-                {
-                    valueIndex = ~valueIndex; // locate the best insertion point
-
-                    if (valueIndex >= _builder.Count)
-                    {
-                        _builder.Add(value);
-                    }
-                    else
-                    {
-                        _builder.Insert(valueIndex, value);
-                    }
-                }
-
-                lowBoundIndex = valueIndex;
-            }
-        }
-    }
 }

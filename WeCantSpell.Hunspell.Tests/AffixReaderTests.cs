@@ -57,7 +57,7 @@ public class AffixReaderTests
             var suffixGroup1 = suffixes[0];
             suffixGroup1.AFlag.ShouldBeValue('N');
             suffixGroup1.Options.ShouldBe(AffixEntryOptions.CrossProduct);
-            var entry = suffixGroup1.Entries.ShouldHaveSingleItem();
+            var entry = suffixGroup1.ShouldHaveSingleItem();
             entry.Strip.ShouldBeEmpty();
             entry.Append.ShouldBe("n");
             entry.Conditions.GetEncoded().ShouldBe(".");
@@ -65,7 +65,7 @@ public class AffixReaderTests
             var suffixGroup2 = suffixes[1];
             suffixGroup2.AFlag.ShouldBeValue('S');
             suffixGroup2.Options.ShouldBe(AffixEntryOptions.CrossProduct);
-            entry = suffixGroup2.Entries.ShouldHaveSingleItem();
+            entry = suffixGroup2.ShouldHaveSingleItem();
             entry.Strip.ShouldBeEmpty();
             entry.Append.ShouldBe("s");
             entry.Conditions.GetEncoded().ShouldBe(".");
@@ -73,7 +73,7 @@ public class AffixReaderTests
             var suffixGroup3 = suffixes[2];
             suffixGroup3.AFlag.ShouldBeValue('P');
             suffixGroup3.Options.ShouldBe(AffixEntryOptions.CrossProduct);
-            entry = suffixGroup3.Entries.ShouldHaveSingleItem();
+            entry = suffixGroup3.ShouldHaveSingleItem();
             entry.Strip.ShouldBeEmpty();
             entry.Append.ShouldBe("en");
             entry.Conditions.GetEncoded().ShouldBe(".");
@@ -81,12 +81,12 @@ public class AffixReaderTests
             var suffixGroup4 = suffixes[3];
             suffixGroup4.AFlag.ShouldBeValue('Q');
             suffixGroup4.Options.ShouldBe(AffixEntryOptions.CrossProduct);
-            suffixGroup4.Entries.ShouldHaveCount(2);
-            entry = suffixGroup4.Entries[0];
+            suffixGroup4.ShouldHaveCount(2);
+            entry = suffixGroup4[0];
             entry.Strip.ShouldBeEmpty();
             entry.Append.ShouldBe("e");
             entry.Conditions.GetEncoded().ShouldBe(".");
-            entry = suffixGroup4.Entries[1];
+            entry = suffixGroup4[1];
             entry.Strip.ShouldBeEmpty();
             entry.Append.ShouldBe("en");
             entry.Conditions.GetEncoded().ShouldBe(".");
@@ -111,7 +111,7 @@ public class AffixReaderTests
             var suffixGroup1 = actual.Suffixes.ElementAt(0);
             suffixGroup1.AFlag.ShouldBeValue('S');
             suffixGroup1.Options.ShouldBe(AffixEntryOptions.CrossProduct);
-            var entry = suffixGroup1.Entries.ShouldHaveSingleItem();
+            var entry = suffixGroup1.ShouldHaveSingleItem();
             entry.Strip.ShouldBeEmpty();
             entry.Append.ShouldBe("s");
             entry.Conditions.GetEncoded().ShouldBe(".");
@@ -119,7 +119,7 @@ public class AffixReaderTests
             var suffixGroup2 = actual.Suffixes.ElementAt(1);
             suffixGroup2.AFlag.ShouldBeValue('e');
             suffixGroup2.Options.ShouldBe(AffixEntryOptions.CrossProduct);
-            entry = suffixGroup2.Entries.ShouldHaveSingleItem();
+            entry = suffixGroup2.ShouldHaveSingleItem();
             entry.Strip.ShouldBeEmpty();
             entry.Append.ShouldBe("e");
             entry.Conditions.GetEncoded().ShouldBe(".");
@@ -137,8 +137,8 @@ public class AffixReaderTests
             var group = actual.Suffixes.ShouldHaveSingleItem();
             group.AFlag.ShouldBeValue('A');
             group.Options.ShouldBe(AffixEntryOptions.CrossProduct);
-            group.Entries.ShouldHaveCount(5);
-            group.Entries.Select(e => e.Append).ShouldBe(
+            group.ShouldHaveCount(5);
+            group.Select(e => e.Append).ShouldBe(
             [
                 "e",
                 "er",
@@ -146,8 +146,8 @@ public class AffixReaderTests
                 "em",
                 "es"
             ]);
-            group.Entries.ShouldAllBe(e => e.Strip == string.Empty);
-            group.Entries.ShouldAllBe(e => e.Conditions.GetEncoded() == ".");
+            group.ShouldAllBe(e => e.Strip == string.Empty);
+            group.ShouldAllBe(e => e.Conditions.GetEncoded() == ".");
 
             actual.CompoundRules.ShouldHaveSingleItem().ShouldBeValues(['v', 'w']);
         }
@@ -164,7 +164,7 @@ public class AffixReaderTests
             var prefixGroup1 = actual.Prefixes.ShouldHaveSingleItem();
             prefixGroup1.AFlag.ShouldBeValue('x');
             prefixGroup1.Options.ShouldBe(AffixEntryOptions.None);
-            var prefixEntry = prefixGroup1.Entries.ShouldHaveSingleItem();
+            var prefixEntry = prefixGroup1.ShouldHaveSingleItem();
             prefixEntry.Append.ShouldBe("ت");
             prefixEntry.Conditions.GetEncoded().ShouldBe("أ[^ي]");
             prefixEntry.Strip.ShouldBe("أ");
@@ -221,8 +221,7 @@ public class AffixReaderTests
             var prefix = actual.Prefixes.ShouldHaveSingleItem();
             prefix.AFlag.ShouldBeValue('A');
             prefix.Options.ShouldBe(AffixEntryOptions.CrossProduct);
-            prefix.Entries.ShouldHaveSingleItem();
-            var prefixEntry = prefix.Entries.Single();
+            var prefixEntry = prefix.ShouldHaveSingleItem();
             prefixEntry.Strip.ShouldBeEmpty();
             prefixEntry.Append.ShouldBe("re");
             prefixEntry.Conditions.GetEncoded().ShouldBe(".");
@@ -230,12 +229,12 @@ public class AffixReaderTests
             var suffix = actual.Suffixes.ShouldHaveSingleItem();
             suffix.AFlag.ShouldBeValue('B');
             suffix.Options.ShouldBe(AffixEntryOptions.CrossProduct);
-            suffix.Entries.ShouldHaveCount(2);
-            var suffixEntry1 = suffix.Entries[0];
+            suffix.ShouldHaveCount(2);
+            var suffixEntry1 = suffix[0];
             suffixEntry1.Strip.ShouldBeEmpty();
             suffixEntry1.Append.ShouldBe("ed");
             suffixEntry1.Conditions.GetEncoded().ShouldBe("[^y]");
-            var suffixEntry2 = suffix.Entries[1];
+            var suffixEntry2 = suffix[1];
             suffixEntry2.Strip.ShouldBe("y");
             suffixEntry2.Append.ShouldBe("ied");
             suffixEntry2.Conditions.GetEncoded().ShouldBe(".");
@@ -255,14 +254,14 @@ public class AffixReaderTests
             var suffix = actual.Suffixes.ElementAt(0);
             suffix.AFlag.ShouldBeValue('A');
             suffix.Options.ShouldBe(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF);
-            var entry = suffix.Entries.ShouldHaveSingleItem();
+            var entry = suffix.ShouldHaveSingleItem();
             entry.Strip.ShouldBeEmpty();
             entry.Append.ShouldBe("x");
             entry.Conditions.GetEncoded().ShouldBe(".");
             suffix = actual.Suffixes.ElementAt(1);
             suffix.AFlag.ShouldBeValue('B');
             suffix.Options.ShouldBe(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF);
-            entry = suffix.Entries.ShouldHaveSingleItem();
+            entry = suffix.ShouldHaveSingleItem();
             entry.Strip.ShouldBeEmpty();
             entry.Append.ShouldBe("y");
             entry.ContClass.ShouldBeValues(['A']);
@@ -290,7 +289,7 @@ public class AffixReaderTests
             var suffixGroup = actual.Suffixes.ElementAt(0);
             suffixGroup.AFlag.ShouldBeValue('A');
             suffixGroup.Options.ShouldBe(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF | AffixEntryOptions.AliasM);
-            var suffixEntry1 = suffixGroup.Entries.ShouldHaveSingleItem();
+            var suffixEntry1 = suffixGroup.ShouldHaveSingleItem();
             suffixEntry1.Strip.ShouldBeEmpty();
             suffixEntry1.Append.ShouldBe("x");
             suffixEntry1.Conditions.GetEncoded().ShouldBe(".");
@@ -299,7 +298,7 @@ public class AffixReaderTests
             suffixGroup = actual.Suffixes.ElementAt(1);
             suffixGroup.AFlag.ShouldBeValue('B');
             suffixGroup.Options.ShouldBe(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasF | AffixEntryOptions.AliasM);
-            var suffixEntry2 = suffixGroup.Entries.ShouldHaveSingleItem();
+            var suffixEntry2 = suffixGroup.ShouldHaveSingleItem();
             suffixEntry2.Strip.ShouldBeEmpty();
             suffixEntry2.Append.ShouldBe("y");
             suffixEntry2.ContClass.ShouldBeValues(['A']);
@@ -316,20 +315,20 @@ public class AffixReaderTests
 
             actual.ComplexPrefixes.ShouldBeTrue();
             actual.WordChars.ShouldBeValues(['_']);
-            actual.AliasM.ShouldBe(new[]
-            {
-                new MorphSet([@"affix_1/".Reversed()]),
-                new MorphSet([@"affix_2/".Reversed()]),
-                new MorphSet([@"/suffix_1".Reversed()]),
-                new MorphSet([@"[stem_1]".Reversed()])
-            });
+            actual.AliasM.ShouldBe(
+            [
+                MorphSet.Create([@"affix_1/".Reversed()]),
+                MorphSet.Create([@"affix_2/".Reversed()]),
+                MorphSet.Create([@"/suffix_1".Reversed()]),
+                MorphSet.Create([@"[stem_1]".Reversed()])
+            ]);
 
             actual.Suffixes.ShouldHaveCount(2);
 
             var suffixGroup1 = actual.Suffixes.ElementAt(0);
             suffixGroup1.AFlag.ShouldBeValue('A');
             suffixGroup1.Options.ShouldBe(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasM);
-            var suffixEntry1 = suffixGroup1.Entries.ShouldHaveSingleItem();
+            var suffixEntry1 = suffixGroup1.ShouldHaveSingleItem();
             suffixEntry1.Strip.ShouldBeEmpty();
             suffixEntry1.Append.ShouldBe("ket");
             suffixEntry1.Conditions.GetEncoded().ShouldBe(".");
@@ -338,7 +337,7 @@ public class AffixReaderTests
             var suffixGroup2 = actual.Suffixes.ElementAt(1);
             suffixGroup2.AFlag.ShouldBeValue('B');
             suffixGroup2.Options.ShouldBe(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasM);
-            var suffixEntry2 = suffixGroup2.Entries.ShouldHaveSingleItem();
+            var suffixEntry2 = suffixGroup2.ShouldHaveSingleItem();
             suffixEntry2.Strip.ShouldBeEmpty();
             suffixEntry2.Append.ShouldBe("tem");
             suffixEntry2.ContClass.ShouldBeValues(['A']);
@@ -348,8 +347,7 @@ public class AffixReaderTests
             var prefixGroup1 = actual.Prefixes.ShouldHaveSingleItem();
             prefixGroup1.AFlag.ShouldBeValue('C');
             prefixGroup1.Options.ShouldBe(AffixEntryOptions.CrossProduct | AffixEntryOptions.AliasM);
-            prefixGroup1.Entries.ShouldHaveSingleItem();
-            var prefixEntry1 = prefixGroup1.Entries.Single();
+            var prefixEntry1 = prefixGroup1.ShouldHaveSingleItem();
             prefixEntry1.Strip.ShouldBeEmpty();
             prefixEntry1.Append.ShouldBe("_tset_");
             prefixEntry1.Conditions.GetEncoded().ShouldBe(".");
@@ -368,8 +366,7 @@ public class AffixReaderTests
             var group = actual.Suffixes.ShouldHaveSingleItem();
             group.AFlag.ShouldBeValue('S');
             group.Options.ShouldBe(AffixEntryOptions.None);
-            group.Entries.ShouldHaveSingleItem();
-            var entry1 = group.Entries.ShouldHaveSingleItem();
+            var entry1 = group.ShouldHaveSingleItem();
             entry1.Strip.ShouldBeEmpty();
             entry1.Append.ShouldBe("'s");
             entry1.Conditions.GetEncoded().ShouldBe(".");
@@ -389,8 +386,8 @@ public class AffixReaderTests
             var group = actual.Suffixes.ShouldHaveSingleItem();
             group.AFlag.ShouldBeValue('S');
             group.Options.ShouldBe(AffixEntryOptions.None);
-            group.Entries.ShouldHaveSingleItem();
-            var entry1 = group.Entries.ShouldHaveSingleItem();
+
+            var entry1 = group.ShouldHaveSingleItem();
             entry1.Strip.ShouldBeEmpty();
             entry1.Append.ShouldBe("'s");
             entry1.Conditions.GetEncoded().ShouldBe(".");
@@ -408,7 +405,8 @@ public class AffixReaderTests
             var group = actual.Suffixes.ShouldHaveSingleItem();
             group.AFlag.ShouldBeValue('s');
             group.Options.ShouldBe(AffixEntryOptions.None);
-            var entry1 = group.Entries.ShouldHaveSingleItem();
+
+            var entry1 = group.ShouldHaveSingleItem();
             entry1.Strip.ShouldBeEmpty();
             entry1.Append.ShouldBe("os");
             entry1.Conditions.GetEncoded().ShouldBe(".");
@@ -428,7 +426,7 @@ public class AffixReaderTests
             var suffixGroup1 = actual.Suffixes.ElementAt(0);
             suffixGroup1.AFlag.ShouldBeValue('s');
             suffixGroup1.Options.ShouldBe(AffixEntryOptions.None);
-            var entry1 = suffixGroup1.Entries.ShouldHaveSingleItem();
+            var entry1 = suffixGroup1.ShouldHaveSingleItem();
             entry1.Strip.ShouldBeEmpty();
             entry1.Append.ShouldBe("s");
             entry1.Conditions.GetEncoded().ShouldBe(".");
@@ -436,7 +434,7 @@ public class AffixReaderTests
             var suffixGroup2 = actual.Suffixes.ElementAt(1);
             suffixGroup2.AFlag.ShouldBeValue('S');
             suffixGroup2.Options.ShouldBe(AffixEntryOptions.None);
-            var entry2 = suffixGroup2.Entries.ShouldHaveSingleItem();
+            var entry2 = suffixGroup2.ShouldHaveSingleItem();
             entry2.Strip.ShouldBeEmpty();
             entry2.Append.ShouldBe("\'s");
             entry2.Conditions.GetEncoded().ShouldBe(".");
@@ -456,7 +454,8 @@ public class AffixReaderTests
             var group1 = actual.Prefixes.ShouldHaveSingleItem();
             group1.AFlag.ShouldBeValue('A');
             group1.Options.ShouldBe(AffixEntryOptions.CrossProduct);
-            var entry1 = group1.Entries.ShouldHaveSingleItem();
+
+            var entry1 = group1.ShouldHaveSingleItem();
             entry1.Strip.ShouldBeEmpty();
             entry1.Append.ShouldBeEmpty();
             entry1.ContClass.ShouldBeValues(['0', 'X']);
@@ -478,7 +477,7 @@ public class AffixReaderTests
             var prefixGroup1 = actual.Prefixes.ElementAt(0);
             prefixGroup1.AFlag.ShouldBeValue('A');
             prefixGroup1.Options.ShouldBe(AffixEntryOptions.CrossProduct);
-            var entry1 = prefixGroup1.Entries.ShouldHaveSingleItem();
+            var entry1 = prefixGroup1.ShouldHaveSingleItem();
             entry1.Strip.ShouldBeEmpty();
             entry1.Append.ShouldBe("re");
             entry1.Conditions.GetEncoded().ShouldBe(".");
@@ -709,9 +708,9 @@ public class AffixReaderTests
             var pg = actual.Prefixes.ElementAt(0);
             pg.AFlag.ShouldBeValue('A');
             pg.Options.ShouldBe(AffixEntryOptions.CrossProduct);
-            pg.Entries.ShouldHaveSingleItem();
+            pg.ShouldHaveSingleItem();
 
-            var entry1 = pg.Entries[0];
+            var entry1 = pg[0];
             entry1.Strip.ShouldBeEmpty();
             entry1.Append.ShouldBe("leg");
             entry1.ContClass.ShouldBeValues(['X']);
@@ -720,9 +719,9 @@ public class AffixReaderTests
             pg = actual.Prefixes.ElementAt(1);
             pg.AFlag.ShouldBeValue('B');
             pg.Options.ShouldBe(AffixEntryOptions.CrossProduct);
-            pg.Entries.ShouldHaveSingleItem();
+            pg.ShouldHaveSingleItem();
 
-            var entry2 = actual.Prefixes.ElementAt(1).Entries[0];
+            var entry2 = actual.Prefixes.ElementAt(1)[0];
             entry2.Strip.ShouldBeEmpty();
             entry2.Append.ShouldBe("legesleg");
             entry2.ContClass.ShouldBeValues(['X']);
@@ -731,22 +730,22 @@ public class AffixReaderTests
             var sg = actual.Suffixes.ShouldHaveSingleItem();
             sg.AFlag.ShouldBeValue('C');
             sg.Options.ShouldBe(AffixEntryOptions.CrossProduct);
-            sg.Entries.ShouldHaveCount(3);
+            sg.ShouldHaveCount(3);
 
-            var entry3 = sg.Entries[0];
+            var entry3 = sg[0];
             entry3.Strip.ShouldBeEmpty();
             entry3.Append.ShouldBe("obb");
             entry3.Conditions.GetEncoded().ShouldBe(".");
             entry3.MorphCode.ShouldAllBe(x => x == "is:COMPARATIVE");
 
-            var entry4 = sg.Entries[1];
+            var entry4 = sg[1];
             entry4.Strip.ShouldBeEmpty();
             entry4.Append.ShouldBe("obb");
             entry4.ContClass.ShouldBeValues(['A', 'X']);
             entry4.Conditions.GetEncoded().ShouldBe(".");
             entry4.MorphCode.ShouldAllBe(x => x == "is:SUPERLATIVE");
 
-            var entry5 = sg.Entries[2];
+            var entry5 = sg[2];
             entry5.Strip.ShouldBeEmpty();
             entry5.Append.ShouldBe("obb");
             entry5.ContClass.ShouldBeValues(['B', 'X']);
@@ -986,12 +985,12 @@ public class AffixReaderTests
 
             actual.FlagMode.ShouldBe(FlagParsingMode.Uni);
             actual.Suffixes.ShouldHaveCount(3);
-            actual.Suffixes.ElementAt(0).Entries.ShouldHaveSingleItem();
+            actual.Suffixes.ElementAt(0).ShouldHaveSingleItem();
             actual.Suffixes.ElementAt(1).AFlag.ShouldBeValue('Ö');
-            actual.Suffixes.ElementAt(1).Entries.ShouldHaveSingleItem();
-            actual.Suffixes.ElementAt(2).Entries.ShouldHaveSingleItem();
+            actual.Suffixes.ElementAt(1).ShouldHaveSingleItem();
+            actual.Suffixes.ElementAt(2).ShouldHaveSingleItem();
             var pg = actual.Prefixes.ShouldHaveSingleItem();
-            pg.Entries.ShouldHaveSingleItem();
+            pg.ShouldHaveSingleItem();
         }
 
         [Fact]
@@ -1046,17 +1045,17 @@ public class AffixReaderTests
             sg.AFlag.ShouldBeValue('A');
             sg.Options.ShouldBe(AffixEntryOptions.CrossProduct);
 
-            var entry1 = sg.Entries[0];
+            var entry1 = sg[0];
             entry1.Strip.ShouldBe("andare");
             entry1.Append.ShouldBe("vado");
             entry1.Conditions.GetEncoded().ShouldBe(".");
 
-            var entry2 = sg.Entries[1];
+            var entry2 = sg[1];
             entry2.Strip.ShouldBe("andare");
             entry2.Append.ShouldBe("va");
             entry2.Conditions.GetEncoded().ShouldBe(".")
                 ;
-            var entry3 = sg.Entries[2];
+            var entry3 = sg[2];
             entry3.Strip.ShouldBe("are");
             entry3.Append.ShouldBe("iamo");
             entry3.Conditions.GetEncoded().ShouldBe("andare");
@@ -1083,24 +1082,24 @@ public class AffixReaderTests
             var sg = actual.Suffixes.ElementAt(0);
             sg.AFlag.ShouldBeValue('A');
             sg.Options.ShouldBe(AffixEntryOptions.CrossProduct);
-            sg.Entries.ShouldHaveCount(3);
-            sg.Entries[0].Strip.ShouldBeEmpty();
-            sg.Entries[0].Append.ShouldBe("s");
-            sg.Entries[0].Key.ShouldBe("s");
-            sg.Entries[0].ContClass.ShouldBeValues(['U', 'P', 'X'], ignoreOrder: true);
-            sg.Entries[0].Conditions.GetEncoded().ShouldBe(".");
-            sg.Entries[1].Append.ShouldBe("s");
-            sg.Entries[1].Key.ShouldBe("s");
-            sg.Entries[2].Append.ShouldBeEmpty();
-            sg.Entries[2].Key.ShouldBeEmpty();
+            sg.ShouldHaveCount(3);
+            sg[0].Strip.ShouldBeEmpty();
+            sg[0].Append.ShouldBe("s");
+            sg[0].Key.ShouldBe("s");
+            sg[0].ContClass.ShouldBeValues(['U', 'P', 'X'], ignoreOrder: true);
+            sg[0].Conditions.GetEncoded().ShouldBe(".");
+            sg[1].Append.ShouldBe("s");
+            sg[1].Key.ShouldBe("s");
+            sg[2].Append.ShouldBeEmpty();
+            sg[2].Key.ShouldBeEmpty();
 
             sg = actual.Suffixes.ElementAt(1);
             sg.AFlag.ShouldBeValue('B');
-            sg.Entries.ShouldHaveCount(2);
+            sg.ShouldHaveCount(2);
 
             sg = actual.Suffixes.ElementAt(2);
             sg.AFlag.ShouldBeValue('C');
-            var se = sg.Entries.ShouldHaveSingleItem();
+            var se = sg.ShouldHaveSingleItem();
             se.Strip.ShouldBeEmpty();
             se.Append.ShouldBe("n");
             se.ContClass.ShouldBeValues(['D', 'W']);
@@ -1113,13 +1112,13 @@ public class AffixReaderTests
             var pg = actual.Prefixes.ElementAt(0);
             pg.AFlag.ShouldBeValue('-');
             pg.Options.ShouldBe(AffixEntryOptions.CrossProduct);
-            var pe = pg.Entries.ShouldHaveSingleItem();
+            var pe = pg.ShouldHaveSingleItem();
             pe.Strip.ShouldBeEmpty();
             pe.Append.ShouldBe("-");
             pe.ContClass.ShouldBeValues(['P']);
             pe.Conditions.GetEncoded().ShouldBe(".");
 
-            actual.Prefixes.ElementAt(1).Entries.ShouldHaveCount(29);
+            actual.Prefixes.ElementAt(1).ShouldHaveCount(29);
         }
 
         [Fact]
@@ -1151,10 +1150,10 @@ public class AffixReaderTests
             var pg = actual.Prefixes.ShouldHaveSingleItem();
             pg.AFlag.ShouldBeValue('A');
             pg.Options.ShouldBe(AffixEntryOptions.CrossProduct);
-            pg.Entries.ShouldHaveSingleItem();
-            pg.Entries[0].Strip.ShouldBeEmpty();
-            pg.Entries[0].Append.ShouldBe("r");
-            pg.Entries[0].Conditions.GetEncoded().ShouldBe(".");
+            var e = pg.ShouldHaveSingleItem();
+            e.Strip.ShouldBeEmpty();
+            e.Append.ShouldBe("r");
+            e.Conditions.GetEncoded().ShouldBe(".");
         }
 
         [Fact]
@@ -1191,21 +1190,21 @@ public class AffixReaderTests
 
             var pg = actual.Prefixes.ShouldHaveSingleItem();
             pg.AFlag.ShouldBeValue('P');
-            pg.Entries[0].MorphCode.ShouldBe(["dp:pfx_un", "sp:un"]);
+            pg[0].MorphCode.ShouldBe(["dp:pfx_un", "sp:un"]);
 
             actual.Suffixes.ShouldHaveCount(3);
 
             var sg = actual.Suffixes.ElementAt(0);
             sg.AFlag.ShouldBeValue('S');
-            sg.Entries[0].MorphCode.ShouldBe(["is:plur"]);
+            sg[0].MorphCode.ShouldBe(["is:plur"]);
 
             sg = actual.Suffixes.ElementAt(1);
             sg.AFlag.ShouldBeValue('Q');
-            sg.Entries[0].MorphCode.ShouldBe(["is:sg_3"]);
+            sg[0].MorphCode.ShouldBe(["is:sg_3"]);
 
             sg = actual.Suffixes.ElementAt(2);
             sg.AFlag.ShouldBeValue('R');
-            sg.Entries[0].MorphCode.ShouldBe(["ds:der_able"]);
+            sg[0].MorphCode.ShouldBe(["ds:der_able"]);
         }
 
         [Fact]
@@ -1217,8 +1216,8 @@ public class AffixReaderTests
 
             actual.NeedAffix.ShouldBeValue('X');
             actual.CompoundFlag.ShouldBeValue('Y');
-            actual.Suffixes.ShouldHaveSingleItem();
-            actual.Suffixes.Single().Entries.ShouldHaveSingleItem();
+            var g = actual.Suffixes.ShouldHaveSingleItem();
+            g.ShouldHaveSingleItem();
         }
 
         [Fact]
@@ -1269,18 +1268,18 @@ public class AffixReaderTests
             var pg = actual.Prefixes.ShouldHaveSingleItem();
             pg.AFlag.ShouldBeValue(101);
             pg.Options.ShouldBe(AffixEntryOptions.CrossProduct);
-            pg.Entries.ShouldHaveSingleItem();
-            pg.Entries.Single().Strip.ShouldBeEmpty();
-            pg.Entries.Single().Append.ShouldBe("пред");
-            pg.Entries.Single().Conditions.GetEncoded().ShouldBe(".");
+            var e = pg.ShouldHaveSingleItem();
+            e.Strip.ShouldBeEmpty();
+            e.Append.ShouldBe("пред");
+            e.Conditions.GetEncoded().ShouldBe(".");
 
             actual.Suffixes.ShouldHaveCount(3);
             var sg = actual.Suffixes.ElementAt(1);
             sg.AFlag.ShouldBeValue(2000);
-            sg.Entries.ShouldHaveCount(3);
-            sg.Entries[1].Strip.ShouldBeEmpty();
-            sg.Entries[1].Append.ShouldBe("ами");
-            sg.Entries[1].Conditions.GetEncoded().ShouldBe(".");
+            sg.ShouldHaveCount(3);
+            sg[1].Strip.ShouldBeEmpty();
+            sg[1].Append.ShouldBe("ами");
+            sg[1].Conditions.GetEncoded().ShouldBe(".");
         }
 
         [Fact]
@@ -1313,7 +1312,7 @@ public class AffixReaderTests
             var sg = actual.Suffixes.ShouldHaveSingleItem();
             sg.AFlag.ShouldBeValue('B');
             sg.Options.ShouldBe(AffixEntryOptions.CrossProduct);
-            var e = sg.Entries.ShouldHaveSingleItem();
+            var e = sg.ShouldHaveSingleItem();
             e.Strip.ShouldBeEmpty();
             e.Append.ShouldBe("s");
             e.ContClass.ShouldBeValues(['O', 'P']);
@@ -1345,15 +1344,15 @@ public class AffixReaderTests
             var sg = actual.Suffixes.ShouldHaveSingleItem();
             sg.AFlag.ShouldBeValue('C' << 8 | 'h');
             sg.Options.ShouldBe(AffixEntryOptions.CrossProduct);
-            sg.Entries.ShouldHaveCount(2);
-            sg.Entries[0].Strip.ShouldBeEmpty();
-            sg.Entries[0].Append.ShouldBe("s");
-            sg.Entries[0].ContClass.ShouldBeValues(['C' << 8 | 'a', 'C' << 8 | 'b', 'C' << 8 | 'x', 'C' << 8 | 'p'], ignoreOrder: true);
-            sg.Entries[0].Conditions.GetEncoded().ShouldBe(".");
-            sg.Entries[1].Strip.ShouldBeEmpty();
-            sg.Entries[1].Append.ShouldBe("s-");
-            sg.Entries[1].ContClass.ShouldBeValues(['C' << 8 | 'a', 'C' << 8 | 'b', 'C' << 8 | 'c', 'C' << 8 | 'p'], ignoreOrder: true);
-            sg.Entries[1].Conditions.GetEncoded().ShouldBe(".");
+            sg.ShouldHaveCount(2);
+            sg[0].Strip.ShouldBeEmpty();
+            sg[0].Append.ShouldBe("s");
+            sg[0].ContClass.ShouldBeValues(['C' << 8 | 'a', 'C' << 8 | 'b', 'C' << 8 | 'x', 'C' << 8 | 'p'], ignoreOrder: true);
+            sg[0].Conditions.GetEncoded().ShouldBe(".");
+            sg[1].Strip.ShouldBeEmpty();
+            sg[1].Append.ShouldBe("s-");
+            sg[1].ContClass.ShouldBeValues(['C' << 8 | 'a', 'C' << 8 | 'b', 'C' << 8 | 'c', 'C' << 8 | 'p'], ignoreOrder: true);
+            sg[1].Conditions.GetEncoded().ShouldBe(".");
         }
 
         [Fact]
@@ -1663,7 +1662,7 @@ public class AffixReaderTests
             var sg = actual.Suffixes.ElementAt(0);
             sg.AFlag.ShouldBeValue('A');
 
-            var e = sg.Entries.ShouldHaveSingleItem();
+            var e = sg.ShouldHaveSingleItem();
             e.Strip.ShouldBeEmpty();
             e.Append.ShouldBeEmpty();
             e.Conditions.GetEncoded().ShouldBe(".");
@@ -1672,7 +1671,7 @@ public class AffixReaderTests
             sg = actual.Suffixes.ElementAt(1);
             sg.AFlag.ShouldBeValue('B');
 
-            e = sg.Entries.ShouldHaveSingleItem();
+            e = sg.ShouldHaveSingleItem();
             e.Strip.ShouldBeEmpty();
             e.Append.ShouldBeEmpty();
             e.Conditions.GetEncoded().ShouldBe(".");
@@ -1680,16 +1679,16 @@ public class AffixReaderTests
 
             sg = actual.Suffixes.ElementAt(2);
             sg.AFlag.ShouldBeValue('C');
-            sg.Entries.ShouldHaveCount(2);
+            sg.ShouldHaveCount(2);
 
-            e = sg.Entries[0];
+            e = sg[0];
             e.Strip.ShouldBeEmpty();
             e.Append.ShouldBeEmpty();
             e.ContClass.ShouldBeValues(['X', 'A', 'B'], ignoreOrder: true);
             e.Conditions.GetEncoded().ShouldBe(".");
             e.MorphCode.ShouldAllBe(x => x == "<ZERODERIV>");
 
-            e = sg.Entries[1];
+            e = sg[1];
             e.Strip.ShouldBeEmpty();
             e.Append.ShouldBe("baz");
             e.ContClass.ShouldBeValues(['X', 'A', 'B'], ignoreOrder: true);

@@ -8,17 +8,17 @@ public partial class WordList
 {
     public sealed class Builder
     {
-        public Builder() : this(new AffixConfig.Builder().MoveToImmutable())
+        public Builder() : this(new AffixConfig.Builder().Extract())
         {
         }
 
         public Builder(AffixConfig affix)
         {
             Affix = affix;
-            _entryDetailsByRoot = new(1);
+            _entriesByRoot = new();
         }
 
-        internal TextDictionary<WordEntryDetail[]> _entryDetailsByRoot;
+        internal TextDictionary<WordEntryDetail[]> _entriesByRoot;
 
         public readonly AffixConfig Affix;
 
@@ -29,40 +29,114 @@ public partial class WordList
 
         internal ArrayBuilder<SingleReplacement> _phoneticReplacements { get; } = [];
 
-        public void Add(string word)
+        /// <summary>
+        /// Adds a root word to this builder.
+        /// </summary>
+        /// <param name="word">The root word to add.</param>
+        /// <returns><c>true</c> when a root is added, <c>false</c> otherwise.</returns>
+        public bool Add(string word)
         {
-            Add(word, WordEntryDetail.Default);
+            return Add(word, FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None);
         }
 
-        public void Add(string word, WordEntryDetail detail)
+        /// <summary>
+        /// Adds a root word to this builder.
+        /// </summary>
+        /// <param name="word">The root word to add.</param>
+        /// <param name="flags">The flags associated with the root <paramref name="word"/> detail entry.</param>
+        /// <param name="morphs">The morphs associated with the root <paramref name="word"/> detail entry.</param>
+        /// <param name="options">The options associated with the root <paramref name="word"/> detail entry.</param>
+        /// <returns><c>true</c> when a root is added, <c>false</c> otherwise.</returns>
+        public bool Add(string word, FlagSet flags, IEnumerable<string> morphs, WordEntryOptions options)
         {
-            ref var details = ref _entryDetailsByRoot.GetOrAdd(word);
-            if (details is null)
-            {
-                details = [detail];
-            }
-            else
-            {
-                Array.Resize(ref details, details.Length + 1);
-                details[details.Length - 1] = detail;
-            }
+            return Add(word, new WordEntryDetail(flags, MorphSet.Create(morphs), options));
         }
 
-        public WordList ToImmutable() => ToImmutable(allowDestructive: false);
+        /// <summary>
+        /// Adds a root word to this builder.
+        /// </summary>
+        /// <param name="word">The root word to add.</param>
+        /// <param name="flags">The flags associated with the root <paramref name="word"/> detail entry.</param>
+        /// <param name="morphs">The morphs associated with the root <paramref name="word"/> detail entry.</param>
+        /// <param name="options">The options associated with the root <paramref name="word"/> detail entry.</param>
+        /// <returns><c>true</c> when a root is added, <c>false</c> otherwise.</returns>
+        public bool Add(string word, FlagSet flags, MorphSet morphs, WordEntryOptions options)
+        {
+            return Add(word, new WordEntryDetail(flags, morphs, options));
+        }
 
-        public WordList MoveToImmutable() => ToImmutable(allowDestructive: true);
+        /// <summary>
+        /// Adds a root word to this builder.
+        /// </summary>
+        /// <param name="word">The root word to add details for.</param>
+        /// <param name="detail">The details to associate with the root <paramref name="word"/>.</param>
+        /// <returns><c>true</c> when a root is added, <c>false</c> otherwise.</returns>
+        public bool Add(string word, WordEntryDetail detail)
+        {
+            return WordList.Add(_entriesByRoot, Affix, word, detail);
+        }
 
-        public WordList ToImmutable(bool allowDestructive)
+        /// <summary>
+        /// Removes all detail entries for the given root <paramref name="word"/>.
+        /// </summary>
+        /// <param name="word">The root to delete all entries for.</param>
+        /// <returns>The count of entries removed.</returns>
+        public int Remove(string word)
+        {
+            return WordList.Remove(_entriesByRoot, Affix, word);
+        }
+
+        /// <summary>
+        /// Removes a specific detail entry for the given root <paramref name="word"/> and detail arguments.
+        /// </summary>
+        /// <param name="word">The root word to delete a specific entry for.</param>
+        /// <param name="flags">The flags to match on an entry.</param>
+        /// <param name="morphs">The morphs to match on an entry.</param>
+        /// <param name="options">The options to match on an entry.</param>
+        /// <returns><c>true</c> when an entry is remove, otherwise <c>false</c>.</returns>
+        public bool Remove(string word, FlagSet flags, MorphSet morphs, WordEntryOptions options)
+        {
+            return Remove(word, new WordEntryDetail(flags, morphs, options));
+        }
+
+        /// <summary>
+        /// Removes a specific <paramref name="detail"/> entry for the given root <paramref name="word"/>.
+        /// </summary>
+        /// <param name="word">The root word to delete a specific entry for.</param>
+        /// <param name="detail">The detail to delete for a specific root.</param>
+        /// <returns><c>true</c> when an entry is remove, otherwise <c>false</c>.</returns>
+        public bool Remove(string word, WordEntryDetail detail)
+        {
+            return WordList.Remove(_entriesByRoot, Affix, word, detail);
+        }
+
+        /// <summary>
+        /// Builds a new <see cref="WordList"/> based on the values in this builder.
+        /// </summary>
+        /// <returns>A new <see cref="WordList"/>.</returns>
+        public WordList Build() => BuildOrExtract(extract: false);
+
+        /// <summary>
+        /// Builds a new <see cref="WordList"/> based on the values in this builder.
+        /// </summary>
+        /// <remarks>
+        /// This method can leave the builder in an invalid state
+        /// but provides better performance for file reads.
+        /// </remarks>
+        /// <returns>A new <see cref="WordList"/>.</returns>
+        public WordList Extract() => BuildOrExtract(extract: true);
+
+        private WordList BuildOrExtract(bool extract)
         {
             TextDictionary<WordEntryDetail[]> entriesByRoot;
-            if (allowDestructive)
+            if (extract)
             {
-                entriesByRoot = _entryDetailsByRoot;
-                _entryDetailsByRoot = new(1);
+                entriesByRoot = _entriesByRoot;
+                _entriesByRoot = new();
             }
             else
             {
-                entriesByRoot = TextDictionary<WordEntryDetail[]>.Clone(_entryDetailsByRoot, static v => [.. v]);
+                entriesByRoot = TextDictionary<WordEntryDetail[]>.Clone(_entriesByRoot, static v => [.. v]);
             }
 
             var allReplacements = Affix.Replacements;
@@ -71,11 +145,11 @@ public partial class WordList
                 // store ph: field of a morphological description in reptable
                 if (allReplacements.IsEmpty)
                 {
-                    allReplacements = new(_phoneticReplacements.MakeOrExtractArray(allowDestructive));
+                    allReplacements = new(_phoneticReplacements.MakeOrExtractArray(extract));
                 }
-                else if (allowDestructive)
+                else if (extract)
                 {
-                    _phoneticReplacements.AddRange(allReplacements);
+                    _phoneticReplacements.AddRange(allReplacements.RawArray);
                     allReplacements = new(_phoneticReplacements.Extract());
                 }
                 else
@@ -92,30 +166,11 @@ public partial class WordList
                 Affix.OnlyInCompound,
                 SpecialFlags.OnlyUpcaseFlag
             ]);
-            TextDictionary<WordEntryDetail[]> nGramRestrictedDetails = new(1);
-            var restrictedRootSetDetails = new ArrayBuilder<WordEntryDetail>();
-            foreach (var rootSet in entriesByRoot)
-            {
-                restrictedRootSetDetails.Clear();
-
-                foreach (var entry in rootSet.Value)
-                {
-                    if (nGramRestrictedFlags.ContainsAny(entry.Flags))
-                    {
-                        restrictedRootSetDetails.Add(entry);
-                    }
-                }
-
-                if (restrictedRootSetDetails.Count > 0)
-                {
-                    nGramRestrictedDetails.Add(rootSet.Key, restrictedRootSetDetails.Extract());
-                }
-            }
 
             return new WordList(
                 Affix,
                 entriesByRoot: entriesByRoot,
-                nGramRestrictedDetails: nGramRestrictedDetails,
+                nGramRestrictedFlags: nGramRestrictedFlags,
                 allReplacements);
         }
 
@@ -125,7 +180,7 @@ public partial class WordList
             {
                 // PERF: because we add more entries than we are told about, we add a bit more to the expected size
                 var expectedCapacity = (expectedSize / 100) + expectedSize;
-                _entryDetailsByRoot.EnsureCapacity(expectedCapacity);
+                _entriesByRoot.EnsureCapacity(expectedCapacity);
             }
         }
     }

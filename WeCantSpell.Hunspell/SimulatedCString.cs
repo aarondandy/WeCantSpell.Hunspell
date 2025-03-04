@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Buffers;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell;
 
+[DebuggerDisplay("BufferLength = {BufferLength}, Text = {ToString()}")]
 internal struct SimulatedCString
 {
     public SimulatedCString(int capacity)
@@ -169,6 +171,8 @@ internal struct SimulatedCString
             buffer.Slice(buffer.Length - count).Clear(); // zero the freed space at the end
         }
     }
+
+    public override string ToString() => TerminatedSpan.ToString();
 
     public void Dispose()
     {
