@@ -314,7 +314,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
             }
         }
 
-        [DebuggerDisplay("{Builder}")]
+        [DebuggerDisplay("AFlag = {AFlag}, Options = {Options}, Count = {Count}")]
         public sealed class GroupBuilder
         {
             internal GroupBuilder(BuilderBase parent, FlagValue aFlag)
@@ -334,6 +334,8 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
             public AffixEntryOptions Options { get; set; }
 
             public bool IsInitialized { get; private set; }
+
+            public int Count => _entries.Count;
 
             public void Initialize(AffixEntryOptions options, int expectedCapacity)
             {
