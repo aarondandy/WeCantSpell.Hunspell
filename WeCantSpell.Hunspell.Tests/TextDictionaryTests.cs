@@ -205,11 +205,13 @@ public class TextDictionaryTests
     [Fact]
     public void can_clear_after_add()
     {
-        var dic = new TextDictionary<int>();
-        dic.Add("word1", 1);
-        dic.Add("word2", 2);
-        dic.Add("word3", 3);
-        dic.Add("word4", 4);
+        var dic = new TextDictionary<int>
+        {
+            { "word1", 1 },
+            { "word2", 2 },
+            { "word3", 3 },
+            { "word4", 4 }
+        };
 
         dic.Clear();
 
@@ -217,23 +219,31 @@ public class TextDictionaryTests
     }
 
     [Fact]
-    public void can_add_after_clear()
+    public void can_readd_after_clear()
     {
-        var dic = new TextDictionary<int>();
+        var dic = new TextDictionary<int>(4)
+        {
+            { "word1", 1 },
+            { "word2", 2 },
+            { "word3", 3 },
+            { "word4", 4 }
+        };
+        var originalCapacity = dic.Capacity;
+        dic.Clear();
+
         dic.Add("word1", 1);
         dic.Add("word2", 2);
         dic.Add("word3", 3);
         dic.Add("word4", 4);
-        dic.Clear();
-
-        dic.Add("word5", 5);
-        dic.Add("word6", 6);
 
         dic.ShouldBe(
         [
-            new("word5", 5),
-            new("word6", 6)
+            new("word1", 1),
+            new("word2", 2),
+            new("word3", 3),
+            new("word4", 4)
         ], ignoreOrder: true);
+        dic.Capacity.ShouldBe(originalCapacity, "The existing storage should be used");
     }
 
     [Fact]
@@ -249,11 +259,13 @@ public class TextDictionaryTests
     [Fact]
     public void can_remove_one_of_many()
     {
-        var dic = new TextDictionary<int>();
-        dic.Add("word1", 1);
-        dic.Add("word2", 2);
-        dic.Add("word3", 3);
-        dic.Add("word4", 4);
+        var dic = new TextDictionary<int>
+        {
+            { "word1", 1 },
+            { "word2", 2 },
+            { "word3", 3 },
+            { "word4", 4 }
+        };
 
         dic.Remove("word3").ShouldBeTrue();
 
@@ -268,11 +280,13 @@ public class TextDictionaryTests
     [Fact]
     public void removing_not_found_does_nothing()
     {
-        var dic = new TextDictionary<int>();
-        dic.Add("word1", 1);
-        dic.Add("word2", 2);
-        dic.Add("word3", 3);
-        dic.Add("word4", 4);
+        var dic = new TextDictionary<int>
+        {
+            { "word1", 1 },
+            { "word2", 2 },
+            { "word3", 3 },
+            { "word4", 4 }
+        };
 
         dic.Remove("not-found").ShouldBeFalse();
 
@@ -283,6 +297,37 @@ public class TextDictionaryTests
             new("word3", 3),
             new("word4", 4)
         ], ignoreOrder: true);
+    }
+
+    [Fact]
+    public void can_readd_after_remove()
+    {
+        var dic = new TextDictionary<int>(4)
+        {
+            { "word1", 1 },
+            { "word2", 2 },
+            { "word3", 3 },
+            { "word4", 4 }
+        };
+        var originalCapacity = dic.Capacity;
+        dic.Remove("word1");
+        dic.Remove("word2");
+        dic.Remove("word3");
+        dic.Remove("word4");
+
+        dic.Add("word1", 1);
+        dic.Add("word2", 2);
+        dic.Add("word3", 3);
+        dic.Add("word4", 4);
+
+        dic.ShouldBe(
+        [
+            new("word1", 1),
+            new("word2", 2),
+            new("word3", 3),
+            new("word4", 4)
+        ], ignoreOrder: true);
+        dic.Capacity.ShouldBe(originalCapacity, "The existing storage should be used");
     }
 
     [Fact]
