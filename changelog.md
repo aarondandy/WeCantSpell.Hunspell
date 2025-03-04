@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## 6.0.0 - 2025-03
+
+- Add and remove words from in-memory `WordList` instances, resolving [Issue $41](https://github.com/aarondandy/WeCantSpell.Hunspell/issues/41).
+- (breaking) Add word methods respect `IgnoredChars` and `ComplexPrefixes` options now.
+- (breaking) The netstandard2.0 assembly depends on System.Runtime.CompilerServices.Unsafe instead of System.Collections.Immutable like in previous versions.
+- (breaking) Too many little API changes to mention them all 🤷.
+- (breaking) Some "Immutable" method names are now "Extract" or "Build". I recommend using "Extract" for better performance.
+- File loading is a bit faster now.
+
 ## 5.2.2 - 2025-02
 
 - It's all just a little bit faster
