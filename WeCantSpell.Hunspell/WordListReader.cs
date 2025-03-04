@@ -586,23 +586,22 @@ public sealed class WordListReader
 
         if (details is not null)
         {
+#if DEBUG
+            if (details.Length <= 0) ExceptionEx.ThrowInvalidOperation();
+#endif
+
             if (onlyUpperCase)
             {
-                if (details.Length > 0)
-                {
-                    return;
-                }
+                return;
             }
-            else
+
+            for (var i = 0; i < details.Length; i++)
             {
-                for (var i = 0; i < details.Length; i++)
+                ref var entry = ref details[i];
+                if (entry.ContainsFlag(SpecialFlags.OnlyUpcaseFlag))
                 {
-                    ref var entry = ref details[i];
-                    if (entry.ContainsFlag(SpecialFlags.OnlyUpcaseFlag))
-                    {
-                        entry = new(flags, entry.Morphs, entry.Options);
-                        return;
-                    }
+                    entry = new(flags, entry.Morphs, entry.Options);
+                    return;
                 }
             }
 
