@@ -630,6 +630,9 @@ public sealed partial class AffixReader
 
         for (var k = 0; k < parameterText.Length; k++)
         {
+            if (parameterText[k] == '#')
+                break;
+
             var chb = k;
             var che = k + 1;
             if (parameterText[k] == '(' && parameterText.IndexOf(')', k) is int parpos and >= 0)
