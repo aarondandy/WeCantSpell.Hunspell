@@ -1609,7 +1609,7 @@ public partial class WordList
                     }
 
                     var scphon = -20000;
-                    if (hasPhoneEntries && sc > 2 && wordKeyLengthDifference <= 3)
+                    if (hasPhoneEntries && target.Length > 0 && sc > 2 && wordKeyLengthDifference <= 3)
                     {
                         scphon = NGramNoLowering(3, target, Phonet(StringEx.MakeAllCap(hpSet.Key, TextInfo)), NGramOptions.LongerWorse) * 2;
                     }
