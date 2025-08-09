@@ -16,7 +16,7 @@ namespace WeCantSpell.Hunspell.Tests;
 public class EnUsWordsTests : IAsyncLifetime
 {
     private WordList _spell = null!;
-    private ImmutableArray<CommonSpellingMistake> _words = [];
+    private ImmutableArray<CommonSpellingMistake> _words = ImmutableArray<CommonSpellingMistake>.Empty;
 
     public async ValueTask InitializeAsync()
     {
