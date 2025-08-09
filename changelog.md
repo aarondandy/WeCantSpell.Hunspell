@@ -2,9 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 6.0.1 - 2025-08
+
+- Fix for numeric phonetic suggestions by [filipnavara](https://github.com/filipnavara) in [PR #104](https://github.com/aarondandy/WeCantSpell.Hunspell/pull/104)
+- Fix for comments on MAP by [tbambuch](https://github.com/tbambuch) in [PR #105](https://github.com/aarondandy/WeCantSpell.Hunspell/pull/105)
+
 ## 6.0.0 - 2025-03
 
-- Add and remove words from in-memory `WordList` instances, resolving [Issue $41](https://github.com/aarondandy/WeCantSpell.Hunspell/issues/41).
+- Add and remove words from in-memory `WordList` instances, resolving [Issue #41](https://github.com/aarondandy/WeCantSpell.Hunspell/issues/41).
 - (breaking) Add word methods respect `IgnoredChars` and `ComplexPrefixes` options now.
 - (breaking) The netstandard2.0 assembly depends on System.Runtime.CompilerServices.Unsafe instead of System.Collections.Immutable like in previous versions.
 - (breaking) Too many little API changes to mention them all 🤷.
