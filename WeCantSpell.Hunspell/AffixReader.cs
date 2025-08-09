@@ -630,24 +630,50 @@ public sealed partial class AffixReader
 
         for (var k = 0; k < parameterText.Length; k++)
         {
-            if (parameterText[k] == '#')
-                break;
-
-            var chb = k;
-            var che = k + 1;
-            if (parameterText[k] == '(' && parameterText.IndexOf(')', k) is int parpos and >= 0)
+            if (isComment(parameterText, k))
             {
-                chb = k + 1;
-                che = parpos;
-                k = parpos;
+                break;
             }
 
-            valuesBuilder.Add(parameterText.Slice(chb, che - chb).ToString());
+            if (parameterText[k] == '(')
+            {
+                var searchPos = parameterText.IndexOf(')', k);
+                if (searchPos >= 0)
+                {
+                    valuesBuilder.Add(parameterText.Slice(k + 1, searchPos - k - 1).ToString());
+                    k = searchPos;
+                    continue;
+                }
+            }
+
+            valuesBuilder.Add(parameterText[k].ToString());
         }
 
         entries.Add(new MapEntry(valuesBuilder.Extract()));
 
         return true;
+
+        static bool isComment(ReadOnlySpan<char> text, int i)
+        {
+            do
+            {
+                switch (text[i])
+                {
+                    case ' ' or '\t':
+                        // Read through any leading spaces to they don't end up in the character set
+                        i++;
+                        break;
+                    case '#':
+                        // If a hash character is encountered, it's probably a comment
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+            while (i < text.Length);
+
+            return false;
+        }
     }
 
     private bool TryParseConv(ReadOnlySpan<char> parameterText, EntryListType entryListType, ref TextDictionary<MultiReplacementEntry> entries)

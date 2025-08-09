@@ -19,6 +19,28 @@ public class AffixReaderTests
         Helpers.EnsureEncodingsReady();
     }
 
+    public class ReadFile : AffixReaderTests
+    {
+        [Fact]
+        public void can_read_map_with_comments()
+        {
+            var fileContents =
+            """
+            MAP 3
+            MAP (NJ)Ǌ
+            MAP (ng)ŋ #"Latin small letter eng"
+            MAP (NG)Ŋ #"Latin capital letter eng"
+            """;
+
+            var affix = AffixReader.ReadFromString(fileContents);
+
+            affix.RelatedCharacterMap.Count.ShouldBe(3);
+            affix.RelatedCharacterMap[0].ShouldBe(["NJ", "Ǌ"]);
+            affix.RelatedCharacterMap[1].ShouldBe(["ng", "ŋ"]);
+            affix.RelatedCharacterMap[2].ShouldBe(["NG", "Ŋ"]);
+        }
+    }
+
     public class ReadFileAsync : AffixReaderTests
     {
         [Fact]
