@@ -107,5 +107,24 @@ public partial class WordListTests
 
             actual.ShouldContain("word");
         }
+
+        [Fact]
+        public void suggest_doesnt_crash_on_empty_phonetics()
+        {
+            var affix = new AffixConfig.Builder()
+            {
+                Phone =
+                {
+                    new("AH(AEIOUY)-^", "*H")
+                }
+            }.Build();
+            var wordListBuilder = new WordList.Builder(affix);
+            wordListBuilder.Add("0th");
+            var wordList = wordListBuilder.Build();
+
+            var suggestions = wordList.Suggest("001", TestCancellation);
+
+            suggestions.ShouldBeEmpty(customMessage: "number is truncated to zero-length string by the phonetics algorithm");
+        }
     }
 }

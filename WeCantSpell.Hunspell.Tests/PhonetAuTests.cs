@@ -42,15 +42,4 @@ public class PhonetAuTests : IAsyncLifetime
 
         actual.ShouldContain(expected);
     }
-
-    [Fact]
-    public void suggest_doesnt_crash_on_empty_phonetics()
-    {
-        // number is truncated to zero-length string by the phonetics algorithm
-        var suggestions = _wordList.Suggest(
-            "001",
-            new QueryOptions() { MaxWords = 5 },
-            TestContext.Current.CancellationToken);
-        suggestions.ShouldBeEmpty();
-    }
 }
