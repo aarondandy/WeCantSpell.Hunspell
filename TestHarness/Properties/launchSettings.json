@@ -55,7 +55,7 @@
     },
     "Issue #106": {
       "commandName": "Project",
-      "commandLineArgs": "suggest-word --dic-file \"../samples/French.dic\" --word Designation",
+      "commandLineArgs": "suggest-word-fast --dic-file \"../samples/French.dic\" --word Designation",
       "workingDirectory": "./"
     }
   }

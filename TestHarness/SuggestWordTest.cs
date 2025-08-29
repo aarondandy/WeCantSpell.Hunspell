@@ -2,16 +2,8 @@
 
 public static class SuggestWordTest
 {
-    public static void Run(string dicFilePath, string word)
+    public static void RunIterationsSlow(string dicFilePath, string word)
     {
-        var wordList = WordListReader.ReadFile(dicFilePath);
-        const int wordLimit = 20;
-
-        var results = new List<int>(wordLimit);
-        var allSuggestions = new HashSet<string>();
-
-        Console.WriteLine($"Suggesting for word \"{word}\" {wordLimit} times");
-
         var options = new QueryOptions
         {
             TimeLimitCompoundSuggest = TimeSpan.FromSeconds(10),
@@ -20,6 +12,23 @@ public static class SuggestWordTest
             TimeLimitSuggestStep = TimeSpan.FromSeconds(10),
             MaxSuggestions = 10
         };
+
+        Run(dicFilePath, word, options, wordLimit: 20);
+    }
+
+    public static void RunIterationsFast(string dicFilePath, string word)
+    {
+        Run(dicFilePath, word, options: null, wordLimit: 50);
+    }
+
+    public static void Run(string dicFilePath, string word, QueryOptions? options, int wordLimit)
+    {
+        var wordList = WordListReader.ReadFile(dicFilePath);
+
+        var results = new List<int>(wordLimit);
+        var allSuggestions = new HashSet<string>();
+
+        Console.WriteLine($"Suggesting for word \"{word}\" {wordLimit} times");
 
         for (var i = 0; i < wordLimit; i++)
         {
