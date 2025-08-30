@@ -1323,21 +1323,23 @@ public partial class WordList
 
         private byte CheckWordAffixPortion(WordEntry? rv, ReadOnlySpan<char> word)
         {
-            var noSuffix = rv is not null;
-            if (!noSuffix)
-            {
-                rv = _query.SuffixCheck(word, AffixEntryOptions.None, null, default, default, CompoundOptions.Not); // only suffix
-            }
-
+            var noSuffix = false;
             if (rv is null)
             {
-                if (Affix.ContClasses.IsEmpty)
-                {
-                    goto noResult;
-                }
+                noSuffix = true;
 
-                rv = _query.SuffixCheckTwoSfx(word, AffixEntryOptions.None, null, default)
-                    ?? _query.PrefixCheckTwoSfx(word, CompoundOptions.Not, default);
+                rv = _query.SuffixCheck(word, AffixEntryOptions.None, null, default, default, CompoundOptions.Not); // only suffix
+
+                if (rv is null)
+                {
+                    if (Affix.ContClasses.IsEmpty)
+                    {
+                        goto noResult;
+                    }
+
+                    rv = _query.SuffixCheckTwoSfx(word, AffixEntryOptions.None, null, default)
+                        ?? _query.PrefixCheckTwoSfx(word, CompoundOptions.Not, default);
+                }
             }
 
             if (rv is not null)
@@ -1348,13 +1350,9 @@ public partial class WordList
                     goto noResult;
                 }
 
-                // XXX obsolete
-                if (rv.ContainsFlag(Affix.CompoundFlag))
-                {
-                    return noSuffix ? (byte)3 : (byte)2;
-                }
-
-                return 1;
+                return rv.ContainsFlag(Affix.CompoundFlag)
+                    ? (noSuffix ? (byte)3 : (byte)2) // XXX obsolete
+                    : (byte)1;
             }
 
         noResult:
