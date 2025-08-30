@@ -1513,7 +1513,7 @@ public partial class WordList
             var tmpl = word.Length - pe.Append.Length; // length of tmpword
 
             if (
-                (tmpl > 0 || (tmpl == 0 && Affix.FullStrip))
+                (Affix.FullStrip ? tmpl >= 0 : tmpl > 0)
                 &&
                 (tmpl + pe.Strip.Length >= pe.Conditions.Count)
             )
@@ -2210,7 +2210,7 @@ public partial class WordList
 
             if (optflags.HasFlagEx(AffixEntryOptions.CrossProduct) && se.Options.IsMissingFlag(AffixEntryOptions.CrossProduct))
             {
-                return null;
+                goto exit;
             }
 
             // upon entry suffix is 0 length or already matches the end of the word.
@@ -2224,7 +2224,7 @@ public partial class WordList
             // it checked in test_condition()
 
             if (
-                (tmpl > 0 || (tmpl == 0 && Affix.FullStrip))
+                (Affix.FullStrip ? tmpl >= 0 : tmpl > 0)
                 &&
                 (tmpl + se.Strip.Length >= se.Conditions.Count)
             )
@@ -2243,11 +2243,13 @@ public partial class WordList
                 // if all conditions are met then recall suffix_check
                 if (se.TestCondition(tmpword))
                 {
-                    var he = ppfx is not null && se.ContainsContClass(ppfx.AFlag)
-                        // handle conditional suffix
-                        ? SuffixCheck(tmpword, AffixEntryOptions.None, null, se.AFlag, needflag, CompoundOptions.Not)
-                        : SuffixCheck(tmpword, optflags, ppfx, se.AFlag, needflag, CompoundOptions.Not);
+                    if (ppfx is not null && se.ContainsContClass(ppfx.AFlag))
+                    {
+                        ppfx = null;
+                        optflags = AffixEntryOptions.None;
+                    }
 
+                    var he = SuffixCheck(tmpword, optflags, ppfx, se.AFlag, needflag, CompoundOptions.Not);
                     if (he is not null)
                     {
                         return he;
@@ -2255,6 +2257,7 @@ public partial class WordList
                 }
             }
 
+        exit:
             return null;
         }
 
