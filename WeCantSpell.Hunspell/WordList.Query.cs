@@ -2002,7 +2002,7 @@ public partial class WordList
             return false;
 
             static bool equalsOrdinalLimited(ReadOnlySpan<char> a, ReadOnlySpan<char> b, int limit) =>
-                a.Limit(limit).EqualsOrdinal(b.Limit(limit));
+                a.Limit(limit).SequenceEqual(b.Limit(limit));
         }
 
         private WordEntry? CheckWordPrefix(PrefixEntry affix, ReadOnlySpan<char> word, CompoundOptions inCompound, FlagValue needFlag)
