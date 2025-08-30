@@ -159,23 +159,26 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
     /// <returns>True when the start of the <paramref name="text"/> is matched by the conditions.</returns>
     public bool IsStartingMatch(ReadOnlySpan<char> text)
     {
-        if (IsEmpty)
+        if (_items is not null)
         {
-            return false;
-        }
-
-        foreach (var condition in _items!)
-        {
-            var matchLength = condition.FullyMatchesFromStart(text);
-            if (matchLength <= 0)
+            foreach (var condition in _items)
             {
-                return false;
+                var matchLength = condition.FullyMatchesFromStart(text);
+                if (matchLength > 0)
+                {
+                    text = text.Slice(matchLength);
+                }
+                else
+                {
+                    goto exit;
+                }
             }
 
-            text = text.Slice(matchLength);
+            return true;
         }
 
-        return true;
+    exit:
+        return false;
     }
 
     /// <summary>
@@ -185,23 +188,26 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
     /// <returns>True when the end of the <paramref name="text"/> is matched by the conditions.</returns>
     public bool IsEndingMatch(ReadOnlySpan<char> text)
     {
-        if (IsEmpty)
+        if (_items is not null)
         {
-            return false;
-        }
-
-        for (var conditionIndex = _items!.Length - 1; conditionIndex >= 0; conditionIndex--)
-        {
-            var matchLength = _items[conditionIndex].FullyMatchesFromEnd(text);
-            if (matchLength <= 0)
+            for (var conditionIndex = _items!.Length - 1; conditionIndex >= 0; conditionIndex--)
             {
-                return false;
+                var matchLength = _items[conditionIndex].FullyMatchesFromEnd(text);
+                if (matchLength > 0)
+                {
+                    text = text.Slice(0, text.Length - matchLength);
+                }
+                else
+                {
+                    goto exit;
+                }
             }
 
-            text = text.Slice(0, text.Length - matchLength);
+            return true;
         }
 
-        return true;
+    exit:
+        return false;
     }
 
     public bool IsOnlyPossibleMatch(ReadOnlySpan<char> text)
