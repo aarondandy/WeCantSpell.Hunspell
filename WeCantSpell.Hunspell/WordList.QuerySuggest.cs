@@ -1411,24 +1411,25 @@ public partial class WordList
 
                     rv = _query.SuffixCheckTwoSfx(word, AffixEntryOptions.None, null, default)
                         ?? _query.PrefixCheckTwoSfx(word, CompoundOptions.Not, default);
+
+                    if (rv is null)
+                    {
+                        goto noResult;
+                    }
                 }
             }
 
-            if (rv is not null)
+            // check forbidden words
+            if (rv.ContainsAnyFlags(Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest_OnlyInCompound))
             {
-                // check forbidden words
-                if (rv.ContainsAnyFlags(Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest_OnlyInCompound))
-                {
-                    goto noResult;
-                }
-
-                return rv.ContainsFlag(Affix.CompoundFlag)
-                    ? (noSuffix ? (byte)3 : (byte)2) // XXX obsolete
-                    : (byte)1;
+                goto noResult;
             }
+
+            return rv.ContainsFlag(Affix.CompoundFlag)
+                ? (noSuffix ? (byte)3 : (byte)2) // XXX obsolete
+                : (byte)1;
 
         noResult:
-
             return 0;
         }
 
