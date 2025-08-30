@@ -1172,7 +1172,7 @@ public partial class WordList
             };
 
             var candidate = new StringBuilderSpan(word.Length + 2);
-            MapRelated(ref mapRelatedState, ref timer, ref candidate, wn: 0, depth: 0);
+            MapRelatedSearch(ref mapRelatedState, ref timer, ref candidate, wn: 0, depth: 0);
             candidate.Dispose();
         }
 
@@ -1183,27 +1183,23 @@ public partial class WordList
             public byte CpdSuggest;
         }
 
-        private void MapRelated(ref MapRelatedState state, ref OperationTimedCountLimiter timer, ref StringBuilderSpan candidate, int wn, int depth)
+        private void MapRelatedAdd(ref MapRelatedState state, ref OperationTimedCountLimiter timer, ref StringBuilderSpan candidate)
         {
-            if (state.Word.Length <= wn)
+            if (
+                CanAcceptSuggestion(state.SuggestionList, candidate.CurrentSpan)
+                &&
+                CheckWord(candidate.CurrentSpan, state.CpdSuggest, ref timer) != 0
+            )
             {
-                if (
-                    CanAcceptSuggestion(state.SuggestionList, candidate.CurrentSpan)
-                    &&
-                    CheckWord(candidate.CurrentSpan, state.CpdSuggest, ref timer) != 0
-                )
-                {
-                    state.SuggestionList.Add(candidate.ToString());
-                }
-
-                return;
+                state.SuggestionList.Add(candidate.ToString());
             }
+        }
 
-            if (depth > Options.RecursiveDepthLimit)
-            {
-                return;
-            }
+        private void MapRelatedSearch(ref MapRelatedState state, ref OperationTimedCountLimiter timer, ref StringBuilderSpan candidate, int wn, int depth)
+        {
+            depth++;
 
+            int nextWn;
             var inMap = false;
             foreach (var mapEntry in Affix.RelatedCharacterMap.RawArray)
             {
@@ -1213,15 +1209,36 @@ public partial class WordList
                     {
                         inMap = true;
                         var candidateLength = candidate.Length;
-                        foreach (var otherMapEntryValue in mapEntry.RawArray)
-                        {
-                            candidate.Truncate(candidateLength);
-                            candidate.Append(otherMapEntryValue);
-                            MapRelated(ref state, ref timer, ref candidate, wn + mapEntryValue.Length, depth + 1);
 
-                            if (timer.HasBeenCanceled)
+                        nextWn = wn + mapEntryValue.Length;
+                        if (state.Word.Length <= nextWn)
+                        {
+                            foreach (var otherMapEntryValue in mapEntry.RawArray)
                             {
-                                return;
+                                candidate.Truncate(candidateLength);
+                                candidate.Append(otherMapEntryValue);
+
+                                MapRelatedAdd(ref state, ref timer, ref candidate);
+
+                                if (timer.HasBeenCanceled)
+                                {
+                                    return;
+                                }
+                            }
+                        }
+                        else if (Options.RecursiveDepthLimit >= depth)
+                        {
+                            foreach (var otherMapEntryValue in mapEntry.RawArray)
+                            {
+                                candidate.Truncate(candidateLength);
+                                candidate.Append(otherMapEntryValue);
+
+                                MapRelatedSearch(ref state, ref timer, ref candidate, nextWn, depth);
+
+                                if (timer.HasBeenCanceled)
+                                {
+                                    return;
+                                }
                             }
                         }
                     }
@@ -1231,7 +1248,16 @@ public partial class WordList
             if (!inMap)
             {
                 candidate.Append(state.Word[wn]);
-                MapRelated(ref state, ref timer, ref candidate, wn + 1, depth + 1);
+
+                nextWn = wn + 1;
+                if (state.Word.Length <= nextWn)
+                {
+                    MapRelatedAdd(ref state, ref timer, ref candidate);
+                }
+                else if (Options.RecursiveDepthLimit >= depth)
+                {
+                    MapRelatedSearch(ref state, ref timer, ref candidate, nextWn, depth);
+                }
             }
         }
 
