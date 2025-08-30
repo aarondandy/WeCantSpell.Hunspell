@@ -43,6 +43,8 @@ public static class SuggestWordTest
             Console.WriteLine($"{r}");
         }
 
+        Console.WriteLine($"Average: {results.Average(static r => (decimal)r)}");
+
         Console.WriteLine("Suggestions:");
         foreach (var s in allSuggestions)
         {
