@@ -166,7 +166,8 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
 
         foreach (var condition in _items!)
         {
-            if (!condition.FullyMatchesFromStart(text, out var matchLength))
+            var matchLength = condition.FullyMatchesFromStart(text);
+            if (matchLength <= 0)
             {
                 return false;
             }
@@ -191,7 +192,8 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
 
         for (var conditionIndex = _items!.Length - 1; conditionIndex >= 0; conditionIndex--)
         {
-            if (!_items[conditionIndex].FullyMatchesFromEnd(text, out var matchLength))
+            var matchLength = _items[conditionIndex].FullyMatchesFromEnd(text);
+            if (matchLength <= 0)
             {
                 return false;
             }
