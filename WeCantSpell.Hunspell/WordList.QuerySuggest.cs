@@ -1445,34 +1445,42 @@ public partial class WordList
         /// </remarks>
         private byte CheckWord(ReadOnlySpan<char> word, byte cpdSuggest)
         {
-            WordEntry? rv;
-            if (cpdSuggest >= 1)
+            return cpdSuggest > 0
+                ? CheckWord_CpdSuggest(word, cpdSuggest)
+                : CheckWord_CpdSuggestZero(word);
+        }
+
+        private byte CheckWord_CpdSuggest(ReadOnlySpan<char> word, byte cpdSuggest)
+        {
+            if (Affix.HasCompound)
             {
-                if (Affix.HasCompound)
+                var rwords = IncrementalWordList.GetRoot(); // buffer for COMPOUND pattern checking
+                var rv = _query.CompoundCheck(
+                    word, 0, 0, 100, rwords, huMovRule: false, isSug: true,
+                    info: cpdSuggest == 1 ? SpellCheckResultType.Compound2 : SpellCheckResultType.None); // EXT
+                IncrementalWordList.ReturnRoot(ref rwords);
+
+                // TODO filter 3-word or more compound words, as in spell()
+                // (it's too slow to call suggest() here for all possible compound words)
+                if (rv is not null && !(TryLookupFirstDetail(word, out var rvDetail) && rvDetail.ContainsAnyFlags(Affix.Flags_ForbiddenWord_NoSuggest)))
                 {
-                    var rwords = IncrementalWordList.GetRoot(); // buffer for COMPOUND pattern checking
-                    rv = _query.CompoundCheck(
-                        word, 0, 0, 100, rwords, huMovRule: false, isSug: true,
-                        info: cpdSuggest == 1 ? SpellCheckResultType.Compound2 : SpellCheckResultType.None); // EXT
-                    IncrementalWordList.ReturnRoot(ref rwords);
-
-                    // TODO filter 3-word or more compound words, as in spell()
-                    // (it's too slow to call suggest() here for all possible compound words)
-                    if (rv is not null && (!TryLookupFirstDetail(word, out var rvDetail) || !rvDetail.ContainsAnyFlags(Affix.Flags_ForbiddenWord_NoSuggest)))
-                    {
-                        return 3; // XXX obsolote categorisation + only ICONV needs affix flag check?
-                    }
+                    return 3; // XXX obsolote categorisation + only ICONV needs affix flag check?
                 }
-
-                return 0;
             }
 
-            // get homonyms
+            return 0;
+        }
+
+        private byte CheckWord_CpdSuggestZero(ReadOnlySpan<char> word)
+        {
+            WordEntry? rv;
             if (_query.TryLookupDetails(word, out var wordString, out var rvDetails))
             {
 #if DEBUG
                 if (rvDetails is not { Length: > 0 }) ExceptionEx.ThrowInvalidOperation();
 #endif
+
+                // get homonyms
 
                 if (rvDetails[0].ContainsAnyFlags(Affix.Flags_ForbiddenWord_NoSuggest_SubStandard))
                 {
@@ -1500,34 +1508,42 @@ public partial class WordList
         /// </remarks>
         private byte CheckWord(string word, byte cpdSuggest)
         {
-            WordEntry? rv;
-            if (cpdSuggest >= 1)
+            return cpdSuggest > 0
+                ? CheckWord_CpdSuggest(word, cpdSuggest)
+                : CheckWord_CpdSuggestZero(word);
+        }
+
+        private byte CheckWord_CpdSuggest(string word, byte cpdSuggest)
+        {
+            if (Affix.HasCompound)
             {
-                if (Affix.HasCompound)
+                var rwords = IncrementalWordList.GetRoot(); // buffer for COMPOUND pattern checking
+                var rv = _query.CompoundCheck(
+                    word.AsSpan(), 0, 0, 100, rwords, huMovRule: false, isSug: true,
+                    info: cpdSuggest == 1 ? SpellCheckResultType.Compound2 : SpellCheckResultType.None); // EXT
+                IncrementalWordList.ReturnRoot(ref rwords);
+
+                // TODO filter 3-word or more compound words, as in spell()
+                // (it's too slow to call suggest() here for all possible compound words)
+                if (rv is not null && (!TryLookupFirstDetail(word, out var rvDetail) || !rvDetail.ContainsAnyFlags(Affix.Flags_ForbiddenWord_NoSuggest)))
                 {
-                    var rwords = IncrementalWordList.GetRoot(); // buffer for COMPOUND pattern checking
-                    rv = _query.CompoundCheck(
-                        word.AsSpan(), 0, 0, 100, rwords, huMovRule: false, isSug: true,
-                        info: cpdSuggest == 1 ? SpellCheckResultType.Compound2 : SpellCheckResultType.None); // EXT
-                    IncrementalWordList.ReturnRoot(ref rwords);
-
-                    // TODO filter 3-word or more compound words, as in spell()
-                    // (it's too slow to call suggest() here for all possible compound words)
-                    if (rv is not null && (!TryLookupFirstDetail(word, out var rvDetail) || !rvDetail.ContainsAnyFlags(Affix.Flags_ForbiddenWord_NoSuggest)))
-                    {
-                        return 3; // XXX obsolote categorisation + only ICONV needs affix flag check?
-                    }
+                    return 3; // XXX obsolote categorisation + only ICONV needs affix flag check?
                 }
-
-                return 0;
             }
 
-            // get homonyms
+            return 0;
+        }
+
+        private byte CheckWord_CpdSuggestZero(string word)
+        {
+            WordEntry? rv;
             if (_query.TryLookupDetails(word, out var rvDetails))
             {
 #if DEBUG
                 if (rvDetails is not { Length: > 0 }) ExceptionEx.ThrowInvalidOperation();
 #endif
+
+                // get homonyms
 
                 if (rvDetails[0].ContainsAnyFlags(Affix.Flags_ForbiddenWord_NoSuggest_SubStandard))
                 {
@@ -1597,7 +1613,7 @@ public partial class WordList
                         var prev = 0;
                         while (sp >= 0)
                         {
-                            if (CheckWord(candidate.AsSpan(prev, sp - prev), cpdSuggest: 0) != 0)
+                            if (CheckWord_CpdSuggestZero(candidate.AsSpan(prev, sp - prev)) != 0)
                             {
                                 if (TestSug(candidate.AsSpan(sp + 1), ref state))
                                 {
@@ -1970,7 +1986,7 @@ public partial class WordList
                             if (
                                 (guess.GuessOrig ?? guess.Guess).Contains(wlst[j])
                                 || // check forbidden words
-                                CheckWord(guess.Guess, cpdSuggest: 0) == 0
+                                CheckWord_CpdSuggestZero(guess.Guess) == 0
                             )
                             {
                                 unique = false;
@@ -2009,7 +2025,7 @@ public partial class WordList
                             if (
                                 rootPhon.Contains(wlst[j])
                                 || // check forbidden words
-                                CheckWord(rootPhon, cpdSuggest: 0) == 0
+                                CheckWord_CpdSuggestZero(rootPhon) == 0
                             )
                             {
                                 unique = false;
