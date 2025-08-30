@@ -1556,59 +1556,33 @@ public partial class WordList
 
         public WordEntry? SuffixCheck(ReadOnlySpan<char> word, AffixEntryOptions sfxOpts, PrefixEntry? pfx, FlagValue cclass, FlagValue needFlag, CompoundOptions inCompound)
         {
-            if (inCompound == CompoundOptions.Begin && Affix.CompoundPermitFlag.IsZero)
+            var compoundPermitFlag = Affix.CompoundPermitFlag;
+            if (inCompound is CompoundOptions.Begin && compoundPermitFlag.IsZero)
             {
                 // not possible to be signed with compoundpermitflag flag
                 return null;
             }
 
-            WordEntry? rv;
-            var checkWordCclassFlag = inCompound != CompoundOptions.Not ? default : Affix.OnlyInCompound;
+            var onlyInCompound = Affix.OnlyInCompound;
+            var checkWordCclassFlag = inCompound is CompoundOptions.Not ? onlyInCompound : FlagValue.Zero;
+
+            var needAffix = Affix.NeedAffix;
+            var circumfix = Affix.Circumfix;
 
             var pfxHasCircumfix = false;
             var pfxDoesNotNeedAffix = false;
             if (pfx is not null)
             {
-                pfxHasCircumfix = pfx.ContainsContClass(Affix.Circumfix);
-                pfxDoesNotNeedAffix = !pfx.ContainsContClass(Affix.NeedAffix);
+                pfxHasCircumfix = pfx.ContainsContClass(circumfix);
+                pfxDoesNotNeedAffix = !pfx.ContainsContClass(needAffix);
             }
+
+            WordEntry? rv;
 
             // first handle the special case of 0 length suffixes
             foreach (var se in Affix.Suffixes.GetAffixesWithEmptyKeys())
             {
-                // suffixes are not allowed in beginning of compounds
-                if (
-                    (
-                        inCompound != CompoundOptions.Begin
-                        ||
-                        // except when signed with compoundpermitflag flag
-                        se.ContainsContClass(Affix.CompoundPermitFlag)
-                    )
-                    &&
-                    // fogemorpheme
-                    (
-                        inCompound != CompoundOptions.Not
-                        ||
-                        !se.ContainsContClass(Affix.OnlyInCompound)
-                    )
-                    &&
-                    // needaffix on prefix or first suffix
-                    (
-                        pfxDoesNotNeedAffix
-                        ||
-                        cclass.HasValue
-                        ||
-                        !se.ContainsContClass(Affix.NeedAffix)
-                    )
-                    &&
-                    (
-                        Affix.Circumfix.IsZero
-                        ||
-                        // no circumfix flag in prefix and suffix
-                        // circumfix flag in prefix AND suffix
-                        se.ContainsContClass(Affix.Circumfix) == pfxHasCircumfix
-                    )
-                )
+                if (testSuffixEntryGeneral(se))
                 {
                     rv = CheckWordSuffix(se, word, sfxOpts, pfx, cclass, needFlag, checkWordCclassFlag);
                     if (rv is not null)
@@ -1620,7 +1594,7 @@ public partial class WordList
             }
 
             // now handle the general case
-            if (word.Length == 0)
+            if (word.IsEmpty)
             {
                 return null;
             }
@@ -1628,75 +1602,85 @@ public partial class WordList
             foreach (var sptr in Affix.Suffixes.GetMatchingAffixes(word))
             {
                 if (
-                    (
-                        // suffixes are not allowed in beginning of compounds
-                        inCompound != CompoundOptions.Begin
-                        ||
-                        // except when signed with compoundpermitflag flag
-                        sptr.ContainsContClass(Affix.CompoundPermitFlag)
-                    )
-                    &&
-                    // fogemorpheme
-                    (
-                        inCompound != CompoundOptions.Not
-                        ||
-                        !sptr.ContainsContClass(Affix.OnlyInCompound)
-                    )
+                    testSuffixEntryGeneral(sptr)
                     &&
                     (
                         inCompound != CompoundOptions.End
                         ||
                         pfx is not null
                         ||
-                        !sptr.ContainsContClass(Affix.OnlyInCompound)
-                    )
-                    &&
-                    // needaffix on prefix or first suffix
-                    (
-                        pfxDoesNotNeedAffix
-                        ||
-                        cclass.HasValue
-                        ||
-                        !sptr.ContainsContClass(Affix.NeedAffix)
-                    )
-                    &&
-                    (
-                        Affix.Circumfix.IsZero
-                        ||
-                        // no circumfix flag in prefix and suffix
-                        // circumfix flag in prefix AND suffix
-                        sptr.ContainsContClass(Affix.Circumfix) == pfxHasCircumfix
+                        !sptr.ContainsContClass(onlyInCompound)
                     )
                 )
                 {
                     rv = CheckWordSuffix(sptr, word, sfxOpts, pfx, cclass, needFlag, checkWordCclassFlag);
                     if (rv is not null)
                     {
-                        SetSuffix(sptr);
-                        SetSuffixFlag(sptr.AFlag);
-
-                        if (!sptr.ContClass.HasItems)
-                        {
-                            SetSuffixAppend(sptr.Key);
-                        }
-                        else if (
-                            Affix.IsHungarian
-                            && sptr.Key.Length >= 2
-                            && sptr.Key[0] == 'i'
-                            && sptr.Key[1] is not ('y' or 't')
-                        )
-                        {
-                            // LANG_hu section: spec. Hungarian rule
-                            SetSuffixExtra(true);
-                        }
-
-                        // END of LANG_hu section
+                        SuffixCheckSetState(sptr);
                         return rv;
                     }
                 }
             }
 
             return null;
+
+            bool testSuffixEntryGeneral(SuffixEntry se)
+            {
+                return
+                (
+                    // suffixes are not allowed in beginning of compounds
+                    inCompound != CompoundOptions.Begin
+                    ||
+                    // except when signed with compoundpermitflag flag
+                    se.ContainsContClass(compoundPermitFlag)
+                )
+                &&
+                // fogemorpheme
+                (
+                    inCompound != CompoundOptions.Not
+                    ||
+                    !se.ContainsContClass(onlyInCompound)
+                )
+                &&
+                // needaffix on prefix or first suffix
+                (
+                    pfxDoesNotNeedAffix
+                    ||
+                    cclass.HasValue
+                    ||
+                    !se.ContainsContClass(needAffix)
+                )
+                &&
+                (
+                    circumfix.IsZero
+                    ||
+                    // no circumfix flag in prefix and suffix
+                    // circumfix flag in prefix AND suffix
+                    se.ContainsContClass(circumfix) == pfxHasCircumfix
+                );
+            }
+        }
+
+        private void SuffixCheckSetState(SuffixEntry sptr)
+        {
+            SetSuffix(sptr);
+            SetSuffixFlag(sptr.AFlag);
+
+            if (sptr.ContClass.IsEmpty)
+            {
+                SetSuffixAppend(sptr.Key);
+            }
+            else if (Affix.IsHungarian && isHungarianSuffixKey(sptr.Key))
+            {
+                // LANG_hu section: spec. Hungarian rule
+                SetSuffixExtra(true);
+                // END of LANG_hu section
+            }
+
+            static bool isHungarianSuffixKey(string key) =>
+                key.Length >= 2
+                && key[0] == 'i'
+                && key[1] is not ('y' or 't');
         }
 
         /// <summary>
