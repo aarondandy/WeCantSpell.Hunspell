@@ -1183,6 +1183,13 @@ public partial class WordList
             public byte CpdSuggest;
         }
 
+        private enum MapRelatedStepKind : byte
+        {
+            None = 0,
+            InMap = 1,
+            Timeout = 2,
+        }
+
         private void MapRelatedAdd(ref MapRelatedState state, ref OperationTimedCountLimiter timer, ref StringBuilderSpan candidate)
         {
             if (
@@ -1195,7 +1202,7 @@ public partial class WordList
             }
         }
 
-        private void MapRelatedAddAll(ref MapRelatedState state, ref OperationTimedCountLimiter timer, ref StringBuilderSpan candidate, string[] values)
+        private bool MapRelatedAddAll(ref MapRelatedState state, ref OperationTimedCountLimiter timer, ref StringBuilderSpan candidate, string[] values)
         {
             var candidateLength = candidate.Length;
             foreach (var otherMapEntryValue in values)
@@ -1207,12 +1214,14 @@ public partial class WordList
 
                 if (timer.HasBeenCanceled)
                 {
-                    return;
+                    return false;
                 }
             }
+
+            return true;
         }
 
-        private void MapRelatedSearchAll(ref MapRelatedState state, ref OperationTimedCountLimiter timer, ref StringBuilderSpan candidate, int nextWn, int depth, string[] values)
+        private bool MapRelatedSearchAll(ref MapRelatedState state, ref OperationTimedCountLimiter timer, ref StringBuilderSpan candidate, int nextWn, int depth, string[] values)
         {
             var candidateLength = candidate.Length;
             foreach (var otherMapEntryValue in values)
@@ -1224,39 +1233,62 @@ public partial class WordList
 
                 if (timer.HasBeenCanceled)
                 {
-                    return;
+                    return false;
                 }
             }
+
+            return true;
+        }
+
+        private MapRelatedStepKind MapRelatedSearchEntry(ref MapRelatedState state, ref OperationTimedCountLimiter timer, ref StringBuilderSpan candidate, int wn, int depth, string[] values)
+        {
+            var fnFlags = MapRelatedStepKind.None;
+            foreach (var mapEntryValue in values)
+            {
+                if (state.Word.AsSpan(wn).StartsWithOrdinal(mapEntryValue))
+                {
+                    fnFlags = MapRelatedStepKind.InMap;
+
+                    if (state.Word.Length <= wn + mapEntryValue.Length)
+                    {
+                        if (!MapRelatedAddAll(ref state, ref timer, ref candidate, values: values))
+                        {
+                            goto timeout;
+                        }
+                    }
+                    else if (Options.RecursiveDepthLimit >= depth)
+                    {
+                        if (!MapRelatedSearchAll(ref state, ref timer, ref candidate, nextWn: wn + mapEntryValue.Length, depth: depth, values: values))
+                        {
+                            goto timeout;
+                        }
+                    }
+                }
+            }
+
+        exit:
+
+            return fnFlags;
+
+        timeout:
+            fnFlags = MapRelatedStepKind.Timeout;
+            goto exit;
         }
 
         private void MapRelatedSearch(ref MapRelatedState state, ref OperationTimedCountLimiter timer, ref StringBuilderSpan candidate, int wn, int depth)
         {
             depth++;
 
-            int nextWn;
             var inMap = false;
             foreach (var mapEntry in Affix.RelatedCharacterMap.RawArray)
             {
-                foreach (var mapEntryValue in mapEntry.RawArray)
+                switch (MapRelatedSearchEntry(ref state, ref timer, ref candidate, wn: wn, depth: depth, values: mapEntry.RawArray))
                 {
-                    if (state.Word.AsSpan(wn).StartsWithOrdinal(mapEntryValue))
-                    {
+                    case MapRelatedStepKind.Timeout:
+                        return;
+                    case MapRelatedStepKind.InMap:
                         inMap = true;
-                        nextWn = wn + mapEntryValue.Length;
-                        if (state.Word.Length <= nextWn)
-                        {
-                            MapRelatedAddAll(ref state, ref timer, ref candidate, values: mapEntry.RawArray);
-                        }
-                        else if (Options.RecursiveDepthLimit >= depth)
-                        {
-                            MapRelatedSearchAll(ref state, ref timer, ref candidate, nextWn: nextWn, depth: depth, values: mapEntry.RawArray);
-                        }
-
-                        if (timer.HasBeenCanceled)
-                        {
-                            return;
-                        }
-                    }
+                        break;
                 }
             }
 
@@ -1264,14 +1296,13 @@ public partial class WordList
             {
                 candidate.Append(state.Word[wn]);
 
-                nextWn = wn + 1;
-                if (state.Word.Length <= nextWn)
+                if (state.Word.Length <= wn + 1)
                 {
                     MapRelatedAdd(ref state, ref timer, ref candidate);
                 }
                 else if (Options.RecursiveDepthLimit >= depth)
                 {
-                    MapRelatedSearch(ref state, ref timer, ref candidate, nextWn, depth);
+                    MapRelatedSearch(ref state, ref timer, ref candidate, wn + 1, depth);
                 }
             }
         }
