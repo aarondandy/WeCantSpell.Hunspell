@@ -1195,6 +1195,40 @@ public partial class WordList
             }
         }
 
+        private void MapRelatedAddAll(ref MapRelatedState state, ref OperationTimedCountLimiter timer, ref StringBuilderSpan candidate, string[] values)
+        {
+            var candidateLength = candidate.Length;
+            foreach (var otherMapEntryValue in values)
+            {
+                candidate.Truncate(candidateLength);
+                candidate.Append(otherMapEntryValue);
+
+                MapRelatedAdd(ref state, ref timer, ref candidate);
+
+                if (timer.HasBeenCanceled)
+                {
+                    return;
+                }
+            }
+        }
+
+        private void MapRelatedSearchAll(ref MapRelatedState state, ref OperationTimedCountLimiter timer, ref StringBuilderSpan candidate, int nextWn, int depth, string[] values)
+        {
+            var candidateLength = candidate.Length;
+            foreach (var otherMapEntryValue in values)
+            {
+                candidate.Truncate(candidateLength);
+                candidate.Append(otherMapEntryValue);
+
+                MapRelatedSearch(ref state, ref timer, ref candidate, nextWn, depth);
+
+                if (timer.HasBeenCanceled)
+                {
+                    return;
+                }
+            }
+        }
+
         private void MapRelatedSearch(ref MapRelatedState state, ref OperationTimedCountLimiter timer, ref StringBuilderSpan candidate, int wn, int depth)
         {
             depth++;
@@ -1208,38 +1242,19 @@ public partial class WordList
                     if (state.Word.AsSpan(wn).StartsWithOrdinal(mapEntryValue))
                     {
                         inMap = true;
-                        var candidateLength = candidate.Length;
-
                         nextWn = wn + mapEntryValue.Length;
                         if (state.Word.Length <= nextWn)
                         {
-                            foreach (var otherMapEntryValue in mapEntry.RawArray)
-                            {
-                                candidate.Truncate(candidateLength);
-                                candidate.Append(otherMapEntryValue);
-
-                                MapRelatedAdd(ref state, ref timer, ref candidate);
-
-                                if (timer.HasBeenCanceled)
-                                {
-                                    return;
-                                }
-                            }
+                            MapRelatedAddAll(ref state, ref timer, ref candidate, values: mapEntry.RawArray);
                         }
                         else if (Options.RecursiveDepthLimit >= depth)
                         {
-                            foreach (var otherMapEntryValue in mapEntry.RawArray)
-                            {
-                                candidate.Truncate(candidateLength);
-                                candidate.Append(otherMapEntryValue);
+                            MapRelatedSearchAll(ref state, ref timer, ref candidate, nextWn: nextWn, depth: depth, values: mapEntry.RawArray);
+                        }
 
-                                MapRelatedSearch(ref state, ref timer, ref candidate, nextWn, depth);
-
-                                if (timer.HasBeenCanceled)
-                                {
-                                    return;
-                                }
-                            }
+                        if (timer.HasBeenCanceled)
+                        {
+                            return;
                         }
                     }
                 }
