@@ -2218,7 +2218,7 @@ public partial class WordList
                 if (affix.TestCondition(tmpword))
                 {
                     if (
-                        !affix.ContainsContClass(Affix.NeedAffix) // forbid single prefixes with needaffix flag
+                        affix.DoesNotContainContClass(Affix.NeedAffix) // forbid single prefixes with needaffix flag
                         &&
                         TryLookupDetails(tmpword, out var tmpwordString, out var details)
                     )
