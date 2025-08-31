@@ -1556,11 +1556,14 @@ public partial class WordList
             var circumfix = Affix.Circumfix;
 
             var pfxHasCircumfix = false;
-            var pfxDoesNotNeedAffix = false;
+            var pfxNeedAffixTestBypass = cclass.HasValue;
             if (pfx is not null)
             {
                 pfxHasCircumfix = pfx.ContainsContClass(circumfix);
-                pfxDoesNotNeedAffix = pfx.DoesNotContainContClass(needAffix);
+                if (!pfxNeedAffixTestBypass)
+                {
+                    pfxNeedAffixTestBypass = pfx.DoesNotContainContClass(needAffix);
+                }
             }
 
             // first handle the special case of 0 length suffixes
@@ -1635,9 +1638,7 @@ public partial class WordList
                         return
                             // needaffix on prefix or first suffix
                             (
-                                pfxDoesNotNeedAffix
-                                ||
-                                cclass.HasValue
+                                pfxNeedAffixTestBypass
                                 ||
                                 se.DoesNotContainContClass(needAffix)
                             )
