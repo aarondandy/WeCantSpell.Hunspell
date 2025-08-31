@@ -1207,7 +1207,7 @@ public partial class WordList
 
             if (rv is null)
             {
-                rv = SuffixCheck(st, AffixEntryOptions.None, null, FlagValue.Zero, Affix.CompoundFlag, movCompoundOptions);
+                rv = SuffixCheck(st, AffixEntryOptions.None, null, cclass: default, needFlag: Affix.CompoundFlag, movCompoundOptions);
 
                 if (rv is null && Affix.CompoundMoreSuffixes)
                 {
@@ -1658,7 +1658,7 @@ public partial class WordList
                 );
             }
 
-            FlagValue checkWordCclassFlag() => inCompound is CompoundOptions.Not ? onlyInCompound : FlagValue.Zero;
+            FlagValue checkWordCclassFlag() => inCompound is CompoundOptions.Not ? onlyInCompound : default;
         }
 
         private void SuffixCheckSetState(SuffixEntry sptr)
