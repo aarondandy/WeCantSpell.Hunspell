@@ -1564,8 +1564,6 @@ public partial class WordList
             }
 
             var onlyInCompound = Affix.OnlyInCompound;
-            var checkWordCclassFlag = inCompound is CompoundOptions.Not ? onlyInCompound : FlagValue.Zero;
-
             var needAffix = Affix.NeedAffix;
             var circumfix = Affix.Circumfix;
 
@@ -1584,7 +1582,7 @@ public partial class WordList
             {
                 if (testSuffixEntryGeneral(se))
                 {
-                    rv = CheckWordSuffix(se, word, sfxOpts, pfx, cclass, needFlag, checkWordCclassFlag);
+                    rv = CheckWordSuffix(se, word, sfxOpts, pfx, cclass, needFlag, checkWordCclassFlag());
                     if (rv is not null)
                     {
                         SetSuffix(se);
@@ -1613,7 +1611,7 @@ public partial class WordList
                     )
                 )
                 {
-                    rv = CheckWordSuffix(sptr, word, sfxOpts, pfx, cclass, needFlag, checkWordCclassFlag);
+                    rv = CheckWordSuffix(sptr, word, sfxOpts, pfx, cclass, needFlag, checkWordCclassFlag());
                     if (rv is not null)
                     {
                         SuffixCheckSetState(sptr);
@@ -1659,6 +1657,8 @@ public partial class WordList
                     se.ContainsContClass(circumfix) == pfxHasCircumfix
                 );
             }
+
+            FlagValue checkWordCclassFlag() => inCompound is CompoundOptions.Not ? onlyInCompound : FlagValue.Zero;
         }
 
         private void SuffixCheckSetState(SuffixEntry sptr)
