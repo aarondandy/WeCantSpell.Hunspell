@@ -1395,23 +1395,24 @@ public partial class WordList
         {
             ClearPrefix();
             ClearAllAppendAndExtra();
-            WordEntry? rv;
 
-            if (inCompound == CompoundOptions.End && Affix.CompoundPermitFlag.IsZero)
+            if (inCompound is CompoundOptions.End && Affix.CompoundPermitFlag.IsZero)
             {
                 // not possible to permit prefixes in compounds
                 return null;
             }
+
+            WordEntry? rv;
 
             // first handle the special case of 0 length prefixes
             foreach (var pe in Affix.Prefixes.GetAffixesWithEmptyKeys())
             {
                 if (
                     // fogemorpheme
-                    (inCompound != CompoundOptions.Not || !pe.ContainsContClass(Affix.OnlyInCompound))
+                    (inCompound is not CompoundOptions.Not || pe.DoesNotContainContClass(Affix.OnlyInCompound))
                     &&
                     // permit prefixes in compounds
-                    (inCompound != CompoundOptions.End || pe.ContainsContClass(Affix.CompoundPermitFlag))
+                    (inCompound is not CompoundOptions.End || pe.ContainsContClass(Affix.CompoundPermitFlag))
                 )
                 {
                     // check prefix
@@ -1428,10 +1429,10 @@ public partial class WordList
             {
                 if (
                     // fogemorpheme
-                    (inCompound != CompoundOptions.Not || !pe.ContainsContClass(Affix.OnlyInCompound))
+                    (inCompound is not CompoundOptions.Not || pe.DoesNotContainContClass(Affix.OnlyInCompound))
                     &&
                     // permit prefixes in compounds
-                    (inCompound != CompoundOptions.End || pe.ContainsContClass(Affix.CompoundPermitFlag))
+                    (inCompound is not CompoundOptions.End || pe.ContainsContClass(Affix.CompoundPermitFlag))
                 )
                 {
                     // check prefix
@@ -1672,7 +1673,12 @@ public partial class WordList
                     )
                 )
                 ||
-                (cclass.HasValue && !affix.ContainsContClass(cclass)) // ! handle cont. class
+                (
+                    // ! handle cont. class
+                    cclass.HasValue
+                    &&
+                    affix.DoesNotContainContClass(cclass)
+                )
             )
             {
                 return null;
