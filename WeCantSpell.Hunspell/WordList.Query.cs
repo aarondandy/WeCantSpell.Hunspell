@@ -1513,9 +1513,9 @@ public partial class WordList
             var tmpl = word.Length - pe.Append.Length; // length of tmpword
 
             if (
-                (Affix.FullStrip ? tmpl >= 0 : tmpl > 0)
+                tmpl >= Affix.FullStripMinLength
                 &&
-                (tmpl + pe.Strip.Length >= pe.Conditions.Count)
+                (tmpl + pe.Strip.Length) >= pe.Conditions.Count
             )
             {
                 // generate new root word by removing prefix and adding
@@ -2040,7 +2040,7 @@ public partial class WordList
 
             var tmpl = word.Length - affix.Append.Length; // length of tmpword
 
-            if (tmpl > 0 || (tmpl == 0 && Affix.FullStrip))
+            if (tmpl >= Affix.FullStripMinLength)
             {
                 // generate new root word by removing prefix and adding
                 // back any characters that would have been stripped
@@ -2134,9 +2134,9 @@ public partial class WordList
             // it checked in test_condition()
 
             if (
-                (tmpl > 0 || (Affix.FullStrip && tmpl == 0))
+                tmpl >= Affix.FullStripMinLength
                 &&
-                (tmpl + affix.Strip.Length >= affix.Conditions.Count)
+                (tmpl + affix.Strip.Length) >= affix.Conditions.Count
             )
             {
                 // generate new root word by removing suffix and adding
@@ -2224,9 +2224,9 @@ public partial class WordList
             // it checked in test_condition()
 
             if (
-                (Affix.FullStrip ? tmpl >= 0 : tmpl > 0)
+                tmpl >= Affix.FullStripMinLength
                 &&
-                (tmpl + se.Strip.Length >= se.Conditions.Count)
+                (tmpl + se.Strip.Length) >= se.Conditions.Count
             )
             {
                 // generate new root word by removing suffix and adding

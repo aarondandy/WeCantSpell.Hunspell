@@ -19,6 +19,7 @@ public sealed partial class AffixConfig
 
     private AffixConfig()
     {
+        FullStrip = false;
     }
 
     private AffixConfigOptions _options;
@@ -151,7 +152,19 @@ public sealed partial class AffixConfig
     /// Note: conditions may be word length without <see cref="FullStrip"/>, too.
     /// </remarks>
     /// <seealso cref="AffixConfigOptions.FullStrip"/>
-    public bool FullStrip { get; private set; }
+    public bool FullStrip
+    {
+        get => _fullStrip;
+        private set
+        {
+            _fullStrip = value;
+            FullStripMinLength = _fullStrip ? 0 : 1;
+        }
+    }
+
+    private bool _fullStrip;
+
+    internal int FullStripMinLength { get; private set; }
 
     /// <summary>
     /// Add dot(s) to suggestions, if input word terminates in dot(s).

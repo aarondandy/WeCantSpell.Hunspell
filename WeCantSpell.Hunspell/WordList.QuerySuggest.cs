@@ -2440,7 +2440,7 @@ public partial class WordList
         /// </summary>
         private readonly string Add(PrefixEntry entry, string word)
         {
-            if (word.Length >= entry.Strip.Length || (word.Length == 0 && Affix.FullStrip))
+            if (word.Length >= entry.Strip.Length || word.Length >= Affix.FullStripMinLength)
             {
                 if (entry.TestCondition(word.AsSpan()))
                 {
@@ -2467,7 +2467,7 @@ public partial class WordList
         private readonly string ConcatWithSuffix(string word, SuffixEntry entry)
         {
             // make sure all conditions match
-            if (word.Length > entry.Strip.Length || (word.Length == 0 && Affix.FullStrip))
+            if (word.Length > entry.Strip.Length || word.Length >= Affix.FullStripMinLength)
             {
                 if (entry.TestCondition(word.AsSpan()))
                 {
