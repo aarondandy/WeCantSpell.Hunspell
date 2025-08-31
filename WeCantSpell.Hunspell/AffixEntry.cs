@@ -72,6 +72,8 @@ public abstract class AffixEntry
     public bool ContainsContClass(FlagValue flag) => ContClass.Contains(flag);
 
     public bool ContainsAnyContClass(FlagSet flags) => ContClass.ContainsAny(flags);
+
+    public bool DoesNotContainContClass(FlagValue flag) => ContClass.DoesNotContain(flag);
 }
 
 [DebuggerDisplay("Key = {Key}, Conditions = {Conditions}")]

@@ -1559,7 +1559,7 @@ public partial class WordList
             if (pfx is not null)
             {
                 pfxHasCircumfix = pfx.ContainsContClass(circumfix);
-                pfxDoesNotNeedAffix = !pfx.ContainsContClass(needAffix);
+                pfxDoesNotNeedAffix = pfx.DoesNotContainContClass(needAffix);
             }
 
             // first handle the special case of 0 length suffixes
@@ -1588,11 +1588,11 @@ public partial class WordList
                     testSuffixEntryGeneral(sptr)
                     &&
                     (
-                        inCompound != CompoundOptions.End
+                        inCompound is not CompoundOptions.End
                         ||
                         pfx is not null
                         ||
-                        !sptr.ContainsContClass(onlyInCompound)
+                        sptr.DoesNotContainContClass(onlyInCompound)
                     )
                 )
                 {
@@ -1609,38 +1609,49 @@ public partial class WordList
 
             bool testSuffixEntryGeneral(SuffixEntry se)
             {
-                return
-                (
-                    // suffixes are not allowed in beginning of compounds
-                    inCompound != CompoundOptions.Begin
-                    ||
-                    // except when signed with compoundpermitflag flag
-                    se.ContainsContClass(compoundPermitFlag)
-                )
-                &&
-                // fogemorpheme
-                (
-                    inCompound != CompoundOptions.Not
-                    ||
-                    !se.ContainsContClass(onlyInCompound)
-                )
-                &&
-                // needaffix on prefix or first suffix
-                (
-                    pfxDoesNotNeedAffix
-                    ||
-                    cclass.HasValue
-                    ||
-                    !se.ContainsContClass(needAffix)
-                )
-                &&
-                (
-                    circumfix.IsZero
-                    ||
-                    // no circumfix flag in prefix and suffix
-                    // circumfix flag in prefix AND suffix
-                    se.ContainsContClass(circumfix) == pfxHasCircumfix
-                );
+                switch (inCompound)
+                {
+                    case CompoundOptions.Not:
+                        // fogemorpheme
+                        if (se.ContainsContClass(onlyInCompound))
+                        {
+                            goto fail;
+                        }
+
+                        goto default;
+
+                    case CompoundOptions.Begin:
+                        // suffixes are not allowed in beginning of compounds
+                        // except when signed with compoundpermitflag flag
+                        if (se.DoesNotContainContClass(compoundPermitFlag))
+                        {
+                            goto fail;
+                        }
+
+                        goto default;
+
+                    default:
+                        return
+                            // needaffix on prefix or first suffix
+                            (
+                                pfxDoesNotNeedAffix
+                                ||
+                                cclass.HasValue
+                                ||
+                                se.DoesNotContainContClass(needAffix)
+                            )
+                            &&
+                            (
+                                circumfix.IsZero
+                                ||
+                                // no circumfix flag in prefix and suffix
+                                // circumfix flag in prefix AND suffix
+                                se.ContainsContClass(circumfix) == pfxHasCircumfix
+                            );
+                }
+
+            fail:
+                return false;
             }
 
             FlagValue checkWordCclassFlag() => inCompound is CompoundOptions.Not ? onlyInCompound : default;
