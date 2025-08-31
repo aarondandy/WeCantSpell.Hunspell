@@ -1438,15 +1438,12 @@ public partial class WordList
 
             return null;
 
-            bool testPrefixEntryGeneral(PrefixEntry pe)
+            bool testPrefixEntryGeneral(PrefixEntry pe) => inCompound switch
             {
-                return // fogemorpheme
-                    (inCompound is not CompoundOptions.Not || pe.DoesNotContainContClass(onlyInCompound))
-                    &&
-                    // permit prefixes in compounds
-                    (inCompound is not CompoundOptions.End || pe.ContainsContClass(compoundPermitFlag))
-                    ;
-            }
+                CompoundOptions.Not => pe.DoesNotContainContClass(onlyInCompound),// fogemorpheme
+                CompoundOptions.End => pe.ContainsContClass(compoundPermitFlag),// permit prefixes in compounds
+                _ => true,
+            };
         }
 
         private WordEntry? PrefixCheck(PrefixEntry affix, ReadOnlySpan<char> word, CompoundOptions inCompound, FlagValue needFlag)
