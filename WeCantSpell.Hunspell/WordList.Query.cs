@@ -1556,6 +1556,8 @@ public partial class WordList
 
         public WordEntry? SuffixCheck(ReadOnlySpan<char> word, AffixEntryOptions sfxOpts, PrefixEntry? pfx, FlagValue cclass, FlagValue needFlag, CompoundOptions inCompound)
         {
+            WordEntry? rv;
+
             var compoundPermitFlag = Affix.CompoundPermitFlag;
             if (inCompound is CompoundOptions.Begin && compoundPermitFlag.IsZero)
             {
@@ -1574,8 +1576,6 @@ public partial class WordList
                 pfxHasCircumfix = pfx.ContainsContClass(circumfix);
                 pfxDoesNotNeedAffix = !pfx.ContainsContClass(needAffix);
             }
-
-            WordEntry? rv;
 
             // first handle the special case of 0 length suffixes
             foreach (var se in Affix.Suffixes.GetAffixesWithEmptyKeys())
