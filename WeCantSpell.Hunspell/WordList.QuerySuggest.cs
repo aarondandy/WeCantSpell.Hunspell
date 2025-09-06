@@ -1190,12 +1190,12 @@ public partial class WordList
             Timeout = 2,
         }
 
-        private void MapRelatedAdd(ref MapRelatedState state, ref OperationTimedCountLimiter timer, ref StringBuilderSpan candidate)
+        private void MapRelatedAdd(ref MapRelatedState state, ref OperationTimedCountLimiter timer, ReadOnlySpan<char> candidate)
         {
             if (
-                CanAcceptSuggestion(state.SuggestionList, candidate.CurrentSpan)
+                CanAcceptSuggestion(state.SuggestionList, candidate)
                 &&
-                CheckWord(candidate.CurrentSpan, state.CpdSuggest, ref timer) != 0
+                CheckWord(candidate, state.CpdSuggest, ref timer) != 0
             )
             {
                 state.SuggestionList.Add(candidate.ToString());
@@ -1210,7 +1210,7 @@ public partial class WordList
                 candidate.Truncate(candidateLength);
                 candidate.Append(otherMapEntryValue);
 
-                MapRelatedAdd(ref state, ref timer, ref candidate);
+                MapRelatedAdd(ref state, ref timer, candidate.CurrentSpan);
 
                 if (timer.HasBeenCanceled)
                 {
@@ -1298,7 +1298,7 @@ public partial class WordList
 
                 if (state.Word.Length <= wn + 1)
                 {
-                    MapRelatedAdd(ref state, ref timer, ref candidate);
+                    MapRelatedAdd(ref state, ref timer, candidate.CurrentSpan);
                 }
                 else if (Options.RecursiveDepthLimit >= depth)
                 {
