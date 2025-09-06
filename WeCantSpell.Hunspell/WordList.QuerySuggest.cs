@@ -1162,7 +1162,6 @@ public partial class WordList
                 return;
             }
 
-            var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, _query.CancellationToken);
 
             var mapRelatedState = new MapRelatedState
             {
@@ -1172,6 +1171,7 @@ public partial class WordList
             };
 
             var candidate = new StringBuilderSpan(word.Length + 2);
+            var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, _query.CancellationToken);
             MapRelatedSearch(ref mapRelatedState, ref timer, ref candidate, wn: 0, depth: 0);
             candidate.Dispose();
         }
