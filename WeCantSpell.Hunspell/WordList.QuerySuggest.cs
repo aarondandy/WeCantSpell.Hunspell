@@ -1162,7 +1162,6 @@ public partial class WordList
                 return;
             }
 
-
             var mapRelatedState = new MapRelatedState
             {
                 Word = word,
@@ -1245,7 +1244,7 @@ public partial class WordList
             var fnFlags = MapRelatedStepKind.None;
             foreach (var mapEntryValue in values)
             {
-                if (state.Word.AsSpan(wn).StartsWithOrdinal(mapEntryValue))
+                if (mapEntryValue.Length > 0 && state.Word.AsSpan(wn).StartsWithOrdinal(mapEntryValue))
                 {
                     fnFlags = MapRelatedStepKind.InMap;
 
@@ -1267,7 +1266,6 @@ public partial class WordList
             }
 
         exit:
-
             return fnFlags;
 
         timeout:
