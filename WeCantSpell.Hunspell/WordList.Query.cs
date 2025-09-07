@@ -1641,7 +1641,7 @@ public partial class WordList
                 {
                     if (testSuffixEntryCommon(se))
                     {
-                        var rv = query.SuffixCheck(se, word, sfxOpts, pfx, cclass, needFlag, inCompound);
+                        var rv = suffixCheck(ref query, word, se);
                         if (rv is not null)
                         {
                             query.SetSuffix(se);
@@ -1663,10 +1663,10 @@ public partial class WordList
                         if (
                             testSuffixEntryCommon(sptr)
                             &&
-                            testSuffixEntryGeneral(sptr)
+                            testSuffixEntryGeneralExtra(sptr)
                         )
                         {
-                            var rv = query.SuffixCheck(sptr, word, sfxOpts, pfx, cclass, needFlag, inCompound);
+                            var rv = suffixCheck(ref query, word, sptr);
                             if (rv is not null)
                             {
                                 query.SuffixCheckSetState(sptr);
@@ -1687,7 +1687,7 @@ public partial class WordList
                         // fogemorpheme
                         if (se.ContainsContClass(affix.OnlyInCompound))
                         {
-                            goto fail;
+                            break;
                         }
 
                         goto default;
@@ -1697,7 +1697,7 @@ public partial class WordList
                         // except when signed with compoundpermitflag flag
                         if (se.DoesNotContainContClass(affix.CompoundPermitFlag))
                         {
-                            goto fail;
+                            break;
                         }
 
                         goto default;
@@ -1720,126 +1720,128 @@ public partial class WordList
                             );
                 }
 
-            fail:
                 return false;
             }
 
-            bool testSuffixEntryGeneral(SuffixEntry sptr)
+            bool testSuffixEntryGeneralExtra(SuffixEntry sptr)
             {
                 return inCompound is not CompoundOptions.End
                     || pfx is not null
                     || sptr.DoesNotContainContClass(affix.OnlyInCompound);
             }
-        }
 
-        private readonly WordEntry? SuffixCheck(SuffixEntry affix, ReadOnlySpan<char> word, AffixEntryOptions optFlags, PrefixEntry? pfx, FlagValue cclass, FlagValue needFlag, CompoundOptions inCompound)
-        {
-            // if this suffix is being cross checked with a prefix
-            // but it does not support cross products skip it
+            WordEntry? suffixCheck(ref Query query, ReadOnlySpan<char> word, SuffixEntry se)
+            {
+                // if this suffix is being cross checked with a prefix
+                // but it does not support cross products skip it
 
-            var optFlagsHasCrossProduct = optFlags.HasFlagEx(AffixEntryOptions.CrossProduct);
-            if (
-                (
-                    optFlagsHasCrossProduct
-                    &&
+                if (
                     (
-                        pfx is null // enabled by prefix is impossible
-                        ||
-                        affix.Options.IsMissingFlag(AffixEntryOptions.CrossProduct)
+                        sfxOpts.HasFlagEx(AffixEntryOptions.CrossProduct)
+                        &&
+                        (
+                            pfx is null // enabled by prefix is impossible
+                            ||
+                            se.Options.IsMissingFlag(AffixEntryOptions.CrossProduct)
+                        )
+                    )
+                    ||
+                    (
+                        // ! handle cont. class
+                        cclass.HasValue
+                        &&
+                        se.DoesNotContainContClass(cclass)
                     )
                 )
-                ||
-                (
-                    // ! handle cont. class
-                    cclass.HasValue
-                    &&
-                    affix.DoesNotContainContClass(cclass)
-                )
-            )
-            {
-                return null;
-            }
-
-            // upon entry suffix is 0 length or already matches the end of the word.
-            // So if the remaining root word has positive length
-            // and if there are enough chars in root word and added back strip chars
-            // to meet the number of characters conditions, then test it
-
-            var tmpl = word.Length - affix.Append.Length;
-            // the second condition is not enough for UTF-8 strings
-            // it checked in test_condition()
-
-            if (
-                tmpl >= Affix.FullStripMinLength
-                &&
-                (tmpl + affix.Strip.Length >= affix.Conditions.Count)
-            )
-            {
-                // generate new root word by removing suffix and adding
-                // back any characters that would have been stripped or
-                // or null terminating the shorter string
-
-                var tmpSpan = word.Slice(0, tmpl).ConcatSpan(affix.Strip);
-
-                // now make sure all of the conditions on characters
-                // are met.  Please see the appendix at the end of
-                // this file for more info on exactly what is being
-                // tested
-
-                // if all conditions are met then check if resulting
-                // root word in the dictionary
-                if (affix.Conditions.IsEndingMatch(tmpSpan))
                 {
-                    if (TryLookupDetails(tmpSpan, out var tmpString, out var details))
+                    return null;
+                }
+
+                // upon entry suffix is 0 length or already matches the end of the word.
+                // So if the remaining root word has positive length
+                // and if there are enough chars in root word and added back strip chars
+                // to meet the number of characters conditions, then test it
+
+                var tmpl = word.Length - se.Append.Length;
+                // the second condition is not enough for UTF-8 strings
+                // it checked in test_condition()
+
+                if (
+                    tmpl >= affix.FullStripMinLength
+                    &&
+                    (tmpl + se.Strip.Length >= se.Conditions.Count)
+                )
+                {
+                    // generate new root word by removing suffix and adding
+                    // back any characters that would have been stripped or
+                    // or null terminating the shorter string
+
+                    var tmpSpan = word.Slice(0, tmpl).ConcatSpan(se.Strip);
+
+                    // now make sure all of the conditions on characters
+                    // are met.  Please see the appendix at the end of
+                    // this file for more info on exactly what is being
+                    // tested
+
+                    // if all conditions are met then check if resulting
+                    // root word in the dictionary
+                    if (se.Conditions.IsEndingMatch(tmpSpan))
                     {
-                        foreach (var heDetail in details)
+                        if (query.TryLookupDetails(tmpSpan, out var tmpString, out var details))
                         {
-                            if (
-                                (
-                                    heDetail.ContainsFlag(affix.AFlag)
-                                    ||
-                                    (pfx is not null && pfx.ContainsContClass(affix.AFlag))
-                                )
-                                &&
-                                (
-                                    !optFlagsHasCrossProduct
-                                    ||
-                                    (
-                                        pfx is not null
-                                        &&
-                                        (
-                                            heDetail.ContainsFlag(pfx.AFlag)
-                                            ||
-                                            affix.ContainsContClass(pfx.AFlag) // enabled by prefix
-                                        )
-                                    )
-                                )
-                                &&
-                                (
-                                    // check only in compound homonyms (bad flags)
-                                    inCompound is not CompoundOptions.Not
-                                    ||
-                                    heDetail.DoesNotContainFlag(Affix.OnlyInCompound)
-                                )
-                                &&
-                                (
-                                    // handle required flag
-                                    needFlag.IsZero
-                                    ||
-                                    heDetail.ContainsFlag(needFlag)
-                                    ||
-                                    affix.ContainsContClass(needFlag)
-                                )
-                            )
+                            foreach (var heDetail in details)
                             {
-                                return new WordEntry(tmpString, heDetail);
+                                if (testSuffixDetails(in heDetail, se))
+                                {
+                                    return new WordEntry(tmpString, heDetail);
+                                }
                             }
                         }
                     }
                 }
+
+                return null;
             }
 
-            return null;
+            bool testSuffixDetails(in WordEntryDetail heDetail, SuffixEntry se)
+            {
+                return
+                    (
+                        heDetail.ContainsFlag(se.AFlag)
+                        ||
+                        (pfx is not null && pfx.ContainsContClass(se.AFlag))
+                    )
+                    &&
+                    (
+                        sfxOpts.IsMissingFlag(AffixEntryOptions.CrossProduct)
+                        ||
+                        (
+                            pfx is not null
+                            &&
+                            (
+                                heDetail.ContainsFlag(pfx.AFlag)
+                                ||
+                                se.ContainsContClass(pfx.AFlag) // enabled by prefix
+                            )
+                        )
+                    )
+                    &&
+                    (
+                        // check only in compound homonyms (bad flags)
+                        inCompound is not CompoundOptions.Not
+                        ||
+                        heDetail.DoesNotContainFlag(affix.OnlyInCompound)
+                    )
+                    &&
+                    (
+                        // handle required flag
+                        needFlag.IsZero
+                        ||
+                        heDetail.ContainsFlag(needFlag)
+                        ||
+                        se.ContainsContClass(needFlag)
+                    );
+            }
         }
 
         private void SuffixCheckSetState(SuffixEntry sptr)
