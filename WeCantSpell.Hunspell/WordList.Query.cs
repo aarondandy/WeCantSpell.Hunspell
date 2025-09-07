@@ -1610,82 +1610,82 @@ public partial class WordList
 
         public WordEntry? SuffixCheck(ReadOnlySpan<char> word, AffixEntryOptions sfxOpts, PrefixEntry? pfx, FlagValue cclass, FlagValue needFlag, CompoundOptions inCompound)
         {
-            WordEntry? rv;
+            var affix = Affix;
 
-            var compoundPermitFlag = Affix.CompoundPermitFlag;
-            if (inCompound is CompoundOptions.Begin && compoundPermitFlag.IsZero)
+            if (inCompound is CompoundOptions.Begin && affix.CompoundPermitFlag.IsZero)
             {
                 // not possible to be signed with compoundpermitflag flag
                 return null;
             }
 
-            var onlyInCompound = Affix.OnlyInCompound;
-            var needAffix = Affix.NeedAffix;
-            var circumfix = Affix.Circumfix;
-
             var pfxHasCircumfix = false;
             var pfxNeedAffixTestBypass = cclass.HasValue;
             if (pfx is not null)
             {
-                pfxHasCircumfix = pfx.ContainsContClass(circumfix);
+                pfxHasCircumfix = pfx.ContainsContClass(affix.Circumfix);
                 if (!pfxNeedAffixTestBypass)
                 {
-                    pfxNeedAffixTestBypass = pfx.DoesNotContainContClass(needAffix);
+                    pfxNeedAffixTestBypass = pfx.DoesNotContainContClass(affix.NeedAffix);
                 }
             }
 
             // first handle the special case of 0 length suffixes
-            foreach (var se in Affix.Suffixes.GetAffixesWithEmptyKeys())
+            return searchZeroLength(ref this, word)
+                // now handle the general case
+                ?? searchGeneral(ref this, word);
+
+            WordEntry? searchZeroLength(ref Query query, ReadOnlySpan<char> word)
             {
-                if (testSuffixEntryGeneral(se))
+                // first handle the special case of 0 length suffixes
+                foreach (var se in affix.Suffixes.GetAffixesWithEmptyKeys())
                 {
-                    rv = SuffixCheck(se, word, sfxOpts, pfx, cclass, needFlag, inCompound);
-                    if (rv is not null)
+                    if (testSuffixEntryCommon(se))
                     {
-                        SetSuffix(se);
-                        return rv;
+                        var rv = query.SuffixCheck(se, word, sfxOpts, pfx, cclass, needFlag, inCompound);
+                        if (rv is not null)
+                        {
+                            query.SetSuffix(se);
+                            return rv;
+                        }
                     }
                 }
-            }
 
-            // now handle the general case
-            if (word.IsEmpty)
-            {
                 return null;
             }
 
-            foreach (var sptr in Affix.Suffixes.GetMatchingAffixes(word))
+            WordEntry? searchGeneral(ref Query query, ReadOnlySpan<char> word)
             {
-                if (
-                    testSuffixEntryGeneral(sptr)
-                    &&
-                    (
-                        inCompound is not CompoundOptions.End
-                        ||
-                        pfx is not null
-                        ||
-                        sptr.DoesNotContainContClass(onlyInCompound)
-                    )
-                )
+                // now handle the general case
+                if (!word.IsEmpty)
                 {
-                    rv = SuffixCheck(sptr, word, sfxOpts, pfx, cclass, needFlag, inCompound);
-                    if (rv is not null)
+                    foreach (var sptr in affix.Suffixes.GetMatchingAffixes(word))
                     {
-                        SuffixCheckSetState(sptr);
-                        return rv;
+                        if (
+                            testSuffixEntryCommon(sptr)
+                            &&
+                            testSuffixEntryGeneral(sptr)
+                        )
+                        {
+                            var rv = query.SuffixCheck(sptr, word, sfxOpts, pfx, cclass, needFlag, inCompound);
+                            if (rv is not null)
+                            {
+                                query.SuffixCheckSetState(sptr);
+                                return rv;
+                            }
+                        }
                     }
                 }
+
+                return null;
             }
 
-            return null;
-
-            bool testSuffixEntryGeneral(SuffixEntry se)
+            bool testSuffixEntryCommon(SuffixEntry se)
             {
                 switch (inCompound)
                 {
                     case CompoundOptions.Not:
                         // fogemorpheme
-                        if (se.ContainsContClass(onlyInCompound))
+                        if (se.ContainsContClass(affix.OnlyInCompound))
                         {
                             goto fail;
                         }
@@ -1695,7 +1695,7 @@ public partial class WordList
                     case CompoundOptions.Begin:
                         // suffixes are not allowed in beginning of compounds
                         // except when signed with compoundpermitflag flag
-                        if (se.DoesNotContainContClass(compoundPermitFlag))
+                        if (se.DoesNotContainContClass(affix.CompoundPermitFlag))
                         {
                             goto fail;
                         }
@@ -1708,20 +1708,27 @@ public partial class WordList
                             (
                                 pfxNeedAffixTestBypass
                                 ||
-                                se.DoesNotContainContClass(needAffix)
+                                se.DoesNotContainContClass(affix.NeedAffix)
                             )
                             &&
                             (
-                                circumfix.IsZero
+                                affix.Circumfix.IsZero
                                 ||
                                 // no circumfix flag in prefix and suffix
                                 // circumfix flag in prefix AND suffix
-                                se.ContainsContClass(circumfix) == pfxHasCircumfix
+                                se.ContainsContClass(affix.Circumfix) == pfxHasCircumfix
                             );
                 }
 
             fail:
                 return false;
+            }
+
+            bool testSuffixEntryGeneral(SuffixEntry sptr)
+            {
+                return inCompound is not CompoundOptions.End
+                    || pfx is not null
+                    || sptr.DoesNotContainContClass(affix.OnlyInCompound);
             }
         }
 
