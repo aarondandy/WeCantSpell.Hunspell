@@ -427,6 +427,18 @@ internal ref struct StringBuilderSpan
         _length--;
     }
 
+    public void Truncate(int maxLength)
+    {
+#if DEBUG
+        ExceptionEx.ThrowIfArgumentLessThan(maxLength, 0, nameof(maxLength));
+#endif
+
+        if (_length > maxLength)
+        {
+            _length = maxLength;
+        }
+    }
+
     public void Remove(int startIndex, int count)
     {
 #if DEBUG

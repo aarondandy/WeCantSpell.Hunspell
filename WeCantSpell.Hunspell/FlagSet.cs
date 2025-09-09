@@ -17,7 +17,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     public static FlagSet Create(FlagValue value) => value.IsZero ? Empty : new(value);
 
-    public static FlagSet Create(char value) => value == FlagValue.ZeroValue ? Empty : new(value);
+    public static FlagSet Create(char value) => value == '\0' ? Empty : new(value);
 
     public static FlagSet Create(FlagValue value0, FlagValue value1)
     {
@@ -139,7 +139,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     private static FlagSet CreateFromBuilderChars(ReadOnlySpan<char> text)
     {
         var builder = new StringBuilderSpan(text);
-        builder.RemoveAll(FlagValue.ZeroValue);
+        builder.RemoveAll('\0'); // remove zero values
         builder.Sort();
         builder.RemoveAdjacentDuplicates();
         return new(builder.GetStringAndDispose());
@@ -194,7 +194,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
     private static FlagSet CreateUsingMutableBuffer(Span<char> values)
     {
-        MemoryEx.RemoveAll(ref values, FlagValue.ZeroValue);
+        MemoryEx.RemoveAll(ref values, '\0'); // remove zero values
 
         values.Sort();
 
@@ -385,13 +385,13 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
 
 #if HAS_SEARCHVALUES
 
-    public bool Contains(FlagValue value) => value != FlagValue.Zero && _searchValues!.Contains(value);
+    public bool Contains(FlagValue value) => value != default && _searchValues!.Contains(value);
 
-    public bool Contains(char value) => value != FlagValue.ZeroValue && _searchValues!.Contains(value);
+    public bool Contains(char value) => value is '\0' && _searchValues!.Contains(value);
 
-    public bool DoesNotContain(FlagValue value) => value == FlagValue.Zero || !_searchValues!.Contains(value);
+    public bool DoesNotContain(FlagValue value) => value == default || !_searchValues!.Contains(value);
 
-    public bool DoesNotContain(char value) => value == FlagValue.ZeroValue || !_searchValues!.Contains(value);
+    public bool DoesNotContain(char value) => value == '\0' || !_searchValues!.Contains(value);
 
     public bool ContainsAny(FlagValue a, FlagValue b) =>
         ((ReadOnlySpan<char>)[a, b]).ContainsAny(_searchValues!);
@@ -427,7 +427,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     public bool Contains(char value)
     {
         return
-            value != FlagValue.ZeroValue
+            value != '\0'
             &&
             _values is not null
             &&
@@ -446,7 +446,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     public bool DoesNotContain(char value)
     {
         return
-            value == FlagValue.ZeroValue
+            value == '\0'
             ||
             _values is null
             ||

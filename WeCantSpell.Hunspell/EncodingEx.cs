@@ -13,7 +13,7 @@ internal static class EncodingEx
 
     private static Encoding? GetUtf8EncodingOrDefault(ReadOnlySpan<char> encodingName)
     {
-        if (encodingName.EqualsOrdinal("UTF8") || encodingName.EqualsOrdinal("UTF-8"))
+        if (encodingName.Equals("UTF8", StringComparison.OrdinalIgnoreCase) || encodingName.Equals("UTF-8", StringComparison.OrdinalIgnoreCase))
         {
             return Encoding.UTF8;
         }

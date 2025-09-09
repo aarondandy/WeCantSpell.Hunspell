@@ -147,60 +147,38 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
 
     internal string GetValuesAsText() => _characters ?? string.Empty;
 
-    internal bool FullyMatchesFromStart(ReadOnlySpan<char> text, out int matchLength)
+    internal int FullyMatchesFromStart(ReadOnlySpan<char> text)
     {
-        matchLength = 1;
-
-        if (text.Length > 0)
+        if (_mode is ModeKind.MatchSequence)
         {
-            switch (_mode)
+            if (_characters is not null && text.StartsWith(_characters.AsSpan()))
             {
-                case ModeKind.PermitChars:
-                    return Contains(text[0]);
-
-                case ModeKind.RestrictChars:
-                    return !Contains(text[0]);
-
-                case ModeKind.MatchSequence:
-                    if (_characters is { Length: > 0 } && text.StartsWith(_characters.AsSpan()))
-                    {
-                        matchLength = _characters.Length;
-                        return true;
-                    }
-
-                    break;
+                return _characters.Length;
             }
         }
+        else if (text.Length > 0 && Contains(text[0]) == (_mode is ModeKind.PermitChars))
+        {
+            return 1;
+        }
 
-        return false;
+        return 0;
     }
 
-    internal bool FullyMatchesFromEnd(ReadOnlySpan<char> text, out int matchLength)
+    internal int FullyMatchesFromEnd(ReadOnlySpan<char> text)
     {
-        matchLength = 1;
-
-        if (text.Length > 0)
+        if (_mode is ModeKind.MatchSequence)
         {
-            switch (_mode)
+            if (_characters is not null && text.EndsWith(_characters.AsSpan()))
             {
-                case ModeKind.PermitChars:
-                    return Contains(text[text.Length - 1]);
-
-                case ModeKind.RestrictChars:
-                    return !Contains(text[text.Length - 1]);
-
-                case ModeKind.MatchSequence:
-                    if (_characters is { Length: > 0 } && text.EndsWith(_characters.AsSpan()))
-                    {
-                        matchLength = _characters.Length;
-                        return true;
-                    }
-
-                    break;
+                return _characters.Length;
             }
         }
+        else if (text.Length > 0 && Contains(text[text.Length - 1]) == (_mode is ModeKind.PermitChars))
+        {
+            return 1;
+        }
 
-        return false;
+        return 0;
     }
 
     internal bool IsOnlyPossibleMatch(ReadOnlySpan<char> text, out int matchLength)

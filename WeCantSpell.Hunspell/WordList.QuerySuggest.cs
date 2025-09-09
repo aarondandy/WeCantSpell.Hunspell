@@ -118,7 +118,7 @@ public partial class WordList
             }
 
             // process XML input of the simplified API (see manual)
-            if (word.StartsWith(Query.DefaultXmlTokenCheckPrefix, StringComparison.Ordinal))
+            if (word.StartsWithOrdinal(Query.DefaultXmlTokenCheckPrefix))
             {
                 goto fail; // TODO: complete support for XML input
             }
@@ -307,7 +307,7 @@ public partial class WordList
                             var slen = toRemove.Length - spaceIndex - 1;
 
                             // different case after space (need capitalisation)
-                            if (slen < scw.Length && !scw.AsSpan(scw.Length - slen).EqualsOrdinal(toRemove.AsSpan(spaceIndex + 1)))
+                            if (slen < scw.Length && !scw.AsSpan(scw.Length - slen).SequenceEqual(toRemove.AsSpan(spaceIndex + 1)))
                             {
                                 // set as first suggestion
                                 removeFromIndexThenInsertAtFront(
@@ -460,7 +460,7 @@ public partial class WordList
                     }
 
                     var chunk = scw.AsSpan(prevPos, dashPos - prevPos);
-                    if (!chunk.EqualsOrdinal(word) && !Check(chunk))
+                    if (!chunk.SequenceEqual(word) && !Check(chunk))
                     {
                         var nlst = SuggestNested(chunk);
 
@@ -1162,59 +1162,146 @@ public partial class WordList
                 return;
             }
 
-            var candidate = string.Empty;
+            var mapRelatedState = new MapRelatedState
+            {
+                Word = word,
+                SuggestionList = state.SuggestionList,
+                CpdSuggest = state.CpdSuggest,
+            };
+
+            var candidate = new StringBuilderSpan(word.Length + 2);
             var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, _query.CancellationToken);
-            MapRelated(word, ref candidate, wn: 0, ref state, ref timer, depth: 0);
+            MapRelatedSearch(ref mapRelatedState, ref timer, ref candidate, wn: 0, depth: 0);
+            candidate.Dispose();
         }
 
-        private void MapRelated(string word, ref string candidate, int wn, ref SuggestState state, ref OperationTimedCountLimiter timer, int depth)
+        private ref struct MapRelatedState
         {
-            if (word.Length == wn)
+            public string Word;
+            public List<string> SuggestionList;
+            public byte CpdSuggest;
+        }
+
+        private enum MapRelatedStepKind : byte
+        {
+            None = 0,
+            InMap = 1,
+            Timeout = 2,
+        }
+
+        private void MapRelatedAdd(ref MapRelatedState state, ref OperationTimedCountLimiter timer, ReadOnlySpan<char> candidate)
+        {
+            if (
+                CanAcceptSuggestion(state.SuggestionList, candidate)
+                &&
+                CheckWord(candidate, state.CpdSuggest, ref timer) != 0
+            )
             {
-                if (
-                    CanAcceptSuggestion(state.SuggestionList, candidate)
-                    &&
-                    CheckWord(candidate, state.CpdSuggest, ref timer) != 0
-                )
+                state.SuggestionList.Add(candidate.ToString());
+            }
+        }
+
+        private bool MapRelatedAddAll(ref MapRelatedState state, ref OperationTimedCountLimiter timer, ref StringBuilderSpan candidate, string[] values)
+        {
+            var candidateLength = candidate.Length;
+            foreach (var otherMapEntryValue in values)
+            {
+                candidate.Truncate(candidateLength);
+                candidate.Append(otherMapEntryValue);
+
+                MapRelatedAdd(ref state, ref timer, candidate.CurrentSpan);
+
+                if (timer.HasBeenCanceled)
                 {
-                    state.SuggestionList.Add(candidate);
+                    return false;
                 }
-
-                return;
             }
 
-            if (depth > Options.RecursiveDepthLimit)
-            {
-                return;
-            }
+            return true;
+        }
 
-            var inMap = false;
-            foreach (var mapEntry in Affix.RelatedCharacterMap.RawArray)
+        private bool MapRelatedSearchAll(ref MapRelatedState state, ref OperationTimedCountLimiter timer, ref StringBuilderSpan candidate, int nextWn, int depth, string[] values)
+        {
+            var candidateLength = candidate.Length;
+            foreach (var otherMapEntryValue in values)
             {
-                foreach (var mapEntryValue in mapEntry.RawArray)
+                candidate.Truncate(candidateLength);
+                candidate.Append(otherMapEntryValue);
+
+                MapRelatedSearch(ref state, ref timer, ref candidate, nextWn, depth);
+
+                if (timer.HasBeenCanceled)
                 {
-                    if (word.AsSpan(wn).StartsWith(mapEntryValue, StringComparison.Ordinal))
-                    {
-                        inMap = true;
-                        var candidatePrefix = candidate;
-                        foreach (var otherMapEntryValue in mapEntry.RawArray)
-                        {
-                            candidate = candidatePrefix + otherMapEntryValue;
-                            MapRelated(word, ref candidate, wn + mapEntryValue.Length, ref state, ref timer, depth + 1);
+                    return false;
+                }
+            }
 
-                            if (timer.HasBeenCanceled)
-                            {
-                                return;
-                            }
+            return true;
+        }
+
+        private MapRelatedStepKind MapRelatedSearchEntry(ref MapRelatedState state, ref OperationTimedCountLimiter timer, ref StringBuilderSpan candidate, int wn, int depth, string[] values)
+        {
+            var fnFlags = MapRelatedStepKind.None;
+            foreach (var mapEntryValue in values)
+            {
+                if (mapEntryValue.Length > 0 && state.Word.AsSpan(wn).StartsWithOrdinal(mapEntryValue))
+                {
+                    fnFlags = MapRelatedStepKind.InMap;
+
+                    if (state.Word.Length <= wn + mapEntryValue.Length)
+                    {
+                        if (!MapRelatedAddAll(ref state, ref timer, ref candidate, values: values))
+                        {
+                            goto timeout;
+                        }
+                    }
+                    else if (Options.RecursiveDepthLimit >= depth)
+                    {
+                        if (!MapRelatedSearchAll(ref state, ref timer, ref candidate, nextWn: wn + mapEntryValue.Length, depth: depth, values: values))
+                        {
+                            goto timeout;
                         }
                     }
                 }
             }
 
+        exit:
+            return fnFlags;
+
+        timeout:
+            fnFlags = MapRelatedStepKind.Timeout;
+            goto exit;
+        }
+
+        private void MapRelatedSearch(ref MapRelatedState state, ref OperationTimedCountLimiter timer, ref StringBuilderSpan candidate, int wn, int depth)
+        {
+            depth++;
+
+            var inMap = false;
+            foreach (var mapEntry in Affix.RelatedCharacterMap.RawArray)
+            {
+                switch (MapRelatedSearchEntry(ref state, ref timer, ref candidate, wn: wn, depth: depth, values: mapEntry.RawArray))
+                {
+                    case MapRelatedStepKind.Timeout:
+                        return;
+                    case MapRelatedStepKind.InMap:
+                        inMap = true;
+                        break;
+                }
+            }
+
             if (!inMap)
             {
-                candidate = StringEx.ConcatString(candidate, word[wn]);
-                MapRelated(word, ref candidate, wn + 1, ref state, ref timer, depth + 1);
+                candidate.Append(state.Word[wn]);
+
+                if (state.Word.Length <= wn + 1)
+                {
+                    MapRelatedAdd(ref state, ref timer, candidate.CurrentSpan);
+                }
+                else if (Options.RecursiveDepthLimit >= depth)
+                {
+                    MapRelatedSearch(ref state, ref timer, ref candidate, wn + 1, depth);
+                }
             }
         }
 
@@ -1306,42 +1393,41 @@ public partial class WordList
 
         private byte CheckWordAffixPortion(WordEntry? rv, ReadOnlySpan<char> word)
         {
-            var noSuffix = rv is not null;
-            if (!noSuffix)
-            {
-                rv = _query.SuffixCheck(word, AffixEntryOptions.None, null, default, default, CompoundOptions.Not); // only suffix
-            }
-
+            var noSuffix = false;
             if (rv is null)
             {
-                if (Affix.ContClasses.IsEmpty)
-                {
-                    goto noResult;
-                }
+                noSuffix = true;
 
-                rv = _query.SuffixCheckTwoSfx(word, AffixEntryOptions.None, null, default)
-                    ?? _query.PrefixCheckTwoSfx(word, CompoundOptions.Not, default);
+                rv = _query.SuffixCheck(word, AffixEntryOptions.None, null, default, default, CompoundOptions.Not); // only suffix
+
+                if (rv is null)
+                {
+                    if (Affix.ContClasses.IsEmpty)
+                    {
+                        goto noResult;
+                    }
+
+                    rv = _query.SuffixCheckTwoSfx(word, AffixEntryOptions.None, null, default)
+                        ?? _query.PrefixCheckTwoSfx(word, CompoundOptions.Not, default);
+
+                    if (rv is null)
+                    {
+                        goto noResult;
+                    }
+                }
             }
 
-            if (rv is not null)
+            // check forbidden words
+            if (rv.ContainsAnyFlags(Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest_OnlyInCompound))
             {
-                // check forbidden words
-                if (rv.ContainsAnyFlags(Affix.Flags_ForbiddenWord_OnlyUpcase_NoSuggest_OnlyInCompound))
-                {
-                    goto noResult;
-                }
-
-                // XXX obsolete
-                if (rv.ContainsFlag(Affix.CompoundFlag))
-                {
-                    return noSuffix ? (byte)3 : (byte)2;
-                }
-
-                return 1;
+                goto noResult;
             }
+
+            return rv.ContainsFlag(Affix.CompoundFlag)
+                ? (noSuffix ? (byte)3 : (byte)2) // XXX obsolete
+                : (byte)1;
 
         noResult:
-
             return 0;
         }
 
@@ -1357,34 +1443,42 @@ public partial class WordList
         /// </remarks>
         private byte CheckWord(ReadOnlySpan<char> word, byte cpdSuggest)
         {
-            WordEntry? rv;
-            if (cpdSuggest >= 1)
+            return cpdSuggest > 0
+                ? CheckWord_CpdSuggest(word, cpdSuggest)
+                : CheckWord_CpdSuggestZero(word);
+        }
+
+        private byte CheckWord_CpdSuggest(ReadOnlySpan<char> word, byte cpdSuggest)
+        {
+            if (Affix.HasCompound)
             {
-                if (Affix.HasCompound)
+                var rwords = IncrementalWordList.GetRoot(); // buffer for COMPOUND pattern checking
+                var rv = _query.CompoundCheck(
+                    word, 0, 0, 100, rwords, huMovRule: false, isSug: true,
+                    info: cpdSuggest == 1 ? SpellCheckResultType.Compound2 : SpellCheckResultType.None); // EXT
+                IncrementalWordList.ReturnRoot(ref rwords);
+
+                // TODO filter 3-word or more compound words, as in spell()
+                // (it's too slow to call suggest() here for all possible compound words)
+                if (rv is not null && !(TryLookupFirstDetail(word, out var rvDetail) && rvDetail.ContainsAnyFlags(Affix.Flags_ForbiddenWord_NoSuggest)))
                 {
-                    var rwords = IncrementalWordList.GetRoot(); // buffer for COMPOUND pattern checking
-                    rv = _query.CompoundCheck(
-                        word, 0, 0, 100, rwords, huMovRule: false, isSug: true,
-                        info: cpdSuggest == 1 ? SpellCheckResultType.Compound2 : SpellCheckResultType.None); // EXT
-                    IncrementalWordList.ReturnRoot(ref rwords);
-
-                    // TODO filter 3-word or more compound words, as in spell()
-                    // (it's too slow to call suggest() here for all possible compound words)
-                    if (rv is not null && (!TryLookupFirstDetail(word, out var rvDetail) || !rvDetail.ContainsAnyFlags(Affix.Flags_ForbiddenWord_NoSuggest)))
-                    {
-                        return 3; // XXX obsolote categorisation + only ICONV needs affix flag check?
-                    }
+                    return 3; // XXX obsolote categorisation + only ICONV needs affix flag check?
                 }
-
-                return 0;
             }
 
-            // get homonyms
+            return 0;
+        }
+
+        private byte CheckWord_CpdSuggestZero(ReadOnlySpan<char> word)
+        {
+            WordEntry? rv;
             if (_query.TryLookupDetails(word, out var wordString, out var rvDetails))
             {
 #if DEBUG
                 if (rvDetails is not { Length: > 0 }) ExceptionEx.ThrowInvalidOperation();
 #endif
+
+                // get homonyms
 
                 if (rvDetails[0].ContainsAnyFlags(Affix.Flags_ForbiddenWord_NoSuggest_SubStandard))
                 {
@@ -1412,34 +1506,42 @@ public partial class WordList
         /// </remarks>
         private byte CheckWord(string word, byte cpdSuggest)
         {
-            WordEntry? rv;
-            if (cpdSuggest >= 1)
+            return cpdSuggest > 0
+                ? CheckWord_CpdSuggest(word, cpdSuggest)
+                : CheckWord_CpdSuggestZero(word);
+        }
+
+        private byte CheckWord_CpdSuggest(string word, byte cpdSuggest)
+        {
+            if (Affix.HasCompound)
             {
-                if (Affix.HasCompound)
+                var rwords = IncrementalWordList.GetRoot(); // buffer for COMPOUND pattern checking
+                var rv = _query.CompoundCheck(
+                    word.AsSpan(), 0, 0, 100, rwords, huMovRule: false, isSug: true,
+                    info: cpdSuggest == 1 ? SpellCheckResultType.Compound2 : SpellCheckResultType.None); // EXT
+                IncrementalWordList.ReturnRoot(ref rwords);
+
+                // TODO filter 3-word or more compound words, as in spell()
+                // (it's too slow to call suggest() here for all possible compound words)
+                if (rv is not null && (!TryLookupFirstDetail(word, out var rvDetail) || !rvDetail.ContainsAnyFlags(Affix.Flags_ForbiddenWord_NoSuggest)))
                 {
-                    var rwords = IncrementalWordList.GetRoot(); // buffer for COMPOUND pattern checking
-                    rv = _query.CompoundCheck(
-                        word.AsSpan(), 0, 0, 100, rwords, huMovRule: false, isSug: true,
-                        info: cpdSuggest == 1 ? SpellCheckResultType.Compound2 : SpellCheckResultType.None); // EXT
-                    IncrementalWordList.ReturnRoot(ref rwords);
-
-                    // TODO filter 3-word or more compound words, as in spell()
-                    // (it's too slow to call suggest() here for all possible compound words)
-                    if (rv is not null && (!TryLookupFirstDetail(word, out var rvDetail) || !rvDetail.ContainsAnyFlags(Affix.Flags_ForbiddenWord_NoSuggest)))
-                    {
-                        return 3; // XXX obsolote categorisation + only ICONV needs affix flag check?
-                    }
+                    return 3; // XXX obsolote categorisation + only ICONV needs affix flag check?
                 }
-
-                return 0;
             }
 
-            // get homonyms
+            return 0;
+        }
+
+        private byte CheckWord_CpdSuggestZero(string word)
+        {
+            WordEntry? rv;
             if (_query.TryLookupDetails(word, out var rvDetails))
             {
 #if DEBUG
                 if (rvDetails is not { Length: > 0 }) ExceptionEx.ThrowInvalidOperation();
 #endif
+
+                // get homonyms
 
                 if (rvDetails[0].ContainsAnyFlags(Affix.Flags_ForbiddenWord_NoSuggest_SubStandard))
                 {
@@ -1509,7 +1611,7 @@ public partial class WordList
                         var prev = 0;
                         while (sp >= 0)
                         {
-                            if (CheckWord(candidate.AsSpan(prev, sp - prev), cpdSuggest: 0) != 0)
+                            if (CheckWord_CpdSuggestZero(candidate.AsSpan(prev, sp - prev)) != 0)
                             {
                                 if (TestSug(candidate.AsSpan(sp + 1), ref state))
                                 {
@@ -1882,7 +1984,7 @@ public partial class WordList
                             if (
                                 (guess.GuessOrig ?? guess.Guess).Contains(wlst[j])
                                 || // check forbidden words
-                                CheckWord(guess.Guess, cpdSuggest: 0) == 0
+                                CheckWord_CpdSuggestZero(guess.Guess) == 0
                             )
                             {
                                 unique = false;
@@ -1921,7 +2023,7 @@ public partial class WordList
                             if (
                                 rootPhon.Contains(wlst[j])
                                 || // check forbidden words
-                                CheckWord(rootPhon, cpdSuggest: 0) == 0
+                                CheckWord_CpdSuggestZero(rootPhon) == 0
                             )
                             {
                                 unique = false;
@@ -2440,7 +2542,7 @@ public partial class WordList
         /// </summary>
         private readonly string Add(PrefixEntry entry, string word)
         {
-            if (word.Length >= entry.Strip.Length || (word.Length == 0 && Affix.FullStrip))
+            if (word.Length >= entry.Strip.Length || word.Length >= Affix.FullStripMinLength)
             {
                 if (entry.TestCondition(word.AsSpan()))
                 {
@@ -2467,7 +2569,7 @@ public partial class WordList
         private readonly string ConcatWithSuffix(string word, SuffixEntry entry)
         {
             // make sure all conditions match
-            if (word.Length > entry.Strip.Length || (word.Length == 0 && Affix.FullStrip))
+            if (word.Length > entry.Strip.Length || word.Length >= Affix.FullStripMinLength)
             {
                 if (entry.TestCondition(word.AsSpan()))
                 {
@@ -2477,7 +2579,7 @@ public partial class WordList
                         return string.Concat(word, entry.Append);
                     }
 
-                    if (word.AsSpan(word.Length - entry.Strip.Length).EqualsOrdinal(entry.Strip))
+                    if (word.AsSpan(word.Length - entry.Strip.Length).SequenceEqual(entry.Strip.AsSpan()))
                     {
                         // we have a match so add suffix
                         return word.AsSpanRemoveFromEnd(entry.Strip.Length).ConcatString(entry.Append);

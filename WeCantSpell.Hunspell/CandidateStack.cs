@@ -71,7 +71,7 @@ internal struct CandidateStack
             _s0 is not null
             &&
             (
-                StringEx.EqualsOrdinal(_s0, value)
+                _s0.AsSpan().SequenceEqual(value)
                 ||
                 (_rest is not null && _rest.Contains(value))
             );

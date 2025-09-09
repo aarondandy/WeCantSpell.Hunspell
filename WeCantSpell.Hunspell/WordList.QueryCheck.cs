@@ -91,7 +91,7 @@ public partial class WordList
                 return SpellCheckResult.DefaultWrong;
             }
 
-            if (word.StartsWith(Query.DefaultXmlTokenCheckPrefix, StringComparison.Ordinal))
+            if (word.StartsWith(Query.DefaultXmlTokenCheckPrefix.AsSpan()))
             {
                 // Hunspell supports XML input of the simplified API (see manual)
                 return SpellCheckResult.DefaultCorrect;
@@ -273,7 +273,7 @@ public partial class WordList
                 var pLastIndex = breakEntry.Length - 1;
                 if (
                     breakEntry[0] == '^'
-                    && scw.AsSpan(0, pLastIndex).EqualsOrdinal(breakEntry.AsSpan(1))
+                    && scw.AsSpan(0, pLastIndex).SequenceEqual(breakEntry.AsSpan(1))
                     && CheckNested(scw.AsSpan(pLastIndex))
                 )
                 {
@@ -282,7 +282,7 @@ public partial class WordList
 
                 if (
                     breakEntry[pLastIndex] == '$'
-                    && scw.AsSpan(scw.Length - pLastIndex).EqualsOrdinal(breakEntry.AsSpan(0, pLastIndex))
+                    && scw.AsSpan(scw.Length - pLastIndex).SequenceEqual(breakEntry.AsSpan(0, pLastIndex))
                     && CheckNested(scw.AsSpan(0, scw.Length - pLastIndex))
                 )
                 {
