@@ -33,6 +33,25 @@ internal static partial class StringEx
 
 #endif
 
+    public static bool IsSubset(string s1, string s2)
+    {
+        if (s1.Length <= s2.Length)
+        {
+            for (var i = 0; i < s1.Length; i++)
+            {
+                if (s1[i] != '.' && s1[i] != s2[i])
+                {
+                    goto fail;
+                }
+            }
+
+            return true;
+        }
+
+    fail:
+        return false;
+    }
+
     public static bool IsSubset(string s1, ReadOnlySpan<char> s2)
     {
         if (s1.Length <= s2.Length)
@@ -77,7 +96,7 @@ internal static partial class StringEx
 
     public static bool IsNumericWord(string word)
     {
-        var isNum = false; // 0 = begin, 1 = number, 2 = separator
+        var isNum = false;
         foreach (var c in word)
         {
             switch (c)
@@ -190,7 +209,7 @@ internal static partial class StringEx
             var expectedFirstLetter = textInfo.ToUpper(actualFirstLetter);
             if (expectedFirstLetter != actualFirstLetter)
             {
-                s = StringEx.ConcatString(expectedFirstLetter, s.AsSpan(1));
+                s = ConcatString(expectedFirstLetter, s.AsSpan(1));
             }
         }
 
@@ -211,7 +230,7 @@ internal static partial class StringEx
             var expectedFirstLetter = textInfo.ToLower(actualFirstLetter);
             if (expectedFirstLetter != actualFirstLetter)
             {
-                s = StringEx.ConcatString(expectedFirstLetter, s.AsSpan(1));
+                s = ConcatString(expectedFirstLetter, s.AsSpan(1));
             }
         }
 
@@ -265,50 +284,33 @@ internal static partial class StringEx
 
             if (!hasFoundMoreCaps && char.IsUpper(c))
             {
-                hasFoundMoreCaps = true;
-
                 if (hasLower)
                 {
-                    break;
+                    goto handleHuh;
                 }
+
+                hasFoundMoreCaps = true;
             }
             else if (!hasLower && charIsNotNeutral(c, textInfo))
             {
-                hasLower = true;
-
                 if (hasFoundMoreCaps)
                 {
-                    break;
+                    goto handleHuh;
                 }
+
+                hasLower = true;
             }
         }
 
-        if (firstIsUpper)
+        if (hasFoundMoreCaps)
         {
-            if (!hasFoundMoreCaps)
-            {
-                return CapitalizationType.Init;
-            }
-
-            if (hasLower)
-            {
-                return CapitalizationType.HuhInit;
-            }
-        }
-        else
-        {
-            if (!hasFoundMoreCaps)
-            {
-                return CapitalizationType.None;
-            }
-
-            if (hasLower)
-            {
-                return CapitalizationType.Huh;
-            }
+            return CapitalizationType.All;
         }
 
-        return CapitalizationType.All;
+        return firstIsUpper ? CapitalizationType.Init : CapitalizationType.None;
+
+    handleHuh:
+        return firstIsUpper ? CapitalizationType.HuhInit : CapitalizationType.Huh;
 
         static bool charIsNotNeutral(char c, TextInfo textInfo) => c < 128
             ? c is >= 'a' and <= 'z' // For ASCII, only the a-z range needs to be checked

@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 
 namespace WeCantSpell.Hunspell;
 
+[DebuggerDisplay("HasBeenCanceled = {HasBeenCanceled}")]
 internal struct OperationTimedLimiter
 {
     public OperationTimedLimiter(TimeSpan timeLimit, CancellationToken cancellationToken)

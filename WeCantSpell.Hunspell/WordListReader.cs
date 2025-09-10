@@ -9,30 +9,6 @@ namespace WeCantSpell.Hunspell;
 
 public sealed class WordListReader
 {
-    private WordListReader(WordList.Builder? builder, AffixConfig affix)
-    {
-        if (builder is null)
-        {
-            _ownsBuilder = true;
-            builder = new WordList.Builder(affix);
-        }
-
-        Builder = builder;
-        Affix = affix;
-        FlagParser = new FlagParser(Affix.FlagMode, Affix.Encoding);
-    }
-
-    private readonly bool _ownsBuilder;
-    private bool _hasInitialized;
-
-    private WordList.Builder Builder { get; }
-
-    private AffixConfig Affix { get; }
-
-    private FlagParser FlagParser { get; }
-
-    private TextInfo TextInfo => Affix.Culture.TextInfo;
-
     public static Task<WordList> ReadFileAsync(string dictionaryFilePath, CancellationToken cancellationToken = default)
     {
 #if HAS_THROWNULL
@@ -55,12 +31,16 @@ public sealed class WordListReader
         ExceptionEx.ThrowIfArgumentNull(affixFilePath, nameof(affixFilePath));
 #endif
 
-        var affix = await AffixReader.ReadFileAsync(affixFilePath, cancellationToken).ConfigureAwait(false);
-        return await ReadFileAsync(dictionaryFilePath, affix, cancellationToken);
+        var affixReader = new AffixReader(builder: null);
+        var affix = await affixReader.ReadFileLinesAsync(affixFilePath, cancellationToken).ConfigureAwait(false);
+        var wordListReader = new WordListReader(builder: null, affix, affixReader);
+        return await wordListReader.ReadFileLinesAsync(dictionaryFilePath, cancellationToken);
     }
 
-    public static Task<WordList> ReadFileAsync(string dictionaryFilePath, AffixConfig affix, CancellationToken cancellationToken = default) =>
-        ReadFileAsync(dictionaryFilePath, affix, builder: null, cancellationToken);
+    public static Task<WordList> ReadFileAsync(string dictionaryFilePath, AffixConfig affix, CancellationToken cancellationToken = default)
+    {
+        return ReadFileAsync(dictionaryFilePath, affix, builder: null, cancellationToken);
+    }
 
     public static async Task<WordList> ReadFileAsync(string dictionaryFilePath, AffixConfig affix, WordList.Builder? builder, CancellationToken cancellationToken = default)
     {
@@ -90,10 +70,12 @@ public sealed class WordListReader
         return await ReadAsync(dictionaryStream, affix, cancellationToken);
     }
 
-    public static Task<WordList> ReadAsync(Stream dictionaryStream, AffixConfig affix, CancellationToken cancellationToken = default) =>
-        ReadAsync(dictionaryStream, affix, builder: null, cancellationToken);
+    public static Task<WordList> ReadAsync(Stream dictionaryStream, AffixConfig affix, CancellationToken cancellationToken = default)
+    {
+        return ReadAsync(dictionaryStream, affix, builder: null, cancellationToken);
+    }
 
-    public static async Task<WordList> ReadAsync(Stream dictionaryStream, AffixConfig affix, WordList.Builder? builder, CancellationToken cancellationToken = default)
+    public static Task<WordList> ReadAsync(Stream dictionaryStream, AffixConfig affix, WordList.Builder? builder, CancellationToken cancellationToken = default)
     {
 #if HAS_THROWNULL
         ArgumentNullException.ThrowIfNull(dictionaryStream);
@@ -103,17 +85,7 @@ public sealed class WordListReader
         ExceptionEx.ThrowIfArgumentNull(affix, nameof(affix));
 #endif
 
-        var readerInstance = new WordListReader(builder, affix);
-
-        using (var lineReader = new LineReader(dictionaryStream, affix.Encoding))
-        {
-            while (await lineReader.ReadNextAsync(cancellationToken))
-            {
-                readerInstance.ParseLine(lineReader.CurrentSpan);
-            }
-        }
-
-        return readerInstance.BuildWordList(allowDestructive: true);
+        return new WordListReader(builder, affix).ReadLinesAsync(dictionaryStream, cancellationToken);
     }
 
     public static WordList ReadFile(string dictionaryFilePath)
@@ -137,13 +109,16 @@ public sealed class WordListReader
         ExceptionEx.ThrowIfArgumentNull(dictionaryFilePath, nameof(dictionaryFilePath));
         ExceptionEx.ThrowIfArgumentNull(affixFilePath, nameof(affixFilePath));
 #endif
-
-        var affix = AffixReader.ReadFile(affixFilePath);
-        return ReadFile(dictionaryFilePath, affix);
+        var affixReader = new AffixReader(builder: null);
+        var affix = affixReader.ReadFileLines(affixFilePath);
+        var wordListReader = new WordListReader(builder: null, affix, affixReader);
+        return wordListReader.ReadFileLines(dictionaryFilePath);
     }
 
-    public static WordList ReadFile(string dictionaryFilePath, AffixConfig affix) =>
-        ReadFile(dictionaryFilePath, affix, builder: null);
+    public static WordList ReadFile(string dictionaryFilePath, AffixConfig affix)
+    {
+        return ReadFile(dictionaryFilePath, affix, builder: null);
+    }
 
     public static WordList ReadFile(string dictionaryFilePath, AffixConfig affix, WordList.Builder? builder)
     {
@@ -173,8 +148,10 @@ public sealed class WordListReader
         return Read(dictionaryStream, affix);
     }
 
-    public static WordList Read(Stream dictionaryStream, AffixConfig affix) =>
-        Read(dictionaryStream, affix, builder: null);
+    public static WordList Read(Stream dictionaryStream, AffixConfig affix)
+    {
+        return Read(dictionaryStream, affix, builder: null);
+    }
 
     public static WordList Read(Stream dictionaryStream, AffixConfig affix, WordList.Builder? builder)
     {
@@ -186,20 +163,7 @@ public sealed class WordListReader
         ExceptionEx.ThrowIfArgumentNull(affix, nameof(affix));
 #endif
 
-        var readerInstance = new WordListReader(builder, affix);
-
-        using var lineReader = new LineReader(dictionaryStream, affix.Encoding);
-        while (lineReader.ReadNext())
-        {
-            readerInstance.ParseLine(lineReader.CurrentSpan);
-        }
-
-        return readerInstance.Builder.MoveToImmutable();
-    }
-
-    private WordList BuildWordList(bool allowDestructive)
-    {
-        return Builder.ToImmutable(allowDestructive: _ownsBuilder && allowDestructive);
+        return new WordListReader(builder, affix).ReadLines(dictionaryStream);
     }
 
     private static string FindAffixFilePath(string dictionaryFilePath)
@@ -225,6 +189,101 @@ public sealed class WordListReader
         return Path.ChangeExtension(dictionaryFilePath, "aff");
     }
 
+    private WordListReader(WordList.Builder? builder, AffixConfig affix)
+        : this(builder, affix, new(affix), new(affix))
+    {
+    }
+
+    private WordListReader(
+        WordList.Builder? builder,
+        AffixConfig affix,
+        AffixReader affixReader)
+        : this(builder, affix, affixReader.FlagParser, affixReader.MorphParser)
+    {
+    }
+
+    private WordListReader(
+        WordList.Builder? builder,
+        AffixConfig affix,
+        FlagParser flagParser,
+        MorphSetParser morphSetParser)
+    {
+        if (builder is null)
+        {
+            _ownsBuilder = true;
+            builder = new WordList.Builder(affix);
+        }
+
+        Builder = builder;
+        Affix = affix;
+        _flagParser = flagParser;
+        _morphParser = morphSetParser;
+
+        _parseWordLineFlags = Affix.IsAliasF
+            ? GetAliasedFlagSet
+            : _flagParser.ParseFlagSet;
+
+        _parseWordLineMorphs = Affix.IsAliasM
+            ? GetAliasedMorphSet
+            : _morphParser.ParseMorphSet;
+
+        _parseWordLineWord = Affix.ComplexPrefixes || Affix.IgnoredChars.HasItems
+            ? ParseWordGeneral
+            : ParseWordSimple;
+    }
+
+    private readonly ParseFlagSetDelegate _parseWordLineFlags;
+    private readonly ParseMorphSetDelegate _parseWordLineMorphs;
+    private readonly ParseWordDelegate _parseWordLineWord;
+    private readonly FlagParser _flagParser;
+    private readonly MorphSetParser _morphParser;
+    private readonly bool _ownsBuilder;
+    private bool _hasInitialized;
+
+    private WordList.Builder Builder { get; }
+
+    private AffixConfig Affix { get; }
+
+    private TextInfo TextInfo => Affix.Culture.TextInfo;
+
+    public async Task<WordList> ReadFileLinesAsync(string filePath, CancellationToken cancellationToken)
+    {
+        using var stream = StreamEx.OpenAsyncReadFileStream(filePath);
+        return await ReadLinesAsync(stream, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<WordList> ReadLinesAsync(Stream dictionaryStream, CancellationToken cancellationToken = default)
+    {
+        using (var lineReader = new LineReader(dictionaryStream, Affix.Encoding))
+        {
+            while (await lineReader.ReadNextAsync(cancellationToken))
+            {
+                ParseLine(lineReader.CurrentSpan);
+            }
+        }
+
+        return ExtractOrBuild();
+    }
+
+    public WordList ReadFileLines(string filePath)
+    {
+        using var stream = StreamEx.OpenAsyncReadFileStream(filePath);
+        return ReadLines(stream);
+    }
+
+    public WordList ReadLines(Stream dictionaryStream)
+    {
+        using (var lineReader = new LineReader(dictionaryStream, Affix.Encoding))
+        {
+            while (lineReader.ReadNext())
+            {
+                ParseLine(lineReader.CurrentSpan);
+            }
+        }
+
+        return Builder.Extract();
+    }
+
     private void ParseLine(ReadOnlySpan<char> line)
     {
         if (line.Length > 0)
@@ -239,22 +298,113 @@ public sealed class WordListReader
                 Builder.InitializeEntriesByRoot(-1);
             }
 
-            var parsed = ParsedWordLine.Parse(line);
-            if (parsed.Word.Length > 0)
+            int i;
+
+            // read past any leading tabs or spaces
+            for (i = 0; i < line.Length && line[i].IsTabOrSpace(); ++i) ;
+
+            if (i < line.Length)
             {
-                AddWord(
-                    parsed.Word.ReplaceIntoString(@"\/", @"/"),
-                    parsed.Flags.IsEmpty
-                        ? FlagSet.Empty
-                        : (Affix.IsAliasF ? GetAliasedFlagSet(parsed.Flags) : FlagParser.ParseFlagSet(parsed.Flags)),
-                    parsed.Morphs);
+                if (i > 0)
+                {
+                    line = line.Slice(i);
+                }
+
+                // Try to locate the end of the word part of a line, taking morphs into consideration
+                i = findIndexOfFirstMorphByColonCharAndSpacingHints(line);
+                if (i <= 0)
+                {
+                    i = line.IndexOf('\t'); // For some reason, this does not include space
+                    if (i < 0)
+                    {
+                        i = line.Length;
+                    }
+                }
+
+                for (; i > 0 && line[i - 1].IsTabOrSpace(); --i) ;
+
+                if (i > 0)
+                {
+                    var wordPart = line.Slice(0, i);
+                    FlagSet flags;
+
+                    var flagsDelimiterPosition = indexOfFlagsDelimiter(wordPart);
+                    if (flagsDelimiterPosition < wordPart.Length)
+                    {
+                        flags = _parseWordLineFlags(wordPart.Slice(flagsDelimiterPosition + 1));
+                        wordPart = wordPart.Slice(0, flagsDelimiterPosition);
+                    }
+                    else
+                    {
+                        flags = FlagSet.Empty;
+                    }
+
+                    AddWord(
+                        _parseWordLineWord(wordPart),
+                        flags,
+                        (i + 1) < line.Length ? _parseWordLineMorphs(line.Slice(i + 1)) : MorphSet.Empty);
+                }
             }
+        }
+
+        static int findIndexOfFirstMorphByColonCharAndSpacingHints(ReadOnlySpan<char> text)
+        {
+            var index = 0;
+            while ((index = text.IndexOf(':', index)) >= 0)
+            {
+                var checkLocation = index - 3;
+                if (checkLocation >= 0 && text[checkLocation].IsTabOrSpace())
+                {
+                    return checkLocation;
+                }
+
+                index++;
+            }
+
+            return -1;
+        }
+
+        static int indexOfFlagsDelimiter(ReadOnlySpan<char> text)
+        {
+            // NOTE: the first character is ignored as a single slash should be treated as a word
+            int i;
+            for (i = 1; i < text.Length; i++)
+            {
+                if (text[i] == '/' && text[i - 1] != '\\')
+                {
+                    break;
+                }
+            }
+
+            return i;
         }
     }
 
-    private FlagSet GetAliasedFlagSet(ReadOnlySpan<char> flagNumber)
+    private string ParseWordGeneral(ReadOnlySpan<char> text)
     {
-        if (IntEx.TryParseInvariant(flagNumber, out var flagAliasNumber) && Affix.TryGetAliasF(flagAliasNumber, out var aliasedFlags))
+        var word = text.ReplaceIntoString(@"\/", @"/");
+
+        if (Affix.IgnoredChars.HasItems)
+        {
+            word = Affix.IgnoredChars.RemoveChars(word);
+        }
+
+        if (Affix.ComplexPrefixes)
+        {
+            word = word.GetReversed();
+        }
+
+        return word;
+    }
+
+    private string ParseWordSimple(ReadOnlySpan<char> text)
+    {
+        return text.ReplaceIntoString(@"\/", @"/");
+    }
+
+    private FlagSet GetAliasedFlagSet(ReadOnlySpan<char> flagNumberText)
+    {
+        if (Affix.AliasF.TryGetByNumber(flagNumberText, out var aliasedFlags))
         {
             return aliasedFlags;
         }
@@ -265,23 +415,46 @@ public sealed class WordListReader
         }
     }
 
+    MorphSet GetAliasedMorphSet(ReadOnlySpan<char> morphsText)
+    {
+        var morphBuilder = ArrayBuilder<string>.Pool.Get();
+        foreach (var originalValue in morphsText.SplitOnTabOrSpace())
+        {
+            if (Affix.AliasM.TryGetByNumber(originalValue, out var aliasedMorph))
+            {
+                morphBuilder.AddRange(aliasedMorph.RawArray);
+            }
+            else
+            {
+                morphBuilder.Add(originalValue.ToString());
+            }
+        }
+
+        return MorphSet.CreateUsingArray(ArrayBuilder<string>.Pool.ExtractAndReturn(morphBuilder));
+    }
+
     private bool AttemptToProcessInitializationLine(ReadOnlySpan<char> text)
     {
+        int i;
         _hasInitialized = true;
 
         // read through any leading spaces
-        int i;
         for (i = 0; i < text.Length && char.IsWhiteSpace(text[i]); i++) ;
-        text = text.Slice(i);
+
+        if (i > 0)
+        {
+            text = text.Slice(i);
+        }
 
         // find the possible value
         for (i = 0; i < text.Length && !char.IsWhiteSpace(text[i]); i++) ;
+
         if (i < text.Length)
         {
             text = text.Slice(0, i);
         }
 
-        if (!text.IsEmpty && IntEx.TryParseInvariant(text, out var expectedSize))
+        if (text.Length > 0 && IntEx.TryParseInvariant(text, out var expectedSize))
         {
             Builder.InitializeEntriesByRoot(expectedSize);
 
@@ -291,217 +464,157 @@ public sealed class WordListReader
         return false;
     }
 
-    private void AddWord(string word, FlagSet flags, string[] morphs)
+    private void AddWord(string word, FlagSet flags, MorphSet morphs)
     {
-        if (Affix.IgnoredChars.HasItems)
-        {
-            word = Affix.IgnoredChars.RemoveChars(word);
-        }
-
-        if (Affix.ComplexPrefixes)
-        {
-            word = word.GetReversed();
-
-            if (morphs.Length != 0 && !Affix.IsAliasM)
-            {
-                morphs = MorphSet.CreateReversedStrings(morphs);
-            }
-        }
-
         var capType = StringEx.GetCapitalizationType(word, TextInfo);
-        AddWord(word, flags, morphs, false, capType);
+        AddWord(word, flags, morphs, onlyUpperCase: false, capType);
         AddWordCapitalized(word, flags, morphs, capType);
     }
 
-    private string[] AddWord_HandleMorph(string[] morphs, string word, CapitalizationType capType, ref WordEntryOptions options)
+    private void AddWord_HandleMorph(MorphSet morphs, string word, CapitalizationType capType, ref WordEntryOptions options)
     {
-        if (Affix.IsAliasM)
-        {
-            options |= WordEntryOptions.AliasM;
-            var morphBuilder = ArrayBuilder<string>.Pool.Get();
-            foreach (var originalValue in morphs)
-            {
-                if (IntEx.TryParseInvariant(originalValue, out var morphNumber) && Affix.TryGetAliasM(morphNumber, out var aliasedMorph))
-                {
-                    morphBuilder.AddRange(aliasedMorph.GetInternalArray());
-                }
-                else
-                {
-                    morphBuilder.Add(originalValue);
-                }
-            }
-
-            morphs = ArrayBuilder<string>.Pool.ExtractAndReturn(morphBuilder);
-        }
-
         var morphPhonEnumerator = new AddWordMorphFilterEnumerator(morphs);
-        if (morphPhonEnumerator.MoveNext())
+        if (!morphPhonEnumerator.MoveNext())
         {
-            options |= WordEntryOptions.Phon;
-
-            // store ph: fields (pronounciation, misspellings, old orthography etc.)
-            // of a morphological description in reptable to use in REP replacements.
-
-            do
-            {
-                var ph = morphPhonEnumerator.Current.AsSpan(MorphologicalTags.Phon.Length);
-                if (ph.Length == 0)
-                {
-                    continue;
-                }
-
-                ReadOnlySpan<char> wordpart;
-                // dictionary based REP replacement, separated by "->"
-                // for example "pretty ph:prity ph:priti->pretti" to handle
-                // both prity -> pretty and pritier -> prettiest suggestions.
-                var strippatt = ph.IndexOf("->".AsSpan());
-                if (strippatt > 0 && strippatt < (ph.Length - 2))
-                {
-                    wordpart = ph.Slice(strippatt + 2);
-                    ph = ph.Slice(0, strippatt);
-                }
-                else
-                {
-                    wordpart = word.AsSpan();
-                }
-
-                // when the ph: field ends with the character *,
-                // strip last character of the pattern and the replacement
-                // to match in REP suggestions also at character changes,
-                // for example, "pretty ph:prity*" results "prit->prett"
-                // REP replacement instead of "prity->pretty", to get
-                // prity->pretty and pritiest->prettiest suggestions.
-                if (ph.EndsWith('*'))
-                {
-                    if (ph.Length > 2 && wordpart.Length > 1)
-                    {
-                        ph = ph.Slice(0, ph.Length - 2);
-                        wordpart = wordpart.Slice(0, word.Length - 1);
-                    }
-                }
-
-                var phString = ph.ToString();
-                var wordpartString = wordpart.ToString();
-
-                // capitalize lowercase pattern for capitalized words to support
-                // good suggestions also for capitalized misspellings, eg.
-                // Wednesday ph:wendsay
-                // results wendsay -> Wednesday and Wendsay -> Wednesday, too.
-                if (capType == CapitalizationType.Init)
-                {
-                    var phCapitalized = StringEx.MakeInitCap(phString, Affix.Culture.TextInfo);
-                    if (phCapitalized.Length != 0)
-                    {
-                        // add also lowercase word in the case of German or
-                        // Hungarian to support lowercase suggestions lowercased by
-                        // compound word generation or derivational suffixes
-                        // (for example by adjectival suffix "-i" of geographical
-                        // names in Hungarian:
-                        // Massachusetts ph:messzecsuzec
-                        // messzecsuzeci -> massachusettsi (adjective)
-                        // For lowercasing by conditional PFX rules, see
-                        // tests/germancompounding test example or the
-                        // Hungarian dictionary.)
-                        if (Affix.IsGerman || Affix.IsHungarian)
-                        {
-                            var wordpartLower = StringEx.MakeAllSmall(wordpartString, Affix.Culture.TextInfo);
-                            Builder._phoneticReplacements.Add(new SingleReplacement(phString, wordpartLower, ReplacementValueType.Med));
-                        }
-
-                        Builder._phoneticReplacements.Add(new SingleReplacement(phCapitalized, wordpartString, ReplacementValueType.Med));
-                    }
-                }
-
-                Builder._phoneticReplacements.Add(new SingleReplacement(phString, wordpartString, ReplacementValueType.Med));
-            }
-            while (morphPhonEnumerator.MoveNext());
+            return;
         }
 
-        return morphs;
-    }
+        options |= WordEntryOptions.Phon;
 
-    private struct AddWordMorphFilterEnumerator
-    {
-        public AddWordMorphFilterEnumerator(string[] morphs)
+        // store ph: fields (pronounciation, misspellings, old orthography etc.)
+        // of a morphological description in reptable to use in REP replacements.
+
+        do
         {
-            _morphs = morphs;
-            _index = 0;
-            Current = default!;
-        }
-
-        private readonly string[] _morphs;
-        public string Current;
-        private int _index;
-
-        public bool MoveNext()
-        {
-            var i = _index;
-            while (i < _morphs.Length)
+            if (morphPhonEnumerator.Current.Length <= MorphologicalTags.Phon.Length)
             {
-                var morph = _morphs[i++];
-                if (morph.StartsWith(MorphologicalTags.Phon))
-                {
-                    Current = morph;
-                    _index = i;
-                    return true;
-                }
+                continue;
             }
 
-            Current = default!;
-            _index = i;
-            return false;
-        }
-    }
+            var ph = morphPhonEnumerator.Current.AsSpan(MorphologicalTags.Phon.Length);
 
-    private void AddWord(string word, FlagSet flags, string[] morphs, bool onlyUpperCase, CapitalizationType capType)
-    {
-        // store the description string or its pointer
-        var options = capType == CapitalizationType.Init ? WordEntryOptions.InitCap : WordEntryOptions.None;
-        if (morphs.Length != 0)
-        {
-            morphs = AddWord_HandleMorph(morphs, word, capType, ref options);
-        }
-
-        ref var details = ref Builder._entryDetailsByRoot.GetOrAdd(word);
-
-        if (details is not null)
-        {
-            if (onlyUpperCase)
+            ReadOnlySpan<char> wordpart;
+            // dictionary based REP replacement, separated by "->"
+            // for example "pretty ph:prity ph:priti->pretti" to handle
+            // both prity -> pretty and pritier -> prettiest suggestions.
+            var strippatt = ph.IndexOf("->".AsSpan());
+            if (strippatt > 0 && strippatt < (ph.Length - 2))
             {
-                if (details.Length != 0)
-                {
-                    return;
-                }
+                wordpart = ph.Slice(strippatt + 2);
+                ph = ph.Slice(0, strippatt);
             }
             else
             {
-                for (var i = 0; i < details.Length; i++)
+                wordpart = word.AsSpan();
+            }
+
+            // when the ph: field ends with the character *,
+            // strip last character of the pattern and the replacement
+            // to match in REP suggestions also at character changes,
+            // for example, "pretty ph:prity*" results "prit->prett"
+            // REP replacement instead of "prity->pretty", to get
+            // prity->pretty and pritiest->prettiest suggestions.
+            if (ph.EndsWith('*'))
+            {
+                if (ph.Length > 2 && wordpart.Length > 1)
                 {
-                    ref var entry = ref details[i];
-                    if (entry.ContainsFlag(SpecialFlags.OnlyUpcaseFlag))
+                    ph = ph.Slice(0, ph.Length - 2);
+                    wordpart = wordpart.Slice(0, word.Length - 1);
+                }
+            }
+
+            var phString = ph.ToString();
+            var wordpartString = wordpart.ToString();
+
+            // capitalize lowercase pattern for capitalized words to support
+            // good suggestions also for capitalized misspellings, eg.
+            // Wednesday ph:wendsay
+            // results wendsay -> Wednesday and Wendsay -> Wednesday, too.
+            if (capType == CapitalizationType.Init)
+            {
+                var phCapitalized = StringEx.MakeInitCap(phString, Affix.Culture.TextInfo);
+                if (phCapitalized.Length > 0)
+                {
+                    // add also lowercase word in the case of German or
+                    // Hungarian to support lowercase suggestions lowercased by
+                    // compound word generation or derivational suffixes
+                    // (for example by adjectival suffix "-i" of geographical
+                    // names in Hungarian:
+                    // Massachusetts ph:messzecsuzec
+                    // messzecsuzeci -> massachusettsi (adjective)
+                    // For lowercasing by conditional PFX rules, see
+                    // tests/germancompounding test example or the
+                    // Hungarian dictionary.)
+                    if (Affix.IsGerman || Affix.IsHungarian)
                     {
-                        entry = new(flags, entry.Morphs, entry.Options);
-                        return;
+                        Builder._phoneticReplacements.Add(new SingleReplacement(
+                            phString,
+                            StringEx.MakeAllSmall(wordpartString, Affix.Culture.TextInfo),
+                            ReplacementValueType.Med));
                     }
+
+                    Builder._phoneticReplacements.Add(new SingleReplacement(phCapitalized, wordpartString, ReplacementValueType.Med));
+                }
+            }
+
+            Builder._phoneticReplacements.Add(new SingleReplacement(phString, wordpartString, ReplacementValueType.Med));
+        }
+        while (morphPhonEnumerator.MoveNext());
+    }
+
+    private WordList ExtractOrBuild()
+    {
+        return _ownsBuilder ? Builder.Extract() : Builder.Build();
+    }
+
+    private void AddWord(string word, FlagSet flags, MorphSet morphs, bool onlyUpperCase, CapitalizationType capType)
+    {
+        // store the description string or its pointer
+        var options = capType == CapitalizationType.Init ? WordEntryOptions.InitCap : WordEntryOptions.None;
+
+        if (morphs.HasItems)
+        {
+            if (Affix.IsAliasM)
+            {
+                options |= WordEntryOptions.AliasM;
+            }
+
+            AddWord_HandleMorph(morphs, word, capType, ref options);
+        }
+
+        ref var details = ref Builder._entriesByRoot.GetOrAddValueRef(word);
+
+        if (details is not null)
+        {
+#if DEBUG
+            if (details.Length <= 0) ExceptionEx.ThrowInvalidOperation();
+#endif
+
+            if (onlyUpperCase)
+            {
+                return;
+            }
+
+            for (var i = 0; i < details.Length; i++)
+            {
+                ref var entry = ref details[i];
+                if (entry.ContainsFlag(SpecialFlags.OnlyUpcaseFlag))
+                {
+                    entry = new(flags, entry.Morphs, entry.Options);
+                    return;
                 }
             }
 
             Array.Resize(ref details, details.Length + 1);
-            details[details.Length - 1] = new(
-                flags,
-                new MorphSet(morphs),
-                options);
+            details[details.Length - 1] = new(flags, morphs, options);
         }
         else
         {
-            details =
-            [
-                new(flags, new MorphSet(morphs), options)
-            ];
+            details = [new(flags, morphs, options)];
         }
     }
 
-    private void AddWordCapitalized(string word, FlagSet flags, string[] morphs, CapitalizationType capType)
+    private void AddWordCapitalized(string word, FlagSet flags, MorphSet morphs, CapitalizationType capType)
     {
         // add inner capitalized forms to handle the following allcap forms:
         // Mixed caps: OpenOffice.org -> OPENOFFICE.ORG
@@ -517,119 +630,46 @@ public sealed class WordListReader
             flags.DoesNotContain(Affix.ForbiddenWord)
         )
         {
-            flags = flags.Union(SpecialFlags.OnlyUpcaseFlag);
-            word = StringEx.MakeTitleCase(word, Affix.Culture);
-            AddWord(word, flags, morphs, true, CapitalizationType.Init);
+            AddWord(
+                StringEx.MakeTitleCase(word, Affix.Culture),
+                flags.Union(SpecialFlags.OnlyUpcaseFlag),
+                morphs,
+                onlyUpperCase: true,
+                CapitalizationType.Init);
         }
     }
 
-    private readonly ref struct ParsedWordLine
+    private struct AddWordMorphFilterEnumerator
     {
-        private ParsedWordLine(ReadOnlySpan<char> word, ReadOnlySpan<char> flags, string[] morphs)
+        public AddWordMorphFilterEnumerator(MorphSet morphs) : this(morphs.RawArray)
         {
-            Morphs = morphs;
-            Word = word;
-            Flags = flags;
         }
 
-        public readonly string[] Morphs;
-        public readonly ReadOnlySpan<char> Word;
-        public readonly ReadOnlySpan<char> Flags;
-
-        public static ParsedWordLine Parse(ReadOnlySpan<char> line)
+        public AddWordMorphFilterEnumerator(string[] morphs)
         {
-            int i;
+            _morphs = morphs;
+            _index = 0;
+            Current = default!;
+        }
 
-            // read past any leading tabs or spaces
-            for (i = 0; i < line.Length && line[i].IsTabOrSpace(); ++i) ;
+        private readonly string[] _morphs;
+        public string Current;
+        private int _index;
 
-            if (i > 0)
+        public bool MoveNext()
+        {
+            while (_index < _morphs.Length)
             {
-                line = line.Slice(i);
-            }
-
-            if (line.Length > 0)
-            {
-                // Try to locate the end of the word part of a line, taking morphs into consideration
-                i = findIndexOfFirstMorphByColonCharAndSpacingHints(line);
-                if (i <= 0)
+                var morph = _morphs[_index++];
+                if (morph.StartsWith(MorphologicalTags.Phon))
                 {
-                    i = line.IndexOf('\t');
-                    if (i < 0)
-                    {
-                        i = line.Length;
-                    }
-                }
-
-                for (; i > 0 && line[i - 1].IsTabOrSpace(); --i) ;
-
-                var wordPart = line.Slice(0, i);
-                ReadOnlySpan<char> flagsPart;
-
-                var flagsDelimiterPosition = indexOfFlagsDelimiter(wordPart);
-                if (flagsDelimiterPosition >= 0)
-                {
-                    flagsPart = wordPart.Slice(flagsDelimiterPosition + 1);
-                    wordPart = wordPart.Slice(0, flagsDelimiterPosition);
-                }
-                else
-                {
-                    flagsPart = [];
-                }
-
-                if (wordPart.Length > 0)
-                {
-                    return new ParsedWordLine(
-                        word: wordPart,
-                        flags: flagsPart,
-                        morphs: i < line.Length ? parseMorphs(line.Slice(i)) : []);
+                    Current = morph;
+                    return true;
                 }
             }
 
-            return default;
-
-            static int findIndexOfFirstMorphByColonCharAndSpacingHints(ReadOnlySpan<char> text)
-            {
-                var index = 0;
-                while ((index = text.IndexOf(':', index)) >= 0)
-                {
-                    var checkLocation = index - 3;
-                    if (checkLocation >= 0 && text[checkLocation].IsTabOrSpace())
-                    {
-                        return checkLocation;
-                    }
-
-                    index++;
-                }
-
-                return -1;
-            }
-
-            static int indexOfFlagsDelimiter(ReadOnlySpan<char> text)
-            {
-                // NOTE: the first character is ignored as a single slash should be treated as a word
-                for (var i = 1; i < text.Length; i++)
-                {
-                    if (text[i] == '/' && text[i - 1] != '\\')
-                    {
-                        return i;
-                    }
-                }
-
-                return -1;
-            }
-
-            static string[] parseMorphs(ReadOnlySpan<char> text)
-            {
-                var morphsBuilder = ArrayBuilder<string>.Pool.Get();
-
-                foreach (var morph in text.SplitOnTabOrSpace())
-                {
-                    morphsBuilder.Add(morph.ToString());
-                }
-
-                return ArrayBuilder<string>.Pool.ExtractAndReturn(morphsBuilder);
-            }
+            Current = default!;
+            return false;
         }
     }
 }

@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
-using System.Runtime.CompilerServices;
 
 namespace WeCantSpell.Hunspell;
 
+[DebuggerDisplay("Length = {Length}, Text = {ToString()}")]
 internal ref struct StringBuilderSpan
 {
     public StringBuilderSpan(int capacity)
@@ -123,11 +124,7 @@ internal ref struct StringBuilderSpan
 
     public void Set(scoped ReadOnlySpan<char> value)
     {
-        if (value.IsEmpty)
-        {
-            _length = 0;
-        }
-        else
+        if (value.Length > 0)
         {
             if (_bufferSpan.Length < value.Length)
             {
@@ -136,6 +133,10 @@ internal ref struct StringBuilderSpan
 
             value.CopyTo(_bufferSpan);
             _length = value.Length;
+        }
+        else
+        {
+            _length = 0;
         }
     }
 
@@ -159,7 +160,7 @@ internal ref struct StringBuilderSpan
 
     public void Append(scoped ReadOnlySpan<char> value)
     {
-        if (!value.IsEmpty)
+        if (value.Length > 0)
         {
             if (value.Length + _length > _bufferSpan.Length)
             {
@@ -435,16 +436,13 @@ internal ref struct StringBuilderSpan
         ExceptionEx.ThrowIfArgumentGreaterThan(startIndex + count, _length, nameof(count));
 #endif
 
-        if (count != 0)
+        if (count == 1)
         {
-            if (count == 1)
-            {
-                RemoveAt(startIndex);
-            }
-            else
-            {
-                RemoveRangeInternal(startIndex, count);
-            }
+            RemoveAt(startIndex);
+        }
+        else if (count > 1)
+        {
+            RemoveRangeInternal(startIndex, count);
         }
     }
 
@@ -547,9 +545,9 @@ internal ref struct StringBuilderSpan
         return result;
     }
 
-    public override readonly string ToString() => _length == 0 ? string.Empty : _bufferSpan.Slice(0, _length).ToString();
+    public override readonly string ToString() => _length > 0 ? _bufferSpan.Slice(0, _length).ToString() : string.Empty;
 
-    public readonly bool EndsWith(char value) => _length != 0 && _bufferSpan[_length - 1] == (value);
+    public readonly bool EndsWith(char value) => _length > 0 && _bufferSpan[_length - 1] == value;
 
     public readonly bool Contains(char value) => CurrentSpan.Contains(value);
 

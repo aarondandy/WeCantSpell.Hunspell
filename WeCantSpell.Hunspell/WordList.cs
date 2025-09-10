@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace WeCantSpell.Hunspell;
 
+[DebuggerDisplay("RootCount = {RootCount}")]
 public sealed partial class WordList
 {
     public static WordList CreateFromStreams(Stream dictionaryStream, Stream affixStream) =>
@@ -35,7 +37,7 @@ public sealed partial class WordList
         ExceptionEx.ThrowIfArgumentNull(words, nameof(words));
 #endif
 
-        return CreateFromWords(words, new AffixConfig.Builder().MoveToImmutable());
+        return CreateFromWords(words, new AffixConfig.Builder().Extract());
     }
 
     public static WordList CreateFromWords(IEnumerable<string> words, AffixConfig affix)
@@ -57,25 +59,25 @@ public sealed partial class WordList
             wordListBuilder.Add(word);
         }
 
-        return wordListBuilder.MoveToImmutable();
+        return wordListBuilder.Extract();
     }
 
     private WordList(
         AffixConfig affix,
         TextDictionary<WordEntryDetail[]> entriesByRoot,
-        TextDictionary<WordEntryDetail[]> nGramRestrictedDetails,
+        FlagSet nGramRestrictedFlags,
         SingleReplacementSet allReplacements
     )
     {
         _affix = affix;
         _entriesByRoot = entriesByRoot;
-        _nGramRestrictedDetails = nGramRestrictedDetails;
+        _nGramRestrictedFlags = nGramRestrictedFlags;
         _allReplacements = allReplacements;
     }
 
     private readonly AffixConfig _affix;
     private readonly TextDictionary<WordEntryDetail[]> _entriesByRoot;
-    private readonly TextDictionary<WordEntryDetail[]> _nGramRestrictedDetails;
+    private readonly FlagSet _nGramRestrictedFlags;
     private readonly SingleReplacementSet _allReplacements;
 
     public AffixConfig Affix => _affix;
@@ -87,6 +89,8 @@ public sealed partial class WordList
     public bool HasEntries => _entriesByRoot.HasItems;
 
     public bool IsEmpty => _entriesByRoot.IsEmpty;
+
+    public int RootCount => _entriesByRoot.Count;
 
     public WordEntryDetail[] this[string rootWord] => TryGetEntryDetailsByRootWord(rootWord, out var details) ? details : [];
 
@@ -136,15 +140,6 @@ public sealed partial class WordList
         return result;
     }
 
-    private void ApplyRootOutputConversions(ref SpellCheckResult result)
-    {
-        // output conversion
-        if (result.Correct && _affix.OutputConversions.TryConvert(result.Root, out var converted) && !string.Equals(result.Root, converted, StringComparison.Ordinal))
-        {
-            result = SpellCheckResult.Success(converted, result.Info);
-        }
-    }
-
     public IEnumerable<string> Suggest(string word) => Suggest(word, options: null, CancellationToken.None);
 
     public IEnumerable<string> Suggest(ReadOnlySpan<char> word) => Suggest(word, options: null, CancellationToken.None);
@@ -160,6 +155,197 @@ public sealed partial class WordList
     public IEnumerable<string> Suggest(string word, QueryOptions? options, CancellationToken cancellationToken) => new QuerySuggest(this, options, cancellationToken).Suggest(word);
 
     public IEnumerable<string> Suggest(ReadOnlySpan<char> word, QueryOptions? options, CancellationToken cancellationToken) => new QuerySuggest(this, options, cancellationToken).Suggest(word);
+
+    /// <summary>
+    /// Adds a root word to this in-memory dictionary.
+    /// </summary>
+    /// <param name="word">The root word to add.</param>
+    /// <returns><c>true</c> when a root is added, <c>false</c> otherwise.</returns>
+    /// <remarks>
+    /// Changes made to this dictionary instance will not be saved.
+    /// </remarks>
+    public bool Add(string word)
+    {
+        return Add(word, FlagSet.Empty, MorphSet.Empty, WordEntryOptions.None);
+    }
+
+    /// <summary>
+    /// Adds a root word to this in-memory dictionary.
+    /// </summary>
+    /// <param name="word">The root word to add.</param>
+    /// <param name="flags">The flags associated with the root <paramref name="word"/> detail entry.</param>
+    /// <param name="morphs">The morphs associated with the root <paramref name="word"/> detail entry.</param>
+    /// <param name="options">The options associated with the root <paramref name="word"/> detail entry.</param>
+    /// <returns><c>true</c> when a root is added, <c>false</c> otherwise.</returns>
+    /// <remarks>
+    /// Changes made to this dictionary instance will not be saved.
+    /// </remarks>
+    public bool Add(string word, FlagSet flags, IEnumerable<string> morphs, WordEntryOptions options)
+    {
+        return Add(word, flags, MorphSet.Create(morphs), options);
+    }
+
+    /// <summary>
+    /// Adds a root word to this in-memory dictionary.
+    /// </summary>
+    /// <param name="word">The root word to add.</param>
+    /// <param name="flags">The flags associated with the root <paramref name="word"/> detail entry.</param>
+    /// <param name="morphs">The morphs associated with the root <paramref name="word"/> detail entry.</param>
+    /// <param name="options">The options associated with the root <paramref name="word"/> detail entry.</param>
+    /// <returns><c>true</c> when a root is added, <c>false</c> otherwise.</returns>
+    /// <remarks>
+    /// Changes made to this dictionary instance will not be saved.
+    /// </remarks>
+    public bool Add(string word, FlagSet flags, MorphSet morphs, WordEntryOptions options)
+    {
+        return Add(word, new WordEntryDetail(flags, morphs, options));
+    }
+
+    /// <summary>
+    /// Adds a root word to this in-memory dictionary.
+    /// </summary>
+    /// <param name="word">The root word to add details for.</param>
+    /// <param name="detail">The details to associate with the root <paramref name="word"/>.</param>
+    /// <returns><c>true</c> when a root is added, <c>false</c> otherwise.</returns>
+    /// <remarks>
+    /// Changes made to this dictionary instance will not be saved.
+    /// </remarks>
+    public bool Add(string word, WordEntryDetail detail)
+    {
+        return Add(_entriesByRoot, Affix, word, detail);
+    }
+
+    private static bool Add(TextDictionary<WordEntryDetail[]> entries, AffixConfig affix, string word, WordEntryDetail detail)
+    {
+        if (affix.IgnoredChars.HasItems)
+        {
+            word = affix.IgnoredChars.RemoveChars(word);
+        }
+
+        if (affix.ComplexPrefixes)
+        {
+            word = word.GetReversed();
+        }
+
+        ref var details = ref entries.GetOrAddValueRef(word)!;
+        if (details is null)
+        {
+            details = [detail];
+        }
+        else
+        {
+            if (details.Contains(detail))
+            {
+                return false;
+            }
+
+            Array.Resize(ref details, details.Length + 1);
+            details[details.Length - 1] = detail;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Removes all detail entries for the given root <paramref name="word"/>.
+    /// </summary>
+    /// <param name="word">The root to delete all entries for.</param>
+    /// <returns>The count of entries removed.</returns>
+    public int Remove(string word)
+    {
+        return Remove(_entriesByRoot, Affix, word);
+    }
+
+    private static int Remove(TextDictionary<WordEntryDetail[]> entries, AffixConfig affix, string word)
+    {
+        if (affix.IgnoredChars.HasItems)
+        {
+            word = affix.IgnoredChars.RemoveChars(word);
+        }
+
+        if (affix.ComplexPrefixes)
+        {
+            word = word.GetReversed();
+        }
+
+        if (entries.TryGetValue(word, out var details))
+        {
+            entries.Remove(word);
+
+            return details.Length;
+        }
+
+        return 0;
+    }
+
+    /// <summary>
+    /// Removes a specific detail entry for the given root <paramref name="word"/> and detail arguments.
+    /// </summary>
+    /// <param name="word">The root word to delete a specific entry for.</param>
+    /// <param name="flags">The flags to match on an entry.</param>
+    /// <param name="morphs">The morphs to match on an entry.</param>
+    /// <param name="options">The options to match on an entry.</param>
+    /// <returns><c>true</c> when an entry is remove, otherwise <c>false</c>.</returns>
+    public bool Remove(string word, FlagSet flags, MorphSet morphs, WordEntryOptions options)
+    {
+        return Remove(word, new WordEntryDetail(flags, morphs, options));
+    }
+
+    /// <summary>
+    /// Removes a specific <paramref name="detail"/> entry for the given root <paramref name="word"/>.
+    /// </summary>
+    /// <param name="word">The root word to delete a specific entry for.</param>
+    /// <param name="detail">The detail to delete for a specific root.</param>
+    /// <returns><c>true</c> when an entry is remove, otherwise <c>false</c>.</returns>
+    public bool Remove(string word, WordEntryDetail detail)
+    {
+        return Remove(_entriesByRoot, Affix, word, detail);
+    }
+
+    private static bool Remove(TextDictionary<WordEntryDetail[]> entries, AffixConfig affix, string word, WordEntryDetail detail)
+    {
+        if (affix.IgnoredChars.HasItems)
+        {
+            word = affix.IgnoredChars.RemoveChars(word);
+        }
+
+        if (affix.ComplexPrefixes)
+        {
+            word = word.GetReversed();
+        }
+
+        if (entries.TryGetValue(word, out var details))
+        {
+            var index = details.AsSpan().IndexOf(detail);
+            if (index >= 0)
+            {
+                if (details.Length == 1)
+                {
+                    entries.Remove(word);
+                }
+                else
+                {
+                    var newDetails = new WordEntryDetail[details.Length - 1];
+                    Array.Copy(details, 0, newDetails, 0, index);
+                    Array.Copy(details, index + 1, newDetails, index, newDetails.Length - index);
+                    entries[word] = newDetails;
+                }
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void ApplyRootOutputConversions(ref SpellCheckResult result)
+    {
+        // output conversion
+        if (result.Correct && _affix.OutputConversions.TryConvert(result.Root, out var converted) && !string.Equals(result.Root, converted, StringComparison.Ordinal))
+        {
+            result = SpellCheckResult.Success(converted, result.Info);
+        }
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool TryGetEntryDetailsByRootWord(
@@ -210,12 +396,12 @@ public sealed partial class WordList
     {
         public NGramAllowedEntriesEnumerator(WordList wordList, int minKeyLength, int maxKeyLength)
         {
-            _nGramRestrictedDetails = wordList._nGramRestrictedDetails;
+            _nGramRestrictedFlags = wordList._nGramRestrictedFlags;
             _coreEnumerator = new(wordList._entriesByRoot, minKeyLength, maxKeyLength);
             _current = default;
         }
 
-        private readonly TextDictionary<WordEntryDetail[]> _nGramRestrictedDetails;
+        private readonly FlagSet _nGramRestrictedFlags;
         private TextDictionary<WordEntryDetail[]>.KeyLengthEnumerator _coreEnumerator;
         private KeyValuePair<string, WordEntryDetail[]> _current;
 
@@ -225,7 +411,7 @@ public sealed partial class WordList
 
         public bool MoveNext()
         {
-            if (_nGramRestrictedDetails.HasItems)
+            if (_nGramRestrictedFlags.HasItems)
             {
                 return MoveNextWithRestrictedDetails();
             }
@@ -245,29 +431,22 @@ public sealed partial class WordList
             while (_coreEnumerator.MoveNext())
             {
                 _current = _coreEnumerator.Current;
+                var details = _current.Value;
 
-                if (_nGramRestrictedDetails.TryGetValue(_current.Key, out var restrictedDetails) && restrictedDetails.Length != 0)
+                int leftRestrictCount = 0;
+                for (; leftRestrictCount < details.Length && details[leftRestrictCount].ContainsAnyFlags(_nGramRestrictedFlags); leftRestrictCount++) ;
+
+                if (leftRestrictCount == details.Length)
                 {
-                    if (restrictedDetails.Length == _current.Value.Length)
-                    {
-                        continue;
-                    }
+                    continue; // all are restricted so try the next one
+                }
 
-                    _current = new(_current.Key, filterNonMatching(_current.Value, restrictedDetails));
-                    static WordEntryDetail[] filterNonMatching(WordEntryDetail[] source, WordEntryDetail[] check)
-                    {
-                        var builder = ArrayBuilder<WordEntryDetail>.Pool.Get(source.Length);
+                int index = leftRestrictCount + 1;
+                for (; index < details.Length && details[index].DoesNotContainAnyFlags(_nGramRestrictedFlags); index++) ;
 
-                        foreach (var item in source)
-                        {
-                            if (!check.Contains(item))
-                            {
-                                builder.Add(item);
-                            }
-                        }
-
-                        return ArrayBuilder<WordEntryDetail>.Pool.ExtractAndReturn(builder);
-                    }
+                if (leftRestrictCount > 0 || index < details.Length)
+                {
+                    _current = new(_current.Key, FilterRestrictedDetails(details, leftRestrictCount, index));
                 }
 
                 return true;
@@ -275,6 +454,24 @@ public sealed partial class WordList
 
             _current = default;
             return false;
+        }
+
+        private readonly WordEntryDetail[] FilterRestrictedDetails(WordEntryDetail[] source, int leftRestrictCount, int index)
+        {
+            var builder = ArrayBuilder<WordEntryDetail>.Pool.Get(source.Length - leftRestrictCount);
+            builder.AddRange(source.AsSpan(leftRestrictCount, index - leftRestrictCount));
+
+            index++; // whatever is at the index isn't permitted, so skip it
+
+            for (; index < source.Length; index++)
+            {
+                if (source[index].DoesNotContainAnyFlags(_nGramRestrictedFlags))
+                {
+                    builder.Add(source[index]);
+                }
+            }
+
+            return ArrayBuilder<WordEntryDetail>.Pool.ExtractAndReturn(builder);
         }
     }
 }
