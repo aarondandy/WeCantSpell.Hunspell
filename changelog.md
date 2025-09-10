@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 6.0.2 - 2025-09
+
+- Fixes default timeout for suggest steps [PR #110](https://github.com/aarondandy/WeCantSpell.Hunspell/pull/110)
+
 ## 6.0.1 - 2025-08
 
 - Fix for numeric phonetic suggestions by [filipnavara](https://github.com/filipnavara) in [PR #104](https://github.com/aarondandy/WeCantSpell.Hunspell/pull/104)
@@ -15,6 +19,10 @@ All notable changes to this project will be documented in this file.
 - (breaking) Too many little API changes to mention them all 🤷.
 - (breaking) Some "Immutable" method names are now "Extract" or "Build". I recommend using "Extract" for better performance.
 - File loading is a bit faster now.
+
+## 5.2.3 - 2025-09
+
+- Fixes default timeout for suggest steps [PR #109](https://github.com/aarondandy/WeCantSpell.Hunspell/pull/109)
 
 ## 5.2.2 - 2025-02
 
