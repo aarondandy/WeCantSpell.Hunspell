@@ -68,25 +68,34 @@ public sealed class QueryOptions
     public int RecursiveDepthLimit { get; set; } = 0x3F00;
 
     /// <summary>
-    /// The time limit for some long running steps during suggestion generation.
+    /// The time limit for the individual steps during suggestion generation.
     /// </summary>
     /// <remarks>
-    /// Timelimit: max ~1/4 sec (process time on Linux) for a time consuming function.
+    /// The default value is sourced from the TIMELIMIT variable in origin.
     /// </remarks>
-    public TimeSpan TimeLimitSuggestStep { get; set; } = TimeSpan.FromMilliseconds(250);
+    public TimeSpan TimeLimitSuggestStep { get; set; } = TimeSpan.FromMilliseconds(1000 / 20);
 
     /// <summary>
     /// The time limit for each compound suggestion iteration.
     /// </summary>
-    public TimeSpan TimeLimitCompoundSuggest { get; set; } = TimeSpan.FromMilliseconds(100);
+    /// <remarks>
+    /// The default value is sourced from the TIMELIMIT_SUGGESTION variable in origin.
+    /// </remarks>
+    public TimeSpan TimeLimitCompoundSuggest { get; set; } = TimeSpan.FromMilliseconds(1000 / 10);
 
     /// <summary>
     /// The time limit for each compound word check operation.
     /// </summary>
-    public TimeSpan TimeLimitCompoundCheck { get; set; } = TimeSpan.FromMilliseconds(50);
+    /// <remarks>
+    /// The default value is sourced from the TIMELIMIT variable in origin.
+    /// </remarks>
+    public TimeSpan TimeLimitCompoundCheck { get; set; } = TimeSpan.FromMilliseconds(1000 / 20);
 
     /// <summary>
     /// A somewhat overall time limit for the suggestion algorithm.
     /// </summary>
-    public TimeSpan TimeLimitSuggestGlobal { get; set; } = TimeSpan.FromMilliseconds(250);
+    /// <remarks>
+    /// The default value is sourced from the TIMELIMIT_GLOBAL variable in origin.
+    /// </remarks>
+    public TimeSpan TimeLimitSuggestGlobal { get; set; } = TimeSpan.FromMilliseconds(1000 / 4);
 }
