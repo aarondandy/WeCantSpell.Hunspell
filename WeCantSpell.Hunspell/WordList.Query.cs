@@ -1451,22 +1451,38 @@ public partial class WordList
         {
             ClearPrefix();
             ClearSuffixAppendAndExtra();
-            WordEntry? rv;
 
+            if (inCompound is CompoundOptions.Begin)
+            {
+                // This is an early exit optiomization as CheckTwoSfx is effectively a no-op for CompoundOptions.Begin
+                return null;
+            }
+
+            return PrefixCheckTwoSfx_Empty(word, inCompound, needFlag)
+                ?? PrefixCheckTwoSfx_Matching(word, inCompound, needFlag);
+        }
+
+        private WordEntry? PrefixCheckTwoSfx_Empty(ReadOnlySpan<char> word, CompoundOptions inCompound, FlagValue needFlag)
+        {
             // first handle the special case of 0 length prefixes
             foreach (var pe in Affix.Prefixes.GetAffixesWithEmptyKeys())
             {
-                rv = CheckTwoSfx(pe, word, inCompound, needFlag);
+                var rv = CheckTwoSfx(pe, word, inCompound, needFlag);
                 if (rv is not null)
                 {
                     return rv;
                 }
             }
 
+            return null;
+        }
+
+        private WordEntry? PrefixCheckTwoSfx_Matching(ReadOnlySpan<char> word, CompoundOptions inCompound, FlagValue needFlag)
+        {
             // now handle the general case
             foreach (var pe in Affix.Prefixes.GetMatchingAffixes(word))
             {
-                rv = CheckTwoSfx(pe, word, inCompound, needFlag);
+                var rv = CheckTwoSfx(pe, word, inCompound, needFlag);
                 if (rv is not null)
                 {
                     SetPrefix(pe);
@@ -1482,6 +1498,13 @@ public partial class WordList
         /// </summary>
         private WordEntry? CheckTwoSfx(PrefixEntry pe, ReadOnlySpan<char> word, CompoundOptions inCompound, FlagValue needFlag)
         {
+            if (inCompound is CompoundOptions.Begin || !pe.Options.HasFlagEx(AffixEntryOptions.CrossProduct))
+            {
+                // This method is effectively a no-op in this case. To avoid the expensive allocations
+                // and comparisons inside this check, the code early exits from here
+                goto exit;
+            }
+
             // on entry prefix is 0 length or already matches the beginning of the word.
             // So if the remaining root word has positive length
             // and if there are enough chars in root word and added back strip chars
@@ -1490,7 +1513,7 @@ public partial class WordList
             var tmpl = word.Length - pe.Append.Length; // length of tmpword
 
             if (
-                (tmpl > 0 || (tmpl == 0 && Affix.FullStrip))
+                (Affix.FullStrip ? tmpl >= 0 : tmpl > 0)
                 &&
                 (tmpl + pe.Strip.Length >= pe.Conditions.Count)
             )
@@ -1514,7 +1537,9 @@ public partial class WordList
                     // if CrossProduct is allowed, try again but now
                     // cross checked combined with a suffix
 
-                    if (pe.Options.HasFlagEx(AffixEntryOptions.CrossProduct) && (inCompound != CompoundOptions.Begin))
+                    // This check is made reundant at the top of the method but the original source probably checks the
+                    // the conditions down here before calling SuffixCheckTwoSfx
+                    // if (inCompound is not CompoundOptions.Begin && pe.Options.HasFlagEx(AffixEntryOptions.CrossProduct))
                     {
                         // find hash entry of root word
                         if (SuffixCheckTwoSfx(tmpword, AffixEntryOptions.CrossProduct, pe, needFlag) is { } he)
@@ -1525,6 +1550,7 @@ public partial class WordList
                 }
             }
 
+        exit:
             return null;
         }
 
@@ -2184,7 +2210,7 @@ public partial class WordList
 
             if (optflags.HasFlagEx(AffixEntryOptions.CrossProduct) && se.Options.IsMissingFlag(AffixEntryOptions.CrossProduct))
             {
-                return null;
+                goto exit;
             }
 
             // upon entry suffix is 0 length or already matches the end of the word.
@@ -2198,7 +2224,7 @@ public partial class WordList
             // it checked in test_condition()
 
             if (
-                (tmpl > 0 || (tmpl == 0 && Affix.FullStrip))
+                (Affix.FullStrip ? tmpl >= 0 : tmpl > 0)
                 &&
                 (tmpl + se.Strip.Length >= se.Conditions.Count)
             )
@@ -2217,11 +2243,13 @@ public partial class WordList
                 // if all conditions are met then recall suffix_check
                 if (se.TestCondition(tmpword))
                 {
-                    var he = ppfx is not null && se.ContainsContClass(ppfx.AFlag)
-                        // handle conditional suffix
-                        ? SuffixCheck(tmpword, AffixEntryOptions.None, null, se.AFlag, needflag, CompoundOptions.Not)
-                        : SuffixCheck(tmpword, optflags, ppfx, se.AFlag, needflag, CompoundOptions.Not);
+                    if (ppfx is not null && se.ContainsContClass(ppfx.AFlag))
+                    {
+                        ppfx = null;
+                        optflags = AffixEntryOptions.None;
+                    }
 
+                    var he = SuffixCheck(tmpword, optflags, ppfx, se.AFlag, needflag, CompoundOptions.Not);
                     if (he is not null)
                     {
                         return he;
@@ -2229,6 +2257,7 @@ public partial class WordList
                 }
             }
 
+        exit:
             return null;
         }
 
