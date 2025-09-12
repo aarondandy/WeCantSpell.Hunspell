@@ -16,6 +16,8 @@ internal static partial class StringEx
 
     public static bool StartsWith(this ReadOnlySpan<char> @this, string value, StringComparison comparison) => @this.StartsWith(value.AsSpan(), comparison);
 
+    public static bool StartsWithOrdinal(this ReadOnlySpan<char> @this, string value) => @this.StartsWith(value.AsSpan());
+
     public static bool StartsWith(this ReadOnlySpan<char> @this, char value) => @this.Length > 0 && @this[0] == value;
 
     public static bool EndsWith(this string @this, char character) => @this.Length > 0 && @this[@this.Length - 1] == character;
@@ -26,15 +28,9 @@ internal static partial class StringEx
 
     public static bool Equals(this ReadOnlySpan<char> @this, string value, StringComparison comparison) => @this.Equals(value.AsSpan(), comparison);
 
-    public static bool EqualsOrdinal(this ReadOnlySpan<char> @this, string value) => @this.Equals(value, StringComparison.Ordinal);
-
     public static bool EqualsOrdinal(this ReadOnlySpan<char> @this, char value) => @this.Length == 1 && @this[0] == value;
 
-    public static bool EqualsOrdinal(this string @this, ReadOnlySpan<char> value) => value.Equals(@this, StringComparison.Ordinal);
-
     public static bool EqualsOrdinal(this string @this, char value) => @this.Length == 1 && @this[0] == value;
-
-    public static bool EqualsOrdinal(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value) => @this.Equals(value, StringComparison.Ordinal);
 
     public static bool IsTabOrSpace(this char c) => c is '\t' or ' ';
 
@@ -43,12 +39,6 @@ internal static partial class StringEx
 #else
     public static int IndexOfTabOrSpace(this ReadOnlySpan<char> span) => span.IndexOfAny('\t', ' ');
 #endif
-
-    public static int IndexOf(this ReadOnlySpan<char> @this, ReadOnlySpan<char> value, int startIndex, StringComparison comparisonType)
-    {
-        var result = @this.Slice(startIndex).IndexOf(value, comparisonType);
-        return result < 0 ? result : result + startIndex;
-    }
 
 #if NO_STRING_CONTAINS
 
