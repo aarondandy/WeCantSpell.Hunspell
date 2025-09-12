@@ -118,7 +118,7 @@ public partial class WordList
             }
 
             // process XML input of the simplified API (see manual)
-            if (word.StartsWith(Query.DefaultXmlTokenCheckPrefix, StringComparison.Ordinal))
+            if (word.StartsWithOrdinal(Query.DefaultXmlTokenCheckPrefix))
             {
                 goto fail; // TODO: complete support for XML input
             }
@@ -307,7 +307,7 @@ public partial class WordList
                             var slen = toRemove.Length - spaceIndex - 1;
 
                             // different case after space (need capitalisation)
-                            if (slen < scw.Length && !scw.AsSpan(scw.Length - slen).EqualsOrdinal(toRemove.AsSpan(spaceIndex + 1)))
+                            if (slen < scw.Length && !scw.AsSpan(scw.Length - slen).SequenceEqual(toRemove.AsSpan(spaceIndex + 1)))
                             {
                                 // set as first suggestion
                                 removeFromIndexThenInsertAtFront(
@@ -460,7 +460,7 @@ public partial class WordList
                     }
 
                     var chunk = scw.AsSpan(prevPos, dashPos - prevPos);
-                    if (!chunk.EqualsOrdinal(word) && !Check(chunk))
+                    if (!chunk.SequenceEqual(word) && !Check(chunk))
                     {
                         var nlst = SuggestNested(chunk);
 
@@ -1193,7 +1193,7 @@ public partial class WordList
             {
                 foreach (var mapEntryValue in mapEntry.RawArray)
                 {
-                    if (word.AsSpan(wn).StartsWith(mapEntryValue, StringComparison.Ordinal))
+                    if (word.AsSpan(wn).StartsWithOrdinal(mapEntryValue))
                     {
                         inMap = true;
                         var candidatePrefix = candidate;
@@ -2477,7 +2477,7 @@ public partial class WordList
                         return string.Concat(word, entry.Append);
                     }
 
-                    if (word.AsSpan(word.Length - entry.Strip.Length).EqualsOrdinal(entry.Strip))
+                    if (word.AsSpan(word.Length - entry.Strip.Length).SequenceEqual(entry.Strip.AsSpan()))
                     {
                         // we have a match so add suffix
                         return word.AsSpanRemoveFromEnd(entry.Strip.Length).ConcatString(entry.Append);

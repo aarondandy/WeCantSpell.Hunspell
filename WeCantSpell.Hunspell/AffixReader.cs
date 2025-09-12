@@ -854,7 +854,7 @@ public sealed partial class AffixReader
         }
 
         var group3 = affixParser.ParseNextArgument();
-        if (group3.IsEmpty && group2.EqualsOrdinal("."))
+        if (group3.IsEmpty && group2.EqualsOrdinal('.'))
         {
             // In some special cases it seems as if the group 2 is blank but groups 1 and 3 have values in them.
             // I think this is a way to make a blank affix value.
