@@ -11,4 +11,4 @@ Job=Suggest en-US  Runtime=.NET 9.0
 ```
 | Method          | Mean    | Error    | StdDev   | Min     | Median  | Ratio |
 |---------------- |--------:|---------:|---------:|--------:|--------:|------:|
-| &#39;Suggest words&#39; | 1.447 s | 0.0031 s | 0.0029 s | 1.440 s | 1.447 s |  1.00 |
+| &#39;Suggest words&#39; | 1.455 s | 0.0040 s | 0.0038 s | 1.449 s | 1.454 s |  1.00 |
