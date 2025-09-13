@@ -8,7 +8,7 @@ AMD Ryzen 7 5800H with Radeon Graphics 3.20GHz, 1 CPU, 16 logical and 8 physical
 Job=Suggest en-US  
 
 ```
-| Method                       | Mean    | Error    | StdDev   | Min     | Median  | Ratio | RatioSD |
-|----------------------------- |--------:|---------:|---------:|--------:|--------:|------:|--------:|
-| &#39;Suggest words: WeCantSpell&#39; | 3.595 s | 0.0637 s | 0.0497 s | 3.572 s | 3.578 s |  1.00 |    0.02 |
-| &#39;Suggest words: NHunspell&#39;   | 8.865 s | 0.1756 s | 0.3211 s | 8.161 s | 8.858 s |  2.47 |    0.09 |
+| Method                       | Mean    | Error    | StdDev   | Min     | Median  | Ratio |
+|----------------------------- |--------:|---------:|---------:|--------:|--------:|------:|
+| &#39;Suggest words: WeCantSpell&#39; | 3.570 s | 0.0025 s | 0.0023 s | 3.565 s | 3.570 s |  1.00 |
+| &#39;Suggest words: NHunspell&#39;   | 7.777 s | 0.0242 s | 0.0189 s | 7.719 s | 7.783 s |  2.18 |

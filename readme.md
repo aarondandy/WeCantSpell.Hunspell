@@ -23,7 +23,7 @@ A port of [Hunspell](https://github.com/hunspell/hunspell) for .NET.
 
 "It's complicated"
 
-Read the license: [LICENSE](license.txt)
+Read the license: [license.txt](license.txt)
 
 This library was ported from the original [Hunspell](https://github.com/hunspell/hunspell) source
 and as a result is licensed under their MPL, LGPL, and GPL tri-license. Read the [LICENSE](license.txt) file to be sure you can use this library.
@@ -43,10 +43,10 @@ bool ok = dictionary.Check("Colour");
 
 This port performs competitively on newer versions of the .NET framework compared to the original [NHunspell](https://www.nuget.org/packages/NHunspell/) binaries.
 
-| Benchmark en-US | .NET 8 on 9  | .NET 8       | .NET 4.8     | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
-|-----------------|--------------|--------------|--------------|--------------|
-| Check 7000      | 🐇 5,690 μs | 🐇 5,864 μs | 🐌 19,807 μs | 🐇 5,969 μs |
-| Suggest 300     | 🐇 1.454 s  | 🐇 1.528 s  | 🐢 3.470 s   | 🐌 7.795 s  |
+| Benchmark en-US | .NET 9       | .NET 4.8     | [NHunspell](https://www.nuget.org/packages/NHunspell/) |
+|-----------------|--------------|--------------|--------------|
+| Check 7000      | 🐝 5.532 ms | 🐌 18.160 ms | 🐝 6.046 ms |
+| Suggest 300     | 🐝 1.498 s  | 🐢 3.570 s   | 🐌 7.777 s  |
 
 _Note: Measurements taken on an AMD 5800H._
 

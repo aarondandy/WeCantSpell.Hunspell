@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 6.0.3 - 2025-09
+
+- Improves overall performance a tiny bit
+
 ## 6.0.2 - 2025-09
 
 - Fixes default timeout for suggest steps [PR #110](https://github.com/aarondandy/WeCantSpell.Hunspell/pull/110)
