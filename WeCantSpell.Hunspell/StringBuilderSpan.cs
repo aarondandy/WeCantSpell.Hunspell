@@ -225,6 +225,18 @@ internal ref struct StringBuilderSpan
         value.CopyToReversed(space);
     }
 
+    public void Truncate(int maxLength)
+    {
+#if DEBUG
+        ExceptionEx.ThrowIfArgumentLessThan(maxLength, 0, nameof(maxLength));
+#endif
+
+        if (_length > maxLength)
+        {
+            _length = maxLength;
+        }
+    }
+
     public readonly void Replace(char oldChar, char newChar)
     {
         Replace(oldChar, newChar, 0, _length);

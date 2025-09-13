@@ -1162,24 +1162,19 @@ public partial class WordList
                 return;
             }
 
-            var candidate = string.Empty;
+            var candidate = new StringBuilderSpan(word.Length + 2);
             var timer = new OperationTimedCountLimiter(Options.TimeLimitSuggestStep, Options.MinTimer, _query.CancellationToken);
-            MapRelated(word, ref candidate, wn: 0, ref state, ref timer, depth: 0);
+
+            MapRelated(ref state, ref timer, ref candidate, wn: 0, depth: 0);
+
+            candidate.Dispose();
         }
 
-        private void MapRelated(string word, ref string candidate, int wn, ref SuggestState state, ref OperationTimedCountLimiter timer, int depth)
+        private void MapRelated(ref SuggestState state, ref OperationTimedCountLimiter timer, ref StringBuilderSpan candidate, int wn, int depth)
         {
-            if (word.Length == wn)
+            if (state.Word.Length == wn)
             {
-                if (
-                    CanAcceptSuggestion(state.SuggestionList, candidate)
-                    &&
-                    CheckWord(candidate, state.CpdSuggest, ref timer) != 0
-                )
-                {
-                    state.SuggestionList.Add(candidate);
-                }
-
+                MapRelated_Add(ref state, ref timer, candidate.CurrentSpan);
                 return;
             }
 
@@ -1188,19 +1183,23 @@ public partial class WordList
                 return;
             }
 
+            int candidateLength;
             var inMap = false;
+
             foreach (var mapEntry in Affix.RelatedCharacterMap.RawArray)
             {
                 foreach (var mapEntryValue in mapEntry.RawArray)
                 {
-                    if (word.AsSpan(wn).StartsWithOrdinal(mapEntryValue))
+                    if (state.Word.Slice(wn).StartsWithOrdinal(mapEntryValue))
                     {
                         inMap = true;
-                        var candidatePrefix = candidate;
+                        candidateLength = candidate.Length;
+
                         foreach (var otherMapEntryValue in mapEntry.RawArray)
                         {
-                            candidate = candidatePrefix + otherMapEntryValue;
-                            MapRelated(word, ref candidate, wn + mapEntryValue.Length, ref state, ref timer, depth + 1);
+                            candidate.Truncate(candidateLength);
+                            candidate.Append(otherMapEntryValue);
+                            MapRelated(ref state, ref timer, ref candidate, wn + mapEntryValue.Length, depth + 1);
 
                             if (timer.HasBeenCanceled)
                             {
@@ -1213,8 +1212,20 @@ public partial class WordList
 
             if (!inMap)
             {
-                candidate = StringEx.ConcatString(candidate, word[wn]);
-                MapRelated(word, ref candidate, wn + 1, ref state, ref timer, depth + 1);
+                candidate.Append(state.Word[wn]);
+                MapRelated(ref state, ref timer, ref candidate, wn + 1, depth + 1);
+            }
+        }
+
+        private void MapRelated_Add(ref SuggestState state, ref OperationTimedCountLimiter timer, ReadOnlySpan<char> candidate)
+        {
+            if (
+                CanAcceptSuggestion(state.SuggestionList, candidate)
+                &&
+                CheckWord(candidate, state.CpdSuggest, ref timer) != 0
+            )
+            {
+                state.SuggestionList.Add(candidate.ToString());
             }
         }
 
