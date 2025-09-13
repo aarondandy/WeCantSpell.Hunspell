@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-#if HAS_FROZENDICTIONARY || HAS_FROZENSET
+#if HAS_FROZENDICTIONARY
 using System.Collections.Frozen;
 #endif
 

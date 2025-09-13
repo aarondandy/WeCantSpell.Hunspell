@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net6.0;net48</TargetFrameworks>
+    <TargetFrameworks>net10.0;net8.0;net48</TargetFrameworks>
     <OutputType>Exe</OutputType>
-    <LangVersion>latest</LangVersion>
+    <LangVersion>14.0</LangVersion>
     <NoWarn>$(NoWarn);IDE1006</NoWarn>
   </PropertyGroup>
 
