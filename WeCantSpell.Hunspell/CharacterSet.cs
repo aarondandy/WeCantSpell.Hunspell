@@ -118,7 +118,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
 
 #else
 
-    public bool Contains(char value) => MemoryEx.SortedLargeSearchSpaceContains(_values.AsSpan(), value);
+    public bool Contains(char value) => MemoryEx.SortedLargeSearchSpaceContains(_values, value);
 
     public int FindIndexOfMatch(ReadOnlySpan<char> text)
     {
@@ -129,7 +129,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
                 case 1:
                     return text.IndexOf(_values[0]);
                 case <= 5: // There are special cases in IndexOfAny for sizes 5 or less
-                    return text.IndexOfAny(_values.AsSpan());
+                    return text.IndexOfAny(_values);
                 default:
                     var values = _values.AsSpan();
                     for (var searchLocation = 0; searchLocation < text.Length; searchLocation++)
@@ -234,7 +234,7 @@ public readonly struct CharacterSet : IReadOnlyList<char>, IEquatable<CharacterS
         }
         while (true);
 
-        return ToStringWithRemoval(text, index).AsSpan();
+        return ToStringWithRemoval(text, index);
     }
 
     private string ToStringWithRemoval(ReadOnlySpan<char> text, int matchIndex)

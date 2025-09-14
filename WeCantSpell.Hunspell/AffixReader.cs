@@ -246,7 +246,7 @@ public sealed partial class AffixReader
         string? line;
         while ((line = reader.ReadLine()) is not null)
         {
-            ParseLine(line.AsSpan());
+            ParseLine(line);
         }
 
         return ExtractOrBuild();
@@ -933,7 +933,7 @@ public sealed partial class AffixReader
         var conditions = CharacterConditionGroup.Parse(conditionText);
         if (strip.Length != 0 && !conditions.MatchesAnySingleCharacter)
         {
-            if (conditions.IsOnlyPossibleMatch(strip.AsSpan()))
+            if (conditions.IsOnlyPossibleMatch(strip))
             {
                 // determine if the condition is redundant
                 conditions = CharacterConditionGroup.AllowAnySingleCharacter;
@@ -1000,7 +1000,7 @@ public sealed partial class AffixReader
 
         static ReadOnlySpan<char> reverseCharacters(ReadOnlySpan<char> conditionText)
         {
-            var chars = conditionText.ToArray().AsSpan();
+            Span<char> chars = conditionText.ToArray();
             chars.Reverse();
 
             var neg = false;

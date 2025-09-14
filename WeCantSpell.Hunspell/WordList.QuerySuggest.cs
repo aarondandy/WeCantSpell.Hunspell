@@ -99,7 +99,7 @@ public partial class WordList
 
             CandidateStack.Push(ref _suggestCandidateStack, word);
 
-            var slst = SuggestInternal(word.AsSpan(), scw, capType, abbv);
+            var slst = SuggestInternal(word, scw, capType, abbv);
 
             CandidateStack.Pop(ref _suggestCandidateStack);
 
@@ -1419,7 +1419,7 @@ public partial class WordList
                 {
                     var rwords = IncrementalWordList.GetRoot(); // buffer for COMPOUND pattern checking
                     rv = _query.CompoundCheck(
-                        word.AsSpan(), 0, 0, 100, rwords, huMovRule: false, isSug: true,
+                        word, 0, 0, 100, rwords, huMovRule: false, isSug: true,
                         info: cpdSuggest == 1 ? SpellCheckResultType.Compound2 : SpellCheckResultType.None); // EXT
                     IncrementalWordList.ReturnRoot(ref rwords);
 
@@ -1450,10 +1450,10 @@ public partial class WordList
             }
             else
             {
-                rv = _query.PrefixCheck(word.AsSpan(), CompoundOptions.Not, default); // only prefix, and prefix + suffix XXX
+                rv = _query.PrefixCheck(word, CompoundOptions.Not, default); // only prefix, and prefix + suffix XXX
             }
 
-            return CheckWordAffixPortion(rv, word.AsSpan());
+            return CheckWordAffixPortion(rv, word);
         }
 
         /// <summary>
@@ -1671,7 +1671,7 @@ public partial class WordList
                         mw[k] = '*';
                     }
 
-                    thresh += NGramNoLowering(word.Length, word.AsSpan(), mw.CurrentSpan, NGramOptions.AnyMismatch);
+                    thresh += NGramNoLowering(word.Length, word, mw.CurrentSpan, NGramOptions.AnyMismatch);
                 }
 
                 mw.Dispose();
@@ -1778,7 +1778,7 @@ public partial class WordList
                     var gl = TextInfo.ToLower(guess.Guess);
                     var len = guess.Guess.Length;
 
-                    var lcsLength = LcsLen(word.AsSpan(), gl.AsSpan());
+                    var lcsLength = LcsLen(word, gl);
 
                     // same characters with different casing
                     if (word.Length == len && word.Length == lcsLength)
@@ -1824,7 +1824,7 @@ public partial class WordList
                         var len = root.RootPhon.Length;
 
                         // heuristic weigthing of ngram scores
-                        roots[i].ScorePhone += 2 * LcsLen(word.AsSpan(), gl.AsSpan()) - Math.Abs(word.Length - len)
+                        roots[i].ScorePhone += 2 * LcsLen(word, gl) - Math.Abs(word.Length - len)
                             // weight length of the left common substring
                             + LeftCommonSubstring(word, gl);
                     }
@@ -2442,7 +2442,7 @@ public partial class WordList
         {
             if (word.Length >= entry.Strip.Length || (word.Length == 0 && Affix.FullStrip))
             {
-                if (entry.TestCondition(word.AsSpan()))
+                if (entry.TestCondition(word))
                 {
                     if (entry.Strip.Length == 0)
                     {
@@ -2469,7 +2469,7 @@ public partial class WordList
             // make sure all conditions match
             if (word.Length > entry.Strip.Length || (word.Length == 0 && Affix.FullStrip))
             {
-                if (entry.TestCondition(word.AsSpan()))
+                if (entry.TestCondition(word))
                 {
                     if (entry.Strip.Length == 0)
                     {
@@ -2477,7 +2477,7 @@ public partial class WordList
                         return string.Concat(word, entry.Append);
                     }
 
-                    if (word.AsSpan(word.Length - entry.Strip.Length).SequenceEqual(entry.Strip.AsSpan()))
+                    if (word.AsSpan(word.Length - entry.Strip.Length).SequenceEqual(entry.Strip))
                     {
                         // we have a match so add suffix
                         return word.AsSpanRemoveFromEnd(entry.Strip.Length).ConcatString(entry.Append);
@@ -2509,7 +2509,7 @@ public partial class WordList
                 var morph = morphs.Join(' ').AsSpan();
                 if (morph.Length > 0)
                 {
-                    var pos = morph.IndexOf(var.AsSpan(), StringComparison.Ordinal);
+                    var pos = morph.IndexOf(var, StringComparison.Ordinal);
                     if (pos >= 0)
                     {
                         morph = morph.Slice(pos + var.Length);
@@ -2571,11 +2571,6 @@ public partial class WordList
                 s1,
                 StringEx.MakeAllSmall(s2, TextInfo),
                 opt);
-        }
-
-        private static int NGramNoLowering(int n, string s1, string s2, NGramOptions opt)
-        {
-            return NGramNoLowering(n, s1.AsSpan(), s2.AsSpan(), opt);
         }
 
         private static int NGramNoLowering(int n, ReadOnlySpan<char> s1, ReadOnlySpan<char> s2, NGramOptions opt)
@@ -2723,7 +2718,7 @@ public partial class WordList
                 return string.Empty;
             }
 
-            var word = new SimulatedCString(inword.AsSpan());
+            var word = new SimulatedCString(inword);
             var target = new StringBuilderSpan(inword.Length);
 
             // check word

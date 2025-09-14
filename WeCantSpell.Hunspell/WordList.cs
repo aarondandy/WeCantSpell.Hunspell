@@ -316,7 +316,7 @@ public sealed partial class WordList
 
         if (entries.TryGetValue(word, out var details))
         {
-            var index = details.AsSpan().IndexOf(detail);
+            var index = details.IndexOf(detail);
             if (index >= 0)
             {
                 if (details.Length == 1)

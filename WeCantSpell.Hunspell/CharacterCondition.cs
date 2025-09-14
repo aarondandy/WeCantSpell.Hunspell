@@ -112,7 +112,7 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
             1 => _characters[0] == c,
             2 => _characters[0] == c || _characters[1] == c,
             3 => _characters[0] == c || _characters[1] == c || _characters[2] == c,
-            > 8 when _mode is not ModeKind.MatchSequence => MemoryEx.SortedLargeSearchSpaceContains(_characters.AsSpan(), c),
+            > 8 when _mode is not ModeKind.MatchSequence => MemoryEx.SortedLargeSearchSpaceContains(_characters, c),
             _ => _characters.Contains(c),
         };
 

@@ -11,7 +11,7 @@ internal static partial class StringEx
 
     public static bool IsReverseSubset(string s1, ReadOnlySpan<char> s2)
     {
-        return s1.Length <= s2.Length && check(s1.AsSpan(), s2);
+        return s1.Length <= s2.Length && check(s1, s2);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static bool check(ReadOnlySpan<char> s1, ReadOnlySpan<char> s2)
@@ -119,15 +119,11 @@ internal static partial class StringEx
 
 #if HAS_SEARCHVALUES
 
-    public static int CountMatchingFromLeft(string text, char character) => CountMatchingFromLeft(text.AsSpan(), character);
-
     public static int CountMatchingFromLeft(ReadOnlySpan<char> text, char character)
     {
         var count = text.IndexOfAnyExcept(character);
         return count < 0 ? text.Length : count;
     }
-
-    public static int CountMatchingFromRight(string text, char character) => CountMatchingFromRight(text.AsSpan(), character);
 
     public static int CountMatchingFromRight(ReadOnlySpan<char> text, char character)
     {
@@ -252,9 +248,6 @@ internal static partial class StringEx
 
         return s;
     }
-
-    public static CapitalizationType GetCapitalizationType(string word, TextInfo textInfo) =>
-        GetCapitalizationType(word.AsSpan(), textInfo);
 
     public static CapitalizationType GetCapitalizationType(ReadOnlySpan<char> word, TextInfo textInfo)
     {

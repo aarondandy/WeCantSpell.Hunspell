@@ -306,7 +306,7 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
 
         while (true)
         {
-            if (entry.HashCode == hash && key.SequenceEqual(entry.Key.AsSpan()))
+            if (entry.HashCode == hash && key.SequenceEqual(entry.Key))
             {
                 if (Unsafe.IsNullRef(ref otherEntry))
                 {
@@ -497,7 +497,7 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
         {
             do
             {
-                if (entry.HashCode == hash && key.SequenceEqual(entry.Key.AsSpan()))
+                if (entry.HashCode == hash && key.SequenceEqual(entry.Key))
                 {
                     return ref entry;
                 }

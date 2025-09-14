@@ -383,7 +383,7 @@ internal sealed class LineReader : IDisposable
             {
                 if (
                     candidateEncoding.GetPreamble() is { Length: > 0 } encodingPreamble
-                    && fileBytes.StartsWith(encodingPreamble.AsSpan())
+                    && fileBytes.StartsWith(encodingPreamble)
                 )
                 {
                     ChangeEncoding(candidateEncoding);

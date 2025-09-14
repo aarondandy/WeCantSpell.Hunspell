@@ -71,7 +71,7 @@ internal struct CandidateStack
             _s0 is not null
             &&
             (
-                _s0.AsSpan().SequenceEqual(value)
+                value.SequenceEqual(_s0)
                 ||
                 (_rest is not null && _rest.Contains(value))
             );
