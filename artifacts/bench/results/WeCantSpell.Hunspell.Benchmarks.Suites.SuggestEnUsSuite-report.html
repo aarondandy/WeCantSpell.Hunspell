@@ -2,7 +2,7 @@
 <html lang='en'>
 <head>
 <meta charset='utf-8' />
-<title>WeCantSpell.Hunspell.Benchmarks.Suites.SuggestEnUsSuite-20250912-212614</title>
+<title>WeCantSpell.Hunspell.Benchmarks.Suites.SuggestEnUsSuite-20250913-175811</title>
 
 <style type="text/css">
 	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
@@ -15,17 +15,18 @@
 <pre><code>
 BenchmarkDotNet v0.15.2, Windows 11 (10.0.26100.6584/24H2/2024Update/HudsonValley)
 Unknown processor
-.NET SDK 9.0.305
-  [Host]        : .NET 9.0.9 (9.0.925.41916), X64 RyuJIT AVX2
-  Suggest en-US : .NET 9.0.9 (9.0.925.41916), X64 RyuJIT AVX2
+.NET SDK 10.0.100-rc.1.25451.107
+  [Host]        : .NET 10.0.0 (10.0.25.45207), X64 RyuJIT AVX2
+  Suggest en-US : .NET 10.0.0 (10.0.25.45207), X64 RyuJIT AVX2
 </code></pre>
-<pre><code>Job=Suggest en-US  Runtime=.NET 9.0  
+<pre><code>Job=Suggest en-US  
 </code></pre>
 
 <table>
-<thead><tr><th>Method   </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Min</th><th>Median</th><th>Ratio</th>
+<thead><tr><th>Method   </th><th>Runtime</th><th>Mean</th><th>Error</th><th>StdDev</th><th>Min</th><th>Median</th><th>Ratio</th>
 </tr>
-</thead><tbody><tr><td>&#39;Suggest words&#39;</td><td>1.498 s</td><td>0.0025 s</td><td>0.0021 s</td><td>1.494 s</td><td>1.498 s</td><td>1.00</td>
+</thead><tbody><tr><td>&#39;Suggest words&#39;</td><td>.NET 10.0</td><td>1.429 s</td><td>0.0036 s</td><td>0.0033 s</td><td>1.424 s</td><td>1.428 s</td><td>0.97</td>
+</tr><tr><td>&#39;Suggest words&#39;</td><td>.NET 9.0</td><td>1.477 s</td><td>0.0086 s</td><td>0.0077 s</td><td>1.459 s</td><td>1.476 s</td><td>1.00</td>
 </tr></tbody></table>
 </body>
 </html>
