@@ -18,7 +18,7 @@ internal readonly struct FlagParser
     {
         Encoding = encoding;
         Mode = mode;
-        _flagSetCache = new();
+        _flagSetCache = [];
 
         switch (mode)
         {

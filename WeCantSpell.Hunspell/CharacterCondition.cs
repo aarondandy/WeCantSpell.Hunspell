@@ -23,7 +23,7 @@ public readonly struct CharacterCondition : IReadOnlyList<char>, IEquatable<Char
         {
             if (chars.Length <= 4)
             {
-                Span<char> buffer = (stackalloc char[4]).Slice(0, chars.Length);
+                var buffer = (stackalloc char[4]).Slice(0, chars.Length);
                 chars.CopyTo(buffer);
                 buffer.Sort();
                 MemoryEx.RemoveAdjacentDuplicates(ref buffer);

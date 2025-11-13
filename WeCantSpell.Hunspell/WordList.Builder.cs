@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace WeCantSpell.Hunspell;
@@ -15,7 +14,7 @@ public partial class WordList
         public Builder(AffixConfig affix)
         {
             Affix = affix;
-            _entriesByRoot = new();
+            _entriesByRoot = [];
         }
 
         internal TextDictionary<WordEntryDetail[]> _entriesByRoot;
@@ -132,7 +131,7 @@ public partial class WordList
             if (extract)
             {
                 entriesByRoot = _entriesByRoot;
-                _entriesByRoot = new();
+                _entriesByRoot = [];
             }
             else
             {

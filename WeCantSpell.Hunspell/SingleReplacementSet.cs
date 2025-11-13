@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace WeCantSpell.Hunspell;
 
@@ -19,7 +18,7 @@ public readonly struct SingleReplacementSet : IReadOnlyList<SingleReplacement>
         ExceptionEx.ThrowIfArgumentNull(replacements, nameof(replacements));
 #endif
 
-        return new(replacements.ToArray());
+        return new([.. replacements]);
     }
 
     internal SingleReplacementSet(SingleReplacement[] replacements)

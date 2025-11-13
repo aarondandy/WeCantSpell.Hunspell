@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace WeCantSpell.Hunspell;
 
@@ -25,7 +24,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
         ExceptionEx.ThrowIfArgumentNull(conditions, nameof(conditions));
 #endif
 
-        return new(conditions.ToArray());
+        return new([.. conditions]);
     }
 
     public static CharacterConditionGroup Parse(string text)
@@ -148,7 +147,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
 
     public bool MatchesAnySingleCharacter => _items is { Length: 1 } && _items[0].MatchesAnySingleCharacter;
 
-    public string GetEncoded() => string.Concat(RawArray.Select(static c => c.GetEncoded()));
+    public string GetEncoded() => string.Concat(Array.ConvertAll(RawArray, static c => c.GetEncoded()));
 
     public override string ToString() => GetEncoded();
 

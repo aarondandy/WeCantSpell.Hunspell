@@ -8,7 +8,7 @@ internal sealed class WordEntry : IEquatable<WordEntry>
 {
     public static bool operator ==(WordEntry? a, WordEntry? b) => a is null ? b is null : a.Equals(b);
 
-    public static bool operator !=(WordEntry? a, WordEntry? b) => !(a == b);
+    public static bool operator !=(WordEntry? a, WordEntry? b) => a is null ? b is not null : !a.Equals(b);
 
     public WordEntry(string word, in WordEntryDetail detail)
     {

@@ -23,7 +23,7 @@ public readonly struct PhoneTable : IReadOnlyList<PhoneticEntry>
         ExceptionEx.ThrowIfArgumentNull(entries, nameof(entries));
 #endif
 
-        return new(entries.ToArray());
+        return new([.. entries]);
     }
 
 #if HAS_FROZENDICTIONARY

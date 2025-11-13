@@ -306,10 +306,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
                         nptr = nptr.Next;
                     }
 
-                    if (mptr is not null)
-                    {
-                        mptr.NextNotEqual = null;
-                    }
+                    mptr?.NextNotEqual = null;
                 }
             }
         }
@@ -321,7 +318,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
             {
                 _parent = parent;
                 AFlag = aFlag;
-                _entries = new();
+                _entries = [];
             }
 
             private readonly BuilderBase _parent;

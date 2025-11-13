@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -690,7 +689,7 @@ public sealed partial class AffixReader
             }
         }
 
-        entries ??= new();
+        entries ??= [];
 
         var pattern1 = ReadOnlySpan<char>.Empty;
         var pattern2 = ReadOnlySpan<char>.Empty;

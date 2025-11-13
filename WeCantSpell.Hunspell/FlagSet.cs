@@ -128,7 +128,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     {
         if (text.Length <= 4)
         {
-            Span<char> buffer = (stackalloc char[4]).Slice(0, text.Length);
+            var buffer = (stackalloc char[4]).Slice(0, text.Length);
             text.CopyTo(buffer);
             return CreateUsingMutableBuffer(buffer);
         }

@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace WeCantSpell.Hunspell;
 
@@ -10,7 +9,7 @@ namespace WeCantSpell.Hunspell;
 public sealed class AffixGroup<TAffixEntry> : IReadOnlyList<TAffixEntry> where TAffixEntry : AffixEntry
 {
     public static AffixGroup<TAffixEntry> Create(FlagValue aFlag, AffixEntryOptions options, IEnumerable<TAffixEntry> entries) =>
-        CreateUsingArray(aFlag, options, entries.ToArray());
+        CreateUsingArray(aFlag, options, [.. entries]);
 
     internal static AffixGroup<TAffixEntry> CreateUsingArray(FlagValue aFlag, AffixEntryOptions options, TAffixEntry[] entries) =>
         new(aFlag, options, entries);

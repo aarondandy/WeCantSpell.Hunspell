@@ -6,10 +6,6 @@ using System.Text;
 
 namespace WeCantSpell.Hunspell;
 
-#pragma warning disable IDE0079 // Remove unnecessary suppression
-#pragma warning disable IDE0305 // Simplify collection initialization
-#pragma warning disable IDE0028 // Simplify collection initialization
-
 public partial class AffixConfig
 {
     [DebuggerDisplay("Prefixes = {Prefixes}, Suffixes = {Suffixes}")]
@@ -211,7 +207,7 @@ public partial class AffixConfig
         /// <seealso cref="AffixConfig.Replacements"/>
         public IList<SingleReplacement> Replacements => ReplacementsBuilder;
 
-        internal ArrayBuilder<SingleReplacement> ReplacementsBuilder = new();
+        internal ArrayBuilder<SingleReplacement> ReplacementsBuilder = [];
 
         /// <summary>
         /// Suffixes attached to root words to make other words.
@@ -231,7 +227,7 @@ public partial class AffixConfig
         /// <seealso cref="AffixConfig.AliasF"/>
         public IList<FlagSet> AliasF => AliasFBuilder;
 
-        internal ArrayBuilder<FlagSet> AliasFBuilder = new();
+        internal ArrayBuilder<FlagSet> AliasFBuilder = [];
 
         /// <summary>
         /// Values used for morphological alias compression.
@@ -239,7 +235,7 @@ public partial class AffixConfig
         /// <seealso cref="AffixConfig.AliasM"/>
         public IList<MorphSet> AliasM => AliasMBuilder;
 
-        internal ArrayBuilder<MorphSet> AliasMBuilder = new();
+        internal ArrayBuilder<MorphSet> AliasMBuilder = [];
 
         /// <summary>
         /// Defines custom compound patterns with a regex-like syntax.
@@ -247,7 +243,7 @@ public partial class AffixConfig
         /// <seealso cref="AffixConfig.CompoundRules"/>
         public IList<CompoundRule> CompoundRules => CompoundRulesBuilder;
 
-        internal ArrayBuilder<CompoundRule> CompoundRulesBuilder = new();
+        internal ArrayBuilder<CompoundRule> CompoundRulesBuilder = [];
 
         /// <summary>
         /// Forbid compounding, if the first word in the compound ends with endchars, and
@@ -256,7 +252,7 @@ public partial class AffixConfig
         /// <seealso cref="AffixConfig.CompoundPatterns"/>
         public IList<PatternEntry> CompoundPatterns => CompoundPatternsBuilder;
 
-        internal ArrayBuilder<PatternEntry> CompoundPatternsBuilder = new();
+        internal ArrayBuilder<PatternEntry> CompoundPatternsBuilder = [];
 
         /// <summary>
         /// Defines new break points for breaking words and checking word parts separately.
@@ -264,7 +260,7 @@ public partial class AffixConfig
         /// <seealso cref="AffixConfig.BreakPoints"/>
         public IList<string> BreakPoints => BreakPointsBuilder;
 
-        internal ArrayBuilder<string> BreakPointsBuilder = new();
+        internal ArrayBuilder<string> BreakPointsBuilder = [];
 
         /// <summary>
         /// Input conversion entries.
@@ -272,7 +268,7 @@ public partial class AffixConfig
         /// <seealso cref="AffixConfig.InputConversions"/>
         public IDictionary<string, MultiReplacementEntry> InputConversions => InputConversionsBuilder;
 
-        internal TextDictionary<MultiReplacementEntry> InputConversionsBuilder = new();
+        internal TextDictionary<MultiReplacementEntry> InputConversionsBuilder = [];
 
         /// <summary>
         /// Output conversion entries.
@@ -280,7 +276,7 @@ public partial class AffixConfig
         /// <seealso cref="AffixConfig.OutputConversions"/>
         public IDictionary<string, MultiReplacementEntry> OutputConversions => OutputConversionsBuilder;
 
-        internal TextDictionary<MultiReplacementEntry> OutputConversionsBuilder = new();
+        internal TextDictionary<MultiReplacementEntry> OutputConversionsBuilder = [];
 
         /// <summary>
         /// Mappings between related characters.
@@ -288,7 +284,7 @@ public partial class AffixConfig
         /// <seealso cref="AffixConfig.RelatedCharacterMap"/>
         public IList<MapEntry> RelatedCharacterMap => RelatedCharacterMapBuilder;
 
-        internal ArrayBuilder<MapEntry> RelatedCharacterMapBuilder = new();
+        internal ArrayBuilder<MapEntry> RelatedCharacterMapBuilder = [];
 
         /// <summary>
         /// Phonetic transcription entries.
@@ -296,7 +292,7 @@ public partial class AffixConfig
         /// <seealso cref="AffixConfig.Phone"/>
         public IList<PhoneticEntry> Phone => PhoneBuilder;
 
-        internal ArrayBuilder<PhoneticEntry> PhoneBuilder = new();
+        internal ArrayBuilder<PhoneticEntry> PhoneBuilder = [];
 
         /// <summary>
         /// Maximum syllable number, that may be in a
@@ -433,11 +429,11 @@ public partial class AffixConfig
                 config.InputConversions = InputConversionsBuilder.HasItems
                     ? MultiReplacementTable.TakeDictionary(InputConversionsBuilder)
                     : MultiReplacementTable.Empty;
-                InputConversionsBuilder = new();
+                InputConversionsBuilder = [];
                 config.OutputConversions = OutputConversionsBuilder.HasItems
                     ? MultiReplacementTable.TakeDictionary(OutputConversionsBuilder)
                     : MultiReplacementTable.Empty;
-                OutputConversionsBuilder = new();
+                OutputConversionsBuilder = [];
             }
             else
             {
@@ -480,7 +476,7 @@ public partial class AffixConfig
             config.Flags_ForbiddenWord_NoSuggest = FlagSet.Create(config.ForbiddenWord, config.NoSuggest);
             config.Flags_ForbiddenWord_NoSuggest_SubStandard = config.Flags_ForbiddenWord_NoSuggest.Union(config.SubStandard);
 
-            config.Warnings = Warnings.ToArray();
+            config.Warnings = [.. Warnings];
 
             return config;
         }

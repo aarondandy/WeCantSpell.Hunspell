@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace WeCantSpell.Hunspell;
 
@@ -19,7 +18,7 @@ public readonly struct MapEntry : IReadOnlyList<string>
         ExceptionEx.ThrowIfArgumentNull(items, nameof(items));
 #endif
 
-        return new(items.ToArray());
+        return new([.. items]);
     }
 
     internal MapEntry(string[] items)
