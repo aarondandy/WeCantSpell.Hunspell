@@ -81,7 +81,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     internal static FlagSet CreateFromPreparedValues(string values)
     {
 #if DEBUG
-        if (!ValidateFlagSetData(values.AsSpan())) ExceptionEx.ThrowArgumentOutOfRange(nameof(values));
+        if (!ValidateFlagSetData(values)) ExceptionEx.ThrowArgumentOutOfRange(nameof(values));
 #endif
 
         return new(values);
@@ -128,7 +128,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
     {
         if (text.Length <= 4)
         {
-            Span<char> buffer = (stackalloc char[4]).Slice(0, text.Length);
+            var buffer = (stackalloc char[4]).Slice(0, text.Length);
             text.CopyTo(buffer);
             return CreateUsingMutableBuffer(buffer);
         }
@@ -369,7 +369,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             }
             else
             {
-                return string.Join(",", _values!.Select(static v => ((int)v).ToString(CultureInfo.InvariantCulture.NumberFormat)));
+                return string.Join(",", _values.Select(static v => ((int)v).ToString(CultureInfo.InvariantCulture.NumberFormat)));
             }
         }
 
@@ -413,8 +413,8 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             &&
             (
                 _values.Length < other._values.Length
-                ? _values.AsSpan().ContainsAny(other._searchValues!)
-                : other._values.AsSpan().ContainsAny(_searchValues!)
+                ? _values.ContainsAny(other._searchValues!)
+                : other._values.ContainsAny(_searchValues!)
             );
     }
 
@@ -437,7 +437,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
                 1 => _values[0] == value,
                 2 => _values[0] == value || _values[1] == value,
                 3 => _values[0] == value || _values[1] == value || _values[2] == value,
-                _ => MemoryEx.SortedLargeSearchSpaceContains(_values.AsSpan(), value)
+                _ => MemoryEx.SortedLargeSearchSpaceContains(_values, value)
             };
     }
 
@@ -456,7 +456,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
                 1 => _values[0] != value,
                 2 => _values[0] != value && _values[1] != value,
                 3 => _values[0] != value && _values[1] != value && _values[2] != value,
-                _ => !MemoryEx.SortedLargeSearchSpaceContains(_values.AsSpan(), value)
+                _ => !MemoryEx.SortedLargeSearchSpaceContains(_values, value)
             };
     }
 
@@ -561,7 +561,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
                 : (
                     _values!.Length == 1
                         ? other.Contains(_values[0])
-                        : SortedIntersectionTest(other._values.AsSpan(), _values.AsSpan())
+                        : SortedIntersectionTest(other._values, _values)
                 )
             );
     }
@@ -578,7 +578,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
                 : (
                     _values!.Length == 1
                         ? other.DoesNotContain(_values[0])
-                        : !SortedIntersectionTest(other._values.AsSpan(), _values.AsSpan())
+                        : !SortedIntersectionTest(other._values, _values)
                 )
             );
     }
@@ -600,7 +600,7 @@ public readonly struct FlagSet : IReadOnlyList<FlagValue>, IEquatable<FlagSet>
             (
                 _values!.Length == 1
                 ? MemoryEx.SortedLargeSearchSpaceContains(other, _values[0])
-                : SortedIntersectionTest(_values.AsSpan(), other)
+                : SortedIntersectionTest(_values, other)
             );
     }
 

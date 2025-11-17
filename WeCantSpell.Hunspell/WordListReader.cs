@@ -497,7 +497,7 @@ public sealed class WordListReader
             // dictionary based REP replacement, separated by "->"
             // for example "pretty ph:prity ph:priti->pretti" to handle
             // both prity -> pretty and pritier -> prettiest suggestions.
-            var strippatt = ph.IndexOf("->".AsSpan());
+            var strippatt = ph.IndexOf("->");
             if (strippatt > 0 && strippatt < (ph.Length - 2))
             {
                 wordpart = ph.Slice(strippatt + 2);

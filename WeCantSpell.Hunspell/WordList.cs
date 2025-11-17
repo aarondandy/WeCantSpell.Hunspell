@@ -316,7 +316,7 @@ public sealed partial class WordList
 
         if (entries.TryGetValue(word, out var details))
         {
-            var index = details.AsSpan().IndexOf(detail);
+            var index = details.IndexOf(detail);
             if (index >= 0)
             {
                 if (details.Length == 1)
@@ -433,7 +433,7 @@ public sealed partial class WordList
                 _current = _coreEnumerator.Current;
                 var details = _current.Value;
 
-                int leftRestrictCount = 0;
+                var leftRestrictCount = 0;
                 for (; leftRestrictCount < details.Length && details[leftRestrictCount].ContainsAnyFlags(_nGramRestrictedFlags); leftRestrictCount++) ;
 
                 if (leftRestrictCount == details.Length)
@@ -441,7 +441,7 @@ public sealed partial class WordList
                     continue; // all are restricted so try the next one
                 }
 
-                int index = leftRestrictCount + 1;
+                var index = leftRestrictCount + 1;
                 for (; index < details.Length && details[index].DoesNotContainAnyFlags(_nGramRestrictedFlags); index++) ;
 
                 if (leftRestrictCount > 0 || index < details.Length)

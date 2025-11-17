@@ -12,21 +12,17 @@ internal static partial class StringEx
 
 #if NO_STATIC_STRINGCHAR_METHODS
     public static bool StartsWith(this string @this, char character) => @this.Length != 0 && @this[0] == character;
-#endif
 
-    public static bool StartsWith(this ReadOnlySpan<char> @this, string value, StringComparison comparison) => @this.StartsWith(value.AsSpan(), comparison);
+    public static bool EndsWith(this string @this, char character) => @this.Length > 0 && @this[@this.Length - 1] == character;
+#endif
 
     public static bool StartsWithOrdinal(this ReadOnlySpan<char> @this, string value) => @this.StartsWith(value.AsSpan());
 
     public static bool StartsWith(this ReadOnlySpan<char> @this, char value) => @this.Length > 0 && @this[0] == value;
 
-    public static bool EndsWith(this string @this, char character) => @this.Length > 0 && @this[@this.Length - 1] == character;
-
     public static bool EndsWith(this ReadOnlySpan<char> @this, char value) => @this.Length > 0 && @this[@this.Length - 1] == value;
 
     public static bool EndsWith(this ReadOnlyMemory<char> @this, char value) => @this.Length > 0 && @this.Span[@this.Length - 1] == value;
-
-    public static bool Equals(this ReadOnlySpan<char> @this, string value, StringComparison comparison) => @this.Equals(value.AsSpan(), comparison);
 
     public static bool EqualsOrdinal(this ReadOnlySpan<char> @this, char value) => @this.Length == 1 && @this[0] == value;
 
@@ -50,8 +46,6 @@ internal static partial class StringEx
 
 #endif
 
-    public static bool ContainsAny(this string @this, char value0, char value1) => @this.AsSpan().ContainsAny(value0, value1);
-
 #if NO_SPAN_CONTAINSANY
 
     public static bool ContainsAny(this ReadOnlySpan<char> @this, char value0, char value1) => @this.IndexOfAny(value0, value1) >= 0;
@@ -62,7 +56,7 @@ internal static partial class StringEx
     {
         foreach (var item in list)
         {
-            if (item is not null && item.AsSpan().SequenceEqual(value))
+            if (item is not null && value.SequenceEqual(item))
             {
                 return true;
             }
@@ -362,7 +356,7 @@ internal static partial class StringEx
         }
 
         var builder = new StringBuilderSpan(@this.Length);
-        builder.AppendReversed(@this.AsSpan());
+        builder.AppendReversed(@this);
         return builder.GetStringAndDispose();
     }
 
@@ -377,7 +371,7 @@ internal static partial class StringEx
 
         return string.Create(@this.Length, @this, static (span, @this) =>
         {
-            @this.AsSpan().CopyToReversed(span);
+            @this.CopyToReversed(span);
         });
     }
 

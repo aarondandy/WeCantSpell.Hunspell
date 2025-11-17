@@ -6,7 +6,7 @@ namespace WeCantSpell.Hunspell;
 internal static class EncodingEx
 {
     public static Encoding? GetEncodingByName(string encodingName) =>
-        GetUtf8EncodingOrDefault(encodingName.AsSpan()) ?? GetEncodingFromDatabase(encodingName);
+        GetUtf8EncodingOrDefault(encodingName) ?? GetEncodingFromDatabase(encodingName);
 
     public static Encoding? GetEncodingByName(ReadOnlySpan<char> encodingName) =>
         GetUtf8EncodingOrDefault(encodingName) ?? GetEncodingFromDatabase(encodingName.ToString());

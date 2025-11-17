@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace WeCantSpell.Hunspell;
 
@@ -19,7 +18,7 @@ public readonly struct CompoundRule : IReadOnlyList<FlagValue>
         ExceptionEx.ThrowIfArgumentNull(values, nameof(values));
 #endif
 
-        return new(values.ToArray());
+        return new([.. values]);
     }
 
     internal CompoundRule(FlagValue[] items)

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-#if HAS_FROZENDICTIONARY || HAS_FROZENSET
+#if HAS_FROZENDICTIONARY
 using System.Collections.Frozen;
 #endif
 
@@ -306,10 +306,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
                         nptr = nptr.Next;
                     }
 
-                    if (mptr is not null)
-                    {
-                        mptr.NextNotEqual = null;
-                    }
+                    mptr?.NextNotEqual = null;
                 }
             }
         }
@@ -321,7 +318,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
             {
                 _parent = parent;
                 AFlag = aFlag;
-                _entries = new();
+                _entries = [];
             }
 
             private readonly BuilderBase _parent;
@@ -579,7 +576,7 @@ public abstract class AffixCollection<TAffixEntry> : IEnumerable<AffixGroup<TAff
         public EntryTreeNode? NextEqual { get; set; }
         public EntryTreeNode? NextNotEqual { get; set; }
         public EntryTreeNode? Next { get; set; }
-        public bool IsKeySubset(EntryTreeNode other) => Affix.IsKeySubset(other.Affix.Key.AsSpan());
+        public bool IsKeySubset(EntryTreeNode other) => Affix.IsKeySubset(other.Affix.Key);
     }
 }
 

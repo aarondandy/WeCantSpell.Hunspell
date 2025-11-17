@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace WeCantSpell.Hunspell;
 
@@ -19,7 +18,7 @@ public readonly struct BreakSet : IReadOnlyList<string>
         ExceptionEx.ThrowIfArgumentNull(entries, nameof(entries));
 #endif
 
-        return new(entries.ToArray());
+        return new([.. entries]);
     }
 
     internal BreakSet(string[] entries)

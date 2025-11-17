@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace WeCantSpell.Hunspell;
 
@@ -17,7 +16,7 @@ public readonly struct AliasCollection<TEntry> : IReadOnlyList<TEntry>
         ExceptionEx.ThrowIfArgumentNull(entries, nameof(entries));
 #endif
 
-        return new(entries.ToArray());
+        return new([.. entries]);
     }
 
     internal AliasCollection(TEntry[] entries)

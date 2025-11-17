@@ -23,9 +23,9 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
+            10.x
             9.x
             8.x
-            6.x
 
       - run: dotnet build WeCantSpell.Hunspell.sln
 

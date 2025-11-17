@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 7.0.0 - 2025-11
+
+- Adds dotnet 10 target
+- Removes dotnet 6 target
+
 ## 6.0.3 - 2025-09
 
 - Improves overall performance a tiny bit

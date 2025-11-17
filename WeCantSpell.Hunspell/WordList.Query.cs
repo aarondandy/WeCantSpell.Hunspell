@@ -200,7 +200,7 @@ public partial class WordList
                 // check with affixes
 
                 // try stripping off affixes
-                he = AffixCheck(word.AsSpan(), default, CompoundOptions.Not);
+                he = AffixCheck(word, default, CompoundOptions.Not);
 
                 // check compound restriction and onlyupcase
                 if (
@@ -339,7 +339,7 @@ public partial class WordList
             var rwords = IncrementalWordList.GetRoot();
 
             // first allow only 2 words in the compound
-            he = CompoundCheck(word.AsSpan(), 0, 0, 100, rwords, huMovRule: false, isSug: false, info | SpellCheckResultType.Compound2);
+            he = CompoundCheck(word, 0, 0, 100, rwords, huMovRule: false, isSug: false, info | SpellCheckResultType.Compound2);
 
             // NOTE: This unset is left in case the input has Compound2
             info &= ~SpellCheckResultType.Compound2; // unset Compound2
@@ -363,7 +363,7 @@ public partial class WordList
                 if (info.HasFlag(SpellCheckResultType.Compound2)) ExceptionEx.ThrowInvalidOperation();
 #endif
 
-                he = CompoundCheck(word.AsSpan(), 0, 0, 100, rwords, huMovRule: false, isSug: false, info);
+                he = CompoundCheck(word, 0, 0, 100, rwords, huMovRule: false, isSug: false, info);
                 // accept the compound with 3 or more words only if it is
                 // - not a dictionary word with a typo and
                 // - not two words written separately,
@@ -492,8 +492,8 @@ public partial class WordList
                             oldLen = len;
                             len += scpdPatternEntry.Pattern.Length + scpdPatternEntry.Pattern2.Length + scpdPatternEntry.Pattern3.Length;
 
-                            st.WriteChars(scpdPatternEntry.Pattern.AsSpan(), oldIndex);
-                            st.WriteChars(scpdPatternEntry.Pattern2.AsSpan(), i);
+                            st.WriteChars(scpdPatternEntry.Pattern, oldIndex);
+                            st.WriteChars(scpdPatternEntry.Pattern2, i);
                             st.WriteChars(word.Slice(oldIndex + scpdPatternEntry.Pattern3.Length), i + scpdPatternEntry.Pattern2.Length);
 
                             oldCMin = cMin;
@@ -1114,7 +1114,7 @@ public partial class WordList
                     (
                         Affix.CompoundMaxSyllable != 0
                         &&
-                        (GetSyllable(rv.Word.AsSpan()) + tmpNumSyllable) <= Affix.CompoundMaxSyllable
+                        (GetSyllable(rv.Word) + tmpNumSyllable) <= Affix.CompoundMaxSyllable
                     )
                 )
                 &&
@@ -1792,7 +1792,7 @@ public partial class WordList
             // XXX only second suffix (inflections, not derivations)
             if (_suffixAppend is not null)
             {
-                numSyllable -= GetSyllableReversed(_suffixAppend.AsSpan());
+                numSyllable -= GetSyllableReversed(_suffixAppend);
             }
             if (_suffixExtra)
             {
@@ -1800,7 +1800,7 @@ public partial class WordList
             }
 
             // + 1 word, if syllable number of the prefix > 1 (hungarian convention)
-            if (_prefix is not null && GetSyllable(_prefix.Key.AsSpan()) > 1)
+            if (_prefix is not null && GetSyllable(_prefix.Key) > 1)
             {
                 wordNum++;
             }
@@ -1823,7 +1823,7 @@ public partial class WordList
             // XXX only second suffix (inflections, not derivations)
             if (_suffixAppend is not null)
             {
-                numSyllable -= GetSyllableReversed(_suffixAppend.AsSpan());
+                numSyllable -= GetSyllableReversed(_suffixAppend);
             }
 
             if (_suffixExtra)
@@ -1833,7 +1833,7 @@ public partial class WordList
 
             // + 1 word, if syllable number of the prefix > 1 (hungarian
             // convention)
-            if (_prefix is not null && GetSyllable(_prefix.Key.AsSpan()) > 1)
+            if (_prefix is not null && GetSyllable(_prefix.Key) > 1)
             {
                 wordNum++;
             }
@@ -1896,7 +1896,7 @@ public partial class WordList
                     if (replacementEntry.Med is { Length: > 0 })
                     {
                         // search every occurence of the pattern in the word
-                        var rIndex = word.IndexOf(replacementEntry.Pattern.AsSpan());
+                        var rIndex = word.IndexOf(replacementEntry.Pattern);
                         while (rIndex >= 0)
                         {
                             if (CandidateCheck(word.ReplaceIntoString(rIndex, replacementEntry.Pattern.Length, replacementEntry.Med)))
@@ -1904,7 +1904,7 @@ public partial class WordList
                                 return true;
                             }
 
-                            rIndex = word.IndexOf(replacementEntry.Pattern.AsSpan(), rIndex + 1);
+                            rIndex = word.IndexOf(replacementEntry.Pattern, rIndex + 1);
                         }
                     }
                 }
@@ -1996,7 +1996,7 @@ public partial class WordList
                 var rv2 = AffixCheck(word.Slice(0, len), default, CompoundOptions.Not);
                 return rv2 is not null
                     && rv2.ContainsFlag(Affix.ForbiddenWord)
-                    && equalsOrdinalLimited(rv2.Word.AsSpan(), st.TerminatedSpan, rv.Word.Length + i);
+                    && equalsOrdinalLimited(rv2.Word, st.TerminatedSpan, rv.Word.Length + i);
             }
 
             return false;
@@ -2233,7 +2233,7 @@ public partial class WordList
         }
 
         private bool CandidateCheck(string word) =>
-            WordList.ContainsEntriesForRootWord(word) || AffixCheck(word.AsSpan(), default, CompoundOptions.Not) is not null;
+            WordList.ContainsEntriesForRootWord(word) || AffixCheck(word, default, CompoundOptions.Not) is not null;
 
         private bool CandidateCheck(ReadOnlySpan<char> word) =>
             WordList.ContainsEntriesForRootWord(word) || AffixCheck(word, default, CompoundOptions.Not) is not null;

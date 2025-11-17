@@ -6,9 +6,6 @@ using System.Text;
 
 namespace WeCantSpell.Hunspell;
 
-#pragma warning disable IDE0079 // Remove unnecessary suppression
-#pragma warning disable IDE0301 // Simplify collection initialization
-
 [DebuggerDisplay("Prefixes = {Prefixes}, Suffixes = {Suffixes}")]
 public sealed partial class AffixConfig
 {
@@ -20,8 +17,6 @@ public sealed partial class AffixConfig
     private AffixConfig()
     {
     }
-
-    private AffixConfigOptions _options;
 
     /// <summary>
     /// The flag type.
@@ -40,25 +35,25 @@ public sealed partial class AffixConfig
     /// </summary>
     public AffixConfigOptions Options
     {
-        get => _options;
+        get => field;
         private set
         {
-            _options = value;
-            ComplexPrefixes = _options.HasFlagEx(AffixConfigOptions.ComplexPrefixes);
-            CompoundMoreSuffixes = _options.HasFlagEx(AffixConfigOptions.CompoundMoreSuffixes);
-            CheckCompoundDup = _options.HasFlagEx(AffixConfigOptions.CheckCompoundDup);
-            CheckCompoundRep = _options.HasFlagEx(AffixConfigOptions.CheckCompoundRep);
-            CheckCompoundTriple = _options.HasFlagEx(AffixConfigOptions.CheckCompoundTriple);
-            SimplifiedTriple = _options.HasFlagEx(AffixConfigOptions.SimplifiedTriple);
-            CheckCompoundCase = _options.HasFlagEx(AffixConfigOptions.CheckCompoundCase);
-            CheckNum = _options.HasFlagEx(AffixConfigOptions.CheckNum);
-            OnlyMaxDiff = _options.HasFlagEx(AffixConfigOptions.OnlyMaxDiff);
-            NoSplitSuggestions = _options.HasFlagEx(AffixConfigOptions.NoSplitSuggestions);
-            FullStrip = _options.HasFlagEx(AffixConfigOptions.FullStrip);
-            SuggestWithDots = _options.HasFlagEx(AffixConfigOptions.SuggestWithDots);
-            ForbidWarn = _options.HasFlagEx(AffixConfigOptions.ForbidWarn);
-            CheckSharps = _options.HasFlagEx(AffixConfigOptions.CheckSharps);
-            SimplifiedCompound = _options.HasFlagEx(AffixConfigOptions.SimplifiedCompound);
+            field = value;
+            ComplexPrefixes = field.HasFlagEx(AffixConfigOptions.ComplexPrefixes);
+            CompoundMoreSuffixes = field.HasFlagEx(AffixConfigOptions.CompoundMoreSuffixes);
+            CheckCompoundDup = field.HasFlagEx(AffixConfigOptions.CheckCompoundDup);
+            CheckCompoundRep = field.HasFlagEx(AffixConfigOptions.CheckCompoundRep);
+            CheckCompoundTriple = field.HasFlagEx(AffixConfigOptions.CheckCompoundTriple);
+            SimplifiedTriple = field.HasFlagEx(AffixConfigOptions.SimplifiedTriple);
+            CheckCompoundCase = field.HasFlagEx(AffixConfigOptions.CheckCompoundCase);
+            CheckNum = field.HasFlagEx(AffixConfigOptions.CheckNum);
+            OnlyMaxDiff = field.HasFlagEx(AffixConfigOptions.OnlyMaxDiff);
+            NoSplitSuggestions = field.HasFlagEx(AffixConfigOptions.NoSplitSuggestions);
+            FullStrip = field.HasFlagEx(AffixConfigOptions.FullStrip);
+            SuggestWithDots = field.HasFlagEx(AffixConfigOptions.SuggestWithDots);
+            ForbidWarn = field.HasFlagEx(AffixConfigOptions.ForbidWarn);
+            CheckSharps = field.HasFlagEx(AffixConfigOptions.CheckSharps);
+            SimplifiedCompound = field.HasFlagEx(AffixConfigOptions.SimplifiedCompound);
         }
     }
 

@@ -126,11 +126,8 @@ internal sealed class LineReader : IDisposable
             return false;
         }
 
-        if (_tempJoinBuffer is not null)
-        {
-            _tempJoinBuffer.Dispose();
-            _tempJoinBuffer = null;
-        }
+        _tempJoinBuffer?.Dispose();
+        _tempJoinBuffer = null;
 
         TextBufferLine buffer;
         if (_position.BufferIndex == lineTerminalPosition.BufferIndex)
@@ -383,7 +380,7 @@ internal sealed class LineReader : IDisposable
             {
                 if (
                     candidateEncoding.GetPreamble() is { Length: > 0 } encodingPreamble
-                    && fileBytes.StartsWith(encodingPreamble.AsSpan())
+                    && fileBytes.StartsWith(encodingPreamble)
                 )
                 {
                     ChangeEncoding(candidateEncoding);

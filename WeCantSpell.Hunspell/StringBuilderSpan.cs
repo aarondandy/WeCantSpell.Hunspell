@@ -245,21 +245,6 @@ internal ref struct StringBuilderSpan
         _bufferSpan.Slice(startIndex, count).Replace(oldChar, newChar);
     }
 
-    public void Replace(string oldText, string newText)
-    {
-        Replace(oldText.AsSpan(), newText.AsSpan());
-    }
-
-    public void Replace(string oldText, string newText, int startIndex)
-    {
-        Replace(oldText.AsSpan(), newText.AsSpan(), startIndex);
-    }
-
-    public void Replace(string oldText, string newText, int startIndex, int count)
-    {
-        Replace(oldText.AsSpan(), newText.AsSpan(), startIndex, count);
-    }
-
     public void Replace(scoped ReadOnlySpan<char> oldText, scoped ReadOnlySpan<char> newText)
     {
         Replace(oldText, newText, 0, _length);

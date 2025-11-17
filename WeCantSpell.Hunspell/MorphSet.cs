@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace WeCantSpell.Hunspell;
 
@@ -23,7 +22,7 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
         ExceptionEx.ThrowIfArgumentNull(morphs, nameof(morphs));
 #endif
 
-        return new(morphs.ToArray());
+        return new([.. morphs]);
     }
 
     public static MorphSet CreateSingle(string morphValue)
@@ -81,7 +80,7 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public bool Equals(MorphSet other) => RawArray.AsSpan().SequenceEqual(other.RawArray.AsSpan());
+    public bool Equals(MorphSet other) => RawArray.SequenceEqual(other.RawArray);
 
     public override bool Equals(object? obj) => obj is MorphSet set && Equals(set);
 
