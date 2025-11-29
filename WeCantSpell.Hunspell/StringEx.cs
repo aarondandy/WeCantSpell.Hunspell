@@ -52,7 +52,7 @@ internal static partial class StringEx
 
 #endif
 
-    public static bool Contains(this List<string> list, ReadOnlySpan<char> value)
+    public static bool ContainsExact(this List<string> list, ReadOnlySpan<char> value)
     {
         foreach (var item in list)
         {
@@ -64,6 +64,22 @@ internal static partial class StringEx
 
         return false;
     }
+
+    public static bool ContainsExact(this List<string> list, string value)
+    {
+        var cmp = StringComparer.Ordinal;
+        foreach (var item in list)
+        {
+            if (cmp.Equals(value, item))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static bool ContainsExact(this string haystack, string value) => haystack.Contains(value, StringComparison.Ordinal);
 
     public static ReadOnlySpan<char> AsSpanRemoveFromEnd(this string @this, int toRemove) => @this.AsSpan(0, @this.Length - toRemove);
 

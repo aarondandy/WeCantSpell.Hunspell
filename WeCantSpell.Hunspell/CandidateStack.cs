@@ -61,7 +61,7 @@ internal struct CandidateStack
             (
                 _s0.Equals(value)
                 ||
-                (_rest is not null && _rest.Contains(value))
+                (_rest is not null && _rest.ContainsExact(value))
             );
     }
 
@@ -73,7 +73,7 @@ internal struct CandidateStack
             (
                 value.SequenceEqual(_s0)
                 ||
-                (_rest is not null && _rest.Contains(value))
+                (_rest is not null && _rest.ContainsExact(value))
             );
     }
 

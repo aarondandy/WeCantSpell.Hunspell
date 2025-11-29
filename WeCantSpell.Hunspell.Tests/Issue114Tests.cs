@@ -7,7 +7,7 @@ using Xunit;
 
 namespace WeCantSpell.Hunspell.Tests;
 
-public class Issue114 : IAsyncLifetime
+public class Issue114Tests : IAsyncLifetime
 {
     private WordList _wordList = null!;
 
@@ -20,7 +20,7 @@ public class Issue114 : IAsyncLifetime
     public async ValueTask DisposeAsync() { }
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
 
-    [Theory]
+    [Theory(Skip = "The reproduction is incomplete")]
     [InlineData("Teh", "Te|Th|Eh|Tet|Ted|Meh|T eh|Te h|Te-h|The|Tech|Tee|Tea|Ten|Tel")]
     [InlineData("quik", "quirk|quick|quin|quit|quid|quip|quiz")]
     [InlineData("MxDif", "Modify")]

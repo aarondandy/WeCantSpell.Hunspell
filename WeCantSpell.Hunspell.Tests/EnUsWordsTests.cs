@@ -122,7 +122,7 @@ public class EnUsWordsTests : IAsyncLifetime
                     TimeLimitSuggestStep = TimeSpan.FromSeconds(1),
                 }, ct);
 
-                if (!suggestions.Contains(word.Correct))
+                if (!suggestions.Contains(word.Correct, StringComparer.Ordinal))
                 {
                     Interlocked.Increment(ref wrongCount);
                 }

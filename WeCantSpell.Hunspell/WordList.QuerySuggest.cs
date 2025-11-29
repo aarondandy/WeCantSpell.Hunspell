@@ -1880,7 +1880,7 @@ public partial class WordList
                             // don't suggest previous suggestions or a previous suggestion with
                             // prefixes or affixes
                             if (
-                                (guess.GuessOrig ?? guess.Guess).Contains(wlst[j])
+                                (guess.GuessOrig ?? guess.Guess).ContainsExact(wlst[j])
                                 || // check forbidden words
                                 CheckWord(guess.Guess, cpdSuggest: 0) == 0
                             )
@@ -1919,7 +1919,7 @@ public partial class WordList
                             // don't suggest previous suggestions or a previous suggestion with
                             // prefixes or affixes
                             if (
-                                rootPhon.Contains(wlst[j])
+                                rootPhon.ContainsExact(wlst[j])
                                 || // check forbidden words
                                 CheckWord(rootPhon, cpdSuggest: 0) == 0
                             )
@@ -2490,9 +2490,9 @@ public partial class WordList
 
         private readonly bool CanAcceptSuggestion(List<string> suggestions) =>  suggestions.Count < Options.MaxSuggestions;
 
-        private readonly bool CanAcceptSuggestion(List<string> suggestions, string candidate) => CanAcceptSuggestion(suggestions) && !suggestions.Contains(candidate);
+        private readonly bool CanAcceptSuggestion(List<string> suggestions, string candidate) => CanAcceptSuggestion(suggestions) && !suggestions.ContainsExact(candidate);
 
-        private readonly bool CanAcceptSuggestion(List<string> suggestions, ReadOnlySpan<char> candidate) => CanAcceptSuggestion(suggestions) && !suggestions.Contains(candidate);
+        private readonly bool CanAcceptSuggestion(List<string> suggestions, ReadOnlySpan<char> candidate) => CanAcceptSuggestion(suggestions) && !suggestions.ContainsExact(candidate);
 
         private readonly void AddIfAcceptable(List<string> suggestions, ReadOnlySpan<char> candidate)
         {
@@ -2975,7 +2975,7 @@ public partial class WordList
                             // new "actual letter"
                             c = sChar;
 
-                            if (phoneEntry.Rule.Contains("^^"))
+                            if (phoneEntry.Rule.ContainsExact("^^"))
                             {
                                 if (c != '\0')
                                 {

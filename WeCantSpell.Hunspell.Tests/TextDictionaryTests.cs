@@ -380,7 +380,7 @@ public class TextDictionaryTests
         var random = new Random(123);
         givenWords.AddRange(generateCollisionWords(dic.Capacity - givenWords.Count, w => w != startWord));
         givenWords.Count.ShouldBeGreaterThan(2);
-        var otherWords = generateCollisionWords(3, w => !givenWords.Contains(w));
+        var otherWords = generateCollisionWords(3, w => !givenWords.Contains(w, StringComparer.Ordinal));
 
         foreach (var toAdd in givenWords)
         {
