@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 6.0.4 - 2025-11
+
+- Fix for suggest capitalization after early exit
+
 ## 6.0.3 - 2025-09
 
 - Improves overall performance a tiny bit
