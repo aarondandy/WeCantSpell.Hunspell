@@ -2,10 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## 7.0.1 - 2025-11
+
+- Fix for suggest capitalization after early exit
+
 ## 7.0.0 - 2025-11
 
 - Adds dotnet 10 target
 - Removes dotnet 6 target
+
+## 6.0.4 - 2025-11
+
+- Fix for suggest capitalization after early exit
 
 ## 6.0.3 - 2025-09
 
