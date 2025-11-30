@@ -26,7 +26,16 @@ public class Issue106Tests : IAsyncLifetime
     public void can_suggest_fr_designation()
     {
         var given = "Designation";
-        var actual = _wordListFr.Suggest(given, TestContext.Current.CancellationToken);
+        var actual = _wordListFr.Suggest(
+            given,
+            new QueryOptions()
+            {
+                TimeLimitSuggestStep = TimeSpan.FromSeconds(1),
+                TimeLimitCompoundCheck = TimeSpan.FromSeconds(1),
+                TimeLimitCompoundSuggest = TimeSpan.FromSeconds(1),
+                TimeLimitSuggestGlobal = TimeSpan.FromSeconds(1),
+            },
+            TestContext.Current.CancellationToken);
         actual.ShouldContain("Désignation", StringComparer.Ordinal);
     }
 
@@ -34,7 +43,16 @@ public class Issue106Tests : IAsyncLifetime
     public void can_suggest_es_descripcion()
     {
         var given = "Descripcion";
-        var actual = _wordListEs.Suggest(given, TestContext.Current.CancellationToken);
+        var actual = _wordListEs.Suggest(
+            given,
+            new QueryOptions()
+            {
+                TimeLimitSuggestStep = TimeSpan.FromSeconds(1),
+                TimeLimitCompoundCheck = TimeSpan.FromSeconds(1),
+                TimeLimitCompoundSuggest = TimeSpan.FromSeconds(1),
+                TimeLimitSuggestGlobal = TimeSpan.FromSeconds(1),
+            },
+            TestContext.Current.CancellationToken);
         actual.ShouldContain("Descripción", StringComparer.Ordinal);
     }
 }
