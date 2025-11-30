@@ -1896,15 +1896,16 @@ public partial class WordList
                     if (replacementEntry.Med is { Length: > 0 })
                     {
                         // search every occurence of the pattern in the word
-                        var rIndex = word.IndexOf(replacementEntry.Pattern);
+                        var replacementPattern = replacementEntry.Pattern.AsSpan();
+                        var rIndex = word.IndexOf(replacementPattern);
                         while (rIndex >= 0)
                         {
-                            if (CandidateCheck(word.ReplaceIntoString(rIndex, replacementEntry.Pattern.Length, replacementEntry.Med)))
+                            if (CandidateCheck(word.ReplaceIntoString(rIndex, replacementPattern.Length, replacementEntry.Med)))
                             {
                                 return true;
                             }
 
-                            rIndex = word.IndexOf(replacementEntry.Pattern, rIndex + 1);
+                            rIndex = word.IndexOf(replacementPattern, rIndex + 1);
                         }
                     }
                 }

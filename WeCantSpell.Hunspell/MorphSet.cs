@@ -84,7 +84,7 @@ public readonly struct MorphSet : IReadOnlyList<string>, IEquatable<MorphSet>
 
     public override bool Equals(object? obj) => obj is MorphSet set && Equals(set);
 
-    public override int GetHashCode() => ((IStructuralEquatable)RawArray).GetHashCode(StringComparer.Ordinal);
+    public override int GetHashCode() => StringComparer.Ordinal.GetHashCode(ToString());
 
     public override string ToString() => Join(' ');
 

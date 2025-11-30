@@ -399,7 +399,7 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
 
         while (true)
         {
-            if (entry.HashCode == hash && key.Equals(entry.Key))
+            if (entry.HashCode == hash && key.Equals(entry.Key, StringComparison.Ordinal))
             {
                 if (throwOnMatch)
                 {
@@ -464,7 +464,7 @@ internal sealed class TextDictionary<TValue> : IEnumerable<KeyValuePair<string, 
         {
             do
             {
-                if (entry.HashCode == hash && key.Equals(entry.Key))
+                if (entry.HashCode == hash && key.Equals(entry.Key, StringComparison.Ordinal))
                 {
                     return ref entry;
                 }

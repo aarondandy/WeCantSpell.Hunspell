@@ -1880,7 +1880,7 @@ public partial class WordList
                             // don't suggest previous suggestions or a previous suggestion with
                             // prefixes or affixes
                             if (
-                                (guess.GuessOrig ?? guess.Guess).ContainsExact(wlst[j])
+                                (guess.GuessOrig ?? guess.Guess).ContainsSubstringOrdinal(wlst[j])
                                 || // check forbidden words
                                 CheckWord(guess.Guess, cpdSuggest: 0) == 0
                             )
@@ -1919,7 +1919,7 @@ public partial class WordList
                             // don't suggest previous suggestions or a previous suggestion with
                             // prefixes or affixes
                             if (
-                                rootPhon.ContainsExact(wlst[j])
+                                rootPhon.ContainsSubstringOrdinal(wlst[j])
                                 || // check forbidden words
                                 CheckWord(rootPhon, cpdSuggest: 0) == 0
                             )
@@ -2490,9 +2490,9 @@ public partial class WordList
 
         private readonly bool CanAcceptSuggestion(List<string> suggestions) =>  suggestions.Count < Options.MaxSuggestions;
 
-        private readonly bool CanAcceptSuggestion(List<string> suggestions, string candidate) => CanAcceptSuggestion(suggestions) && !suggestions.ContainsExact(candidate);
+        private readonly bool CanAcceptSuggestion(List<string> suggestions, string candidate) => CanAcceptSuggestion(suggestions) && !suggestions.ContainsValueOrdinal(candidate);
 
-        private readonly bool CanAcceptSuggestion(List<string> suggestions, ReadOnlySpan<char> candidate) => CanAcceptSuggestion(suggestions) && !suggestions.ContainsExact(candidate);
+        private readonly bool CanAcceptSuggestion(List<string> suggestions, ReadOnlySpan<char> candidate) => CanAcceptSuggestion(suggestions) && !suggestions.ContainsValueOrdinal(candidate);
 
         private readonly void AddIfAcceptable(List<string> suggestions, ReadOnlySpan<char> candidate)
         {
@@ -2502,17 +2502,17 @@ public partial class WordList
             }
         }
 
-        private static bool CopyField(ref string dest, MorphSet morphs, string var)
+        private static bool CopyField(ref string dest, MorphSet morphs, ReadOnlySpan<char> value)
         {
             if (morphs.Count > 0)
             {
                 var morph = morphs.Join(' ').AsSpan();
                 if (morph.Length > 0)
                 {
-                    var pos = morph.IndexOf(var, StringComparison.Ordinal);
+                    var pos = morph.IndexOf(value, StringComparison.Ordinal);
                     if (pos >= 0)
                     {
-                        morph = morph.Slice(pos + var.Length);
+                        morph = morph.Slice(pos + value.Length);
                         pos = morph.IndexOfAny(' ', '\t', '\n');
                         if (pos >= 0)
                         {
@@ -2975,7 +2975,7 @@ public partial class WordList
                             // new "actual letter"
                             c = sChar;
 
-                            if (phoneEntry.Rule.ContainsExact("^^"))
+                            if (phoneEntry.Rule.ContainsSubstringOrdinal("^^"))
                             {
                                 if (c != '\0')
                                 {

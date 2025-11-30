@@ -361,7 +361,7 @@ public partial class WordList
                 }
             }
 
-            if (Affix.CheckSharps && scw.ContainsExact("SS"))
+            if (Affix.CheckSharps && scw.ContainsSubstringOrdinal("SS"))
             {
                 scw = StringEx.MakeAllSmall(scw, textInfo);
                 var u8buffer = scw;
