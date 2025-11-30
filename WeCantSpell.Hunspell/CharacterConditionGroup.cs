@@ -72,7 +72,7 @@ public readonly struct CharacterConditionGroup : IReadOnlyList<CharacterConditio
                         text = [];
                     }
 
-                    if (span.Length > 0 && span[0] == '^')
+                    if (span.StartsWith('^'))
                     {
                         conditions.Add(CharacterCondition.CreateCharSet(span.Slice(1), CharacterCondition.ModeKind.RestrictChars));
                     }
