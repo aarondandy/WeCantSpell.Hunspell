@@ -498,6 +498,8 @@ public partial class WordList
                 }
             }
 
+        result:
+
             // word reversing wrapper for complex prefixes
             if (Affix.ComplexPrefixes)
             {
@@ -567,7 +569,6 @@ public partial class WordList
             // output conversion
             Affix.OutputConversions.ConvertAll(slst);
 
-        result:
             return slst;
         }
 

@@ -26,18 +26,36 @@ public class Issue106Tests : IAsyncLifetime
     public void can_suggest_fr_designation()
     {
         var given = "Designation";
-        var actual = _wordListFr.Suggest(given, TestContext.Current.CancellationToken);
-        actual.ShouldContain("Désignation");
+        var actual = _wordListFr.Suggest(
+            given,
+            new QueryOptions()
+            {
+                TimeLimitSuggestStep = TimeSpan.FromSeconds(1),
+                TimeLimitCompoundCheck = TimeSpan.FromSeconds(1),
+                TimeLimitCompoundSuggest = TimeSpan.FromSeconds(1),
+                TimeLimitSuggestGlobal = TimeSpan.FromSeconds(10),
+            },
+            TestContext.Current.CancellationToken);
+        actual.ShouldContain("Désignation", StringComparer.Ordinal);
     }
 
     [Fact]
     public void can_suggest_es_descripcion()
     {
         var given = "Descripcion";
-        var actual = _wordListEs.Suggest(given, TestContext.Current.CancellationToken);
+        var actual = _wordListEs.Suggest(
+            given,
+            new QueryOptions()
+            {
+                TimeLimitSuggestStep = TimeSpan.FromSeconds(1),
+                TimeLimitCompoundCheck = TimeSpan.FromSeconds(1),
+                TimeLimitCompoundSuggest = TimeSpan.FromSeconds(1),
+                TimeLimitSuggestGlobal = TimeSpan.FromSeconds(10),
+            },
+            TestContext.Current.CancellationToken);
         // I don't know why but net48 randomly changes the case of the first letter.
         // It's probably worth investingating further and creating a new test for that
         // when the issue there is understood.
-        actual.ShouldContain("Descripción", StringComparer.InvariantCultureIgnoreCase);
+        actual.ShouldContain("Descripción", StringComparer.Ordinal);
     }
 }
